@@ -1,6 +1,6 @@
 {
   "name": "xenv-config",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Load config from env, user config, or default spec",
   "main": "xenv-config.js",
   "repository": {
