@@ -22,6 +22,14 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: envs[1] });
     });
 
+    it("should load config from default if array of env not found", () => {
+      const now = Date.now();
+      const envs = [`A${now}`, `B${now}`, `C${now}`];
+      const cfg = xenvConfig({ test: { env: envs, default: "foobar" } });
+      expect(cfg.test).to.equal("foobar");
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
+    });
+
     it("should load config if array of env all not found", () => {
       const now = Date.now();
       const envs = [`X${now}`, `Y${now}`, `Z${now}`];
