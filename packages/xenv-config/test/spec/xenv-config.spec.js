@@ -12,6 +12,15 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
+    it("should use key as env var name if spec.env is true", () => {
+      const k = `TEST${Date.now()}`;
+      process.env[k] = "hello";
+      const cfg = xenvConfig({ [k]: { env: true } });
+      delete process.env[k];
+      expect(cfg[k]).to.equal("hello");
+      expect(cfg.__$trace__[k]).to.deep.equal({ src: "env", name: k });
+    });
+
     it("should load config thru array of env", () => {
       const now = Date.now();
       const envs = [`A${now}`, `B${now}`, `C${now}`];

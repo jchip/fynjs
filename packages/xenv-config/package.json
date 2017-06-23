@@ -1,8 +1,8 @@
 {
   "name": "xenv-config",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "Load config from env, user config, or default spec",
-  "main": "xenv-config.js",
+  "main": "lib/xenv-config.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/jchip/xenv-config.git"

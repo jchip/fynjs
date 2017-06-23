@@ -1,7 +1,5 @@
 "use strict";
 
-const assert = require("assert");
-
 const typeGetters = {
   string: x => x,
   number: x => parseInt(x, 10),
@@ -17,7 +15,8 @@ const xenvConfig = (spec, userConfig) => {
   userConfig = userConfig || {};
   const trace = {};
 
-  const config = Object.keys(spec).reduce((config, k) => {
+  /* eslint-disable max-statements */
+  const config = Object.keys(spec).reduce((cfg, k) => {
     const opt = spec[k];
 
     let env;
@@ -26,7 +25,9 @@ const xenvConfig = (spec, userConfig) => {
         env = optEnv.find(x => process.env.hasOwnProperty(x));
         return env ? process.env[env] : undefined;
       }
-      env = optEnv;
+
+      env = optEnv === true ? k : optEnv;
+
       return process.env.hasOwnProperty(env) ? process.env[env] : undefined;
     };
 
@@ -36,24 +37,24 @@ const xenvConfig = (spec, userConfig) => {
       const type = opt.type || (opt.hasOwnProperty("default") && typeof opt.default) || "string";
       const getter = typeGetters[type] || typeGetters.string;
       trace[k] = { src: "env", name: env };
-      config[k] = getter(envX);
-      return config;
+      cfg[k] = getter(envX);
+      return cfg;
     }
 
     // use options if it exists
     if (userConfig.hasOwnProperty(k)) {
       trace[k] = { src: "option" };
-      config[k] = userConfig[k];
-      return config;
+      cfg[k] = userConfig[k];
+      return cfg;
     }
 
     // use default if it exists
     if (opt.hasOwnProperty("default")) {
       trace[k] = { src: "default" };
-      config[k] = opt.default;
+      cfg[k] = opt.default;
     }
 
-    return config;
+    return cfg;
   }, {});
 
   Object.defineProperty(config, "__$trace__", {

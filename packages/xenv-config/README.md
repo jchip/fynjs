@@ -53,29 +53,43 @@ Returns `config` object.
 
 ## Spec
 
-The spec is a JSON object:
+The spec is a JSON object with the following format:
 
--   Each key specifies the name of the option
+```js
+{
+  "<optionKey>": {
+    env: "ENV_VAR_NAME",
+    default: <default_value>,
+    type: "<type>"
+  }
+}
+```
+
+-   Each `optionKey` specifies the name of the option
 -   Its value should be an object with the following fields:
-    -   `env`: the name (or array of names) of the environment varialbe(s) to check first (`optional`)
-    -   `default`: the default value (`optional`)
-    -   `type`: type of the value to help convert the string from `process.env` into (`optional`)
+    -   `env`: the name (or array of names) of the environment varialbe(s) to check first.  If it's `true`, then use `optionKey` as the env variable name.
+    -   `default`: the default value.
+    -   `type`: type of the value to help convert the string from `process.env` to.
 
-> If all three fields are skipped, then the config option will be determined from `userConfig` only.
+> All three are `optional`, if they are all skipped, then the config option will be determined from `userConfig` only.
 >
-> Without either `default` or `type`, the value from `env` will remain as a string
+> Without either `default` or `type`, the value from `env` will remain as a string.
 >
 > If `env` is an array, then the first one that finds a value in `process.env` will be used.
+>
+> If `env` is `true`, then use `optionKey` as the name to look up from `process.env`.
 
 ### Types
 
-When loading from `env`, in order to indicate what value to convert the string into, the type can be one of:
+When loading from `env`, in order to indicate what value to convert the string into, the type can be one of.
 
 -   `string` - no conversion
 -   `number` - (integer) convert with `parseInt(x,10)`
 -   `float` - (float) convert with `parseFloat(x)`
 -   `boolean` - (boolean) convert with `x === "true" || x === "yes" || x === "1" || x === "on"`
 -   `truthy` - (boolean from truthy check) convert with `!!x`
+
+> If `type` is not specified, then it'd be derived from the `default` value using `typeof`, if it's defined.
 
 ### Trace
 
@@ -89,8 +103,8 @@ The hidden field `__$trace__` contain data for each key to indicate where its va
 
 The order of source to check are:
 
-1.  The `env` if it's defined in the spec, and `process.env` contains the key
-2.  The value from `userConfig` directly if it contains the key
+1.  The `env` if it's defined in the spec and `process.env` contains the variable
+2.  The value from `userConfig` directly if it contains the `optionKey`
 3.  The default value from spec if it's declared
 4.  Nothing
 
