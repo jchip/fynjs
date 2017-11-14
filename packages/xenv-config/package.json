@@ -15,8 +15,7 @@
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "electrode-archetype-njs-module-dev": "^2.2.0",
-    "xclap-cli": "^0.1.1"
+    "electrode-archetype-njs-module-dev": "^2.2.0"
   },
   "nyc": {
     "all": true,
