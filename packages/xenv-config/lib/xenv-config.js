@@ -18,6 +18,7 @@ const xenvConfig = (spec, userConfig) => {
   /* eslint-disable max-statements */
   const config = Object.keys(spec).reduce((cfg, k) => {
     const opt = spec[k];
+    const post = opt.post || (v => v);
 
     let env;
     const getFromEnv = optEnv => {
@@ -37,21 +38,21 @@ const xenvConfig = (spec, userConfig) => {
       const type = opt.type || (opt.hasOwnProperty("default") && typeof opt.default) || "string";
       const getter = typeGetters[type] || typeGetters.string;
       trace[k] = { src: "env", name: env };
-      cfg[k] = getter(envX);
+      cfg[k] = post(getter(envX), trace[k]);
       return cfg;
     }
 
     // use options if it exists
     if (userConfig.hasOwnProperty(k)) {
       trace[k] = { src: "option" };
-      cfg[k] = userConfig[k];
+      cfg[k] = post(userConfig[k], trace[k]);
       return cfg;
     }
 
     // use default if it exists
     if (opt.hasOwnProperty("default")) {
       trace[k] = { src: "default" };
-      cfg[k] = opt.default;
+      cfg[k] = post(opt.default, trace[k]);
     }
 
     return cfg;

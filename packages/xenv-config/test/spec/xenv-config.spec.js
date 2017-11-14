@@ -8,7 +8,7 @@ describe("xenv-config", function() {
       process.env[k] = "hello";
       const cfg = xenvConfig({ test: { env: k } });
       delete process.env[k];
-      expect(cfg.test).to.equal("hello");
+      expect(cfg).to.deep.equal({ test: "hello" });
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 

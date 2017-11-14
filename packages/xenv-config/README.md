@@ -60,7 +60,8 @@ The spec is a JSON object with the following format:
   "<optionKey>": {
     env: "ENV_VAR_NAME",
     default: <default_value>,
-    type: "<type>"
+    type: "<type>",
+    post: (val, trace) => {}
   }
 }
 ```
@@ -70,8 +71,9 @@ The spec is a JSON object with the following format:
     -   `env`: the name (or array of names) of the environment varialbe(s) to check first.  If it's `true`, then use `optionKey` as the env variable name.
     -   `default`: the default value.
     -   `type`: type of the value to help convert the string from `process.env` to.
+    -   `post`: callback to post process value
 
-> All three are `optional`, if they are all skipped, then the config option will be determined from `userConfig` only.
+> All fields are `optional`, if they are all skipped, then the config option will be determined from `userConfig` only.
 >
 > Without either `default` or `type`, the value from `env` will remain as a string.
 >
