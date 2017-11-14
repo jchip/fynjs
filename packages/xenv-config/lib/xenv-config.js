@@ -11,49 +11,67 @@ const typeGetters = {
   truthy: x => !!x
 };
 
-const xenvConfig = (spec, userConfig) => {
+const getEnvName = (optKey, opt) => {
+  if (!opt.hasOwnProperty("env")) return undefined;
+
+  let name;
+
+  if (Array.isArray(opt.env)) {
+    name = opt.env.find(x => process.env.hasOwnProperty(x));
+  } else {
+    name = opt.env === true ? optKey : opt.env;
+  }
+
+  if (name && process.env.hasOwnProperty(name)) {
+    return name;
+  }
+
+  return undefined;
+};
+
+const xenvConfig = (spec, userConfig, options) => {
   userConfig = userConfig || {};
   const trace = {};
 
-  /* eslint-disable max-statements */
+  const getters = {
+    env: (opt, k) => {
+      const name = getEnvName(k, opt);
+      if (name) {
+        const type = opt.type || (opt.hasOwnProperty("default") && typeof opt.default) || "string";
+        const getter = typeGetters[type] || typeGetters.string;
+        return { trace: { src: "env", name }, value: getter(process.env[name]) };
+      }
+      return undefined;
+    },
+
+    option: (opt, k) => {
+      if (userConfig.hasOwnProperty(k)) {
+        return { trace: { src: "option" }, value: userConfig[k] };
+      }
+      return undefined;
+    },
+
+    default: opt => {
+      if (opt.hasOwnProperty("default")) {
+        return { trace: { src: "default" }, value: opt.default };
+      }
+      return undefined;
+    }
+  };
+
+  const sources = (options && options.sources) || ["env", "option"];
+  sources.push("default");
+
   const config = Object.keys(spec).reduce((cfg, k) => {
     const opt = spec[k];
-    const post = opt.post || (v => v);
+    let found;
 
-    let env;
-    const getFromEnv = optEnv => {
-      if (Array.isArray(optEnv)) {
-        env = optEnv.find(x => process.env.hasOwnProperty(x));
-        return env ? process.env[env] : undefined;
-      }
+    sources.find(s => (found = getters[s](opt, k)));
 
-      env = optEnv === true ? k : optEnv;
+    if (!found) return cfg;
 
-      return process.env.hasOwnProperty(env) ? process.env[env] : undefined;
-    };
-
-    // always use env if it's not undefined
-    let envX;
-    if (opt.hasOwnProperty("env") && (envX = getFromEnv(opt.env)) !== undefined) {
-      const type = opt.type || (opt.hasOwnProperty("default") && typeof opt.default) || "string";
-      const getter = typeGetters[type] || typeGetters.string;
-      trace[k] = { src: "env", name: env };
-      cfg[k] = post(getter(envX), trace[k]);
-      return cfg;
-    }
-
-    // use options if it exists
-    if (userConfig.hasOwnProperty(k)) {
-      trace[k] = { src: "option" };
-      cfg[k] = post(userConfig[k], trace[k]);
-      return cfg;
-    }
-
-    // use default if it exists
-    if (opt.hasOwnProperty("default")) {
-      trace[k] = { src: "default" };
-      cfg[k] = post(opt.default, trace[k]);
-    }
+    trace[k] = found.trace;
+    cfg[k] = opt.post ? opt.post(found.value, found.trace) : found.value;
 
     return cfg;
   }, {});

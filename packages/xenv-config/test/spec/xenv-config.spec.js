@@ -12,6 +12,15 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
+    it("should call post", () => {
+      const k = `K${Date.now()}`;
+      process.env[k] = "hello";
+      const cfg = xenvConfig({ test: { env: k, post: (v, t) => `${v}-${t.src}` } });
+      delete process.env[k];
+      expect(cfg).to.deep.equal({ test: "hello-env" });
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
+    });
+
     it("should use key as env var name if spec.env is true", () => {
       const k = `TEST${Date.now()}`;
       process.env[k] = "hello";
@@ -152,6 +161,18 @@ describe("xenv-config", function() {
 
     it("should load config if env doesn't exist", () => {
       const cfg = xenvConfig({ test: { env: `K${Date.now()}`, type: "number" } }, { test: 222 });
+      expect(cfg.test).to.equal(222);
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "option" });
+    });
+
+    it("should load config if sources set it first", () => {
+      const k = `TEST${Date.now()}`;
+      process.env[k] = 999;
+      const cfg = xenvConfig(
+        { test: { env: k, type: "number" } },
+        { test: 222 },
+        { sources: ["option", "env"] }
+      );
       expect(cfg.test).to.equal(222);
       expect(cfg.__$trace__.test).to.deep.equal({ src: "option" });
     });
