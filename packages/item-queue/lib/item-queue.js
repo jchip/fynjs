@@ -28,6 +28,9 @@ class ItemQueue extends EventEmitter {
     this._timeout = options.timeout; // TODO
     this._watchTime = options.watchTime;
     this._id = 1;
+    _.each(options.handlers, (handler, evt) => {
+      this.on(evt, handler);
+    });
   }
 
   wait() {
