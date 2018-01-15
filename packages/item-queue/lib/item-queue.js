@@ -224,11 +224,11 @@ class ItemQueue extends EventEmitter {
       let promise;
 
       if (item === RESUME_ITEM) {
-        promise = Promise.resolve({});
+        promise = this.Promise.resolve({});
       } else {
         promise = this._processItem(item, id);
         if (!promise || !promise.then) {
-          promise = Promise.resolve(promise);
+          promise = this.Promise.resolve(promise);
         }
       }
 
