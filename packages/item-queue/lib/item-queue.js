@@ -49,160 +49,25 @@ class ItemQueue extends EventEmitter {
   }
 
   setItemQ(itemQ, defer) {
+    assert(Array.isArray(itemQ), "item-queue: Must pass array to setItemQ");
     this._itemQ = itemQ;
     this._empty = !itemQ || itemQ.length === 0;
-    if (!defer) this._process();
+    if (!defer) process.nextTick(() => this._process());
+    return this;
   }
 
   addItem(data, defer) {
     this._empty = false;
     this._itemQ.push(data);
     if (!defer) process.nextTick(() => this._process());
+    return this;
   }
 
-  handleQueueItemDone(data) {
-    if (data.id > 0) {
-      this._pending.remove(data.id);
-    }
-
-    if (this._failed) {
-      return;
-    }
-
-    if (data.item !== RESUME_ITEM && data.id > 0) {
-      if (data.error) {
-        this.emit("failItem", data);
-        if (this._stopOnError) {
-          this._failed = true;
-          this.emit("fail", data);
-          return;
-        }
-      } else {
-        this.emit("doneItem", data);
-      }
-    }
-
-    this.emitEmpty();
-
-    if (!this._pause && this._itemQ.length > 0) {
-      this._process();
-    } else if (this._pending.isEmpty()) {
-      if (this._pause) {
-        this.emit("pause");
-      } else {
-        this.emitDone();
-      }
-    }
-  }
-
-  emitDone() {
-    const endTime = Date.now();
-    const totalTime = endTime - this._startTime;
-    const res = {
-      startTime: this._startTime,
-      endTime,
-      totalTime
-    };
-    this.emit("done", res);
-  }
-
-  emitEmpty() {
-    if (this._itemQ.length === 0 && !this._empty) {
-      this._empty = true; // make sure only emit empty event once
-      this.emit("empty");
-    }
-  }
-
-  pendingWatcher() {
-    if (this._pending.isEmpty() && !this._watched) return;
-
-    const watched = [];
-    const still = [];
-    const now = Date.now();
-
-    _.each(this._pending.inflights, (v, id) => {
-      const lastXTime = this._pending.lastCheckTime(id, now);
-      const time = this._pending.time(id, now);
-      if (lastXTime >= this._watchTime) {
-        watched.push({ item: v.value.item, promise: v.value.promise, time });
-        this._pending.resetCheckTime(id, now);
-      } else if (time >= this._watchTime) {
-        still.push({ item: v.value.item, promise: v.value.promise, time });
-      }
-    });
-
-    if (still.length > 0 || watched.length > 0) {
-      this._watched = true;
-      this.emit("watch", { total: watched.length + still.length, watched, still });
-    } else if (this._watched) {
-      this._watched = false;
-      this.emit("watch", { total: 0, watched, still });
-    }
-
-    this._watchTimer = setTimeout(() => this.pendingWatcher(), WATCH_PERIOD).unref();
-  }
-
-  setupWatch() {
-    if (!this._watchTimer && this._watchTime) {
-      process.nextTick(() => this.pendingWatcher());
-    }
-  }
-
-  _process() {
-    if (this._startTime === undefined) {
-      this._startTime = Date.now();
-    }
-
-    if (this._processing || this._pause || this._itemQ.length === 0) return 0;
-
-    this._processing = true;
-    let count = 0;
-    let i = this._pending.getCount();
-    for (; this._itemQ.length > 0 && i < this._concurrency; i++) {
-      const item = this._itemQ.shift();
-      if (item === PAUSE_ITEM) {
-        this._pause = true;
-        // since no more pending can be added at this point, if there're no
-        // existing pending, then setup to emit the pause event.
-        if (this._pending.isEmpty()) {
-          process.nextTick(() => {
-            this.handleQueueItemDone({ id: 0 });
-          });
-        }
-        break;
-      }
-
-      count++;
-
-      const id = this._id++;
-
-      let promise;
-
-      if (item === RESUME_ITEM) {
-        promise = Promise.resolve({});
-      } else {
-        promise = this._processItem(item, id);
-        if (!promise || !promise.then) {
-          promise = Promise.resolve(promise);
-        }
-      }
-
-      this._pending.add(id, {
-        item,
-        promise: promise.then(
-          res => this.handleQueueItemDone({ id, item, res }),
-          error => {
-            this.handleQueueItemDone({ error, id, item });
-          }
-        )
-      });
-    }
-
-    this._processing = false;
-
-    this.setupWatch();
-
-    return count;
+  addItems(items, defer) {
+    assert(Array.isArray(items), "item-queue: Must pass array to addItems");
+    items.forEach(x => this.addItem(x, true));
+    if (!defer) process.nextTick(() => this._process());
+    return this;
   }
 
   static get pauseItem() {
@@ -229,8 +94,157 @@ class ItemQueue extends EventEmitter {
     return this;
   }
 
+  start() {
+    return this.resume();
+  }
+
   isPending() {
     return !this._pending.isEmpty() || this._itemQ.length !== 0;
+  }
+
+  _handleQueueItemDone(data) {
+    if (data.id > 0) {
+      this._pending.remove(data.id);
+    }
+
+    if (this._failed) {
+      return;
+    }
+
+    if (data.item !== RESUME_ITEM && data.id > 0) {
+      if (data.error) {
+        this.emit("failItem", data);
+        if (this._stopOnError) {
+          this._failed = true;
+          this.emit("fail", data);
+          return;
+        }
+      } else {
+        this.emit("doneItem", data);
+      }
+    }
+
+    this._emitEmpty();
+
+    if (!this._pause && this._itemQ.length > 0) {
+      this._process();
+    } else if (this._pending.isEmpty()) {
+      if (this._pause) {
+        this.emit("pause");
+      } else {
+        this._emitDone();
+      }
+    }
+  }
+
+  _emitDone() {
+    const endTime = Date.now();
+    const totalTime = endTime - this._startTime;
+    const res = {
+      startTime: this._startTime,
+      endTime,
+      totalTime
+    };
+    this.emit("done", res);
+  }
+
+  _emitEmpty() {
+    if (this._itemQ.length === 0 && !this._empty) {
+      this._empty = true; // make sure only emit empty event once
+      this.emit("empty");
+    }
+  }
+
+  _pendingWatcher() {
+    if (this._pending.isEmpty() && !this._watched) return;
+
+    const watched = [];
+    const still = [];
+    const now = Date.now();
+
+    _.each(this._pending.inflights, (v, id) => {
+      const lastXTime = this._pending.lastCheckTime(id, now);
+      const time = this._pending.time(id, now);
+      if (lastXTime >= this._watchTime) {
+        watched.push({ item: v.value.item, promise: v.value.promise, time });
+        this._pending.resetCheckTime(id, now);
+      } else if (time >= this._watchTime) {
+        still.push({ item: v.value.item, promise: v.value.promise, time });
+      }
+    });
+
+    if (still.length > 0 || watched.length > 0) {
+      this._watched = true;
+      this.emit("watch", { total: watched.length + still.length, watched, still });
+    } else if (this._watched) {
+      this._watched = false;
+      this.emit("watch", { total: 0, watched, still });
+    }
+
+    this._watchTimer = setTimeout(() => this._pendingWatcher(), WATCH_PERIOD).unref();
+  }
+
+  _setupWatch() {
+    if (!this._watchTimer && this._watchTime) {
+      process.nextTick(() => this._pendingWatcher());
+    }
+  }
+
+  _process() {
+    if (this._startTime === undefined) {
+      this._startTime = Date.now();
+    }
+
+    if (this._processing || this._pause || this._itemQ.length === 0) return 0;
+
+    this._processing = true;
+    let count = 0;
+    let i = this._pending.getCount();
+    for (; this._itemQ.length > 0 && i < this._concurrency; i++) {
+      const item = this._itemQ.shift();
+      if (item === PAUSE_ITEM) {
+        this._pause = true;
+        // since no more pending can be added at this point, if there're no
+        // existing pending, then setup to emit the pause event.
+        if (this._pending.isEmpty()) {
+          process.nextTick(() => {
+            this._handleQueueItemDone({ id: 0 });
+          });
+        }
+        break;
+      }
+
+      count++;
+
+      const id = this._id++;
+
+      let promise;
+
+      if (item === RESUME_ITEM) {
+        promise = Promise.resolve({});
+      } else {
+        promise = this._processItem(item, id);
+        if (!promise || !promise.then) {
+          promise = Promise.resolve(promise);
+        }
+      }
+
+      this._pending.add(id, {
+        item,
+        promise: promise.then(
+          res => this._handleQueueItemDone({ id, item, res }),
+          error => {
+            this._handleQueueItemDone({ error, id, item });
+          }
+        )
+      });
+    }
+
+    this._processing = false;
+
+    this._setupWatch();
+
+    return count;
   }
 }
 
