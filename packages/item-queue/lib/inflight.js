@@ -8,10 +8,10 @@ class Inflight {
     this.inflights = {};
   }
 
-  add(key, value) {
+  add(key, value, now) {
     assert(this.inflights[key] === undefined, `Already has inflight item ${key}`);
     this.count++;
-    const now = Date.now();
+    now = now || Date.now();
     this.inflights[key] = { start: now, lastXTime: now, value };
 
     return value;
@@ -20,30 +20,6 @@ class Inflight {
   get(key) {
     const x = this.inflights[key];
     return x && x.value;
-  }
-
-  lastCheckTime(key, now) {
-    const x = this.inflights[key];
-    if (x) {
-      const t = (now || Date.now()) - x.lastXTime;
-      return t;
-    }
-    return -1;
-  }
-
-  resetCheckTime(key, now) {
-    const x = this.inflights[key];
-    if (x) {
-      x.lastXTime = now || Date.now();
-    }
-  }
-
-  time(key, now) {
-    const x = this.inflights[key];
-    if (x) {
-      return (now || Date.now()) - x.start;
-    }
-    return -1;
   }
 
   remove(key) {
@@ -63,6 +39,49 @@ class Inflight {
 
   getCount() {
     return this.count;
+  }
+
+  getStartTime(key) {
+    const x = this.inflights[key];
+    return x && x.start;
+  }
+
+  time(key, now) {
+    const x = this.inflights[key];
+    if (x) {
+      return (now || Date.now()) - x.start;
+    }
+    return -1;
+  }
+
+  elapseTime(key, now) {
+    return this.time(key, now);
+  }
+
+  getCheckTime(key) {
+    const x = this.inflights[key];
+    return x && x.lastXTime;
+  }
+
+  lastCheckTime(key, now) {
+    const x = this.inflights[key];
+    if (x) {
+      const t = (now || Date.now()) - x.lastXTime;
+      return t;
+    }
+    return -1;
+  }
+
+  elapseCheckTime(key, now) {
+    return this.lastCheckTime(key, now);
+  }
+
+  resetCheckTime(key, now) {
+    const x = this.inflights[key];
+    if (x) {
+      x.lastXTime = now || Date.now();
+    }
+    return this;
   }
 }
 
