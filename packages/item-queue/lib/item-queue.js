@@ -93,7 +93,7 @@ class ItemQueue extends EventEmitter {
   }
 
   get isPending() {
-    return !this._pending.isEmpty() || this._itemQ.length !== 0;
+    return !this._pending.isEmpty || this._itemQ.length !== 0;
   }
 
   unpause() {
@@ -142,7 +142,7 @@ class ItemQueue extends EventEmitter {
 
     if (!this._pause && this._itemQ.length > 0) {
       this._process();
-    } else if (this._pending.isEmpty()) {
+    } else if (this._pending.isEmpty) {
       if (this._pause) {
         this.emit("pause");
       } else {
@@ -170,13 +170,13 @@ class ItemQueue extends EventEmitter {
   }
 
   _pendingWatcher() {
-    if (this._pending.isEmpty() && !this._watched) return;
+    if (this._pending.isEmpty && !this._watched) return;
 
     const watched = [];
     const still = [];
     const now = Date.now();
 
-    _.each(this._pending.inflights, (v, id) => {
+    _.each(this._pending._inflights, (v, id) => {
       const lastXTime = this._pending.lastCheckTime(id, now);
       const time = this._pending.time(id, now);
       if (lastXTime >= this._watchTime) {
@@ -213,14 +213,14 @@ class ItemQueue extends EventEmitter {
 
     this._processing = true;
     let count = 0;
-    let i = this._pending.getCount();
+    let i = this._pending.count;
     for (; this._itemQ.length > 0 && i < this._concurrency; i++) {
       const item = this._itemQ.shift();
       if (item === PAUSE_ITEM) {
         this._pause = true;
         // since no more pending can be added at this point, if there're no
         // existing pending, then setup to emit the pause event.
-        if (this._pending.isEmpty()) {
+        if (this._pending.isEmpty) {
           process.nextTick(() => {
             this._handleQueueItemDone({ id: 0 });
           });

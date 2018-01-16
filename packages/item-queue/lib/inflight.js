@@ -4,50 +4,50 @@ const assert = require("assert");
 
 class Inflight {
   constructor() {
-    this.count = 0;
-    this.inflights = {};
+    this._count = 0;
+    this._inflights = {};
   }
 
   add(key, value, now) {
-    assert(this.inflights[key] === undefined, `Already has inflight item ${key}`);
-    this.count++;
+    assert(this._inflights[key] === undefined, `Already has inflight item ${key}`);
+    this._count++;
     now = now || Date.now();
-    this.inflights[key] = { start: now, lastXTime: now, value };
+    this._inflights[key] = { start: now, lastXTime: now, value };
 
     return value;
   }
 
   get(key) {
-    const x = this.inflights[key];
+    const x = this._inflights[key];
     return x && x.value;
   }
 
   remove(key) {
-    assert(this.inflights[key] !== undefined, `Removing non-existing inflight item ${key}`);
-    assert(this.count > 0, `Removing inflight item ${key} but count is ${this.count}`);
-    this.count--;
-    if (this.count === 0) {
-      this.inflights = {};
+    assert(this._inflights[key] !== undefined, `Removing non-existing inflight item ${key}`);
+    assert(this._count > 0, `Removing inflight item ${key} but count is ${this._count}`);
+    this._count--;
+    if (this._count === 0) {
+      this._inflights = {};
     } else {
-      this.inflights[key] = undefined;
+      this._inflights[key] = undefined;
     }
   }
 
-  isEmpty() {
-    return this.count === 0;
+  get isEmpty() {
+    return this._count === 0;
   }
 
-  getCount() {
-    return this.count;
+  get count() {
+    return this._count;
   }
 
   getStartTime(key) {
-    const x = this.inflights[key];
+    const x = this._inflights[key];
     return x && x.start;
   }
 
   time(key, now) {
-    const x = this.inflights[key];
+    const x = this._inflights[key];
     if (x) {
       return (now || Date.now()) - x.start;
     }
@@ -59,12 +59,12 @@ class Inflight {
   }
 
   getCheckTime(key) {
-    const x = this.inflights[key];
+    const x = this._inflights[key];
     return x && x.lastXTime;
   }
 
   lastCheckTime(key, now) {
-    const x = this.inflights[key];
+    const x = this._inflights[key];
     if (x) {
       const t = (now || Date.now()) - x.lastXTime;
       return t;
@@ -77,7 +77,7 @@ class Inflight {
   }
 
   resetCheckTime(key, now) {
-    const x = this.inflights[key];
+    const x = this._inflights[key];
     if (x) {
       x.lastXTime = now || Date.now();
     }

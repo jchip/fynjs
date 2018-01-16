@@ -35,24 +35,24 @@ describe("inflight", function() {
 
   it("should remove item", () => {
     const ifl = new Inflight();
-    expect(ifl.isEmpty()).to.equal(true);
+    expect(ifl.isEmpty).to.equal(true);
 
     ifl.add("foo", "bar");
-    expect(ifl.isEmpty()).to.equal(false);
+    expect(ifl.isEmpty).to.equal(false);
     ifl.add("test", "hello");
-    expect(ifl.getCount()).to.equal(2);
+    expect(ifl.count).to.equal(2);
     expect(ifl.get("foo")).to.equal("bar");
     expect(ifl.get("test")).to.equal("hello");
 
     ifl.remove("test");
-    expect(ifl.getCount()).to.equal(1);
+    expect(ifl.count).to.equal(1);
 
     expect(ifl.get("test")).to.equal(undefined);
     ifl.remove("foo");
     expect(ifl.get("foo")).to.equal(undefined);
 
-    expect(ifl.getCount()).to.equal(0);
-    expect(ifl.isEmpty()).to.equal(true);
+    expect(ifl.count).to.equal(0);
+    expect(ifl.isEmpty).to.equal(true);
   });
 
   it("should handle last check time", done => {
