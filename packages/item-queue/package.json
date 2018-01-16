@@ -10,9 +10,21 @@
     "type": "git",
     "url": "https://github.com/jchip/item-queue.git"
   },
-  "keywords": ["item", "queue", "promise"],
+  "keywords": [
+    "concurrent",
+    "item",
+    "process",
+    "processing",
+    "pause",
+    "resume",
+    "watch",
+    "timer",
+    "queue",
+    "promise"
+  ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
+  "dependencies": {},
   "devDependencies": {
     "bluebird": "^3.5.1",
     "electrode-archetype-njs-module-dev": "^3.0.0"
