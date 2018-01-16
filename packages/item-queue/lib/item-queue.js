@@ -26,15 +26,17 @@ class ItemQueue extends EventEmitter {
     this._stopOnError = options.stopOnError;
     this._failed = false;
     this._timeout = options.timeout; // TODO
+    this._watchPeriod = options.watchPeriod || WATCH_PERIOD;
     this._watchTime = options.watchTime;
     this._id = 1;
+    this._deferred = false;
     _.each(options.handlers, (handler, evt) => {
       this.on(evt, handler);
     });
   }
 
   wait() {
-    return this.isPending()
+    return this.isPending
       ? new this.Promise((resolve, reject) => {
           const h = data => {
             if (data.error) {
@@ -51,25 +53,34 @@ class ItemQueue extends EventEmitter {
       : this.Promise.resolve();
   }
 
-  setItemQ(itemQ, defer) {
+  deferProcess() {
+    if (this._deferred) return;
+    this._deferred = true;
+    process.nextTick(() => {
+      this._deferred = false;
+      this._process();
+    });
+  }
+
+  setItemQ(itemQ, noStart) {
     assert(Array.isArray(itemQ), "item-queue: Must pass array to setItemQ");
     this._itemQ = itemQ;
     this._empty = !itemQ || itemQ.length === 0;
-    if (!defer) process.nextTick(() => this._process());
+    if (!noStart) this.deferProcess();
     return this;
   }
 
-  addItem(data, defer) {
+  addItem(data, noStart) {
     this._empty = false;
     this._itemQ.push(data);
-    if (!defer) process.nextTick(() => this._process());
+    if (!noStart) this.deferProcess();
     return this;
   }
 
-  addItems(items, defer) {
+  addItems(items, noStart) {
     assert(Array.isArray(items), "item-queue: Must pass array to addItems");
     items.forEach(x => this.addItem(x, true));
-    if (!defer) process.nextTick(() => this._process());
+    if (!noStart) this.deferProcess();
     return this;
   }
 
@@ -79,6 +90,10 @@ class ItemQueue extends EventEmitter {
 
   get isPause() {
     return this._pause;
+  }
+
+  get isPending() {
+    return !this._pending.isEmpty() || this._itemQ.length !== 0;
   }
 
   unpause() {
@@ -99,10 +114,6 @@ class ItemQueue extends EventEmitter {
 
   start() {
     return this.resume();
-  }
-
-  isPending() {
-    return !this._pending.isEmpty() || this._itemQ.length !== 0;
   }
 
   _handleQueueItemDone(data) {
@@ -184,7 +195,7 @@ class ItemQueue extends EventEmitter {
       this.emit("watch", { total: 0, watched, still });
     }
 
-    this._watchTimer = setTimeout(() => this._pendingWatcher(), WATCH_PERIOD).unref();
+    this._watchTimer = setTimeout(() => this._pendingWatcher(), this._watchPeriod).unref();
   }
 
   _setupWatch() {
@@ -226,9 +237,13 @@ class ItemQueue extends EventEmitter {
       if (item === RESUME_ITEM) {
         promise = this.Promise.resolve({});
       } else {
-        promise = this._processItem(item, id);
-        if (!promise || !promise.then) {
-          promise = this.Promise.resolve(promise);
+        try {
+          promise = this._processItem(item, id);
+          if (!promise || !promise.then) {
+            promise = this.Promise.resolve(promise);
+          }
+        } catch (err) {
+          promise = this.Promise.reject(err);
         }
       }
 

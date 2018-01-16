@@ -13,9 +13,11 @@ describe("item-queue", function() {
     };
     const pq = new ItemQueue({
       concurrency,
-      processItem: x => process(x)
+      processItem: x => process(x),
+      handlers: {
+        done: () => done()
+      }
     });
-    pq.on("done", () => done());
     for (let x = 0; x <= expected; x++) {
       pq.addItem(x, true);
     }
@@ -48,14 +50,17 @@ describe("item-queue", function() {
         }
       });
     };
+    let failed;
     const pq = new ItemQueue({
       concurrency: 5,
-      processItem: x => process(x)
+      processItem: x => process(x),
+      handlers: {
+        failItem: data => (failed = data.error)
+      }
     });
     for (let x = 0; x < 15; x++) {
       pq.addItem(x);
     }
-    let failed;
     pq.on("done", () => {
       expect(failed).to.be.ok;
       done();
@@ -124,6 +129,137 @@ describe("item-queue", function() {
       expect(sum).to.equal(15);
       done();
     });
+    expect(pq.isPending).to.equal(false);
+    expect(() => pq.setItemQ()).to.throw("Must pass array");
+    pq.setItemQ(items, true);
+    expect(pq._deferred, "should not setup defer start").to.equal(false);
+    expect(pq.isPending).to.equal(true);
     pq.setItemQ(items);
+  });
+
+  it("should not wait if Q is empty", () => {
+    return new ItemQueue({ processItem: () => undefined }).wait().then(x => {
+      expect(x).to.equal(undefined);
+    });
+  });
+
+  it("should reject in wait if Q failed", () => {
+    let error;
+    return new ItemQueue({
+      stopOnError: true,
+      processItem: () => {
+        throw new Error("test");
+      }
+    })
+      .setItemQ([1])
+      .wait()
+      .catch(err => (error = err))
+      .then(() => {
+        expect(error).to.exist;
+      });
+  });
+
+  it("should addItems as an array", () => {
+    let sum = 0;
+    const items = [1, 2, 3, 4, 5];
+    const pq = new ItemQueue({
+      concurrency: 2,
+      processItem: x => Promise.resolve((sum += x))
+    });
+    pq.on("done", () => {
+      expect(sum).to.equal(30);
+    });
+    expect(() => pq.addItems()).to.throw("Must pass array");
+    pq.addItems(items, true);
+    pq.addItems(items);
+    return pq.wait();
+  });
+
+  it("should emit done after start even if Q is empty", done => {
+    const pq = new ItemQueue({
+      concurrency: 2,
+      processItem: () => undefined
+    });
+    pq.on("done", () => done());
+    pq.start();
+  });
+
+  it("should pause on pause item", () => {
+    let sum = 0;
+    const pq = new ItemQueue({
+      concurrency: 2,
+      processItem: x => (sum += x)
+    });
+    const items = [1, 2, 3, 4, 5, ItemQueue.pauseItem, 1, 2, 3, 4, 5];
+    let paused;
+    pq.on("pause", () => {
+      paused = sum;
+      expect(pq.isPause).to.equal(true);
+      pq.resume();
+    });
+    pq.addItems(items);
+    return pq.wait().then(() => {
+      expect(paused).to.equal(15);
+      expect(sum).to.equal(30);
+    });
+  });
+
+  it("should emit pause even if Q is empty", () => {
+    let sum = 0;
+    const pq = new ItemQueue({
+      concurrency: 2,
+      processItem: x => (sum += x)
+    });
+    const items = [ItemQueue.pauseItem, 1, 2, 3, 4, 5];
+    let paused;
+    pq.on("pause", () => {
+      paused = sum;
+      expect(pq.isPause).to.equal(true);
+      pq.resume();
+    });
+    pq.addItems(items);
+    return pq.wait().then(() => {
+      expect(paused).to.equal(0);
+      expect(sum).to.equal(15);
+    });
+  });
+
+  it("should not process if Q is empty", () => {
+    const pq = new ItemQueue({
+      processItem: () => undefined
+    });
+    expect(pq._process()).to.equal(0);
+  });
+
+  it("should setup a watcher for long pending items", () => {
+    const watches = [];
+    const pq = new ItemQueue({
+      concurrency: 2,
+      processItem: x => Promise.delay(x),
+      watchPeriod: 10,
+      watchTime: 50,
+      handlers: {
+        watch: x => {
+          watches.push(x);
+        }
+      }
+    });
+
+    return pq
+      .addItems([1, 100, 20, 30, 40])
+      .wait()
+      .then(() => Promise.delay(20))
+      .then(() => {
+        expect(watches.length > 0, "Should have emit watch events");
+        const w1 = watches[0];
+        expect(w1.total).to.equal(1);
+        expect(w1.watched[0].item).to.equal(100);
+        const w2 = watches[1];
+        expect(w2.total).to.equal(1);
+        expect(w2.watched.length).to.equal(0);
+        expect(w2.still[0].item).to.equal(100);
+        const wl = watches[watches.length - 1];
+        expect(wl.total).to.equal(0);
+      });
   });
 });
