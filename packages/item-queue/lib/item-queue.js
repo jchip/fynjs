@@ -266,6 +266,6 @@ class ItemQueue extends EventEmitter {
   }
 }
 
-ItemQueue.Promise = Promise;
+ItemQueue.Promise = typeof Promise !== "undefined" && Promise;
 
 module.exports = ItemQueue;
