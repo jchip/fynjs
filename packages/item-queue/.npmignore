@@ -7,3 +7,4 @@ coverage
 /test
 fyn-lock.yaml
 /xclap.js
+.travis.yml
