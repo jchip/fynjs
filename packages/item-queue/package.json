@@ -43,7 +43,7 @@
       "gulpfile.js",
       "dist",
       "test",
-      "examples"
+      "samples"
     ],
     "check-coverage": true,
     "statements": 100,
