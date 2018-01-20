@@ -159,6 +159,7 @@ class ItemQueue extends EventEmitter {
       endTime,
       totalTime
     };
+    this._pendingWatcher();
     this.emit("done", res);
   }
 
