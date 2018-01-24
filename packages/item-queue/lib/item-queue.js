@@ -96,6 +96,15 @@ class ItemQueue extends EventEmitter {
     return !this._pending.isEmpty || this._itemQ.length !== 0;
   }
 
+  get count() {
+    return this._pending.count + this._itemQ.length;
+  }
+
+  pause() {
+    this._itemQ.unshift(ItemQueue.pauseItem);
+    return this;
+  }
+
   unpause() {
     this._pause = false;
     return this;
@@ -171,6 +180,7 @@ class ItemQueue extends EventEmitter {
   }
 
   _pendingWatcher() {
+    this._watchTimer = undefined;
     if (this._pending.isEmpty && !this._watched) return;
 
     const watched = [];

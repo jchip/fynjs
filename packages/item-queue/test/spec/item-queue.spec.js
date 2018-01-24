@@ -21,6 +21,7 @@ describe("item-queue", function() {
     for (let x = 0; x <= expected; x++) {
       pq.addItem(x, true);
     }
+    expect(pq.count).to.equal(expected + 1);
     pq._process();
     expect(save.length, "should queue up expected number of concurrent items").to.equal(expected);
     const tmpSave = save;
@@ -210,14 +211,16 @@ describe("item-queue", function() {
       concurrency: 2,
       processItem: x => (sum += x)
     });
-    const items = [ItemQueue.pauseItem, 1, 2, 3, 4, 5];
+    const items = [1, 2, 3, 4, 5];
     let paused;
     pq.on("pause", () => {
       paused = sum;
       expect(pq.isPause).to.equal(true);
       pq.resume();
     });
-    pq.addItems(items);
+    pq.addItems(items, true);
+    pq.pause();
+    pq.start();
     return pq.wait().then(() => {
       expect(paused).to.equal(0);
       expect(sum).to.equal(15);

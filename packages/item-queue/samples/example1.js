@@ -9,13 +9,16 @@ const chalk = require("chalk");
 
 const ItemQueue = require(".."); // or require("item-queue")
 
-const TOTAL_ITEMS = Math.floor(Math.random() * 10 + 5);
+const CONCURRENCY = 3;
+const TOTAL_ITEMS = 10;
 
-const makeItem = () => Math.floor(Math.random() * 2000 + Math.random() * 1000 + 100);
+logger.info("processing", TOTAL_ITEMS, "items", "concurrency", CONCURRENCY);
+
+const makeItem = (n = 0) => n + Math.floor(Math.random() * 2000 + Math.random() * 1000 + 100);
 
 let itemCount = 0;
 const itemQ = new ItemQueue({
-  concurrency: 3, // maximum process 3 concurrent items
+  concurrency: CONCURRENCY, // maximum process 3 concurrent items
   watchPeriod: 100, // watcher check every 100 ms
   watchTime: 1000, // emit watch event if any item takes longer than 1000ms to complete
   stopOnError: true, // stop entire queue if any item process failed
@@ -55,8 +58,16 @@ const itemQ = new ItemQueue({
       itemCount++;
     },
     empty: () => {
-      if (itemCount < TOTAL_ITEMS) {
-        itemQ.addItem(makeItem());
+      let n = 0;
+      let x = itemCount + itemQ.count;
+
+      // add enough to fill up concurrency slots but not to exceed total quota
+      for (; itemQ.count < CONCURRENCY && x < TOTAL_ITEMS; n++, x++) {
+        itemQ.addItem(makeItem(500));
+      }
+
+      if (n > 0) {
+        logger.info("itemQ empty, added", n, "new items");
       }
     },
     watch: w => {
@@ -70,10 +81,21 @@ const itemQ = new ItemQueue({
       } else {
         logger.removeItem("watch");
       }
+    },
+    pause: () => {
+      logger.info("item queue paused");
+      setTimeout(() => {
+        logger.info("resuming");
+        itemQ.resume();
+      }, 2000);
     }
   }
 })
-  .addItems(Array.apply(null, { length: Math.floor(Math.random() * 5 + 3) }).map(makeItem))
+  .addItems(
+    Array.apply(null, { length: 4 })
+      .map(makeItem)
+      .concat(ItemQueue.pauseItem)
+  )
   .start();
 
 itemQ.wait();
