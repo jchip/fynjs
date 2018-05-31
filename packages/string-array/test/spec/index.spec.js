@@ -1,6 +1,7 @@
 "use strict";
 
 const stringArray = require("../..");
+const parseArray = stringArray.parse;
 
 describe("stringArray.parse", function() {
   const emptyResult = { prefix: "", array: [], remain: "" };
@@ -71,5 +72,46 @@ describe("stringArray.parse", function() {
     expect(() =>
       stringArray.parse(" blah [ hello, world, 1, 2, 3 ]  foo bar [ ", false, true)
     ).to.throw("extra data at end of array");
+  });
+
+  it("should handle nesting complex arrays", () => {
+    const r = parseArray("[[.,a, b, c, [d, [1, 2, [3, 4]], e], f, [g]]]");
+    expect(r.array).to.deep.equal([
+      [".", "a", "b", "c", ["d", ["1", "2", ["3", "4"]], "e"], "f", ["g"]]
+    ]);
+  });
+
+  it("should handle simple nesting array", () => {
+    expect(parseArray("[[[a]]]")).to.deep.equal({ prefix: "", array: [[["a"]]], remain: "" });
+  });
+
+  it("should handle simple single element array", () => {
+    expect(parseArray("[123]")).to.deep.equal({ prefix: "", array: ["123"], remain: "" });
+  });
+
+  it("should handle trailing ,", () => {
+    expect(parseArray("[123,]")).to.deep.equal({ prefix: "", array: ["123"], remain: "" });
+  });
+
+  it("should dangling ,", () => {
+    expect(parseArray("[ ,]")).to.deep.equal({ prefix: "", array: [""], remain: "" });
+  });
+
+  it("should handle empty nesting arrays", () => {
+    expect(parseArray("[123,[a],b,c,[],[],[555]]")).to.deep.equal({
+      prefix: "",
+      array: ["123", ["a"], "b", "c", [], [], ["555"]],
+      remain: ""
+    });
+  });
+
+  it("should handle extra spaces", () => {
+    expect(
+      parseArray("[ [    [ a  , ] , b ,   [ , [  c]  ,d , [ e, ] , h ,f  ,g ]]]")
+    ).to.deep.equal({
+      prefix: "",
+      array: [[["a"], "b", ["", ["c"], "d", ["e"], "h", "f", "g"]]],
+      remain: ""
+    });
   });
 });
