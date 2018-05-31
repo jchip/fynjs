@@ -3,7 +3,9 @@
 
 # String Array
 
-Parse string into array of string elements
+Parse string into array of string elements.
+
+`"[ hello, world, [ 1, [2, [ 3 ]]]]"` :arrow_right: `[ "hello", "world", [ "1", [ "2", [ "3" ]]]]`
 
 ## Install
 
