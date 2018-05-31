@@ -22,6 +22,8 @@ const r2 = stringArray.parse("test[1,2,3]");
 // r2 === { prefix: "test", array: ["1","2","3"], remain: "" }
 ```
 
+* Elements are automatically treated as strings, so quotes `'`, `"` and backtick are taken as part of element.
+
 * All leading and trailing whitespaces are automatically `trim`ed.
 
 * Can't have these characters in elements: `,` `[` `]`
@@ -39,12 +41,12 @@ const r2 = stringArray.parse("test[1,2,3]");
 }
 ```
 
-* `stringArray.parse("test[1,2,3]")`:
+* `stringArray.parse('test[1,2,"3"]')`:
 
 ```js
 {
   prefix: "test",
-  array: ["1","2","3"],
+  array: ["1","2", '"3"'],
   remain: ""
 }
 ```

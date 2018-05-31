@@ -19,6 +19,14 @@ describe("stringArray.parse", function() {
     });
   });
 
+  it("should handle array elements with quotes", () => {
+    expect(stringArray.parse(` [ 'hello, "world", 1', 2, 3 ]`)).to.deep.equal({
+      prefix: "",
+      array: ["'hello", `"world"`, "1'", "2", "3"],
+      remain: ""
+    });
+  });
+
   it("should handle trailing , and empty elements", () => {
     expect(stringArray.parse(" [ hello, world, 1, , 3 ]")).to.deep.equal({
       prefix: "",
@@ -28,9 +36,11 @@ describe("stringArray.parse", function() {
   });
 
   it("should handle nested array", () => {
-    expect(stringArray.parse(" [ hello, [ world, [], , [1, ,], 3 ], foo, [bar] ] ")).to.deep.equal({
+    expect(
+      stringArray.parse(" [ hello, [ world, [], , [1, ,], 3 ], [[[2]]], foo, [bar] ] ")
+    ).to.deep.equal({
       prefix: "",
-      array: ["hello", ["world", [], "", ["1", ""], "3"], "foo", ["bar"]],
+      array: ["hello", ["world", [], "", ["1", ""], "3"], [[["2"]]], "foo", ["bar"]],
       remain: ""
     });
   });
