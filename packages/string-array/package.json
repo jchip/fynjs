@@ -1,6 +1,6 @@
 {
   "name": "string-array",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Parse string into array of string elements",
   "main": "lib/index.js",
   "scripts": {
@@ -17,7 +17,9 @@
     "parse",
     "parser"
   ],
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
