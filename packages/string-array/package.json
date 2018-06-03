@@ -1,6 +1,6 @@
 {
   "name": "string-array",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Parse string into array of string elements",
   "main": "lib/index.js",
   "scripts": {
