@@ -1,7 +1,7 @@
 "use strict";
 
 const typeGetters = {
-  string: x => x,
+  string: x => `${x}`,
   number: x => parseInt(x, 10),
   float: x => parseFloat(x),
   boolean: x => {
@@ -37,7 +37,8 @@ const xenvConfig = (spec, userConfig, options) => {
     env: (opt, k) => {
       const name = getEnvName(k, opt);
       if (name) {
-        const type = opt.type || (opt.hasOwnProperty("default") && typeof opt.default) || "string";
+        const tod = opt.hasOwnProperty("default") && typeof opt.default;
+        const type = opt.type || (tod !== "function" && tod) || "string";
         const getter = typeGetters[type] || typeGetters.string;
         return { trace: { src: "env", name }, value: getter(process.env[name]) };
       }
@@ -53,7 +54,13 @@ const xenvConfig = (spec, userConfig, options) => {
 
     default: opt => {
       if (opt.hasOwnProperty("default")) {
-        return { trace: { src: "default" }, value: opt.default };
+        return {
+          trace: { src: "default" },
+          value:
+            typeof opt.default === "function"
+              ? (typeGetters[opt.type] || typeGetters.string)(opt.default())
+              : opt.default
+        };
       }
       return undefined;
     }

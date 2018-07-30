@@ -67,6 +67,20 @@ describe("xenv-config", function() {
       });
     });
 
+    it("should load config from default callback", () => {
+      const val = Date.now();
+      const cfg = xenvConfig({ test: { type: "number", default: () => `${val}` } });
+      expect(cfg.test).to.equal(val);
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
+    });
+
+    it("should load as string config from default callback", () => {
+      const val = Date.now();
+      const cfg = xenvConfig({ test: { default: () => val } });
+      expect(cfg.test).to.equal(`${val}`);
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
+    });
+
     it("should load config by type from default as boolean", () => {
       const k = `K${Date.now()}`;
       ["true", "True", "yes", "Yes", "1", "On", "on"].forEach(x => {
