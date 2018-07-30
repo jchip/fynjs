@@ -14,6 +14,9 @@
   "keywords": [],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
+  "files": [
+    "lib"
+  ],
   "devDependencies": {
     "electrode-archetype-njs-module-dev": "^2.2.0"
   },
