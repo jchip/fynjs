@@ -81,6 +81,23 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
     });
 
+    it("should not call default callback if env exist", () => {
+      const k = `K${Date.now()}`;
+      process.env[k] = "true";
+      const cfg = xenvConfig({
+        test: {
+          env: k,
+          type: "boolean",
+          default: () => {
+            throw new Error("default shouldn't be called");
+          }
+        }
+      });
+      expect(cfg.test).to.equal(true);
+      delete process.env[k];
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
+    });
+
     it("should load config by type from default as boolean", () => {
       const k = `K${Date.now()}`;
       ["true", "True", "yes", "Yes", "1", "On", "on"].forEach(x => {
