@@ -1,28 +1,34 @@
 "use strict";
 
+const assert = require("assert");
+
 const typeGetters = {
   string: x => `${x}`,
   number: x => parseInt(x, 10),
   float: x => parseFloat(x),
-  boolean: x => {
+  boolean: (x, flagName) => {
+    assert(
+      typeof x === "string",
+      `xenv-config: [${flagName}] trying to convert non-string env value ${x} to boolean.`
+    );
     x = x.toLowerCase();
     return x === "true" || x === "yes" || x === "1" || x === "on";
   },
   truthy: x => !!x
 };
 
-const getEnvName = (optKey, opt) => {
+const getEnvName = (optKey, opt, env) => {
   if (!opt.hasOwnProperty("env")) return undefined;
 
   let name;
 
   if (Array.isArray(opt.env)) {
-    name = opt.env.find(x => process.env.hasOwnProperty(x));
+    name = opt.env.find(x => env.hasOwnProperty(x));
   } else {
     name = opt.env === true ? optKey : opt.env;
   }
 
-  if (name && process.env.hasOwnProperty(name)) {
+  if (name && env.hasOwnProperty(name)) {
     return name;
   }
 
@@ -30,17 +36,21 @@ const getEnvName = (optKey, opt) => {
 };
 
 const xenvConfig = (spec, userConfig, options) => {
+  const env = (options && options._env) || process.env;
   userConfig = userConfig || {};
   const trace = {};
 
+  const getGetter = opt => {
+    const tod = opt.hasOwnProperty("default") && typeof opt.default;
+    const type = opt.type || (tod !== "function" && tod) || "string";
+    return typeGetters[type] || typeGetters.string;
+  };
+
   const getters = {
     env: (opt, k) => {
-      const name = getEnvName(k, opt);
+      const name = getEnvName(k, opt, env);
       if (name) {
-        const tod = opt.hasOwnProperty("default") && typeof opt.default;
-        const type = opt.type || (tod !== "function" && tod) || "string";
-        const getter = typeGetters[type] || typeGetters.string;
-        return { trace: { src: "env", name }, value: getter(process.env[name]) };
+        return { trace: { src: "env", name }, value: getGetter(opt)(env[name], k) };
       }
       return undefined;
     },
@@ -56,10 +66,7 @@ const xenvConfig = (spec, userConfig, options) => {
       if (opt.hasOwnProperty("default")) {
         return {
           trace: { src: "default" },
-          value:
-            typeof opt.default === "function"
-              ? (typeGetters[opt.type] || typeGetters.string)(opt.default())
-              : opt.default
+          value: typeof opt.default === "function" ? opt.default() : opt.default
         };
       }
       return undefined;

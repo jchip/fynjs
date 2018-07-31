@@ -69,15 +69,15 @@ describe("xenv-config", function() {
 
     it("should load config from default callback", () => {
       const val = Date.now();
-      const cfg = xenvConfig({ test: { type: "number", default: () => `${val}` } });
+      const cfg = xenvConfig({ test: { type: "number", default: () => val } });
       expect(cfg.test).to.equal(val);
       expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
     });
 
     it("should load as string config from default callback", () => {
-      const val = Date.now();
+      const val = `${Date.now()}`;
       const cfg = xenvConfig({ test: { default: () => val } });
-      expect(cfg.test).to.equal(`${val}`);
+      expect(cfg.test).to.equal(val);
       expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
     });
 
@@ -98,7 +98,7 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
-    it("should load config by type from default as boolean", () => {
+    it("should load env value, by type from default, as boolean", () => {
       const k = `K${Date.now()}`;
       ["true", "True", "yes", "Yes", "1", "On", "on"].forEach(x => {
         process.env[k] = x;
@@ -109,7 +109,15 @@ describe("xenv-config", function() {
       });
     });
 
-    it("should load config by type from default as number", () => {
+    it("should load default config with type as boolean", () => {
+      [true, false].forEach(x => {
+        const cfg = xenvConfig({ test: { type: "boolean", default: x } });
+        expect(cfg.test).to.equal(x);
+        expect(cfg.__$trace__.test).to.deep.equal({ src: "default" });
+      });
+    });
+
+    it("should load env value, by type from default, as number", () => {
       const k = `K${Date.now()}`;
       process.env[k] = 999;
       const cfg = xenvConfig({ test: { env: k, default: 0 } });
@@ -118,7 +126,7 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
-    it("should load config by type as string", () => {
+    it("should load env value by type as string", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "555";
       const cfg = xenvConfig({ test: { env: k, type: "string" } });
@@ -127,7 +135,7 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
-    it("should load config by type as number", () => {
+    it("should load env value by type as number", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "555";
       const cfg = xenvConfig({ test: { env: k, type: "number" } });
@@ -136,7 +144,7 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
-    it("should load config by type as float", () => {
+    it("should load env value by type as float", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "1.5";
       const cfg = xenvConfig({ test: { env: k, type: "float" } });
@@ -144,7 +152,7 @@ describe("xenv-config", function() {
       delete process.env[k];
     });
 
-    it("should load config by type as boolean", () => {
+    it("should load true env value by type as boolean", () => {
       const k = `K${Date.now()}`;
       ["true", "True", "yes", "Yes", "1", "On", "on"].forEach(x => {
         process.env[k] = x;
@@ -155,7 +163,24 @@ describe("xenv-config", function() {
       });
     });
 
-    it("should load config by type as truthy false", () => {
+    it("should load false env value by type as boolean", () => {
+      const k = `K${Date.now()}`;
+      ["false", "no", "0", "off"].forEach(x => {
+        process.env[k] = x;
+        const cfg = xenvConfig({ test: { env: k, type: "boolean" } });
+        expect(cfg.test).to.equal(false);
+        delete process.env[k];
+        expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
+      });
+    });
+
+    it("should throw if load non-string env value as type boolean", () => {
+      const env = { foo: null };
+      expect(() => xenvConfig({ test: { env: "foo", type: "boolean" } }, {}, { _env: env })).to
+        .throw;
+    });
+
+    it("should load false env value by type as truthy", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "";
       const cfg = xenvConfig({ test: { env: k, type: "truthy" } });
@@ -164,7 +189,7 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
-    it("should load config by type as truthy true", () => {
+    it("should load true env value by type as truthy", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "false";
       const cfg = xenvConfig({ test: { env: k, type: "truthy" } });
@@ -173,7 +198,7 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
-    it("should load config as string if type is unknown", () => {
+    it("should load env value as string if type is unknown", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "false";
       const cfg = xenvConfig({ test: { env: k, type: "blah" } });

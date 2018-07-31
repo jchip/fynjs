@@ -70,7 +70,7 @@ The spec is a JSON object with the following format:
 - Its value should be an object with the following fields:
   - `env`: the name (or array of names) of the environment varialbe(s) to check first. If it's `true`, then use `optionKey` as the env variable name.
   - `default`: the default value or a function to return the default value.
-  - `type`: type of the value to help convert the string from `process.env` to.
+  - `type`: indicate how to interpret and convert the string from `process.env`.
   - `post`: callback to post process value
 
 > All fields are `optional`, if they are all skipped, then the config option will be determined from `userConfig` only.
@@ -93,7 +93,7 @@ When loading from `env`, in order to indicate what value to convert the string i
 - `boolean` - (boolean) convert with `x === "true" || x === "yes" || x === "1" || x === "on"`
 - `truthy` - (boolean from truthy check) convert with `!!x`
 
-> If `type` is not specified, then it'd be derived from the `default` value using `typeof`, if it's defined.
+> If `type` is not specified, and `default` exist and not a function, then `typeof default` will be used.
 
 ### Trace
 
