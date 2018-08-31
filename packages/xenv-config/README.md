@@ -18,38 +18,48 @@ const xenvConfig = require("xenv-config");
 const spec = {
   fooOption: { env: "FOO_OPTION", default: false },
   barOption: { env: "BAR_OPTION", type: "number" },
-  zooOption: { default: false, type: "truthy" }
+  zooOption: { default: false, type: "truthy" },
+  jsonOption: { env: "JSON_OPTION", type: "json" }
 };
 
 process.env.BAR_OPTION = "900";
-const config = xenvConfig(spec, { zooOption: true });
+process.env.JSON_OPTION = "{b:90}";
+const config = xenvConfig(spec, { zooOption: true, jsonOption: { a: 50 } });
 
 expect(config).to.deep.equal({
   fooOption: false,
   barOption: 900,
-  zooOption: true
+  zooOption: true,
+  jsonOption: { a: 50, b: 90 }
 });
 
 expect(config.__$trace__).to.deep.equal({
   fooOption: { src: "default" },
   barOption: { src: "env", name: "BAR_OPTION" },
-  zooOption: { src: "option" }
+  zooOption: { src: "option" },
+  jsonOption: { src: "env,option" }
 });
 ```
 
 ## API
 
 ```js
-xenvConfig(spec, userConfig);
+xenvConfig(spec, userConfig, options);
 ```
 
 - `spec` - specification of the configs
 - `userConfig` - configuration from the user (use if not declared in env)
+- `options` - options
 
 Returns `config` object.
 
 - Each key that exist has the value that's determined
 - A hidden field `__$trace__` that contains data to indicate where each config key's value was determined from
+
+`options`:
+
+- `_env` - Object that represents environment instead of `process.env`
+- `merge` - function to merge `json` object instead of using `Object.assign`
 
 ## Spec
 
@@ -92,6 +102,7 @@ When loading from `env`, in order to indicate what value to convert the string i
 - `float` - (float) convert with `parseFloat(x)`
 - `boolean` - (boolean) convert with `x === "true" || x === "yes" || x === "1" || x === "on"`
 - `truthy` - (boolean from truthy check) convert with `!!x`
+- `json` - (JSON) parsed with `JSON.parse`
 
 > If `type` is not specified, and `default` exist and not a function, then `typeof default` will be used.
 
@@ -102,6 +113,15 @@ The hidden field `__$trace__` contain data for each key to indicate where its va
 - If the value's from env, then it's `{src: "env", name: "ENV_OPTION_NAME"}`
 - If the value's from user config, then it's `{src: "option"}`
 - If the value's from default, then it's `{src: "default"}`
+
+### json Type
+
+`json` type is slightly different.
+
+- If `default` is an object like `{}`, then type is detected to be `json`, unless spec has `type` explicitly.
+- Values from all three sources are combined in the following order `env`, `option`, `default`.
+- It uses `Object.assign` to combine values unless you pass in a `merge` function in options. For example, merge from `lodash`.
+- `trace.src` would be a comma separate list of them. For example, `"env,option"`, `"env,option,default"`, or `"option,default"`
 
 ## Option Orders
 

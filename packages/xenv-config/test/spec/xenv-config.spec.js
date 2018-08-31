@@ -1,6 +1,8 @@
 "use strict";
 
 const xenvConfig = require("../..");
+const { merge } = require("lodash");
+
 describe("xenv-config", function() {
   describe("from env", function() {
     it("should load config", () => {
@@ -245,6 +247,63 @@ describe("xenv-config", function() {
       const cfg = xenvConfig({ test: { env: `K${Date.now()}`, type: "number" } });
       expect(cfg).to.not.have.property("test");
       expect(cfg.__$trace__).to.not.have.property("test");
+    });
+  });
+
+  describe("for json type", function() {
+    it("should parse json from env", () => {
+      const envKey = "TEST_JSON";
+      const x = { foo: "123", a: { b: 5 } };
+      const cfg = xenvConfig(
+        { test: { env: envKey, type: "json" } },
+        {},
+        { _env: { [envKey]: JSON.stringify(x) }, merge }
+      );
+      expect(JSON.stringify(cfg.test)).to.equal(JSON.stringify(x));
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env" });
+    });
+
+    it("should return nothing if no sources available", () => {
+      const envKey = "TEST_JSON";
+      const cfg = xenvConfig({ test: { env: envKey, type: "json" } }, {}, { _env: {} });
+      expect(cfg).to.deep.equal({});
+      expect(cfg.__$trace__.test).to.deep.equal(undefined);
+    });
+
+    it("should parse json from env by type from default", () => {
+      const envKey = "TEST_JSON";
+      const x = { foo: "123", a: { b: 5 } };
+      const cfg = xenvConfig(
+        { test: { env: envKey, default: {} } },
+        {},
+        { _env: { [envKey]: JSON.stringify(x) }, merge }
+      );
+      expect(JSON.stringify(cfg.test)).to.equal(JSON.stringify(x));
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env,default" });
+    });
+
+    it("should parse and merge json from all by type from default", () => {
+      const envKey = "TEST_JSON";
+      const x = { foo: "123", a: { b: 5 } };
+      const cfg = xenvConfig(
+        { test: { env: envKey, default: { d: 1 } } },
+        { test: { o: true, foo: "456", a: { c: 9 } } },
+        { _env: { [envKey]: JSON.stringify(x) }, merge }
+      );
+      expect(cfg.test).to.deep.equal({ d: 1, o: true, foo: "123", a: { c: 9, b: 5 } });
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env,option,default" });
+    });
+
+    it("should use Object.assign if no merge provided", () => {
+      const envKey = "TEST_JSON";
+      const x = { foo: "123", a: { b: 5 } };
+      const cfg = xenvConfig(
+        { test: { env: envKey, default: { d: 1 } } },
+        { test: { o: true, foo: "456", a: { c: 9 } } },
+        { _env: { [envKey]: JSON.stringify(x) } }
+      );
+      expect(cfg.test).to.deep.equal({ d: 1, o: true, foo: "123", a: { b: 5 } });
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env,option,default" });
     });
   });
 });

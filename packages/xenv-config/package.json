@@ -18,7 +18,8 @@
     "lib"
   ],
   "devDependencies": {
-    "electrode-archetype-njs-module-dev": "^2.2.0"
+    "electrode-archetype-njs-module-dev": "^2.2.0",
+    "lodash": "^4.17.10"
   },
   "nyc": {
     "all": true,

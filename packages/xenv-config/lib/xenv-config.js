@@ -1,5 +1,7 @@
 "use strict";
 
+/* eslint-disable prefer-spread */
+
 const assert = require("assert");
 
 const typeGetters = {
@@ -14,7 +16,8 @@ const typeGetters = {
     x = x.toLowerCase();
     return x === "true" || x === "yes" || x === "1" || x === "on";
   },
-  truthy: x => !!x
+  truthy: x => !!x,
+  json: x => JSON.parse(x)
 };
 
 const getEnvName = (optKey, opt, env) => {
@@ -37,12 +40,18 @@ const getEnvName = (optKey, opt, env) => {
 
 const xenvConfig = (spec, userConfig, options) => {
   const env = (options && options._env) || process.env;
+  const merge = (options && options.merge) || Object.assign;
   userConfig = userConfig || {};
   const trace = {};
 
-  const getGetter = opt => {
+  const getType = opt => {
     const tod = opt.hasOwnProperty("default") && typeof opt.default;
     const type = opt.type || (tod !== "function" && tod) || "string";
+    return type === "object" ? "json" : type;
+  };
+
+  const getGetter = opt => {
+    const type = getType(opt);
     return typeGetters[type] || typeGetters.string;
   };
 
@@ -78,9 +87,20 @@ const xenvConfig = (spec, userConfig, options) => {
 
   const config = Object.keys(spec).reduce((cfg, k) => {
     const opt = spec[k];
+    const type = getType(opt);
     let found;
 
-    sources.find(s => (found = getters[s](opt, k)));
+    if (type !== "json") {
+      sources.find(s => (found = getters[s](opt, k)));
+    } else {
+      const mapped = sources.map(s => getters[s](opt, k)).filter(x => x);
+      if (mapped.length > 0) {
+        found = {
+          trace: { src: mapped.map(x => x.trace.src).join(",") },
+          value: merge.apply(null, [{}].concat(mapped.map(x => x.value).reverse()))
+        };
+      }
+    }
 
     if (!found) return cfg;
 
