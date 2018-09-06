@@ -92,9 +92,10 @@ const itemQ = new ItemQueue({
   }
 })
   .addItems(
-    Array.apply(null, { length: 4 })
+    Array.apply(null, { length: 7 })
       .map(makeItem)
       .concat(ItemQueue.pauseItem)
+      .concat(Array.apply(null, { length: 5 }).map(makeItem))
   )
   .start();
 

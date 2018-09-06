@@ -36,21 +36,27 @@ class ItemQueue extends EventEmitter {
   }
 
   wait() {
-    return this.isPending
-      ? new this.Promise((resolve, reject) => {
-          const h = data => {
-            if (data.error) {
-              this.removeListener("done", h);
-              reject(data.error);
-            } else {
-              this.removeListener("fail", h);
-              resolve(data);
-            }
-          };
-          this.once("done", h);
-          this.once("fail", h);
-        })
-      : this.Promise.resolve();
+    if (this._failed) {
+      return this.Promise.reject(this._failed);
+    }
+
+    if (this.isPending) {
+      return new this.Promise((resolve, reject) => {
+        const h = data => {
+          if (data.error) {
+            this.removeListener("done", h);
+            reject(data.error);
+          } else {
+            this.removeListener("fail", h);
+            resolve(data);
+          }
+        };
+        this.once("done", h);
+        this.once("fail", h);
+      });
+    }
+
+    return this.Promise.resolve();
   }
 
   deferProcess() {
@@ -138,7 +144,7 @@ class ItemQueue extends EventEmitter {
       if (data.error) {
         this.emit("failItem", data);
         if (this._stopOnError) {
-          this._failed = true;
+          this._failed = data.error;
           this.emit("fail", data);
           return;
         }

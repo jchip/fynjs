@@ -160,6 +160,27 @@ describe("item-queue", function() {
       });
   });
 
+  it("should reject in subsequent wait if Q failed", () => {
+    let error;
+    const q = new ItemQueue({
+      stopOnError: true,
+      processItem: () => {
+        throw new Error("test");
+      }
+    }).setItemQ([1, 2, 3]);
+    return q
+      .wait()
+      .catch(err => (error = err))
+      .then(() => {
+        expect(error).to.exist;
+        return q.wait();
+      })
+      .catch(err => (error = err))
+      .then(() => {
+        expect(error).to.exist;
+      });
+  });
+
   it("should addItems as an array", () => {
     let sum = 0;
     const items = [1, 2, 3, 4, 5];
