@@ -1,0 +1,53 @@
+{
+  "name": "chalker",
+  "version": "0.0.1",
+  "description": "XML markers to add terminal colors to strings with chalk",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/chalker.git"
+  },
+  "scripts": {
+    "test": "clap test",
+    "coverage": "clap check"
+  },
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "chalk",
+    "color",
+    "xml",
+    "marker"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electrode-archetype-njs-module-dev": "^3.0.0",
+    "chalk": ">=2"
+  },
+  "peerDependencies": {
+    "chalk": ">=2"
+  },
+  "nyc": {
+    "all": true,
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "exclude": [
+      "coverage",
+      "*clap.js",
+      "gulpfile.js",
+      "dist",
+      "test"
+    ],
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100,
+    "cache": true
+  }
+}
