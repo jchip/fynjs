@@ -99,14 +99,13 @@ chalker(str, [chalkInstance]);
 ### `chalker.remove`
 
 ```js
-chalker.remove(str);
+chalker.remove(str, keepHtml);
 ```
 
 - `str` - String with chalker color markers
+- `keepHtml` - If `true`, then don't decode HTML entity escapes.
 
-Simply remove all chalker markers and return the plain text string.
-
-Note: This doesn't decode HTML entity escapes.  Use [decodeHtml](#chalkerdecodehtml) to decode them.
+Simply remove all chalker markers and return the plain text string, with HTML escapes decoded.
 
 **Returns**: A plain text string without chalker color markers
 

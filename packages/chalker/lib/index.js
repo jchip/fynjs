@@ -172,8 +172,9 @@ function format(s, userChalk) {
 }
 
 // remove the color marker like <red>text</> from strings
-function remove(s) {
-  return s.replace(/<[^>]*>/g, "").trim();
+function remove(s, keepHtml) {
+  const r = s.replace(/<[^>]*>/g, "").trim();
+  return keepHtml ? r : decodeHtml(r);
 }
 
 format.remove = remove;

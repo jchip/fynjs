@@ -88,8 +88,16 @@ describe("chalker", function() {
 
   it("should remove markers", () => {
     const r = chalker.remove(
-      "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>"
+      "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>"
     );
-    expect(r).to.equal("red bold textgreen on blue bold");
+    expect(r).to.equal("red bold text \uD83D\uDC69green on blue bold");
+  });
+
+  it("should remove markers but keep html escapes if flag is true", () => {
+    const r = chalker.remove(
+      "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>",
+      true
+    );
+    expect(r).to.equal("red bold text &#xD83D;&#xDC69;green on blue bold");
   });
 });
