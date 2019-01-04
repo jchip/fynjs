@@ -55,12 +55,14 @@ npm i --save chalk
 
 [Chalk advanced colors] can be applied with:
 
-- `chalk.rgb` - `<(255, 10, 20)>`, `<rgb(255,10,20)>`
-- `chalk.bgRgb` - `<bg(255, 10, 20)>`, `<bgRgb(255,10,20)>`
-- `chalk.hex`, `chalk.bgHex` - `<#FF0000>`, `<bg#0000FF>`, `<hex(#FF0000)>`, `<bgHex(#0000FF)>`
-- `chalk.keyword` - `<orange>`, `<(orange)>`, `<keyword(orange)>`
-- `chalk.bgKeyword` - `bg-orange`, `<bg(orange)>`, `<bgKeyword(orange)>`
-- `hsl`, `hsv`, `hwb` - `<hsl(32,100,50)>`, `<hsv(32,100,100)>`, `<hwb(32,0,50)>`
+| [chalk] API     | chalker marker                                | [chalk] API       | chalker marker                                       |
+| --------------- | --------------------------------------------- | ----------------- | ---------------------------------------------------- |
+| `chalk.rgb`     | `<(255, 10, 20)>`, `<rgb(255,10,20)>`         | `chalk.bgRgb`     | `<bg(255, 10, 20)>`, `<bgRgb(255,10,20)>`            |
+| `chalk.hex`     | `<#FF0000>`, `<hex(#FF0000)>`                 | `chalk.bgHex`     | `<bg#0000FF>`,  `<bgHex(#0000FF)>`                   |
+| `chalk.keyword` | `<orange>`, `<(orange)>`, `<keyword(orange)>` | `chalk.bgKeyword` | `<bg-orange>`, `<bg(orange)>`, `<bgKeyword(orange)>` |
+| `chalk.hsl`     | `<hsl(32,100,50)>`                            | `chalk.bgHsl`     | `<bgHsl(32,100,50)>`                                 |
+| `chalk.hsv`     | `<hsv(32,100,100)>`                           | `chalk.bgHsv`     | `<bgHsv(32,100,100)>`                                |
+| `chalk.hwb`     | `<hwb(32,0,50)>`                              | `chalk.bgHwb`     | `<bgHwb(32,0,50)>`                                   |
 
 ##### More details
 
