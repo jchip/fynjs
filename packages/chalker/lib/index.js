@@ -94,7 +94,9 @@ function applyChalkMarkers(markers, text, userChalk) {
         return a.hex(marker);
       } else if ((marker[2] === "#" || marker[3] === "#") && marker.startsWith("bg")) {
         // a bgHex value, `bg#`, `bg-#`, `bg #`
-        return a.bgHex(marker.substr(2));
+        // no need to extract only the #HHHHHH part since chalk seems to deal with
+        // the value in the form of text#HHHHHH
+        return a.bgHex(marker);
       }
 
       const openIx = marker.indexOf("(");
