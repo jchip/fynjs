@@ -41,6 +41,17 @@ describe("chalker", function() {
     expect(r2).to.equal(r);
   });
 
+  it("should decode html escapes", () => {
+    const ctx = new chalk.constructor({ level: 2 });
+    const r = chalker(
+      `<gold.bg-green>&lt;Gold on&gt; &xyz;&nbsp;Green-&quot;&amp;&apos;&copy;&reg;</gold.bg-green>`,
+      ctx
+    );
+    const x = "[38;5;220m[48;5;34m<Gold on> &xyz;\xa0Green-\"&'©®[49m[39m";
+    expect(r).to.equal(x);
+    console.log(r);
+  });
+
   it("should fail for mismatched ()", () => {
     expect(() => chalker("<(10,20,30>bad</>")).to.throw("missing matching ()");
   });

@@ -48,6 +48,21 @@ function deQuote(str, marker) {
   return str;
 }
 
+const htmlEntities = {
+  [`&quot;`]: `"`,
+  [`&amp;`]: "&",
+  [`&apos;`]: "'",
+  [`&lt;`]: "<",
+  [`&gt;`]: ">",
+  [`&nbsp;`]: "\xa0",
+  [`&copy;`]: "\xa9",
+  [`&reg;`]: "\xae"
+};
+
+function decodeHtml(str) {
+  return str.replace(/&[a-z]+;/g, m => htmlEntities[m] || m);
+}
+
 function applyChalkMarkers(markers, text, userChalk) {
   const chalkify = markers
     .trim()
@@ -133,9 +148,11 @@ function applyChalkMarkers(markers, text, userChalk) {
 
 function format(s, userChalk) {
   userChalk = userChalk || chalk;
-  return s.replace(/<([\-A-Z 0-9#()'"`,a-z.]+)>([^<]+)($|<\/[^>]*>)/g, (a, b, c) => {
-    return applyChalkMarkers(b, c, userChalk);
-  });
+  return decodeHtml(
+    s.replace(/<([\-A-Z 0-9#()'"`,a-z.]+)>([^<]+)($|<\/[^>]*>)/g, (a, b, c) => {
+      return applyChalkMarkers(b, c, userChalk);
+    })
+  );
 }
 
 // remove the color marker like <red>text</> from strings
@@ -144,5 +161,7 @@ function remove(s) {
 }
 
 format.remove = remove;
+
+format.decodeHtml = decodeHtml;
 
 module.exports = format;

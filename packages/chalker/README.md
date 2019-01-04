@@ -36,42 +36,45 @@ npm i --save chalk
   - For example, `<blue.bold>blue bold text</blue.bold>` will colorize `blue bold text` with `chalk.blue.bold`.
   - Closing marker can be simply `</>`
 
+- The following HTML entities escapes are supported:
+
+  | Entity   | Character | Entity   | Character          |
+  | -------- | --------- | -------- | ------------------ |
+  | `&lt;`   | <         | `&gt;`   | >                  |
+  | `&amp;`  | &         | `&nbsp;` | non-breaking space |
+  | `&apos;` | '         | `&copy;` | &copy;             |
+  | `&quot;` | "         | `&reg;`  | &reg;              |
+
 #### Advanced Chalk Colors
 
 [Chalk advanced colors] can be applied with:
 
-```
-// <(r,g,b)>, <rgb(255,10,20)>
-// <bg(r,g,b)>, <bgRgb(255,10,20)>
-// <#FF0000>, <bg#0000FF>, <hex(#FF0000)>, <bgHex(#0000FF)>
-// <(orange)>, <keyword(orange)>, <keyword('orange')>, <keyword("orange")>, <keyword(`orange`)>
-// <bg(orange)>, <bgKeyword(orange)>, <bgKeyword('orange')>, <bgKeyword("orange")>, <bgKeyword(`orange`)>
-// <hsl(32,100,50)>, <hsv(32,100,100)>, <hwb(32,0,50)>
-```
+- `chalk.rgb` - `<(255, 10, 20)>`, `<rgb(255,10,20)>`
+- `chalk.bgRgb` - `<bg(255, 10, 20)>`, `<bgRgb(255,10,20)>`
+- `chalk.hex`, `chalk.bgHex` - `<#FF0000>`, `<bg#0000FF>`, `<hex(#FF0000)>`, `<bgHex(#0000FF)>`
+- `chalk.keyword` - `<orange>`, `<(orange)>`, `<keyword(orange)>`
+- `chalk.bgKeyword` - `bg-orange`, `<bg(orange)>`, `<bgKeyword(orange)>`
+- `hsl`, `hsv`, `hwb` - `<hsl(32,100,50)>`, `<hsv(32,100,100)>`, `<hwb(32,0,50)>`
 
-- any thing that's not found as a basic color is tried using `chalk.keyword`
+##### More details
 
-ie:
+- any thing not detected as hex or having `()` params and not found as a basic color is tried using `chalk.keyword`
 
-```
-<orange>, <'orange'>, <"orange">, <`orange`>
-```
+    - ie: `<orange>`
 
-- If it's prefixed with `"bg-"` or `"bg "` then it's tried using `chalk.bgKeyword`
+  - If it's prefixed with `"bg-"` or `"bg "` then it's tried using `chalk.bgKeyword`
 
-ie:
+    - ie: `<bg-orange>`, `<bg orange>`
 
-```
-<bg-orange>, <bg orange>
-```
+- All markers can be comined with `.` in any order as long as they work with [chalk]
 
-- These can be comined with . in any order as long as they work with [chalk]
+    - ie: `<#FF0000.bg#0000FF.bg orange.keyword(red)>`
 
-ie:
+- Quotes can be used for keywords but **not necessary** and not recommended.
 
-```
-<#FF0000.bg#0000FF.bg orange.keyword(red)>
-```
+    - `<'orange'>`, `<"orange">`, `<``orange``>`, `<'bg orange'>`
+    - `<keyword('orange')>`, `<keyword("orange")>`, `<keyword(``orange``)>`
+    - `<bgKeyword('orange')>`, `<bgKeyword("orange")>`, `<bgKeyword(``orange``)>`
 
 # APIs
 
@@ -97,7 +100,20 @@ chalker.remove(str);
 
 Simply remove all chalker markers and return the plain text string.
 
+Note: This doesn't decode HTML entity escapes.  Use [decodeHtml](#chalkerdecodehtml) to decode them.
+
 **Returns**: A plain text string without chalker color markers
+
+
+### `chalker.decodeHtml`
+
+```js
+chalker.decodeHtml(str)
+```
+
+- `str` - String to decode HTML entities
+
+**Returns**: String with HTML entities escapes decoded
 
 # License
 
