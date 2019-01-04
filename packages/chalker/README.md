@@ -72,9 +72,9 @@ npm i --save chalk
 
 - Quotes can be used for keywords but **not necessary** and not recommended.
 
-    - `<'orange'>`, `<"orange">`, `<``orange``>`, `<'bg orange'>`
-    - `<keyword('orange')>`, `<keyword("orange")>`, `<keyword(``orange``)>`
-    - `<bgKeyword('orange')>`, `<bgKeyword("orange")>`, `<bgKeyword(``orange``)>`
+    - `<'orange'>`, `<"orange">`, ``<`orange`>``, `<'bg orange'>`
+    - `<keyword('orange')>`, `<keyword("orange")>`, ``<keyword(`orange`)>``
+    - `<bgKeyword('orange')>`, `<bgKeyword("orange")>`, ``<bgKeyword(`orange`)>``
 
 # APIs
 
