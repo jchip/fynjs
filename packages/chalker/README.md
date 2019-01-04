@@ -45,6 +45,12 @@ npm i --save chalk
   | `&apos;` | '         | `&copy;` | &copy;             |
   | `&quot;` | "         | `&reg;`  | &reg;              |
 
+- HTML escape using code points also works:
+
+  - Hex - `&#xhhhh;` where `hhhh` is the Hex code point.
+  - Decimal - `&#nnnn;` where `nnnn` is the Decimal code point.
+  - ie: `&#xD83D;&#xDC69;` makes 👩
+
 #### Advanced Chalk Colors
 
 [Chalk advanced colors] can be applied with:

@@ -48,6 +48,9 @@ function deQuote(str, marker) {
   return str;
 }
 
+// https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
+// https://en.wikipedia.org/wiki/Universal_Coded_Character_Set
+
 const htmlEntities = {
   [`&quot;`]: `"`,
   [`&amp;`]: "&",
@@ -60,7 +63,20 @@ const htmlEntities = {
 };
 
 function decodeHtml(str) {
-  return str.replace(/&[a-z]+;/g, m => htmlEntities[m] || m);
+  return str.replace(/&[\w#]+;/g, m => {
+    if (htmlEntities.hasOwnProperty(m)) return htmlEntities[m];
+    if (m.startsWith("&#x")) {
+      const s = m.substring(3, m.length - 1);
+      const p = parseInt(s, 16);
+      return String.fromCodePoint(p);
+    }
+    if (m.startsWith("&#")) {
+      const s = m.substring(2, m.length - 1);
+      const p = parseInt(s, 10);
+      return String.fromCodePoint(p);
+    }
+    return m;
+  });
 }
 
 function applyChalkMarkers(markers, text, userChalk) {

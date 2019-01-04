@@ -66,6 +66,12 @@ describe("chalker", function() {
     console.log(r);
   });
 
+  it("should decode html escape code points", () => {
+    const r = chalker("&#x0391; &#x398; &#8201; &#8657; &#x2666; &#xD83D;&#xDC69;");
+    const x = "\u0391 \u0398 \u2009 \u21d1 \u2666 \uD83D\uDC69";
+    expect(r).to.equal(x);
+  });
+
   it("should fail for mismatched ()", () => {
     expect(() => chalker("<(10,20,30>bad</>")).to.throw("missing matching ()");
   });
