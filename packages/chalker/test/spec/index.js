@@ -17,6 +17,20 @@ describe("chalker", function() {
     console.log(r);
   });
 
+  it("should support hex 'bg-#' colors", () => {
+    const ctx = new chalk.constructor({ level: 2 });
+    const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
+    expect(r).to.equal("[38;5;214m[48;5;71mhex colors[49m[39m");
+    console.log(r);
+  });
+
+  it("should support hex 'bg #' colors", () => {
+    const ctx = new chalk.constructor({ level: 2 });
+    const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
+    expect(r).to.equal("[38;5;214m[48;5;71mhex colors[49m[39m");
+    console.log(r);
+  });
+
   it("should support rgb triples", () => {
     const ctx = new chalk.constructor({ level: 2 });
     const r = chalker("<(255, 10, 20).bg(20,10,255)>rgb red on blue</>", ctx);

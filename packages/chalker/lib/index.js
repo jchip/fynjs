@@ -76,8 +76,8 @@ function applyChalkMarkers(markers, text, userChalk) {
       } else if (marker.startsWith("#")) {
         // a hex value
         return a.hex(marker);
-      } else if (marker.startsWith("bg#")) {
-        // a bgHex value
+      } else if ((marker[2] === "#" || marker[3] === "#") && marker.startsWith("bg")) {
+        // a bgHex value, `bg#`, `bg-#`, `bg #`
         return a.bgHex(marker.substr(2));
       }
 
