@@ -10,6 +10,26 @@ describe("chalker", function() {
     console.log(r);
   });
 
+  it("should support nesting colors", () => {
+    const ctx = new chalk.constructor({ level: 2 });
+    const r = chalker(
+      `plain1 <red>red1<bgBlue> on blue<cyan> cyan on blue</cyan><black> black
+ on blue</black><green.bg-gold>green on gold</> red2 on
+ blue       <orange.bg#0>orange</orange>           <magenta.bgGreen>
+magenta on green</magenta.bgGreen></bgBlue> red3 </red> plain2<magenta>
+magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
+      ctx
+    );
+
+    const e = `plain1 [31mred1[44m on blue[36m cyan on blue[31m[30m black[31m[49m[39m
+[31m[44m[30m on blue[31m[32m[48;5;220mgreen on gold[44m[31m red2 on[49m[39m
+[31m[44m blue       [38;5;214m[48;5;16morange[44m[31m           [35m[42m[44m[31m[49m[39m
+[31m[44m[35m[42mmagenta on green[44m[31m[49m red3 [39m plain2[35m[39m
+[35mmagenta1 [31mred[35m [32mgreen[35m magenta2[39m plain3`;
+    expect(r).to.equal(e);
+    console.log(r);
+  });
+
   it("should support hex colors", () => {
     const ctx = new chalk.constructor({ level: 2 });
     const r = chalker("<#FFA010.bg#1f9020>hex colors</>", ctx);
@@ -84,6 +104,12 @@ describe("chalker", function() {
     expect(() => chalker(`<blah>bad</blah>`)).to.throw(
       "blah is not found and invalid as a keyword"
     );
+  });
+
+  it("should fail for unbalanced markers", () => {
+    expect(() => chalker(`<red>red`)).to.throw("unbalanced");
+    expect(() => chalker(`<red>red<blue></blue>`)).to.throw("unbalanced");
+    expect(() => chalker(`<red>red<blue></>`)).to.throw("unbalanced");
   });
 
   it("should remove markers", () => {

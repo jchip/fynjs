@@ -166,11 +166,37 @@ function applyChalkMarkers(markers, text, userChalk) {
 
 function format(s, userChalk) {
   userChalk = userChalk || chalk;
-  return decodeHtml(
-    s.replace(/<([\-A-Z 0-9#()'"`,a-z.]+)>([^<]+)($|<\/[^>]*>)/g, (a, b, c) => {
-      return applyChalkMarkers(b, c, userChalk);
-    })
+
+  const tks = s.match(/(<[^>]+>|[^<>]+)/g);
+
+  const colorized = tks.reduceRight(
+    (a, e) => {
+      // text
+      if (e[0] !== "<") {
+        a.s[a.l].push(e + a.s[a.l].pop());
+        return a;
+      }
+
+      // closing marker
+      if (e[1] === "/") {
+        a.s[++a.l] = [""];
+        return a;
+      }
+
+      // open marker
+      const mk = e.substring(1, e.length - 1);
+      const ss = a.s[a.l].pop();
+      const t = applyChalkMarkers(mk, ss, userChalk);
+      a.l--;
+      assert(a.l >= 0, `unbalanced open/close markers`);
+      a.s[a.l].push(t + a.s[a.l].pop());
+
+      return a;
+    },
+    { l: 0, s: { 0: [""] } }
   );
+
+  return decodeHtml(colorized.s[0][0]);
 }
 
 // remove the color marker like <red>text</> from strings
