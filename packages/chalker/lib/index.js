@@ -184,6 +184,11 @@ function format(s, userChalk) {
       }
 
       // open marker
+      if (a.l.length === 0) {
+        const partial =
+          tks.slice(0, ix).join("") + `[${tks[ix]}]` + (tks.length > ix + 1 ? "..." : "");
+        throw new Error(`unbalanced open/close markers: ${partial}`);
+      }
       const ss = a.s[a.l.length].pop();
       const mk = e.substring(1, e.length - 1);
       const close = a.l.pop();
@@ -196,19 +201,14 @@ function format(s, userChalk) {
         throw new Error(`mismatch markers: ${partial}`);
       }
       const t = applyChalkMarkers(mk, ss, userChalk);
-      if (a.l.length < 1) {
-        const partial =
-          tks.slice(0, ix).join("") + `[${tks[ix]}]` + (tks.length > ix + 1 ? "..." : "");
-        throw new Error(`unbalanced open/close markers: ${partial}`);
-      }
       a.s[a.l.length].push(t + a.s[a.l.length].pop());
 
       return a;
     },
-    { l: [{ mk: null }], s: { 1: [""] } }
+    { l: [], s: { 0: [""] } }
   );
 
-  return decodeHtml(colorized.s[1][0]);
+  return decodeHtml(colorized.s[0][0]);
 }
 
 // remove the color marker like <red>text</> from strings
