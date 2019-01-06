@@ -173,8 +173,7 @@ function format(s, userChalk) {
     (a, e, ix) => {
       // text
       if (e[0] !== "<") {
-        const nl = a.l.length;
-        a.s[nl].push(e + a.s[nl].pop());
+        a.s[a.l.length].push(e + a.s[a.l.length].pop());
         return a;
       }
 
@@ -199,8 +198,9 @@ function format(s, userChalk) {
       }
       const t = applyChalkMarkers(mk, ss, userChalk);
       if (a.l.length < 1) {
-        const partial = tks.slice(0, ix).join("") + `[${tks[ix]}]`;
-        throw new Error(`open marker has unbalanced close markers: ${partial}`);
+        const partial =
+          tks.slice(0, ix).join("") + `[${tks[ix]}]` + (tks.length > ix + 1 ? "..." : "");
+        throw new Error(`unbalanced open/close markers: ${partial}`);
       }
       a.s[a.l.length].push(t + a.s[a.l.length].pop());
 

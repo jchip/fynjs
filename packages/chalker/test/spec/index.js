@@ -107,9 +107,13 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   });
 
   it("should fail for unbalanced markers", () => {
-    expect(() => chalker(`<red>red`)).to.throw("unbalanced");
-    expect(() => chalker(`<red>red<blue></blue>`)).to.throw("unbalanced");
-    expect(() => chalker(`<red>red<blue></>`)).to.throw("unbalanced");
+    expect(() => chalker(`<red>`)).to.throw("unbalanced open/close markers: [<red>]");
+    expect(() => chalker(`oops <red>red<blue></blue>`)).to.throw(
+      "unbalanced open/close markers: oops [<red>]..."
+    );
+    expect(() => chalker(`<red>red<blue><cyan></>`)).to.throw(
+      "unbalanced open/close markers: <red>red[<blue>]..."
+    );
   });
 
   it("should fail for mismatched markers", () => {
