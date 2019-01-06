@@ -1,6 +1,6 @@
 "use strict";
 
-/* eslint-disable complexity, max-statements, no-magic-numbers */
+/* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template */
 
 const assert = require("assert");
 const chalk = require("chalk");
@@ -170,14 +170,14 @@ function format(s, userChalk) {
   const tks = s.match(/(<[^>]+>|[^<>]+)/g);
 
   const colorized = tks.reduceRight(
-    (a, e) => {
+    (a, e, ix) => {
       // text
       if (e[0] !== "<") {
         a.s[a.l].push(e + a.s[a.l].pop());
         return a;
       }
 
-      // closing marker
+      // close marker
       if (e[1] === "/") {
         a.s[++a.l] = [""];
         return a;
@@ -188,7 +188,10 @@ function format(s, userChalk) {
       const ss = a.s[a.l].pop();
       const t = applyChalkMarkers(mk, ss, userChalk);
       a.l--;
-      assert(a.l >= 0, `unbalanced open/close markers`);
+      if (a.l < 0) {
+        const partial = tks.slice(0, ix).join("") + `[${tks[ix]}]`;
+        throw new Error(`open marker has unbalanced close markers: ${partial}`);
+      }
       a.s[a.l].push(t + a.s[a.l].pop());
 
       return a;
