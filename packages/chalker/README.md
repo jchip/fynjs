@@ -40,10 +40,10 @@ npm i --save chalk
 
   | Entity   | Character | Entity   | Character          |
   | -------- | --------- | -------- | ------------------ |
-  | `&lt;`   | <         | `&gt;`   | >                  |
-  | `&amp;`  | &         | `&nbsp;` | non-breaking space |
-  | `&apos;` | '         | `&copy;` | &copy;             |
-  | `&quot;` | "         | `&reg;`  | &reg;              |
+  | `&lt;`   | &lt;      | `&gt;`   | &gt;               |
+  | `&amp;`  | &amp;     | `&nbsp;` | non-breaking space |
+  | `&apos;` | &apos;    | `&copy;` | &copy;             |
+  | `&quot;` | &quot;    | `&reg;`  | &reg;              |
 
 - HTML escape using code points also works:
 
