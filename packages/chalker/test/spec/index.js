@@ -100,6 +100,16 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
     expect(() => chalker(`<blah(red)>bad</>`)).to.throw("blah is not a chalk function");
   });
 
+  it("should handle chalk api throwing", () => {
+    expect(() =>
+      chalker("<blah(foo)>bar</>", {
+        blah: () => {
+          throw new Error("fake");
+        }
+      })
+    ).to.throw("calling chalk.blah failed with: fake");
+  });
+
   it("should fail for invalid keyword", () => {
     expect(() => chalker(`<blah>bad</blah>`)).to.throw(
       "blah is not found and invalid as a keyword"

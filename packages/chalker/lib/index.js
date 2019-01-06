@@ -1,6 +1,6 @@
 "use strict";
 
-/* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template */
+/* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template, prefer-spread */
 
 const assert = require("assert");
 const chalk = require("chalk");
@@ -127,9 +127,8 @@ function applyChalkMarkers(markers, text, userChalk) {
         }
 
         try {
-          a = a[name].apply(a, values); // eslint-disable-line
+          a = a[name].apply(a, values);
         } catch (err) {
-          // istanbul ignore next
           const msg =
             typeof a[name] !== "function"
               ? `${name} is not a chalk function`
