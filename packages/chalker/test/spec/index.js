@@ -15,7 +15,7 @@ describe("chalker", function() {
     const r = chalker(
       `plain1 <red>red1<bgBlue> on blue<cyan> cyan on blue</cyan><black> black
  on blue</black><green.bg-gold>green on gold</> red2 on
- blue       <orange.bg#0>orange</orange>           <magenta.bgGreen>
+ blue       <orange.bg#0>orange</>           <magenta.bgGreen>
 magenta on green</magenta.bgGreen></bgBlue> red3 </red> plain2<magenta>
 magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       ctx
@@ -63,7 +63,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   it("should support keyword", () => {
     const ctx = new chalk.constructor({ level: 2 });
     const r = chalker(
-      "<orange.bgKeyword(`green`)>orange on green</orange><'green'.bg gold>green on gold</>",
+      "<orange.bgKeyword(`green`)>orange on green</><'green'.bg gold>green on gold</>",
       ctx
     );
     expect(r).to.equal("[38;5;214m[48;5;34morange on green[49m[39m[38;5;34m[48;5;220mgreen on gold[49m[39m");
@@ -110,6 +110,12 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
     expect(() => chalker(`<red>red`)).to.throw("unbalanced");
     expect(() => chalker(`<red>red<blue></blue>`)).to.throw("unbalanced");
     expect(() => chalker(`<red>red<blue></>`)).to.throw("unbalanced");
+  });
+
+  it("should fail for mismatched markers", () => {
+    expect(() => chalker(`blah <red>red<blue>blue</blue></rad>`)).to.throw(
+      "blah [<red>]red<blue>blue</blue>[</rad>]"
+    );
   });
 
   it("should remove markers", () => {

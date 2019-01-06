@@ -173,33 +173,43 @@ function format(s, userChalk) {
     (a, e, ix) => {
       // text
       if (e[0] !== "<") {
-        a.s[a.l].push(e + a.s[a.l].pop());
+        const nl = a.l.length;
+        a.s[nl].push(e + a.s[nl].pop());
         return a;
       }
 
       // close marker
       if (e[1] === "/") {
-        a.s[++a.l] = [""];
+        a.l.push({ mk: e.substring(2, e.length - 1), ix });
+        a.s[a.l.length] = [""];
         return a;
       }
 
       // open marker
+      const ss = a.s[a.l.length].pop();
       const mk = e.substring(1, e.length - 1);
-      const ss = a.s[a.l].pop();
+      const close = a.l.pop();
+      if (close.mk && mk !== close.mk) {
+        const partial =
+          tks.slice(0, ix).join("") +
+          `[${tks[ix]}]` +
+          tks.slice(ix + 1, close.ix).join("") +
+          `[${tks[close.ix]}]`;
+        throw new Error(`mismatch markers: ${partial}`);
+      }
       const t = applyChalkMarkers(mk, ss, userChalk);
-      a.l--;
-      if (a.l < 0) {
+      if (a.l.length < 1) {
         const partial = tks.slice(0, ix).join("") + `[${tks[ix]}]`;
         throw new Error(`open marker has unbalanced close markers: ${partial}`);
       }
-      a.s[a.l].push(t + a.s[a.l].pop());
+      a.s[a.l.length].push(t + a.s[a.l.length].pop());
 
       return a;
     },
-    { l: 0, s: { 0: [""] } }
+    { l: [{ mk: null }], s: { 1: [""] } }
   );
 
-  return decodeHtml(colorized.s[0][0]);
+  return decodeHtml(colorized.s[1][0]);
 }
 
 // remove the color marker like <red>text</> from strings
