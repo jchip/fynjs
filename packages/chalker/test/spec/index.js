@@ -128,7 +128,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
 
   it("should fail for mismatched markers", () => {
     expect(() => chalker(`blah <red>red<blue>blue</blue></rad>`)).to.throw(
-      "blah [<red>]red<blue>blue</blue>[</rad>]"
+      "blah [** <red> **]red<blue>blue</blue>[** </rad> **]"
     );
   });
 

@@ -170,47 +170,52 @@ function format(s, userChalk) {
 
   const colorized = tks.reduceRight(
     (a, e, ix) => {
+      const lvl = a[a.length - 1];
+
       // text
       if (e[0] !== "<") {
-        a.s[a.l.length] = e + a.s[a.l.length];
+        lvl.s = e + lvl.s;
         return a;
       }
 
       // close marker
       if (e[1] === "/") {
-        a.l.push({ mk: e.substring(2, e.length - 1), ix });
-        a.s[a.l.length] = "";
+        a.push({ mk: e.substring(2, e.length - 1), ix, s: "" });
         return a;
       }
 
       // open marker
-      if (a.l.length === 0) {
+
+      // markers balance check
+      if (a.length === 1) {
         const partial =
           tks.slice(0, ix).join("") + `[${tks[ix]}]` + (tks.length > ix + 1 ? "..." : "");
         throw new Error(`unbalanced open/close markers: ${partial}`);
       }
-      // markers balance check
-      const ss = a.s[a.l.length];
+
+      // markers match check
       const mk = e.substring(1, e.length - 1);
-      const close = a.l.pop();
-      if (close.mk && mk !== close.mk) {
+      if (lvl.mk && mk !== lvl.mk) {
         const partial =
           tks.slice(0, ix).join("") +
-          `[${tks[ix]}]` +
-          tks.slice(ix + 1, close.ix).join("") +
-          `[${tks[close.ix]}]`;
+          `[** ${tks[ix]} **]` +
+          tks.slice(ix + 1, lvl.ix).join("") +
+          `[** ${tks[lvl.ix]} **]`;
         throw new Error(`mismatch markers: ${partial}`);
       }
-      // apply marker and update result at level
-      const t = applyChalkMarkers(mk, ss, userChalk);
-      a.s[a.l.length] = t + a.s[a.l.length];
+
+      // apply marker and update result at previous level
+      const t = applyChalkMarkers(mk, lvl.s, userChalk);
+      a.pop();
+      const nl = a.length - 1;
+      a[nl].s = t + a[nl].s;
 
       return a;
     },
-    { l: [], s: { 0: "" } }
+    [{ s: "" }]
   );
 
-  return decodeHtml(colorized.s[0]);
+  return decodeHtml(colorized[0].s);
 }
 
 // remove the color marker like <red>text</> from strings
