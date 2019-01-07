@@ -3,7 +3,7 @@
 
 # chalker
 
-Enable XML like markers in strings to colorize text with [chalk].
+Set ansi colors in strings using XML like markers and [chalk].
 
 # Usage
 
@@ -96,7 +96,7 @@ chalker(str, [chalkInstance]);
 - `chalkInstance` - Optional custom instance of [chalk].
   - ie: created from `new chalk.constructor({level: 2})`
 
-**Returns:** A string with terminal color codes
+**Returns:** A string with terminal/ansi color codes
 
 ### `chalker.remove`
 

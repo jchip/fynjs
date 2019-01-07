@@ -6,7 +6,7 @@ const assert = require("assert");
 const chalk = require("chalk");
 
 //
-// convert color markers in a string to terminal color codes with chalk
+// convert color markers in a string to terminal/ansi color codes with chalk
 // color marker format is "<red>red text</red><blue.bold>blue bold text</blue.bold>"
 // the end marker can simply be "</>" also
 // the marker is converted to chalk methods directly, for example:

@@ -1,7 +1,7 @@
 {
   "name": "chalker",
   "version": "0.0.1",
-  "description": "XML markers to add terminal colors to strings with chalk",
+  "description": "Set ansi colors in strings using XML and chalk",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
@@ -15,6 +15,10 @@
     "lib"
   ],
   "keywords": [
+    "string",
+    "terminal",
+    "ansi",
+    "colors",
     "chalk",
     "color",
     "xml",
