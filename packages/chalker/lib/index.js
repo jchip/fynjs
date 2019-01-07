@@ -166,7 +166,11 @@ function applyChalkMarkers(markers, text, userChalk) {
 function format(s, userChalk) {
   userChalk = userChalk || chalk;
 
-  const tks = s.match(/(<[^>]+>|[^<>]+)/g);
+  const tks = s && s.match(/(<[^>]+>|[^<>]+)/g);
+
+  // empty string "" result in null from match
+  // but other strings w/o matches gets ['original-string']
+  if (!tks) return s || "";
 
   const colorized = tks.reduceRight(
     (a, e, ix) => {

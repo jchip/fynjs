@@ -110,6 +110,14 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
     ).to.throw("calling chalk.blah failed with: fake");
   });
 
+  it("should handle empty/null string or strings w/o markers", () => {
+    expect(chalker(null)).to.equal("");
+    expect(chalker(undefined)).to.equal("");
+    expect(chalker("")).to.equal("");
+    expect(chalker("hello world")).to.equal("hello world");
+    expect(chalker("&quot;hello world&quot;")).to.equal(`"hello world"`);
+  });
+
   it("should fail for invalid keyword", () => {
     expect(() => chalker(`<blah>bad</blah>`)).to.throw(
       "blah is not found and invalid as a keyword"
