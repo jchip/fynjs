@@ -1,0 +1,49 @@
+{
+  "name": "xflight",
+  "version": "0.0.1",
+  "description": "Handle inflight promise to avoid async duplication",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "clap check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/xflight.git"
+  },
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "inflight",
+    "promise"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electrode-archetype-njs-module-dev": "^3.0.0"
+  },
+  "dependencies": {
+    "optional-require": "^1.0.0"
+  },
+  "nyc": {
+    "all": true,
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "exclude": [
+      "coverage",
+      "*clap.js",
+      "gulpfile.js",
+      "dist",
+      "test"
+    ],
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100,
+    "cache": true
+  }
+}
