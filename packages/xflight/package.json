@@ -1,6 +1,6 @@
 {
   "name": "xflight",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Handle inflight promise to avoid async duplication",
   "main": "lib/index.js",
   "scripts": {
