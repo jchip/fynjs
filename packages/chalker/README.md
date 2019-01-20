@@ -11,6 +11,23 @@ Set ansi colors in strings using XML like markers and [chalk].
 const chalker = require("chalker");
 
 console.log(chalker("<red.bgGreen>Red on Green Text</>"));
+
+// with template string tagging
+const msg = "hello world";
+
+console.log(chalker`<green>${msg}</green>`);
+```
+
+A typical use case is to easily manage colors for logs that could go to console or log servers.
+
+```js
+const msg = `<red>some error occurred...</red>`;
+
+// log to console for visual with colors
+if (!production) console.log(chalker(msg));
+
+// log to log server with colors removed
+logger.log(chalker.remove(msg));
 ```
 
 # Install

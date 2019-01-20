@@ -10,6 +10,18 @@ describe("chalker", function() {
     console.log(r);
   });
 
+  it("should support template string tagging", () => {
+    const x = chalker``;
+    expect(x).to.equal(``);
+    const y = "hello world";
+    const b = "<blue>";
+    const x2 = chalker`${b}blue</><red>${y}</red>`;
+    expect(x2).to.equal("[34mblue[39m[31mhello world[39m");
+    const r = chalker`<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>`;
+    expect(r).to.equal("[31m[1mred bold text[22m[39m[44m[32m[1mgreen on blue bold[22m[39m[49m");
+    console.log(r);
+  });
+
   it("should support nesting colors", () => {
     const ctx = new chalk.constructor({ level: 2 });
     const r = chalker(

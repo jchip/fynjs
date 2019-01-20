@@ -228,8 +228,22 @@ function remove(s, keepHtml) {
   return keepHtml ? r : decodeHtml(r);
 }
 
-format.remove = remove;
+function chalker(s, ...args) {
+  if (Array.isArray(s)) {
+    // template string
+    let c = "";
+    let ix;
+    for (ix = 0; ix < args.length; ix++) {
+      c = c + s[ix] + args[ix];
+    }
+    return format(c + s[ix]);
+  }
 
-format.decodeHtml = decodeHtml;
+  return format(s, ...args);
+}
 
-module.exports = format;
+chalker.remove = remove;
+
+chalker.decodeHtml = decodeHtml;
+
+module.exports = chalker;
