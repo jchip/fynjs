@@ -13,9 +13,7 @@ const chalker = require("chalker");
 console.log(chalker("<red.bgGreen>Red on Green Text</>"));
 
 // with template string tagging
-const msg = "hello world";
-
-console.log(chalker`<green>${msg}</green>`);
+console.log(chalker`<green>hello world</green>`);
 ```
 
 A typical use case is to easily manage colors for logs that could go to console or log servers.
@@ -34,12 +32,6 @@ logger.log(chalker.remove(msg));
 
 ```
 npm i --save chalker
-```
-
-- [chalk] is a `peerDependencies` so you need to add chalk also:
-
-```
-npm i --save chalk
 ```
 
 # Demo

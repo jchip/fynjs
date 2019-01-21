@@ -26,12 +26,11 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
-  "devDependencies": {
-    "electrode-archetype-njs-module-dev": "^3.0.0",
-    "chalk": ">=2"
+  "dependencies": {
+    "chalk": "^2.4.2"
   },
-  "peerDependencies": {
-    "chalk": ">=2"
+  "devDependencies": {
+    "electrode-archetype-njs-module-dev": "^3.0.0"
   },
   "nyc": {
     "all": true,

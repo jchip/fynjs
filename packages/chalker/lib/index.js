@@ -230,7 +230,7 @@ function remove(s, keepHtml) {
 
 function chalker(s, ...args) {
   if (Array.isArray(s)) {
-    // template string
+    // template string tagging
     let c = "";
     let ix;
     for (ix = 0; ix < args.length; ix++) {
