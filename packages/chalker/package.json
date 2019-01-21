@@ -1,6 +1,6 @@
 {
   "name": "chalker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Set ansi colors in strings using XML and chalk",
   "main": "lib/index.js",
   "repository": {
