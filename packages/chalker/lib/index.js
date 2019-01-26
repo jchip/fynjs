@@ -163,8 +163,19 @@ function applyChalkMarkers(markers, text, userChalk) {
   return chalkify(text);
 }
 
+// remove the color marker like <red>text</> from strings
+function remove(s, keepHtml) {
+  const r = s.replace(/<[^>]*>/g, "").trim();
+  return keepHtml ? r : decodeHtml(r);
+}
+
 function format(s, userChalk) {
   userChalk = userChalk || chalk;
+
+  // skip applying ansi colors if chalk says color support is off
+  if (userChalk.supportsColor === false) {
+    return remove(s);
+  }
 
   const tks = s && s.match(/(<[^>]+>|[^<>]+)/g);
 
@@ -220,12 +231,6 @@ function format(s, userChalk) {
   );
 
   return decodeHtml(colorized[0].s);
-}
-
-// remove the color marker like <red>text</> from strings
-function remove(s, keepHtml) {
-  const r = s.replace(/<[^>]*>/g, "").trim();
-  return keepHtml ? r : decodeHtml(r);
 }
 
 function chalker(s, ...args) {

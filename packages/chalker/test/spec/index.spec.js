@@ -10,6 +10,14 @@ describe("chalker", function() {
     console.log(r);
   });
 
+  it("should not apply colors if chalk supportsColor is false", () => {
+    const r = chalker(
+      "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>",
+      { supportsColor: false }
+    );
+    expect(r).to.equal("red bold textgreen on blue bold");
+  });
+
   it("should support template string tagging", () => {
     const x = chalker``;
     expect(x).to.equal(``);
