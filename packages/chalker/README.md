@@ -75,23 +75,18 @@ npm i --save chalker
 
 ##### More details
 
-- any thing not detected as hex or having `()` params and not found as a basic color is tried using `chalk.keyword`
+- a marker is tried with `chalk.keyword` if:
+  - it's not detected as hex value
+  - it doesn't contain params enclosed in `()`
+  - it's not found as a basic color that `chalk` supports
+  - for example, this is a chalk color keyword: `<orange>`
+  - If it's prefixed with `"bg-"` then it's tried using `chalk.bgKeyword`
 
-    - ie: `<orange>`
-
-  - If it's prefixed with `"bg-"` or `"bg "` then it's tried using `chalk.bgKeyword`
-
-    - ie: `<bg-orange>`, `<bg orange>`
+    - ie: `<bg-orange>`
 
 - All markers can be comined with `.` in any order as long as they work with [chalk]
 
-    - ie: `<#FF0000.bg#0000FF.bg orange.keyword(red)>`
-
-- Quotes can be used for keywords but **not necessary** and not recommended.
-
-    - `<'orange'>`, `<"orange">`, ``<`orange`>``, `<'bg orange'>`
-    - `<keyword('orange')>`, `<keyword("orange")>`, ``<keyword(`orange`)>``
-    - `<bgKeyword('orange')>`, `<bgKeyword("orange")>`, ``<bgKeyword(`orange`)>``
+    - ie: `<#FF0000.bg#0000FF.bg-orange.keyword(red)>`
 
 # APIs
 
@@ -106,6 +101,8 @@ chalker(str, [chalkInstance]);
   - ie: created from `new chalk.constructor({level: 2})`
 
 **Returns:** A string with terminal/ansi color codes
+
+> If `chalk.supportsColor` is `false`, then it will simply remove the XML markers and decode HTML entities only.
 
 ### `chalker.remove`
 
