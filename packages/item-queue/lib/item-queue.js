@@ -35,6 +35,11 @@ class ItemQueue extends EventEmitter {
     });
   }
 
+  _wrap(item, stopOnError) {
+    if (item === PAUSE_ITEM || item === RESUME_ITEM) return item;
+    return { item, stopOnError };
+  }
+
   wait() {
     if (this._failed) {
       return this.Promise.reject(this._failed);
@@ -70,15 +75,15 @@ class ItemQueue extends EventEmitter {
 
   setItemQ(itemQ, noStart) {
     assert(Array.isArray(itemQ), "item-queue: Must pass array to setItemQ");
-    this._itemQ = itemQ;
-    this._empty = !itemQ || itemQ.length === 0;
+    this._itemQ = itemQ.map(x => this._wrap(x));
+    this._empty = itemQ.length === 0;
     if (!noStart) this.deferProcess();
     return this;
   }
 
-  addItem(data, noStart) {
+  addItem(item, noStart, stopOnError) {
     this._empty = false;
-    this._itemQ.push(data);
+    this._itemQ.push(this._wrap(item, stopOnError));
     if (!noStart) this.deferProcess();
     return this;
   }
@@ -143,7 +148,7 @@ class ItemQueue extends EventEmitter {
     if (data.item !== RESUME_ITEM && data.id > 0) {
       if (data.error) {
         this.emit("failItem", data);
-        if (this._stopOnError) {
+        if (data.stopOnError !== false && this._stopOnError) {
           this._failed = data.error;
           this.emit("fail", data);
           return;
@@ -232,8 +237,8 @@ class ItemQueue extends EventEmitter {
     let count = 0;
     let i = this._pending.count;
     for (; this._itemQ.length > 0 && i < this._concurrency; i++) {
-      const item = this._itemQ.shift();
-      if (item === PAUSE_ITEM) {
+      const wrapped = this._itemQ.shift();
+      if (wrapped === PAUSE_ITEM) {
         this._pause = true;
         // since no more pending can be added at this point, if there're no
         // existing pending, then setup to emit the pause event.
@@ -251,11 +256,11 @@ class ItemQueue extends EventEmitter {
 
       let promise;
 
-      if (item === RESUME_ITEM) {
+      if (wrapped === RESUME_ITEM) {
         promise = this.Promise.resolve({});
       } else {
         try {
-          promise = this._processItem(item, id);
+          promise = this._processItem(wrapped.item, id);
           if (!promise || !promise.then) {
             promise = this.Promise.resolve(promise);
           }
@@ -265,11 +270,11 @@ class ItemQueue extends EventEmitter {
       }
 
       this._pending.add(id, {
-        item,
+        item: wrapped.item,
         promise: promise.then(
-          res => this._handleQueueItemDone({ id, item, res }),
+          res => this._handleQueueItemDone(Object.assign({ id, res }, wrapped)),
           error => {
-            this._handleQueueItemDone({ error, id, item });
+            this._handleQueueItemDone(Object.assign({ id, error }, wrapped));
           }
         )
       });
