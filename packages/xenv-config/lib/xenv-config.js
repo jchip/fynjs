@@ -59,7 +59,14 @@ const xenvConfig = (spec, userConfig, options) => {
     env: (opt, k) => {
       const name = getEnvName(k, opt, env);
       if (name) {
-        return { trace: { src: "env", name }, value: getGetter(opt)(env[name], k) };
+        const envVal = env[name];
+        return {
+          trace: { src: "env", name },
+          value:
+            opt.envMap && opt.envMap.hasOwnProperty(envVal)
+              ? opt.envMap[envVal]
+              : getGetter(opt)(envVal, k)
+        };
       }
       return undefined;
     },

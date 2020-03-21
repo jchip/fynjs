@@ -69,6 +69,7 @@ The spec is a JSON object with the following format:
 {
   "<optionKey>": {
     env: "ENV_VAR_NAME",
+    envMap: {},
     default: <default_value>,
     type: "<type>",
     post: (val, trace) => {}
@@ -79,6 +80,7 @@ The spec is a JSON object with the following format:
 - Each `optionKey` specifies the name of the option
 - Its value should be an object with the following fields:
   - `env`: the name (or array of names) of the environment varialbe(s) to check first. If it's `true`, then use `optionKey` as the env variable name.
+  - `envMap`: an object of mapping env value to another value.
   - `default`: the default value or a function to return the default value.
   - `type`: indicate how to interpret and convert the string from `process.env`.
   - `post`: callback to post process value

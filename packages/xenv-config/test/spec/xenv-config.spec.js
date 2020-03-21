@@ -14,6 +14,15 @@ describe("xenv-config", function() {
       expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
     });
 
+    it("should translate using envMap", () => {
+      const k = `K${Date.now()}`;
+      process.env[k] = "hello";
+      const cfg = xenvConfig({ test: { env: k, envMap: { hello: "xyz" } } });
+      delete process.env[k];
+      expect(cfg).to.deep.equal({ test: "xyz" });
+      expect(cfg.__$trace__.test).to.deep.equal({ src: "env", name: k });
+    });
+
     it("should call post", () => {
       const k = `K${Date.now()}`;
       process.env[k] = "hello";
