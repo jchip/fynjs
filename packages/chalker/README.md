@@ -3,7 +3,7 @@
 
 # chalker
 
-Set ansi colors in strings using XML like markers and [chalk].
+Set ansi colors in strings using `<>` markers and [chalk].
 
 # Usage
 
@@ -67,7 +67,7 @@ npm i --save chalker
 | [chalk] API     | chalker marker                                | [chalk] API       | chalker marker                                       |
 | --------------- | --------------------------------------------- | ----------------- | ---------------------------------------------------- |
 | `chalk.rgb`     | `<(255, 10, 20)>`, `<rgb(255,10,20)>`         | `chalk.bgRgb`     | `<bg(255, 10, 20)>`, `<bgRgb(255,10,20)>`            |
-| `chalk.hex`     | `<#FF0000>`, `<hex(#FF0000)>`                 | `chalk.bgHex`     | `<bg#0000FF>`,  `<bgHex(#0000FF)>`                   |
+| `chalk.hex`     | `<#FF0000>`, `<hex(#FF0000)>`                 | `chalk.bgHex`     | `<bg#0000FF>`, `<bgHex(#0000FF)>`                    |
 | `chalk.keyword` | `<orange>`, `<(orange)>`, `<keyword(orange)>` | `chalk.bgKeyword` | `<bg-orange>`, `<bg(orange)>`, `<bgKeyword(orange)>` |
 | `chalk.hsl`     | `<hsl(32,100,50)>`                            | `chalk.bgHsl`     | `<bgHsl(32,100,50)>`                                 |
 | `chalk.hsv`     | `<hsv(32,100,100)>`                           | `chalk.bgHsv`     | `<bgHsv(32,100,100)>`                                |
@@ -76,6 +76,7 @@ npm i --save chalker
 ##### More details
 
 - a marker is tried with `chalk.keyword` if:
+
   - it's not detected as hex value
   - it doesn't contain params enclosed in `()`
   - it's not found as a basic color that `chalk` supports
@@ -86,7 +87,7 @@ npm i --save chalker
 
 - All markers can be comined with `.` in any order as long as they work with [chalk]
 
-    - ie: `<#FF0000.bg#0000FF.bg-orange.keyword(red)>`
+  - ie: `<#FF0000.bg#0000FF.bg-orange.keyword(red)>`
 
 # APIs
 
@@ -102,7 +103,7 @@ chalker(str, [chalkInstance]);
 
 **Returns:** A string with terminal/ansi color codes
 
-> If `chalk.supportsColor` is `false`, then it will simply remove the XML markers and decode HTML entities only.
+> If `chalk.supportsColor` is `false`, then it will simply remove the `<>` markers and decode HTML entities only.
 
 ### `chalker.remove`
 
@@ -117,11 +118,10 @@ Simply remove all chalker markers and return the plain text string, with HTML es
 
 **Returns**: A plain text string without chalker color markers
 
-
 ### `chalker.decodeHtml`
 
 ```js
-chalker.decodeHtml(str)
+chalker.decodeHtml(str);
 ```
 
 - `str` - String to decode HTML entities
