@@ -3,7 +3,7 @@
 const chalk = require("chalk");
 const chalker = require("../..");
 
-describe("chalker", function() {
+describe("chalker", function () {
   it("should support basic colors", () => {
     const r = chalker("<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>");
     expect(r).to.equal("[31m[1mred bold text[22m[39m[44m[32m[1mgreen on blue bold[22m[39m[49m");
@@ -31,7 +31,7 @@ describe("chalker", function() {
   });
 
   it("should support nesting colors", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker(
       `plain1 <red>red1<bgBlue> on blue<cyan> cyan on blue</cyan><black> black
  on blue</black><green.bg-gold>green on gold</> red2 on
@@ -41,38 +41,38 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       ctx
     );
 
-    const e = `plain1 [31mred1[44m on blue[36m cyan on blue[31m[30m black[31m[49m[39m
-[31m[44m[30m on blue[31m[32m[48;5;220mgreen on gold[44m[31m red2 on[49m[39m
-[31m[44m blue       [38;5;214m[48;5;16morange[44m[31m           [35m[42m[44m[31m[49m[39m
-[31m[44m[35m[42mmagenta on green[44m[31m[49m red3 [39m plain2[35m[39m
-[35mmagenta1 [31mred[35m [32mgreen[35m magenta2[39m plain3`;
+    const e = `plain1 [31mred1[44m on blue[36m cyan on blue[39m[31m[30m black[39m[31m[49m[39m
+[31m[44m[30m on blue[39m[31m[32m[48;5;220mgreen on gold[49m[44m[39m[31m red2 on[49m[39m
+[31m[44m blue       [38;5;214m[48;5;16morange[49m[44m[39m[31m           [35m[42m[49m[44m[39m[31m[49m[39m
+[31m[44m[35m[42mmagenta on green[49m[44m[39m[31m[49m red3 [39m plain2[35m[39m
+[35mmagenta1 [31mred[39m[35m [32mgreen[39m[35m magenta2[39m plain3`;
     expect(r).to.equal(e);
     console.log(r);
   });
 
   it("should support hex colors", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker("<#FFA010.bg#1f9020>hex colors</>", ctx);
     expect(r).to.equal("[38;5;214m[48;5;71mhex colors[49m[39m");
     console.log(r);
   });
 
   it("should support hex 'bg-#' colors", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
     expect(r).to.equal("[38;5;214m[48;5;71mhex colors[49m[39m");
     console.log(r);
   });
 
   it("should support hex 'bg #' colors", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
     expect(r).to.equal("[38;5;214m[48;5;71mhex colors[49m[39m");
     console.log(r);
   });
 
   it("should support rgb triples", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker("<(255, 10, 20).bg(20,10,255)>rgb red on blue</>", ctx);
     expect(r).to.equal("[38;5;196m[48;5;21mrgb red on blue[49m[39m");
     console.log(r);
@@ -81,7 +81,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   });
 
   it("should support keyword", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker(
       "<orange.bgKeyword(`green`)>orange on green</><'green'.bg gold>green on gold</>",
       ctx
@@ -96,7 +96,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   });
 
   it("should decode html escapes", () => {
-    const ctx = new chalk.constructor({ level: 2 });
+    const ctx = new chalk.Instance({ level: 2 });
     const r = chalker(
       `<gold.bg-green>&lt;Gold on&gt; &xyz;&nbsp;Green-&quot;&amp;&apos;&copy;&reg;</gold.bg-green>`,
       ctx
