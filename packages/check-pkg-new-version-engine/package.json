@@ -23,6 +23,10 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/check-pkg-new-version-engine.git"
+  },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/jest": "^26.0.20",
