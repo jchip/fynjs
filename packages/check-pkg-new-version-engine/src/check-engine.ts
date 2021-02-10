@@ -67,12 +67,12 @@ function getNpmRegistryInfo(npmConfig: NpmConfig, pkg: PkgInfo) {
 }
 
 /**
- * Check package new version with all options customizable
+ * Internal use
  *
- * @param options - options
- * @returns whatever
+ * @param options options
+ * @returns boolean
  */
-export async function checkPkgNewVersionEngine(options: CheckNewVersionOptions): Promise<any> {
+async function _internalCheck(options: CheckNewVersionOptions): Promise<any> {
   //
   if (isCI) {
     return false;
@@ -131,4 +131,18 @@ export async function checkPkgNewVersionEngine(options: CheckNewVersionOptions):
   }
 
   return true;
+}
+
+/**
+ * Check package new version with all options customizable
+ *
+ * @param options - options
+ * @returns whatever
+ */
+export async function checkPkgNewVersionEngine(options: CheckNewVersionOptions): Promise<any> {
+  try {
+    return await _internalCheck(options);
+  } catch {
+    return false;
+  }
 }
