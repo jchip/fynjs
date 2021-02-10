@@ -11,15 +11,17 @@
     "coverage": "xrun xarc/test-cov"
   },
   "keywords": [
-    "check",
     "npm",
-    "cli",
     "package",
     "new",
     "version",
+    "check",
+    "checker",
     "update",
     "notify",
-    "notifier"
+    "notifier",
+    "module",
+    "cli"
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
