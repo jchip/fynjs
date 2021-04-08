@@ -9,6 +9,11 @@ export type NotifyData = PkgInfo & {
   newVersion: string;
 };
 
+export type CheckResult = {
+  isNewer: boolean;
+  version?: string;
+};
+
 export type CheckNewVersionOptions = {
   /** package info */
   pkg: PkgInfo;
@@ -35,7 +40,7 @@ export type CheckNewVersionOptions = {
   checkTag?: string;
 
   /** check if dist tags has a version that's newer than pkg */
-  checkIsNewer?(pkg: PkgInfo, distTags: Record<string, string>, tag?: string): boolean;
+  checkIsNewer?(pkg: PkgInfo, distTags: Record<string, string>, tag?: string): CheckResult;
 
   /**
    * NPM config

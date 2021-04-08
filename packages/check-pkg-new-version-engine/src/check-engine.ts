@@ -109,7 +109,7 @@ async function _internalCheck(options: CheckNewVersionOptions): Promise<any> {
       const data = await Fs.readFile(metaFile, "utf-8");
       return JSON.parse(data);
     } catch {
-      return { ...pkg, time: 0, notified: false };
+      return { ...pkg, time: 0, notifiedVersion: "", notifiedTime: 0 };
     }
   };
 
@@ -119,15 +119,34 @@ async function _internalCheck(options: CheckNewVersionOptions): Promise<any> {
   const shouldFetch = now - existMeta.time >= checkInterval || !existMeta.distTags;
   const distTags = shouldFetch ? await fetchDistTags() : existMeta.distTags;
 
-  const saveMetaFile = async (notified = false) => {
-    await Fs.writeFile(metaFile, JSON.stringify({ ...pkg, distTags, time: now, notified }));
+  const saveMetaFile = async (notifiedVersion = "", notifiedTime = 0) => {
+    await Fs.writeFile(
+      metaFile,
+      JSON.stringify({ ...pkg, distTags, time: now, notifiedVersion, notifiedTime })
+    );
   };
 
-  if ((shouldFetch || !existMeta.notified) && options.checkIsNewer(pkg, distTags, tag)) {
-    (options.notifyNewVersion || internalNotify)({ ...pkg, newVersion: distTags[tag] });
-    await saveMetaFile(true);
-  } else if (shouldFetch) {
-    await saveMetaFile();
+  // only if we fetched for something that we need to do a check and update meta
+  if (shouldFetch) {
+    let notifiedVersion =
+      typeof existMeta.notifiedVersion === "string" ? existMeta.notifiedVersion : "";
+
+    let notifiedTime = existMeta.notifiedTime || 0;
+
+    const checked = options.checkIsNewer(pkg, distTags, tag);
+
+    if (
+      checked.isNewer &&
+      // if have not notified about the new version yet or if it's been 7 days since
+      // last notify, then notify again
+      (notifiedVersion !== checked.version || now - notifiedTime > 7 * ONE_DAY)
+    ) {
+      notifiedVersion = checked.version;
+      notifiedTime = now;
+      (options.notifyNewVersion || internalNotify)({ ...pkg, newVersion: checked.version });
+    }
+
+    await saveMetaFile(notifiedVersion, notifiedTime);
   }
 
   return true;

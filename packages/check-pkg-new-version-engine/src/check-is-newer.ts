@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 
-import { PkgInfo } from "./types";
+import { CheckResult, PkgInfo } from "./types";
 import assert from "assert";
 
 /**
@@ -13,13 +13,13 @@ import assert from "assert";
  * @param distTags dist tags
  * @param tag tag to use
  *
- * @returns true|false
+ * @returns the newer version or ""
  */
 export function internalCheckIsNewer(
   pkg: PkgInfo,
   distTags: Record<string, string>,
   tag?: string
-): boolean {
+): CheckResult {
   const current = pkg.version;
   const newer = distTags[tag];
 
@@ -36,5 +36,11 @@ export function internalCheckIsNewer(
   const newerN = newerX.map((s) => parseInt(s, 10));
   const diffs = currentN.map((v, i) => newerN[i] - v);
 
-  return Boolean(diffs.find((d) => Number.isInteger(d) && d > 0));
+  const isNewer = Boolean(diffs.find((d) => Number.isInteger(d) && d > 0));
+
+  if (isNewer) {
+    return { isNewer, version: newer };
+  } else {
+    return { isNewer: false };
+  }
 }
