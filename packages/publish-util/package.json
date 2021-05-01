@@ -20,11 +20,6 @@
     "registry": "https://registry.npmjs.com/",
     "access": "public"
   },
-  "publishUtil": {
-    "remove": [
-      "devDependencies"
-    ]
-  },
   "files": [
     "bin",
     "lib"

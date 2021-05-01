@@ -121,7 +121,7 @@ exports.keepStandardFields = [
   "scripts",
   "config",
   "dependencies",
-  "devDependencies",
+  // "devDependencies",
   "peerDependencies",
   "peerDependenciesMeta",
   "bundledDependencies",

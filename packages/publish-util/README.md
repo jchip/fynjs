@@ -97,17 +97,27 @@ For example, to reach `pkg.key1.key2`, and `pkg.key1.xyz*`:
 ]
 ```
 
-## Non-standard fields
+## Extra fields
 
 These top level fields are considered standard fields:
 
-- all top level fields defined at [npm package.json](https://docs.npmjs.com/cli/v7/configuring-npm/package-json), except `workspaces`
+- all top level fields defined at [npm package.json](https://docs.npmjs.com/cli/v7/configuring-npm/package-json), except `workspaces` and `devDependencies`
 - And these fields: `module`
 
-Any top level fields not in the standard fields are automatically removed.
+Any extra top level fields not in the standard fields are automatically removed.
 
 - To skip this automatic removal, set `publishUtil.removeExtraKeys` to `false`.
 - You can also add fields to `publishUtil.keep` to avoid them being removed.
+
+For example, to keep `devDependencies`:
+
+```json
+{
+  "publishUtil": {
+    "keep": ["devDependencies"]
+  }
+}
+```
 
 ## Auto `postpack` Insert
 
