@@ -11,7 +11,7 @@ exports.getInfo = async () => {
   const pkg = JSON.parse(pkgData);
 
   const tmpDir = Os.tmpdir();
-  const saveName = `${pkg.name.replace(/[@\/]/g, "_")}_pkg.json`;
+  const saveName = `package-util-${pkg.name.replace(/[@\/]/g, "_")}_pkg.json`;
   const saveFile = Path.join(tmpDir, saveName);
 
   return { pkgDir, pkg, pkgData, tmpDir, saveName, saveFile, pkgFile };

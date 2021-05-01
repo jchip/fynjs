@@ -7,7 +7,8 @@ Your `package.json`:
 ```json
 {
   "name": "...",
-
+  "version": "...",
+  "description": "...",
   "scripts": {
     "test": "...",
     "coverage": "...",
@@ -16,7 +17,6 @@ Your `package.json`:
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
-
   "publishUtil": {
     "remove": [
       "devDependencies",
@@ -24,15 +24,18 @@ Your `package.json`:
     ],
     "keep": ["options"]
   },
-
   "dependencies": {
-    "react": "*",
-    "react-dom": "*"
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0"
   },
   "devDependencies": {
-    "tap": "*"
+    "tap": "^15.0.0",
+    "publish-util": "^1.0.0"
   },
-  "nyc": {}
+  "nyc": {
+    "reporter": ["lcov", "text", "text-summary"]
+  },
+  "options": {}
 }
 ```
 
@@ -41,15 +44,16 @@ Your `package.json` published:
 ```json
 {
   "name": "...",
-
+  "version": "...",
+  "description": "...",
   "scripts": {
     "postpack": "publish-util-postpack"
   },
-
   "dependencies": {
     "react": "*",
     "react-dom": "*"
-  }
+  },
+  "options": {}
 }
 ```
 
@@ -103,7 +107,7 @@ These top level fields are considered standard fields:
 Any top level fields not in the standard fields are automatically removed.
 
 - To skip this automatic removal, set `publishUtil.removeExtraKeys` to `false`.
-- You can also add fields you want to keep to `publishUtil.keep` to avoid them being removed.
+- You can also add fields to `publishUtil.keep` to avoid them being removed.
 
 ## Auto `postpack` Insert
 
@@ -124,5 +128,5 @@ Using `npm pack`
 
 1. Run `npm pack`
 2. Inspect `package.json` to ensure it's not modified
-3. Look the the `.tgz` file and extract it
+3. Look for the `.tgz` file and extract it
 4. Inspect `package/package.json` to ensure it's as expected.
