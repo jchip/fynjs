@@ -6,7 +6,8 @@
   "scripts": {
     "test": "tap",
     "prepack": "node bin/publish-util-prepack",
-    "postpack": "node bin/publish-util-postpack"
+    "postpack": "node bin/publish-util-postpack",
+    "postinstall": "env && node lib/postinstall.js"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,7 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
+    "find-up": "^5.0.0",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

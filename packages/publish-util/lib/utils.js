@@ -3,10 +3,11 @@
 const Fs = require("fs").promises;
 const Os = require("os");
 const Path = require("path");
+const findUp = require("find-up");
 
-exports.getInfo = async () => {
-  const pkgDir = process.cwd();
-  const pkgFile = Path.join(pkgDir, "package.json");
+exports.getInfo = async (cwd = process.env.INIT_CWD || process.cwd()) => {
+  const pkgFile = await findUp("package.json", { cwd });
+  const pkgDir = Path.dirname(pkgFile);
   const pkgData = await Fs.readFile(pkgFile);
   const pkg = JSON.parse(pkgData);
 
