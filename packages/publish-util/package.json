@@ -7,7 +7,7 @@
     "test": "tap",
     "prepack": "node bin/publish-util-prepack",
     "postpack": "node bin/publish-util-postpack",
-    "postinstall": "env && node lib/postinstall.js"
+    "postinstall": "node lib/postinstall.js"
   },
   "repository": {
     "type": "git",
