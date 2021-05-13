@@ -50,21 +50,31 @@ Your `package.json` published:
     "postpack": "publish-util-postpack"
   },
   "dependencies": {
-    "react": "*",
-    "react-dom": "*"
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0"
   },
   "options": {}
 }
 ```
 
+## Usage
+
+Just install this to your module:
+
+`npm install --save-dev publish-util`
+
+It will automatically add `prepack` and `postpack` scripts to your package.json for you.
+
+Out of the box it will clean up non-standard fields plus `workspaces` and `devDependencies` from your `package.json`. To keep `devDependencies`, see [details below](#removing-non-standard-fields)
+
 ## `publishUtil` configs:
 
-| Config            | Description                                                  |
-| ----------------- | ------------------------------------------------------------ |
-| `remove`          | array of keys and nesting keys to remove from `package.json` |
-| `keep`            | array of keys and nesting keys to keep from `package.json`.  |
-| `removeExtraKeys` | remove top level non-standard fields. Default: `true`        |
-| `autoPostPack`    | insert `scripts.postpack` if it's missing. Default: `true`   |
+| Config            | Description                                                  | Default |
+| ----------------- | ------------------------------------------------------------ | ------- |
+| `remove`          | array of keys and nesting keys to remove from `package.json` |         |
+| `keep`            | array of keys and nesting keys to keep from `package.json`.  |         |
+| `removeExtraKeys` | remove top level non-standard fields.                        | `true`  |
+| `autoPostPack`    | insert `scripts.postpack` if it's missing.                   | `true`  |
 
 - `publishUtil` is removed automatically.
 - `scripts.prepack` is removed automatically. Add it to `publishUtil.keep` to keep it:
@@ -97,7 +107,7 @@ For example, to reach `pkg.key1.key2`, and `pkg.key1.xyz*`:
 ]
 ```
 
-## Extra fields
+## Removing Non-standard Fields
 
 These top level fields are considered standard fields:
 
