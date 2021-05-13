@@ -69,6 +69,8 @@ Out of the box it will clean up non-standard fields plus `workspaces` and `devDe
 
 ## `publishUtil` configs:
 
+You can configure some behaviors with `publishUtil` in your `package.json`.
+
 | Config            | Description                                                  | Default |
 | ----------------- | ------------------------------------------------------------ | ------- |
 | `remove`          | array of keys and nesting keys to remove from `package.json` |         |
