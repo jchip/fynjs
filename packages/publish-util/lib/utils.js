@@ -41,7 +41,7 @@ function deleteFields(f, obj) {
 
     if (parts.length === 3) {
       const regex = new RegExp(parts[1], parts[2]);
-      Object.keys(from).forEach(fk => {
+      Object.keys(obj).forEach(fk => {
         if (fk.match(regex)) {
           delete obj[fk];
         }

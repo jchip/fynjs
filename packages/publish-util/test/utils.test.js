@@ -1,5 +1,5 @@
 const Tap = require("tap");
-const { extractFromObj } = require("../lib/utils");
+const { extractFromObj, removeFromObj } = require("../lib/utils");
 
 Tap.test("extractFromObj should extract all types", test => {
   const sym1 = Symbol("abcdefg");
@@ -62,3 +62,21 @@ Tap.test("extractFromObj should extract all types", test => {
 
   test.end();
 });
+
+Tap.test(
+  "removeFromObj should remove specs that are string and object",
+  test => {
+    const testObj = {
+      hello: {
+        foo: 1,
+        bar: 2
+      },
+      test1: 10,
+      test2: 11
+    };
+
+    removeFromObj(testObj, ["test1", { hello: ["/.*/"] }]);
+    Tap.same(testObj, { hello: {}, test2: 11 });
+    test.end();
+  }
+);
