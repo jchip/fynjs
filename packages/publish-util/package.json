@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "tap",
-    "prepack": "node bin/publish-util-prepack",
+    "prepublishOnly": "node bin/publish-util-prepublishonly",
     "postpack": "node bin/publish-util-postpack",
     "postinstall": "node lib/postinstall.js"
   },
@@ -14,6 +14,7 @@
     "url": "https://github.com/jchip/publish-util.git"
   },
   "bin": {
+    "publish-util-prepublishonly": "bin/publish-util-prepublishonly.js",
     "publish-util-prepack": "bin/publish-util-prepack.js",
     "publish-util-postpack": "bin/publish-util-postpack.js"
   },
@@ -48,6 +49,7 @@
       "lcov",
       "text",
       "text-summary"
-    ]
+    ],
+    "sourceMap": false
   }
 }

@@ -1,5 +1,6 @@
 "use strict";
 
+const Path = require("path");
 const Fs = require("fs").promises;
 const {
   getInfo,
@@ -12,8 +13,10 @@ const _ = require("lodash");
 exports.prePack = async function prePack() {
   const { pkg, pkgData, saveFile, pkgFile } = await getInfo();
 
+  const myName = Path.basename(process.argv[1]) || "publish-util-prepack";
+
   try {
-    console.log("publish-util-prepack saveFile", saveFile, "pkgFile", pkgFile);
+    console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
     await Fs.writeFile(saveFile, pkgData);
 
     const config = pkg.publishUtil || {};
@@ -48,6 +51,12 @@ exports.prePack = async function prePack() {
     }
 
     delete pkg.scripts.prepack;
+    if (
+      pkg.scripts.prepublishOnly === "publish-util-prepublishonly" ||
+      pkg.scripts.prepublishOnly === "publish-util-prepack"
+    ) {
+      delete pkg.scripts.prepublishOnly;
+    }
 
     if (keepObj) {
       _.merge(pkg, keepObj);
@@ -55,7 +64,9 @@ exports.prePack = async function prePack() {
 
     await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
   } catch (err) {
-    console.error(`publish-util-prepack failed`, err);
+    console.error(`${myName} failed`, err);
     process.exit(1);
   }
 };
+//# fynSourceMap
+//# sourceMappingURL=prepack.js.fyn.map

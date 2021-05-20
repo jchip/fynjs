@@ -17,16 +17,22 @@ async function postInstall() {
   const { pkg, pkgFile } = await getInfo(cwd);
 
   const addScript = name => {
-    if (!_.get(pkg, `scripts.${name}`)) {
+    const script = `publish-util-${name.toLowerCase()}`;
+    const exist = _.get(pkg, `scripts.${name}`);
+    if (!exist) {
       console.log(
-        `adding ${name} script to your package.json for publish-util-${name}`
+        `adding ${name} script to your package.json with '${script}'`
       );
-      _.set(pkg, `scripts.${name}`, `publish-util-${name}`);
+      _.set(pkg, `scripts.${name}`, script);
+    } else if (!exist.includes(script)) {
+      console.warn(
+        `You already have npm script '${name}' in your package.json, please add '${script}' to it.`
+      );
     }
   };
 
   try {
-    addScript("prepack");
+    addScript("prepublishOnly");
     addScript("postpack");
     await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
   } catch (err) {
@@ -35,3 +41,5 @@ async function postInstall() {
 }
 
 postInstall();
+//# fynSourceMap
+//# sourceMappingURL=postinstall.js.fyn.map

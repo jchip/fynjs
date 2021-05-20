@@ -13,14 +13,14 @@ Your `package.json`:
     "test": "...",
     "coverage": "...",
     "build": "...",
-    "prepublishOnly": "...",
-    "prepack": "publish-util-prepack",
+    "prepublishOnly": "publish-util-prepublishonly",
+    "prepack": "npm run build",
     "postpack": "publish-util-postpack"
   },
   "publishUtil": {
     "remove": [
       "devDependencies",
-      { "scripts": ["test", "coverage", "build", "prepublishOnly"] }
+      { "scripts": ["test", "coverage", "build", "prepack"] }
     ],
     "keep": ["options"]
   },
@@ -63,7 +63,7 @@ Just install this to your module:
 
 `npm install --save-dev publish-util`
 
-It will automatically add `prepack` and `postpack` scripts to your package.json for you.
+It will automatically add `prepublishOnly` and `postpack` scripts to your package.json for you.
 
 Out of the box it will clean up non-standard fields plus `workspaces` and `devDependencies` from your `package.json`. To keep `devDependencies`, see [details below](#removing-non-standard-fields)
 
@@ -79,17 +79,19 @@ You can configure some behaviors with `publishUtil` in your `package.json`.
 | `autoPostPack`    | insert `scripts.postpack` if it's missing.                   | `true`  |
 
 - `publishUtil` is removed automatically.
-- `scripts.prepack` is removed automatically. Add it to `publishUtil.keep` to keep it:
+- `scripts.prepublishOnly` is removed automatically if it's just `"publish-util-prepublishonly"`. Add it to `publishUtil.keep` to keep it:
 
 ```json
 {
   "publishUtil": {
-    "keep": [{ "scripts": ["prepack"] }]
+    "keep": [{ "scripts": ["prepublishOnly"] }]
   }
 }
 ```
 
 - Can't remove `scripts.postpack` because npm needs that to restore `package.json`.
+
+- Can't use `prepack` because `npm publish` uploads meta data before that so if you want to publish with different `dependencies` it will break.
 
 ### `remove` and `keep` formats
 
@@ -141,7 +143,7 @@ If you don't have a `scripts.postpack`, then it's automatically added with `"pub
 
 To verify `package.json` content.
 
-1. Run `npm run prepack`
+1. Run `npm run prepublishOnly`
 2. Inspect `package.json` to ensure everything is in order
 3. Run `npm run postpack` to restore `package.json`
 4. Inspect `package.json` again
