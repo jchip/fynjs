@@ -6,6 +6,7 @@
   "scripts": {
     "test": "tap",
     "prepublishOnly": "node bin/publish-util-prepublishonly",
+    "prepack": "echo prepack script",
     "postpack": "node bin/publish-util-postpack",
     "postinstall": "node lib/postinstall.js"
   },
