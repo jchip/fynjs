@@ -13,14 +13,13 @@ Your `package.json`:
     "test": "...",
     "coverage": "...",
     "build": "...",
-    "prepublishOnly": "publish-util-prepublishonly",
-    "prepack": "npm run build",
+    "prepublishOnly": "npm run build && publish-util-prepublishonly",
     "postpack": "publish-util-postpack"
   },
   "publishUtil": {
     "remove": [
       "devDependencies",
-      { "scripts": ["test", "coverage", "build", "prepack"] }
+      { "scripts": ["test", "coverage", "build"] }
     ],
     "keep": ["options"]
   },
@@ -138,6 +137,31 @@ For example, to keep `devDependencies`:
 If you don't have a `scripts.postpack`, then it's automatically added with `"publish-util-postpack"` to ensure your package.json is restored after packing.
 
 - Set `publishUtil.autoPostPack` to `false` to skip this.
+
+## Quirks
+
+- During `npm publish` there are other scripts that run after `prepublishOnly`. If these scripts depend on the full `package.json`, such as tools like `nyc` that put their config in `package.json` then these must go in `prepublishOnly` first.
+
+For example:
+
+```json
+{
+  "scripts": {
+    "prepublishOnly": "nyc mocha && publish-util-prepublishonly"
+  }
+}
+```
+
+The following will not work if there are `nyc` config in `package.json`:
+
+```json
+{
+  "scripts": {
+    "prepublishOnly": "publish-util-prepublishonly",
+    "prepack": "nyc mocha"
+  }
+}
+```
 
 ## Dry Run and Verify
 
