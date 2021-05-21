@@ -50,7 +50,6 @@ exports.prePack = async function prePack() {
       _.set(pkg, "scripts.postpack", "publish-util-postpack");
     }
 
-    delete pkg.scripts.prepack;
     if (
       pkg.scripts.prepublishOnly === "publish-util-prepublishonly" ||
       pkg.scripts.prepublishOnly === "publish-util-prepack"
