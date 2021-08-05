@@ -135,7 +135,9 @@ exports.keepStandardFields = [
   //   "workspaces"
 
   // extras
-  "module"
+  "module",
+  "type", // module type
+  "types" // typescript types
 ];
 //# fynSourceMap
 //# sourceMappingURL=utils.js.fyn.map
