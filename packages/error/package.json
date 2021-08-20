@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "test": "xrun xarc/test-only",
+    "check": "xrun xarc/check",
     "publish-util-pre": "publish-util-prepublishonly",
     "prepublishOnly": "xrun [[build, docs], xarc/check, publish-util-pre]",
     "postpack": "publish-util-postpack",

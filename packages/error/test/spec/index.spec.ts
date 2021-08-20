@@ -65,13 +65,13 @@ describe("AggregateError", function () {
   it("should fail with TypeError", () => {
     return asyncVerify(
       expectError(() => {
-        new AggregateError();
+        return new AggregateError();
       }),
       (err: Error) => {
         expect(err.message).contains(`iterable`);
       },
       expectError(() => {
-        new AggregateError({} as any);
+        return new AggregateError({} as any);
       }),
       (err: Error) => {
         expect(err.message).contains(`iterable`);

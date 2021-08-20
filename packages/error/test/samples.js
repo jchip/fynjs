@@ -1,3 +1,7 @@
+"use strict";
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 const { cleanErrorStack, AggregateError, aggregateErrorStack } = require("..");
 
 console.log(aggregateErrorStack(new AggregateError([new Error("error 1")], "test")));

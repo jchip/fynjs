@@ -87,7 +87,8 @@ export function aggregateStack(stack: string, errors: any[]): string {
  * @param error aggregate error
  * @returns aggregate stack
  */
-export function aggregateErrorStack(error: AggregateError) {
+/* eslint-disable-next-line no-use-before-define */
+export function aggregateErrorStack(error: AggregateError): string {
   return aggregateStack(error.__stack || error.message || String(error), error.errors);
 }
 
