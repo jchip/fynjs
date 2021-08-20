@@ -55,8 +55,17 @@
   },
   "dependencies": {},
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/error"
+  },
   "engines": {
     "node": ">= 10"
   },
