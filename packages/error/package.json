@@ -1,7 +1,7 @@
 {
   "name": "@jchip/error",
   "version": "1.0.0",
-  "description": "utilities for node.js errors",
+  "description": "utilities and polyfill for node.js errors",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -20,7 +20,10 @@
     "stack",
     "utilities",
     "aggregate",
-    "error"
+    "error",
+    "AggregateError",
+    "polyfill",
+    "cleanErrorStack"
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
