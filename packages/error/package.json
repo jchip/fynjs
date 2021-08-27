@@ -8,7 +8,7 @@
     "test": "xrun xarc/test-only",
     "check": "xrun xarc/check",
     "publish-util-pre": "publish-util-prepublishonly",
-    "prepublishOnly": "xrun [[build, docs], xarc/check, publish-util-pre]",
+    "prepublishOnly": "xrun --serial [[build, docs], xarc/check, publish-util-pre]",
     "postpack": "publish-util-postpack",
     "docs": "xrun xarc/docs",
     "coverage": "xrun xarc/test-cov"
