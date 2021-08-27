@@ -1,6 +1,6 @@
 {
   "name": "@jchip/error",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "utilities and polyfill for node.js errors",
   "main": "dist/index.js",
   "scripts": {
