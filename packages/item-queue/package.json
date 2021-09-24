@@ -95,7 +95,9 @@
   },
   "files": [
     "dist",
-    "lib"
+    "lib",
+    "src",
+    "index.d.ts"
   ],
   "mocha": {
     "require": [
