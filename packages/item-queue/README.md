@@ -2,12 +2,14 @@
 
 An item processing queue using Promise.
 
+[**API Reference**](https://jchip.github.io/item-queue/index.html)
+
 # Features
 
-* incrementally add items
-* concurrent processing
-* pause and resume processing
-* automatic watch timer for long pending items
+- incrementally add items
+- concurrent processing
+- pause and resume processing
+- automatic watch timer for long pending items
 
 # Demo
 
