@@ -1,22 +1,22 @@
 "use strict";
 
-const ItemQueue = require("../../lib/item-queue");
+const ItemQueue = require("../..");
 const Promise = require("bluebird");
 
-describe("item-queue", function() {
+describe("item-queue", function () {
   const testConcurrency = (done, concurrency, expected) => {
     let save = [];
     const process = () => {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         save.push(resolve);
       });
     };
     const pq = new ItemQueue({
       concurrency,
-      processItem: x => process(x),
+      processItem: (x) => process(x),
       handlers: {
-        done: () => done()
-      }
+        done: () => done(),
+      },
     });
     for (let x = 0; x <= expected; x++) {
       pq.addItem(x, true);
@@ -35,11 +35,11 @@ describe("item-queue", function() {
     }, 10);
   };
 
-  it("should handle optional conncurrency", done => testConcurrency(done, 3, 3));
+  it("should handle optional conncurrency", (done) => testConcurrency(done, 3, 3));
 
-  it("should handle default conncurrency", done => testConcurrency(done, undefined, 15));
+  it("should handle default conncurrency", (done) => testConcurrency(done, undefined, 15));
 
-  it("should handle fail item", done => {
+  it("should handle fail item", (done) => {
     let n = 0;
     const process = () => {
       return new Promise((resolve, reject) => {
@@ -54,10 +54,10 @@ describe("item-queue", function() {
     let failed;
     const pq = new ItemQueue({
       concurrency: 5,
-      processItem: x => process(x),
+      processItem: (x) => process(x),
       handlers: {
-        failItem: data => (failed = data.error)
-      }
+        failItem: (data) => (failed = data.error),
+      },
     });
     for (let x = 0; x < 15; x++) {
       pq.addItem(x);
@@ -66,10 +66,10 @@ describe("item-queue", function() {
       expect(failed).to.be.ok;
       done();
     });
-    pq.on("failItem", data => (failed = data.error));
+    pq.on("failItem", (data) => (failed = data.error));
   });
 
-  it("should stop on error", done => {
+  it("should stop on error", (done) => {
     let n = 0;
     const process = () => {
       return new Promise((resolve, reject) => {
@@ -84,7 +84,7 @@ describe("item-queue", function() {
     const pq = new ItemQueue({
       concurrency: 5,
       stopOnError: true,
-      processItem: x => process(x)
+      processItem: (x) => process(x),
     });
     for (let x = 0; x < 15; x++) {
       pq.addItem(x);
@@ -97,14 +97,14 @@ describe("item-queue", function() {
       expect(failed).to.be.ok;
       done();
     });
-    pq.on("failItem", data => (failed = data.error));
+    pq.on("failItem", (data) => (failed = data.error));
   });
 
-  it("should emit doneItem event", done => {
+  it("should emit doneItem event", (done) => {
     const process = () => Promise.resolve();
     const pq = new ItemQueue({
       concurrency: 5,
-      processItem: x => process(x)
+      processItem: (x) => process(x),
     });
     let n = 0;
     pq.on("doneItem", () => {
@@ -119,12 +119,12 @@ describe("item-queue", function() {
     }
   });
 
-  it("should take initial item Q", done => {
+  it("should take initial item Q", (done) => {
     let sum = 0;
     const items = [1, 2, 3, 4, 5];
     const pq = new ItemQueue({
       concurrency: 2,
-      processItem: x => Promise.resolve((sum += x))
+      processItem: (x) => Promise.resolve((sum += x)),
     });
     pq.on("done", () => {
       expect(sum).to.equal(15);
@@ -139,7 +139,7 @@ describe("item-queue", function() {
   });
 
   it("should not wait if Q is empty", () => {
-    return new ItemQueue({ processItem: () => undefined }).wait().then(x => {
+    return new ItemQueue({ processItem: () => undefined }).wait().then((x) => {
       expect(x).to.equal(undefined);
     });
   });
@@ -150,11 +150,11 @@ describe("item-queue", function() {
       stopOnError: true,
       processItem: () => {
         throw new Error("test");
-      }
+      },
     })
       .setItemQ([1])
       .wait()
-      .catch(err => (error = err))
+      .catch((err) => (error = err))
       .then(() => {
         expect(error).to.exist;
       });
@@ -166,16 +166,16 @@ describe("item-queue", function() {
       stopOnError: true,
       processItem: () => {
         throw new Error("test");
-      }
+      },
     }).setItemQ([1, 2, 3]);
     return q
       .wait()
-      .catch(err => (error = err))
+      .catch((err) => (error = err))
       .then(() => {
         expect(error).to.exist;
         return q.wait();
       })
-      .catch(err => (error = err))
+      .catch((err) => (error = err))
       .then(() => {
         expect(error).to.exist;
       });
@@ -186,7 +186,7 @@ describe("item-queue", function() {
     const items = [1, 2, 3, 4, 5];
     const pq = new ItemQueue({
       concurrency: 2,
-      processItem: x => Promise.resolve((sum += x))
+      processItem: (x) => Promise.resolve((sum += x)),
     });
     pq.on("done", () => {
       expect(sum).to.equal(30);
@@ -197,10 +197,25 @@ describe("item-queue", function() {
     return pq.wait();
   });
 
-  it("should emit done after start even if Q is empty", done => {
+  it("should add itemQ from options as an array", () => {
+    let sum = 0;
+    const items = [1, 2, 3, 4, 5];
+    const pq = new ItemQueue({
+      itemQ: items,
+      concurrency: 2,
+      processItem: (x) => Promise.resolve((sum += x)),
+    });
+    pq.on("done", () => {
+      expect(sum).to.equal(30);
+    });
+    pq.addItems(items);
+    return pq.wait();
+  });
+
+  it("should emit done after start even if Q is empty", (done) => {
     const pq = new ItemQueue({
       concurrency: 2,
-      processItem: () => undefined
+      processItem: () => undefined,
     });
     pq.on("done", () => done());
     pq.start();
@@ -210,7 +225,7 @@ describe("item-queue", function() {
     let sum = 0;
     const pq = new ItemQueue({
       concurrency: 2,
-      processItem: x => (sum += x)
+      processItem: (x) => (sum += x),
     });
     const items = [1, 2, 3, 4, 5, ItemQueue.pauseItem, 1, 2, 3, 4, 5];
     let paused;
@@ -230,7 +245,7 @@ describe("item-queue", function() {
     let sum = 0;
     const pq = new ItemQueue({
       concurrency: 2,
-      processItem: x => (sum += x)
+      processItem: (x) => (sum += x),
     });
     const items = [1, 2, 3, 4, 5];
     let paused;
@@ -250,7 +265,7 @@ describe("item-queue", function() {
 
   it("should not process if Q is empty", () => {
     const pq = new ItemQueue({
-      processItem: () => undefined
+      processItem: () => undefined,
     });
     expect(pq._process()).to.equal(0);
   });
@@ -259,14 +274,14 @@ describe("item-queue", function() {
     const watches = [];
     const pq = new ItemQueue({
       concurrency: 2,
-      processItem: x => Promise.delay(x),
+      processItem: (x) => Promise.delay(x),
       watchPeriod: 10,
       watchTime: 50,
       handlers: {
-        watch: x => {
+        watch: (x) => {
           watches.push(x);
-        }
-      }
+        },
+      },
     });
 
     return pq

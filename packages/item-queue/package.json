@@ -2,9 +2,16 @@
   "name": "item-queue",
   "version": "1.0.4",
   "description": "An item processing queue with Promise",
-  "main": "lib/item-queue.js",
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
-    "test": "clap check"
+    "build": "tsc",
+    "test": "xrun --serial build xarc/test-only",
+    "publish-util-pre": "publish-util-prepublishonly",
+    "prepublishOnly": "xrun --serial [[build, docs], xarc/check, publish-util-pre]",
+    "docs": "xrun xarc/docs",
+    "coverage": "xrun --serial build xarc/test-cov",
+    "postpack": "publish-util-postpack"
   },
   "repository": {
     "type": "git",
@@ -24,10 +31,29 @@
   ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
-  "dependencies": {},
+  "dependencies": {
+    "tslib": "^2.1.0"
+  },
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.16",
+    "@types/sinon": "^9.0.10",
+    "@types/sinon-chai": "^3.2.5",
+    "@xarc/module-dev": "^4.1.0",
     "bluebird": "^3.5.1",
-    "electrode-archetype-njs-module-dev": "^3.0.0",
+    "chai": "^4.3.4",
+    "mocha": "^9.1.0",
+    "nyc": "^15.1.0",
+    "prettier": "^2.3.2",
+    "publish-util": "^1.1.6",
+    "sinon": "^9.2.2",
+    "sinon-chai": "^3.5.0",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^10.2.1",
+    "typedoc": "^0.21.6",
+    "typescript": "^4.3.5",
     "visual-logger": "^0.1.6"
   },
   "nyc": {
@@ -38,18 +64,53 @@
       "text-summary"
     ],
     "exclude": [
-      "coverage",
       "*clap.js",
+      "*clap.ts",
+      ".eslintrc.js",
+      "coverage",
+      "src",
+      "dist/**/*.ts",
+      "docs",
       "gulpfile.js",
-      "dist",
+      "samples",
       "test",
-      "samples"
+      "xrun*.js",
+      "xrun*.ts",
+      "index.js",
+      "index.d.ts"
     ],
     "check-coverage": true,
     "statements": 100,
     "branches": 100,
     "functions": 100,
     "lines": 100,
-    "cache": true
+    "cache": true,
+    "extends": [
+      "@istanbuljs/nyc-config-typescript"
+    ],
+    "exclude-after-remap": false
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "mocha": {
+    "require": [
+      "ts-node/register",
+      "source-map-support/register",
+      "@xarc/module-dev/config/test/setup.js"
+    ],
+    "recursive": true
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "@xarc/module-dev": {
+    "features": [
+      "mocha",
+      "prettier",
+      "typedoc",
+      "typescript"
+    ]
   }
 }

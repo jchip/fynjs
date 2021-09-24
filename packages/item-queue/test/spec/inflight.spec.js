@@ -2,7 +2,7 @@
 
 const Inflight = require("../../lib/inflight");
 
-describe("inflight", function() {
+describe("inflight", function () {
   it("should add item with start and check time from NOW", () => {
     const now = Date.now();
     const ifl = new Inflight();
@@ -16,7 +16,7 @@ describe("inflight", function() {
     expect(ifl.getCheckTime("foo")).to.equal(undefined);
   });
 
-  it("should handle start and elapse time", done => {
+  it("should handle start and elapse time", (done) => {
     const ifl = new Inflight();
 
     expect(ifl.elapseTime()).to.equal(-1);
@@ -55,7 +55,7 @@ describe("inflight", function() {
     expect(ifl.isEmpty).to.equal(true);
   });
 
-  it("should handle last check time", done => {
+  it("should handle last check time", (done) => {
     const ifl = new Inflight();
     ifl.add("test", "hello");
     setTimeout(() => {
