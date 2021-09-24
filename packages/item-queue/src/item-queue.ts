@@ -46,7 +46,7 @@ export type ItemQueueHandlers<ItemT = unknown> = {
  * @param item item to process
  * @param id id number item queue uses to track this item
  */
-export type ProcessCb<ItemT> = (item: ItemT, id?: number) => Promise<unknown> | undefined;
+export type ProcessCb<ItemT> = (item: ItemT, id?: number) => Promise<unknown> | void;
 
 /**
  * Item queue options
@@ -193,7 +193,7 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
    * @param stopOnError - stop if error occurred for this item
    * @returns instance self
    */
-  addItem(item: ItemT, noStart: boolean, stopOnError?: boolean) {
+  addItem(item: ItemT, noStart?: boolean, stopOnError?: boolean) {
     this._empty = false;
     this._itemQ.push(this._wrap(item, stopOnError));
     if (!noStart) this.deferProcess();
@@ -430,9 +430,11 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
         promise = this.Promise.resolve({});
       } else {
         try {
-          promise = this._processItem(wrapped.item, id);
-          if (!promise || !promise.then) {
-            promise = this.Promise.resolve(promise);
+          const res: unknown = this._processItem(wrapped.item, id);
+          if (res && (res as Promise<unknown>).then) {
+            promise = res as Promise<unknown>;
+          } else {
+            promise = this.Promise.resolve(res);
           }
         } catch (err) {
           promise = this.Promise.reject(err);
