@@ -84,6 +84,8 @@
 								<li class="tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter"><a href="item_queue.html#ItemQueueOptions" class="tsd-kind-icon">Item<wbr>Queue<wbr>Options</a></li>
 								<li class="tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter"><a href="item_queue.html#ItemQueueResult" class="tsd-kind-icon">Item<wbr>Queue<wbr>Result</a></li>
 								<li class="tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter"><a href="item_queue.html#ProcessCb" class="tsd-kind-icon">Process<wbr>Cb</a></li>
+								<li class="tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter"><a href="item_queue.html#WatchData" class="tsd-kind-icon">Watch<wbr>Data</a></li>
+								<li class="tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter"><a href="item_queue.html#WatchItemInfo" class="tsd-kind-icon">Watch<wbr>Item<wbr>Info</a></li>
 							</ul>
 						</section>
 					</div>
@@ -97,7 +99,7 @@
 					<div class="tsd-signature tsd-kind-icon">Item<wbr>Queue<wbr>Data&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>_control<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol">; </span>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">; </span>promise<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>stopOnError<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L15">src/item-queue.ts:15</a></li>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L15">src/item-queue.ts:15</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -135,7 +137,7 @@
 					<div class="tsd-signature tsd-kind-icon">Item<wbr>Queue<wbr>Handler&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><a href="item_queue.html#ItemQueueResult" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueResult</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L32">src/item-queue.ts:32</a></li>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L71">src/item-queue.ts:71</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -174,15 +176,19 @@
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
 					<a name="ItemQueueHandlers" class="tsd-anchor"></a>
 					<h3>Item<wbr>Queue<wbr>Handlers</h3>
-					<div class="tsd-signature tsd-kind-icon">Item<wbr>Queue<wbr>Handlers&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>doneItem<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>fail<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>failItem<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>done<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>pause<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span></div>
+					<div class="tsd-signature tsd-kind-icon">Item<wbr>Queue<wbr>Handlers&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>doneItem<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>fail<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>failItem<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>done<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>empty<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>pause<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>watch<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L35">src/item-queue.ts:35</a></li>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L78">src/item-queue.ts:78</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
 							<p>handlers for the events item queue emits</p>
+							<ul>
+								<li>You can pass these to the queue in <code>options.handlers</code></li>
+								<li>or you can handle each one as an event with <code>queue.on</code></li>
+							</ul>
 						</div>
 					</div>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -196,12 +202,27 @@
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> done<wbr>Item<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>an item was processed</p>
+									</div>
+								</div>
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> fail<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>queue failed</p>
+									</div>
+								</div>
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> fail<wbr>Item<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandler" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandler</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>an item processing failed</p>
+									</div>
+								</div>
 							</li>
 							<li class="tsd-parameter">
 								<h5>done<span class="tsd-signature-symbol">: </span>function</h5>
@@ -212,9 +233,17 @@
 									<li class="tsd-description">
 										<aside class="tsd-sources">
 											<ul>
-												<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L40">src/item-queue.ts:40</a></li>
+												<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L83">src/item-queue.ts:83</a></li>
 											</ul>
 										</aside>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>queue finished</p>
+												<ul>
+													<li>queue will emit an <code>empty</code> before this</li>
+												</ul>
+											</div>
+										</div>
 										<h4 class="tsd-parameters-title">Parameters</h4>
 										<ul class="tsd-parameters">
 											<li>
@@ -237,6 +266,27 @@
 								</ul>
 							</li>
 							<li class="tsd-parameter">
+								<h5>empty<span class="tsd-signature-symbol">: </span>function</h5>
+								<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
+									<li class="tsd-signature tsd-kind-icon">empty<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<aside class="tsd-sources">
+											<ul>
+												<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L93">src/item-queue.ts:93</a></li>
+											</ul>
+										</aside>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>queue is empty</p>
+											</div>
+										</div>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+							<li class="tsd-parameter">
 								<h5>pause<span class="tsd-signature-symbol">: </span>function</h5>
 								<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
 									<li class="tsd-signature tsd-kind-icon">pause<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
@@ -245,9 +295,46 @@
 									<li class="tsd-description">
 										<aside class="tsd-sources">
 											<ul>
-												<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L39">src/item-queue.ts:39</a></li>
+												<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L91">src/item-queue.ts:91</a></li>
 											</ul>
 										</aside>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>queue is paused</p>
+											</div>
+										</div>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+							<li class="tsd-parameter">
+								<h5>watch<span class="tsd-signature-symbol">: </span>function</h5>
+								<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-type-literal">
+									<li class="tsd-signature tsd-kind-icon">watch<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><a href="item_queue.html#WatchData" class="tsd-signature-type" data-tsd-kind="Type alias">WatchData</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<aside class="tsd-sources">
+											<ul>
+												<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L101">src/item-queue.ts:101</a></li>
+											</ul>
+										</aside>
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>progress watcher that watch for items taking longer than <code>options.watchTime</code>
+												to process.</p>
+											</div>
+											<ul>
+												<li>If the queue emitted a watch event, and then all items resolved, it will emit
+												the event one last time with empty items.</li>
+											</ul>
+										</div>
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5>data: <a href="item_queue.html#WatchData" class="tsd-signature-type" data-tsd-kind="Type alias">WatchData</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span></h5>
+											</li>
+										</ul>
 										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 									</li>
 								</ul>
@@ -261,7 +348,7 @@
 					<div class="tsd-signature tsd-kind-icon">Item<wbr>Queue<wbr>Options&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>Promise<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">PromiseConstructor</span><span class="tsd-signature-symbol">; </span>concurrency<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>handlers<span class="tsd-signature-symbol">?: </span><a href="item_queue.html#ItemQueueHandlers" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueHandlers</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>itemQ<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>processItem<span class="tsd-signature-symbol">: </span><a href="item_queue.html#ProcessCb" class="tsd-signature-type" data-tsd-kind="Type alias">ProcessCb</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>stopOnError<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span>timeout<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>watchPeriod<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>watchTime<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L54">src/item-queue.ts:54</a></li>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L115">src/item-queue.ts:115</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -331,9 +418,23 @@
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> watch<wbr>Period<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>frequency the progress watcher should check for overdue items</p>
+									</div>
+								</div>
 							</li>
 							<li class="tsd-parameter">
 								<h5><span class="tsd-flag ts-flagOptional">Optional</span> watch<wbr>Time<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>The time an item has to take before reporting it to the progress watcher</p>
+										<ul>
+											<li>If an item is already overdue but has not trigger the <code>watchTime</code> again yet, then
+											it&#39;s report as part of the <code>still</code> items in the WatchData.</li>
+										</ul>
+									</div>
+								</div>
 							</li>
 						</ul>
 					</div>
@@ -344,7 +445,7 @@
 					<div class="tsd-signature tsd-kind-icon">Item<wbr>Queue<wbr>Result&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <a href="item_queue.html#ItemQueueData" class="tsd-signature-type" data-tsd-kind="Type alias">ItemQueueData</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> &amp; </span><span class="tsd-signature-symbol">{ </span>error<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">; </span>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>res<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L25">src/item-queue.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L64">src/item-queue.ts:64</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -362,10 +463,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
 					<a name="ProcessCb" class="tsd-anchor"></a>
 					<h3>Process<wbr>Cb</h3>
-					<div class="tsd-signature tsd-kind-icon">Process<wbr>Cb&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span>, id<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></div>
+					<div class="tsd-signature tsd-kind-icon">Process<wbr>Cb&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span>, id<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/196e3c2f/src/item-queue.ts#L49">src/item-queue.ts:49</a></li>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L110">src/item-queue.ts:110</a></li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -379,7 +480,7 @@
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter-signature">
 								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span>, id<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></li>
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span>, id<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 								</ul>
 								<ul class="tsd-descriptions">
 									<li class="tsd-description">
@@ -407,9 +508,126 @@
 												</div>
 											</li>
 										</ul>
-										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></h4>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></h4>
 									</li>
 								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+					<a name="WatchData" class="tsd-anchor"></a>
+					<h3>Watch<wbr>Data</h3>
+					<div class="tsd-signature tsd-kind-icon">Watch<wbr>Data&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>still<span class="tsd-signature-symbol">: </span><a href="item_queue.html#WatchItemInfo" class="tsd-signature-type" data-tsd-kind="Type alias">WatchItemInfo</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>total<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>watchTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>watched<span class="tsd-signature-symbol">: </span><a href="item_queue.html#WatchItemInfo" class="tsd-signature-type" data-tsd-kind="Type alias">WatchItemInfo</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L46">src/item-queue.ts:46</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Data for the progress watch event of overdue items that took longer than <code>options.watchTime</code></p>
+						</div>
+						<p>The overdue items are reported in two fields: <code>watched</code> and <code>still</code>. Typically <code>watched</code> would
+							contain the items that are newly become overdue or again. If you are not interested in the difference,
+						then just combine them with <code>[].concat(watched, still)</code>.</p>
+						<ul>
+							<li><code>watched</code> are items that pass <code>options.watchTime</code> for the first time or again since they were
+							last checked.</li>
+							<li><code>still</code> are items already overdue by <code>options.watchTime</code> but have not again taken more time than
+							<code>options.watchTime</code> yet.</li>
+						</ul>
+					</div>
+					<h4 class="tsd-type-parameters-title">Type parameters</h4>
+					<ul class="tsd-type-parameters">
+						<li>
+							<h4>ItemT = <span class="tsd-signature-type">unknown</span></h4>
+						</li>
+					</ul>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>still<span class="tsd-signature-symbol">: </span><a href="item_queue.html#WatchItemInfo" class="tsd-signature-type" data-tsd-kind="Type alias">WatchItemInfo</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Items that are already overdue but have not again taken more time than <code>options.watchTime</code> yet</p>
+									</div>
+								</div>
+							</li>
+							<li class="tsd-parameter">
+								<h5>total<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>total number of items triggered in <code>watched</code> and <code>still</code> combined</p>
+									</div>
+								</div>
+							</li>
+							<li class="tsd-parameter">
+								<h5>watch<wbr>Time<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>time an item has to take before it&#39;s reported</p>
+									</div>
+								</div>
+							</li>
+							<li class="tsd-parameter">
+								<h5>watched<span class="tsd-signature-symbol">: </span><a href="item_queue.html#WatchItemInfo" class="tsd-signature-type" data-tsd-kind="Type alias">WatchItemInfo</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Items that took over <code>options.watchTime</code> for the first time or again since they were last checked</p>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+					<a name="WatchItemInfo" class="tsd-anchor"></a>
+					<h3>Watch<wbr>Item<wbr>Info</h3>
+					<div class="tsd-signature tsd-kind-icon">Watch<wbr>Item<wbr>Info&lt;ItemT&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span><span class="tsd-signature-symbol">; </span>promise<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>time<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/jchip/item-queue/blob/3f480791/src/item-queue.ts#L25">src/item-queue.ts:25</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Data of each item for the progress watch event</p>
+						</div>
+					</div>
+					<h4 class="tsd-type-parameters-title">Type parameters</h4>
+					<ul class="tsd-type-parameters">
+						<li>
+							<h4>ItemT = <span class="tsd-signature-type">unknown</span></h4>
+						</li>
+					</ul>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>item<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ItemT</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>item that made progress</p>
+									</div>
+								</div>
+							</li>
+							<li class="tsd-parameter">
+								<h5>promise<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>promise waiting for item</p>
+									</div>
+								</div>
+							</li>
+							<li class="tsd-parameter">
+								<h5>time<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>time elapsed since item started processing</p>
+									</div>
+								</div>
 							</li>
 						</ul>
 					</div>
@@ -452,6 +670,12 @@
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
 						<a href="item_queue.html#ProcessCb" class="tsd-kind-icon">Process<wbr>Cb</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="item_queue.html#WatchData" class="tsd-kind-icon">Watch<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="item_queue.html#WatchItemInfo" class="tsd-kind-icon">Watch<wbr>Item<wbr>Info</a>
 					</li>
 				</ul>
 			</nav>

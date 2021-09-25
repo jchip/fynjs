@@ -64,7 +64,7 @@
 				<p>An item processing queue using Promise.</p>
 				<p><a href="https://jchip.github.io/item-queue/index.html"><strong>API Reference</strong></a></p>
 				<a href="#features" id="features" style="color: inherit; text-decoration: none;">
-					<h1>Features</h1>
+					<h2>Features</h2>
 				</a>
 				<ul>
 					<li>incrementally add items</li>
@@ -72,9 +72,37 @@
 					<li>pause and resume processing</li>
 					<li>automatic watch timer for long pending items</li>
 				</ul>
-				<a href="#demo" id="demo" style="color: inherit; text-decoration: none;">
-					<h1>Demo</h1>
+				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+					<h2>Usage</h2>
 				</a>
+				<p>Simple Example:</p>
+				<pre><code class="language-ts"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">ItemQueue</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;item-queue&quot;</span><span style="color: #000000">;</span>
+
+<span style="color: #0000FF">async</span><span style="color: #000000"> </span><span style="color: #0000FF">function</span><span style="color: #000000"> </span><span style="color: #795E26">test</span><span style="color: #000000">() {</span>
+<span style="color: #000000">  </span><span style="color: #0000FF">let</span><span style="color: #000000"> </span><span style="color: #001080">total</span><span style="color: #000000"> = </span><span style="color: #098658">0</span><span style="color: #000000">;</span>
+
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">queue</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">ItemQueue</span><span style="color: #000000">&lt;</span><span style="color: #267F99">number</span><span style="color: #000000">&gt;({</span>
+<span style="color: #000000">    </span><span style="color: #008000">// processItem can be an async or sync function</span>
+<span style="color: #000000">    </span><span style="color: #0000FF">async</span><span style="color: #000000"> </span><span style="color: #795E26">processItem</span><span style="color: #000000">(</span><span style="color: #001080">delay</span><span style="color: #000000">) {</span>
+<span style="color: #000000">      </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #267F99">Promise</span><span style="color: #000000">((</span><span style="color: #001080">resolve</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> </span><span style="color: #795E26">setTimeout</span><span style="color: #000000">(</span><span style="color: #001080">resolve</span><span style="color: #000000">, </span><span style="color: #001080">delay</span><span style="color: #000000">));</span>
+<span style="color: #000000">      </span><span style="color: #001080">total</span><span style="color: #000000"> = </span><span style="color: #001080">total</span><span style="color: #000000"> + </span><span style="color: #001080">delay</span><span style="color: #000000">;</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #001080">itemQ:</span><span style="color: #000000"> [</span><span style="color: #098658">10</span><span style="color: #000000">, </span><span style="color: #098658">20</span><span style="color: #000000">, </span><span style="color: #098658">30</span><span style="color: #000000">, </span><span style="color: #098658">40</span><span style="color: #000000">, </span><span style="color: #098658">50</span><span style="color: #000000">, </span><span style="color: #098658">60</span><span style="color: #000000">, </span><span style="color: #098658">70</span><span style="color: #000000">, </span><span style="color: #098658">80</span><span style="color: #000000">, </span><span style="color: #098658">90</span><span style="color: #000000">],</span>
+<span style="color: #000000">    </span><span style="color: #001080">concurrency:</span><span style="color: #000000"> </span><span style="color: #098658">2</span><span style="color: #000000">,</span>
+<span style="color: #000000">  });</span>
+
+<span style="color: #000000">  </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">waiting</span><span style="color: #000000"> = </span><span style="color: #001080">queue</span><span style="color: #000000">.</span><span style="color: #795E26">start</span><span style="color: #000000">().</span><span style="color: #795E26">wait</span><span style="color: #000000">();</span>
+<span style="color: #000000">  </span><span style="color: #001080">queue</span><span style="color: #000000">.</span><span style="color: #795E26">addItem</span><span style="color: #000000">(</span><span style="color: #098658">75</span><span style="color: #000000">); </span><span style="color: #008000">// add one item while queue in progress</span>
+<span style="color: #000000">  </span><span style="color: #001080">queue</span><span style="color: #000000">.</span><span style="color: #795E26">addItems</span><span style="color: #000000">([</span><span style="color: #098658">55</span><span style="color: #000000">, </span><span style="color: #098658">45</span><span style="color: #000000">, </span><span style="color: #098658">35</span><span style="color: #000000">]); </span><span style="color: #008000">// can add multiple items also</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">waiting</span><span style="color: #000000">;</span>
+
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;result:&quot;</span><span style="color: #000000">, </span><span style="color: #001080">total</span><span style="color: #000000">);</span>
+<span style="color: #000000">}</span>
+</code></pre>
+				<a href="#demo" id="demo" style="color: inherit; text-decoration: none;">
+					<h2>Demo</h2>
+				</a>
+				<p>More Examples:</p>
 				<p>See <a href="./samples/example1.js">sample</a> for a demo usage with <a href="https://www.npmjs.com/package/visual-logger">visual-logger</a>.</p>
 				<p><img src="./samples/example1.gif" alt="item-queue demo"></p>
 			</div>
