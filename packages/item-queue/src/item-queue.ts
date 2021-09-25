@@ -20,6 +20,45 @@ export type ItemQueueData<ItemT = unknown> = {
 };
 
 /**
+ * Data of each item for the progress watch event
+ */
+export type WatchItemInfo<ItemT = unknown> = {
+  /** item that made progress */
+  item: ItemT;
+  /** promise waiting for item */
+  promise: Promise<unknown>;
+  /** time elapsed since item started processing */
+  time: number;
+};
+
+/**
+ * Data for the progress watch event of overdue items that took longer than `options.watchTime`
+ *
+ * The overdue items are reported in two fields: `watched` and `still`. Typically `watched` would
+ * contain the items that are newly become overdue or again. If you are not interested in the difference,
+ * then just combine them with `[].concat(watched, still)`.
+ *
+ * - `watched` are items that pass `options.watchTime` for the first time or again since they were
+ *   last checked.
+ * - `still` are items already overdue by `options.watchTime` but have not again taken more time than
+ *    `options.watchTime` yet.
+ */
+export type WatchData<ItemT = unknown> = {
+  /** total number of items triggered in `watched` and `still` combined */
+  total: number;
+  /** time an item has to take before it's reported */
+  watchTime: number;
+  /**
+   * Items that took over `options.watchTime` for the first time or again since they were last checked
+   */
+  watched: WatchItemInfo<ItemT>[];
+  /**
+   * Items that are already overdue but have not again taken more time than `options.watchTime` yet
+   */
+  still: WatchItemInfo<ItemT>[];
+};
+
+/**
  * result of processed an item
  */
 export type ItemQueueResult<ItemT = unknown> = ItemQueueData<ItemT> & {
@@ -31,13 +70,35 @@ export type ItemQueueResult<ItemT = unknown> = ItemQueueData<ItemT> & {
 /** Event handler */
 export type ItemQueueHandler<ItemT = unknown> = (data: ItemQueueResult<ItemT>) => void;
 
-/** handlers for the events item queue emits */
+/**
+ * handlers for the events item queue emits
+ * - You can pass these to the queue in `options.handlers`
+ * - or you can handle each one as an event with `queue.on`
+ */
 export type ItemQueueHandlers<ItemT = unknown> = {
-  failItem?: ItemQueueHandler<ItemT>;
-  fail?: ItemQueueHandler<ItemT>;
-  doneItem?: ItemQueueHandler<ItemT>;
-  pause?: () => void;
+  /**
+   * queue finished
+   * - queue will emit an `empty` before this
+   */
   done?: (data: { startTime: number; endTime: number; totalTime: number }) => void;
+  /** an item processing failed */
+  failItem?: ItemQueueHandler<ItemT>;
+  /** queue failed */
+  fail?: ItemQueueHandler<ItemT>;
+  /** an item was processed */
+  doneItem?: ItemQueueHandler<ItemT>;
+  /** queue is paused */
+  pause?: () => void;
+  /** queue is empty */
+  empty?: () => void;
+  /**
+   * progress watcher that watch for items taking longer than `options.watchTime`
+   * to process.
+   *
+   * - If the queue emitted a watch event, and then all items resolved, it will emit
+   *   the event one last time with empty items.
+   */
+  watch?: (data: WatchData<ItemT>) => void;
 };
 
 /**
@@ -63,7 +124,13 @@ export type ItemQueueOptions<ItemT = unknown> = {
   /** immediately stop if an error occurred */
   stopOnError?: boolean;
   timeout?: number;
+  /** frequency the progress watcher should check for overdue items */
   watchPeriod?: number;
+  /**
+   * The time an item has to take before reporting it to the progress watcher
+   * - If an item is already overdue but has not trigger the `watchTime` again yet, then
+   *   it's report as part of the `still` items in the WatchData.
+   */
   watchTime?: number;
   /** event handlers */
   handlers?: ItemQueueHandlers<ItemT>;
@@ -369,22 +436,35 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     const now = Date.now();
 
     _.each(this._pending.inflights, (v: InflightRecord<ItemQueueData>, id: RecordKey) => {
-      const lastXTime = this._pending.lastCheckTime(id, now);
-      const time = this._pending.time(id, now);
-      if (lastXTime >= this._watchTime) {
-        watched.push({ item: v.value.item, promise: v.value.promise, time });
-        this._pending.resetCheckTime(id, now);
-      } else if (time >= this._watchTime) {
-        still.push({ item: v.value.item, promise: v.value.promise, time });
+      if (v) {
+        const lastXTime = this._pending.lastCheckTime(id, now);
+        const time = this._pending.time(id, now);
+        const overdue = time >= this._watchTime;
+        const checked = lastXTime >= this._watchTime;
+
+        if (overdue) {
+          const data = { item: v.value.item, promise: v.value.promise, time };
+          if (checked) {
+            watched.push(data);
+            this._pending.resetCheckTime(id, now);
+          } else {
+            still.push(data);
+          }
+        }
       }
     });
 
-    if (still.length > 0 || watched.length > 0) {
+    if (watched.length > 0 || still.length > 0) {
       this._watched = true;
-      this.emit("watch", { total: watched.length + still.length, watched, still });
+      this.emit("watch", {
+        total: watched.length + still.length,
+        watched,
+        still,
+        watchTime: this._watchTime,
+      });
     } else if (this._watched) {
       this._watched = false;
-      this.emit("watch", { total: 0, watched, still });
+      this.emit("watch", { total: 0, watched, still, watchTime: this._watchTime });
     }
 
     this._watchTimer = setTimeout(() => this._pendingWatcher(), this._watchPeriod).unref();

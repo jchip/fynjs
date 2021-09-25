@@ -276,7 +276,7 @@ describe("item-queue", function () {
       concurrency: 2,
       processItem: (x) => Promise.delay(x),
       watchPeriod: 10,
-      watchTime: 50,
+      watchTime: 40,
       handlers: {
         watch: (x) => {
           watches.push(x);
