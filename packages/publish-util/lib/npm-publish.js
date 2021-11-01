@@ -25,6 +25,14 @@ function getArg(opt, msg, valids = []) {
   return [];
 }
 
+async function removeFile(name) {
+  try {
+    if (name) {
+      await Fs.unlink(name);
+    }
+  } catch {}
+}
+
 process.on("SIGINT", () => {});
 
 exports.npmPublish = async function npmPublish() {
@@ -37,7 +45,25 @@ exports.npmPublish = async function npmPublish() {
   let changedPkg = false;
   let exitCode = 0;
 
+  const tgzName = pkg.name.replace(/@/g, "").replace(/\//g, "-");
+  const tgzFile = `${tgzName}-${pkg.version}.tgz`;
+  const fullTgzFile = Path.join(pkgDir, tgzFile);
+
   const saveDir = process.cwd();
+
+  const restore = async () => {
+    try {
+      if (changedPkg) {
+        console.log("Restoring", pkgFile);
+        await Fs.writeFile(pkgFile, pkgData);
+      }
+    } catch {}
+
+    try {
+      process.chdir(saveDir);
+    } catch {}
+  };
+
   try {
     process.env.BY_PUBLISH_UTIL = "1";
     process.chdir(pkgDir);
@@ -67,21 +93,16 @@ exports.npmPublish = async function npmPublish() {
       await execa(`npm`, ["run", "prepublishOnly"], execaOpts);
     }
 
+    await removeFile(fullTgzFile);
+
     await execa(`npm`, [`pack`], execaOpts);
 
     if (scripts.publish) {
       await execa(`npm`, [`run`, `publish`], execaOpts);
     }
 
-    const tgzName = pkg.name.replace(/@/g, "").replace(/\//g, "-");
-    const tgzFile = `${tgzName}-${pkg.version}.tgz`;
-
     if (!dryRun) {
-      const publishArgs = [`publish`].concat(
-        tag,
-        access,
-        Path.join(pkgDir, tgzFile)
-      );
+      const publishArgs = [`publish`].concat(tag, access, fullTgzFile);
       console.log("publishing args:", publishArgs.join(" "));
       await execa(`npm`, publishArgs, execaOpts);
     } else {
@@ -95,11 +116,8 @@ exports.npmPublish = async function npmPublish() {
     }
     exitCode = 1;
   } finally {
-    if (changedPkg) {
-      console.log("Restoring", pkgFile);
-      await Fs.writeFile(pkgFile, pkgData);
-    }
-    process.chdir(saveDir);
+    await restore();
+    await removeFile(fullTgzFile);
     process.exit(exitCode);
   }
 };
