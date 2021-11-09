@@ -74,6 +74,7 @@ You can configure some behaviors with `publishUtil` in your `package.json`.
 | `keep`            | array of keys and nesting keys to keep from `package.json`.             |         |
 | `removeExtraKeys` | remove top level non-standard fields.                                   | `true`  |
 | `autoPostPack`    | insert `scripts.postpack` if it's missing.                              | `true`  |
+| `silent`          | don't log message with console                                          | `false` |
 
 - `publishUtil` is removed automatically.
 

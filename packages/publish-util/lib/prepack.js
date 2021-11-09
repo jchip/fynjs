@@ -27,19 +27,23 @@ function prePackObj(pkg, config = {}) {
       (k) => !keepStandardFields.includes(k)
     );
     if (!_.isEmpty(removed)) {
-      console.log(
-        "removed non-standard fields:",
-        removed.join(", "),
-        "\n  To skip this, set publishUtil.removeExtraKeys to false"
-      );
+      if (!config.silent) {
+        console.log(
+          "removed non-standard fields:",
+          removed.join(", "),
+          "\n  To skip this, set publishUtil.removeExtraKeys to false"
+        );
+      }
       removed.forEach((k) => delete pkg[k]);
     }
   }
 
   if (!_.get(pkg, "scripts.postpack") && config.autoPostPack !== false) {
-    console.log(
-      "scripts.postpack missing, adding it.\n To skip this, set publishUtil.autoPostPack to false"
-    );
+    if (!config.silent) {
+      console.log(
+        "scripts.postpack missing, adding it.\n To skip this, set publishUtil.autoPostPack to false"
+      );
+    }
     _.set(pkg, "scripts.postpack", "publish-util-postpack");
   }
 
@@ -63,10 +67,14 @@ exports.prePack = async function prePack() {
   const myName = Path.basename(process.argv[1]) || "publish-util-prepack";
 
   try {
-    console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
+    const config = pkg.publishUtil || {};
+    if (!config.silent) {
+      console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
+    }
+
     await Fs.writeFile(saveFile, pkgData);
 
-    prePackObj(pkg, pkg.publishUtil || {});
+    prePackObj(pkg, config);
 
     await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
   } catch (err) {
