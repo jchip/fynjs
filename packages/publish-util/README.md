@@ -17,10 +17,7 @@ Your `package.json`:
     "postpack": "publish-util-postpack"
   },
   "publishUtil": {
-    "remove": [
-      "devDependencies",
-      { "scripts": ["test", "coverage", "build"] }
-    ],
+    "remove": ["devDependencies", { "scripts": ["test", "coverage", "build"] }],
     "keep": ["options"]
   },
   "dependencies": {
@@ -70,14 +67,30 @@ Out of the box it will clean up non-standard fields plus `workspaces` and `devDe
 
 You can configure some behaviors with `publishUtil` in your `package.json`.
 
-| Config            | Description                                                  | Default |
-| ----------------- | ------------------------------------------------------------ | ------- |
-| `remove`          | array of keys and nesting keys to remove from `package.json` |         |
-| `keep`            | array of keys and nesting keys to keep from `package.json`.  |         |
-| `removeExtraKeys` | remove top level non-standard fields.                        | `true`  |
-| `autoPostPack`    | insert `scripts.postpack` if it's missing.                   | `true`  |
+| Config            | Description                                                             | Default |
+| ----------------- | ----------------------------------------------------------------------- | ------- |
+| `rename`          | object map of keys to rename from `package.json` - done before `remove` |         |
+| `remove`          | array of keys and nesting keys to remove from `package.json`            |         |
+| `keep`            | array of keys and nesting keys to keep from `package.json`.             |         |
+| `removeExtraKeys` | remove top level non-standard fields.                                   | `true`  |
+| `autoPostPack`    | insert `scripts.postpack` if it's missing.                              | `true`  |
 
 - `publishUtil` is removed automatically.
+
+- `rename` details. The rename config is an object map, with key being the field to rename, and its value being the target name.
+
+For example:
+
+```json
+{
+  "publishUtil": {
+    "rename": {
+      "scripts.foo": "scripts.renamedFoo"
+    }
+  }
+}
+```
+
 - `scripts.prepublishOnly` is removed automatically if it's just `"publish-util-prepublishonly"`. Add it to `publishUtil.keep` to keep it:
 
 ```json

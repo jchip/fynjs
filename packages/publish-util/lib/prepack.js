@@ -6,7 +6,8 @@ const {
   getInfo,
   extractFromObj,
   removeFromObj,
-  keepStandardFields
+  keepStandardFields,
+  renameFromObj,
 } = require("./utils");
 const _ = require("lodash");
 
@@ -21,6 +22,8 @@ exports.prePack = async function prePack() {
 
     const config = pkg.publishUtil || {};
 
+    renameFromObj(pkg, config.rename);
+
     const keepObj = config.keep && extractFromObj(pkg, config.keep);
 
     if (config.remove) {
@@ -31,7 +34,7 @@ exports.prePack = async function prePack() {
 
     if (config.removeExtraKeys !== false) {
       const removed = Object.keys(pkg).filter(
-        k => !keepStandardFields.includes(k)
+        (k) => !keepStandardFields.includes(k)
       );
       if (!_.isEmpty(removed)) {
         console.log(
@@ -39,7 +42,7 @@ exports.prePack = async function prePack() {
           removed.join(", "),
           "\n  To skip this, set publishUtil.removeExtraKeys to false"
         );
-        removed.forEach(k => delete pkg[k]);
+        removed.forEach((k) => delete pkg[k]);
       }
     }
 
@@ -67,5 +70,3 @@ exports.prePack = async function prePack() {
     process.exit(1);
   }
 };
-//# fynSourceMap
-//# sourceMappingURL=prepack.js.fyn.map

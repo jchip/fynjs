@@ -16,7 +16,7 @@ async function postInstall() {
 
   const { pkg, pkgFile } = await getInfo(cwd);
 
-  const addScript = name => {
+  const addScript = (name) => {
     const script = `publish-util-${name.toLowerCase()}`;
     const exist = _.get(pkg, `scripts.${name}`);
     if (!exist) {
@@ -41,5 +41,3 @@ async function postInstall() {
 }
 
 postInstall();
-//# fynSourceMap
-//# sourceMappingURL=postinstall.js.fyn.map

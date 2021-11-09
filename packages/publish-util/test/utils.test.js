@@ -1,7 +1,11 @@
 const Tap = require("tap");
-const { extractFromObj, removeFromObj } = require("../lib/utils");
+const {
+  extractFromObj,
+  removeFromObj,
+  renameFromObj,
+} = require("../lib/utils");
 
-Tap.test("extractFromObj should extract all types", test => {
+Tap.test("extractFromObj should extract all types", (test) => {
   const sym1 = Symbol("abcdefg");
   const sym2 = Symbol("abcdefgdefgasdf");
 
@@ -26,8 +30,8 @@ Tap.test("extractFromObj should extract all types", test => {
         abc1: "1",
         abc2: "2",
         mm1: 11,
-        mm2: "12"
-      }
+        mm2: "12",
+      },
     },
     [
       "hello",
@@ -39,8 +43,8 @@ Tap.test("extractFromObj should extract all types", test => {
         oops2: ["a", "b"],
         oops3: ["c", "d"],
         sym2: ["x", "y"],
-        re1: ["/abc.*/", "mm1"]
-      }
+        re1: ["/abc.*/", "mm1"],
+      },
     ]
   );
 
@@ -56,8 +60,8 @@ Tap.test("extractFromObj should extract all types", test => {
     re1: {
       abc1: "1",
       abc2: "2",
-      mm1: 11
-    }
+      mm1: 11,
+    },
   });
 
   test.end();
@@ -65,14 +69,14 @@ Tap.test("extractFromObj should extract all types", test => {
 
 Tap.test(
   "removeFromObj should remove specs that are string and object",
-  test => {
+  (test) => {
     const testObj = {
       hello: {
         foo: 1,
-        bar: 2
+        bar: 2,
       },
       test1: 10,
-      test2: 11
+      test2: 11,
     };
 
     removeFromObj(testObj, ["test1", { hello: ["/.*/"] }]);
@@ -80,3 +84,28 @@ Tap.test(
     test.end();
   }
 );
+
+Tap.test("renameFrom obj", (test) => {
+  const testObj = {
+    hello: {
+      foo: 1,
+      bar: 2,
+    },
+    test1: 10,
+    test2: 11,
+  };
+
+  renameFromObj(testObj, {
+    test1: "test1-b",
+    test2: ["x", "y", "z"],
+    "hello.foo": "blah.foo",
+  });
+
+  Tap.same(testObj, {
+    hello: { bar: 2 },
+    "test1-b": 10,
+    x: { y: { z: 11 } },
+    blah: { foo: 1 },
+  });
+  test.end();
+});

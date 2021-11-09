@@ -4,6 +4,7 @@ const Fs = require("fs").promises;
 const Os = require("os");
 const Path = require("path");
 const findUp = require("find-up");
+const _ = require("lodash");
 
 exports.getInfo = async (cwd = process.env.INIT_CWD || process.cwd()) => {
   const pkgFile = await findUp("package.json", { cwd });
@@ -24,7 +25,7 @@ function transferField(f, from, to) {
 
     if (parts.length === 3) {
       const regex = new RegExp(parts[1], parts[2]);
-      Object.keys(from).forEach(fk => {
+      Object.keys(from).forEach((fk) => {
         if (fk.match(regex)) {
           to[fk] = from[fk];
         }
@@ -41,7 +42,7 @@ function deleteFields(f, obj) {
 
     if (parts.length === 3) {
       const regex = new RegExp(parts[1], parts[2]);
-      Object.keys(obj).forEach(fk => {
+      Object.keys(obj).forEach((fk) => {
         if (fk.match(regex)) {
           delete obj[fk];
         }
@@ -53,12 +54,24 @@ function deleteFields(f, obj) {
   delete obj[f];
 }
 
+exports.renameFromObj = function renameFromObj(obj, rename) {
+  if (rename) {
+    for (const key in rename) {
+      const data = _.get(obj, key);
+      if (data !== undefined && rename[key]) {
+        _.unset(obj, key);
+        _.set(obj, rename[key], data);
+      }
+    }
+  }
+};
+
 exports.removeFromObj = function removeFromObj(obj, fields) {
   for (const f of fields) {
     if (typeof f === "string") {
       deleteFields(f, obj);
     } else {
-      Object.keys(f).forEach(f2 => {
+      Object.keys(f).forEach((f2) => {
         removeFromObj(obj[f2], f[f2]);
       });
     }
@@ -137,7 +150,5 @@ exports.keepStandardFields = [
   // extras
   "module",
   "type", // module type
-  "types" // typescript types
+  "types", // typescript types
 ];
-//# fynSourceMap
-//# sourceMappingURL=utils.js.fyn.map

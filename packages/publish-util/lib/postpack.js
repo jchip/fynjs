@@ -20,5 +20,3 @@ exports.postPack = async function postPack() {
     process.exit(1);
   }
 };
-//# fynSourceMap
-//# sourceMappingURL=postpack.js.fyn.map
