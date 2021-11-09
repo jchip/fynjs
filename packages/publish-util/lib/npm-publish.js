@@ -33,9 +33,9 @@ async function removeFile(name) {
   } catch {}
 }
 
-process.on("SIGINT", () => {});
-
 exports.npmPublish = async function npmPublish() {
+  process.on("SIGINT", () => {});
+
   const { pkgDir, pkgFile, pkg, pkgData } = await getInfo();
 
   const dryRun = process.argv.indexOf("--dry-run") > 0;
