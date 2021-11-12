@@ -47,11 +47,8 @@ function prePackObj(pkg, config = {}) {
     _.set(pkg, "scripts.postpack", "publish-util-postpack");
   }
 
-  if (
-    pkg.scripts.prepublishOnly === "publish-util-prepublishonly" ||
-    pkg.scripts.prepublishOnly === "publish-util-prepack"
-  ) {
-    delete pkg.scripts.prepublishOnly;
+  if (pkg.scripts.prepack === "publish-util-prepack") {
+    delete pkg.scripts.prepack;
   }
 
   if (keepObj) {

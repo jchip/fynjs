@@ -32,7 +32,10 @@ async function postInstall() {
   };
 
   try {
-    addScript("prepublishOnly");
+    console.log(
+      `publish-util postinstall - setting CWD to env INIT_CWD: ${cwd}`
+    );
+    addScript("prepack");
     addScript("postpack");
     await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
   } catch (err) {

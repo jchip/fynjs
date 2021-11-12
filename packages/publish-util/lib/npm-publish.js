@@ -6,20 +6,30 @@ const assert = require("assert");
 const Fs = require("fs").promises;
 const Path = require("path");
 
-function getArg(opt, msg, valids = []) {
-  const tagIx = process.argv.indexOf(opt);
+function getArg({ opt, msg, argv, value = true, valids = [] }) {
+  const tagIx = argv.indexOf(opt);
 
-  if (tagIx > 0) {
-    const val = process.argv[tagIx + 1];
-    if (valids.length > 0) {
-      assert(
-        valids.includes(val),
-        `${opt} must specify a valid ${msg}: ${valids.join(",")}`
-      );
+  if (tagIx >= 0) {
+    if (value) {
+      const val = argv[tagIx + 1];
+      if (valids.length > 0) {
+        assert(
+          valids.includes(val),
+          `${opt} has a value ${val} but it must be one of: ${valids.join(
+            ", "
+          )}`
+        );
+      } else {
+        assert(val, `${opt} must specify a ${msg}`);
+      }
+      argv.splice(tagIx, 2);
+
+      return [opt, val];
     } else {
-      assert(val, `${opt} must specify a ${msg}`);
+      argv.splice(tagIx, 1);
     }
-    return [opt, val];
+
+    return [opt];
   }
 
   return [];
@@ -33,14 +43,24 @@ async function removeFile(name) {
   } catch {}
 }
 
-exports.npmPublish = async function npmPublish() {
-  process.on("SIGINT", () => {});
+exports.npmPublish = async function npmPublish({
+  exit = true,
+  silent = false,
+} = {}) {
+  const noop = () => {};
+  process.on("SIGINT", noop);
+  const argv = [].concat(process.argv.slice(2));
 
   const { pkgDir, pkgFile, pkg, pkgData } = await getInfo();
 
-  const dryRun = process.argv.indexOf("--dry-run") > 0;
-  const tag = getArg("--tag", "tag");
-  const access = getArg("--access", "access", ["public", "restricted"]);
+  const dryRun = getArg({ opt: "--dry-run", value: false, argv }).length > 0;
+  const tag = getArg({ opt: "--tag", msg: "tag", argv });
+  const access = getArg({
+    opt: "--access",
+    msg: "access",
+    argv,
+    valids: ["public", "restricted"],
+  });
 
   let changedPkg = false;
   let exitCode = 0;
@@ -54,7 +74,9 @@ exports.npmPublish = async function npmPublish() {
   const restore = async () => {
     try {
       if (changedPkg) {
-        console.log("Restoring", pkgFile);
+        if (!silent) {
+          console.log("Restoring", pkgFile);
+        }
         await Fs.writeFile(pkgFile, pkgData);
       }
     } catch {}
@@ -62,6 +84,8 @@ exports.npmPublish = async function npmPublish() {
     try {
       process.chdir(saveDir);
     } catch {}
+
+    process.removeListener("SIGINT", noop);
   };
 
   try {
@@ -102,11 +126,13 @@ exports.npmPublish = async function npmPublish() {
     }
 
     if (!dryRun) {
-      const publishArgs = [`publish`].concat(tag, access, fullTgzFile);
-      console.log("publishing args:", publishArgs.join(" "));
+      const publishArgs = [`publish`].concat(tag, access, fullTgzFile, argv);
+      if (!silent) {
+        console.log("publishing args:", publishArgs.join(" "));
+      }
       await execa(`npm`, publishArgs, execaOpts);
     } else {
-      console.log(tgzFile);
+      console.log("dry-run", tgzFile, "args:", [].concat(tag, access, argv));
     }
   } catch (err) {
     if (err.message.includes("SIGINT")) {
@@ -118,6 +144,10 @@ exports.npmPublish = async function npmPublish() {
   } finally {
     await restore();
     await removeFile(fullTgzFile);
-    process.exit(exitCode);
+    if (exit) {
+      process.exit(exitCode);
+    }
   }
+
+  return exitCode;
 };

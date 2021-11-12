@@ -13,7 +13,7 @@ Your `package.json`:
     "test": "...",
     "coverage": "...",
     "build": "...",
-    "prepublishOnly": "npm run build && publish-util-prepublishonly",
+    "prepack": "npm run build && publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
   "publishUtil": {
@@ -59,9 +59,21 @@ Just install this to your module:
 
 `npm install --save-dev publish-util`
 
-It will automatically add `prepublishOnly` and `postpack` scripts to your package.json for you.
+It will automatically add `prepack` and `postpack` scripts to your package.json for you.
 
 Out of the box it will clean up non-standard fields plus `workspaces` and `devDependencies` from your `package.json`. To keep `devDependencies`, see [details below](#removing-non-standard-fields)
+
+## Publishing
+
+This module offers a custom publishing script to fix some behaviors of `npm publish`.
+
+The problem is that before any thing can process `package.json`, `npm publish` will load and upload it to the registry as packument (meta for the package).
+
+If you want the copy of `package.json` after this module processed it to be the packument meta, then use the `do-publish` command:
+
+`npx do-publish`
+
+The script use whatever version of `npm` you have to do the actual work. It takes all CLI arguments that `npm publish` accepts and will pass them through.
 
 ## `publishUtil` configs:
 
@@ -152,36 +164,11 @@ If you don't have a `scripts.postpack`, then it's automatically added with `"pub
 
 - Set `publishUtil.autoPostPack` to `false` to skip this.
 
-## Quirks
-
-- During `npm publish` there are other scripts that run after `prepublishOnly`. If these scripts depend on the full `package.json`, such as tools like `nyc` that put their config in `package.json` then these must go in `prepublishOnly` first.
-
-For example:
-
-```json
-{
-  "scripts": {
-    "prepublishOnly": "nyc mocha && publish-util-prepublishonly"
-  }
-}
-```
-
-The following will not work if there are `nyc` config in `package.json`:
-
-```json
-{
-  "scripts": {
-    "prepublishOnly": "publish-util-prepublishonly",
-    "prepack": "nyc mocha"
-  }
-}
-```
-
 ## Dry Run and Verify
 
 To verify `package.json` content.
 
-1. Run `npm run prepublishOnly`
+1. Run `npm run prepack`
 2. Inspect `package.json` to ensure everything is in order
 3. Run `npm run postpack` to restore `package.json`
 4. Inspect `package.json` again
