@@ -1,6 +1,6 @@
 {
   "name": "publish-util",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Some util to clean up package.json for npm publish",
   "main": "lib/index.js",
   "scripts": {
