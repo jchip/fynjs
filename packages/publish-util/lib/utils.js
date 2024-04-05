@@ -151,4 +151,8 @@ exports.keepStandardFields = [
   "module",
   "type", // module type
   "types", // typescript types
+
+  // ESM
+  "exports", // subpath exports entry point
+  "imports", // subpath imports entry point
 ];
