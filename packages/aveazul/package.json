@@ -1,9 +1,9 @@
 {
   "name": "aveazul",
   "version": "0.1.0",
-  "description": "Extend native Promise with bluebird like APIs",
+  "description": "Extend native Promise with bluebird like APIs for Node.js",
   "main": "lib/aveazul.js",
-  "homepage": "",
+  "homepage": "https://github.com/jchip/aveazul",
   "license": "Apache-2.0",
   "scripts": {
     "test": "jest test",
@@ -22,7 +22,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/jchip/aveazul.git"
   },
   "dependencies": {
     "xaa": "^1.7.3"
