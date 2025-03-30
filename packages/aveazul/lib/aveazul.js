@@ -353,4 +353,101 @@ AveAzul.reduce = (array, fn, initialValue) => {
  */
 AveAzul.throw = reason => AveAzul.reject(reason);
 
+/**
+ * Bluebird-style promisifyAll() for converting all methods of an object or class to promise-based versions
+ * Similar to Bluebird's Promise.promisifyAll()
+ * 
+ * @param {Object|Function} target - The object or class to promisify
+ * @param {Object} [options] - Configuration options
+ * @param {string} [options.suffix='Async'] - Suffix to append to promisified method names
+ * @param {Function} [options.filter] - Filter function to determine which methods to promisify
+ * @param {Function} [options.promisifier] - Custom function to handle promisification
+ * @param {boolean} [options.multiArgs=false] - Whether to support multiple callback arguments
+ * @param {boolean} [options.excludeMain=false] - Whether to exclude promisifying the main object/class
+ * @param {Object} [options.context] - The context (this) to use when calling methods
+ * @returns {Object|Function} The promisified object or class
+ * @throws {TypeError} If target is null, undefined, or not an object/function
+ * 
+ * @example
+ * // Promisify an object
+ * const obj = {
+ *   method(cb) { cb(null, 'result'); }
+ * };
+ * AveAzul.promisifyAll(obj);
+ * const result = await obj.methodAsync();
+ * 
+ * @example
+ * // Promisify a class
+ * class MyClass {
+ *   method(cb) { cb(null, 'result'); }
+ * }
+ * AveAzul.promisifyAll(MyClass);
+ * const instance = new MyClass();
+ * const result = await instance.methodAsync();
+ * 
+ * @example
+ * // With custom options
+ * const obj = {
+ *   method(cb) { cb(null, 'result1', 'result2'); }
+ * };
+ * AveAzul.promisifyAll(obj, {
+ *   suffix: 'Promise',
+ *   multiArgs: true,
+ *   filter: (name) => name === 'method'
+ * });
+ * const [result1, result2] = await obj.methodPromise();
+ */
+AveAzul.promisifyAll = (target, options = {}) => {
+  const {
+    suffix = 'Async',
+    filter = (name, func, targetObj, passedOptions) => {
+      return (
+        typeof func === 'function' &&
+        !func.name.startsWith('_') &&
+        !func.name.startsWith('promisify') &&
+        !func.name.startsWith('promisifyAll')
+      );
+    },
+    promisifier = (fn, context, multiArgs) => {
+      if (multiArgs) {
+        return (...args) => {
+          return new AveAzul((resolve, reject) => {
+            args.push((err, ...results) => {
+              if (err) reject(err);
+              else resolve(results);
+            });
+            fn.apply(context, args);
+          });
+        };
+      }
+      return AveAzul.promisify(fn, { context });
+    },
+    multiArgs = false,
+    excludeMain = false,
+    context = target
+  } = options;
+
+  if (target == null || (typeof target !== 'object' && typeof target !== 'function')) {
+    throw new TypeError('target must be an object');
+  }
+
+  const targetObj = target.prototype || target;
+  const keys = Object.getOwnPropertyNames(targetObj);
+
+  for (const key of keys) {
+    const func = targetObj[key];
+    if (filter(key, func, targetObj, options)) {
+      const promisifiedKey = key + suffix;
+      targetObj[promisifiedKey] = promisifier(func, context, multiArgs);
+    }
+  }
+
+  if (!excludeMain && typeof target === 'function') {
+    target.promisify = AveAzul.promisify;
+    target.promisifyAll = AveAzul.promisifyAll;
+  }
+
+  return target;
+};
+
 module.exports = AveAzul;

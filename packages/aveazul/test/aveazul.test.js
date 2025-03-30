@@ -245,9 +245,16 @@ describe('AveAzul', () => {
       expect(result).toBe(42);
     });
 
-    test('reduce() should handle empty array without initial value', async () => {
-      const result = await AveAzul.reduce([], (acc, val) => acc + val);
+    test('reduce() should handle empty array without initial value and return undefined', async () => {
+      const fn = jest.fn();
+      const result = await AveAzul.reduce([], fn);
+      expect(fn).not.toHaveBeenCalled();
       expect(result).toBe(undefined);
+    });
+
+    test('reduce() should handle empty array with initial value', async () => {
+      const result = await AveAzul.reduce([], (acc, val) => acc + val, 10);
+      expect(result).toBe(10);
     });
 
     test('reduce() should handle array with one element without initial value', async () => {
@@ -388,6 +395,16 @@ describe('AveAzul', () => {
       expect(result).toBe(45);
     });
 
+    test('promisify() should return an AveAzul instance', async () => {
+      const fn = (cb) => cb(null, 'success');
+      const promisified = AveAzul.promisify(fn);
+      const promise = promisified();
+      expect(promise).toBeInstanceOf(AveAzul);
+      expect(promise).toBeInstanceOf(Promise);
+      const result = await promise;
+      expect(result).toBe('success');
+    });
+
     test('defer() should create a deferred promise', async () => {
       const deferred = AveAzul.defer();
       setTimeout(() => deferred.resolve(42), 50);
@@ -414,6 +431,219 @@ describe('AveAzul', () => {
     test('map() should transform array elements', async () => {
       const result = await AveAzul.map([1, 2, 3], x => x * 2);
       expect(result).toEqual([2, 4, 6]);
+    });
+
+    test('promisifyAll() should promisify all methods of an object', async () => {
+      const obj = {
+        method1(cb) {
+          cb(null, 'result1');
+        },
+        method2(a, b, cb) {
+          cb(null, a + b);
+        },
+        _privateMethod(cb) {
+          cb(null, 'private');
+        }
+      };
+
+      AveAzul.promisifyAll(obj);
+
+      const result1 = await obj.method1Async();
+      const result2 = await obj.method2Async(1, 2);
+
+      expect(result1).toBe('result1');
+      expect(result2).toBe(3);
+      expect(obj._privateMethodAsync).toBeUndefined();
+    });
+
+    test('promisifyAll() should promisify all methods of a class prototype', async () => {
+      class MyClass {
+        method1(cb) {
+          cb(null, 'result1');
+        }
+        method2(a, b, cb) {
+          cb(null, a + b);
+        }
+        _privateMethod(cb) {
+          cb(null, 'private');
+        }
+      }
+
+      AveAzul.promisifyAll(MyClass);
+
+      const instance = new MyClass();
+      const result1 = await instance.method1Async();
+      const result2 = await instance.method2Async(1, 2);
+
+      expect(result1).toBe('result1');
+      expect(result2).toBe(3);
+      expect(instance._privateMethodAsync).toBeUndefined();
+    });
+
+    test('promisifyAll() should respect custom suffix option', async () => {
+      const obj = {
+        method(cb) {
+          cb(null, 'result');
+        }
+      };
+
+      AveAzul.promisifyAll(obj, { suffix: 'Promise' });
+
+      const result = await obj.methodPromise();
+      expect(result).toBe('result');
+      expect(obj.methodAsync).toBeUndefined();
+    });
+
+    test('promisifyAll() should respect custom filter option', async () => {
+      const obj = {
+        method1(cb) {
+          cb(null, 'result1');
+        },
+        method2(cb) {
+          cb(null, 'result2');
+        }
+      };
+
+      AveAzul.promisifyAll(obj, {
+        filter: (name) => name === 'method1'
+      });
+
+      const result = await obj.method1Async();
+      expect(result).toBe('result1');
+      expect(obj.method2Async).toBeUndefined();
+    });
+
+    test('promisifyAll() should respect context option', async () => {
+      const obj = {
+        value: 42,
+        method(a, b, cb) {
+          cb(null, this.value + a + b);
+        }
+      };
+
+      AveAzul.promisifyAll(obj, { context: obj });
+
+      const result = await obj.methodAsync(1, 2);
+      expect(result).toBe(45);
+    });
+
+    test('promisifyAll() should handle multiArgs option', async () => {
+      const obj = {
+        method(cb) {
+          cb(null, 'result1', 'result2');
+        }
+      };
+
+      AveAzul.promisifyAll(obj, { multiArgs: true });
+
+      const [result1, result2] = await obj.methodAsync();
+      expect(result1).toBe('result1');
+      expect(result2).toBe('result2');
+    });
+
+    test('promisifyAll() should handle excludeMain option', async () => {
+      class MyClass {
+        method(cb) {
+          cb(null, 'result');
+        }
+      }
+
+      AveAzul.promisifyAll(MyClass, { excludeMain: true });
+
+      const instance = new MyClass();
+      const result = await instance.methodAsync();
+      expect(result).toBe('result');
+      expect(MyClass.promisify).toBeUndefined();
+      expect(MyClass.promisifyAll).toBeUndefined();
+    });
+
+    test('promisifyAll() should throw on invalid target', () => {
+      expect(() => AveAzul.promisifyAll(null)).toThrow(TypeError);
+      expect(() => AveAzul.promisifyAll(undefined)).toThrow(TypeError);
+      expect(() => AveAzul.promisifyAll(42)).toThrow(TypeError);
+    });
+
+    test('promisifyAll() should support custom promisifier', async () => {
+      const obj = {
+        method(a, b, cb) {
+          cb(null, a + b);
+        }
+      };
+
+      AveAzul.promisifyAll(obj, {
+        promisifier: (fn) => {
+          return (...args) => {
+            return new AveAzul((resolve) => {
+              fn(...args, (err, result) => {
+                // Custom promisifier that ignores errors
+                resolve(result * 2);
+              });
+            });
+          };
+        }
+      });
+
+      const result = await obj.methodAsync(2, 3);
+      expect(result).toBe(10); // (2 + 3) * 2
+    });
+
+    test('promisifyAll() should return AveAzul instances', async () => {
+      const obj = {
+        method(cb) {
+          cb(null, 'result1', 'result2');
+        }
+      };
+
+      AveAzul.promisifyAll(obj, { multiArgs: true });
+
+      const promise = obj.methodAsync();
+      expect(promise).toBeInstanceOf(AveAzul);
+      expect(promise).toBeInstanceOf(Promise);
+
+      const [result1, result2] = await promise;
+      expect(result1).toBe('result1');
+      expect(result2).toBe('result2');
+    });
+
+    test('promisifyAll() should handle multiArgs option with error', async () => {
+      const error = new Error('test error');
+      const obj = {
+        method(cb) {
+          cb(error);
+        }
+      };
+
+      AveAzul.promisifyAll(obj, { multiArgs: true });
+
+      await expect(obj.methodAsync()).rejects.toBe(error);
+    });
+
+    test('promisifyAll() should handle multiArgs option with custom promisifier', async () => {
+      const obj = {
+        method(cb) {
+          cb(null, 'result1', 'result2', 'result3');
+        }
+      };
+
+      AveAzul.promisifyAll(obj, {
+        multiArgs: true,
+        promisifier: (fn, context, multiArgs) => {
+          return (...args) => {
+            return new AveAzul((resolve, reject) => {
+              args.push((err, ...results) => {
+                if (err) reject(err);
+                else resolve(results.map(r => r.toUpperCase()));
+              });
+              fn.apply(context, args);
+            });
+          };
+        }
+      });
+
+      const promise = obj.methodAsync();
+      expect(promise).toBeInstanceOf(AveAzul);
+      const results = await promise;
+      expect(results).toEqual(['RESULT1', 'RESULT2', 'RESULT3']);
     });
   });
 }); 
