@@ -222,7 +222,7 @@ describe('AveAzul', () => {
     });
 
     test('delay() should handle single argument using arguments object', async () => {
-      const args = [100];
+      const args = [101];
       const start = Date.now();
       await AveAzul.delay.apply(null, args);
       const duration = Date.now() - start;
@@ -237,7 +237,7 @@ describe('AveAzul', () => {
     });
 
     test('delay() should handle two arguments using arguments object', async () => {
-      const args = [100, 42];
+      const args = [101, 42];
       const start = Date.now();
       const result = await AveAzul.delay.apply(null, args);
       const duration = Date.now() - start;
