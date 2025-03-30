@@ -27,6 +27,8 @@ AveAzul.resolve([1, 2, 3])
 const fs = require('fs');
 const readFile = AveAzul.promisify(fs.readFile);
 readFile('file.txt').then(content => console.log(content));
+// Properties from the original function are preserved
+console.log(readFile.length); // Original function's length property
 
 // Promisify all methods of an object
 const obj = {
@@ -64,7 +66,7 @@ obj.methodAsync().then(result => console.log(result)); // 'result'
 - `try(fn)` - Wrap sync/async functions
 - `props(obj)` - Resolve object properties
 - `defer()` - Create a deferred promise
-- `promisify(fn, options?)` - Convert callback-style functions to promises
+- `promisify(fn, options?)` - Convert callback-style functions to promises (preserves original function properties)
 - `each(items, fn)` - Iterate over array elements
 - `reduce(array, fn, initialValue?)` - Reduce array elements
 - `throw(reason)` - Return rejected promise

@@ -308,11 +308,48 @@ AveAzul.defer = () => {
  * @returns {Function} Promisified function that returns an AveAzul promise
  */
 AveAzul.promisify = (fn, options = {}) => {
-  const promisified = nodePromisify(fn);
-  if (options.context) {
-    return (...args) => AveAzul.resolve(promisified.apply(options.context, args));
+  if (typeof fn !== 'function') {
+    throw new TypeError('Expected a function');
   }
-  return (...args) => AveAzul.resolve(promisified(...args));
+
+  const wrapped = function(...args) {
+    return new AveAzul((resolve, reject) => {
+      const callback = (err, ...results) => {
+        if (err) reject(err);
+        else resolve(options.multiArgs ? results : results[0]);
+      };
+
+      if (options.context) {
+        fn.apply(options.context, [...args, callback]);
+      } else {
+        fn(...args, callback);
+      }
+    });
+  };
+
+  // Transfer properties from original function
+  const restrictedProps = ['length', 'name', 'caller', 'callee', 'arguments', 'prototype'];
+  Object.getOwnPropertyNames(fn).forEach(key => {
+    if (!restrictedProps.includes(key)) {
+      try {
+        wrapped[key] = fn[key];
+      } catch (e) {
+        // Skip properties that can't be copied
+      }
+    }
+  });
+
+  // Explicitly set length and name
+  Object.defineProperty(wrapped, 'length', {
+    value: fn.length,
+    configurable: true
+  });
+  Object.defineProperty(wrapped, 'name', {
+    value: fn.name,
+    configurable: true
+  });
+
+  return wrapped;
 };
 
 /**
@@ -401,6 +438,14 @@ AveAzul.promisifyAll = (target, options = {}) => {
   const {
     suffix = 'Async',
     filter = (name, func, targetObj, passedOptions) => {
+      // Check for valid JavaScript identifier
+      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+        return false;
+      }
+      // Check for constructor function (has enumerable properties in prototype)
+      if (func.prototype && Object.keys(func.prototype).length > 0) {
+        return false;
+      }
       return (
         typeof func === 'function' &&
         !func.name.startsWith('_') &&
@@ -433,6 +478,13 @@ AveAzul.promisifyAll = (target, options = {}) => {
 
   const targetObj = target.prototype || target;
   const keys = Object.getOwnPropertyNames(targetObj);
+
+  // Check for existing Async methods first
+  for (const key of keys) {
+    if (key.endsWith('Async')) {
+      throw new TypeError("Cannot promisify an API that has normal methods with 'Async'-suffix");
+    }
+  }
 
   for (const key of keys) {
     const func = targetObj[key];

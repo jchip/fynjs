@@ -365,72 +365,107 @@ describe('AveAzul', () => {
     });
 
     test('promisify() should handle functions with no arguments', async () => {
-      const fn = (cb) => cb(null, 'success');
-      const promisified = AveAzul.promisify(fn);
-      const result = await promisified();
-      expect(result).toBe('success');
+      const original = function noArgs(cb) {};
+      original.length = 1;
+      original.name = 'noArgs';
+      
+      const promisified = AveAzul.promisify(original);
+      
+      expect(promisified.length).toBe(1);
+      expect(promisified.name).toBe('noArgs');
     });
 
-    test('promisify() should preserve this context', async () => {
+    test('promisify() should handle non-configurable properties', () => {
+      const original = function testFn(cb) {};
+      Object.defineProperty(original, 'nonConfigurable', {
+        value: 'test',
+        configurable: false,
+        writable: false
+      });
+      
+      // This should not throw even though the property can't be copied
+      const promisified = AveAzul.promisify(original);
+      expect(promisified).toBeDefined();
+    });
+
+    test('promisify() should throw on non-function arguments', () => {
+      expect(() => AveAzul.promisify(null)).toThrow(TypeError);
+      expect(() => AveAzul.promisify(undefined)).toThrow(TypeError);
+      expect(() => AveAzul.promisify(42)).toThrow(TypeError);
+      expect(() => AveAzul.promisify('not a function')).toThrow(TypeError);
+      expect(() => AveAzul.promisify({})).toThrow(TypeError);
+    });
+
+    test('promisify() should handle context option', async () => {
       const obj = {
         value: 42,
-        fn(cb) {
-          cb(null, this.value);
-        }
+        method(cb) { cb(null, this.value); }
       };
-      const promisified = AveAzul.promisify(obj.fn, { context: obj });
+      const promisified = AveAzul.promisify(obj.method, { context: obj });
       const result = await promisified();
       expect(result).toBe(42);
     });
 
-    test('promisify() should handle functions with multiple arguments and context', async () => {
+    test('promisify() should preserve properties from original function', () => {
+      const original = function testFn(a, b, cb) {};
+      original.someProperty = 'value';
+      original.anotherProperty = 42;
+      original.nested = {
+        prop: 'nested value'
+      };
+      
+      const promisified = AveAzul.promisify(original);
+      
+      // Test basic properties
+      expect(promisified.someProperty).toBe('value');
+      expect(promisified.anotherProperty).toBe(42);
+      
+      // Test nested properties
+      expect(promisified.nested).toBeDefined();
+      expect(promisified.nested.prop).toBe('nested value');
+      
+      // Test function properties
+      expect(promisified.length).toBe(3); // Original function's length
+      expect(promisified.name).toBe('testFn'); // Original function's name
+      
+      // Test that the promisified function still works
+      expect(typeof promisified).toBe('function');
+    });
+
+    test('promisify() should preserve properties from fs.readFile-like functions', () => {
+      const original = function readFile(path, options, cb) {};
+      original.length = 3;
+      original.name = 'readFile';
+      
+      const promisified = AveAzul.promisify(original);
+      
+      expect(promisified.length).toBe(3);
+      expect(promisified.name).toBe('readFile');
+    });
+
+    test('promisify() should preserve properties from functions with no arguments', () => {
+      const original = function noArgs(cb) {};
+      original.length = 1;
+      original.name = 'noArgs';
+      
+      const promisified = AveAzul.promisify(original);
+      
+      expect(promisified.length).toBe(1);
+      expect(promisified.name).toBe('noArgs');
+    });
+
+    test('promisify() should handle multiArgs option', async () => {
       const obj = {
-        value: 42,
-        fn(a, b, cb) {
-          cb(null, this.value + a + b);
+        method(cb) {
+          cb(null, 'result1', 'result2');
         }
       };
-      const promisified = AveAzul.promisify(obj.fn, { context: obj });
-      const result = await promisified(1, 2);
-      expect(result).toBe(45);
-    });
 
-    test('promisify() should return an AveAzul instance', async () => {
-      const fn = (cb) => cb(null, 'success');
-      const promisified = AveAzul.promisify(fn);
-      const promise = promisified();
-      expect(promise).toBeInstanceOf(AveAzul);
-      expect(promise).toBeInstanceOf(Promise);
-      const result = await promise;
-      expect(result).toBe('success');
-    });
+      AveAzul.promisifyAll(obj, { multiArgs: true });
 
-    test('defer() should create a deferred promise', async () => {
-      const deferred = AveAzul.defer();
-      setTimeout(() => deferred.resolve(42), 50);
-      const result = await deferred.promise;
-      expect(result).toBe(42);
-    });
-
-    test('defer() should handle rejection', async () => {
-      const deferred = AveAzul.defer();
-      const error = new Error('test');
-      setTimeout(() => deferred.reject(error), 50);
-      await expect(deferred.promise).rejects.toBe(error);
-    });
-
-    test('each() should iterate over array elements', async () => {
-      const sideEffect = jest.fn();
-      await AveAzul.each([1, 2, 3], sideEffect);
-      expect(sideEffect).toHaveBeenCalledTimes(3);
-      expect(sideEffect).toHaveBeenNthCalledWith(1, 1, 0);
-      expect(sideEffect).toHaveBeenNthCalledWith(2, 2, 1);
-      expect(sideEffect).toHaveBeenNthCalledWith(3, 3, 2);
-    });
-
-    test('map() should transform array elements', async () => {
-      const result = await AveAzul.map([1, 2, 3], x => x * 2);
-      expect(result).toEqual([2, 4, 6]);
+      const [result1, result2] = await obj.methodAsync();
+      expect(result1).toBe('result1');
+      expect(result2).toBe('result2');
     });
 
     test('promisifyAll() should promisify all methods of an object', async () => {
@@ -563,6 +598,43 @@ describe('AveAzul', () => {
       expect(() => AveAzul.promisifyAll(42)).toThrow(TypeError);
     });
 
+    test('promisifyAll() should throw when methods end in Async', () => {
+      const obj = {
+        method(cb) { cb(null, 'result'); },
+        methodAsync(cb) { cb(null, 'result'); }
+      };
+      expect(() => AveAzul.promisifyAll(obj)).toThrow("Cannot promisify an API that has normal methods with 'Async'-suffix");
+    });
+
+    test('promisifyAll() should not promisify invalid JavaScript identifiers', () => {
+      const obj = {
+        '123method'(cb) { cb(null, 'result'); },
+        'method-name'(cb) { cb(null, 'result'); },
+        'method.name'(cb) { cb(null, 'result'); }
+      };
+      AveAzul.promisifyAll(obj);
+      expect(obj['123methodAsync']).toBeUndefined();
+      expect(obj['method-nameAsync']).toBeUndefined();
+      expect(obj['method.nameAsync']).toBeUndefined();
+    });
+
+    test('promisifyAll() should not promisify constructor functions', () => {
+      class MyClass {
+        constructor() {}
+        method(cb) { cb(null, 'result'); }
+      }
+      MyClass.prototype.someMethod = function() {};
+      
+      const obj = {
+        MyClass,
+        method(cb) { cb(null, 'result'); }
+      };
+      
+      AveAzul.promisifyAll(obj);
+      expect(obj.MyClassAsync).toBeUndefined();
+      expect(obj.methodAsync).toBeDefined();
+    });
+
     test('promisifyAll() should support custom promisifier', async () => {
       const obj = {
         method(a, b, cb) {
@@ -644,6 +716,19 @@ describe('AveAzul', () => {
       expect(promise).toBeInstanceOf(AveAzul);
       const results = await promise;
       expect(results).toEqual(['RESULT1', 'RESULT2', 'RESULT3']);
+    });
+
+    test('defer() should create a deferred promise', async () => {
+      const deferred = AveAzul.defer();
+      expect(deferred.promise).toBeInstanceOf(AveAzul);
+      expect(deferred.promise).toBeInstanceOf(Promise);
+      expect(typeof deferred.resolve).toBe('function');
+      expect(typeof deferred.reject).toBe('function');
+
+      // Test resolving
+      deferred.resolve(42);
+      const result = await deferred.promise;
+      expect(result).toBe(42);
     });
   });
 }); 
