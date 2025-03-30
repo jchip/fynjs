@@ -1,6 +1,6 @@
 {
   "name": "aveazul",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Extend native Promise with bluebird like APIs for Node.js",
   "main": "lib/aveazul.js",
   "homepage": "https://github.com/jchip/aveazul",
