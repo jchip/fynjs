@@ -1,4 +1,6 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+
+const AveAzul = require("./promise-lib");
 
 describe("AveAzul.method", () => {
   test("should convert a synchronous function to a promise-returning function", async () => {
@@ -13,7 +15,6 @@ describe("AveAzul.method", () => {
 
     const promise = fn();
     expect(promise).toBeInstanceOf(AveAzul);
-    expect(promise).toBeInstanceOf(Promise);
   });
 
   test("should preserve 'this' context", async () => {

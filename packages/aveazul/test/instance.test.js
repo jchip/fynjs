@@ -1,4 +1,5 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+const AveAzul = require("./promise-lib");
 
 describe("instance methods", () => {
   test("tap() should execute side effects and return original value", async () => {

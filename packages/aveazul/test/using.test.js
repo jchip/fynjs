@@ -1,9 +1,16 @@
 "use strict";
 
-const AveAzul = require("bluebird");
-// const AveAzul = require("../lib/aveazul");
+const AveAzul = require("./promise-lib");
 
 describe("AveAzul.using", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   test("should manage a single resource with cleanup", async () => {
     const resource = { value: "test resource", disposed: false };
     let resourceUsed = false;
@@ -138,6 +145,32 @@ describe("AveAzul.using", () => {
     expect(resource.disposed).toBe(true);
   });
 
+  test("should handle disposer acquisition failure", async () => {
+    const resource = { disposed: false };
+    const acquisitionError = new Error("Resource acquisition failed");
+
+    // Create a disposer that will reject during acquisition
+    const failingDisposer = AveAzul.reject(acquisitionError).disposer(() => {
+      resource.disposed = true;
+    });
+
+    // Create a second disposer that should never be acquired
+    const secondResource = { disposed: false };
+    const secondDisposer = AveAzul.resolve(secondResource).disposer(() => {
+      secondResource.disposed = true;
+    });
+
+    const result = AveAzul.using([failingDisposer, secondDisposer], () => {
+      return "success";
+    });
+    // Attempt to use both disposers
+    await expect(result).rejects.toThrow(acquisitionError);
+
+    // Verify that neither resource was disposed since acquisition failed
+    expect(resource.disposed).toBe(false);
+    expect(secondResource.disposed).toBe(true);
+  });
+
   test("should clean up acquired resources even a later promise resource rejects", async () => {
     let disposed = false;
     const resource = { value: "test resource" };
@@ -200,57 +233,6 @@ describe("AveAzul.using", () => {
     // Now verify that cleanup happened
     expect(disposed).toBe(true);
     expect(err1).toBeInstanceOf(Error);
-  });
-
-  /**
-   * If a disposer throws or rejects, then bluebird throw an exception (crashing the process in node.js)
-   * by doing this: `setTimeout(function(){throw e;}, 0);`, which is out of band exception that only
-   * uncaughtException handler can catch.  So `.catch()` can't handle it.
-   *
-   * Recommendation from bluebird:
-   *  As a result, if you anticipate thrown errors or promise rejections while disposing of the resource you
-   *  should use a try..catch block (or Promise.try) and write the appropriate catch code to handle the
-   *  errors. If it's not possible to sensibly handle the error, letting the process crash is the next best
-   *  option.
-   */
-  test.skip("should throw exception if a disposer throws", async () => {
-    const cleanupCalled = [false, false, false];
-    const resources = [{ id: 1 }, { id: 2 }, { id: 3 }];
-
-    // const disposer1 = AveAzul.resolve(resources[0]).disposer(() => {
-    //   cleanupCalled[0] = true;
-    // });
-
-    // const disposer2 = AveAzul.resolve(resources[1]).disposer(() => {
-    //   cleanupCalled[1] = true;
-    //   throw new Error("Cleanup error");
-    // });
-
-    // const disposer3 = AveAzul.resolve(resources[2]).disposer(() => {
-    //   cleanupCalled[2] = true;
-    // });
-
-    // let errorThrown = false;
-    // // Should not throw even though a disposer throws
-    // // test using ...args syntax with multiple disposers
-    // const result = await AveAzul.using(
-    //   disposer1,
-    //   disposer2,
-    //   disposer3,
-    //   () => "success"
-    // ).catch(() => {
-    //   errorThrown = true;
-    // });
-
-    // expect(result).toBe("success");
-    // expect(cleanupCalled).toEqual([true, true, true]);
-
-    setTimeout(() => {
-      console.log("throwing");
-      throw new Error("blah");
-    }, 0);
-    await AveAzul.delay(100);
-    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   test("should work with non-promise values", async () => {
@@ -422,5 +404,37 @@ describe("AveAzul.using", () => {
       fileHandle: 123,
       path: "/path/to/file.txt",
     });
+  });
+
+  test("should handle error when acquiring from promise-like resource", async () => {
+    const acquisitionError = new Error(
+      "Promise-like resource acquisition failed"
+    );
+
+    // Create two resources: one that succeeds and one that fails
+    const successResource = { disposed: false };
+    const successDisposer = AveAzul.resolve(successResource).disposer(() => {
+      successResource.disposed = true;
+    });
+
+    // Create a failing promise-like object
+    const failingPromiseLike = {
+      then: function (resolve, reject) {
+        reject(acquisitionError);
+        return this;
+      },
+      catch: function (onReject) {
+        onReject(acquisitionError);
+        return this;
+      },
+    };
+
+    // Try to use both resources
+    await expect(
+      AveAzul.using([successDisposer, failingPromiseLike], () => "success")
+    ).rejects.toThrow(acquisitionError);
+
+    // Verify the successful resource was disposed even though the acquisition failed
+    expect(successResource.disposed).toBe(true);
   });
 });

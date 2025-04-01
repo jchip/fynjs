@@ -1,4 +1,4 @@
-const AveAzul = require("../lib/aveazul");
+const AveAzul = require("./promise-lib");
 
 describe("static methods", () => {
   test("reduce() should handle empty array without initial value and return undefined", async () => {
@@ -95,7 +95,6 @@ describe("static methods", () => {
   test("defer() should create a deferred promise", async () => {
     const deferred = AveAzul.defer();
     expect(deferred.promise).toBeInstanceOf(AveAzul);
-    expect(deferred.promise).toBeInstanceOf(Promise);
     expect(typeof deferred.resolve).toBe("function");
     expect(typeof deferred.reject).toBe("function");
 

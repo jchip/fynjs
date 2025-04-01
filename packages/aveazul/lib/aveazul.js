@@ -4,6 +4,7 @@ const xaa = require("xaa");
 const { promisify } = require("./promisify");
 const { promisifyAll } = require("./promisify-all");
 const { Disposer } = require("./disposer");
+const { using } = require("./using");
 /**
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird-like utility methods
  * This implementation is inspired by and provides similar APIs to the Bluebird Promise library,
@@ -344,64 +345,37 @@ AveAzul.method = (fn) => {
  * @param {Function} handler - Handler function that will receive the resources as arguments
  * @returns {Promise} Promise that resolves with handler result
  */
-AveAzul.using = (resources, handler) => {
-  const isVariadic = typeof arguments[arguments.length - 1] === "function";
-  const resourcesArray = isVariadic
-    ? Array.prototype.slice.call(arguments, 0, -1)
-    : resources;
-  const handlerFn = isVariadic ? arguments[arguments.length - 1] : handler;
+AveAzul.using = (resources, ...args) => {
+  if (args.length === 0) {
+    throw new TypeError("resrouces and handler function required");
+  }
 
-  return new AveAzul((resolve, reject) => {
-    const values = [];
-    const cleanupFns = [];
+  if (Array.isArray(resources)) {
+    if (args.length > 1) {
+      throw new TypeError(
+        "only two arguments are allowed when passing an array of resources"
+      );
+    }
+    return using(resources, args[0], AveAzul, true);
+  }
+  const handler = args.pop();
+  return using([resources, ...args], handler, AveAzul, false);
+};
 
-    const processResource = (resource, index) => {
-      if (resource instanceof Disposer) {
-        cleanupFns[index] = resource._data;
-        return resource._promise;
-      }
-      return Promise.resolve(resource);
-    };
-
-    const cleanup = (startIndex) => {
-      for (let i = startIndex; i >= 0; i--) {
-        if (cleanupFns[i]) {
-          try {
-            cleanupFns[i](values[i], Promise.resolve(values[i]));
-          } catch (error) {
-            console.error(`Cleanup error for resource ${i}:`, error);
-          }
-        }
-      }
-    };
-
-    Promise.all(resourcesArray.map(processResource))
-      .then((results) => {
-        values.push(...results);
-        const result = isVariadic
-          ? handlerFn.apply(null, values)
-          : handlerFn(values);
-        if (result instanceof Promise) {
-          result.then(
-            (value) => {
-              cleanup(values.length - 1);
-              resolve(value);
-            },
-            (error) => {
-              cleanup(values.length - 1);
-              reject(error);
-            }
-          );
-        } else {
-          cleanup(values.length - 1);
-          resolve(result);
-        }
-      })
-      .catch((error) => {
-        cleanup(values.length - 1);
-        reject(error);
-      });
-  });
+/**
+ * @description
+ * When fatal error and AveAzul needs to crash the process,
+ * this method is used to throw the error.
+ *
+ * @param {Error} error - The error to throw.
+ */
+AveAzul.___throwUncaughtError = (error) => {
+  // istanbul ignore next
+  setTimeout(() => {
+    // istanbul ignore next
+    throw error;
+    // istanbul ignore next
+  }, 0);
 };
 
 module.exports = AveAzul;

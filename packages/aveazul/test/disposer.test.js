@@ -1,5 +1,8 @@
+"use strict";
+
 const { Disposer } = require("../lib/disposer");
-const AveAzul = require("../lib/aveazul");
+const AveAzul = require("./promise-lib");
+
 describe("Disposer", () => {
   test("should be exported as a class", () => {
     expect(typeof Disposer).toBe("function");

@@ -1,4 +1,6 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+
+const AveAzul = require("./promise-lib");
 
 describe("delay", () => {
   beforeEach(() => {

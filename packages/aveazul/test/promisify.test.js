@@ -1,4 +1,6 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+
+const AveAzul = require("./promise-lib");
 
 describe("promisify", () => {
   test("should work with callback-style functions", async () => {
@@ -24,9 +26,17 @@ describe("promisify", () => {
 
   test("should handle functions with no arguments", async () => {
     const original = function noArgs(cb) {};
-    original.length = 1;
-    original.name = "noArgs";
 
+    Object.defineProperty(original, "length", {
+      value: 1,
+      writable: false,
+      configurable: false,
+    });
+    Object.defineProperty(original, "name", {
+      value: "noArgs",
+      writable: false,
+      configurable: false,
+    });
     const promisified = AveAzul.promisify(original);
 
     // expect(promisified.length).toBe(1);
@@ -94,9 +104,16 @@ describe("promisify", () => {
 
   test("should preserve properties from fs.readFile-like functions", () => {
     const original = function readFile(path, options, cb) {};
-    original.length = 3;
-    original.name = "readFile";
-
+    Object.defineProperty(original, "length", {
+      value: 3,
+      writable: false,
+      configurable: false,
+    });
+    Object.defineProperty(original, "name", {
+      value: "readFile",
+      writable: false,
+      configurable: false,
+    });
     const promisified = AveAzul.promisify(original);
 
     expect(promisified.length).toBe(3);
@@ -105,9 +122,16 @@ describe("promisify", () => {
 
   test("should preserve properties from functions with no arguments", () => {
     const original = function noArgs(cb) {};
-    original.length = 1;
-    original.name = "noArgs";
-
+    Object.defineProperty(original, "length", {
+      value: 1,
+      writable: false,
+      configurable: false,
+    });
+    Object.defineProperty(original, "name", {
+      value: "noArgs",
+      writable: false,
+      configurable: false,
+    });
     const promisified = AveAzul.promisify(original);
 
     expect(promisified.length).toBe(1);

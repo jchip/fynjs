@@ -1,4 +1,7 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+
+const AveAzul = require("../../lib/aveazul");
+
 describe("constructor", () => {
   test("should create a new AveAzul instance", () => {
     const promise = new AveAzul((resolve) => resolve(42));

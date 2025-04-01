@@ -1,4 +1,6 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+
+const AveAzul = require("./promise-lib");
 
 describe("AveAzul.promisifyAll", () => {
   test("should promisify all methods of an object", async () => {
