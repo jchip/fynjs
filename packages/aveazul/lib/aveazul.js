@@ -329,6 +329,24 @@ AveAzul.promisifyAll = (target, options) => {
 };
 
 /**
+ * Bluebird-style method() for creating a method that returns a promise
+ * @param {Function} fn - Function to create a method for
+ * @returns {Function} Method function that returns a promise
+ */
+AveAzul.method = (fn) => {
+  return function (...args) {
+    return new AveAzul((resolve, reject) => {
+      try {
+        const result = fn.call(this, ...args);
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+};
+
+/**
  * Bluebird-style using() for resource management
  * @param {Disposer|Array<Disposer>} resources - Resource disposers
  * @param {Function} handler - Handler function
