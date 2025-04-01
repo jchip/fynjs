@@ -3,18 +3,7 @@
 const xaa = require("xaa");
 const { promisify } = require("./promisify");
 const { promisifyAll } = require("./promisify-all");
-
-/**
- * Disposer class for resource cleanup
- * @private
- */
-class Disposer {
-  constructor(data, promise) {
-    this._data = data; // The cleanup function
-    this._promise = promise; // The promise that resolves to the resource
-  }
-}
-
+const { Disposer } = require("./disposer");
 /**
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird-like utility methods
  * This implementation is inspired by and provides similar APIs to the Bluebird Promise library,
@@ -348,9 +337,11 @@ AveAzul.method = (fn) => {
 };
 
 /**
- * Bluebird-style using() for resource management
- * @param {Disposer|Array<Disposer>} resources - Resource disposers
- * @param {Function} handler - Handler function
+ * Bluebird-style using() for resource management. There is only a static version of this method.
+ * After the handler finish and returns, regardless of whether it resolves or rejects, the resources will be disposed.
+ *
+ * @param {Disposer|Array<Disposer>} resources - Resource disposers, either an array of disposers or a variadic argument list
+ * @param {Function} handler - Handler function that will receive the resources as arguments
  * @returns {Promise} Promise that resolves with handler result
  */
 AveAzul.using = (resources, handler) => {
@@ -412,8 +403,5 @@ AveAzul.using = (resources, handler) => {
       });
   });
 };
-
-// Expose Disposer class
-AveAzul.Disposer = Disposer;
 
 module.exports = AveAzul;

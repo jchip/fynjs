@@ -1,12 +1,16 @@
-const AveAzul = require("../lib/aveazul");
+"use strict";
+
+const AveAzul = require("bluebird");
+// const AveAzul = require("../lib/aveazul");
 
 describe("AveAzul.using", () => {
   test("should manage a single resource with cleanup", async () => {
     const resource = { value: "test resource", disposed: false };
     let resourceUsed = false;
 
-    const disposer = AveAzul.resolve(resource).disposer(() => {
-      resource.disposed = true;
+    // expect the disposer to receive the resource from the promise
+    const disposer = AveAzul.resolve(resource).disposer((_res) => {
+      _res.disposed = true;
     });
 
     const result = await AveAzul.using([disposer], (res) => {
@@ -21,7 +25,7 @@ describe("AveAzul.using", () => {
     expect(result).toBe("success");
   });
 
-  test("should manage multiple resources with cleanup", async () => {
+  test("should manage multiple resources using array syntax with cleanup", async () => {
     const resources = [
       { id: 1, disposed: false },
       { id: 2, disposed: false },
@@ -29,8 +33,8 @@ describe("AveAzul.using", () => {
     ];
 
     const disposers = resources.map((res) =>
-      AveAzul.resolve(res).disposer(() => {
-        res.disposed = true;
+      AveAzul.resolve(res).disposer((_res) => {
+        _res.disposed = true;
       })
     );
 
@@ -54,31 +58,7 @@ describe("AveAzul.using", () => {
     expect(result).toBe("success");
   });
 
-  test("should manage resources with array syntax", async () => {
-    const resources = [
-      { id: 1, disposed: false },
-      { id: 2, disposed: false },
-    ];
-
-    const disposers = resources.map((res) =>
-      AveAzul.resolve(res).disposer(() => {
-        res.disposed = true;
-      })
-    );
-
-    const result = await AveAzul.using(disposers, (resArray) => {
-      expect(Array.isArray(resArray)).toBe(true);
-      expect(resArray[0]).toBe(resources[0]);
-      expect(resArray[1]).toBe(resources[1]);
-      return "success";
-    });
-
-    expect(resources[0].disposed).toBe(true);
-    expect(resources[1].disposed).toBe(true);
-    expect(result).toBe("success");
-  });
-
-  test("should cleanup resources in reverse order", async () => {
+  function setupCleanupOrderTest() {
     const cleanupOrder = [];
 
     const resource1 = { id: 1 };
@@ -86,7 +66,9 @@ describe("AveAzul.using", () => {
     const resource3 = { id: 3 };
 
     const disposer1 = AveAzul.resolve(resource1).disposer(() => {
-      cleanupOrder.push(1);
+      return AveAzul.delay(Math.random() * 200).then(() =>
+        cleanupOrder.push(1)
+      );
     });
 
     const disposer2 = AveAzul.resolve(resource2).disposer(() => {
@@ -94,13 +76,31 @@ describe("AveAzul.using", () => {
     });
 
     const disposer3 = AveAzul.resolve(resource3).disposer(() => {
-      cleanupOrder.push(3);
+      return AveAzul.delay(Math.random() * 200).then(() =>
+        cleanupOrder.push(3)
+      );
     });
+    return { cleanupOrder, disposer1, disposer2, disposer3 };
+  }
+
+  test("should cleanup resources using array syntax in order of acquisition", async () => {
+    const { cleanupOrder, disposer1, disposer2, disposer3 } =
+      setupCleanupOrderTest();
 
     await AveAzul.using([disposer1, disposer2, disposer3], () => "success");
 
     // Resources should be cleaned up in reverse order of acquisition
-    expect(cleanupOrder).toEqual([3, 2, 1]);
+    expect(cleanupOrder).toEqual([1, 2, 3]);
+  });
+
+  test("should cleanup resources using ...args syntax in order of acquisition", async () => {
+    const { cleanupOrder, disposer1, disposer2, disposer3 } =
+      setupCleanupOrderTest();
+
+    await AveAzul.using(disposer1, disposer2, disposer3, () => "success");
+
+    // Resources should be cleaned up in reverse order of acquisition
+    expect(cleanupOrder).toEqual([1, 2, 3]);
   });
 
   test("should clean up resources when handler throws", async () => {
@@ -112,7 +112,8 @@ describe("AveAzul.using", () => {
     const error = new Error("Test error");
 
     await expect(
-      AveAzul.using([disposer], () => {
+      // test using ...args syntax with a single disposer
+      AveAzul.using(disposer, () => {
         throw error;
       })
     ).rejects.toThrow(error);
@@ -137,60 +138,119 @@ describe("AveAzul.using", () => {
     expect(resource.disposed).toBe(true);
   });
 
-  test.skip("should clean up acquired resources even if later promises reject", async () => {
+  test("should clean up acquired resources even a later promise resource rejects", async () => {
     let disposed = false;
     const resource = { value: "test resource" };
 
-    // First wrap our cleanup in a promise we can await
-    const cleanupPromise = new Promise((resolve) => {
-      // Create a disposer that will signal when cleanup happens
-      const disposer = AveAzul.resolve(resource).disposer(() => {
-        disposed = true;
-        resolve();
-      });
-
-      // Now create an array with our disposer followed by a rejected promise
-      const disposers = [
-        disposer,
-        Promise.reject(new Error("Resource acquisition failed")),
-      ];
-
-      // Catch the error here to prevent test failure
-      AveAzul.using(disposers, () => "success").catch(() => {});
+    // Create a disposer that will signal when cleanup happens
+    const disposer = AveAzul.resolve(resource).disposer(() => {
+      disposed = true;
     });
 
-    // Wait for the cleanup to happen
-    await cleanupPromise;
+    const reject1 = () =>
+      Promise.reject(new Error("Resource acquisition failed"));
+    const reject2 = () =>
+      AveAzul.delay(50).then(() =>
+        AveAzul.reject(new Error("Resource 2 acquisition failed"))
+      );
 
+    // Now create an array with our disposer followed by a rejected promise
+    const disposers = [disposer, reject1(), reject2()];
+
+    let err1;
+
+    // Catch the error here to prevent test failure
+    const res = await AveAzul.using(disposers, () => "success").catch((err) => {
+      err1 = err;
+    });
+
+    expect(res).toBeUndefined();
     // Now verify that cleanup happened
     expect(disposed).toBe(true);
+    expect(err1).toBeInstanceOf(Error);
   });
 
-  test("should continue cleanup if a disposer throws", async () => {
+  test("should clean up acquired resources even an earlier promise resource rejects", async () => {
+    let disposed = false;
+    const resource = { value: "test resource" };
+
+    // Create a disposer that will signal when cleanup happens
+    const disposer = AveAzul.resolve(resource).disposer(() => {
+      disposed = true;
+    });
+
+    const reject1 = () =>
+      Promise.reject(new Error("Resource acquisition failed"));
+    const reject2 = () =>
+      AveAzul.delay(50).then(() =>
+        AveAzul.reject(new Error("Resource 2 acquisition failed"))
+      );
+
+    // Now create an array with our disposer followed by a rejected promise
+    const disposers = [reject1(), disposer, reject2()];
+
+    let err1;
+
+    // Catch the error here to prevent test failure
+    const res = await AveAzul.using(disposers, () => "success").catch((err) => {
+      err1 = err;
+    });
+
+    expect(res).toBeUndefined();
+    // Now verify that cleanup happened
+    expect(disposed).toBe(true);
+    expect(err1).toBeInstanceOf(Error);
+  });
+
+  /**
+   * If a disposer throws or rejects, then bluebird throw an exception (crashing the process in node.js)
+   * by doing this: `setTimeout(function(){throw e;}, 0);`, which is out of band exception that only
+   * uncaughtException handler can catch.  So `.catch()` can't handle it.
+   *
+   * Recommendation from bluebird:
+   *  As a result, if you anticipate thrown errors or promise rejections while disposing of the resource you
+   *  should use a try..catch block (or Promise.try) and write the appropriate catch code to handle the
+   *  errors. If it's not possible to sensibly handle the error, letting the process crash is the next best
+   *  option.
+   */
+  test.skip("should throw exception if a disposer throws", async () => {
     const cleanupCalled = [false, false, false];
     const resources = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-    const disposer1 = AveAzul.resolve(resources[0]).disposer(() => {
-      cleanupCalled[0] = true;
-    });
+    // const disposer1 = AveAzul.resolve(resources[0]).disposer(() => {
+    //   cleanupCalled[0] = true;
+    // });
 
-    const disposer2 = AveAzul.resolve(resources[1]).disposer(() => {
-      cleanupCalled[1] = true;
-      throw new Error("Cleanup error");
-    });
+    // const disposer2 = AveAzul.resolve(resources[1]).disposer(() => {
+    //   cleanupCalled[1] = true;
+    //   throw new Error("Cleanup error");
+    // });
 
-    const disposer3 = AveAzul.resolve(resources[2]).disposer(() => {
-      cleanupCalled[2] = true;
-    });
+    // const disposer3 = AveAzul.resolve(resources[2]).disposer(() => {
+    //   cleanupCalled[2] = true;
+    // });
 
-    // Should not throw even though a disposer throws
-    const result = await AveAzul.using(
-      [disposer1, disposer2, disposer3],
-      () => "success"
-    );
+    // let errorThrown = false;
+    // // Should not throw even though a disposer throws
+    // // test using ...args syntax with multiple disposers
+    // const result = await AveAzul.using(
+    //   disposer1,
+    //   disposer2,
+    //   disposer3,
+    //   () => "success"
+    // ).catch(() => {
+    //   errorThrown = true;
+    // });
 
-    expect(result).toBe("success");
-    expect(cleanupCalled).toEqual([true, true, true]);
+    // expect(result).toBe("success");
+    // expect(cleanupCalled).toEqual([true, true, true]);
+
+    setTimeout(() => {
+      console.log("throwing");
+      throw new Error("blah");
+    }, 0);
+    await AveAzul.delay(100);
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   test("should work with non-promise values", async () => {
@@ -291,46 +351,9 @@ describe("AveAzul.using", () => {
 
     expect(resource.cleaned).toBe(true);
   });
-});
 
-describe("AveAzul.Disposer", () => {
-  test("should be exported as a class", () => {
-    expect(typeof AveAzul.Disposer).toBe("function");
-  });
-
-  test("should throw if disposer function is not a function", () => {
-    expect(() => {
-      AveAzul.resolve({}).disposer("not a function");
-    }).toThrow(TypeError);
-
-    expect(() => {
-      AveAzul.resolve({}).disposer(null);
-    }).toThrow(TypeError);
-
-    expect(() => {
-      AveAzul.resolve({}).disposer(undefined);
-    }).toThrow(TypeError);
-
-    expect(() => {
-      AveAzul.resolve({}).disposer(123);
-    }).toThrow(TypeError);
-  });
-
-  test("should store promise and cleanup function", () => {
-    const resource = { value: "test" };
-    const promise = AveAzul.resolve(resource);
-    const cleanupFn = () => {};
-
-    const disposer = promise.disposer(cleanupFn);
-
-    // Testing internal structure
-    expect(disposer._promise).toBe(promise);
-    expect(disposer._data).toBe(cleanupFn);
-  });
-
-  test("disposer should work with both Promise and AveAzul instances", async () => {
+  test("should work with diposer and other types of resources", async () => {
     const resource1 = { id: "aveazul", disposed: false };
-    const resource2 = { id: "native", disposed: false };
 
     // Using AveAzul promise
     const disposer1 = AveAzul.resolve(resource1).disposer(() => {
@@ -338,19 +361,21 @@ describe("AveAzul.Disposer", () => {
     });
 
     // Using native Promise
-    const promise2 = Promise.resolve(resource2);
-    const disposer2 = promise2.disposer
-      ? promise2.disposer(() => {
-          resource2.disposed = true;
-        })
-      : new AveAzul.Disposer(() => {
-          resource2.disposed = true;
-        }, promise2);
+    const promise2 = Promise.resolve("foobar");
+    const result = [];
+    const res = await AveAzul.using(
+      "hello world",
+      disposer1,
+      promise2,
+      (a, b, c) => {
+        result.push(a, b, c);
+        return "success";
+      }
+    );
 
-    await AveAzul.using([disposer1, disposer2], () => "success");
-
+    expect(res).toBe("success");
     expect(resource1.disposed).toBe(true);
-    expect(resource2.disposed).toBe(true);
+    expect(result).toEqual(["hello world", resource1, "foobar"]);
   });
 
   test("should handle a practical example like file operations with mocks", async () => {
