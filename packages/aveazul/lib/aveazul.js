@@ -1,7 +1,18 @@
 "use strict";
 
 const xaa = require("xaa");
-const { promisify: nodePromisify } = require("node:util");
+const { promisify } = require("./promisify");
+const { promisifyAll } = require("./promisify-all");
+/**
+ * Disposer class for resource cleanup
+ * @private
+ */
+class Disposer {
+  constructor(data, promise) {
+    this._data = data; // The cleanup function
+    this._promise = promise; // The promise that resolves to the resource
+  }
+}
 
 /**
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird-like utility methods
@@ -28,7 +39,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the original value
    */
   tap(fn) {
-    return this.then(value => {
+    return this.then((value) => {
       fn(value);
       return value;
     });
@@ -41,7 +52,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the filtered array
    */
   filter(fn) {
-    return this.then(value => xaa.filter(value, fn));
+    return this.then((value) => xaa.filter(value, fn));
   }
 
   /**
@@ -51,7 +62,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the mapped array
    */
   map(fn) {
-    return this.then(value => xaa.map(value, fn));
+    return this.then((value) => xaa.map(value, fn));
   }
 
   /**
@@ -71,7 +82,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves when iteration is complete
    */
   each(fn) {
-    return this.then(value => xaa.each(value, fn));
+    return this.then((value) => xaa.each(value, fn));
   }
 
   /**
@@ -80,7 +91,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves after the delay
    */
   delay(ms) {
-    return this.then(value => xaa.delay(ms, value));
+    return xaa.delay(ms);
   }
 
   /**
@@ -90,42 +101,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that rejects if timeout occurs
    */
   timeout(ms, message = "Operation timed out") {
-    return new AveAzul((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(message));
-      }, ms);
-
-      this.then(
-        value => {
-          clearTimeout(timer);
-          resolve(value);
-        },
-        err => {
-          clearTimeout(timer);
-          reject(err);
-        }
-      );
-    });
-  }
-
-  /**
-   * Bluebird-style try() for wrapping sync/async functions
-   * @param {Function} fn - Function to execute
-   * @returns {Promise} Promise that resolves with the function's return value
-   */
-  try(fn) {
-    return new AveAzul((resolve, reject) => {
-      try {
-        const result = fn();
-        if (result && typeof result.then === "function") {
-          result.then(resolve, reject);
-        } else {
-          resolve(result);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return AveAzul.resolve(xaa.timeout(ms, message).run(this));
   }
 
   /**
@@ -135,9 +111,9 @@ class AveAzul extends Promise {
    */
   props(obj) {
     const keys = Object.keys(obj);
-    const values = keys.map(k => obj[k]);
+    const values = keys.map((k) => obj[k]);
 
-    return AveAzul.all(values).then(results => {
+    return AveAzul.all(values).then((results) => {
       const resolved = {};
       keys.forEach((k, i) => {
         resolved[k] = results[i];
@@ -147,30 +123,12 @@ class AveAzul extends Promise {
   }
 
   /**
-   * Bluebird-style catchIf() with predicate matching
-   * @param {Function|Error} predicate - Error class or predicate function
-   * @param {Function} fn - Handler function
-   * @returns {Promise} Promise with conditional catch handler
-   */
-  catchIf(predicate, fn) {
-    return this.catch(err => {
-      if (
-        (typeof predicate === "function" && !predicate.prototype && predicate(err)) ||
-        (typeof predicate === "function" && predicate.prototype && err instanceof predicate)
-      ) {
-        return fn(err);
-      }
-      throw err;
-    });
-  }
-
-  /**
    * Bluebird-style tapCatch() for side effects on rejection
    * @param {Function} fn - Function to execute on rejection
    * @returns {Promise} Promise that maintains the rejection
    */
   tapCatch(fn) {
-    return this.catch(err => {
+    return this.catch((err) => {
       fn(err);
       throw err;
     });
@@ -184,7 +142,7 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the final reduced value
    */
   reduce(fn, initialValue) {
-    return this.then(array => AveAzul.reduce(array, fn, initialValue));
+    return this.then((array) => AveAzul.reduce(array, fn, initialValue));
   }
 
   /**
@@ -202,7 +160,9 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that rejects with the new reason
    */
   catchThrow(reason) {
-    return this.catch(() => AveAzul.throw(reason));
+    return this.catch(() => {
+      throw reason;
+    });
   }
 
   /**
@@ -220,9 +180,11 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the property value
    */
   get(propertyPath) {
-    return this.then(value => {
+    return this.then((value) => {
       if (value == null) {
-        throw new TypeError("Cannot read property '" + propertyPath + "' of " + value);
+        throw new TypeError(
+          "Cannot read property '" + propertyPath + "' of " + value
+        );
       }
 
       let result = value;
@@ -230,13 +192,27 @@ class AveAzul extends Promise {
 
       for (const prop of props) {
         if (result == null) {
-          throw new TypeError("Cannot read property '" + prop + "' of " + result);
+          throw new TypeError(
+            "Cannot read property '" + prop + "' of " + result
+          );
         }
         result = result[prop];
       }
 
       return result;
     });
+  }
+
+  /**
+   * Bluebird-style disposer() for resource cleanup
+   * @param {Function} fn - Cleanup function
+   * @returns {Disposer} Disposer object
+   */
+  disposer(fn) {
+    if (typeof fn !== "function") {
+      throw new TypeError("Expected a function");
+    }
+    return new Disposer(fn, this);
   }
 }
 
@@ -270,18 +246,18 @@ AveAzul.map = (value, fn) => AveAzul.resolve(xaa.map(value, fn));
  * @param {Function} fn - Function to execute
  * @returns {Promise} Promise that resolves with the function's return value
  */
-AveAzul.try = fn => AveAzul.resolve(xaa.wrap(fn));
+AveAzul.try = (fn) => AveAzul.resolve(xaa.wrap(fn));
 
 /**
  * Bluebird-style props() for object properties
  * @param {Object} obj - Object with promise values
  * @returns {Promise} Promise that resolves with an object of resolved values
  */
-AveAzul.props = obj => {
+AveAzul.props = (obj) => {
   const keys = Object.keys(obj);
-  const values = keys.map(k => obj[k]);
+  const values = keys.map((k) => obj[k]);
 
-  return AveAzul.all(values).then(results => {
+  return AveAzul.all(values).then((results) => {
     const resolved = {};
     keys.forEach((k, i) => {
       resolved[k] = results[i];
@@ -295,61 +271,7 @@ AveAzul.props = obj => {
  * @returns {Object} Deferred object with promise, resolve, and reject methods
  */
 AveAzul.defer = () => {
-  const deferred = xaa.makeDefer();
-  deferred.promise = AveAzul.resolve(deferred.promise);
-  return deferred;
-};
-
-/**
- * Bluebird-style promisify() for converting callback-style functions to promises
- * @param {Function} fn - Function to promisify
- * @param {Object} [options] - Options object
- * @param {Object} [options.context] - `this` context to bind the function to
- * @returns {Function} Promisified function that returns an AveAzul promise
- */
-AveAzul.promisify = (fn, options = {}) => {
-  if (typeof fn !== 'function') {
-    throw new TypeError('Expected a function');
-  }
-
-  const wrapped = function(...args) {
-    return new AveAzul((resolve, reject) => {
-      const callback = (err, ...results) => {
-        if (err) reject(err);
-        else resolve(options.multiArgs ? results : results[0]);
-      };
-
-      if (options.context) {
-        fn.apply(options.context, [...args, callback]);
-      } else {
-        fn(...args, callback);
-      }
-    });
-  };
-
-  // Transfer properties from original function
-  const restrictedProps = ['length', 'name', 'caller', 'callee', 'arguments', 'prototype'];
-  Object.getOwnPropertyNames(fn).forEach(key => {
-    if (!restrictedProps.includes(key)) {
-      try {
-        wrapped[key] = fn[key];
-      } catch (e) {
-        // Skip properties that can't be copied
-      }
-    }
-  });
-
-  // Explicitly set length and name
-  Object.defineProperty(wrapped, 'length', {
-    value: fn.length,
-    configurable: true
-  });
-  Object.defineProperty(wrapped, 'name', {
-    value: fn.name,
-    configurable: true
-  });
-
-  return wrapped;
+  return xaa.makeDefer(AveAzul);
 };
 
 /**
@@ -384,122 +306,95 @@ AveAzul.reduce = (array, fn, initialValue) => {
 };
 
 /**
- * Bluebird-style throw() that returns a rejected promise with the given reason
- * @param {*} reason - Value to reject the promise with
- * @returns {Promise} Promise that rejects with the given reason
+ * Bluebird-style promisify() for converting callback-based functions to promises
+ * @param {Function} fn - Function to promisify
+ * @param {Object} [options] - Options object
+ * @returns {Function} Promisified function
  */
-AveAzul.throw = reason => AveAzul.reject(reason);
+AveAzul.promisify = (fn, options) => {
+  return promisify(fn, {
+    ...options,
+    Promise: AveAzul,
+  });
+};
 
 /**
- * Bluebird-style promisifyAll() for converting all methods of an object or class to promise-based versions
- * Similar to Bluebird's Promise.promisifyAll()
- * 
- * @param {Object|Function} target - The object or class to promisify
- * @param {Object} [options] - Configuration options
- * @param {string} [options.suffix='Async'] - Suffix to append to promisified method names
- * @param {Function} [options.filter] - Filter function to determine which methods to promisify
- * @param {Function} [options.promisifier] - Custom function to handle promisification
- * @param {boolean} [options.multiArgs=false] - Whether to support multiple callback arguments
- * @param {boolean} [options.excludeMain=false] - Whether to exclude promisifying the main object/class
- * @param {Object} [options.context] - The context (this) to use when calling methods
- * @returns {Object|Function} The promisified object or class
- * @throws {TypeError} If target is null, undefined, or not an object/function
- * 
- * @example
- * // Promisify an object
- * const obj = {
- *   method(cb) { cb(null, 'result'); }
- * };
- * AveAzul.promisifyAll(obj);
- * const result = await obj.methodAsync();
- * 
- * @example
- * // Promisify a class
- * class MyClass {
- *   method(cb) { cb(null, 'result'); }
- * }
- * AveAzul.promisifyAll(MyClass);
- * const instance = new MyClass();
- * const result = await instance.methodAsync();
- * 
- * @example
- * // With custom options
- * const obj = {
- *   method(cb) { cb(null, 'result1', 'result2'); }
- * };
- * AveAzul.promisifyAll(obj, {
- *   suffix: 'Promise',
- *   multiArgs: true,
- *   filter: (name) => name === 'method'
- * });
- * const [result1, result2] = await obj.methodPromise();
+ * Bluebird-style promisifyAll() for converting callback-based functions to promises
+ * @param {Object} target - Object to promisify
+ * @param {Object} [options] - Options object
+ * @returns {Object} Object with promisified methods
  */
-AveAzul.promisifyAll = (target, options = {}) => {
-  const {
-    suffix = 'Async',
-    filter = (name, func, targetObj, passedOptions) => {
-      // Check for valid JavaScript identifier
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
-        return false;
-      }
-      // Check for constructor function (has enumerable properties in prototype)
-      if (func.prototype && Object.keys(func.prototype).length > 0) {
-        return false;
-      }
-      return (
-        typeof func === 'function' &&
-        !func.name.startsWith('_') &&
-        !func.name.startsWith('promisify') &&
-        !func.name.startsWith('promisifyAll')
-      );
-    },
-    promisifier = (fn, context, multiArgs) => {
-      if (multiArgs) {
-        return (...args) => {
-          return new AveAzul((resolve, reject) => {
-            args.push((err, ...results) => {
-              if (err) reject(err);
-              else resolve(results);
-            });
-            fn.apply(context, args);
-          });
-        };
-      }
-      return AveAzul.promisify(fn, { context });
-    },
-    multiArgs = false,
-    excludeMain = false,
-    context = target
-  } = options;
-
-  if (target == null || (typeof target !== 'object' && typeof target !== 'function')) {
-    throw new TypeError('target must be an object');
-  }
-
-  const targetObj = target.prototype || target;
-  const keys = Object.getOwnPropertyNames(targetObj);
-
-  // Check for existing Async methods first
-  for (const key of keys) {
-    if (key.endsWith('Async')) {
-      throw new TypeError("Cannot promisify an API that has normal methods with 'Async'-suffix");
-    }
-  }
-
-  for (const key of keys) {
-    const func = targetObj[key];
-    if (filter(key, func, targetObj, options)) {
-      const promisifiedKey = key + suffix;
-      targetObj[promisifiedKey] = promisifier(func, context, multiArgs);
-    }
-  }
-
-  if (!excludeMain && typeof target === 'function') {
-    target.promisify = AveAzul.promisify;
-    target.promisifyAll = AveAzul.promisifyAll;
-  }
-
-  return target;
+AveAzul.promisifyAll = (target, options) => {
+  return promisifyAll(target, { ...options, Promise: AveAzul });
 };
+
+/**
+ * Bluebird-style using() for resource management
+ * @param {Disposer|Array<Disposer>} resources - Resource disposers
+ * @param {Function} handler - Handler function
+ * @returns {Promise} Promise that resolves with handler result
+ */
+AveAzul.using = (resources, handler) => {
+  const isVariadic = typeof arguments[arguments.length - 1] === "function";
+  const resourcesArray = isVariadic
+    ? Array.prototype.slice.call(arguments, 0, -1)
+    : resources;
+  const handlerFn = isVariadic ? arguments[arguments.length - 1] : handler;
+
+  return new AveAzul((resolve, reject) => {
+    const values = [];
+    const cleanupFns = [];
+
+    const processResource = (resource, index) => {
+      if (resource instanceof Disposer) {
+        cleanupFns[index] = resource._data;
+        return resource._promise;
+      }
+      return Promise.resolve(resource);
+    };
+
+    const cleanup = (startIndex) => {
+      for (let i = startIndex; i >= 0; i--) {
+        if (cleanupFns[i]) {
+          try {
+            cleanupFns[i](values[i], Promise.resolve(values[i]));
+          } catch (error) {
+            console.error(`Cleanup error for resource ${i}:`, error);
+          }
+        }
+      }
+    };
+
+    Promise.all(resourcesArray.map(processResource))
+      .then((results) => {
+        values.push(...results);
+        const result = isVariadic
+          ? handlerFn.apply(null, values)
+          : handlerFn(values);
+        if (result instanceof Promise) {
+          result.then(
+            (value) => {
+              cleanup(values.length - 1);
+              resolve(value);
+            },
+            (error) => {
+              cleanup(values.length - 1);
+              reject(error);
+            }
+          );
+        } else {
+          cleanup(values.length - 1);
+          resolve(result);
+        }
+      })
+      .catch((error) => {
+        cleanup(values.length - 1);
+        reject(error);
+      });
+  });
+};
+
+// Expose Disposer class
+AveAzul.Disposer = Disposer;
 
 module.exports = AveAzul;

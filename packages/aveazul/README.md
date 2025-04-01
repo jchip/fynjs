@@ -71,6 +71,8 @@ obj.methodAsync().then(result => console.log(result)); // 'result'
 - `reduce(array, fn, initialValue?)` - Reduce array elements
 - `throw(reason)` - Return rejected promise
 - `promisifyAll(target, options?)` - Convert all methods of an object/class to promises
+- `disposer(fn)` - Create a disposer function for resource cleanup
+- `using(resources, fn)` - Manage resources with automatic cleanup
 
 ### PromisifyAll Options
 
@@ -80,6 +82,27 @@ obj.methodAsync().then(result => console.log(result)); // 'result'
 - `multiArgs` (default: false) - Whether to support multiple callback arguments
 - `excludeMain` (default: false) - Whether to exclude promisifying the main object/class
 - `context` - The context (this) to use when calling methods
+
+### Resource Management
+
+The library provides Bluebird-style resource management through `disposer` and `using`:
+
+```javascript
+// Create a disposer for a resource
+const fileDisposer = AveAzul.disposer(file => {
+  return fs.close(file);
+});
+
+// Use resources with automatic cleanup
+const result = await AveAzul.using(
+  fs.open('file.txt', 'r').then(fileDisposer),
+  file => {
+    return fs.read(file);
+  }
+);
+```
+
+The `using` method ensures that resources are properly cleaned up even if an error occurs. Resources are cleaned up in reverse order of acquisition.
 
 ## Development
 
