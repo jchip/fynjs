@@ -1,54 +1,6 @@
 "use strict";
 
-/**
- * Prop filtering code copied from bluebird/js/release
- */
-const noCopyProps = [
-  "arity",
-  "length",
-  "name",
-  "arguments",
-  "caller",
-  "callee",
-  "prototype",
-  "__isPromisified__",
-];
-const noCopyPropsPattern = new RegExp("^(?:" + noCopyProps.join("|") + ")$");
-
-function propsFilter(key) {
-  return !noCopyPropsPattern.test(key);
-}
-
-function copyOwnProperties(source, target, filter = propsFilter) {
-  const names = Object.getOwnPropertyNames(source);
-
-  for (const name of names) {
-    if (filter(name)) {
-      Object.defineProperty(
-        target,
-        name,
-        Object.getOwnPropertyDescriptor(source, name)
-      );
-    }
-  }
-}
-
-module.exports.copyOwnProperties = copyOwnProperties;
-
-/**
- * Copied from bluebird/js/release/util.js
- * @param {*} fn
- * @returns
- */
-function isPromisified(fn) {
-  try {
-    return fn.__isPromisified__ === true;
-  } catch (e) {
-    return false;
-  }
-}
-
-module.exports.isPromisified = isPromisified;
+const { copyOwnProperties, isPromisified } = require("./util");
 
 module.exports.promisify = function promisify(fn, _options) {
   if (typeof fn !== "function") {

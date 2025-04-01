@@ -1,13 +1,14 @@
 "use strict";
 
-const { promisify, isPromisified } = require("./promisify");
+const { promisify } = require("./promisify");
+const {
+  isIdentifier,
+  isClass,
+  isConstructor,
+  isPromisified,
+} = require("./util");
 
 const defaultSuffix = "Async";
-
-const rident = /^[a-z$_][a-z$_0-9]*$/i;
-function isIdentifier(str) {
-  return rident.test(str);
-}
 
 const defaultFilter = function (name) {
   return isIdentifier(name) && name.charAt(0) !== "_" && name !== "constructor";
@@ -19,36 +20,6 @@ const defaultPromisifier = (fn, _defaultPromisifier, options) => {
     copyProps: false,
   });
 };
-
-const thisAssignmentPattern = /this\s*\.\s*\S+\s*=/;
-function isClass(fn) {
-  try {
-    if (fn && typeof fn === "function") {
-      const keys = Object.getOwnPropertyNames(Object.getPrototypeOf(fn));
-
-      let fnStr = "";
-
-      if (
-        // has methods
-        keys.length > 1 ||
-        // hasMethodsOtherThanConstructor
-        (keys.length > 0 &&
-          !(keys.length === 1 && keys[0] === "constructor")) ||
-        // hasThisAssignmentAndStaticMethods
-        ((fnStr = fn.toString()) &&
-          thisAssignmentPattern.test(fnStr) &&
-          Object.getOwnPropertyNames(fn).length > 0) ||
-        // "class Blah {"
-        fnStr.startsWith("class ")
-      ) {
-        return true;
-      }
-    }
-    return false;
-  } catch (e) {
-    return false;
-  }
-}
 
 const excludedPrototypes = [
   Object.getPrototypeOf(Array),
@@ -67,14 +38,6 @@ function getPromisifiedKeys(target) {
   const allKeys = [...protoKeys, ...keys];
 
   return allKeys;
-}
-
-function isConstructor(func) {
-  return (
-    !!func.prototype &&
-    !!func.prototype.constructor.name &&
-    func.prototype.constructor.name === func.name
-  );
 }
 
 function promisifyAll2(obj, options) {
