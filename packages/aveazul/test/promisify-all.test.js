@@ -257,6 +257,37 @@ describe("AveAzul.promisifyAll", () => {
     expect(obj.methodAsync).toBeDefined();
   });
 
+  test("should handle a class that extends an excluded class", () => {
+    // Create a class that extends Array
+    class CustomArray extends Array {
+      customMethod(cb) {
+        cb(null, this.length);
+      }
+    }
+
+    // Create an object containing this custom class
+    const container = {
+      ExtendedArray: CustomArray,
+      regularMethod(cb) {
+        cb(null, "regular");
+      },
+    };
+
+    // Promisify the container and the custom class
+    AveAzul.promisifyAll(container);
+    AveAzul.promisifyAll(CustomArray.prototype);
+
+    // Check that the custom method was promisified
+    const instance = new CustomArray();
+    expect(typeof instance.customMethodAsync).toBe("function");
+
+    // The container's regular method should be promisified
+    expect(typeof container.regularMethodAsync).toBe("function");
+
+    // The container's ExtendedArray should not have been promisified itself
+    expect(container.ExtendedArrayAsync).toBeUndefined();
+  });
+
   test("should throw RangeError when suffix is not a valid identifier", () => {
     const obj = {
       method(cb) {
