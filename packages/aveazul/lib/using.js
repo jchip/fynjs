@@ -1,6 +1,7 @@
 "use strict";
 
 const { Disposer } = require("./disposer");
+const { isPromise } = require("./util");
 
 /**
  * @description
@@ -28,15 +29,8 @@ function using(resources, handler, Promise, asArray) {
 
   const acquireResources = () => {
     const promiseRes = resources.map((resource) => {
-      // if it's a promise like, wait for its resolved value
-      if (
-        resource instanceof Promise ||
-        resource instanceof global.Promise ||
-        (resource.then &&
-          resource.catch &&
-          typeof resource.then === "function" &&
-          typeof resource.catch === "function")
-      ) {
+      // if it's a promise-like, wait for its resolved value
+      if (isPromise(resource)) {
         return { ___promise: resource };
       }
       return resource;

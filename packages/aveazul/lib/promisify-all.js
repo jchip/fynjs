@@ -6,6 +6,7 @@ const {
   isClass,
   isConstructor,
   isPromisified,
+  getObjectKeys,
 } = require("./util");
 
 const defaultSuffix = "Async";
@@ -48,23 +49,12 @@ function isExcludedClass(obj) {
   return false;
 }
 
-function getPromisifiedKeys(target) {
-  const proto = Object.getPrototypeOf(target);
-  const protoKeys = excludedPrototypes.includes(proto)
-    ? []
-    : Object.getOwnPropertyNames(proto);
-  const keys = Object.getOwnPropertyNames(target);
-  const allKeys = [...protoKeys, ...keys];
-
-  return allKeys;
-}
-
 function promisifyAll2(obj, options) {
   if (isExcludedClass(obj)) {
     return;
   }
 
-  const allKeys = getPromisifiedKeys(obj);
+  const allKeys = getObjectKeys(obj, excludedPrototypes);
 
   for (const key of allKeys) {
     if (key.endsWith(options.suffix)) {
@@ -120,7 +110,7 @@ function promisifyAll(target, _options) {
     );
   }
 
-  const allKeys = getPromisifiedKeys(target);
+  const allKeys = getObjectKeys(target, excludedPrototypes);
 
   for (const key of allKeys) {
     const value = target[key];

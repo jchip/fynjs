@@ -1,14 +1,50 @@
 "use strict";
 
+/**
+ * Determines if a function is a class (either ES6 class or ES5 constructor function)
+ * This function performs several checks to identify different class patterns:
+ * 1. ES6 classes with the 'class' keyword
+ * 2. Constructor functions (ES5 classes) with prototype methods
+ *
+ * @param {*} fn - The value to check
+ * @returns {boolean} - True if the function is a class, false otherwise
+ */
 function isClass(fn) {
+  // Early return for non-functions or null/undefined
+  if (!fn || typeof fn !== "function") return false;
+
+  // Method 1: Check for ES6 class syntax
+  // This detects class declarations and class expressions
   try {
-    if (fn && typeof fn === "function") {
-      const fnStr = fn.toString();
-      return fnStr.startsWith("class ");
+    const fnStr = fn.toString();
+    if (fnStr.startsWith("class ") || /^class\s+/.test(fnStr)) {
+      return true;
     }
   } catch (e) {
-    // ignore
+    // Ignore errors that might occur when calling toString()
+    // Some objects might have custom toString implementations that throw
+    return false;
   }
+
+  // Method 2: Check for constructor functions (ES5 class pattern)
+  // A proper constructor has its .prototype.constructor pointing back to itself
+  if (fn.prototype && fn.prototype.constructor === fn) {
+    // Additional validation to filter out regular functions
+    // that happen to have the correct prototype structure
+
+    // Check if the prototype has any methods other than constructor
+    // This is a strong indicator of a class-like structure
+    const hasOwnMethods = Object.getOwnPropertyNames(fn.prototype).some(
+      (name) =>
+        name !== "constructor" && typeof fn.prototype[name] === "function"
+    );
+
+    // If it has prototype methods OR has static properties/methods
+    // Either condition suggests it's being used as a class
+    return hasOwnMethods || Object.getOwnPropertyNames(fn).length > 0;
+  }
+
+  // Not a class by any of our detection methods
   return false;
 }
 
@@ -76,8 +112,78 @@ function isPromisified(fn) {
   }
 }
 
+/**
+ * Determines if an object is a Promise instance
+ * @param {*} obj - The object to check
+ * @returns {boolean} - True if the object is a Promise instance, false otherwise
+ */
+function isPromise(obj) {
+  return (
+    obj instanceof Promise ||
+    (obj != null &&
+      typeof obj === "object" &&
+      typeof obj.then === "function" &&
+      typeof obj.catch === "function")
+  );
+}
+
+/**
+ * Gets all property keys from an object and its prototype chain, excluding standard
+ * prototypes like Object.prototype, Array.prototype, and Function.prototype
+ *
+ * @param {Object} target - The target object to get keys from
+ * @param {Array} [excludedPrototypes=[]] - An array of prototype objects to exclude keys from
+ * @returns {Array<string>} - Array of property keys
+ */
+function getObjectKeys(target, excludedPrototypes = []) {
+  const defaultExcluded = [
+    Object.getPrototypeOf([]), // Array.prototype
+    Object.getPrototypeOf({}), // Object.prototype
+    Object.getPrototypeOf(function () {}), // Function.prototype
+  ];
+
+  const excluded =
+    excludedPrototypes.length > 0 ? excludedPrototypes : defaultExcluded;
+
+  // Get own properties
+  const ownKeys = Object.getOwnPropertyNames(target);
+
+  // Get prototype properties, excluding those from excluded prototypes
+  let protoKeys = [];
+  let currentProto = Object.getPrototypeOf(target);
+
+  // Walk up the prototype chain until we hit null or an excluded prototype
+  while (currentProto && !excluded.includes(currentProto)) {
+    protoKeys = [...protoKeys, ...Object.getOwnPropertyNames(currentProto)];
+    currentProto = Object.getPrototypeOf(currentProto);
+  }
+
+  // Combine own properties and prototype properties
+  return [...protoKeys, ...ownKeys];
+}
+
+/**
+ * Triggers an uncaught exception in a safe way by scheduling it on the next event loop tick
+ * This is used for fatal errors that should crash the process
+ * @param {Error} error - The error to throw
+ */
+function triggerUncaughtException(error) {
+  if (!(error instanceof Error)) {
+    error = new Error(String(error));
+  }
+
+  // Use setTimeout with 0ms delay to throw on the next event loop tick
+  // This ensures the current execution context completes first
+  setTimeout(() => {
+    throw error;
+  }, 0);
+}
+
 module.exports.copyOwnProperties = copyOwnProperties;
 module.exports.isClass = isClass;
 module.exports.isIdentifier = isIdentifier;
 module.exports.isConstructor = isConstructor;
 module.exports.isPromisified = isPromisified;
+module.exports.isPromise = isPromise;
+module.exports.triggerUncaughtException = triggerUncaughtException;
+module.exports.getObjectKeys = getObjectKeys;

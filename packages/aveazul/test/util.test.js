@@ -27,6 +27,28 @@ describe("util.isClass", () => {
     expect(util.isClass({})).toBe(false);
     expect(util.isClass([])).toBe(false);
   });
+
+  test("should identify ES5 constructor functions with prototype methods as classes", () => {
+    // Create an ES5 constructor function with a prototype method
+    function ES5Class() {
+      this.property = "value";
+    }
+
+    // Add a method to the prototype
+    ES5Class.prototype.method = function () {
+      return this.property;
+    };
+
+    // This should satisfy the hasOwnMethods condition
+    expect(util.isClass(ES5Class)).toBe(true);
+
+    // Create a constructor with no prototype methods, but with static properties
+    function ES5ClassWithStatic() {}
+    ES5ClassWithStatic.staticProperty = "static";
+
+    // This should satisfy the Object.getOwnPropertyNames(fn).length > 0 condition
+    expect(util.isClass(ES5ClassWithStatic)).toBe(true);
+  });
 });
 
 describe("util.isIdentifier", () => {
@@ -149,5 +171,81 @@ describe("util.copyOwnProperties", () => {
     expect(target.a).toBe(1);
     expect(target.b).toBeUndefined();
     expect(target.c).toBe(3);
+  });
+});
+
+describe("util.getObjectKeys", () => {
+  test("should get own properties and prototype properties", () => {
+    // Create an object with prototype and own properties
+    function TestConstructor() {}
+    TestConstructor.prototype.protoMethod = function () {};
+
+    const obj = new TestConstructor();
+    obj.ownProperty = "value";
+
+    const keys = util.getObjectKeys(obj);
+
+    // Should include both own property and prototype method
+    expect(keys).toContain("ownProperty");
+    expect(keys).toContain("protoMethod");
+  });
+
+  test("should exclude keys from excluded prototypes", () => {
+    // Create an array with a custom property
+    const arr = ["a", "b", "c"];
+    arr.customProperty = "test";
+
+    const keys = util.getObjectKeys(arr);
+
+    // Should include own property
+    expect(keys).toContain("customProperty");
+
+    // Should not include Array.prototype methods like 'push'
+    // This tests the excluded prototypes branch
+    expect(keys).not.toContain("push");
+    expect(keys).not.toContain("forEach");
+  });
+
+  test("should honor custom excluded prototypes", () => {
+    // Create a custom prototype chain
+    function BaseClass() {}
+    BaseClass.prototype.baseMethod = function () {};
+
+    function ChildClass() {}
+    ChildClass.prototype = Object.create(BaseClass.prototype);
+    ChildClass.prototype.childMethod = function () {};
+
+    const instance = new ChildClass();
+    instance.ownMethod = function () {};
+
+    // First get keys without exclusion
+    const allKeys = util.getObjectKeys(instance, []);
+    expect(allKeys).toContain("baseMethod");
+    expect(allKeys).toContain("childMethod");
+    expect(allKeys).toContain("ownMethod");
+
+    // Then exclude the base prototype
+    const baseProto = Object.getPrototypeOf(ChildClass.prototype);
+    const filteredKeys = util.getObjectKeys(instance, [baseProto]);
+
+    // Should not include keys from the excluded prototype
+    expect(filteredKeys).not.toContain("baseMethod");
+    expect(filteredKeys).toContain("childMethod");
+    expect(filteredKeys).toContain("ownMethod");
+  });
+
+  test("should work with plain objects", () => {
+    const obj = {
+      method1: function () {},
+      property1: "value1",
+    };
+
+    const keys = util.getObjectKeys(obj);
+
+    expect(keys).toContain("method1");
+    expect(keys).toContain("property1");
+    // Object.prototype methods should be excluded
+    expect(keys).not.toContain("toString");
+    expect(keys).not.toContain("hasOwnProperty");
   });
 });

@@ -5,6 +5,7 @@ const { promisify } = require("./promisify");
 const { promisifyAll } = require("./promisify-all");
 const { Disposer } = require("./disposer");
 const { using } = require("./using");
+const { isPromise, triggerUncaughtException } = require("./util");
 /**
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird-like utility methods
  * This implementation is inspired by and provides similar APIs to the Bluebird Promise library,
@@ -77,13 +78,7 @@ class AveAzul extends Promise {
       const result = [];
       for (let i = 0; i < value.length; i++) {
         let x = value[i];
-        if (
-          x &&
-          x.then &&
-          x.catch &&
-          typeof x.then === "function" &&
-          typeof x.catch === "function"
-        ) {
+        if (isPromise(x)) {
           x = await x;
         }
         await fn(x, i, value.length);
@@ -369,13 +364,6 @@ AveAzul.using = (resources, ...args) => {
  *
  * @param {Error} error - The error to throw.
  */
-AveAzul.___throwUncaughtError = (error) => {
-  // istanbul ignore next
-  setTimeout(() => {
-    // istanbul ignore next
-    throw error;
-    // istanbul ignore next
-  }, 0);
-};
+AveAzul.___throwUncaughtError = triggerUncaughtException;
 
 module.exports = AveAzul;
