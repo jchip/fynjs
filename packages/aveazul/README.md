@@ -42,6 +42,22 @@ const obj = {
 };
 AveAzul.promisifyAll(obj);
 obj.methodAsync().then((result) => console.log(result)); // 'result'
+
+// Resource management with disposer and using
+const getResource = () => {
+  return AveAzul.resolve({
+    data: "important data",
+    close: () => console.log("Resource closed!"),
+  }).disposer((resource) => resource.close());
+};
+
+AveAzul.using(getResource(), (resource) => {
+  console.log(resource.data); // "important data"
+  return AveAzul.resolve("operation completed");
+}).then((result) => {
+  console.log(result); // "operation completed"
+  // Resource is automatically closed here, even if an error occurred
+});
 ```
 
 ## API
@@ -55,15 +71,14 @@ obj.methodAsync().then((result) => console.log(result)); // 'result'
 - `each(fn)` - Iterate over array elements
 - `delay(ms)` - Delay resolution
 - `timeout(ms, message?)` - Reject after specified time
-- `try(fn)` - Wrap sync/async functions
 - `props(obj)` - Resolve object properties
-- `catchIf(predicate, fn)` - Catch specific errors
 - `tapCatch(fn)` - Execute side effects on rejection
 - `reduce(fn, initialValue?)` - Reduce array elements
 - `throw(reason)` - Return rejected promise
 - `catchThrow(reason)` - Catch and throw new error
 - `catchReturn(value)` - Catch and return value
 - `get(propertyPath)` - Retrieve property value
+- `disposer(fn)` - Create a disposer for use with AveAzul.using() for resource cleanup
 
 ### Static Methods
 
@@ -78,7 +93,6 @@ obj.methodAsync().then((result) => console.log(result)); // 'result'
 - `method(fn)` - Creates a method that returns a promise resolving to the value returned by the original function
 - `throw(reason)` - Return rejected promise
 - `promisifyAll(target, options?)` - Convert all methods of an object/class to promises
-- `disposer(fn)` - Create a disposer function for resource cleanup
 - `using(resources, fn)` - Manage resources with automatic cleanup
 
 ### PromisifyAll Options
