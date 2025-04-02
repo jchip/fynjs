@@ -29,6 +29,25 @@ const excludedPrototypes = [
 
 const excludedClasses = [Array, Object, Function];
 
+// Helper function to determine if a class extends from any excluded class
+function isExcludedClass(obj) {
+  if (excludedClasses.includes(obj)) {
+    return true;
+  }
+
+  // Check if obj extends from any excluded class using instanceof
+  if (typeof obj === "function" && obj.prototype) {
+    // Check if prototype is instance of any excluded class
+    for (const excludedClass of excludedClasses) {
+      if (obj.prototype instanceof excludedClass) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function getPromisifiedKeys(target) {
   const proto = Object.getPrototypeOf(target);
   const protoKeys = excludedPrototypes.includes(proto)
@@ -41,7 +60,7 @@ function getPromisifiedKeys(target) {
 }
 
 function promisifyAll2(obj, options) {
-  if (excludedClasses.includes(obj)) {
+  if (isExcludedClass(obj)) {
     return;
   }
 

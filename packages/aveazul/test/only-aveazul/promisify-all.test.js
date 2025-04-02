@@ -25,6 +25,28 @@ describe("AveAzul.promisifyAll", () => {
     expect(obj.methodAsync).toBeDefined();
   });
 
+  test("should not promisify internal classes like Array when contained in an object", () => {
+    // Create a custom object with Array property
+    const obj = {
+      MyArray: Array,
+      method(cb) {
+        cb(null, "result");
+      },
+    };
+
+    AveAzul.promisifyAll(obj);
+
+    // Verify the original Array class itself wasn't modified
+    expect(Array.prototype.mapAsync).toBeUndefined();
+    expect(Array.prototype.filterAsync).toBeUndefined();
+    expect(Array.prototype.forEachAsync).toBeUndefined();
+
+    // Verify that regular methods were still promisified
+    expect(obj.methodAsync).toBeDefined();
+  });
+
+  // newer ES/node.js Array has fromAsync, skipping this for now
+
   test("should handle a class that extends an excluded class", () => {
     // Create a class that extends Array
     class CustomArray extends Array {

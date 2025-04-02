@@ -217,26 +217,6 @@ describe("AveAzul.promisifyAll", () => {
     expect(results).toEqual(["RESULT1", "RESULT2", "RESULT3"]);
   });
 
-  test("should not promisify internal classes like Array when contained in an object", () => {
-    // Create a custom object with Array property
-    const obj = {
-      MyArray: Array,
-      method(cb) {
-        cb(null, "result");
-      },
-    };
-
-    AveAzul.promisifyAll(obj);
-
-    // Verify the original Array class itself wasn't modified
-    expect(Array.prototype.mapAsync).toBeUndefined();
-    expect(Array.prototype.filterAsync).toBeUndefined();
-    expect(Array.prototype.forEachAsync).toBeUndefined();
-
-    // Verify that regular methods were still promisified
-    expect(obj.methodAsync).toBeDefined();
-  });
-
   test("should throw RangeError when suffix is not a valid identifier", () => {
     const obj = {
       method(cb) {
