@@ -94,6 +94,39 @@ describe("static methods", () => {
     expect(result).toBe(10);
   });
 
+  test("reduce() should handle array with promise elements", async () => {
+    // Array with both regular values and promises
+    const array = [
+      1,
+      Promise.resolve(2),
+      3,
+      AveAzul.resolve(4),
+      Promise.resolve(5),
+    ];
+
+    const result = await AveAzul.reduce(
+      array,
+      (acc, val) => {
+        // Verify the promises are resolved before reaching the reducer function
+        expect(typeof val).toBe("number");
+        return acc + val;
+      },
+      0
+    );
+
+    expect(result).toBe(15); // 1+2+3+4+5 = 15
+
+    // Test without initial value
+    const result2 = await AveAzul.reduce(array, (acc, val) => {
+      // Verify the promises are resolved
+      expect(typeof val).toBe("number");
+      expect(typeof acc).toBe("number");
+      return acc + val;
+    });
+
+    expect(result2).toBe(15); // 1+2+3+4+5 = 15
+  });
+
   test("defer() should create a deferred promise", async () => {
     const deferred = AveAzul.defer();
     expect(deferred.promise).toBeInstanceOf(AveAzul);

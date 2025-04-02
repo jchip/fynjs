@@ -124,6 +124,50 @@ describe("instance methods", () => {
     expect(result).toBe(10);
   });
 
+  test("reduce() should handle promise elements", async () => {
+    // Create an array with a mix of regular values and promises
+    const array = [
+      1,
+      Promise.resolve(2),
+      3,
+      AveAzul.resolve(4),
+      Promise.resolve(5),
+    ];
+
+    // Test with initial value
+    const result = await new AveAzul((resolve) => resolve(array)).reduce(
+      (acc, val, idx) => {
+        // Verify each value is resolved before being passed to the reducer
+        expect(typeof val).toBe("number");
+        expect(val).toBe(idx + 1); // Values should be 1,2,3,4,5
+        return acc + val;
+      },
+      0
+    );
+
+    expect(result).toBe(15); // 0+1+2+3+4+5 = 15
+
+    // Test with promise as initial value
+    const result2 = await new AveAzul((resolve) => resolve(array)).reduce(
+      (acc, val) => acc + val,
+      Promise.resolve(10)
+    );
+
+    expect(result2).toBe(25); // 10+1+2+3+4+5 = 25
+
+    // Test without initial value (should use first element as initial)
+    const result3 = await new AveAzul((resolve) => resolve(array)).reduce(
+      (acc, val) => {
+        // Both acc and val should be resolved to numbers
+        expect(typeof acc).toBe("number");
+        expect(typeof val).toBe("number");
+        return acc + val;
+      }
+    );
+
+    expect(result3).toBe(15); // 1+2+3+4+5 = 15
+  });
+
   test("throw() should return rejected promise", async () => {
     const promise = new AveAzul((resolve) => resolve()).throw(
       new Error("test")

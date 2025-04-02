@@ -151,10 +151,24 @@ class AveAzul extends Promise {
 
     return this.then(async (array) => {
       const len = array.length;
-      let value = hasInitial ? initialValue : array[0];
+      let value;
+      let idx;
+      if (hasInitial) {
+        idx = 0;
+        value = initialValue;
+      } else {
+        idx = 1;
+        value = array[0];
+      }
 
-      for (let i = hasInitial ? 0 : 1; i < len; i++) {
-        value = await fn(value, array[i], i, len);
+      value = isPromise(value) ? await value : value;
+
+      for (; idx < len; idx++) {
+        let x = array[idx];
+        if (isPromise(x)) {
+          x = await x;
+        }
+        value = await fn(value, x, idx, len);
       }
 
       return value;

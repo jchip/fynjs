@@ -127,6 +127,12 @@ function isPromise(obj) {
   );
 }
 
+const defaultExcluded = [
+  Object.getPrototypeOf(Array), // Array.prototype
+  Object.getPrototypeOf(Object), // Object.prototype
+  Object.getPrototypeOf(Function), // Function.prototype
+];
+
 /**
  * Gets all property keys from an object and its prototype chain, excluding standard
  * prototypes like Object.prototype, Array.prototype, and Function.prototype
@@ -136,12 +142,6 @@ function isPromise(obj) {
  * @returns {Array<string>} - Array of property keys
  */
 function getObjectKeys(target, excludedPrototypes = []) {
-  const defaultExcluded = [
-    Object.getPrototypeOf([]), // Array.prototype
-    Object.getPrototypeOf({}), // Object.prototype
-    Object.getPrototypeOf(function () {}), // Function.prototype
-  ];
-
   const excluded =
     excludedPrototypes.length > 0 ? excludedPrototypes : defaultExcluded;
 
