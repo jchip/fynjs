@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -12,20 +12,23 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x, 18.x, 20.x, 22.x]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    
-    - name: Install fyn
-      run: npm i -g fyn
 
-    - name: Install dependencies
-      run: fyn install
-        
-    - name: Run coverage
-      run: fyn test:coverage 
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install fyn
+        run: npm i -g fyn
+
+      - name: Install dependencies
+        run: fyn install
+
+      - name: Run tests with bluebird
+        run: fyn test:bluebird
+
+      - name: Run coverage
+        run: fyn test:coverage

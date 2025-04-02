@@ -1,3 +1,5 @@
+"use strict";
+
 const AveAzul = require("./promise-lib");
 
 describe("static methods", () => {
@@ -14,9 +16,9 @@ describe("static methods", () => {
   });
 
   test("reduce() should handle array with one element without initial value", async () => {
-    const fn = jest.fn((acc, val) => (acc === undefined ? val : acc + val));
+    const fn = jest.fn(() => {});
     const result = await AveAzul.reduce([42], fn);
-    expect(fn).toHaveBeenCalledWith(undefined, 42, 0, 1);
+    expect(fn).not.toHaveBeenCalled();
     expect(result).toBe(42);
   });
 
@@ -24,16 +26,16 @@ describe("static methods", () => {
     const fn = jest.fn((acc, val) => acc + val);
     const result = await AveAzul.reduce([42], fn, 10);
     expect(fn).toHaveBeenCalledWith(10, 42, 0, 1);
+    expect(fn).toHaveBeenCalledTimes(1);
     expect(result).toBe(52);
   });
 
   test("reduce() should handle array with multiple elements without initial value", async () => {
     const fn = jest.fn((acc, val) => (acc === undefined ? val : acc + val));
     const result = await AveAzul.reduce([1, 2, 3], fn);
-    expect(fn).toHaveBeenCalledTimes(3);
-    expect(fn).toHaveBeenNthCalledWith(1, undefined, 1, 0, 3);
-    expect(fn).toHaveBeenNthCalledWith(2, 1, 2, 1, 3);
-    expect(fn).toHaveBeenNthCalledWith(3, 3, 3, 2, 3);
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenNthCalledWith(1, 1, 2, 1, 3);
+    expect(fn).toHaveBeenNthCalledWith(2, 3, 3, 2, 3);
     expect(result).toBe(6);
   });
 
@@ -102,5 +104,35 @@ describe("static methods", () => {
     deferred.resolve(42);
     const result = await deferred.promise;
     expect(result).toBe(42);
+  });
+
+  test("each() should handle array with promise elements", async () => {
+    // Create array with regular values and promises
+    const items = [
+      1,
+      Promise.resolve(2),
+      3,
+      AveAzul.resolve(4),
+      Promise.resolve(5),
+    ];
+
+    const processedValues = [];
+
+    // Call each() and collect processed values
+    const result = await AveAzul.each(items, (value, index, length) => {
+      // Verify each value is resolved
+      expect(typeof value).toBe("number");
+      processedValues.push(value);
+
+      // Verify the correct index and length are passed
+      expect(index).toBe(processedValues.length - 1);
+      expect(length).toBe(items.length);
+    });
+
+    // Verify all values were correctly resolved and processed
+    expect(processedValues).toEqual([1, 2, 3, 4, 5]);
+
+    // Verify the original array is returned
+    expect(result).toEqual([1, 2, 3, 4, 5]);
   });
 });

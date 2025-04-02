@@ -14,7 +14,13 @@ describe("promisify", () => {
     const error = new Error("test error");
     const fn = (cb) => cb(error);
     const promisified = AveAzul.promisify(fn);
-    await expect(promisified()).rejects.toThrow(error);
+    try {
+      await promisified();
+      throw new Error("error expected but not thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error);
+      expect(err.message).toBe("test error");
+    }
   });
 
   test("should handle functions with multiple arguments", async () => {
@@ -25,7 +31,11 @@ describe("promisify", () => {
   });
 
   test("should handle functions with no arguments", async () => {
-    const original = function noArgs(cb) {};
+    const sig = "success " + Math.random();
+
+    const original = function noArgs(cb) {
+      cb(null, sig);
+    };
 
     Object.defineProperty(original, "length", {
       value: 1,
@@ -39,8 +49,14 @@ describe("promisify", () => {
     });
     const promisified = AveAzul.promisify(original);
 
+    const result = await promisified();
+    expect(result).toBe(sig);
+
+    //
+    // bluebird returns 3 and "ret", so not verifying these
+    //
     // expect(promisified.length).toBe(1);
-    expect(promisified.name).toBe("noArgs");
+    // expect(promisified.name).toBe("noArgs");
   });
 
   test("should handle non-configurable properties", () => {
@@ -96,7 +112,9 @@ describe("promisify", () => {
 
     // Test function properties
     expect(promisified.length).toBe(3); // Original function's length
-    expect(promisified.name).toBe("testFn"); // Original function's name
+
+    // bluebird returns "ret" - not verifying this
+    // expect(promisified.name).toBe("testFn"); // Original function's name
 
     // Test that the promisified function still works
     expect(typeof promisified).toBe("function");
@@ -117,11 +135,15 @@ describe("promisify", () => {
     const promisified = AveAzul.promisify(original);
 
     expect(promisified.length).toBe(3);
-    expect(promisified.name).toBe("readFile");
+    // bluebird returns "ret" - not verifying this
+    // expect(promisified.name).toBe("readFile");
   });
 
-  test("should preserve properties from functions with no arguments", () => {
-    const original = function noArgs(cb) {};
+  test("should preserve properties from functions with no arguments", async () => {
+    const sig = "success " + Math.random();
+    const original = function noArgs(cb) {
+      cb(null, sig);
+    };
     Object.defineProperty(original, "length", {
       value: 1,
       writable: false,
@@ -134,8 +156,12 @@ describe("promisify", () => {
     });
     const promisified = AveAzul.promisify(original);
 
-    expect(promisified.length).toBe(1);
-    expect(promisified.name).toBe("noArgs");
+    const result = await promisified();
+    expect(result).toBe(sig);
+
+    // bluebird returns 3 and "ret", so not verifying these
+    // expect(promisified.length).toBe(1);
+    // expect(promisified.name).toBe("noArgs");
   });
 
   it("should return the same function if already promisified", () => {

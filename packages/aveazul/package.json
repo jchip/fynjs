@@ -10,7 +10,8 @@
     "test:watch": "jest test --watch",
     "test:coverage": "jest test --coverage",
     "test:bluebird": "USE_BLUEBIRD=true jest test",
-    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand --no-coverage"
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand --no-coverage",
+    "test:debug:bluebird": "USE_BLUEBIRD=true node --inspect-brk node_modules/.bin/jest --runInBand --no-coverage"
   },
   "author": "Joel Chen",
   "files": [

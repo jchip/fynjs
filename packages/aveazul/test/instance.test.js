@@ -33,16 +33,22 @@ describe("instance methods", () => {
   });
 
   test("each() should iterate over array elements", async () => {
-    const sideEffect = jest.fn();
-    const result = await new AveAzul((resolve) => resolve([1, 2, 3])).each(
-      sideEffect
+    const calls = [];
+    const arr = [1, 2, 3];
+    const result = await new AveAzul((resolve) => resolve(arr)).each(
+      (a, b, c) => {
+        calls.push([a, b, c]);
+      }
     );
 
-    expect(sideEffect).toHaveBeenCalledTimes(3);
-    expect(sideEffect).toHaveBeenNthCalledWith(1, 1, 0);
-    expect(sideEffect).toHaveBeenNthCalledWith(2, 2, 1);
-    expect(sideEffect).toHaveBeenNthCalledWith(3, 3, 2);
-    expect(result).toBeUndefined();
+    // bluebird calls with value, int index, int arrayLength
+
+    expect(calls).toEqual([
+      [1, 0, 3],
+      [2, 1, 3],
+      [3, 2, 3],
+    ]);
+    expect(result).toEqual(arr);
   });
 
   test("delay() should delay resolution", async () => {
@@ -58,7 +64,7 @@ describe("instance methods", () => {
       setTimeout(() => resolve(42), 100)
     ).timeout(50);
 
-    await expect(promise).rejects.toThrow("Operation timed out");
+    await expect(promise).rejects.toThrow("operation timed out");
   });
 
   test("timeout() should resolve if operation completes in time", async () => {
@@ -79,11 +85,13 @@ describe("instance methods", () => {
   });
 
   test("props() should resolve object properties", async () => {
-    const result = await new AveAzul((resolve) => resolve()).props({
-      a: Promise.resolve(1),
-      b: Promise.resolve(2),
-      c: 3,
-    });
+    const result = await new AveAzul((resolve) =>
+      resolve({
+        a: Promise.resolve(1),
+        b: Promise.resolve(2),
+        c: 3,
+      })
+    ).props();
 
     expect(result).toEqual({ a: 1, b: 2, c: 3 });
   });
@@ -141,30 +149,20 @@ describe("instance methods", () => {
   });
 
   test("get() should retrieve property value", async () => {
-    const result = await new AveAzul((resolve) =>
-      resolve({ a: { b: 42 } })
-    ).get("a.b");
+    const result = await new AveAzul((resolve) => resolve({ a: 42 })).get("a");
 
     expect(result).toBe(42);
   });
 
-  test("get() should throw on null/undefined value", async () => {
-    const promise = new AveAzul((resolve) => resolve(null)).get("a.b");
+  test("get() should retrieve property value", async () => {
+    const result = await new AveAzul((resolve) => resolve({ a: 42 })).get("a");
 
-    await expect(promise).rejects.toThrow("Cannot read property 'a.b' of null");
+    expect(result).toBe(42);
   });
 
-  test("get() should throw on undefined property", async () => {
-    const promise = new AveAzul((resolve) => resolve({})).get("a.b");
+  test("get() should retrieve property value", async () => {
+    const result = await new AveAzul((resolve) => resolve([1, 2, 3])).get(1);
 
-    await expect(promise).rejects.toThrow(
-      "Cannot read property 'b' of undefined"
-    );
-  });
-
-  test("get() should handle intermediate null/undefined values", async () => {
-    const promise = new AveAzul((resolve) => resolve({ a: null })).get("a.b");
-
-    await expect(promise).rejects.toThrow("Cannot read property 'b' of null");
+    expect(result).toBe(2);
   });
 });

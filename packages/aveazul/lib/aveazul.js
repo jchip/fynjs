@@ -73,7 +73,24 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves when iteration is complete
    */
   each(fn) {
-    return this.then((value) => xaa.each(value, fn));
+    return this.then(async (value) => {
+      const result = [];
+      for (let i = 0; i < value.length; i++) {
+        let x = value[i];
+        if (
+          x &&
+          x.then &&
+          x.catch &&
+          typeof x.then === "function" &&
+          typeof x.catch === "function"
+        ) {
+          x = await x;
+        }
+        await fn(x, i, value.length);
+        result.push(x);
+      }
+      return result;
+    });
   }
 
   /**
@@ -91,7 +108,7 @@ class AveAzul extends Promise {
    * @param {string} [message] - Optional error message
    * @returns {Promise} Promise that rejects if timeout occurs
    */
-  timeout(ms, message = "Operation timed out") {
+  timeout(ms, message = "operation timed out") {
     return AveAzul.resolve(xaa.timeout(ms, message).run(this));
   }
 
@@ -100,16 +117,18 @@ class AveAzul extends Promise {
    * @param {Object} obj - Object with promise values
    * @returns {Promise} Promise that resolves with an object of resolved values
    */
-  props(obj) {
-    const keys = Object.keys(obj);
-    const values = keys.map((k) => obj[k]);
+  props() {
+    return this.then((value) => {
+      const keys = Object.keys(value);
+      const values = keys.map((k) => value[k]);
 
-    return AveAzul.all(values).then((results) => {
-      const resolved = {};
-      keys.forEach((k, i) => {
-        resolved[k] = results[i];
+      return AveAzul.all(values).then((results) => {
+        const resolved = {};
+        keys.forEach((k, i) => {
+          resolved[k] = results[i];
+        });
+        return resolved;
       });
-      return resolved;
     });
   }
 
@@ -133,7 +152,18 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the final reduced value
    */
   reduce(fn, initialValue) {
-    return this.then((array) => AveAzul.reduce(array, fn, initialValue));
+    const hasInitial = arguments.length > 1;
+
+    return this.then(async (array) => {
+      const len = array.length;
+      let value = hasInitial ? initialValue : array[0];
+
+      for (let i = hasInitial ? 0 : 1; i < len; i++) {
+        value = await fn(value, array[i], i, len);
+      }
+
+      return value;
+    });
   }
 
   /**
@@ -167,31 +197,11 @@ class AveAzul extends Promise {
 
   /**
    * Bluebird-style get() for retrieving a property value
-   * @param {string|number} propertyPath - Path to the property (can be nested using dot notation)
+   * @param {string|number} key - Key to retrieve
    * @returns {Promise} Promise that resolves with the property value
    */
-  get(propertyPath) {
-    return this.then((value) => {
-      if (value == null) {
-        throw new TypeError(
-          "Cannot read property '" + propertyPath + "' of " + value
-        );
-      }
-
-      let result = value;
-      const props = String(propertyPath).split(".");
-
-      for (const prop of props) {
-        if (result == null) {
-          throw new TypeError(
-            "Cannot read property '" + prop + "' of " + result
-          );
-        }
-        result = result[prop];
-      }
-
-      return result;
-    });
+  get(key) {
+    return this.then((value) => value[key]);
   }
 
   /**
@@ -271,7 +281,9 @@ AveAzul.defer = () => {
  * @param {Function} fn - Iterator function to call for each item
  * @returns {Promise} Promise that resolves when iteration is complete
  */
-AveAzul.each = (items, fn) => AveAzul.resolve(xaa.each(items, fn));
+AveAzul.each = function (items, fn) {
+  return AveAzul.resolve(items).each(fn);
+};
 
 /**
  * Bluebird-style reduce() for array reduction
@@ -280,20 +292,8 @@ AveAzul.each = (items, fn) => AveAzul.resolve(xaa.each(items, fn));
  * @param {*} [initialValue] - Optional initial value
  * @returns {Promise} Promise that resolves with the final reduced value
  */
-AveAzul.reduce = (array, fn, initialValue) => {
-  const hasInitial = arguments.length > 2;
-  const len = array.length;
-
-  return AveAzul.resolve().then(async () => {
-    let value = hasInitial ? initialValue : array[0];
-    const start = hasInitial ? 0 : 1;
-
-    for (let i = start; i < len; i++) {
-      value = await fn(value, array[i], i, len);
-    }
-
-    return value;
-  });
+AveAzul.reduce = function (array, ...args) {
+  return AveAzul.resolve(array).reduce(...args);
 };
 
 /**
