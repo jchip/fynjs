@@ -232,4 +232,88 @@ describe("AveAzul.promisifyAll", () => {
     );
     expect(() => AveAzul.promisifyAll(obj, { suffix: "$valid" })).not.toThrow();
   });
+
+  test("should not promisify methods in standard prototypes like Array", () => {
+    // Try to promisify an array
+    const arr = [1, 2, 3];
+    AveAzul.promisifyAll(arr);
+
+    // Array's standard methods should not have Async versions
+    expect(arr.mapAsync).toBeUndefined();
+    expect(arr.filterAsync).toBeUndefined();
+    expect(arr.forEachAsync).toBeUndefined();
+    expect(arr.reduceAsync).toBeUndefined();
+
+    // Create a custom object with an Array property
+    const objWithArrayProp = {
+      myArray: arr,
+      arrayMethod(cb) {
+        cb(null, this.myArray);
+      },
+    };
+
+    // The object itself should be promisified, but not affect the Array
+    AveAzul.promisifyAll(objWithArrayProp);
+    expect(objWithArrayProp.arrayMethodAsync).toBeDefined();
+    expect(typeof objWithArrayProp.arrayMethodAsync).toBe("function");
+
+    // Array methods should still not be promisified
+    expect(arr.mapAsync).toBeUndefined();
+  });
+
+  test("should not promisify methods of a class that extends Array", () => {
+    // Create a class that extends Array
+    class MyArray extends Array {
+      myCustomMethod(cb) {
+        cb(null, this.length);
+      }
+    }
+
+    const myArr = new MyArray(1, 2, 3);
+    AveAzul.promisifyAll(myArr);
+
+    // The standard Array methods should not have Async versions
+    expect(myArr.mapAsync).toBeUndefined();
+    expect(myArr.filterAsync).toBeUndefined();
+
+    // But custom methods should be promisified
+    expect(myArr.myCustomMethodAsync).toBeDefined();
+  });
+
+  test("should have no effect when called multiple times on the same object", async () => {
+    const obj = {
+      method(cb) {
+        cb(null, "result");
+      },
+      otherMethod(a, cb) {
+        cb(null, a + 1);
+      },
+    };
+
+    // First promisification
+    AveAzul.promisifyAll(obj);
+
+    // Capture the state after first promisification
+    const methodAsync = obj.methodAsync;
+    const otherMethodAsync = obj.otherMethodAsync;
+    const properties = Object.getOwnPropertyNames(obj);
+
+    // Second promisification
+    AveAzul.promisifyAll(obj);
+
+    // Verify no new properties were added
+    const newProperties = Object.getOwnPropertyNames(obj);
+    expect(newProperties).toEqual(properties);
+
+    // Verify methods are the same objects (idempotent operation)
+    expect(obj.methodAsync).toBe(methodAsync);
+    expect(obj.otherMethodAsync).toBe(otherMethodAsync);
+
+    // Verify the methods still function correctly
+    const result1 = await obj.methodAsync();
+    expect(result1).toBe("result");
+
+    const result2 = await obj.otherMethodAsync(5);
+    expect(result2).toBe(6);
+  });
 });

@@ -437,4 +437,40 @@ describe("AveAzul.using", () => {
     // Verify the successful resource was disposed even though the acquisition failed
     expect(successResource.disposed).toBe(true);
   });
+
+  test("should wait for handler to complete before calling dispose functions", async () => {
+    // Create a sequence tracker to monitor the order of operations
+    const sequence = [];
+
+    const resource = { value: "test resource", disposed: false };
+
+    // Create a disposer that records when disposal happens
+    const disposer = AveAzul.resolve(resource).disposer(() => {
+      sequence.push("dispose called");
+      resource.disposed = true;
+    });
+
+    await AveAzul.using([disposer], async () => {
+      // Record that we're in the handler
+      sequence.push("handler started");
+
+      // Use a delay to simulate async operations in the handler
+      await AveAzul.delay(50);
+
+      // Record that the handler is about to complete
+      sequence.push("handler finishing");
+
+      return "done";
+    });
+
+    // Verify that disposal happened AFTER the handler completed
+    expect(sequence).toEqual([
+      "handler started",
+      "handler finishing",
+      "dispose called",
+    ]);
+
+    // Also verify the resource was properly disposed
+    expect(resource.disposed).toBe(true);
+  });
 });

@@ -6,6 +6,7 @@ const { promisifyAll } = require("./promisify-all");
 const { Disposer } = require("./disposer");
 const { using } = require("./using");
 const { isPromise, triggerUncaughtException } = require("./util");
+
 /**
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird-like utility methods
  * This implementation is inspired by and provides similar APIs to the Bluebird Promise library,
@@ -31,8 +32,8 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that resolves with the original value
    */
   tap(fn) {
-    return this.then((value) => {
-      fn(value);
+    return this.then(async (value) => {
+      await fn(value);
       return value;
     });
   }
@@ -222,7 +223,35 @@ class AveAzul extends Promise {
     if (typeof fn !== "function") {
       throw new TypeError("Expected a function");
     }
+
     return new Disposer(fn, this);
+  }
+
+  /**
+   * Bluebird-style spread() method for handling array arguments
+   * Similar to Bluebird's Promise.prototype.spread()
+   * @param {Function} fn - Function to apply to the array arguments
+   * @returns {Promise} Promise that resolves with the function's return value
+   */
+  spread(fn) {
+    if (typeof fn !== "function") {
+      return AveAzul.reject(
+        new TypeError("expecting a function but got " + fn)
+      );
+    }
+
+    return this.then(async (args) => {
+      if (Array.isArray(args)) {
+        for (let i = 0; i < args.length; i++) {
+          if (isPromise(args[i])) {
+            args[i] = await args[i];
+          }
+        }
+        return fn(...args);
+      } else {
+        return fn(args);
+      }
+    });
   }
 }
 
@@ -372,6 +401,52 @@ AveAzul.using = (resources, ...args) => {
 };
 
 /**
+ * Bluebird-style join() for joining promises
+ *
+ * @param {...Promise} args - Promises to join
+ * @param {Function} handler - Handler function to apply to the joined results
+ * @returns {Promise} Promise that resolves with the handler's return value
+ */
+AveAzul.join = function (...args) {
+  if (args.length > 1 && typeof args.at(-1) === "function") {
+    const handler = args.pop();
+    return AveAzul.all(args).then((results) => handler(...results));
+  } else {
+    return AveAzul.all(args);
+  }
+};
+
+function fromCallback(fn, options) {
+  return new AveAzul((resolve, reject) => {
+    try {
+      fn((err, ...args) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (options && options.multiArgs) {
+            resolve(args);
+          } else {
+            resolve(args[0]);
+          }
+        }
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+AveAzul.fromNode = fromCallback;
+
+/**
+ * Bluebird-style fromCallback() for converting callback-based functions to promises
+ * @param {Function} fn - Function to convert
+ * @param {Object} [options] - Options object
+ * @returns {Promise} Promise that resolves with the function's return value
+ */
+AveAzul.fromCallback = fromCallback;
+
+/**
  * @description
  * When fatal error and AveAzul needs to crash the process,
  * this method is used to throw the error.
@@ -381,3 +456,6 @@ AveAzul.using = (resources, ...args) => {
 AveAzul.___throwUncaughtError = triggerUncaughtException;
 
 module.exports = AveAzul;
+
+const { setupNotImplemented } = require("./not-implemented");
+setupNotImplemented(AveAzul);

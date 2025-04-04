@@ -3,6 +3,7 @@
 const { Disposer } = require("./disposer");
 const { isPromise } = require("./util");
 
+const SYM_FN_DISPOSE = Symbol("fnDispose");
 /**
  * @description
  * The using function is a utility function that allows you to acquire resources,
@@ -37,10 +38,15 @@ function using(resources, handler, Promise, asArray) {
     });
 
     return Promise.map(promiseRes, async (resource) => {
-      if (resource instanceof Disposer) {
+      if (
+        resource &&
+        (resource instanceof Disposer ||
+          (resource._promise && typeof resource._data === "function"))
+      ) {
         try {
           const res = await resource._promise;
           resource._result = res;
+          resource[SYM_FN_DISPOSE] = resource._data;
         } catch (error) {
           acquisitionErrors.push(error);
           resource._error = error;
@@ -68,18 +74,18 @@ function using(resources, handler, Promise, asArray) {
     const errors = [];
     return Promise.each(processedResources, async (resource) => {
       // dispose all resources that were acquired without errors
-      if (!resource._error && resource.hasOwnProperty("_result")) {
-        if (resource instanceof Disposer) {
-          try {
-            await resource._data(resource._result);
-          } catch (error) {
-            errors.push(error);
-          }
+      if (resource && resource[SYM_FN_DISPOSE]) {
+        try {
+          await resource[SYM_FN_DISPOSE](resource._result);
+        } catch (error) {
+          errors.push(error);
         }
       }
     }).finally(() => {
       if (errors.length > 0) {
-        Promise.___throwUncaughtError(new Error("cleanup resources failed"));
+        Promise.___throwUncaughtError(
+          new AggregateError(errors, "cleanup resources failed", errors)
+        );
       }
     });
   };
@@ -97,26 +103,25 @@ function using(resources, handler, Promise, asArray) {
       results.push(resource._result);
     }
 
-    let handlerResult;
-    let handlerSyncError;
+    let handlerPromise;
+
     try {
       // now call the handler with the results
-      if (asArray) {
-        handlerResult = handler(results);
-      } else {
-        handlerResult = handler(...results);
-      }
+      handlerPromise = Promise.resolve(
+        asArray ? handler(results) : handler(...results)
+      );
     } catch (error) {
       // catch sync error from handler
-      handlerSyncError = error;
+      handlerPromise = Promise.reject(error);
     }
 
-    return disposeResources(processedResources).then(() => {
-      if (handlerSyncError) {
-        throw handlerSyncError;
-      }
-      return handlerResult;
-    });
+    return handlerPromise
+      .tap(() => {
+        return disposeResources(processedResources);
+      })
+      .tapCatch(() => {
+        return disposeResources(processedResources);
+      });
   });
 }
 

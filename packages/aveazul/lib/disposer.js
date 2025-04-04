@@ -5,8 +5,8 @@
  * @private
  */
 class Disposer {
-  constructor(data, promise) {
-    this._data = data; // The cleanup function
+  constructor(fn, promise) {
+    this._data = fn; // The cleanup function
     this._promise = promise; // The promise that resolves to the resource
   }
 }

@@ -9,43 +9,34 @@
  * @param {*} fn - The value to check
  * @returns {boolean} - True if the function is a class, false otherwise
  */
+const thisAssignmentPattern = /this\s*\.\s*\S+\s*=/;
 function isClass(fn) {
-  // Early return for non-functions or null/undefined
-  if (!fn || typeof fn !== "function") return false;
-
-  // Method 1: Check for ES6 class syntax
-  // This detects class declarations and class expressions
   try {
-    const fnStr = fn.toString();
-    if (fnStr.startsWith("class ") || /^class\s+/.test(fnStr)) {
-      return true;
+    if (typeof fn === "function") {
+      const keys = Object.getOwnPropertyNames(fn.prototype);
+
+      const fnStr = fn.toString();
+      const es6Class = fnStr.startsWith("class ") || /^class\s+/.test(fnStr);
+      const hasMethods = keys.length > 1;
+      const hasMethodsOtherThanConstructor =
+        keys.length > 0 && !(keys.length === 1 && keys[0] === "constructor");
+      const hasThisAssignmentAndStaticMethods =
+        thisAssignmentPattern.test(fnStr) &&
+        Object.getOwnPropertyNames(fn).length > 0;
+
+      if (
+        es6Class ||
+        hasMethods ||
+        hasMethodsOtherThanConstructor ||
+        hasThisAssignmentAndStaticMethods
+      ) {
+        return true;
+      }
     }
+    return false;
   } catch (e) {
-    // Ignore errors that might occur when calling toString()
-    // Some objects might have custom toString implementations that throw
     return false;
   }
-
-  // Method 2: Check for constructor functions (ES5 class pattern)
-  // A proper constructor has its .prototype.constructor pointing back to itself
-  if (fn.prototype && fn.prototype.constructor === fn) {
-    // Additional validation to filter out regular functions
-    // that happen to have the correct prototype structure
-
-    // Check if the prototype has any methods other than constructor
-    // This is a strong indicator of a class-like structure
-    const hasOwnMethods = Object.getOwnPropertyNames(fn.prototype).some(
-      (name) =>
-        name !== "constructor" && typeof fn.prototype[name] === "function"
-    );
-
-    // If it has prototype methods OR has static properties/methods
-    // Either condition suggests it's being used as a class
-    return hasOwnMethods || Object.getOwnPropertyNames(fn).length > 0;
-  }
-
-  // Not a class by any of our detection methods
-  return false;
 }
 
 const rident = /^[a-z$_][a-z$_0-9]*$/i;
@@ -127,11 +118,24 @@ function isPromise(obj) {
   );
 }
 
+// istanbul ignore next
+const emptyFatArrow = () => {};
+// istanbul ignore next
+const emptyFunction = function () {};
+
 const defaultExcluded = [
   Object.getPrototypeOf(Array), // Array.prototype
   Object.getPrototypeOf(Object), // Object.prototype
   Object.getPrototypeOf(Function), // Function.prototype
+  Object.getPrototypeOf([]),
+  Object.getPrototypeOf({}),
+  Object.getPrototypeOf(emptyFatArrow),
+  Object.getPrototypeOf(emptyFunction),
 ];
+
+function isExcludedPrototype(proto) {
+  return defaultExcluded.includes(proto);
+}
 
 /**
  * Gets all property keys from an object and its prototype chain, excluding standard
@@ -187,3 +191,4 @@ module.exports.isPromisified = isPromisified;
 module.exports.isPromise = isPromise;
 module.exports.triggerUncaughtException = triggerUncaughtException;
 module.exports.getObjectKeys = getObjectKeys;
+module.exports.isExcludedPrototype = isExcludedPrototype;

@@ -7,6 +7,7 @@ const {
   isConstructor,
   isPromisified,
   getObjectKeys,
+  isExcludedPrototype,
 } = require("./util");
 
 const defaultSuffix = "Async";
@@ -21,12 +22,6 @@ const defaultPromisifier = (fn, _defaultPromisifier, options) => {
     copyProps: false,
   });
 };
-
-const excludedPrototypes = [
-  Object.getPrototypeOf(Array),
-  Object.getPrototypeOf(Object),
-  Object.getPrototypeOf(Function),
-];
 
 const excludedClasses = [Array, Object, Function];
 
@@ -54,17 +49,9 @@ function promisifyAll2(obj, options) {
     return;
   }
 
-  const allKeys = getObjectKeys(obj, excludedPrototypes);
+  const allKeys = getObjectKeys(obj);
 
   for (const key of allKeys) {
-    if (key.endsWith(options.suffix)) {
-      throw new TypeError(
-        "Cannot promisify an API that has normal methods with '%s'-suffix\u000a\u000a    See http://goo.gl/MqrFmX\u000a".replace(
-          "%s",
-          options.suffix
-        )
-      );
-    }
     const value = obj[key];
     const promisifiedKey = key + options.suffix;
     const passesDefaultFilter =
@@ -78,6 +65,16 @@ function promisifyAll2(obj, options) {
     ) {
       continue;
     }
+
+    if (key.endsWith(options.suffix)) {
+      throw new TypeError(
+        "Cannot promisify an API that has normal methods with '%s'-suffix\u000a\u000a    See http://goo.gl/MqrFmX\u000a".replace(
+          "%s",
+          options.suffix
+        )
+      );
+    }
+
     obj[promisifiedKey] = options.promisifier(value, defaultPromisifier, {
       context: obj,
       copyProps: false,
@@ -110,7 +107,7 @@ function promisifyAll(target, _options) {
     );
   }
 
-  const allKeys = getObjectKeys(target, excludedPrototypes);
+  const allKeys = getObjectKeys(target);
 
   for (const key of allKeys) {
     const value = target[key];
@@ -121,7 +118,7 @@ function promisifyAll(target, _options) {
       isClass(value)
     ) {
       const proto = Object.getPrototypeOf(value);
-      if (!excludedPrototypes.includes(proto)) {
+      if (!isExcludedPrototype(proto)) {
         promisifyAll2(proto, options);
       }
 

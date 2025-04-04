@@ -58,6 +58,17 @@ AveAzul.using(getResource(), (resource) => {
   console.log(result); // "operation completed"
   // Resource is automatically closed here, even if an error occurred
 });
+
+// Using spread to apply array results as arguments
+AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
+  (user, posts, comments) => {
+    // Instead of using .then(([user, posts, comments]) => {...})
+    console.log(
+      `User ${user.name} has ${posts.length} posts and ${comments.length} comments`
+    );
+    return { user, activity: { posts, comments } };
+  }
+);
 ```
 
 ## API
@@ -72,6 +83,7 @@ AveAzul.using(getResource(), (resource) => {
 - `delay(ms)` - Delay resolution
 - `timeout(ms, message?)` - Reject after specified time
 - `props(obj)` - Resolve object properties
+- `spread(fn)` - Apply array values as arguments to function
 - `tapCatch(fn)` - Execute side effects on rejection
 - `reduce(fn, initialValue?)` - Reduce array elements
 - `throw(reason)` - Return rejected promise
@@ -88,12 +100,15 @@ AveAzul.using(getResource(), (resource) => {
 - `props(obj)` - Resolve object properties
 - `defer()` - Create a deferred promise
 - `promisify(fn, options?)` - Convert callback-style functions to promises (preserves original function properties)
+- `fromNode(fn, options?)` - Convert Node-style callback functions to promise-returning functions
+- `fromCallback(fn, options?)` - Alias for fromNode
 - `each(items, fn)` - Iterate over array elements
 - `reduce(array, fn, initialValue?)` - Reduce array elements
 - `method(fn)` - Creates a method that returns a promise resolving to the value returned by the original function
 - `throw(reason)` - Return rejected promise
 - `promisifyAll(target, options?)` - Convert all methods of an object/class to promises
 - `using(resources, fn)` - Manage resources with automatic cleanup
+- `join(...values, handler?)` - Wait for multiple promises and pass their resolved values as separate arguments to the handler function. If no handler is provided, behaves like Promise.all
 
 ### PromisifyAll Options
 

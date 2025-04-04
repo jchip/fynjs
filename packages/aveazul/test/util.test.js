@@ -43,11 +43,66 @@ describe("util.isClass", () => {
     expect(util.isClass(ES5Class)).toBe(true);
 
     // Create a constructor with no prototype methods, but with static properties
-    function ES5ClassWithStatic() {}
+    function ES5ClassWithStatic() {
+      this.property = "value";
+    }
     ES5ClassWithStatic.staticProperty = "static";
 
     // This should satisfy the Object.getOwnPropertyNames(fn).length > 0 condition
     expect(util.isClass(ES5ClassWithStatic)).toBe(true);
+  });
+
+  // Additional tests to cover all branches of the if statement at line 27
+  test("should identify ES6 class via 'class' keyword (es6Class branch)", () => {
+    // This tests the es6Class branch specifically
+    // Using eval to create a class with the 'class' keyword that stringifies correctly
+    const ClassWithKeyword = eval(
+      "(class TestClassWithKeyword { method() {} })"
+    );
+    expect(util.isClass(ClassWithKeyword)).toBe(true);
+  });
+
+  test("should identify class with multiple prototype methods (hasMethods branch)", () => {
+    // This tests the hasMethods branch specifically
+    function ClassWithMultipleMethods() {}
+    ClassWithMultipleMethods.prototype.method1 = function () {};
+    ClassWithMultipleMethods.prototype.method2 = function () {};
+    ClassWithMultipleMethods.prototype.method3 = function () {};
+
+    expect(util.isClass(ClassWithMultipleMethods)).toBe(true);
+  });
+
+  test("should identify class with single non-constructor method (hasMethodsOtherThanConstructor branch)", () => {
+    // This tests the hasMethodsOtherThanConstructor branch specifically
+    function ClassWithSingleMethod() {}
+    // Only add one method that's not 'constructor'
+    ClassWithSingleMethod.prototype.someMethod = function () {};
+
+    expect(util.isClass(ClassWithSingleMethod)).toBe(true);
+  });
+
+  test("should identify ES5 class with this assignments and static methods (hasThisAssignmentAndStaticMethods branch)", () => {
+    // This tests the hasThisAssignmentAndStaticMethods branch specifically
+    function ES5ClassWithThisAssignment() {
+      this.property = "value"; // This assignment pattern should be detected
+    }
+    // Add static methods/properties
+    ES5ClassWithThisAssignment.staticMethod = function () {};
+
+    expect(util.isClass(ES5ClassWithThisAssignment)).toBe(true);
+  });
+
+  test("should not identify regular functions", () => {
+    // Regular function with no prototype methods, this assignments, or static methods
+    function regularFunction(a, b) {
+      return a + b;
+    }
+
+    expect(util.isClass(regularFunction)).toBe(false);
+
+    // Arrow function
+    const arrowFunction = () => {};
+    expect(util.isClass(arrowFunction)).toBe(false);
   });
 });
 
