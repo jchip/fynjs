@@ -384,6 +384,18 @@ class AveAzul extends Promise {
   nodeify(cb, options) {
     return this.asCallback(cb, options);
   }
+
+  /**
+   * Bluebird-style call() method for calling a method on the resolved value
+   * @param {string} methodName - Name of the method to call
+   * @param {...any} args - Arguments to pass to the method
+   * @returns {Promise} Promise that resolves with the method's return value
+   */
+  call(methodName, ...args) {
+    return this.then(function (obj) {
+      return obj[methodName].call(obj, ...args);
+    });
+  }
 }
 
 /**
