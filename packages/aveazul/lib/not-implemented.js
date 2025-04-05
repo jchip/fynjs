@@ -84,9 +84,9 @@ function createStaticNotImplemented(AveAzul) {
 }
 
 function setupNotImplemented(AveAzul) {
-  const instance = createInstanceNotImplemented(AveAzul);
+  const instanceMethods = createInstanceNotImplemented(AveAzul);
   const staticMethods = createStaticNotImplemented(AveAzul);
-  AveAzul.__notImplementedInstance = instance;
+  AveAzul.__notImplementedInstance = instanceMethods;
   AveAzul.__notImplementedStatic = staticMethods;
 }
 
