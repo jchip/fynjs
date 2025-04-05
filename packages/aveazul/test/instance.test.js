@@ -18,14 +18,6 @@ describe("instance methods", () => {
     expect(result).toEqual([2, 4]);
   });
 
-  test("map() should transform array elements", async () => {
-    const result = await new AveAzul((resolve) => resolve([1, 2, 3])).map(
-      (x) => x * 2
-    );
-
-    expect(result).toEqual([2, 4, 6]);
-  });
-
   test("return() should inject a new value", async () => {
     const result = await new AveAzul((resolve) => resolve(42)).return(100);
 

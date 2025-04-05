@@ -54,8 +54,18 @@ class AveAzul extends Promise {
    * @param {Function} fn - Map function to apply to each element
    * @returns {Promise} Promise that resolves with the mapped array
    */
-  map(fn) {
-    return this.then((value) => xaa.map(value, fn));
+  map(fn, options = { concurrency: 50 }) {
+    return this.then((value) => xaa.map(value, fn, options));
+  }
+
+  /**
+   * Bluebird-style mapSeries() method for array operations
+   * Similar to Bluebird's Promise.prototype.mapSeries()
+   * @param {Function} fn - Map function to apply to each element
+   * @returns {Promise} Promise that resolves with the mapped array
+   */
+  mapSeries(fn) {
+    return this.map(fn, { concurrency: 1 });
   }
 
   /**
@@ -278,7 +288,16 @@ AveAzul.delay = (ms, value) => {
  * @param {Function} fn - Map function to apply to each element
  * @returns {Promise} Promise that resolves with the mapped array
  */
-AveAzul.map = (value, fn) => AveAzul.resolve(xaa.map(value, fn));
+AveAzul.map = (value, fn, options = { concurrency: 50 }) =>
+  AveAzul.resolve(value).map(fn, options);
+
+/**
+ * Bluebird-style mapSeries() for array operations
+ * @param {Array} value - Array to map over
+ * @param {Function} fn - Map function to apply to each element
+ * @returns {Promise} Promise that resolves with the mapped array
+ */
+AveAzul.mapSeries = (value, fn) => AveAzul.map(value, fn, { concurrency: 1 });
 
 /**
  * Bluebird-style try() for wrapping sync/async functions
