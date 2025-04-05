@@ -67,7 +67,6 @@ function createStaticNotImplemented(AveAzul) {
     "method",
     "resolve",
     "reject",
-
     "props",
     "any",
     "some",

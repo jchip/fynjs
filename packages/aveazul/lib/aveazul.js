@@ -80,6 +80,30 @@ class AveAzul extends Promise {
   }
 
   /**
+   * Bluebird-style any() method for waiting for any promises to resolve
+   * @param {Array|Iterable} promises - Array or iterable of promises
+   * @returns {Promise} Promise that resolves with the first resolved promise
+   */
+  any() {
+    return this.then((args) => {
+      if (!Array.isArray(args)) {
+        // Check if args is iterable
+        if (args != null && typeof args[Symbol.iterator] === "function") {
+          // Convert iterable to array, must do this to get the length, in order
+          // to detect if too many errors occurred and completion is impossible.
+          args = Array.from(args);
+        } else {
+          throw new TypeError(
+            "expecting an array or an iterable object but got " + args
+          );
+        }
+      }
+
+      return AveAzul.any(args);
+    });
+  }
+
+  /**
    * Bluebird-style each() method for array iteration
    * Similar to Bluebird's Promise.prototype.each()
    * @param {Function} fn - Function to execute for each element
