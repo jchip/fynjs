@@ -142,4 +142,237 @@ describe("AveAzul.join", () => {
     expect(spy3).toHaveBeenCalled();
     expect(spy4).toHaveBeenCalled();
   });
+
+  test("should handle nested join calls", async () => {
+    // Create an inner join that resolves to the sum of 3 numbers
+    const innerJoin = AveAzul.join(
+      AveAzul.resolve(1),
+      AveAzul.resolve(2),
+      AveAzul.resolve(3),
+      (a, b, c) => a + b + c
+    );
+
+    // Create a second inner join that multiplies 2 numbers
+    const secondInnerJoin = AveAzul.join(
+      AveAzul.resolve(4),
+      AveAzul.resolve(5),
+      (a, b) => a * b
+    );
+
+    // Create a third promise that resolves to a number
+    const thirdPromise = new AveAzul((resolve) =>
+      setTimeout(() => resolve(10), 20)
+    );
+
+    // Outer join that combines results from the inner joins
+    const result = await AveAzul.join(
+      innerJoin,
+      secondInnerJoin,
+      thirdPromise,
+      (sum, product, value) => ({
+        sum,
+        product,
+        value,
+        total: sum + product + value,
+      })
+    );
+
+    // Verify the expected results
+    expect(result).toEqual({
+      sum: 6, // 1 + 2 + 3 from the first inner join
+      product: 20, // 4 * 5 from the second inner join
+      value: 10, // From the third promise
+      total: 36, // 6 + 20 + 10 = 36
+    });
+  });
+
+  test("should handle complex nested joins with 5 promises where 3 are inner joins", async () => {
+    // First inner join: Calculate average of three numbers
+    const avgJoin = AveAzul.join(
+      AveAzul.resolve(10),
+      AveAzul.resolve(20),
+      AveAzul.resolve(30),
+      (a, b, c) => (a + b + c) / 3
+    );
+
+    // Second inner join: Concatenate strings
+    const strJoin = AveAzul.join(
+      AveAzul.resolve("hello"),
+      AveAzul.resolve("world"),
+      (a, b) => `${a} ${b}`
+    );
+
+    // Third inner join: Nested deeper - combine two promises with a calculation
+    const nestedJoin = AveAzul.join(
+      AveAzul.resolve(5),
+      AveAzul.join(AveAzul.resolve(2), AveAzul.resolve(3), (a, b) => a * b),
+      (num, product) => num + product
+    );
+
+    // Fourth promise: Simple delay with a value
+    const delayedPromise = new AveAzul((resolve) =>
+      setTimeout(() => resolve(100), 30)
+    );
+
+    // Fifth promise: Regular value
+    const regularValue = 42;
+
+    // Final join combining all five promises
+    const result = await AveAzul.join(
+      avgJoin,
+      strJoin,
+      nestedJoin,
+      delayedPromise,
+      regularValue,
+      (avg, str, nested, delayed, regular) => ({
+        average: avg,
+        greeting: str,
+        nestedResult: nested,
+        delayedValue: delayed,
+        regularValue: regular,
+        summary: `Average: ${avg}, Greeting: ${str}, Nested: ${nested}, Delayed: ${delayed}, Regular: ${regular}`,
+      })
+    );
+
+    // Verify all the expected results
+    expect(result).toEqual({
+      average: 20, // (10 + 20 + 30) / 3
+      greeting: "hello world", // Concatenated strings
+      nestedResult: 11, // 5 + (2 * 3)
+      delayedValue: 100, // From the delayed promise
+      regularValue: 42, // Regular value
+      summary:
+        "Average: 20, Greeting: hello world, Nested: 11, Delayed: 100, Regular: 42",
+    });
+  });
+
+  test("should handle deeply nested join calls with multiple inner joins", async () => {
+    // Helper function to create a promise with random delay
+    const delayedResolve = (value) => {
+      const delay = Math.floor(Math.random() * 21) + 10; // Random delay between 10-30ms
+      return new AveAzul((resolve) => setTimeout(() => resolve(value), delay));
+    };
+
+    // First inner join with another inner join inside
+    const deepNestedJoin1 = AveAzul.join(
+      delayedResolve(10),
+      // Inner join inside the first inner join
+      AveAzul.join(
+        delayedResolve(5),
+        delayedResolve(15),
+        (a, b) => Math.max(a, b) // Get the max value
+      ),
+      delayedResolve(20),
+      (outer1, innerMax, outer2) => ({
+        values: [outer1, innerMax, outer2],
+        total: outer1 + innerMax + outer2,
+      })
+    );
+
+    // Second inner join with another inner join inside
+    const deepNestedJoin2 = AveAzul.join(
+      delayedResolve("first"),
+      // Inner join inside the second inner join
+      AveAzul.join(
+        AveAzul.join(
+          // Even deeper nesting (3 levels)
+          delayedResolve("nested"),
+          delayedResolve("deeply"),
+          (a, b) => `${a} ${b}`
+        ),
+        delayedResolve("value"),
+        (deepResult, c) => `${deepResult} ${c}`
+      ),
+      (prefix, complexString) => `${prefix}: ${complexString}`
+    );
+
+    // Third inner join (without further nesting)
+    const simpleInnerJoin = AveAzul.join(
+      delayedResolve(100),
+      delayedResolve(200),
+      (a, b) => a * b
+    );
+
+    // Fourth promise: Delayed promise with timestamp
+    const delayedPromise = new AveAzul((resolve) => {
+      const delay = Math.floor(Math.random() * 21) + 10; // Random delay between 10-30ms
+      setTimeout(() => resolve({ timestamp: Date.now(), delay }), delay);
+    });
+
+    // Fifth promise: Regular value (still needs to be wrapped in promise for consistency)
+    const regularValue = delayedResolve({ type: "constant", value: 42 });
+
+    // Record start time to measure total execution
+    const startTime = Date.now();
+
+    // Final join combining all five promises with varying depths of nesting
+    const result = await AveAzul.join(
+      deepNestedJoin1,
+      deepNestedJoin2,
+      simpleInnerJoin,
+      delayedPromise,
+      regularValue,
+      (firstNested, secondNested, simpleResult, delayed, regular) => {
+        const endTime = Date.now();
+        return {
+          nestedObject: firstNested,
+          nestedString: secondNested,
+          multiplication: simpleResult,
+          delayedData: delayed,
+          constant: regular,
+          // Create a summary property that combines all results
+          combined: {
+            numericSum: firstNested.total + simpleResult,
+            stringRepresentation: `${secondNested} (total: ${firstNested.total}, product: ${simpleResult})`,
+            metaData: {
+              hasTimestamp: !!delayed.timestamp,
+              constantValue: regular.value,
+              totalExecutionTime: endTime - startTime,
+            },
+          },
+        };
+      }
+    );
+
+    // Verify complex nested structure
+    expect(result).toMatchObject({
+      nestedObject: {
+        values: [10, 15, 20],
+        total: 45,
+      },
+      nestedString: "first: nested deeply value",
+      multiplication: 20000,
+      delayedData: expect.objectContaining({
+        timestamp: expect.any(Number),
+      }),
+      constant: {
+        type: "constant",
+        value: 42,
+      },
+      combined: {
+        numericSum: 20045,
+        stringRepresentation:
+          "first: nested deeply value (total: 45, product: 20000)",
+        metaData: {
+          hasTimestamp: true,
+          constantValue: 42,
+          totalExecutionTime: expect.any(Number),
+        },
+      },
+    });
+
+    // The execution should be faster than if we ran all promises sequentially
+    // Even with deeply nested joins, the library should handle parallelization
+    expect(result.combined.metaData.totalExecutionTime).toBeLessThan(1500);
+
+    // Execution time should be non-zero and reasonable for async operations
+    expect(result.combined.metaData.totalExecutionTime).toBeGreaterThan(20);
+
+    // Only log execution time when DEBUG environment variable is set
+    if (process.env.DEBUG) {
+      console.log(
+        `Total execution time: ${result.combined.metaData.totalExecutionTime}ms`
+      );
+    }
+  });
 });
