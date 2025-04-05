@@ -316,6 +316,29 @@ class AveAzul extends Promise {
       });
     });
   }
+
+  /**
+   * Bluebird-style all() method for array operations
+   * Similar to Promise.all() but operates on the resolved value of this promise
+   * @returns {Promise} Promise that resolves when all items in the array resolve
+   */
+  all() {
+    return this.then((value) => {
+      if (!Array.isArray(value)) {
+        // Check if value is iterable
+        if (value != null && typeof value[Symbol.iterator] === "function") {
+          // Convert iterable to array
+          value = Array.from(value);
+        } else {
+          throw new TypeError(
+            "expecting an array or an iterable object but got " + value
+          );
+        }
+      }
+
+      return AveAzul.all(value);
+    });
+  }
 }
 
 /**
