@@ -27,6 +27,26 @@ AveAzul.resolve([1, 2, 3])
   .filter((x) => x > 2)
   .then((result) => console.log(result)); // [4, 6]
 
+// Wait for at least 2 promises to be fulfilled
+const fetchUrls = [
+  fetch("https://api.example.com/data1"),
+  fetch("https://api.example.com/data2"),
+  fetch("https://api.example.com/data3"),
+  fetch("https://api.example.com/data4"),
+];
+AveAzul.some(fetchUrls, 2).then((results) =>
+  console.log(`Got the first 2 successful results`)
+);
+
+// Process items sequentially with mapSeries
+AveAzul.resolve([1, 2, 3])
+  .mapSeries(async (x) => {
+    // Each item is processed only after the previous one completes
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return x * 2;
+  })
+  .then((result) => console.log(result)); // [2, 4, 6]
+
 // Promisify callback-style functions
 const fs = require("fs");
 const readFile = AveAzul.promisify(fs.readFile);
@@ -78,6 +98,7 @@ AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
 - `tap(fn)` - Execute side effects and return original value
 - `filter(fn)` - Filter array elements
 - `map(fn)` - Transform array elements
+- `mapSeries(fn)` - Transform array elements sequentially
 - `return(value)` - Inject a new value
 - `each(fn)` - Iterate over array elements
 - `delay(ms)` - Delay resolution
@@ -86,6 +107,7 @@ AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
 - `spread(fn)` - Apply array values as arguments to function
 - `tapCatch(fn)` - Execute side effects on rejection
 - `reduce(fn, initialValue?)` - Reduce array elements
+- `some(count)` - Resolves when a specified number of promises in the array have resolved
 - `throw(reason)` - Return rejected promise
 - `catchThrow(reason)` - Catch and throw new error
 - `catchReturn(value)` - Catch and return value
@@ -96,6 +118,7 @@ AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
 
 - `delay(ms, value?)` - Resolve after specified time
 - `map(value, fn)` - Transform array elements
+- `mapSeries(value, fn)` - Transform array elements one at a time in sequence
 - `try(fn)` - Wrap sync/async functions
 - `props(obj)` - Resolve object properties
 - `defer()` - Create a deferred promise
@@ -104,6 +127,7 @@ AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
 - `fromCallback(fn, options?)` - Alias for fromNode
 - `each(items, fn)` - Iterate over array elements
 - `reduce(array, fn, initialValue?)` - Reduce array elements
+- `some(promises, count)` - Wait for a specified number of promises to be fulfilled
 - `method(fn)` - Creates a method that returns a promise resolving to the value returned by the original function
 - `throw(reason)` - Return rejected promise
 - `promisifyAll(target, options?)` - Convert all methods of an object/class to promises
