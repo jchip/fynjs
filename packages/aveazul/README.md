@@ -1,6 +1,6 @@
 # AveAzul
 
-AveAzul ("Blue Bird" in Spanish) is a Promise library that extends native Promises with Bluebird-like utility methods. Built on top of native Promises, it provides a familiar API for Node.js developers who are used to working with [Bluebird](https://github.com/petkaantonov/bluebird) ([npm](https://www.npmjs.com/package/bluebird)).
+AveAzul ("Blue Bird" in Spanish) is a Promise library that extends native Promises with Bluebird like utility methods. Built on top of native Promises, it provides a familiar API for Node.js developers who are used to working with [Bluebird](https://github.com/petkaantonov/bluebird) ([npm](https://www.npmjs.com/package/bluebird)).
 
 This library helps migrate legacy code that uses Bluebird specific APIs to native Promises with minimal changes. It aims to provide a drop-in replacement that maintains compatibility while leveraging native Promises.
 

@@ -8,7 +8,8 @@ const { using } = require("./using");
 const { isPromise, triggerUncaughtException } = require("./util");
 
 /**
- * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird-like utility methods
+ * @fileoverview
+ * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird like utility methods
  * This implementation is inspired by and provides similar APIs to the Bluebird Promise library,
  * but built on top of native Promises. The name is a Spanish play on words referencing Bluebird.
  * @extends Promise
