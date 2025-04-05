@@ -339,6 +339,51 @@ class AveAzul extends Promise {
       return AveAzul.all(value);
     });
   }
+
+  /**
+   * Bluebird-style asCallback() method
+   * Attaches a callback to the promise and returns the promise.
+   * The callback is invoked when the promise is resolved or rejected.
+   *
+   * @param {Function} cb - Node.js-style callback function (err, value)
+   * @param {Object} [options] - Additional options
+   * @param {boolean} [options.spread=false] - Pass array values as arguments to callback
+   * @returns {Promise} The same promise instance
+   */
+  asCallback(cb, options = {}) {
+    if (typeof cb !== "function") {
+      return this;
+    }
+
+    const spread = options && options.spread === true;
+
+    this.then(
+      (value) => {
+        try {
+          if (spread && Array.isArray(value)) {
+            cb(null, ...value);
+          } else {
+            cb(null, value);
+          }
+        } catch (err) {
+          AveAzul.___throwUncaughtError(err);
+        }
+      },
+      (reason) => {
+        try {
+          cb(reason);
+        } catch (err) {
+          AveAzul.___throwUncaughtError(err);
+        }
+      }
+    );
+
+    return this;
+  }
+
+  nodeify(cb, options) {
+    return this.asCallback(cb, options);
+  }
 }
 
 /**
@@ -560,7 +605,8 @@ AveAzul.some = function (promises, count) {
   return AveAzul.resolve(promises).some(count);
 };
 
-module.exports = AveAzul;
-
+// Setup the not implemented methods
 const { setupNotImplemented } = require("./not-implemented");
 setupNotImplemented(AveAzul);
+
+module.exports = AveAzul;
