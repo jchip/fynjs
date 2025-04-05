@@ -2,9 +2,17 @@
 
 AveAzul ("Blue Bird" in Spanish) serves as a near drop-in replacement for Bluebird. It's built on native Promise, by extending it with the familiar utility methods from Bluebird.
 
-The primary goal is to help migrate legacy code that uses Bluebird APIs extensively to native Promises. While not a 100% drop-in replacement (some aspects of Bluebird simply can't be replicated), it offers a practical migration path with minimal changes for most of the cases.
+## Purpose
+
+The primary goal is to help migrate legacy code, that uses Bluebird APIs extensively, to native Promises. While not a 100% drop-in replacement (some aspects of Bluebird simply can't be replicated), it offers a practical migration path with minimal changes for most cases.
 
 Further, if you like Bluebird's API but want to use native Promises, AveAzul gives you both - familiar Bluebird methods built on native Promise.
+
+## Features
+
+- Built on native Promises
+- Implements most commonly used Bluebird methods
+- Comprehensive test suite ensuring compatibility
 
 ## Installation
 
@@ -91,6 +99,24 @@ AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
 );
 ```
 
+## Migration from Bluebird
+
+For most applications, migrating from Bluebird to AveAzul should be as simple as:
+
+```javascript
+// From
+const Promise = require("bluebird");
+
+// To
+const Promise = require("aveazul");
+```
+
+Key differences to be aware of:
+
+- Some advanced debugging features are not available
+- Performance characteristics may differ
+- A few very specialized methods not available
+
 ## API
 
 ### Instance Methods
@@ -113,6 +139,10 @@ AveAzul.all([getUser(1), getPosts(1), getComments(1)]).spread(
 - `catchReturn(value)` - Catch and return value
 - `get(propertyPath)` - Retrieve property value
 - `disposer(fn)` - Create a disposer for use with AveAzul.using() for resource cleanup
+- `any()` - Resolves when any promise in the iterable resolves, rejecting if all reject
+- `all()` - Like Promise.all(), resolves when all promises resolve, rejects if any reject
+- `call(propertyName, ...args)` - Call a method on the resolved value with the provided arguments
+- `asCallback(callback, options?)` - Register a Node-style callback that handles the resolution or rejection
 
 ### Static Methods
 
@@ -151,7 +181,14 @@ npm install
 npm test
 npm run test:watch
 npm run test:coverage
+
+# Test against Bluebird for compatibility
+npm run jest:bluebird -- test/[name].test.js
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
