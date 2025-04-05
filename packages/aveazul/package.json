@@ -16,6 +16,9 @@
     "jest:bluebird": "USE_BLUEBIRD=true jest --no-coverage"
   },
   "author": "Joel Chen",
+  "contributors": [
+    "Claude (AI assistant)"
+  ],
   "files": [
     "lib"
   ],

@@ -196,4 +196,4 @@ Apache-2.0
 
 ## Author
 
-Joel Chen
+Joel Chen, with assistant from Cursor Claude-3.7-sonnet
