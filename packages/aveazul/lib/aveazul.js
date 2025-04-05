@@ -263,6 +263,58 @@ class AveAzul extends Promise {
       }
     });
   }
+
+  some(count) {
+    return this.then((args) => {
+      if (!Array.isArray(args)) {
+        // Check if args is iterable
+        if (args != null && typeof args[Symbol.iterator] === "function") {
+          // Convert iterable to array, must do this to get the length, in order
+          // to detect if too many errors occurred and completion is impossible.
+          args = Array.from(args);
+        } else {
+          throw new TypeError(
+            "expecting an array or an iterable object but got " + args
+          );
+        }
+      }
+
+      return new AveAzul((resolve, reject) => {
+        // If too many promises are rejected so that the promise can never become fulfilled,
+        // it will be immediately rejected with an AggregateError of the rejection reasons
+        // in the order they were thrown in.
+        const errors = [];
+        // The fulfillment value is an array with count values
+        // in the order they were fulfilled.
+        const results = [];
+        const len = args.length;
+
+        const addDone = (result) => {
+          results.push(result);
+          if (results.length >= count) {
+            // Resolve with exactly count results to match Bluebird's behavior
+            resolve(results.slice(0, count));
+          }
+        };
+
+        const addError = (err) => {
+          errors.push(err);
+          if (len - errors.length < count) {
+            reject(new AggregateError(errors, `aggregate error`));
+          }
+        };
+
+        for (let i = 0; i < len; i++) {
+          const x = args[i];
+          if (isPromise(x)) {
+            x.then(addDone, addError);
+          } else {
+            addDone(x);
+          }
+        }
+      });
+    });
+  }
 }
 
 /**
@@ -473,6 +525,16 @@ AveAzul.fromCallback = fromCallback;
  * @param {Error} error - The error to throw.
  */
 AveAzul.___throwUncaughtError = triggerUncaughtException;
+
+/**
+ * Bluebird-style some() for waiting for some promises to resolve
+ * @param {Array|Iterable} promises - Array or iterable of promises
+ * @param {number} count - Number of promises that need to resolve
+ * @returns {Promise} Promise that resolves when count promises have resolved
+ */
+AveAzul.some = function (promises, count) {
+  return AveAzul.resolve(promises).some(count);
+};
 
 module.exports = AveAzul;
 
