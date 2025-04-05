@@ -1,6 +1,6 @@
 {
   "name": "aveazul",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "description": "Bluebird drop-in replacement built on native Promise",
   "main": "lib/aveazul.js",
   "homepage": "https://github.com/jchip/aveazul",
