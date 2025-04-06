@@ -76,7 +76,7 @@ function promisifyAll2(obj, options) {
     }
 
     obj[promisifiedKey] = options.promisifier(value, defaultPromisifier, {
-      context: obj,
+      // context: obj, // promisified function should get the binded object using this
       copyProps: false,
       multiArgs: options.multiArgs,
       Promise: options.Promise,

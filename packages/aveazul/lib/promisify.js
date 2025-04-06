@@ -22,7 +22,7 @@ module.exports.promisify = function promisify(fn, _options) {
   const Promise = options.Promise;
   const multiArgs = !!options.multiArgs;
 
-  const promisifiedFn = (...args) => {
+  const promisifiedFn = function (...args) {
     return new Promise((resolve, reject) => {
       // add a callback to the end of the arguments to transfer the result to the promise
       args.push((err, ...values) => {
@@ -37,7 +37,7 @@ module.exports.promisify = function promisify(fn, _options) {
       });
 
       // call the original function with the updated args
-      fn.call(options.context, ...args);
+      fn.call(options.context || this, ...args);
     });
   };
 
