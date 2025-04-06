@@ -2,6 +2,7 @@
 
 const { Disposer } = require("./disposer");
 const { isPromise } = require("./util");
+const { AggregateError } = require("@jchip/error");
 
 const SYM_FN_DISPOSE = Symbol("fnDispose");
 /**

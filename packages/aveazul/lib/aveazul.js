@@ -5,8 +5,8 @@ const { promisify } = require("./promisify");
 const { promisifyAll } = require("./promisify-all");
 const { Disposer } = require("./disposer");
 const { using } = require("./using");
-const { isPromise, triggerUncaughtException } = require("./util");
-
+const { isPromise, triggerUncaughtException, toArray } = require("./util");
+const { AggregateError } = require("@jchip/error");
 /**
  * @fileoverview
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird like utility methods
@@ -86,20 +86,7 @@ class AveAzul extends Promise {
    */
   any() {
     return this.then((args) => {
-      if (!Array.isArray(args)) {
-        // Check if args is iterable
-        if (args != null && typeof args[Symbol.iterator] === "function") {
-          // Convert iterable to array, must do this to get the length, in order
-          // to detect if too many errors occurred and completion is impossible.
-          args = Array.from(args);
-        } else {
-          throw new TypeError(
-            "expecting an array or an iterable object but got " + args
-          );
-        }
-      }
-
-      return AveAzul.any(args);
+      return AveAzul.any(toArray(args));
     });
   }
 
@@ -291,18 +278,7 @@ class AveAzul extends Promise {
 
   some(count) {
     return this.then((args) => {
-      if (!Array.isArray(args)) {
-        // Check if args is iterable
-        if (args != null && typeof args[Symbol.iterator] === "function") {
-          // Convert iterable to array, must do this to get the length, in order
-          // to detect if too many errors occurred and completion is impossible.
-          args = Array.from(args);
-        } else {
-          throw new TypeError(
-            "expecting an array or an iterable object but got " + args
-          );
-        }
-      }
+      args = toArray(args);
 
       return new AveAzul((resolve, reject) => {
         // If too many promises are rejected so that the promise can never become fulfilled,
@@ -314,17 +290,23 @@ class AveAzul extends Promise {
         const results = [];
         const len = args.length;
 
+        let settled = false;
+
         const addDone = (result) => {
+          if (settled) return;
           results.push(result);
           if (results.length >= count) {
+            settled = true;
             // Resolve with exactly count results to match Bluebird's behavior
             resolve(results.slice(0, count));
           }
         };
 
         const addError = (err) => {
+          if (settled) return;
           errors.push(err);
           if (len - errors.length < count) {
+            settled = true;
             reject(new AggregateError(errors, `aggregate error`));
           }
         };
@@ -348,19 +330,7 @@ class AveAzul extends Promise {
    */
   all() {
     return this.then((value) => {
-      if (!Array.isArray(value)) {
-        // Check if value is iterable
-        if (value != null && typeof value[Symbol.iterator] === "function") {
-          // Convert iterable to array
-          value = Array.from(value);
-        } else {
-          throw new TypeError(
-            "expecting an array or an iterable object but got " + value
-          );
-        }
-      }
-
-      return AveAzul.all(value);
+      return AveAzul.all(toArray(value));
     });
   }
 
@@ -584,7 +554,7 @@ AveAzul.using = (resources, ...args) => {
  * @returns {Promise} Promise that resolves with the handler's return value
  */
 AveAzul.join = function (...args) {
-  if (args.length > 1 && typeof args.at(-1) === "function") {
+  if (args.length > 1 && typeof args[args.length - 1] === "function") {
     const handler = args.pop();
     return AveAzul.all(args).then((results) => handler(...results));
   } else {
@@ -640,6 +610,9 @@ AveAzul.___throwUncaughtError = triggerUncaughtException;
 AveAzul.some = function (promises, count) {
   return AveAzul.resolve(promises).some(count);
 };
+
+const { addStaticAny } = require("./any");
+addStaticAny(AveAzul);
 
 // Setup the not implemented methods
 const { setupNotImplemented } = require("./not-implemented");

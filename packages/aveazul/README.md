@@ -1,4 +1,4 @@
-# AveAzul
+# AveAzul.js
 
 AveAzul ("Blue Bird" in Spanish) serves as a near drop-in replacement for Bluebird. It's built on native Promise, by extending it with the familiar utility methods from Bluebird.
 
@@ -13,6 +13,10 @@ Further, if you like Bluebird's API but want to use native Promises, AveAzul giv
 - Built on native Promises
 - Implements most commonly used Bluebird methods
 - Comprehensive test suite ensuring compatibility
+
+## Requirements
+
+- node.js version >= 12
 
 ## Installation
 

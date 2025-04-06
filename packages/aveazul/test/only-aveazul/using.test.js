@@ -1,6 +1,7 @@
 "use strict";
 
 const AveAzul = require("../../lib/aveazul");
+const { AggregateError } = require("@jchip/error");
 
 describe("AveAzul.using", () => {
   beforeEach(() => {

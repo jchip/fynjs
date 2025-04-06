@@ -183,6 +183,23 @@ function triggerUncaughtException(error) {
   }, 0);
 }
 
+function toArray(args) {
+  if (!Array.isArray(args)) {
+    // Check if args is iterable
+    if (args != null && typeof args[Symbol.iterator] === "function") {
+      // Convert iterable to array, must do this to get the length, in order
+      // to detect if too many errors occurred and completion is impossible.
+      args = Array.from(args);
+    } else {
+      throw new TypeError(
+        "expecting an array or an iterable object but got " + args
+      );
+    }
+  }
+
+  return args;
+}
+
 module.exports.copyOwnProperties = copyOwnProperties;
 module.exports.isClass = isClass;
 module.exports.isIdentifier = isIdentifier;
@@ -192,3 +209,4 @@ module.exports.isPromise = isPromise;
 module.exports.triggerUncaughtException = triggerUncaughtException;
 module.exports.getObjectKeys = getObjectKeys;
 module.exports.isExcludedPrototype = isExcludedPrototype;
+module.exports.toArray = toArray;
