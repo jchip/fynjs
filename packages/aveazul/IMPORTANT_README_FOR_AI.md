@@ -11,6 +11,8 @@ When working with this codebase, please adhere to these guidelines:
 
 ### Testing
 
+The tests should work with both AveAzul and the actual Bluebird in a generic mannter without special detection for one or the other, except those in `test/only-aveazul`, which are for AveAzul only.
+
 To run specific test file with AveAzul implementation:
 
 ```bash
@@ -56,3 +58,5 @@ Bluebird special methods that can't be implemented:
 Methods won't implement:
 
 - `done`, `error`
+
+The unimplemented methods are detected in the file not-implemented.js. It goes through all Bluebird APIs and detect the ones that AveAzul doesn't have, there's no need to remove one after it's implemented.

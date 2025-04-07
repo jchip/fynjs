@@ -147,6 +147,7 @@ Key differences to be aware of:
 - `all()` - Like Promise.all(), resolves when all promises resolve, rejects if any reject
 - `call(propertyName, ...args)` - Call a method on the resolved value with the provided arguments
 - `asCallback(callback, options?)` - Register a Node-style callback that handles the resolution or rejection
+- `error(handler)` - Like catch(), but only catches operational errors, letting programmer errors bubble up
 
 ### Static Methods
 
@@ -167,6 +168,10 @@ Key differences to be aware of:
 - `promisifyAll(target, options?)` - Convert all methods of an object/class to promises
 - `using(resources, fn)` - Manage resources with automatic cleanup
 - `join(...values, handler?)` - Wait for multiple promises and pass their resolved values as separate arguments to the handler function. If no handler is provided, behaves like Promise.all
+
+### Error Types
+
+- `AveAzul.OperationalError` - Error type for representing expected operational errors (network failures, validation errors, etc.)
 
 ### PromisifyAll Options
 

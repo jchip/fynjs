@@ -13,7 +13,6 @@ function createInstanceNotImplemented(AveAzul) {
     "then",
     "spread",
     "catch",
-    "error",
     "finally",
     "bind",
     "isFulfilled",

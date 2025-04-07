@@ -31,7 +31,6 @@ describe("not-implemented", () => {
 
       // Methods should be added
       expect(typeof MockClass.prototype.spread).toBe("function");
-      expect(typeof MockClass.prototype.error).toBe("function");
       expect(typeof MockClass.prototype.bind).toBe("function");
 
       // Test that a method throws with the correct error message

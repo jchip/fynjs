@@ -7,6 +7,11 @@ const { Disposer } = require("./disposer");
 const { using } = require("./using");
 const { isPromise, triggerUncaughtException, toArray } = require("./util");
 const { AggregateError } = require("@jchip/error");
+const {
+  OperationalError,
+  isOperationalError,
+  isProgrammerError,
+} = require("./operational-error");
 /**
  * @fileoverview
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird like utility methods
@@ -390,6 +395,21 @@ class AveAzul extends Promise {
       return obj[methodName].call(obj, ...args);
     });
   }
+
+  /**
+   * Catches only operational errors and passes them to the handler.
+   * Programmer errors (non-operational) are rethrown.
+   * @param {Function} handler - Function to handle operational errors
+   * @returns {Promise} - Promise with the error handled or rethrown
+   */
+  error(handler) {
+    return this.catch((err) => {
+      if (isOperationalError(err)) {
+        return handler(err);
+      }
+      throw err;
+    });
+  }
 }
 
 /**
@@ -617,5 +637,8 @@ addStaticAny(AveAzul);
 // Setup the not implemented methods
 const { setupNotImplemented } = require("./not-implemented");
 setupNotImplemented(AveAzul);
+
+// Add these static properties after the class definition
+AveAzul.OperationalError = OperationalError;
 
 module.exports = AveAzul;
