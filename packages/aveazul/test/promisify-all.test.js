@@ -233,7 +233,7 @@ describe("AveAzul.promisifyAll", () => {
     expect(() => AveAzul.promisifyAll(obj, { suffix: "$valid" })).not.toThrow();
   });
 
-  test("should not promisify methods in standard prototypes like Array", () => {
+  test("should handle methods in standard prototypes like Array", () => {
     // Try to promisify an array
     const arr = [1, 2, 3];
     AveAzul.promisifyAll(arr);
@@ -315,5 +315,43 @@ describe("AveAzul.promisifyAll", () => {
 
     const result2 = await obj.otherMethodAsync(5);
     expect(result2).toBe(6);
+  });
+
+  test("should preserve 'this' binding in promisified methods", async () => {
+    // Object with methods that use 'this'
+    const obj = {
+      name: "test-object",
+      value: 42,
+
+      getName(cb) {
+        cb(null, this.name);
+      },
+
+      getValue(cb) {
+        cb(null, this.value);
+      },
+
+      setValues(newName, newValue, cb) {
+        this.name = newName;
+        this.value = newValue;
+        cb(null, { name: this.name, value: this.value });
+      },
+    };
+
+    // Promisify all methods
+    AveAzul.promisifyAll(obj);
+
+    // Verify 'this' is preserved in promisified methods
+    const name = await obj.getNameAsync();
+    expect(name).toBe("test-object");
+
+    const value = await obj.getValueAsync();
+    expect(value).toBe(42);
+
+    // Verify 'this' is modified correctly in promisified methods
+    const result = await obj.setValuesAsync("new-name", 100);
+    expect(result).toEqual({ name: "new-name", value: 100 });
+    expect(obj.name).toBe("new-name");
+    expect(obj.value).toBe(100);
   });
 });
