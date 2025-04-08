@@ -55,7 +55,7 @@
     "filter",
     "reduce",
     "aveazul",
-    "aveazul.js" 
+    "aveazul.js"
   ],
   "repository": {
     "type": "git",
@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@jchip/error": "^1.0.3",
-    "xaa": "^1.7.3"
+    "xaa": "^1.8.0"
   },
   "devDependencies": {
     "bluebird": "^3.7.2",

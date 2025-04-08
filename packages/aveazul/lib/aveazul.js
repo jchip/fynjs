@@ -7,11 +7,7 @@ const { Disposer } = require("./disposer");
 const { using } = require("./using");
 const { isPromise, triggerUncaughtException, toArray } = require("./util");
 const { AggregateError } = require("@jchip/error");
-const {
-  OperationalError,
-  isOperationalError,
-  isProgrammerError,
-} = require("./operational-error");
+const { OperationalError, isOperationalError } = require("./operational-error");
 /**
  * @fileoverview
  * AveAzul ("Blue Bird" in Spanish) - Extended Promise class that provides Bluebird like utility methods
@@ -132,7 +128,12 @@ class AveAzul extends Promise {
    * @returns {Promise} Promise that rejects if timeout occurs
    */
   timeout(ms, message = "operation timed out") {
-    return AveAzul.resolve(xaa.timeout(ms, message).run(this));
+    return xaa
+      .timeout(ms, message, {
+        Promise: AveAzul,
+        TimeoutError: OperationalError,
+      })
+      .run(this);
   }
 
   /**
