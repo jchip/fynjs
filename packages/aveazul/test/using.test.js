@@ -473,4 +473,119 @@ describe("AveAzul.using", () => {
     // Also verify the resource was properly disposed
     expect(resource.disposed).toBe(true);
   });
+
+  test("should handle a promise that resolves to a disposer", async () => {
+    const Promise = require("bluebird");
+
+    // A simple resource class for testing
+    class Resource {
+      constructor(name) {
+        this.name = name;
+        this.disposed = false;
+      }
+
+      dispose() {
+        this.disposed = true;
+      }
+
+      disposer() {
+        return AveAzul.resolve(this).disposer((r) => r.dispose());
+      }
+
+      bluebirdDisposer() {
+        return Promise.resolve(this).disposer((r) => r.dispose());
+      }
+    }
+
+    // Test how AveAzul handles a promise that resolves to a disposer
+    const aveazulResource = new Resource("AveAzul");
+    // Create a function that returns a promise resolving to a disposer
+    const getAveAzulPromiseToDisposer = () => {
+      return AveAzul.resolve(aveazulResource.disposer());
+    };
+
+    await AveAzul.using(getAveAzulPromiseToDisposer(), (resource) => {
+      expect(resource.name).toBe("AveAzul");
+      expect(resource.disposed).toBe(false);
+    });
+
+    expect(aveazulResource.disposed).toBe(true);
+
+    // Test how Bluebird handles a promise that resolves to a disposer
+    const bluebirdResource = new Resource("Bluebird");
+    // Create a function that returns a promise resolving to a disposer
+    const getBluebirdPromiseToDisposer = () => {
+      return Promise.resolve(bluebirdResource.bluebirdDisposer());
+    };
+
+    await Promise.using(getBluebirdPromiseToDisposer(), (resource) => {
+      expect(resource.name).toBe("Bluebird");
+      expect(resource.disposed).toBe(false);
+    });
+
+    expect(bluebirdResource.disposed).toBe(true);
+  });
+
+  test("should compare direct disposer vs promise-to-disposer behavior", async () => {
+    const Promise = require("bluebird");
+
+    // A simple resource class for testing
+    class Resource {
+      constructor(name) {
+        this.name = name;
+        this.disposed = false;
+        this.usedIn = [];
+      }
+
+      use(context) {
+        this.usedIn.push(context);
+      }
+
+      dispose() {
+        this.disposed = true;
+      }
+
+      disposer() {
+        return AveAzul.resolve(this).disposer((r) => r.dispose());
+      }
+
+      bluebirdDisposer() {
+        return Promise.resolve(this).disposer((r) => r.dispose());
+      }
+    }
+
+    // Test with AveAzul - direct disposer vs promise-to-disposer
+    const aveResource1 = new Resource("AveAzul-Direct");
+    const aveDirectDisposer = aveResource1.disposer();
+
+    const aveResource2 = new Resource("AveAzul-Promised");
+    const avePromiseToDisposer = AveAzul.resolve(aveResource2.disposer());
+
+    await AveAzul.using(aveDirectDisposer, avePromiseToDisposer, (r1, r2) => {
+      r1.use("direct");
+      r2.use("promised");
+    });
+
+    expect(aveResource1.disposed).toBe(true);
+    expect(aveResource2.disposed).toBe(true);
+    expect(aveResource1.usedIn).toContain("direct");
+    expect(aveResource2.usedIn).toContain("promised");
+
+    // Test with Bluebird - direct disposer vs promise-to-disposer
+    const bbResource1 = new Resource("Bluebird-Direct");
+    const bbDirectDisposer = bbResource1.bluebirdDisposer();
+
+    const bbResource2 = new Resource("Bluebird-Promised");
+    const bbPromiseToDisposer = Promise.resolve(bbResource2.bluebirdDisposer());
+
+    await Promise.using(bbDirectDisposer, bbPromiseToDisposer, (r1, r2) => {
+      r1.use("direct");
+      r2.use("promised");
+    });
+
+    expect(bbResource1.disposed).toBe(true);
+    expect(bbResource2.disposed).toBe(true);
+    expect(bbResource1.usedIn).toContain("direct");
+    expect(bbResource2.usedIn).toContain("promised");
+  });
 });

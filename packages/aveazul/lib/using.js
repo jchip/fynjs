@@ -29,6 +29,25 @@ function using(resources, handler, Promise, asArray) {
   // Expect Promise to be AveAzul or Bluebird that has map method
   const acquisitionErrors = [];
 
+  // Helper function to process a disposer
+  const processDisposer = async (resource, disposer) => {
+    try {
+      const res = await disposer._promise;
+      resource._result = res;
+      resource[SYM_FN_DISPOSE] = disposer._data;
+    } catch (error) {
+      acquisitionErrors.push(error);
+      resource._error = error;
+    }
+    return resource;
+  };
+
+  // Helper to check if something is a disposer
+  const isDisposer = (obj) =>
+    obj &&
+    (obj instanceof Disposer ||
+      (obj._promise && typeof obj._data === "function"));
+
   const acquireResources = () => {
     const promiseRes = resources.map((resource) => {
       // if it's a promise-like, wait for its resolved value
@@ -39,27 +58,21 @@ function using(resources, handler, Promise, asArray) {
     });
 
     return Promise.map(promiseRes, async (resource) => {
-      if (
-        resource &&
-        (resource instanceof Disposer ||
-          (resource._promise && typeof resource._data === "function"))
-      ) {
-        try {
-          const res = await resource._promise;
-          resource._result = res;
-          resource[SYM_FN_DISPOSE] = resource._data;
-        } catch (error) {
-          acquisitionErrors.push(error);
-          resource._error = error;
-        }
-        return resource;
+      // If it's directly a disposer
+      if (isDisposer(resource)) {
+        return processDisposer(resource, resource);
       }
 
       // if it's a promise like, wait for its resolved value
       if (resource && resource.___promise) {
         try {
           const res = await resource.___promise;
-          resource._result = res;
+          // Check if the resolved value is a disposer
+          if (isDisposer(res)) {
+            return processDisposer(resource, res);
+          } else {
+            resource._result = res;
+          }
         } catch (error) {
           acquisitionErrors.push(error);
           resource._error = error;
