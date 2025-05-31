@@ -1,0 +1,33 @@
+{
+  "name": "cjs1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "homepage": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "cjs1": "index.js"
+  },
+  "author": "",
+  "files": [
+    "src",
+    "lib",
+    "dist"
+  ],
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "fyn": {
+    "devDependencies": {
+      "optional-require": "../../../optional-require"
+    }
+  },
+  "devDependencies": {
+    "optional-require": "^1.1.8"
+  }
+}
