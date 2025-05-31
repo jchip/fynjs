@@ -56,9 +56,7 @@ describe("util.isClass", () => {
   test("should identify ES6 class via 'class' keyword (es6Class branch)", () => {
     // This tests the es6Class branch specifically
     // Using eval to create a class with the 'class' keyword that stringifies correctly
-    const ClassWithKeyword = eval(
-      "(class TestClassWithKeyword { method() {} })"
-    );
+    const ClassWithKeyword = eval("(class TestClassWithKeyword { method() {} })");
     expect(util.isClass(ClassWithKeyword)).toBe(true);
   });
 
@@ -229,7 +227,7 @@ describe("util.copyOwnProperties", () => {
   });
 });
 
-describe("util.getObjectKeys", () => {
+describe("util.getObjectDataKeys", () => {
   test("should get own properties and prototype properties", () => {
     // Create an object with prototype and own properties
     function TestConstructor() {}
@@ -238,7 +236,7 @@ describe("util.getObjectKeys", () => {
     const obj = new TestConstructor();
     obj.ownProperty = "value";
 
-    const keys = util.getObjectKeys(obj);
+    const keys = util.getObjectDataKeys(obj);
 
     // Should include both own property and prototype method
     expect(keys).toContain("ownProperty");
@@ -250,7 +248,7 @@ describe("util.getObjectKeys", () => {
     const arr = ["a", "b", "c"];
     arr.customProperty = "test";
 
-    const keys = util.getObjectKeys(arr);
+    const keys = util.getObjectDataKeys(arr);
 
     // Should include own property
     expect(keys).toContain("customProperty");
@@ -274,14 +272,14 @@ describe("util.getObjectKeys", () => {
     instance.ownMethod = function () {};
 
     // First get keys without exclusion
-    const allKeys = util.getObjectKeys(instance, []);
+    const allKeys = util.getObjectDataKeys(instance, []);
     expect(allKeys).toContain("baseMethod");
     expect(allKeys).toContain("childMethod");
     expect(allKeys).toContain("ownMethod");
 
     // Then exclude the base prototype
     const baseProto = Object.getPrototypeOf(ChildClass.prototype);
-    const filteredKeys = util.getObjectKeys(instance, [baseProto]);
+    const filteredKeys = util.getObjectDataKeys(instance, [baseProto]);
 
     // Should not include keys from the excluded prototype
     expect(filteredKeys).not.toContain("baseMethod");
@@ -295,7 +293,7 @@ describe("util.getObjectKeys", () => {
       property1: "value1",
     };
 
-    const keys = util.getObjectKeys(obj);
+    const keys = util.getObjectDataKeys(obj);
 
     expect(keys).toContain("method1");
     expect(keys).toContain("property1");

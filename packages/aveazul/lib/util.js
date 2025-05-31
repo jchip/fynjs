@@ -21,8 +21,7 @@ function isClass(fn) {
       const hasMethodsOtherThanConstructor =
         keys.length > 0 && !(keys.length === 1 && keys[0] === "constructor");
       const hasThisAssignmentAndStaticMethods =
-        thisAssignmentPattern.test(fnStr) &&
-        Object.getOwnPropertyNames(fn).length > 0;
+        thisAssignmentPattern.test(fnStr) && Object.getOwnPropertyNames(fn).length > 0;
 
       if (
         es6Class ||
@@ -81,11 +80,7 @@ function copyOwnProperties(source, target, filter = propsFilter) {
 
   for (const name of names) {
     if (filter(name)) {
-      Object.defineProperty(
-        target,
-        name,
-        Object.getOwnPropertyDescriptor(source, name)
-      );
+      Object.defineProperty(target, name, Object.getOwnPropertyDescriptor(source, name));
     }
   }
 }
@@ -141,29 +136,58 @@ function isExcludedPrototype(proto) {
  * Gets all property keys from an object and its prototype chain, excluding standard
  * prototypes like Object.prototype, Array.prototype, and Function.prototype
  *
- * @param {Object} target - The target object to get keys from
+ * @param {Object} obj - The target object to get keys from
  * @param {Array} [excludedPrototypes=[]] - An array of prototype objects to exclude keys from
  * @returns {Array<string>} - Array of property keys
  */
-function getObjectKeys(target, excludedPrototypes = []) {
-  const excluded =
-    excludedPrototypes.length > 0 ? excludedPrototypes : defaultExcluded;
+function getObjectDataKeys(obj, excludedProtos = []) {
+  const excludedPrototypes = [
+    Array.prototype,
+    Object.prototype,
+    Function.prototype,
+    ...excludedProtos,
+  ];
 
-  // Get own properties
-  const ownKeys = Object.getOwnPropertyNames(target);
+  const isExcludedProto = function (val) {
+    for (const protoVal of excludedPrototypes) {
+      if (protoVal === val) {
+        return true;
+      }
+    }
+    return false;
+  };
 
-  // Get prototype properties, excluding those from excluded prototypes
-  let protoKeys = [];
-  let currentProto = Object.getPrototypeOf(target);
+  const ret = [];
+  const visitedKeys = Object.create(null);
 
-  // Walk up the prototype chain until we hit null or an excluded prototype
-  while (currentProto && !excluded.includes(currentProto)) {
-    protoKeys = [...protoKeys, ...Object.getOwnPropertyNames(currentProto)];
-    currentProto = Object.getPrototypeOf(currentProto);
+  /* copied from bluebird/js/release/util.js and modified */
+  while (obj && !isExcludedProto(obj)) {
+    let keys;
+    try {
+      keys = Object.getOwnPropertyNames(obj);
+    } catch (e) {
+      return ret;
+    }
+
+    for (const key of keys) {
+      if (visitedKeys[key]) {
+        continue;
+      }
+      visitedKeys[key] = true;
+      const desc = Object.getOwnPropertyDescriptor(obj, key);
+      /**
+       * When desc.get && desc.set are falsy, it means the property is a data
+       * property that holds an actual value, rather than being computed dynamically
+       * through getter/setter functions.
+       */
+      if (desc && !desc.get && !desc.set) {
+        ret.push(key);
+      }
+    }
+    obj = Object.getPrototypeOf(obj);
   }
 
-  // Combine own properties and prototype properties
-  return [...protoKeys, ...ownKeys];
+  return ret;
 }
 
 /**
@@ -191,9 +215,7 @@ function toArray(args) {
       // to detect if too many errors occurred and completion is impossible.
       args = Array.from(args);
     } else {
-      throw new TypeError(
-        "expecting an array or an iterable object but got " + args
-      );
+      throw new TypeError("expecting an array or an iterable object but got " + args);
     }
   }
 
@@ -207,6 +229,6 @@ module.exports.isConstructor = isConstructor;
 module.exports.isPromisified = isPromisified;
 module.exports.isPromise = isPromise;
 module.exports.triggerUncaughtException = triggerUncaughtException;
-module.exports.getObjectKeys = getObjectKeys;
+module.exports.getObjectDataKeys = getObjectDataKeys;
 module.exports.isExcludedPrototype = isExcludedPrototype;
 module.exports.toArray = toArray;

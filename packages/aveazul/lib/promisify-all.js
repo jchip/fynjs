@@ -6,7 +6,7 @@ const {
   isClass,
   isConstructor,
   isPromisified,
-  getObjectKeys,
+  getObjectDataKeys,
   isExcludedPrototype,
 } = require("./util");
 
@@ -49,7 +49,7 @@ function promisifyAll2(obj, options) {
     return;
   }
 
-  const allKeys = getObjectKeys(obj);
+  const allKeys = getObjectDataKeys(obj);
 
   for (const key of allKeys) {
     const value = obj[key];
@@ -86,9 +86,7 @@ function promisifyAll2(obj, options) {
 
 function promisifyAll(target, _options) {
   if (typeof target !== "function" && typeof target !== "object") {
-    throw new TypeError(
-      "the target of promisifyAll must be an object or a function"
-    );
+    throw new TypeError("the target of promisifyAll must be an object or a function");
   }
 
   const options = {
@@ -107,16 +105,11 @@ function promisifyAll(target, _options) {
     );
   }
 
-  const allKeys = getObjectKeys(target);
+  const allKeys = getObjectDataKeys(target);
 
   for (const key of allKeys) {
     const value = target[key];
-    if (
-      value &&
-      key !== "constructor" &&
-      !key.startsWith("_") &&
-      isClass(value)
-    ) {
+    if (value && key !== "constructor" && !key.startsWith("_") && isClass(value)) {
       const proto = Object.getPrototypeOf(value);
       if (!isExcludedPrototype(proto)) {
         promisifyAll2(proto, options);
