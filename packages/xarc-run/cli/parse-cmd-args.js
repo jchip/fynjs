@@ -74,24 +74,41 @@ function searchTaskFile(search, opts) {
 }
 
 function loadTaskFile(name) {
-  if (Path.extname(name) === ".ts") {
-    if (!env.get(env.xrunId)) {
-      logger.log("loading ts-node/register/transpile-only");
-    }
-    optionalRequire("ts-node/register/transpile-only", {
-      fail: e => {
-        logger.log(
-          "Unable to load ts-node/register/transpile-only, TypeScript may not work.",
-          e.message
-        );
-      }
+  const ext = Path.extname(name);
+  if (ext === ".ts" || ext === ".tsx" || ext === ".mts") {
+    let tsRunner = "tsx";
+    let tsxErr;
+    const tsx = optionalRequire(tsRunner, {
+      fail: e => (tsxErr = e)
     });
+    if (!tsx) {
+      tsxErr = new Error(`Unable to load ${tsRunner}`);
+      tsRunner = "ts-node/register/transpile-only";
+      optionalRequire(tsRunner, {
+        fail: e => {
+          tsxRunner = null;
+          logger.log(
+            `Unable to load tsx/esm\n  ${tsxErr &&
+              tsxErr.message}\n  and ts-node/register/transpile-only, TypeScript may not work.`,
+            e.message
+          );
+        }
+      });
+    }
+    /* if xrunId exist then we are already running as invocation from another xrun */
+    if (!env.get(env.xrunId) && tsRunner) {
+      logger.log(`Loaded ${tsRunner} for TypeScript files`);
+    }
   }
 
   return optionalRequire(name, {
     fail: e => {
       const errMsg = chalk.red(`Unable to load ${xsh.pathCwd.replace(name, ".")}`);
-      logger.error(`${errMsg}: ${xsh.pathCwd.replace(e.stack, ".", "g")}`);
+      let msg2 = "";
+      if (e.code === "ERR_REQUIRE_ESM") {
+        msg2 = ` === This is an issue with ts-node/register, install and use tsx ===\n\n`;
+      }
+      logger.error(`${errMsg}: ${msg2}${xsh.pathCwd.replace(e.stack, ".", "g")}`);
     }
   });
 }

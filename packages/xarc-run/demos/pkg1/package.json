@@ -1,0 +1,61 @@
+{
+  "name": "pkg1",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "homepage": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tsc",
+    "test": "xrun xarc/test-only",
+    "prepublishOnly": "xrun --serial [[build, docs], xarc/check]",
+    "docs": "xrun xarc/docs",
+    "coverage": "xrun xarc/test-cov"
+  },
+  "author": "",
+  "files": [
+    "dist",
+    "lib",
+    "src"
+  ],
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "fyn": {
+    "devDependencies": {
+      "@xarc/run": "../.."
+    },
+    "dependencies": {
+      "cjs1": "../cjs1"
+    }
+  },
+  "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@types/node": "^20.8.9",
+    "@xarc/module-dev": "^5.0.0",
+    "@xarc/run": "^1.1.1",
+    "prettier": "^3.0.3",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.1",
+    "tsx": "^4.19.4",
+    "typedoc": "^0.25.2",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "cjs1": "^1.0.0",
+    "tslib": "^2.6.2"
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "@xarc/module-dev": {
+    "features": [
+      "prettier",
+      "typedoc",
+      "typescript"
+    ]
+  }
+}
