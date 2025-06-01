@@ -1,6 +1,8 @@
 "use strict";
 
 const AveAzul = require("./promise-lib");
+const fs = require("fs");
+const path = require("path");
 
 describe("AveAzul.promisifyAll", () => {
   test("should promisify all methods of an object", async () => {
@@ -349,5 +351,83 @@ describe("AveAzul.promisifyAll", () => {
     expect(result).toEqual({ name: "new-name", value: 100 });
     expect(obj.name).toBe("new-name");
     expect(obj.value).toBe(100);
+  });
+
+  test("should promisify fs object methods", async () => {
+    // Create a copy of fs to avoid modifying the original
+    const fsCopy = { ...fs };
+
+    // Promisify all fs methods
+    AveAzul.promisifyAll(fsCopy);
+
+    // Test that readFile is promisified
+    expect(fsCopy.readFileAsync).toBeDefined();
+    expect(typeof fsCopy.readFileAsync).toBe("function");
+
+    // Test that writeFile is promisified
+    expect(fsCopy.writeFileAsync).toBeDefined();
+    expect(typeof fsCopy.writeFileAsync).toBe("function");
+
+    // Test that stat is promisified
+    expect(fsCopy.statAsync).toBeDefined();
+    expect(typeof fsCopy.statAsync).toBe("function");
+
+    // Test that opendir is promisified
+    expect(fsCopy.opendirAsync).toBeDefined();
+    expect(typeof fsCopy.opendirAsync).toBe("function");
+
+    // Test reading package.json file
+    const packageJsonPath = path.join(__dirname, "..", "package.json");
+    const content = await fsCopy.readFileAsync(packageJsonPath, "utf8");
+
+    // Parse and verify it's a valid JSON with expected properties
+    const packageJson = JSON.parse(content);
+    expect(packageJson.name).toBe("aveazul");
+    expect(packageJson.description).toContain("Bluebird");
+
+    // Test that promisified methods return AveAzul instances
+    const promise = fsCopy.readFileAsync(packageJsonPath, "utf8");
+    expect(promise).toBeInstanceOf(AveAzul);
+
+    // Test stat functionality
+    const stats = await fsCopy.statAsync(packageJsonPath);
+    expect(stats.isFile()).toBe(true);
+    expect(stats.size).toBeGreaterThan(0);
+
+    // Test Dir object promisification
+    const testDir = path.join(__dirname, "..");
+    const dir = await fsCopy.opendirAsync(testDir);
+
+    // Test that Dir.read is promisified
+    expect(dir.readAsync).toBeDefined();
+    expect(typeof dir.readAsync).toBe("function");
+
+    // Test that Dir.close is promisified
+    expect(dir.closeAsync).toBeDefined();
+    expect(typeof dir.closeAsync).toBe("function");
+
+    // Test reading a directory entry
+    const dirent = await dir.readAsync();
+    if (dirent) {
+      // Dirent should have synchronous methods like isFile(), isDirectory()
+      expect(typeof dirent.isFile).toBe("function");
+      expect(typeof dirent.isDirectory).toBe("function");
+      expect(typeof dirent.name).toBe("string");
+
+      // Test that Dirent methods work
+      const isFile = dirent.isFile();
+      const isDirectory = dirent.isDirectory();
+      expect(typeof isFile).toBe("boolean");
+      expect(typeof isDirectory).toBe("boolean");
+    }
+
+    // Close the directory
+    await dir.closeAsync();
+
+    // Verify original fs object is not modified
+    expect(fs.readFileAsync).toBeUndefined();
+    expect(fs.writeFileAsync).toBeUndefined();
+    expect(fs.statAsync).toBeUndefined();
+    expect(fs.opendirAsync).toBeUndefined();
   });
 });

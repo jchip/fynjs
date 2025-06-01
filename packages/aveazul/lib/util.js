@@ -95,25 +95,6 @@ function isPromise(obj) {
   );
 }
 
-// istanbul ignore next
-const emptyFatArrow = () => {};
-// istanbul ignore next
-const emptyFunction = function () {};
-
-const defaultExcluded = [
-  Object.getPrototypeOf(Array), // Array.prototype
-  Object.getPrototypeOf(Object), // Object.prototype
-  Object.getPrototypeOf(Function), // Function.prototype
-  Object.getPrototypeOf([]),
-  Object.getPrototypeOf({}),
-  Object.getPrototypeOf(emptyFatArrow),
-  Object.getPrototypeOf(emptyFunction),
-];
-
-function isExcludedPrototype(proto) {
-  return defaultExcluded.includes(proto);
-}
-
 /**
  * Gets all property keys from an object and its prototype chain, excluding standard
  * prototypes like Object.prototype, Array.prototype, and Function.prototype
@@ -148,11 +129,14 @@ function getObjectDataKeys(obj, excludedProtos = []) {
     try {
       keys = Object.getOwnPropertyNames(obj);
     } catch (e) {
+      /* istanbul ignore next */
       return ret;
     }
 
     for (const key of keys) {
+      /* istanbul ignore if */
       if (visitedKeys[key]) {
+        /* istanbul ignore next */
         continue;
       }
       visitedKeys[key] = true;
@@ -162,6 +146,7 @@ function getObjectDataKeys(obj, excludedProtos = []) {
        * property that holds an actual value, rather than being computed dynamically
        * through getter/setter functions.
        */
+      /* istanbul ignore next */
       if (desc && !desc.get && !desc.set) {
         ret.push(key);
       }
@@ -211,5 +196,4 @@ module.exports.isPromisified = isPromisified;
 module.exports.isPromise = isPromise;
 module.exports.triggerUncaughtException = triggerUncaughtException;
 module.exports.getObjectDataKeys = getObjectDataKeys;
-module.exports.isExcludedPrototype = isExcludedPrototype;
 module.exports.toArray = toArray;

@@ -6,7 +6,6 @@ const {
   isClass,
   isPromisified,
   getObjectDataKeys,
-  isExcludedPrototype,
 } = require("./util");
 
 const defaultSuffix = "Async";
@@ -22,32 +21,8 @@ const defaultPromisifier = (fn, _defaultPromisifier, options) => {
   });
 };
 
-const excludedClasses = [Array, Object, Function];
-
-// Helper function to determine if a class extends from any excluded class
-function isExcludedClass(obj) {
-  if (excludedClasses.includes(obj)) {
-    return true;
-  }
-
-  // Check if obj extends from any excluded class using instanceof
-  if (typeof obj === "function" && obj.prototype) {
-    // Check if prototype is instance of any excluded class
-    for (const excludedClass of excludedClasses) {
-      if (obj.prototype instanceof excludedClass) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 
 function promisifyAll2(obj, options) {
-  if (isExcludedClass(obj)) {
-    return;
-  }
-
   const allKeys = getObjectDataKeys(obj);
 
   for (const key of allKeys) {
@@ -107,11 +82,7 @@ function promisifyAll(target, _options) {
   for (const key of allKeys) {
     const value = target[key];
     if (value && key !== "constructor" && !key.startsWith("_") && isClass(value)) {
-      const proto = Object.getPrototypeOf(value);
-      if (!isExcludedPrototype(proto)) {
-        promisifyAll2(proto, options);
-      }
-
+      promisifyAll2(value.prototype, options);
       promisifyAll2(value, options);
     }
   }
