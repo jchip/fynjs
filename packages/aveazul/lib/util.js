@@ -37,18 +37,6 @@ function isIdentifier(str) {
   return rident.test(str);
 }
 
-function isConstructor(func) {
-  if (!func) {
-    return false;
-  }
-  const proto = func.prototype;
-  return (
-    !!proto &&
-    !!proto.constructor &&
-    !!proto.constructor.name &&
-    proto.constructor.name === func.name
-  );
-}
 
 /**
  * Prop filtering code copied from bluebird/js/release
@@ -219,7 +207,6 @@ function toArray(args) {
 module.exports.copyOwnProperties = copyOwnProperties;
 module.exports.isClass = isClass;
 module.exports.isIdentifier = isIdentifier;
-module.exports.isConstructor = isConstructor;
 module.exports.isPromisified = isPromisified;
 module.exports.isPromise = isPromise;
 module.exports.triggerUncaughtException = triggerUncaughtException;

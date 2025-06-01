@@ -4,7 +4,6 @@ const { promisify } = require("./promisify");
 const {
   isIdentifier,
   isClass,
-  isConstructor,
   isPromisified,
   getObjectDataKeys,
   isExcludedPrototype,

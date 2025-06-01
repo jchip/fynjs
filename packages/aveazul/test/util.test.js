@@ -120,42 +120,6 @@ describe("util.isIdentifier", () => {
   });
 });
 
-describe("util.isConstructor", () => {
-  test("should identify functions with proper prototype as constructors", () => {
-    function Constructor() {}
-    Constructor.prototype.constructor = Constructor;
-    expect(util.isConstructor(Constructor)).toBe(true);
-  });
-
-  test("should reject functions without proper prototype structure", () => {
-    function NotAConstructor() {}
-    // This has a prototype, but no proper constructor name
-    NotAConstructor.prototype = { method: () => {} };
-    expect(util.isConstructor(NotAConstructor)).toBe(false);
-  });
-
-  test("should handle non-function values and specifically cover line 30", () => {
-    // This tests the line 30 return false case
-    expect(util.isConstructor(null)).toBe(false);
-    expect(util.isConstructor(undefined)).toBe(false);
-    expect(util.isConstructor(42)).toBe(false);
-    expect(util.isConstructor({})).toBe(false);
-    expect(util.isConstructor([])).toBe(false);
-  });
-
-  test("should reject functions with improper prototype", () => {
-    function FunctionWithImproperPrototype() {}
-    // No constructor on prototype
-    FunctionWithImproperPrototype.prototype = {};
-    expect(util.isConstructor(FunctionWithImproperPrototype)).toBe(false);
-
-    // With constructor but name mismatch
-    function AnotherFunction() {}
-    AnotherFunction.prototype.constructor = { name: "DifferentName" };
-    expect(util.isConstructor(AnotherFunction)).toBe(false);
-  });
-});
-
 describe("util.isPromisified", () => {
   test("should detect promisified functions", () => {
     const fn = function () {};
