@@ -224,12 +224,8 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    expect(() =>
-      AveAzul.promisifyAll(obj, { suffix: "Invalid-Suffix" })
-    ).toThrow(RangeError);
-    expect(() => AveAzul.promisifyAll(obj, { suffix: "123" })).toThrow(
-      RangeError
-    );
+    expect(() => AveAzul.promisifyAll(obj, { suffix: "Invalid-Suffix" })).toThrow(RangeError);
+    expect(() => AveAzul.promisifyAll(obj, { suffix: "123" })).toThrow(RangeError);
     expect(() => AveAzul.promisifyAll(obj, { suffix: "$valid" })).not.toThrow();
   });
 

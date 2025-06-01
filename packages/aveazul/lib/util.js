@@ -11,31 +11,25 @@
  */
 const thisAssignmentPattern = /this\s*\.\s*\S+\s*=/;
 function isClass(fn) {
-  try {
-    if (typeof fn === "function") {
-      const keys = Object.getOwnPropertyNames(fn.prototype);
+    try {
+        if (typeof fn === "function") {
+            const keys = Object.getOwnPropertyNames(fn.prototype);
 
-      const fnStr = fn.toString();
-      const es6Class = fnStr.startsWith("class ") || /^class\s+/.test(fnStr);
-      const hasMethods = keys.length > 1;
-      const hasMethodsOtherThanConstructor =
-        keys.length > 0 && !(keys.length === 1 && keys[0] === "constructor");
-      const hasThisAssignmentAndStaticMethods =
-        thisAssignmentPattern.test(fnStr) && Object.getOwnPropertyNames(fn).length > 0;
+            const hasMethods = keys.length > 1;
+            const hasMethodsOtherThanConstructor = keys.length > 0 &&
+                !(keys.length === 1 && keys[0] === "constructor");
+            const hasThisAssignmentAndStaticMethods =
+                thisAssignmentPattern.test(fn + "") && Object.getOwnPropertyNames (fn).length > 0;
 
-      if (
-        es6Class ||
-        hasMethods ||
-        hasMethodsOtherThanConstructor ||
-        hasThisAssignmentAndStaticMethods
-      ) {
-        return true;
-      }
+            if (hasMethods || hasMethodsOtherThanConstructor ||
+                hasThisAssignmentAndStaticMethods) {
+                return true;
+            }
+        }
+        return false;
+    } catch (e) {
+        return false;
     }
-    return false;
-  } catch (e) {
-    return false;
-  }
 }
 
 const rident = /^[a-z$_][a-z$_0-9]*$/i;

@@ -13,7 +13,7 @@ const {
 const defaultSuffix = "Async";
 
 const defaultFilter = function (name) {
-  return isIdentifier(name) && name.charAt(0) !== "_" && name !== "constructor";
+  return isIdentifier(name) && name.charAt(0) !== "_" && name !== "constructor" && !name.endsWith("Sync");
 };
 
 const defaultPromisifier = (fn, _defaultPromisifier, options) => {
@@ -57,7 +57,6 @@ function promisifyAll2(obj, options) {
     const passesDefaultFilter =
       options.filter === defaultFilter ? true : defaultFilter(key, value, obj);
     if (
-      isConstructor(value) ||
       typeof value !== "function" ||
       isPromisified(value) ||
       obj[promisifiedKey] ||
@@ -78,8 +77,7 @@ function promisifyAll2(obj, options) {
     obj[promisifiedKey] = options.promisifier(value, defaultPromisifier, {
       // context: obj, // promisified function should get the binded object using this
       copyProps: false,
-      multiArgs: options.multiArgs,
-      Promise: options.Promise,
+      ...options
     });
   }
 }
