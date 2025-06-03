@@ -60,5 +60,8 @@
     "functions": 100,
     "lines": 100,
     "cache": true
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
