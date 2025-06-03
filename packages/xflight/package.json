@@ -2,9 +2,18 @@
   "name": "xflight",
   "version": "1.0.0",
   "description": "Handle inflight promise to avoid async duplication",
-  "main": "lib/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/esm/index.js",
+      "require": "./dist-cjs/cjs/index.cjs"
+    }
+  },
   "scripts": {
-    "test": "clap check"
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage",
+    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --remove-source --skip-ts dist-cjs"
   },
   "repository": {
     "type": "git",
@@ -20,10 +29,16 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "devDependencies": {
-    "electrode-archetype-njs-module-dev": "^3.0.0"
+    "@types/node": "^22.15.29",
+    "@vitest/coverage-v8": "^3.2.0",
+    "@xarc/run": "^1.1.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.0",
+    "ts2mjs": "github:jchip/ts2mjs#main"
   },
   "dependencies": {
-    "optional-require": "^1.0.0"
+    "optional-require": "^2.0.1"
   },
   "nyc": {
     "all": true,

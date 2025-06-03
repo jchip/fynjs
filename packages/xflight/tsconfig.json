@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": [
+      "ES2022"
+    ],
+    "module": "ES2022",
+    "esModuleInterop": true,
+    "importHelpers": false,
+    "target": "ES2022",
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "declaration": true,
+    "types": [
+      "node"
+    ],
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "alwaysStrict": true,
+    "strictFunctionTypes": true,
+    "moduleResolution": "Node",
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": [
+    "src"
+  ]
+}
