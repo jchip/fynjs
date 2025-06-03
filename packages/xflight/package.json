@@ -1,6 +1,6 @@
 {
   "name": "xflight",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Handle inflight promise to avoid async duplication",
   "type": "module",
   "exports": {
