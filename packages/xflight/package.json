@@ -20,7 +20,9 @@
     "url": "https://github.com/jchip/xflight.git"
   },
   "files": [
-    "lib"
+    "lib",
+    "dist-esm",
+    "dist-cjs"
   ],
   "keywords": [
     "inflight",
