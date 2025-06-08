@@ -2,7 +2,7 @@
 
 const Path = require("path");
 const cliOptions = require("./cli-options");
-const NixC = require("nix-clap");
+const { NixClap } = require("nix-clap");
 const chalk = require("chalk");
 const xsh = require("xsh");
 const usage = require("./usage");
@@ -89,7 +89,7 @@ function loadTaskFile(name) {
           tsxRunner = null;
           logger.log(
             `Unable to load tsx/esm\n  ${tsxErr &&
-              tsxErr.message}\n  and ts-node/register/transpile-only, TypeScript may not work.`,
+            tsxErr.message}\n  and ts-node/register/transpile-only, TypeScript may not work.`,
             e.message
           );
         }
@@ -178,7 +178,7 @@ function parseArgs(argv, start, clapMode = false) {
       return cliOptions[name];
     }
 
-    const k = Object.keys(cliOptions).find(function(o) {
+    const k = Object.keys(cliOptions).find(function (o) {
       return cliOptions[o].alias === name;
     });
 
@@ -239,30 +239,30 @@ function parseArgs(argv, start, clapMode = false) {
   const tasks = taskXt.tasks;
   if (taskArgs.length > 0) tasks.push(extractTask(taskXt.k, taskArgs.length));
 
-  const nc = new NixC({
-    name: myPkg.name,
-    version: myPkg.version,
-    usage,
-    handlers: {
-      "unknown-command": false,
-      help: p => {
-        if (tasks.length > 0) {
-          p.opts.help = true;
-        } else {
-          nc.showHelp(null, p.opts.help);
+  const nc = new NixClap()
+    .version(myPkg.version)
+    .usage(usage)
+    .init({
+      options: cliOptions,
+      handlers: {
+        "unknown-command": false,
+        help: p => {
+          if (tasks.length > 0) {
+            p.command.jsonMeta.opts.help = true;
+          } else {
+            nc.showHelp();
+          }
         }
       }
-    }
-  }).init(cliOptions);
+    });
 
   const parsed = nc.parse(cliArgs);
-
-  const opts = parsed.opts;
+  const opts = parsed.command.jsonMeta.opts;
 
   // xrun defaults npm option to true but
   // old xclap defaults npm option to false
   // so if user didn't supply the option, force it to false
-  if (clapMode && parsed.source.npm === "default") {
+  if (clapMode && parsed.command.jsonMeta.source.npm === "default") {
     opts.npm = false;
   }
 
@@ -358,9 +358,9 @@ function parseArgs(argv, start, clapMode = false) {
   }
 
   return {
-    cutOff: cutOff,
-    cliArgs: cliArgs,
-    taskArgs: taskArgs,
+    cutOff,
+    cliArgs,
+    taskArgs,
     searchResult,
     opts,
     tasks,
