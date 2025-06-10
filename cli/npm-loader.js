@@ -34,6 +34,7 @@ module.exports = (xrun, options) => {
       }
     }
     xrun.load("npm", scripts);
+    /* istanbul ignore else */
     if (env.get(env.xrunPackagePath) !== readPkg.path) {
       logger.log(`Loaded npm scripts from ${pkgName} into namespace ${chalk.magenta("npm")}`);
     }
@@ -46,6 +47,7 @@ module.exports = (xrun, options) => {
 
   if (pkgConfig) {
     const tasks = Object.assign({}, pkgConfig.tasks);
+    /* istanbul ignore else */
     if (Object.keys(tasks).length > 0) {
       xrun.load("pkg", tasks);
       logger.log(

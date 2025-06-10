@@ -1,281 +1,85 @@
 "use strict";
 
+/**
+ * @typedef {Object} SearchResult
+ * @property {boolean} found - Whether a task file was found
+ * @property {boolean} foundPkg - Whether a package.json was found
+ * @property {string} [xrunFile] - Path to the found task file
+ * @property {string} dir - Directory where the file was found
+ */
+
+/**
+ * @typedef {Object} ParseOptions
+ * @property {string} [cwd] - Current working directory
+ * @property {string} [dir] - Directory to search in
+ * @property {string[]} [require] - Modules to require
+ * @property {boolean} [npm] - Whether to load npm tasks
+ */
+
+/**
+ * @typedef {Object} ParseResult
+ * @property {string[]} tasks - List of tasks to run
+ * @property {Object} parsed - Parsed command line arguments
+ * @property {SearchResult} searchResult - Result of searching for task files
+ */
+
 const Path = require("path");
 const cliOptions = require("./cli-options");
 const { NixClap } = require("nix-clap");
-const chalk = require("chalk");
 const xsh = require("xsh");
 const usage = require("./usage");
-const optionalRequire = require("optional-require")(require);
 const logger = require("../lib/logger");
 const myPkg = require("../package.json");
-const xrun = require("..");
-const searchUpTaskFile = require("./search-up-task-file");
-const npmLoader = require("./npm-loader");
 const ck = require("chalker");
-const requireAt = require("require-at");
 const config = require("./config");
 const env = require("./env");
+const fs = require("fs");
+const { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks } = require("./task-file");
+const { loadProviderPackages } = require("./provider-packages");
 
-function exit(code) {
-  process.exit(code);
+/**
+ * Read and parse package.json from a directory
+ * @param {string} dir - Directory containing package.json
+ * @returns {Object} Parsed package.json contents
+ */
+function readPackageJson(dir) {
+  const pkgData = fs.readFileSync(Path.join(dir, "package.json"), "utf-8");
+  return JSON.parse(pkgData);
 }
 
-function safeGet(from, paths) {
-  for (const p of paths) {
-    if (from) {
-      from = from[p];
-    } else {
-      break;
-    }
-  }
-
-  return from;
-}
-
-function updateCwd(dir) {
-  dir = dir || process.cwd();
-  const newCwd = Path.isAbsolute(dir) ? dir : Path.resolve(dir);
-
-  try {
-    const cwd = process.cwd();
-    if (newCwd !== cwd) {
-      process.chdir(newCwd);
-      logger.log(`CWD changed to ${chalk.magenta(newCwd)}`);
-    } else if (env.get(env.xrunCwd) !== cwd) {
-      logger.log(`CWD is ${chalk.magenta(cwd)}`);
-    }
-    env.set(env.xrunCwd, newCwd);
-
-    return newCwd;
-  } catch (err) {
-    logger.log(`chdir ${chalk.magenta(newCwd)} ${chalk.red("failed")}`);
-    exit(1);
-  }
-}
-
-function searchTaskFile(search, opts) {
-  const xrunDir = Path.join(opts.cwd, opts.dir || "");
-
-  const loadResult = searchUpTaskFile(xrunDir, search);
-
-  if (!loadResult.found) {
-    if (env.get(env.xrunTaskFile) !== "not found") {
-      const x = chalk.magenta(xsh.pathCwd.replace(xrunDir, "./"));
-      logger.log(`No ${chalk.green(config.taskFile)} found in ${x}`);
-    }
-    env.set(env.xrunTaskFile, "not found");
-  } else if (search) {
-    // force CWD to where xrun task file was found
-    opts.cwd = updateCwd(loadResult.dir);
-  }
-
-  return loadResult;
-}
-
-function loadTaskFile(name) {
-  const ext = Path.extname(name);
-  if (ext === ".ts" || ext === ".tsx" || ext === ".mts") {
-    let tsRunner = "tsx";
-    let tsxErr;
-    const tsx = optionalRequire(tsRunner, {
-      fail: e => (tsxErr = e)
-    });
-    if (!tsx) {
-      tsxErr = new Error(`Unable to load ${tsRunner}`);
-      tsRunner = "ts-node/register/transpile-only";
-      optionalRequire(tsRunner, {
-        fail: e => {
-          tsxRunner = null;
-          logger.log(
-            `Unable to load tsx/esm\n  ${tsxErr &&
-            tsxErr.message}\n  and ts-node/register/transpile-only, TypeScript may not work.`,
-            e.message
-          );
-        }
-      });
-    }
-    /* if xrunId exist then we are already running as invocation from another xrun */
-    if (!env.get(env.xrunId) && tsRunner) {
-      logger.log(`Loaded ${tsRunner} for TypeScript files`);
-    }
-  }
-
-  return optionalRequire(name, {
-    fail: e => {
-      const errMsg = chalk.red(`Unable to load ${xsh.pathCwd.replace(name, ".")}`);
-      let msg2 = "";
-      if (e.code === "ERR_REQUIRE_ESM") {
-        msg2 = ` === This is an issue with ts-node/register, install and use tsx ===\n\n`;
-      }
-      logger.error(`${errMsg}: ${msg2}${xsh.pathCwd.replace(e.stack, ".", "g")}`);
-    }
-  });
-}
-
-function processTasks(tasks, loadMsg, ns = "xrun") {
-  if (typeof tasks === "function") {
-    tasks(xrun);
-    if (loadMsg) {
-      logger.log(`Loaded tasks by calling export function from ${loadMsg}`);
-    }
-  } else if (typeof tasks === "object") {
-    if (tasks.default) {
-      processTasks(tasks.default, `${loadMsg} default export`, ns);
-    } else if (Object.keys(tasks).length > 0) {
-      xrun.load(ns, tasks);
-      logger.log(`Loaded tasks from ${loadMsg} into namespace ${chalk.magenta(ns)}`);
-    } else if (loadMsg) {
-      logger.log(`Loaded ${loadMsg}`);
-    }
-  } else {
-    logger.log(`Unknown export type ${chalk.yellow(typeof tasks)} from ${loadMsg}`);
-  }
-}
-
-function loadTasks(opts, searchResult) {
-  npmLoader(xrun, opts);
-
-  if (opts.require) {
-    opts.require.forEach(xmod => {
-      let file;
-      try {
-        file = requireAt(process.cwd()).resolve(xmod);
-      } catch (err) {
-        logger.log(
-          ck`<red>ERROR:</> <yellow>Unable to require module</> <cyan>'${xmod}'</> - <red>${err.message}</>`
-        );
-        return;
-      }
-      const tasks = loadTaskFile(file);
-      if (tasks) {
-        const loadMsg = chalk.green(xmod);
-        processTasks(tasks, loadMsg);
-        return true;
-      }
-    });
-  } else if (searchResult.xrunFile) {
-    const tasks = loadTaskFile(searchResult.xrunFile);
-    if (tasks) {
-      processTasks(
-        tasks,
-        env.get(env.xrunTaskFile) !== searchResult.xrunFile
-          ? chalk.green(`${xsh.pathCwd.replace(searchResult.xrunFile, ".")}`)
-          : ""
-      );
-      env.set(env.xrunTaskFile, searchResult.xrunFile);
-
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function parseArgs(argv, start, clapMode = false) {
-  function getOpt(name) {
-    if (cliOptions.hasOwnProperty(name)) {
-      return cliOptions[name];
-    }
-
-    const k = Object.keys(cliOptions).find(function (o) {
-      return cliOptions[o].alias === name;
-    });
-
-    return cliOptions[k];
-  }
-
-  function takeNextArg(x) {
-    const arg = argv[x];
-    const next = (x + 1 < argv.length && argv[x + 1]) || "";
-
-    if (arg.indexOf("=") > 0 || next.startsWith("-")) {
-      return false;
-    }
-
-    let opt;
-    if (!arg.startsWith("--")) {
-      opt = getOpt(arg.substr(arg.length - 1));
-    } else if (arg.startsWith("--no-")) {
-      return false;
-    } else {
-      opt = getOpt(arg.substr(2));
-    }
-
-    return opt && !(opt.type === "boolean" || opt.type === "count" || opt.count !== undefined);
-  }
-
-  function findCutOff() {
-    let i = start;
-    for (; i < argv.length && argv[i] !== "--"; i++) {
-      if (!argv[i].startsWith("-")) {
-        return i;
-      }
-
-      if (takeNextArg(i)) {
-        i++;
-      }
-    }
-
-    return i;
-  }
-
-  const cutOff = findCutOff();
-  const cliArgs = argv.slice(start, cutOff);
-  const taskArgs = argv.slice(cutOff);
-  const extractTask = (startIx, endIx) => taskArgs.slice(startIx, endIx).join(" ");
-
-  const taskXt = taskArgs.reduce(
-    (acc, v, ix) => {
-      if (!v.startsWith("-")) {
-        if (ix > 0) acc.tasks.push(extractTask(acc.k, ix));
-        acc.k = ix;
-      }
-      return acc;
-    },
-    { tasks: [], k: 0 }
-  );
-
-  const tasks = taskXt.tasks;
-  if (taskArgs.length > 0) tasks.push(extractTask(taskXt.k, taskArgs.length));
-
-  const nc = new NixClap()
+/**
+ * Parse command line arguments
+ * @param {string[]} argv - Command line arguments
+ * @param {number} start - Index to start parsing from
+ * @returns {ParseResult} Parsed arguments and tasks
+ */
+function parseArgs(argv, start) {
+  const nc = new NixClap({
+    noDefaultHandlers: true,
+    allowUnknownCommand: true, // Allow task names as commands
+    allowUnknownOptions: true // Allow task-specific options
+  })
     .version(myPkg.version)
     .usage(usage)
-    .init({
-      options: cliOptions,
-      handlers: {
-        "unknown-command": false,
-        help: p => {
-          if (tasks.length > 0) {
-            p.command.jsonMeta.opts.help = true;
-          } else {
-            nc.showHelp();
-          }
-        }
-      }
-    });
+    .init(
+      cliOptions,
+      {} // no xrun commands
+    );
 
-  const parsed = nc.parse(cliArgs);
-  const opts = parsed.command.jsonMeta.opts;
-
-  // xrun defaults npm option to true but
-  // old xclap defaults npm option to false
-  // so if user didn't supply the option, force it to false
-  if (clapMode && parsed.command.jsonMeta.source.npm === "default") {
-    opts.npm = false;
-  }
+  // Parse all arguments at once - nix-clap v2 will handle command/option separation
+  const parsed = nc.parse(argv, start);
+  const opts = parsed.command.opts;
 
   const myDir = xsh.pathCwd.replace(Path.dirname(__dirname), ".");
 
+  /* istanbul ignore next */
   if (env.get(env.xrunVersion) !== myPkg.version || env.get(env.xrunBinDir) !== myDir) {
-    logger.log(`${chalk.green(myPkg.name)} version ${myPkg.version} at ${chalk.magenta(myDir)}`);
+    logger.log(ck`<green>${myPkg.name}</> version ${myPkg.version} at <magenta>${myDir}</>`);
   }
 
+  /* istanbul ignore next */
   if (env.get(env.xrunNodeBin) !== process.execPath) {
-    logger.log(
-      `${chalk.green("node.js")} version ${process.version} at ${chalk.magenta(process.execPath)}`
-    );
+    logger.log(ck`<green>node.js</> version ${process.version} at <magenta>${process.execPath}</>`);
   }
 
   env.set(env.xrunVersion, myPkg.version);
@@ -290,82 +94,55 @@ function parseArgs(argv, start, clapMode = false) {
 
   let searchResult = {};
 
+  /* istanbul ignore next */
   if (!opts.require) {
     searchResult = searchTaskFile(search, opts);
   }
 
-  const Pkg = optionalRequire(Path.join(opts.cwd, "package.json"), { default: {} });
+  const Pkg = readPackageJson(opts.cwd);
 
   const pkgOptField = config.getPkgOpt(Pkg);
   let pkgConfig = {};
 
+  /* istanbul ignore next */
   if (pkgOptField) {
     pkgConfig = Object.assign(pkgConfig, Pkg[pkgOptField]);
     delete pkgConfig.cwd; // not allow pkg config to override cwd
     delete pkgConfig.tasks;
-    nc.applyConfig(pkgConfig, parsed);
-    const pkgName = chalk.magenta("./package.json");
-    logger.log(`Applied ${chalk.green(pkgOptField)} options from ${pkgName}`);
+    // nc.applyConfig(pkgConfig, parsed);
+    const pkgName = ck`<magenta>./package.json</>`;
+    logger.log(ck`Applied <green>${pkgOptField}</> options from ${pkgName}`);
   }
 
-  const loaded = loadTasks(opts, searchResult, Pkg);
+  const loaded = loadTasks(opts, searchResult);
 
-  const loadProviderModules = () => {
+  // Extract tasks from commands
+  const tasks = Object.keys(parsed.command.subCmdNodes);
+
+  // user has no tasks or explicitly enable searching for provider modules
+  /* istanbul ignore next */
+  if (loaded === false || pkgConfig.loadProviderModules) {
+    /* istanbul ignore next */
     const providerSearches = Object.keys(
       Object.assign({}, Pkg.optionalDependencies, Pkg.devDependencies, Pkg.dependencies)
     );
 
-    providerSearches.forEach(mod => {
-      let modPkg;
-      try {
-        modPkg = require(`${mod}/package.json`);
-      } catch (_err) {
-        return;
-      }
-      const provider = modPkg.xrunProvider;
-      if (!loaded) {
-        if (!provider && !safeGet(modPkg, ["dependencies", myPkg.name])) {
-          // module is not marked as a provider and doesn't have @xarc/run as dep, assume not
-          // a provider
-          return;
-        }
-        // module looks like a provider and user does not have tasks loaded, continue
-        // to see if module exports `loadTasks`
-      } else if (!provider) {
-        // not explicitly a provider and user has tasks, do nothing with it
-        return;
-      }
-
-      const req = (provider && provider.module && `/${provider.module}`) || "";
-      const providerMod = optionalRequire(`${mod}${req}`);
-      if (providerMod) {
-        const loadMsg = saveCwd !== opts.cwd ? `provider module ${mod}` : "";
-        if (!loaded && providerMod.loadTasks) {
-          // if user doesn't have any tasks loaded, and the provider exports loadTasks, then
-          // automatically load tasks from provider
-          processTasks(providerMod.loadTasks, loadMsg);
-        } else if (provider) {
-          // else only load if module explicitly marked itself as a provider
-          processTasks(providerMod.loadTasks || providerMod, loadMsg);
-        }
-      }
-    });
-  };
-
-  // user has no tasks or explicitly enable searching for provider modules
-  if (loaded === false || pkgConfig.loadProviderModules) {
-    loadProviderModules();
+    /* istanbul ignore next */
+    loadProviderPackages(providerSearches);
   }
 
   return {
-    cutOff,
-    cliArgs,
-    taskArgs,
-    searchResult,
     opts,
     tasks,
-    parsed
+    parsed,
+    searchResult
   };
 }
 
-module.exports = parseArgs;
+module.exports = {
+  parseArgs,
+  updateCwd,
+  searchTaskFile,
+  loadTaskFile,
+  processTasks
+};

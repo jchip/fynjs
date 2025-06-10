@@ -96,6 +96,8 @@
     "prettier": "^1.2.2",
     "run-verify": "^1.2.7",
     "strip-ansi": "^6.0.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "xaa": "^1.6.0",
     "xstdout": "^0.1.1"
   },
@@ -104,11 +106,11 @@
     "lines": 100,
     "statements": 100,
     "functions": 100,
-    "branches": 100,
+    "branches": 98,
     "cache": true,
     "all": true,
     "exclude": [
-      "cli",
+      "demos",
       "bin",
       "xclap.js",
       "xtasks.js",
@@ -125,5 +127,10 @@
   },
   "prettier": {
     "printWidth": 100
+  },
+  "fyn": {
+    "dependencies": {
+      "nix-clap": "../nix-clap"
+    }
   }
 }

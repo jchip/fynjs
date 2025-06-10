@@ -20,7 +20,7 @@ const {
 const xsh = require("xsh");
 const xaa = require("xaa");
 
-describe("xrun", function () {
+describe("xrun", function() {
   this.timeout(10000);
 
   it("should lookup and exe a task as a function once", () => {
@@ -67,11 +67,11 @@ describe("xrun", function () {
     );
   });
 
-  it("should fail on unknown options if allowUnknownOptions is false", () => {
+  it("should fail on unknown options if allowUnknownOption is false", () => {
     let context;
     const xrun = new XRun({
       foo: {
-        allowUnknownOptions: false,
+        allowUnknownOption: false,
         task(ctx) {
           context = ctx;
         }
@@ -209,13 +209,13 @@ describe("xrun", function () {
 
   it("should pass task options as argv", () => {
     const xrun = new XRun({
-      foo: function () {
+      foo: function() {
         expect(this.argv).to.deep.equal(["foo"]);
       },
-      foo1: function () {
+      foo1: function() {
         expect(this.argv).to.deep.equal(["foo1", "--test"]);
       },
-      foo2: function () {
+      foo2: function() {
         expect(this.argv).to.deep.equal(["foo2", "--a", "--b"]);
       }
     });
@@ -1075,7 +1075,7 @@ describe("xrun", function () {
       },
       foo3: [
         "~$set b=0",
-        function () {
+        function() {
           this.run([".", "foo4", () => foo3++], _err => foo++);
         }
       ],
@@ -1341,7 +1341,7 @@ describe("xrun", function () {
     );
   });
 
-  describe("stopOnError", function () {
+  describe("stopOnError", function() {
     it("should throw if value is invalid", () => {
       const xrun = new XRun();
       expect(() => (xrun.stopOnError = "blah")).to.throw("stopOnError must be");
@@ -1354,7 +1354,7 @@ describe("xrun", function () {
     });
   });
 
-  describe("_exitOnError", function () {
+  describe("_exitOnError", function() {
     let intercept;
     const xrun = new XRun();
     xrun.stopOnError = false;

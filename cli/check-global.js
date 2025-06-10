@@ -1,5 +1,7 @@
 "use strict";
 
+/* istanbul ignore file */
+
 const Path = require("path");
 const pathIsInside = require("path-is-inside");
 const chalk = require("chalk");

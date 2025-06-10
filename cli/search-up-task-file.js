@@ -12,26 +12,33 @@ const config = require("./config");
 
 function searchUpTaskFile(xrunDir, search) {
   let result;
-
   let dir = xrunDir;
+
   do {
     result = findTaskFile(dir);
+
+    // If we found a task file or package.json, stop searching
     if (result.found || result.foundPkg) {
       break;
     }
+
+    // If we're not searching up or we've hit the root, stop
+    if (!search) break;
+
     const tmp = Path.join(dir, "..");
     if (!tmp || tmp === "." || tmp === dir) {
       break;
     }
     dir = tmp;
-  } while (search);
+  } while (true);
 
-  if (!result.found) result.dir = xrunDir;
+  // If we didn't find a task file, use the original directory
+  if (!result.found) {
+    result.dir = xrunDir;
+  }
 
   return result;
 }
-
-module.exports = searchUpTaskFile;
 
 function findTaskFile(xrunDir) {
   const dirFiles = Fs.readdirSync(xrunDir);
@@ -49,3 +56,5 @@ function findTaskFile(xrunDir) {
     dir: xrunDir
   };
 }
+
+module.exports = { searchUpTaskFile, findTaskFile };

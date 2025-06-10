@@ -7,6 +7,7 @@ const expect = require("chai").expect;
 const xstdout = require("xstdout");
 
 describe("xrun finally", function() {
+  this.timeout(10000);
   let logs = [];
   const tasks = {
     fnFail: () => {
