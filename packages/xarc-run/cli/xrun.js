@@ -1,5 +1,7 @@
 "use strict";
 
+/* istanbul ignore file */
+
 const Path = require("path");
 const parseCmdArgs = require("./parse-cmd-args");
 const chalk = require("chalk");
@@ -13,14 +15,11 @@ const parseArray = require("../lib/util/parse-array");
 const requireAt = require("require-at");
 const optionalRequire = require("optional-require")(require);
 const env = require("./env");
+const WrapProcess = require("./wrap-process");
 
 function flushLogger(opts) {
   logger.quiet(opts && opts.quiet);
   logger.resetBuffer(true, false);
-}
-
-function exit(code) {
-  process.exit(code);
 }
 
 function xrun(argv, offset, clapMode = false, xrunPath = "") {
@@ -29,13 +28,14 @@ function xrun(argv, offset, clapMode = false, xrunPath = "") {
     offset = 2;
   }
 
+  /** list xrun's CLI options and exit - for shell auto completion etc */
   if (argv.length === 3 && argv[offset] === "--options") {
     Object.keys(cliOptions).forEach(k => {
       const x = cliOptions[k];
       console.log(`--${k}`);
       console.log(`-${x.alias}`);
     });
-    return exit(0);
+    return WrapProcess.exit(0);
   }
 
   // handle situation where node.js thinks this pkg is at a diff dir than where it's
@@ -48,10 +48,12 @@ function xrun(argv, offset, clapMode = false, xrunPath = "") {
   ].find(p => p && (runner = optionalRequire(p)));
   const foundPath = Path.dirname(require.resolve(foundReq));
 
-  const cmdArgs = parseCmdArgs(argv, offset, clapMode, foundPath);
-  const opts = cmdArgs.opts;
+  const cmdArgs = parseCmdArgs.parseArgs(argv, offset, clapMode, foundPath);
 
   const numTasks = runner.countTasks();
+
+  const jsonMeta = cmdArgs.parsed.command.jsonMeta;
+  const opts = jsonMeta.opts;
 
   if (numTasks === 0) {
     const fromCwd = Path.dirname(requireAt(process.cwd()).resolve("@xarc/run"));
@@ -78,7 +80,9 @@ ${info}
 For reference, current __dirname is:
     - '${__dirname}'
 `);
-  } else if (cmdArgs.parsed.source.list !== "default") {
+  } else if (jsonMeta.source.list !== "default") {
+    // user explicitly specified the --list option
+    // so we list tasks
     flushLogger(opts);
     const ns = opts.list && opts.list.split(",").map(x => x.trim());
     try {
@@ -92,11 +96,11 @@ For reference, current __dirname is:
     } catch (err) {
       console.log(err.message);
     }
-    return exit(0);
+    return WrapProcess.exit(0);
   } else if (opts.ns) {
     flushLogger(opts);
     console.log(runner._tasks._namespaces.join("\n"));
-    return exit(0);
+    return WrapProcess.exit(0);
   }
 
   const cmdName = Path.basename(process.argv[1] || "") || "xrun";
@@ -113,12 +117,12 @@ For reference, current __dirname is:
         `${cmdName} build\n`
       );
     }
-    return exit(1);
+    return WrapProcess.exit(1);
   }
 
   if (opts.help) {
     console.log("help for tasks:", cmdArgs.tasks);
-    return exit(0);
+    return WrapProcess.exit(0);
   }
 
   flushLogger(opts);
@@ -154,7 +158,7 @@ For reference, current __dirname is:
 
   let tasks = cmdArgs.tasks.map(x => {
     if (x.startsWith("/") && x.indexOf("/", 1) > 1) {
-      return x.substr(1);
+      return x.substring(1);
     }
     return x;
   });
@@ -170,7 +174,7 @@ For reference, current __dirname is:
         chalk.red(`${e.message}:`),
         chalk.cyan(arrayStr)
       );
-      return exit(1);
+      return WrapProcess.exit(1);
     }
   }
 

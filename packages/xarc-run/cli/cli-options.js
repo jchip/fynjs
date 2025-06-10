@@ -7,38 +7,35 @@ const config = require("./config");
 
 module.exports = {
   cwd: {
-    type: "string",
     alias: "w",
     desc: `Set ${myPkg.name}'s ${chalk.magenta("CWD")}`,
-    args: "<string path>",
+    args: "<path string>",
     requireArg: true
   },
   dir: {
-    type: "string",
     alias: "d",
-    desc: `Set dir to look for ${chalk.green(config.taskFile)} (default is ${chalk.magenta("CWD")})`,
-    args: "<string path>",
+    desc: `Set dir to look for ${chalk.green(config.taskFile)} (default is ${chalk.magenta(
+      "CWD"
+    )})`,
+    args: "<path string>",
     requireArg: true
   },
   npm: {
-    type: "boolean",
     alias: "n",
     desc: `load npm scripts into namespace ${chalk.magenta("npm")} (--no-npm to disable)`,
-    args: "[boolean]",
+    args: "[ boolean]",
     argDefault: "true"
   },
   nmbin: {
-    type: "boolean",
     alias: "b",
     desc: `add ${chalk.magenta("CWD/node_modules/.bin")} to ${chalk.blue("PATH")}`,
-    args: "[boolean]",
+    args: "[ boolean]",
     argDefault: "true"
   },
   list: {
-    type: "string",
     alias: "l",
     desc: "List tasks names from list of comma separated namespaces (default is all namespaces)",
-    args: "[string namespaces]",
+    args: "[namespaces string]",
     argDefault: ""
   },
   full: {
@@ -48,43 +45,46 @@ module.exports = {
     counting: Infinity
   },
   ns: {
-    type: "boolean",
     alias: "m",
     desc: "List all namespaces",
-    args: "[boolean]"
+    args: "[ boolean]"
   },
   soe: {
     alias: "e",
     desc: `Stop on errors - one of: no, soft, full`,
-    args: "[enum mode]",
+    args: "[mode enum]",
     argDefault: "full",
-    custom: {
-      mode: v => {
-        if (v === undefined) return "full";
-        if (!v || v === "no") return "";
+    customTypes: {
+      enum: v => {
+        /* istanbul ignore next */
+        if (v === undefined) {
+          return "full";
+        }
+        /* istanbul ignore next */
+        if (!v || v === "no") {
+          /* istanbul ignore next */
+          return "";
+        }
         assert(v === "soft" || v === "full", `option soe value must be one of: no, soft, full`);
         return v;
       }
     }
   },
   quiet: {
-    type: "boolean",
     alias: "q",
     desc: "Do not output any logs",
-    args: "[boolean]",
+    args: "[ boolean]",
     argDefault: "false"
   },
   serial: {
-    type: "boolean",
     alias: ["s", "x"],
     desc: "Execute tasks from command line serially",
-    args: "[boolean]",
+    args: "[ boolean]",
     argDefault: "false"
   },
   require: {
-    type: "string array",
     alias: "r",
     desc: `require module for tasks instead of loading ${config.taskFile}. require from path is CWD`,
-    args: "[string... modules]"
+    args: "[modules string...]"
   }
 };
