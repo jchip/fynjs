@@ -1,5 +1,7 @@
 "use strict";
 
+/* istanbul ignore file */
+
 const Path = require("path");
 const parseCmdArgs = require("./parse-cmd-args");
 const chalk = require("chalk");

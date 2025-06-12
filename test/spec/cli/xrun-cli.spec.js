@@ -4,6 +4,7 @@ const expect = require("chai").expect;
 const xrun = require("../../../cli/xrun");
 const logger = require("../../../lib/logger");
 const WrapProcess = require("../../../cli/wrap-process");
+const xrunInstance = require("../../../lib/xrun-instance");
 
 describe("xrun cli", function() {
   this.timeout(10000);
@@ -70,6 +71,13 @@ describe("xrun cli", function() {
     expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
   });
 
+  it("should handle --full > 1 option", () => {
+    xrun(["node", "xrun", "--quiet", "--list", "-ff"], 2);
+    expect(exitCode).to.equal(0);
+    expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
+    expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
+  });
+
   it("should handle --ns option", () => {
     xrun(["node", "xrun", "--quiet", "--ns"], 2);
     expect(exitCode).to.equal(0);
@@ -115,5 +123,23 @@ describe("xrun cli", function() {
   it("should handle namespaced tasks", () => {
     xrun(["node", "xrun", "--quiet", "1/xfoo1"], 2);
     // expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+  });
+
+  it("should find no tasks in empty directory", done => {
+    xrunInstance.reset();
+    const path = require("path");
+    const origCwd = process.cwd();
+    const modPath = require.resolve("../../..");
+    delete require.cache[modPath];
+    const emptyCwd = path.resolve(__dirname, "../../../test/pkg-fixtures/empty");
+    process.chdir(emptyCwd);
+    xrun(["node", "xrun", "--quiet", "--list"], 2, "", err => {
+      process.chdir(origCwd);
+      const output = logOutput.join("\n");
+      expect(err.exitCode).to.equal(1);
+      expect(output).to.includes("No tasks found");
+      expect(output).to.includes(`You do not have a "xrun-tasks.js|ts"`);
+      done();
+    });
   });
 });

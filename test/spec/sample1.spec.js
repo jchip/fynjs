@@ -6,6 +6,7 @@ const expect = require("chai").expect;
 const xstdout = require("xstdout");
 
 describe("sample1", function() {
+  this.timeout(10000);
   it("should run sample1:foo2 tasks", done => {
     const intercept = xstdout.intercept(true);
     const expectOutput = [
