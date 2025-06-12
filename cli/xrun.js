@@ -1,7 +1,5 @@
 "use strict";
 
-/* istanbul ignore file */
-
 const Path = require("path");
 const parseCmdArgs = require("./parse-cmd-args");
 const chalk = require("chalk");
@@ -13,7 +11,7 @@ const xsh = require("xsh");
 const cliOptions = require("./cli-options");
 const parseArray = require("../lib/util/parse-array");
 const requireAt = require("require-at");
-const optionalRequire = require("optional-require")(require);
+const { makeOptionalRequire } = require("optional-require");
 const env = require("./env");
 const WrapProcess = require("./wrap-process");
 
@@ -24,6 +22,7 @@ function flushLogger(opts) {
 
 function xrun(argv, offset, xrunPath = "", done = null) {
   let cmdName = "xrun";
+  const cwd = WrapProcess.cwd();
 
   if (!argv) {
     cmdName = Path.basename(WrapProcess.argv[1]);
@@ -56,12 +55,14 @@ function xrun(argv, offset, xrunPath = "", done = null) {
   // handle situation where node.js thinks this pkg is at a diff dir than where it's
   // physically installed, a scenario in case pkg mgr installs using symlinks
   let runner;
+  const optionalRequire = makeOptionalRequire(require);
   const foundReq = [
     xrunPath, // first look for it in path passed from cli
     "@xarc/run", // let node.js resolve by package name
     ".." // finally load from definitive known location
   ].find(p => p && (runner = optionalRequire(p)));
-  const foundPath = Path.dirname(require.resolve(foundReq));
+
+  const foundPath = foundReq && Path.dirname(require.resolve(foundReq));
 
   const cmdArgs = parseCmdArgs.parseArgs(argv, offset, foundPath);
 
@@ -71,7 +72,7 @@ function xrun(argv, offset, xrunPath = "", done = null) {
   const opts = jsonMeta.opts;
 
   if (numTasks === 0) {
-    const fromCwd = Path.dirname(requireAt(WrapProcess.cwd()).resolve("@xarc/run"));
+    const fromCwd = optionalRequire.resolve("@xarc/run");
     const fromMyDir = Path.dirname(require.resolve(".."));
     const info = cmdArgs.searchResult.xrunFile
       ? `
@@ -79,21 +80,22 @@ This could be due to a few reasons:
 
   1. your task file ${cmdArgs.searchResult.xrunFile} didn't load any tasks or contains errors.
   2. there are multiple copies of this package (@xarc/run) installed in "node_modules".
-
-Here are some attempts to detect them from CWD and my dir.  They should be the same:
-
-    - resolved from CWD: '${fromCwd}'
-    - resolved from my dir: '${fromMyDir}'
-    - actual dir used: '${foundPath}'
 `
       : `
 You do not have a "xrun-tasks.js|ts" file, so the only tasks may come from your
-'package.json' scripts, and you probably don't have any defined there either.
+'package.json' npm scripts, and you probably don't have any defined there either.
 `;
+    //
     logger.error(`${chalk.red("*** No tasks found ***")}
 ${info}
-For reference, current __dirname is:
-    - '${__dirname}'
+For reference, some paths used to search for tasks:
+    - my current __dirname: '${__dirname}'
+    - dir used to search for tasks:
+        '${cwd}'
+
+Some paths used to resolve @xarc/run:
+    - resolved from CWD: '${fromCwd ? fromCwd : "not found - probably not installed"}'
+    - resolved from my dir: '${fromMyDir}'
 `);
   } else if (jsonMeta.source.list !== "default") {
     // user explicitly specified the --list option
