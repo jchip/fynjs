@@ -29,8 +29,10 @@ class Logger {
 
   resetBuffer(flush, buffering) {
     if (this._buf) {
+      const buf = this._buf;
+      this._buf = [];
       if (flush && !this._quiet) {
-        this._buf.forEach(l => this.write(`${l}\n`));
+        buf.forEach(l => this.write(`${l}\n`));
       }
       this.buffering(buffering);
     }
@@ -77,21 +79,13 @@ class Logger {
   }
 
   log() {
-    let output;
-
-    const make = () => {
-      if (output) return output;
-      const msg = Array.prototype.join.call(arguments, " ");
-      output = `${this._ts()} ${msg}`;
-      return output;
-    };
+    const msg = Array.prototype.join.call(arguments, " ");
+    const output = `${this._ts()} ${msg}`;
 
     if (this._buf) {
-      this._buf.push(make());
-    }
-
-    if (!this._quiet) {
-      this.write(`${make()}\n`);
+      this._buf.push(output);
+    } else if (!this._quiet) {
+      this.write(`${output}\n`);
     }
   }
 

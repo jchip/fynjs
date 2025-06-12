@@ -25,7 +25,7 @@ describe("logger", function() {
     expect(intercept.stdout.join("")).includes("test hello 1 world");
   });
 
-  it("should log to stdout and buffer in coloring off", () => {
+  it("should not log to stdout when buffering in coloring off", () => {
     const intercept = xstdout.intercept(true);
 
     try {
@@ -36,7 +36,7 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout.join("")).includes("test hello 1 world");
+    expect(intercept.stdout.join("")).to.not.includes("test hello 1 world");
     expect(logger.buffer.join("")).includes("test hello 1 world");
   });
 
