@@ -36,6 +36,7 @@ const env = require("./env");
 const fs = require("fs");
 const { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks } = require("./task-file");
 const { loadProviderPackages } = require("./provider-packages");
+const WrapProcess = require("./wrap-process");
 
 /**
  * Read and parse package.json from a directory
@@ -55,9 +56,13 @@ function readPackageJson(dir) {
  */
 function parseArgs(argv, start) {
   const nc = new NixClap({
-    noDefaultHandlers: true,
     allowUnknownCommand: true, // Allow task names as commands
-    allowUnknownOptions: true // Allow task-specific options
+    allowUnknownOption: true, // Allow task-specific options
+    handlers: {
+      exit: code => {
+        WrapProcess.exit(code);
+      }
+    }
   })
     .version(myPkg.version)
     .usage(usage)
@@ -89,7 +94,7 @@ function parseArgs(argv, start) {
   // don't search if user has explicitly set CWD
   const search = !opts.cwd;
 
-  const saveCwd = env.get(env.xrunCwd);
+  // const saveCwd = env.get(env.xrunCwd);
   opts.cwd = updateCwd(opts.cwd);
 
   let searchResult = {};

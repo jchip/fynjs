@@ -1,6 +1,5 @@
 "use strict";
 
-const xrun = require("../..");
 const print1 = require("../fixtures/print1");
 const xstdout = require("xstdout");
 const Fs = require("fs");

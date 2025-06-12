@@ -22,10 +22,25 @@ function flushLogger(opts) {
   logger.resetBuffer(true, false);
 }
 
-function xrun(argv, offset, xrunPath = "") {
+function xrun(argv, offset, xrunPath = "", done = null) {
+  let cmdName = "xrun";
+
   if (!argv) {
-    argv = process.argv;
+    cmdName = Path.basename(WrapProcess.argv[1]);
+    argv = WrapProcess.argv;
     offset = 2;
+  } else {
+    cmdName = "xrun";
+  }
+
+  function exitOrDone(code) {
+    if (done) {
+      const err = new Error(`exit code: ${code}`);
+      err.exitCode = code;
+      done(err);
+    } else {
+      WrapProcess.exit(code);
+    }
   }
 
   /** list xrun's CLI options and exit - for shell auto completion etc */
@@ -35,7 +50,7 @@ function xrun(argv, offset, xrunPath = "") {
       console.log(`--${k}`);
       console.log(`-${x.alias}`);
     });
-    return WrapProcess.exit(0);
+    return exitOrDone(0);
   }
 
   // handle situation where node.js thinks this pkg is at a diff dir than where it's
@@ -56,7 +71,7 @@ function xrun(argv, offset, xrunPath = "") {
   const opts = jsonMeta.opts;
 
   if (numTasks === 0) {
-    const fromCwd = Path.dirname(requireAt(process.cwd()).resolve("@xarc/run"));
+    const fromCwd = Path.dirname(requireAt(WrapProcess.cwd()).resolve("@xarc/run"));
     const fromMyDir = Path.dirname(require.resolve(".."));
     const info = cmdArgs.searchResult.xrunFile
       ? `
@@ -96,14 +111,12 @@ For reference, current __dirname is:
     } catch (err) {
       console.log(err.message);
     }
-    return WrapProcess.exit(0);
+    return exitOrDone(0);
   } else if (opts.ns) {
     flushLogger(opts);
     console.log(runner._tasks._namespaces.join("\n"));
-    return WrapProcess.exit(0);
+    return exitOrDone(0);
   }
-
-  const cmdName = Path.basename(process.argv[1] || "") || "xrun";
 
   if (cmdArgs.tasks.length === 0 || numTasks === 0) {
     flushLogger(opts);
@@ -117,12 +130,12 @@ For reference, current __dirname is:
         `${cmdName} build\n`
       );
     }
-    return WrapProcess.exit(1);
+    return exitOrDone(1);
   }
 
   if (opts.help) {
     console.log("help for tasks:", cmdArgs.tasks);
-    return WrapProcess.exit(0);
+    return exitOrDone(0);
   }
 
   flushLogger(opts);
@@ -152,7 +165,7 @@ For reference, current __dirname is:
     env.set(env.forceColor, "1");
   }
 
-  if (runner.stopOnError === undefined || cmdArgs.parsed.source.soe !== "default") {
+  if (runner.stopOnError === undefined || jsonMeta.source.soe !== "default") {
     runner.stopOnError = opts.soe;
   }
 
@@ -174,7 +187,7 @@ For reference, current __dirname is:
         chalk.red(`${e.message}:`),
         chalk.cyan(arrayStr)
       );
-      return WrapProcess.exit(1);
+      return exitOrDone(1);
     }
   }
 
@@ -182,7 +195,7 @@ For reference, current __dirname is:
     tasks = ["."].concat(tasks);
   }
 
-  return runner.run(tasks.length === 1 ? tasks[0] : tasks);
+  return runner.run(tasks.length === 1 ? tasks[0] : tasks, done);
 }
 
 module.exports = xrun;
