@@ -15,9 +15,7 @@
     "xfoo2": "echo xfoo2 from npm scripts"
   },
   "bin": {
-    "xrun": "bin/xrun.js",
-    "clap": "bin/clap.js",
-    "xclap": "bin/clap.js"
+    "xrun": "bin/xrun.js"
   },
   "repository": {
     "type": "git",

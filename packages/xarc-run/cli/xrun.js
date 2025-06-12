@@ -22,7 +22,7 @@ function flushLogger(opts) {
   logger.resetBuffer(true, false);
 }
 
-function xrun(argv, offset, clapMode = false, xrunPath = "") {
+function xrun(argv, offset, xrunPath = "") {
   if (!argv) {
     argv = process.argv;
     offset = 2;
@@ -48,7 +48,7 @@ function xrun(argv, offset, clapMode = false, xrunPath = "") {
   ].find(p => p && (runner = optionalRequire(p)));
   const foundPath = Path.dirname(require.resolve(foundReq));
 
-  const cmdArgs = parseCmdArgs.parseArgs(argv, offset, clapMode, foundPath);
+  const cmdArgs = parseCmdArgs.parseArgs(argv, offset, foundPath);
 
   const numTasks = runner.countTasks();
 
