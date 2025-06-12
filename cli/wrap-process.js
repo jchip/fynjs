@@ -1,7 +1,5 @@
 "use strict";
 
-/* istanbul ignore file */
-
 /** @type {WrapProcess} */
 const WrapProcess = {
   exit: code => process.exit(code),
