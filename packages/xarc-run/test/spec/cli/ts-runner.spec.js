@@ -41,7 +41,7 @@ describe("ts-runner", function() {
 
     it("should return module when found", () => {
       const mockModule = {};
-      TsRunner._require = mod => mockModule;
+      TsRunner._require = _mod => mockModule;
       const result = TsRunner.load("tsx");
       expect(result).to.equal(mockModule);
       expect(TsRunner.loaded).to.equal("tsx");

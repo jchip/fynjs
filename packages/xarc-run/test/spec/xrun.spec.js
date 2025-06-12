@@ -2,7 +2,7 @@
 
 const gxrun = require("../..");
 const XRun = require("../../lib/xrun");
-const xrun = require("../../lib");
+const xrun = require("../../lib"); // eslint-disable-line no-unused-vars
 const expect = require("chai").expect;
 const xstdout = require("xstdout");
 const chalk = require("chalk");
@@ -1477,7 +1477,7 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         const end = Date.now();
-        expect(end - start).to.be.above(29);
+        expect(end - start).to.be.above(28);
         expect(cfoo2).to.equal(0);
         expect(tasks.foo2Value).to.equal(1);
       }

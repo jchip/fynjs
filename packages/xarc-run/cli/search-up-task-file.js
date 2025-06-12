@@ -1,5 +1,7 @@
 "use strict";
 
+/* eslint-disable no-constant-condition */
+
 const Path = require("path");
 const Fs = require("fs");
 const config = require("./config");

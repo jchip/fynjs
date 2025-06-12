@@ -1,9 +1,10 @@
 "use strict";
 
 const assert = require("assert");
+const WrapProcess = require("./wrap-process");
 
 const lib = {
-  container: process.env,
+  container: WrapProcess.env,
   xrunTaskFile: "XRUN_TASKFILE",
   xrunPackagePath: "XRUN_PACKAGE_PATH",
   xrunId: "XRUN_ID",

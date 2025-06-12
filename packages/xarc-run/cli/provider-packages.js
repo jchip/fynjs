@@ -1,6 +1,7 @@
 "use strict";
 
 /* istanbul ignore file */
+/* eslint-disable */
 
 const optionalRequire = require("optional-require")(require);
 const { processTasks } = require("./task-file");
