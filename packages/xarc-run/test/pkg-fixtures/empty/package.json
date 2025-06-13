@@ -5,8 +5,7 @@
   "main": "index.js",
   "homepage": "",
   "license": "UNLICENSED",
-  "scripts": {
-  },
+  "scripts": {},
   "author": "",
   "files": [
     "src",
