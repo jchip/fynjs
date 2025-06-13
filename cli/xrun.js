@@ -12,7 +12,6 @@ const Fs = require("fs");
 const xsh = require("xsh");
 const cliOptions = require("./cli-options");
 const parseArray = require("../lib/util/parse-array");
-const requireAt = require("require-at");
 const { makeOptionalRequire } = require("optional-require");
 const env = require("./env");
 const WrapProcess = require("./wrap-process");

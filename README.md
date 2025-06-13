@@ -336,13 +336,15 @@ const tasks = {
 load(tasks);
 ```
 
-## Global `xrun` command
+## Install Globally
 
-If you'd like to get the command `xrun` globally, so you don't have to type `npx xrun`, you can install another small npm module [@xarc/run-cli] globally.
+If you'd like to get the command `xrun` globally, you can install this module globally.
 
 ```bash
-$ npm install -g @xarc/run-cli
+$ npm install -g @xarc/run
 ```
+
+It will still try to `require` and use the copy from your `node_modules` if you installed it.
 
 ## Load and Run Tasks Programmatically
 

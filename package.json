@@ -12,7 +12,9 @@
     "coverage": "nyc --all --reporter=lcov --reporter=text --reporter=text-summary npm test",
     "check": "npm run coverage && npm run coveralls && npm run lint",
     "format": "prettier --write --print-width 100 lib/*.js test/**/*.js",
-    "xfoo2": "echo xfoo2 from npm scripts"
+    "xfoo2": "echo xfoo2 from npm scripts",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
   },
   "bin": {
     "xrun": "bin/xrun.js"
@@ -93,6 +95,7 @@
     "munchy": "^1.0.7",
     "nyc": "^11.0.2",
     "prettier": "^1.2.2",
+    "publish-util": "^2.1.0",
     "run-verify": "^1.2.7",
     "strip-ansi": "^6.0.0",
     "ts-node": "^10.9.2",
