@@ -14,6 +14,7 @@ const {
 const env = require("../../../cli/env");
 const xrunInstance = require("../../../lib/xrun-instance");
 const logger = require("../../../lib/logger");
+const stripAnsi = require("strip-ansi");
 
 logger.quiet(true);
 
@@ -94,8 +95,71 @@ describe("task-file", function() {
       fs.mkdirSync(subDir);
       fs.writeFileSync("xrun-tasks.js", "module.exports = {};");
       const opts = { cwd: subDir };
-      searchTaskFile(true, opts);
-      expect(opts.cwd).to.equal(testDir);
+      const result = searchTaskFile(true, opts);
+      expect(result.cwd).to.equal(testDir);
+    });
+
+    it("should avoid logging not found message when env.xrunTaskFile is already set to not found", () => {
+      // Create a subdirectory where we know there won't be any xrun-tasks.js file
+      const subDir = Path.join(testDir, "empty-subdir");
+      fs.mkdirSync(subDir);
+
+      // Create a spy on logger.log to track calls
+      let logMessages = [];
+      const originalLog = logger.log;
+      logger.log = msg => logMessages.push(msg);
+
+      try {
+        // First call should log the not found message
+        searchTaskFile(true, { cwd: subDir });
+        expect(logMessages).to.have.lengthOf(1);
+        expect(stripAnsi(logMessages[0])).to.include("No xrun-tasks.js found");
+        expect(env.get(env.xrunTaskFile)).to.equal("not found");
+
+        // Reset log messages
+        logMessages = [];
+
+        // Second call should not log the not found message
+        searchTaskFile(true, { cwd: subDir });
+        expect(logMessages).to.have.lengthOf(0);
+        expect(env.get(env.xrunTaskFile)).to.equal("not found");
+      } finally {
+        // Restore original logger
+        logger.log = originalLog;
+      }
+    });
+
+    it("should not update cwd when task file is found but opts.updateCwd is false", () => {
+      // Save the original project root directory where xrun-tasks.js exists
+      const projectRoot = Path.resolve(__dirname, "../../..");
+
+      // Create a test directory under test/
+      const testSubDir = Path.join(projectRoot, "test/test-no-update-cwd");
+      fs.mkdirSync(testSubDir, { recursive: true });
+
+      try {
+        // Change to the test directory
+        const originalCwd = process.cwd();
+        process.chdir(testSubDir);
+
+        // Run searchTaskFile with search=false
+        const opts = { cwd: testSubDir, updateCwd: false };
+        const result = searchTaskFile(true, opts);
+
+        // Verify that:
+        // 1. The task file was found (since it exists in project root)
+        // 2. The cwd in opts was not changed
+        // 3. The actual process.cwd() was not changed
+        expect(result.found).to.be.true;
+        expect(result.xrunFile).to.equal(Path.join(projectRoot, "xrun-tasks.js"));
+        expect(process.cwd()).to.equal(testSubDir);
+
+        // Change back to original directory
+        process.chdir(originalCwd);
+      } finally {
+        // Clean up the test directory
+        fs.rmSync(testSubDir, { recursive: true, force: true });
+      }
     });
   });
 
@@ -152,6 +216,59 @@ export default tasks;
       };
       processTasks(tasks, "test tasks");
       expect(xrun._tasks._tasks["test"].foo).to.equal("bar");
+    });
+
+    it("should not log message for function tasks when loadMsg is falsy", () => {
+      // Create a spy on logger.log to track calls
+      let logMessages = [];
+      const originalLog = logger.log;
+      logger.log = msg => logMessages.push(msg);
+
+      try {
+        // Create a function task
+        const tasks = xrun => {
+          xrun.load("test", { foo: "bar" });
+        };
+
+        // Process tasks with falsy loadMsg
+        processTasks(tasks, ""); // test empty string
+        processTasks(tasks, null); // test null
+        processTasks(tasks, undefined); // test undefined
+        processTasks(tasks, false); // test false
+
+        // Verify no messages were logged
+        expect(logMessages).to.have.lengthOf(0);
+
+        // Verify tasks were still processed
+        expect(xrun._tasks._tasks["test"].foo).to.equal("bar");
+      } finally {
+        // Restore original logger
+        logger.log = originalLog;
+      }
+    });
+
+    it("should not log message for empty object tasks when loadMsg is falsy", () => {
+      // Create a spy on logger.log to track calls
+      let logMessages = [];
+      const originalLog = logger.log;
+      logger.log = msg => logMessages.push(msg);
+
+      try {
+        // Create an empty object task
+        const tasks = {};
+
+        // Process tasks with falsy loadMsg
+        processTasks(tasks, ""); // test empty string
+        processTasks(tasks, null); // test null
+        processTasks(tasks, undefined); // test undefined
+        processTasks(tasks, false); // test false
+
+        // Verify no messages were logged
+        expect(logMessages).to.have.lengthOf(0);
+      } finally {
+        // Restore original logger
+        logger.log = originalLog;
+      }
     });
 
     it("should process object tasks", () => {

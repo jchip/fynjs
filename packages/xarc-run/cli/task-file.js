@@ -56,10 +56,12 @@ function searchTaskFile(search, opts) {
       const x = xsh.pathCwd.replace(xrunDir, "./");
       logger.log(ck`No <green>${config.taskFile}</> found in <magenta>${x}</>`);
     }
+    // set env to let subsequent xrun calls know that the task file was not found
+    // and avoid logging the same message again
     env.set(env.xrunTaskFile, "not found");
-  } else if (search) {
+  } else if (opts.updateCwd !== false) {
     // force CWD to where xrun task file was found
-    opts.cwd = updateCwd(loadResult.dir);
+    loadResult.cwd = updateCwd(loadResult.dir);
   }
 
   return loadResult;
@@ -79,12 +81,12 @@ function loadTaskFile(name) {
   return optionalRequire(name, {
     fail: e => {
       const errMsg = ck`<red>Unable to load ${xsh.pathCwd.replace(name, ".")}</>`;
-      let msg2 = "";
-      /* istanbul ignore next */
-      if (e.code === "ERR_REQUIRE_ESM") {
-        /* istanbul ignore next */
-        msg2 = ` === This is an issue with ts-node/register, install and use tsx ===\n\n`;
-      }
+      const msg2 =
+        (e.code === "ERR_REQUIRE_ESM" &&
+          /* istanbul ignore next */
+          ` === This is an issue with ts-node/register, install and use tsx ===\n\n`) ||
+        "";
+
       logger.error(`${errMsg}: ${msg2}${xsh.pathCwd.replace(e.stack, ".", "g")}`);
     }
   });
@@ -137,6 +139,7 @@ function loadTasks(opts, searchResult) {
         return;
       }
       const tasks = loadTaskFile(file);
+      /* istanbul ignore else */
       if (tasks) {
         const loadMsg = ck`<green>${xmod}</>`;
         processTasks(tasks, loadMsg);
@@ -145,6 +148,7 @@ function loadTasks(opts, searchResult) {
     });
   } else if (searchResult.xrunFile) {
     const tasks = loadTaskFile(searchResult.xrunFile);
+    /* istanbul ignore else */
     if (tasks) {
       processTasks(
         tasks,

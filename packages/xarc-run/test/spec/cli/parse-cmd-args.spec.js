@@ -147,15 +147,7 @@ describe("parse-cmd-args", function() {
       const result = searchTaskFile(true, opts);
       expect(result.found).to.be.true;
       expect(result.dir).to.equal(testDir);
-      expect(opts.cwd).to.equal(testDir);
-    });
-
-    it("should not update cwd when search is false", () => {
-      fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = {};");
-      const opts = { cwd: subSubDir };
-      const result = searchTaskFile(false, opts);
-      expect(result.found).to.be.false;
-      expect(opts.cwd).to.equal(subSubDir);
+      expect(result.cwd).to.equal(testDir);
     });
   });
 
