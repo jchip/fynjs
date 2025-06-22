@@ -1,6 +1,6 @@
 {
   "name": "@xarc/run",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "concurrent or serial run npm scripts, javascript tasks, and more",
   "main": "lib/index.js",
   "types": "lib/xrun.d.ts",
