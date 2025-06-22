@@ -80,8 +80,9 @@ function findRunnerModule(xrunPath) {
  * Handle case when no tasks are found
  * @param {Object} cmdArgs - Command arguments
  * @param {string} cwd - Current working directory
+ * @param {Function} done - Optional callback
  */
-function handleNoTasks(cmdArgs, cwd) {
+function handleNoTasks(cmdArgs, cwd, done) {
   const fromCwd = optionalRequire.resolve("@xarc/run") || "not found - probably not installed";
   const fromMyDir = Path.dirname(require.resolve(".."));
   const info = cmdArgs.searchResult.xrunFile
@@ -107,6 +108,7 @@ Some paths used to resolve @xarc/run:
     - resolved from CWD: '${fromCwd}'
     - resolved from my dir: '${fromMyDir}'
 `);
+  return handleExitOrDone(1, done);
 }
 
 /**
@@ -293,7 +295,7 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
 
   // Handle no tasks case
   if (numTasks === 0) {
-    handleNoTasks(cmdArgs, cwd);
+    return handleNoTasks(cmdArgs, cwd, done);
   }
   // Handle task listing
   else if (jsonMeta.source.list !== "default") {
@@ -305,7 +307,7 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   }
 
   // Handle help display
-  if (cmdArgs.tasks.length === 0 || numTasks === 0) {
+  if (cmdArgs.tasks.length === 0) {
     return handleHelp(runner, cmdArgs, opts, cmdName, done);
   }
 
