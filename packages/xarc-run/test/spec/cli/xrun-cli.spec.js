@@ -6,6 +6,21 @@ const logger = require("../../../lib/logger");
 const WrapProcess = require("../../../cli/wrap-process");
 const xrunInstance = require("../../../lib/xrun-instance");
 const stripAnsi = require("strip-ansi");
+const env = require("../../../cli/env");
+const xsh = require("xsh");
+const envPath = xsh.envPath;
+const path = require("path");
+const {
+  xrunMain,
+  setupNodeModulesBin,
+  handleNoTasks,
+  handleTaskListing,
+  handleHelp,
+  setupEnvironment,
+  processTasks,
+  handleQuietFlag
+} = require("../../../cli/xrun-main");
+const fs = require("fs");
 
 describe("xrun cli", function() {
   this.timeout(10000);
@@ -53,7 +68,6 @@ describe("xrun cli", function() {
   });
 
   it("should handle task file that exists but loads no tasks", () => {
-    const { handleNoTasks } = require("../../../cli/xrun-main");
     const cmdArgs = {
       searchResult: {
         xrunFile: "/home/user/project/xrun-tasks.js"
@@ -70,7 +84,6 @@ describe("xrun cli", function() {
   });
 
   it("should handle error in task listing", () => {
-    const { handleTaskListing } = require("../../../cli/xrun-main");
     const runner = {
       _tasks: {
         names: () => {
@@ -91,7 +104,6 @@ describe("xrun cli", function() {
   });
 
   it("should display help and example when opts.quiet is falsy", () => {
-    const { handleHelp } = require("../../../cli/xrun-main");
     const runner = {
       printTasks: () => {}
     };
@@ -109,10 +121,6 @@ describe("xrun cli", function() {
   });
 
   it("should do nothing when opts.nmbin is falsy", () => {
-    const { setupNodeModulesBin } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-    const envPath = require("xsh").envPath;
-
     // Save original env values
     const origPath = env.get(envPath.envKey);
     const origXrunId = env.get(env.xrunId);
@@ -134,11 +142,6 @@ describe("xrun cli", function() {
   });
 
   it("should do nothing when node_modules/.bin doesn't exist", () => {
-    const { setupNodeModulesBin } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-    const envPath = require("xsh").envPath;
-    const path = require("path");
-
     // Save original env values
     const origPath = env.get(envPath.envKey);
     const origXrunId = env.get(env.xrunId);
@@ -159,12 +162,6 @@ describe("xrun cli", function() {
   });
 
   it("should add node_modules/.bin to PATH when not already present", () => {
-    const { setupNodeModulesBin } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-    const envPath = require("xsh").envPath;
-    const path = require("path");
-    const fs = require("fs");
-
     // Save original env values
     const origPath = env.get(envPath.envKey);
     const origXrunId = env.get(env.xrunId);
@@ -200,12 +197,6 @@ describe("xrun cli", function() {
   });
 
   it("should add node_modules/.bin to PATH when PATH is not set", () => {
-    const { setupNodeModulesBin } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-    const envPath = require("xsh").envPath;
-    const path = require("path");
-    const fs = require("fs");
-
     // Save original env values
     const origPath = env.get(envPath.envKey);
     const origXrunId = env.get(env.xrunId);
@@ -240,12 +231,6 @@ describe("xrun cli", function() {
   });
 
   it("should log message when PATH contains .bin but xrunId not set", () => {
-    const { setupNodeModulesBin } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-    const envPath = require("xsh").envPath;
-    const path = require("path");
-    const fs = require("fs");
-
     // Save original env values
     const origPath = env.get(envPath.envKey);
     const origXrunId = env.get(env.xrunId);
@@ -281,9 +266,6 @@ describe("xrun cli", function() {
   });
 
   it("should increment xrunId when it exists", () => {
-    const { setupEnvironment } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-
     // Save original env values
     const origXrunId = env.get(env.xrunId);
     const origForceColor = env.get(env.forceColor);
@@ -304,9 +286,6 @@ describe("xrun cli", function() {
   });
 
   it("should initialize xrunId to '1' when not set", () => {
-    const { setupEnvironment } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-
     // Save original env values
     const origXrunId = env.get(env.xrunId);
     const origForceColor = env.get(env.forceColor);
@@ -327,9 +306,6 @@ describe("xrun cli", function() {
   });
 
   it("should set forceColor when not already set", () => {
-    const { setupEnvironment } = require("../../../cli/xrun-main");
-    const env = require("../../../cli/env");
-
     // Save original env values
     const origXrunId = env.get(env.xrunId);
     const origForceColor = env.get(env.forceColor);
@@ -433,7 +409,6 @@ describe("xrun cli", function() {
 
   it("should find no tasks in empty directory", done => {
     xrunInstance.reset();
-    const path = require("path");
     const origCwd = process.cwd();
     const modPath = require.resolve("../../..");
     delete require.cache[modPath];
@@ -450,8 +425,6 @@ describe("xrun cli", function() {
   });
 
   it("should remove leading slash from task names containing another slash", () => {
-    const { processTasks } = require("../../../cli/xrun-main");
-
     const tasks = ["/namespace/task1", "/another/task2", "normal-task", "/single-slash"];
 
     const result = processTasks(tasks);
@@ -466,8 +439,6 @@ describe("xrun cli", function() {
   });
 
   it("should join and parse tasks that represent an array", () => {
-    const { processTasks } = require("../../../cli/xrun-main");
-
     // Tasks that represent a split array like ["task1", "task2"]
     const tasks = ["[task1", "task2", "task3]"];
 
@@ -478,8 +449,6 @@ describe("xrun cli", function() {
   });
 
   it("should handle array tasks that fail to parse", () => {
-    const { processTasks } = require("../../../cli/xrun-main");
-
     // More complex array with nested arrays and concurrent tasks
     const tasks = ["[build", "[test,lint]", "deploy]"];
 
@@ -487,5 +456,45 @@ describe("xrun cli", function() {
 
     // Should be parsed into a nested array structure
     expect(result).to.deep.equal(null);
+  });
+
+  it("should honor env.xrunQuiet in subsequent invocations", () => {
+    // Save original env values
+    const origQuiet = env.get(env.xrunQuiet);
+
+    try {
+      // Test explicit quiet flag
+      const jsonMeta1 = {
+        source: { quiet: true },
+        opts: { quiet: true }
+      };
+      handleQuietFlag(jsonMeta1, jsonMeta1.opts);
+      expect(env.get(env.xrunQuiet)).to.equal("1");
+
+      // Test inheriting quiet flag
+      const jsonMeta2 = {
+        source: { quiet: "default" },
+        opts: { quiet: false }
+      };
+      const isQuiet = handleQuietFlag(jsonMeta2, jsonMeta2.opts);
+      expect(isQuiet).to.be.true;
+      expect(jsonMeta2.opts.quiet).to.be.true;
+
+      // Test with quiet explicitly disabled
+      const jsonMeta3 = {
+        source: { quiet: false },
+        opts: { quiet: false }
+      };
+      const notQuiet = handleQuietFlag(jsonMeta3, jsonMeta3.opts);
+      expect(notQuiet).to.be.false;
+      expect(jsonMeta3.opts.quiet).to.be.false;
+    } finally {
+      // Restore original env value
+      if (origQuiet === undefined) {
+        env.del(env.xrunQuiet);
+      } else {
+        env.set(env.xrunQuiet, origQuiet);
+      }
+    }
   });
 });

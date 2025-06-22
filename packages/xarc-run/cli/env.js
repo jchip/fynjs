@@ -13,6 +13,7 @@ const lib = {
   xrunVersion: "XRUN_VERSION",
   xrunBinDir: "XRUN_BIN_DIR",
   xrunNodeBin: "XRUN_NODE_BIN",
+  xrunQuiet: "XRUN_QUIET",
   get(key) {
     assert(key, `env.get invalid key: ${key}`);
     return lib.container[key];
