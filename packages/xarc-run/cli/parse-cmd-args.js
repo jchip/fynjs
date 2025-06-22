@@ -44,8 +44,12 @@ const WrapProcess = require("./wrap-process");
  * @returns {Object} Parsed package.json contents
  */
 function readPackageJson(dir) {
-  const pkgData = fs.readFileSync(Path.join(dir, "package.json"), "utf-8");
-  return JSON.parse(pkgData);
+  try {
+    const pkgData = fs.readFileSync(Path.join(dir, "package.json"), "utf-8");
+    return JSON.parse(pkgData);
+  } catch {
+    return {};
+  }
 }
 
 /**
