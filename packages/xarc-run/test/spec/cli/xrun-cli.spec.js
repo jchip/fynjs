@@ -10,15 +10,18 @@ const env = require("../../../cli/env");
 const xsh = require("xsh");
 const envPath = xsh.envPath;
 const path = require("path");
+const { INTERNALS } = require("../../../lib/defaults");
 const {
   xrunMain,
-  setupNodeModulesBin,
-  handleNoTasks,
-  handleTaskListing,
-  handleHelp,
-  setupEnvironment,
-  processTasks,
-  handleQuietFlag
+  [INTERNALS]: {
+    setupNodeModulesBin,
+    handleNoTasks,
+    handleTaskListing,
+    handleHelp,
+    setupEnvironment,
+    processTasks,
+    handleQuietFlag
+  }
 } = require("../../../cli/xrun-main");
 const fs = require("fs");
 
