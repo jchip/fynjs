@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "concurrent or serial run npm scripts, javascript tasks, and more",
   "main": "lib/index.js",
+  "types": "lib/xrun.d.ts",
   "scripts": {
     "pretest": "echo hello",
     "test": "mocha --recursive test/spec",
