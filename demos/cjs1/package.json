@@ -8,6 +8,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "foo": "xrun --serial [[hello, blah]]",
+    "bar": "xrun --no-quiet --serial [[hello, blah]]",
+    "baz": "qrun --serial [[hello, blah]]",
     "blah": "echo blah"
   },
   "bin": {
