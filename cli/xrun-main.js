@@ -252,7 +252,7 @@ function handleQuietFlag(jsonMeta, opts) {
   if (jsonMeta.source.quiet === "default") {
     opts.quiet = env.get(env.xrunQuiet) === "1";
     jsonMeta.source.quiet = "env";
-  } else if (jsonMeta.source.quiet) {
+  } else if (opts.quiet) {
     env.set(env.xrunQuiet, "1");
   }
   return opts.quiet;
