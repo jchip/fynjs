@@ -22,12 +22,15 @@
     "type": "git",
     "url": ""
   },
-  "fyn": {
-    "devDependencies": {
-      "optional-require": "../../../optional-require"
-    }
-  },
   "devDependencies": {
     "optional-require": "^1.1.8"
+  },
+  "fyn": {
+    "dependencies": {
+      "@xarc/run": "../.."
+    }
+  },
+  "dependencies": {
+    "@xarc/run": "^2.0.1"
   }
 }
