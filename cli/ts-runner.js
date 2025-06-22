@@ -3,6 +3,8 @@
 const optionalRequire = require("optional-require")(require);
 const env = require("./env");
 const logger = require("../lib/logger");
+const path = require("path");
+const WrapProcess = require("./wrap-process");
 
 const TsRunner = {
   "runner-tsx": "tsx",
@@ -17,6 +19,10 @@ const TsRunner = {
     if (runner) {
       TsRunner.loaded = name;
       TsRunner.runner = runner;
+      const resolve = TsRunner._require.resolve;
+      TsRunner.path =
+        (resolve && ": " + path.relative(WrapProcess.cwd(), resolve(TsRunner[`runner-${name}`]))) ||
+        "";
     }
     return runner;
   },
@@ -32,7 +38,7 @@ const TsRunner = {
       logger.log(`Unable to load a typescript runner:\n  ${errMsg}`);
     } else if (!env.get(env.xrunId)) {
       /* if xrunId exist then we are already running as invocation from another xrun */
-      logger.log(`Loaded ${TsRunner.loaded} for TypeScript files`);
+      logger.log(`Loaded ${TsRunner.loaded} for TypeScript files${TsRunner.path}`);
     }
   }
 };
