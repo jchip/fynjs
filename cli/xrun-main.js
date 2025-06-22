@@ -332,18 +332,21 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   return runner.run(processedTasks.length === 1 ? processedTasks[0] : processedTasks, done);
 }
 
+const { INTERNALS } = require("../lib/defaults");
 module.exports = {
   xrunMain,
-  flushLogger,
-  handleExitOrDone,
-  handleCliOptions,
-  findRunnerModule,
-  handleNoTasks,
-  handleTaskListing,
-  handleNamespaceListing,
-  handleHelp,
-  setupNodeModulesBin,
-  setupEnvironment,
-  processTasks,
-  handleQuietFlag
+  [INTERNALS]: {
+    flushLogger,
+    handleExitOrDone,
+    handleCliOptions,
+    findRunnerModule,
+    handleNoTasks,
+    handleTaskListing,
+    handleNamespaceListing,
+    handleHelp,
+    setupNodeModulesBin,
+    setupEnvironment,
+    processTasks,
+    handleQuietFlag
+  }
 };
