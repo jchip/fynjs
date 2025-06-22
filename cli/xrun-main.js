@@ -243,6 +243,22 @@ function processTasks(tasks, opts) {
 }
 
 /**
+ * Handle quiet flag setting in environment
+ * @param {Object} jsonMeta - Command metadata
+ * @param {Object} opts - Command options
+ * @returns {boolean} - Whether quiet mode is enabled
+ */
+function handleQuietFlag(jsonMeta, opts) {
+  if (jsonMeta.source.quiet === "default") {
+    opts.quiet = env.get(env.xrunQuiet) === "1";
+    jsonMeta.source.quiet = "env";
+  } else if (jsonMeta.source.quiet) {
+    env.set(env.xrunQuiet, "1");
+  }
+  return opts.quiet;
+}
+
+/**
  * Main entry point for xrun
  * @param {Array} argv - Command line arguments
  * @param {number} offset - Argument offset
@@ -272,6 +288,9 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   const jsonMeta = cmdArgs.parsed.command.jsonMeta;
   const opts = jsonMeta.opts;
 
+  // Handle quiet flag
+  handleQuietFlag(jsonMeta, opts);
+
   // Handle no tasks case
   if (numTasks === 0) {
     handleNoTasks(cmdArgs, cwd);
@@ -289,12 +308,6 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   if (cmdArgs.tasks.length === 0 || numTasks === 0) {
     return handleHelp(runner, cmdArgs, opts, cmdName, done);
   }
-
-  // Handle task help TODO: add this back in
-  // if (opts.help) {
-  //   console.log("help for tasks:", cmdArgs.tasks);
-  //   return handleExitOrDone(0, done);
-  // }
 
   flushLogger(opts);
 
@@ -331,5 +344,6 @@ module.exports = {
   handleHelp,
   setupNodeModulesBin,
   setupEnvironment,
-  processTasks
+  processTasks,
+  handleQuietFlag
 };

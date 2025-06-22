@@ -18,7 +18,8 @@
     "postpack": "publish-util-postpack"
   },
   "bin": {
-    "xrun": "bin/xrun.js"
+    "xrun": "bin/xrun.js",
+    "qrun": "bin/qrun.js"
   },
   "repository": {
     "type": "git",
