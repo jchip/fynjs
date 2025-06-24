@@ -104,7 +104,7 @@ const tasks = {
   foo5c: `~(noenv)$env`,
   foo5d: xrun.exec("env", { noenv: true }),
   foo4: function() {
-    console.log("foo4 task argv", this.argv);
+    console.log("foo4 task argv", this.argv, "args", this.args, "argOpts", this.argOpts);
   },
   foo6: xrun.concurrent(["foo", "bar"]),
   foo7: xrun.serial(["foo", "bar"]),

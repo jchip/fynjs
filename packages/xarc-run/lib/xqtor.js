@@ -19,7 +19,8 @@ const isConcurrent = x => x[0] === defaults.CONCURRENT_SYM;
 const isReadableStream = x => Boolean(x && x.pipe && x.on && x._readableState);
 
 /*
- * Task executor (XQtor)
+ * Task executor (XQtor) - After all the fuss, it comes down to this -- the core of xrun
+ *                         that handles the execution of tasks.
  *
  * Tasks are added to a stack using an array.
  *
@@ -410,12 +411,26 @@ because value type ${vtype} is unknown and no value.item`)
 
     Object.assign(flags, item.flags);
 
+    // Access CLI context through runner
+    const cliContext = this._xrun.getCliContext();
+    const itemArgv = qItem.argv || [];
+    const cliArgv = cliContext.getTaskArgv(qItem.name) || [];
+    const remainingArgv =
+      (cliContext.isLastTask(qItem.name) && cliContext.getRemainingArgs()) || [];
+
+    // Build command with task-specific argv
+    const cmd2 = []
+      .concat(itemArgv.slice(1), cliArgv.slice(1), remainingArgv)
+      .map(x => (x && x.includes(" ") ? `"${x}"` : x))
+      .join(" ");
+
     setTimeout(() => {
       const execData = {
         type: "shell",
         anon,
         qItem,
-        cmd,
+        cmd: cmd + ((cmd2 && " " + cmd2) || ""),
+        cmd2,
         flags,
         cmdVal,
         options,
@@ -593,43 +608,58 @@ because value type ${vtype} is unknown and no value.item`)
       const run = (value, cb) => this._processMoreFromFn(qItem, value, cb);
       const task = qItem.value();
 
-      const allowUnknownOption = task.item ? task.item.allowUnknownOption : task.allowUnknownOption;
-      const nixClap = new NixClap({
-        allowUnknownCommand: true,
-        allowUnknownOption: allowUnknownOption !== undefined ? allowUnknownOption : true,
-        noDefaultHandlers: true
-      });
+      // Access CLI context through runner
+      const cliContext = this._xrun.getCliContext();
+      let cliCmd = cliContext?.getTaskCommand(qItem.name) || {};
 
-      const argp = nixClap.init(task.argOpts || {}).parse(qItem.argv, 0);
+      const cliParser = task.item?.cliParser || task.cliParser || {};
+      const itemArgv = qItem.argv || [];
+      const cliArgv = cliCmd?.argv || [];
 
-      if (argp.errorNodes.length > 0) {
-        const unknownOptions = argp.errorNodes.reduce((acc, node) => {
-          acc.push(
-            ...node.errors
-              .filter(e => e.message.includes("unknown CLI option"))
-              .map(e => e.data.name)
-          );
-          return acc;
-        }, []);
+      if (itemArgv.length > 1 || (cliParser && cliArgv.length > 1)) {
+        const argv = [qItem.name].concat(itemArgv.slice(1), cliArgv.slice(1));
+        const config = {
+          name: qItem.name,
+          allowUnknownOption:
+            cliParser.allowUnknownOption !== undefined ? cliParser.allowUnknownOption : true,
+          allowUnknownCommand: false,
+          noDefaultHandlers: true
+        };
 
-        /* istanbul ignore else */
-        if (unknownOptions.length > 0) {
-          return done(
-            new Error(`Unknown options for task ${qItem.name}: ${unknownOptions.join(", ")}`)
-          );
+        const argp = new NixClap(config)
+          .init(cliParser.options || {}, cliParser.commands || {})
+          .parse(argv || [], 1);
+
+        if (argp.errorNodes.length > 0) {
+          const unknownOptions = argp.errorNodes.reduce((acc, node) => {
+            acc.push(
+              ...node.errors
+                .filter(e => e.message.includes("unknown CLI option"))
+                .map(e => e.data.name)
+            );
+            return acc;
+          }, []);
+
+          /* istanbul ignore else */
+          if (unknownOptions.length > 0) {
+            return done(
+              new Error(`Unknown options for task ${qItem.name}: ${unknownOptions.join(", ")}`)
+            );
+          }
         }
+
+        cliCmd = argp.command;
       }
 
-      const subCommandNodes = argp.command.subCmdNodes;
-      const subCommandNames = Object.keys(subCommandNodes);
-      const subCommand = subCommandNodes[subCommandNames[0]];
+      const argv = cliCmd.argv || [];
 
       const context = {
         run,
-        argv: qItem.argv,
-        args: qItem.argv.slice(1),
-        argp: subCommand.jsonMeta,
-        argOpts: subCommand.opts,
+        argv,
+        cliCmd,
+        argp: cliCmd.jsonMeta,
+        args: cliCmd.argsList,
+        argOpts: cliCmd.opts,
         err: qItem.err,
         failed: this._xrun.failed
       };

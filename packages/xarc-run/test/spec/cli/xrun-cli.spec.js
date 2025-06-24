@@ -24,6 +24,7 @@ const {
   }
 } = require("../../../cli/xrun-main");
 const fs = require("fs");
+const { CliContext } = require("../../../lib/cli-context");
 
 describe("xrun cli", function() {
   this.timeout(10000);
@@ -71,13 +72,13 @@ describe("xrun cli", function() {
   });
 
   it("should handle task file that exists but loads no tasks", () => {
-    const cmdArgs = {
+    const cliContext = new CliContext({
       searchResult: {
         xrunFile: "/home/user/project/xrun-tasks.js"
       }
-    };
+    });
 
-    handleNoTasks(cmdArgs, process.cwd());
+    handleNoTasks(cliContext, process.cwd());
 
     const output = logOutput.join("\n");
     expect(output).to.include("*** No tasks found ***");
