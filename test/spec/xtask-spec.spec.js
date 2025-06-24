@@ -22,4 +22,10 @@ describe("xtask-spec", function() {
       `XTaskSpec - Unknown type blah`
     );
   });
+
+  it("should handle trailing args in toString", () => {
+    expect(new XTaskSpec({ cmd: "hello", type: "exec" }).toString("world")).to.equal(
+      `exec 'hello world'`
+    );
+  });
 });

@@ -14,6 +14,7 @@ const { makeOptionalRequire } = require("optional-require");
 const optionalRequire = makeOptionalRequire(require);
 const env = require("./env");
 const WrapProcess = require("./wrap-process");
+const { CliContext } = require("../lib/cli-context");
 
 /**
  * Flush logger based on options
@@ -78,18 +79,19 @@ function findRunnerModule(xrunPath) {
 
 /**
  * Handle case when no tasks are found
- * @param {Object} cmdArgs - Command arguments
+ * @param {CliContext} cliContext - Command context
  * @param {string} cwd - Current working directory
  * @param {Function} done - Optional callback
  */
-function handleNoTasks(cmdArgs, cwd, done) {
+function handleNoTasks(cliContext, cwd, done) {
   const fromCwd = optionalRequire.resolve("@xarc/run") || "not found - probably not installed";
   const fromMyDir = Path.dirname(require.resolve(".."));
-  const info = cmdArgs.searchResult.xrunFile
+  const searchResult = cliContext.getSearchResult();
+  const info = searchResult.xrunFile
     ? `
 This could be due to a few reasons:
 
-  1. your task file ${cmdArgs.searchResult.xrunFile} didn't load any tasks or contains errors.
+  1. your task file ${searchResult.xrunFile} didn't load any tasks or contains errors.
   2. there are multiple copies of this package (@xarc/run) installed in "node_modules".
 `
     : `
@@ -151,13 +153,13 @@ function handleNamespaceListing(runner, opts, done) {
 /**
  * Handle help display
  * @param {Object} runner - Runner instance
- * @param {Object} cmdArgs - Command arguments
+ * @param {CliContext} cliContext - Command context
  * @param {Object} opts - Options
  * @param {string} cmdName - Command name
  * @param {Function} done - Optional callback
  * @returns {void}
  */
-function handleHelp(runner, cmdArgs, opts, cmdName, done) {
+function handleHelp(runner, cliContext, opts, cmdName, done) {
   flushLogger(opts);
   runner.printTasks();
   if (!opts.quiet) {
@@ -285,17 +287,21 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
 
   // Find and load runner module
   const { runner, foundPath } = findRunnerModule(xrunPath);
-  const cmdArgs = parseCmdArgs.parseArgs(argv, offset, foundPath);
+  const rawCmdArgs = parseCmdArgs.parseArgs(argv, offset, foundPath);
+
+  // Create CliContext as the primary interface
+  const cliContext = new CliContext(rawCmdArgs);
+
   const numTasks = runner.countTasks();
-  const jsonMeta = cmdArgs.parsed.command.jsonMeta;
-  const opts = jsonMeta.opts;
+  const jsonMeta = cliContext.getMetadata();
+  const opts = cliContext.getGlobalOptions();
 
   // Handle quiet flag
   handleQuietFlag(jsonMeta, opts);
 
   // Handle no tasks case
   if (numTasks === 0) {
-    return handleNoTasks(cmdArgs, cwd, done);
+    return handleNoTasks(cliContext, cwd, done);
   }
   // Handle task listing
   else if (jsonMeta.source.list !== "default") {
@@ -307,8 +313,8 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   }
 
   // Handle help display
-  if (cmdArgs.tasks.length === 0) {
-    return handleHelp(runner, cmdArgs, opts, cmdName, done);
+  if (cliContext.getTasks().length === 0) {
+    return handleHelp(runner, cliContext, opts, cmdName, done);
   }
 
   flushLogger(opts);
@@ -317,20 +323,23 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   setupNodeModulesBin(opts);
   setupEnvironment();
 
-  // Configure runner
+  // Configure runner with CliContext
   if (runner.stopOnError === undefined || jsonMeta.source.soe !== "default") {
-    runner.stopOnError = opts.soe;
+    runner.stopOnError = cliContext.getStopOnError();
   }
 
-  // Process tasks
-  const processedTasks = processTasks(cmdArgs.tasks, opts);
+  // Set CliContext on runner
+  runner.setCliContext(cliContext);
+
+  // Process tasks using CliContext
+  const processedTasks = processTasks(cliContext.getTasks(), opts);
   /* istanbul ignore next */
   if (processedTasks === null) {
     /* istanbul ignore next */
     return handleExitOrDone(1, done);
   }
 
-  // Run tasks
+  // Run tasks with CliContext already set on runner
   return runner.run(processedTasks.length === 1 ? processedTasks[0] : processedTasks, done);
 }
 

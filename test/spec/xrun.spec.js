@@ -20,6 +20,7 @@ const {
 } = require("run-verify");
 const xsh = require("xsh");
 const xaa = require("xaa");
+const { CliContext } = require("../../lib/cli-context");
 
 describe("xrun", function() {
   this.timeout(10000);
@@ -60,7 +61,7 @@ describe("xrun", function() {
 
     return asyncVerify(
       runTimeout(500),
-      () => xrun.asyncRun("foo -a=50 --bar=60"),
+      () => xrun.asyncRun("foo --a=50 --bar=60"),
       () => {
         expect(context).to.be.an("object");
         expect(context.argOpts).to.deep.equal({ a: "50", bar: "60" });
@@ -68,11 +69,13 @@ describe("xrun", function() {
     );
   });
 
-  it("should fail on unknown options if allowUnknownOption is false", () => {
+  it("should fail on unknown options if cliParser.allowUnknownOption is false", () => {
     let context;
     const xrun = new XRun({
       foo: {
-        allowUnknownOption: false,
+        cliParser: {
+          allowUnknownOption: false
+        },
         task(ctx) {
           context = ctx;
         }
@@ -81,7 +84,7 @@ describe("xrun", function() {
 
     return asyncVerify(
       runTimeout(500),
-      expectError(() => xrun.asyncRun("foo -a=50 --bar=60")),
+      expectError(() => xrun.asyncRun("foo --a=50 --bar=60")),
       error => {
         expect(error.message).equal("Unknown options for task foo: a, bar");
         expect(context).to.be.undefined;
@@ -105,14 +108,24 @@ describe("xrun", function() {
       }
     });
 
+    xrun.setCliContext(
+      new CliContext({
+        tasks: ["foo", "blah"],
+        cmdNodes: {
+          foo: { argv: ["foo", "-a=50", "--bar=60"], opts: { a: "50", bar: "60" } },
+          blah: { argv: ["blah", "-x=500", "--abc=100"], opts: { x: "500", abc: "100" } }
+        }
+      })
+    );
+
     return asyncVerify(
-      next => xrun.run("foo -a=50 --bar=60 ", next),
+      next => xrun.run("foo", next),
       () => {
         expect(receivedContext).to.be.an("object");
         expect(receivedContext.argOpts.a).equal("50");
         expect(receivedContext.argOpts.bar).equal("60");
       },
-      next => xrun.run("blah -x=500 --abc=100", next),
+      next => xrun.run("blah", next),
       () => {
         expect(receivedCtx).to.be.an("object");
         expect(receivedCtx.argOpts.x).equal("500");
@@ -211,7 +224,7 @@ describe("xrun", function() {
   it("should pass task options as argv", () => {
     const xrun = new XRun({
       foo: function() {
-        expect(this.argv).to.deep.equal(["foo"]);
+        expect(this.argv).to.deep.equal([]);
       },
       foo1: function() {
         expect(this.argv).to.deep.equal(["foo1", "--test"]);
@@ -298,6 +311,35 @@ describe("xrun", function() {
       () => {
         expect(doneItem).to.equal(1);
       }
+    );
+  });
+
+  it("should execute shell with remaining args", () => {
+    const xrun = new XRun({
+      foo: { task: gxrun.exec("echo hello") }
+    });
+
+    const intercept = xstdout.intercept(true);
+
+    xrun.setCliContext(
+      new CliContext({
+        tasks: ["foo"],
+        cmdNodes: { foo: { argv: ["foo"], opts: {} } },
+        parsed: { _: ["foo     world", "a", "b", "   test  1   2   3"] }
+      })
+    );
+
+    return asyncVerify(
+      next => xrun.run("foo", next),
+      () => {
+        intercept.restore();
+        expect(intercept.stdout.join().trim()).to.equal(
+          "hello foo     world a b    test  1   2   3"
+        );
+      },
+      runFinally(() => {
+        intercept.restore();
+      })
     );
   });
 
