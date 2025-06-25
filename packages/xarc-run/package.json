@@ -93,7 +93,7 @@
     "eslint": "^8.1.0",
     "mocha": "^7.1.1",
     "munchy": "^1.0.7",
-    "nyc": "^11.0.2",
+    "nyc": "^17.1.0",
     "prettier": "^1.2.2",
     "publish-util": "^2.1.0",
     "run-verify": "^1.2.7",
@@ -118,7 +118,14 @@
       "xtasks.js",
       "xrun-tasks.js",
       "test",
-      "coverage"
+      "coverage",
+      ".eslintrc.js",
+      ".prettierrc.js",
+      ".nycrc.js",
+      ".nycrc.json",
+      ".nycrc.yml",
+      ".nycrc.yaml",
+      ".nycrc.json"
     ]
   },
   "@xarc/run": {

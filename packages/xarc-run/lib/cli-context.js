@@ -48,7 +48,7 @@ class CliContext {
    * @returns {Object} Command metadata
    */
   getMetadata() {
-    return this._parsed ? this._parsed.command.jsonMeta || {} : {};
+    return this._parsed?.command?.jsonMeta || {};
   }
 
   /**

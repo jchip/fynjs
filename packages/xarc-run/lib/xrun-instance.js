@@ -22,9 +22,12 @@ function createXrunInstance() {
 
 const container = {
   createXrunInstance,
-  xrun: createXrunInstance(),
-  reset: () => {
-    return (container.xrun = createXrunInstance());
+  _xrun: createXrunInstance(),
+  get xrun() {
+    return this._xrun || this.reset();
+  },
+  reset() {
+    return (this._xrun = createXrunInstance());
   }
 };
 
