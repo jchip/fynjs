@@ -91,10 +91,10 @@ describe("npm-loader", function() {
   });
 
   describe("package config tasks loading", () => {
-    it("should load tasks from xarc config", () => {
-      // Create a package.json with xarc config
+    it("should load tasks from xrun config", () => {
+      // Create a package.json with xrun config
       const pkg = {
-        xclap: {
+        xrun: {
           tasks: {
             foo: ["bar", "baz"],
             qux: "quux"

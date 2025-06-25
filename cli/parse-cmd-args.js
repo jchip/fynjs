@@ -48,6 +48,7 @@ function readPackageJson(dir) {
     const pkgData = fs.readFileSync(Path.join(dir, "package.json"), "utf-8");
     return JSON.parse(pkgData);
   } catch {
+    /* istanbul ignore next */
     return {};
   }
 }
@@ -98,7 +99,7 @@ function parseArgs(argv, start) {
   // don't search if user has explicitly set CWD
   const search = !opts.cwd;
 
-  // const saveCwd = env.get(env.xrunCwd);
+  const saveCwd = env.get(env.xrunCwd);
   opts.cwd = updateCwd(opts.cwd);
 
   let searchResult = {};
@@ -113,7 +114,6 @@ function parseArgs(argv, start) {
   const pkgOptField = config.getPkgOpt(Pkg);
   let pkgConfig = {};
 
-  /* istanbul ignore next */
   if (pkgOptField) {
     pkgConfig = Object.assign(pkgConfig, Pkg[pkgOptField]);
     delete pkgConfig.cwd; // not allow pkg config to override cwd
@@ -129,15 +129,8 @@ function parseArgs(argv, start) {
   const tasks = Object.keys(parsed.command.subCmdNodes);
 
   // user has no tasks or explicitly enable searching for provider modules
-  /* istanbul ignore next */
   if (loaded === false || pkgConfig.loadProviderModules) {
-    /* istanbul ignore next */
-    const providerSearches = Object.keys(
-      Object.assign({}, Pkg.optionalDependencies, Pkg.devDependencies, Pkg.dependencies)
-    );
-
-    /* istanbul ignore next */
-    loadProviderPackages(providerSearches);
+    loadProviderPackages(Pkg, saveCwd, opts);
   }
 
   return {

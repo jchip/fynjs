@@ -12,7 +12,6 @@ const envPath = xsh.envPath;
 const path = require("path");
 const { INTERNALS } = require("../../../lib/defaults");
 const {
-  xrunMain,
   [INTERNALS]: {
     setupNodeModulesBin,
     handleNoTasks,

@@ -1,0 +1,17 @@
+{
+  "name": "test-proj-1",
+  "version": "1.0.0",
+  "dependencies": {
+    "provider-1": "^1.0.0",
+    "provider-no-tasks": "^1.0.0"
+  },
+  "devDependencies": {
+    "provider-dev": "^1.0.0"
+  },
+  "optionalDependencies": {
+    "provider-optional": "^1.0.0"
+  },
+  "@xarc/run": {
+    "loadProviderModules": true
+  }
+} 
