@@ -4,12 +4,15 @@
 
 # @xarc/run
 
-`npm run` enhanced.
+`npm run` enhanced - A powerful task runner and build tool for modern JavaScript projects.
 
-- Compatible with `npm run` for [npm scripts]
-- Run them concurrently or serially
-- Extend them with JavaScript
-- Group them with namespace
+- **Compatible** with `npm run` for [npm scripts]
+- **Concurrent & Serial** execution of tasks
+- **JavaScript extensibility** with functions and promises
+- **Provider packages** for reusable task libraries
+- **TypeScript support** with automatic tsx or ts-node integration
+- **Advanced CLI** with argument parsing and remaining args support
+- **Namespace organization** for better task management
 - and [more](#full-list-of-features)
 
 ## Running [npm scripts]
@@ -115,13 +118,13 @@ A function task can do a few things:
 - Return a promise or be an async function, and `xrun` will wait for the Promise.
 - Return a stream and `xrun` will wait for the stream to end.
 - Return another task for `xrun` to execute further.
-- Access arguments with `context.argOpts`.
+- Access parsed options with `context.argOpts`.
 
 Example:
 
 ```js
 load({
-  // A function task named hello that access arguments with `context.argOpts`
+  // A function task named hello that access parsed options with `context.argOpts`
   async hello(context) {
     console.log("hello argOpts:", context.argOpts);
     return ["foo"];
@@ -207,6 +210,78 @@ load({
 
 > `xrun` adds `node_modules/.bin` to PATH. That's why `npx` is not needed to run commands like `cypress` that's installed in `node_modules`.
 
+### Provider Packages
+
+`@xarc/run` supports **provider packages** - reusable task libraries that can be shared across projects. This allows teams to standardize common build tasks and workflows.
+
+#### What makes a provider package?
+
+A provider package is identified by either:
+
+1. Having `xrunProvider` config in its `package.json`
+2. Having `@xarc/run` as a dependency
+
+#### Creating a provider package
+
+```js
+// In your provider package's package.json
+{
+  "name": "my-build-tasks",
+  "xrunProvider": {
+    "module": "tasks.js"  // optional: specify which module exports loadTasks
+  }
+}
+```
+
+```js
+// In your provider's tasks.js (or main module)
+module.exports = {
+  loadTasks(xrun) {
+    // can pass in optional namespace with xrun.load("namespace", {...})
+    return xrun.load({
+      build: "webpack --mode=production",
+      test: "jest",
+      lint: "eslint src/",
+      ci: ["lint", "test", "build"]
+    });
+  }
+};
+```
+
+#### Using provider packages
+
+Provider packages are automatically loaded when:
+
+1. You have no tasks loaded (automatic discovery)
+2. You explicitly enable them by setting `loadProviderModules: true` in your `@xarc/run` config
+
+Provider tasks are loaded from:
+
+- `dependencies`
+- `devDependencies`
+- `optionalDependencies`
+
+Example `package.json`:
+
+```json
+{
+  "name": "my-app",
+  "dependencies": {
+    "my-build-tasks": "^1.0.0"
+  },
+  "@xarc/run": {
+    "loadProviderModules": true
+  }
+}
+```
+
+Now you can run provider tasks directly:
+
+```bash
+xrun build    # runs the build task from my-build-tasks
+xrun ci       # runs the ci task which executes lint, test, build serially
+```
+
 ### Shorthands
 
 Not a fan of full API names like `concurrent`, `serial`, `exec`? You can skip them.
@@ -231,19 +306,35 @@ load({
 
 ## Full List of Features
 
-- **_Support [namespaces](./REFERENCE.md#namespace) for tasks._**
-- Load and execute npm scripts from `package.json`.
-- Auto completion for [bash] and [zsh].
-- Define tasks in a JavaScript file.
-- Serial tasks execution.
-- Concurrent tasks execution.
-- Proper nesting task execution hierarchy.
-- Promise, [node.js stream], or callback support for tasks written in JavaScript.
-- Run time flow control - return further tasks to execute from JS task function.
-- Support custom task execution reporter.
-- Specify complex tasks execution pattern from command line.
-- Tasks can have a [_finally_](./REFERENCE.md#finally-hook) hook that always runs after task finish or fail.
-- Support [flexible function task](./REFERENCE.md#function) that can return more tasks to run.
+- **Core Execution Engine**
+
+  - Serial and concurrent task execution with proper nesting hierarchy
+  - Promise, [node.js stream], or callback support for JavaScript tasks
+  - Run time flow control - return further tasks to execute from JS task functions
+  - Tasks can have a [_finally_](./REFERENCE.md#finally-hook) hook that always runs after task finish or fail
+
+- **Developer Experience**
+
+  - Compatible with and loads npm scripts from `package.json`
+  - Auto completion for [bash] and [zsh]
+  - TypeScript support with automatic tsx/ts-node loading (tsx preferred)
+  - Advanced CLI with comprehensive options (see [CLI reference](./REFERENCE.md#cli-options))
+  - Argument parsing with `--` remaining args support
+  - Specify complex task execution patterns from command line
+
+- **Extensibility & Organization**
+
+  - **Provider packages** - reusable task libraries for sharing common workflows
+  - **[Namespaces](./REFERENCE.md#namespace)** for organizing tasks across modules
+  - Define tasks in JavaScript files with full programmatic control
+  - Support [flexible function tasks](./REFERENCE.md#function) that can return more tasks to run
+  - Custom task execution reporters
+
+- **Advanced Features**
+  - TTY control for interactive commands
+  - Environment variable management with `env()` tasks
+  - Shell command execution with `exec()` and spawn options
+  - Task dependency resolution and execution planning
 
 ## Getting Started
 
@@ -273,7 +364,7 @@ const tasks = {
   jsFunc() {
     console.log("JS hello world");
   },
-  both: ["hello", "jsFun"] // execute the two tasks serially
+  both: ["hello", "jsFunc"] // execute the two tasks serially
 };
 
 // Load the tasks into @xarc/run
@@ -344,7 +435,7 @@ If you'd like to get the command `xrun` globally, you can install this module gl
 $ npm install -g @xarc/run
 ```
 
-It will still try to `require` and use the copy from your `node_modules` if you installed it.
+However, it will still try to `require` and use the copy from your `node_modules` if you installed it.
 
 ## Load and Run Tasks Programmatically
 
@@ -373,15 +464,17 @@ run(concurrent("task1", "task2"), err => {
 
 Name your task file `xrun-tasks.ts` if you want to use TypeScript.
 
-You also need to install [ts-node](https://www.npmjs.com/package/ts-node) to your `node_modules`
-
-ie:
+You need to install a TypeScript runtime to your `node_modules`. `@xarc/run` supports both [tsx](https://www.npmjs.com/package/tsx) (recommended) and [ts-node](https://www.npmjs.com/package/ts-node):
 
 ```bash
+# Recommended: tsx (faster, better ESM support)
+npm install -D tsx typescript
+
+# Alternative: ts-node
 npm install -D ts-node typescript
 ```
 
-`xrun` automatically loads `ts-node/register` when it detects `xrun-tasks.ts` file.
+`xrun` automatically detects and loads the appropriate TypeScript runtime when it finds `xrun-tasks.ts`, `xrun-tasks.tsx`, or `xrun-tasks.mts` files. It tries `tsx` first, then falls back to `ts-node/register`.
 
 ## Command Line Usage
 
@@ -397,13 +490,49 @@ ie:
 $ xrun build
 ```
 
-For help on usage:
+### Passing Arguments to Tasks
+
+You can pass arguments after `--` to shell commands. These arguments are automatically appended to the last shell task:
+
+```bash
+$ xrun build -- --watch --verbose
+$ xrun test -- --grep "specific test"
+```
+
+For JavaScript function tasks, parsed options are available via the `context` param:
+
+It's also pass as the `this` context for the function.
+
+```js
+load({
+  myTask(context) {
+    console.log("Parsed options:", context.argOpts);
+  }
+});
+```
+
+### CLI Options
+
+Common CLI options include:
+
+- `--serial`, `-s` - Execute tasks serially instead of concurrently
+- `--cwd <path>`, `-w` - Set working directory
+- `--list`, `-l` - List available tasks
+- `--npm`, `-n` - Load npm scripts (default: true)
+- `--quiet`, `-q` - Suppress output
+- `--soe <mode>`, `-e` - Stop on error mode: `no`, `soft`, `full`
+
+For complete CLI reference:
 
 ```bash
 $ xrun -h
 ```
 
+See [CLI Options](./REFERENCE.md#cli-options) for full details.
+
 To load [npm scripts] into the `npm` namespace, use the `--npm` option:
+
+This is enabled by default. To turn it off use `--no-npm` option.
 
 ```bash
 $ xrun --npm test
@@ -497,7 +626,7 @@ And you can invoke them with `xrun pkg/foo`, or `xrun foo` if there are no other
 
 ## Options
 
-Command line options can also be specified under `@xarc/run` inside your `package.json`.
+Command line options can also be specified under `@xarc/run` or `xrun` inside your `package.json`.
 
 For example:
 
