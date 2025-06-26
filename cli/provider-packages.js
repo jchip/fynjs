@@ -4,6 +4,7 @@ const { makeOptionalRequire } = require("optional-require");
 const { processTasks } = require("./task-file");
 const WrapProcess = require("./wrap-process");
 const myPkg = require("../package.json");
+const path = require("path");
 
 /**
  * Search for provider packages in the node_modules directory.
@@ -37,7 +38,14 @@ function loadProviderPackages(userPkg, saveCwd, opts) {
     Object.assign({}, userPkg.optionalDependencies, userPkg.devDependencies, userPkg.dependencies)
   );
   providers.forEach(pkgName => {
-    const providerPkg = optionalRequire(`${pkgName}/package.json`);
+    const providerPath = optionalRequire.resolve(pkgName);
+    const pkgJsonPath =
+      providerPath &&
+      path.join(
+        providerPath.substring(0, pkgName.length + providerPath.indexOf(pkgName)),
+        `package.json`
+      );
+    const providerPkg = pkgJsonPath && optionalRequire(pkgJsonPath);
     if (!providerPkg) {
       return;
     }
