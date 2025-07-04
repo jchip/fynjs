@@ -26,7 +26,6 @@
     "url": "https://github.com/electrode-io/xarc-run.git"
   },
   "publishConfig": {
-    "tag": "next",
     "access": "public",
     "registry": "https://registry.npmjs.com/"
   },
@@ -79,12 +78,12 @@
     "jaro-winkler": "^0.2.8",
     "lodash.foreach": "^4.5.0",
     "nix-clap": "^2.2.3",
-    "optional-require": "^2.0.1",
+    "optional-require": "^2.0.4",
     "path-is-inside": "^1.0.2",
     "read-pkg-up": "^7.0.1",
     "require-at": "^1.0.6",
     "string-array": "^1.0.1",
-    "unwrap-npm-cmd": "^1.1.1",
+    "unwrap-npm-cmd": "^1.1.2",
     "xsh": "^0.4.5"
   },
   "devDependencies": {
