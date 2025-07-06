@@ -38,7 +38,7 @@ function loadProviderPackages(userPkg, saveCwd, opts) {
     Object.assign({}, userPkg.optionalDependencies, userPkg.devDependencies, userPkg.dependencies)
   );
   providers.forEach(pkgName => {
-    const providerPath = optionalRequire.resolve(pkgName);
+    const providerPath = optionalRequire.resolvePath(pkgName);
     const pkgJsonPath =
       providerPath &&
       path.join(

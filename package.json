@@ -78,7 +78,7 @@
     "jaro-winkler": "^0.2.8",
     "lodash.foreach": "^4.5.0",
     "nix-clap": "^2.2.3",
-    "optional-require": "^2.0.4",
+    "optional-require": "^2.1.0",
     "path-is-inside": "^1.0.2",
     "read-pkg-up": "^7.0.1",
     "require-at": "^1.0.6",
