@@ -466,7 +466,7 @@ because value type ${vtype} is unknown and no value.item`)
     const done = err => {
       // even if there's error, but if it's due to child being terminated with
       // SIGTERM, then treat that as a normal exit.
-      if (this._isChildSigTerm(err, child)) {
+      if (this._isChildSigTerm(err, child) || this._isChildTerminated(child)) {
         err = null;
       }
       if (watch.finish) return 0;
@@ -565,6 +565,10 @@ because value type ${vtype} is unknown and no value.item`)
 
   _isChildSigTerm(err, child) {
     return err && err.code === null && child && child.signalCode === "SIGTERM";
+  }
+
+  _isChildTerminated(child) {
+    return child && child[defaults.STOP_SYM];
   }
 
   _handleStream(val) {
