@@ -15,6 +15,7 @@ const xsh = require("xsh");
 const updateEnv = require("./util/update-env");
 const myPkg = require("../package.json");
 const { CliContext } = require("./cli-context");
+const { exec } = require("child_process");
 
 // full - full stop, interrupting all pending async tasks
 // soft - allow pending async tasks to complete, but no more new tasks
@@ -245,7 +246,19 @@ class XRun extends EventEmitter {
       this._taskChildren = {};
       const symbols = Object.getOwnPropertySymbols(children);
       symbols.forEach(sym => {
-        children[sym].kill();
+        const child = children[sym];
+        /* istanbul ignore next */
+        if (process.platform === "win32") {
+          try {
+            /* istanbul ignore next */
+            exec(`taskkill /T /F /PID ${child.pid}`);
+          } catch (err) {
+            /* istanbul ignore next */
+            child.kill();
+          }
+        } else {
+          child.kill();
+        }
       });
     }, 10);
   }
