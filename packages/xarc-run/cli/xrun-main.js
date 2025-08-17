@@ -198,13 +198,12 @@ function setupNodeModulesBin(opts) {
     const nmBin = Path.join(opts.cwd, "node_modules", ".bin");
     if (Fs.existsSync(nmBin)) {
       const x = chalk.magenta(`${xsh.pathCwd.replace(nmBin, ".")}`);
-
       const pathStr = env.get(envPath.envKey) || "";
-      if (!pathStr.match(new RegExp(`${nmBin}(${Path.delimiter}|$)`))) {
-        envPath.addToFront(nmBin);
-        logger.log(`Added ${x} to PATH`);
+      const updated = envPath.addToFront(nmBin);
+      if (updated !== pathStr) {
+        logger.log(`Added ${x} to front of PATH`);
       } else if (!env.get(env.xrunId)) {
-        logger.log(`PATH already contains ${x}`);
+        logger.log(`PATH already contains ${x}`, pathStr);
       }
     }
   }
