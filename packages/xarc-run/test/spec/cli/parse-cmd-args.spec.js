@@ -48,6 +48,14 @@ describe("parse-cmd-args", function() {
     });
   });
 
+  describe("env option parsing", () => {
+    it("should handle when no --env option is provided", () => {
+      const args = ["node", "xrun", "task1"];
+      const result = parseArgs(args, 2);
+      expect(result.opts.env).to.be.undefined;
+    });
+  });
+
   describe("task file handling", () => {
     it("finds task file in specified directory", () => {
       const args = ["node", "xrun", "task1"];

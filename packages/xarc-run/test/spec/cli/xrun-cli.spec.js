@@ -19,7 +19,8 @@ const {
     handleHelp,
     setupEnvironment,
     processTasks,
-    handleQuietFlag
+    handleQuietFlag,
+    processEnvOptions
   }
 } = require("../../../cli/xrun-main");
 const fs = require("fs");
@@ -499,5 +500,142 @@ describe("xrun cli", function() {
         env.set(env.xrunQuiet, origQuiet);
       }
     }
+  });
+
+  describe("processEnvOptions (lines 342-349)", () => {
+    let savedEnvValues;
+
+    beforeEach(() => {
+      // Save current environment values that we'll modify
+      savedEnvValues = {
+        NODE_ENV: env.get("NODE_ENV"),
+        FOO: env.get("FOO"),
+        BAR: env.get("BAR"),
+        TEST_VAR: env.get("TEST_VAR"),
+        DEBUG: env.get("DEBUG"),
+        EMPTY_VAR: env.get("EMPTY_VAR")
+      };
+    });
+
+    afterEach(() => {
+      // Restore original environment values
+      Object.keys(savedEnvValues).forEach(key => {
+        if (savedEnvValues[key] === undefined) {
+          env.del(key);
+        } else {
+          env.set(key, savedEnvValues[key]);
+        }
+      });
+    });
+
+    it("should handle undefined opts.env", () => {
+      const opts = { env: undefined };
+
+      expect(() => processEnvOptions(opts)).to.not.throw();
+
+      // No environment variables should be set
+      expect(env.get("NODE_ENV")).to.equal(savedEnvValues.NODE_ENV);
+    });
+
+    it("should handle null opts.env", () => {
+      const opts = { env: null };
+
+      expect(() => processEnvOptions(opts)).to.not.throw();
+
+      // No environment variables should be set
+      expect(env.get("NODE_ENV")).to.equal(savedEnvValues.NODE_ENV);
+    });
+
+    it("should handle single env string", () => {
+      const opts = { env: "NODE_ENV=development" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+    });
+
+    it("should handle array of env strings", () => {
+      const opts = { env: ["NODE_ENV=development", "FOO=bar"] };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("FOO")).to.equal("bar");
+    });
+
+    it("should handle empty strings in env array", () => {
+      const opts = { env: ["", "NODE_ENV=development", "", "FOO=bar", ""] };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("FOO")).to.equal("bar");
+    });
+
+    it("should handle env string with empty value", () => {
+      const opts = { env: "NODE_ENV=" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("");
+    });
+
+    it("should handle env string with no equals sign", () => {
+      const opts = { env: "DEBUG" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("DEBUG")).to.equal("undefined");
+    });
+
+    it("should handle env string with multiple equals signs", () => {
+      const opts = { env: "TEST_VAR=key=value=more" };
+
+      processEnvOptions(opts);
+
+      // split("=") splits on all = signs, but destructuring only takes first two elements
+      expect(env.get("TEST_VAR")).to.equal("key");
+    });
+
+    it("should ignore env strings with empty key", () => {
+      const opts = { env: ["=invalid", "NODE_ENV=development"] };
+
+      processEnvOptions(opts);
+
+      // Empty key should be ignored
+      expect(env.get("NODE_ENV")).to.equal("development");
+    });
+
+    it("should handle mixed valid and invalid env strings", () => {
+      const opts = {
+        env: [
+          "", // empty string - should be filtered out
+          "NODE_ENV=development", // valid
+          "=invalid", // empty key - should be ignored
+          "FOO=bar", // valid
+          "DEBUG", // no value - should set to "undefined"
+          "EMPTY_VAR=" // empty value - should set to ""
+        ]
+      };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("FOO")).to.equal("bar");
+      expect(env.get("DEBUG")).to.equal("undefined");
+      expect(env.get("EMPTY_VAR")).to.equal("");
+    });
+
+    it("should overwrite existing environment variables", () => {
+      // Set initial value
+      env.set("NODE_ENV", "initial");
+      expect(env.get("NODE_ENV")).to.equal("initial");
+
+      const opts = { env: "NODE_ENV=overwritten" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("overwritten");
+    });
   });
 });

@@ -13,8 +13,8 @@ const { NixClap } = require("nix-clap");
 
 const STAGE_FINALLY = "finally";
 
-const isSerial = x => x[0] === defaults.SERIAL_SIG || x[0] === defaults.SERIAL_SYM;
-const isConcurrent = x => x[0] === defaults.CONCURRENT_SYM;
+const isSerial = x => defaults.SERIAL_SIG.includes(x[0]);
+const isConcurrent = x => defaults.CONCURRENT_SIG.includes(x[0]);
 
 const isReadableStream = x => Boolean(x && x.pipe && x.on && x._readableState);
 

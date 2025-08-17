@@ -77,10 +77,20 @@ module.exports = {
     argDefault: "false"
   },
   serial: {
-    alias: ["s", "x"],
+    alias: ["s", "x", "ser"],
     desc: "Execute tasks from command line serially",
     args: "[ boolean]",
     argDefault: "false"
+  },
+  concurrent: {
+    alias: ["c", "conc"],
+    desc: "Execute tasks from command line concurrently (default)",
+    args: "[ boolean]",
+    argDefault: "true"
+  },
+  env: {
+    desc: "Set env. ie: --env NODE_ENV=development FOO=BAR -.",
+    args: "[env string...]"
   },
   require: {
     alias: "r",
