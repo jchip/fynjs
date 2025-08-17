@@ -542,29 +542,33 @@ You can also specify command line options under `@xarc/run` in your `package.jso
 
 ### Specifying Complex Tasks from command line
 
-You can specify your tasks as an array from the command line.
-
-For example, to have `xrun` execute the tasks `[ task_a, task_b ]` concurrently:
+- You can specify your tasks as an array from the command line.  For example, to have `xrun` execute the tasks `[task_a, task_b]` concurrently:
 
 ```bash
-$ xrun [ task_a, task_b ]
+$ xrun [task_a, task_b]
+$ xrun --concurrent [task_a, task_b]
 ```
 
-You can also execute them serially with:
+- You can also execute them serially with:
 
 ```bash
-$ xrun --serial [ task_a, task_b ]
+$ xrun [--serial, task_a, task_b]
+$ xrun --serial [task_a, task_b]
 ```
 
-You can execute tasks serially, and then some tasks concurrently:
+- You can execute tasks serially, and then an inner array with concurrent tasks. The following will execute `task_a`, then `task_b`, and finally `task_c1` and `task_c2` concurrently
 
 ```bash
 $ xrun --serial [task_a, task_b, [task_c1, task_c2]]
 ```
 
-> will execute `task_a`, then `task_b`, and finally `task_c1` and `task_c2` concurrently.
+- You can also make inner arrays serial using `--serial` as the first element.  Other shortcuts for "--serial" are: `.` and `-s`.
 
-You can pass the whole array in as a single string, which will be parsed as an array with string elements only.
+```bash
+$ xrun [task_a, task_b, [--serial, task_c1, task_c2]]
+```
+
+- You can pass the whole array in as a single string, which will be parsed as an array with string elements only.
 
 ```bash
 $ xrun "[task_a, task_b, [task_c1, task_c2]]"

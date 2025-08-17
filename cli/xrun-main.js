@@ -42,6 +42,21 @@ function handleExitOrDone(code, done) {
 }
 
 /**
+ * Process environment options from command line
+ * @param {Object} opts - Options object containing env property
+ */
+function processEnvOptions(opts) {
+  const envs = [].concat(opts.env).filter(Boolean);
+
+  for (const envStr of envs) {
+    const [key, val] = envStr.split("=");
+    if (key) {
+      env.set(key, val);
+    }
+  }
+}
+
+/**
  * List CLI options for shell auto completion
  * @param {Array} argv - Command line arguments
  * @param {number} offset - Argument offset
@@ -339,6 +354,8 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
     return handleExitOrDone(1, done);
   }
 
+  processEnvOptions(opts);
+
   // Run tasks with CliContext already set on runner
   return runner.run(processedTasks.length === 1 ? processedTasks[0] : processedTasks, done);
 }
@@ -358,6 +375,7 @@ module.exports = {
     setupNodeModulesBin,
     setupEnvironment,
     processTasks,
-    handleQuietFlag
+    handleQuietFlag,
+    processEnvOptions
   }
 };
