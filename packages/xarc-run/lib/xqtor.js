@@ -511,7 +511,7 @@ because value type ${vtype} is unknown and no value.item`)
     if (!watch.finish) {
       this._handleChildTask(child, cmd);
       watch.cancel = () => {
-        child.kill();
+        this._xrun.killChildProcess(child);
         done();
       };
       this._watchFailure(watch);
