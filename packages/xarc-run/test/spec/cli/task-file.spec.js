@@ -15,6 +15,7 @@ const env = require("../../../cli/env");
 const xrunInstance = require("../../../lib/xrun-instance");
 const logger = require("../../../lib/logger");
 const stripAnsi = require("strip-ansi");
+const WrapProcess = require("../../../cli/wrap-process");
 
 logger.quiet(true);
 
@@ -23,23 +24,75 @@ describe("task-file", function() {
   let testEnv;
   let saveCwd;
   let xrun;
+  let counter = 0;
+  let originalWrapProcess;
+  let mockProcess;
 
   beforeEach(() => {
-    testDir = Path.join(os.tmpdir(), `xarc-run-test-${Date.now()}`);
+    testDir = Path.join(os.tmpdir(), `xarc-run-test-${Date.now()}-${counter++}`);
     fs.mkdirSync(testDir, { recursive: true });
     saveCwd = process.cwd();
     process.chdir(testDir);
 
     testEnv = { ...process.env };
     env.container = testEnv;
+
+    // Save original WrapProcess
+    originalWrapProcess = Object.assign({}, WrapProcess);
+
+    // Create mock process
+    let mockCwd = testDir;
+    mockProcess = {
+      cwd: () => mockCwd,
+      chdir: (dir) => {
+        mockCwd = dir;
+        process.chdir(dir); // Also change real process for fs operations
+      },
+      exit: (code) => {
+        throw new Error(`Mock exit: ${code}`);
+      },
+      env: testEnv,
+      argv: process.argv
+    };
+
+    // Set WrapProcess to use mock
+    WrapProcess._process = mockProcess;
+    WrapProcess.cwd = () => mockProcess.cwd();
+    WrapProcess.chdir = (dir) => mockProcess.chdir(dir);
+    WrapProcess.exit = (code) => mockProcess.exit(code);
+
     xrunInstance.reset();
     xrun = xrunInstance.xrun;
   });
 
   afterEach(() => {
-    fs.rmSync(testDir, { recursive: true, force: true });
     env.container = process.env;
-    process.chdir(saveCwd);
+
+    // Restore original WrapProcess
+    Object.assign(WrapProcess, originalWrapProcess);
+
+    // Change directory back BEFORE deleting to avoid ENOTEMPTY errors
+    // Ensure we're in a valid directory first
+    if (saveCwd && fs.existsSync(saveCwd)) {
+      try {
+        process.chdir(saveCwd);
+      } catch (e) {
+        // If chdir fails, try to go to temp dir as fallback
+        process.chdir(os.tmpdir());
+      }
+    } else {
+      // Fallback to temp dir if saveCwd doesn't exist
+      process.chdir(os.tmpdir());
+    }
+
+    // Now safe to delete test directory
+    if (testDir && fs.existsSync(testDir)) {
+      try {
+        fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    }
   });
 
   describe("updateCwd", () => {
@@ -48,7 +101,7 @@ describe("task-file", function() {
       fs.mkdirSync(subDir);
       const newCwd = updateCwd(subDir);
       expect(newCwd).to.equal(subDir);
-      expect(process.cwd()).to.contain(subDir);
+      expect(mockProcess.cwd()).to.equal(subDir);
       expect(env.get(env.xrunCwd)).to.equal(subDir);
     });
 
@@ -56,12 +109,14 @@ describe("task-file", function() {
       const subDir = "subdir";
       fs.mkdirSync(subDir);
       const newCwd = updateCwd(subDir);
-      expect(newCwd).to.contain(Path.resolve(testDir, subDir));
+      const expectedPath = fs.realpathSync(Path.resolve(testDir, subDir));
+      expect(fs.realpathSync(newCwd)).to.equal(expectedPath);
+      expect(fs.realpathSync(mockProcess.cwd())).to.equal(expectedPath);
     });
 
     it("should use current directory when no dir provided", () => {
       const newCwd = updateCwd();
-      expect(newCwd).to.contain(testDir);
+      expect(newCwd).to.equal(testDir);
     });
   });
 
@@ -94,9 +149,13 @@ describe("task-file", function() {
       const subDir = Path.join(testDir, "subdir");
       fs.mkdirSync(subDir);
       fs.writeFileSync("xrun-tasks.js", "module.exports = {};");
+      // Change mock to start in subDir
+      mockProcess.chdir(subDir);
       const opts = { cwd: subDir };
       const result = searchTaskFile(true, opts);
+      expect(result.found).to.be.true;
       expect(result.cwd).to.equal(testDir);
+      expect(mockProcess.cwd()).to.equal(testDir);  // Verify WrapProcess.chdir was called
     });
 
     it("should avoid logging not found message when env.xrunTaskFile is already set to not found", () => {
@@ -138,24 +197,23 @@ describe("task-file", function() {
       fs.mkdirSync(testSubDir, { recursive: true });
 
       try {
-        // Change to the test directory
-        const originalCwd = process.cwd();
-        process.chdir(testSubDir);
+        // Change mock to the test directory
+        const originalCwd = mockProcess.cwd();
+        mockProcess.chdir(testSubDir);
 
-        // Run searchTaskFile with search=false
+        // Run searchTaskFile with updateCwd=false
         const opts = { cwd: testSubDir, updateCwd: false };
         const result = searchTaskFile(true, opts);
 
         // Verify that:
         // 1. The task file was found (since it exists in project root)
-        // 2. The cwd in opts was not changed
-        // 3. The actual process.cwd() was not changed
+        // 2. The cwd was not changed
         expect(result.found).to.be.true;
         expect(result.xrunFile).to.equal(Path.join(projectRoot, "xrun-tasks.js"));
-        expect(process.cwd()).to.equal(testSubDir);
+        expect(mockProcess.cwd()).to.equal(testSubDir);
 
         // Change back to original directory
-        process.chdir(originalCwd);
+        mockProcess.chdir(originalCwd);
       } finally {
         // Clean up the test directory
         fs.rmSync(testSubDir, { recursive: true, force: true });
@@ -175,6 +233,7 @@ describe("task-file", function() {
       expect(tasks).to.be.undefined;
     });
 
+    // TODO: This test has process.cwd() issues with vitest - test isolation problem
     it("should handle TypeScript file load error", () => {
       const tsFile = Path.join(testDir, "tasks.ts");
       // Write invalid TypeScript that will cause a syntax error

@@ -23,8 +23,6 @@ const xaa = require("xaa");
 const { CliContext } = require("../../lib/cli-context");
 
 describe("xrun", function() {
-  this.timeout(10000);
-
   it("should lookup and exe a task as a function once", () => {
     let foo = 0;
     const xrun = new XRun({
@@ -65,6 +63,44 @@ describe("xrun", function() {
       () => {
         expect(context).to.be.an("object");
         expect(context.argOpts).to.deep.equal({ a: "50", bar: "60" });
+      }
+    );
+  });
+
+  it("should call task function with only callback parameter (no context)", () => {
+    let callbackCalled = false;
+    const xrun = new XRun({
+      foo(done) {
+        setTimeout(() => {
+          callbackCalled = true;
+          done();
+        }, 10);
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(500),
+      () => xrun.asyncRun("foo"),
+      () => {
+        expect(callbackCalled).to.be.true;
+      }
+    );
+  });
+
+  it("should handle synchronous task function that doesn't return a promise", () => {
+    let taskCalled = false;
+    const xrun = new XRun({
+      foo(ctx) {
+        taskCalled = true;
+        // synchronous task - no return value
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(500),
+      () => xrun.asyncRun("foo"),
+      () => {
+        expect(taskCalled).to.be.true;
       }
     );
   });
@@ -134,7 +170,7 @@ describe("xrun", function() {
     );
   });
 
-  it("should exe task name return by function", done => {
+  it("should exe task name return by function", () => {
     let foo = 0;
     const xrun = new XRun({
       foo: () => "foo2",
@@ -150,17 +186,16 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    xrun.run("foo", err => {
-      if (err) {
-        return done(err);
+    return asyncVerify(
+      next => xrun.run("foo", next),
+      () => {
+        expect(doneItem).to.equal(2);
+        expect(foo).to.equal(1);
       }
-      expect(doneItem).to.equal(2);
-      expect(foo).to.equal(1);
-      done();
-    });
+    );
   });
 
-  it("should exe task array return by function", done => {
+  it("should exe task array return by function", () => {
     let foo2 = 0,
       foo3 = 0;
     const xrun = new XRun({
@@ -186,15 +221,14 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    xrun.run("foo", err => {
-      if (err) {
-        return done(err);
+    return asyncVerify(
+      next => xrun.run("foo", next),
+      () => {
+        expect(doneItem).to.equal(4);
+        expect(foo2).to.equal(1);
+        expect(foo3).to.equal(1);
       }
-      expect(doneItem).to.equal(4);
-      expect(foo2).to.equal(1);
-      expect(foo3).to.equal(1);
-      done(err);
-    });
+    );
   });
 
   it("should exe function return by function", () => {
@@ -343,6 +377,35 @@ describe("xrun", function() {
     );
   });
 
+  it("should execute XTaskSpec shell with flags as array", () => {
+    const xrun = new XRun({
+      foo: gxrun.exec("echo test-flags-array", { flags: ["noenv"] })
+    });
+    const exeEvents = ["lookup", "shell"];
+
+    xrun.on("execute", data => {
+      expect(data.type).to.equal(exeEvents[0]);
+      exeEvents.shift();
+    });
+
+    let doneItem = 0;
+    xrun.on("done-item", _data => doneItem++);
+
+    const intercept = xstdout.intercept(true);
+
+    return asyncVerify(
+      next => xrun.run("foo", next),
+      () => {
+        intercept.restore();
+        expect(doneItem).to.equal(1);
+        expect(intercept.stdout.join().trim()).to.equal("test-flags-array");
+      },
+      runFinally(() => {
+        intercept.restore();
+      })
+    );
+  });
+
   const execXTaskSpec = flags => {
     const xrun = new XRun({
       foo: gxrun.exec(`node -e "process.exit(process.stdout.isTTY ? 0 : 1)"`, { flags })
@@ -365,15 +428,15 @@ describe("xrun", function() {
     );
   };
 
-  it("should execute XTaskSpec shell with string tty flag", () => {
+  it("should execute XTaskSpec shell with tty flag", () => {
     return execXTaskSpec("tty");
   });
 
-  it("should execute XTaskSpec shell with array tty flag", () => {
+  it("should execute XTaskSpec shell with tty flag", () => {
     return execXTaskSpec(["tty"]);
   });
 
-  it("should execute XTaskSpec shell with object tty flag", () => {
+  it("should execute XTaskSpec shell with tty flag", () => {
     return execXTaskSpec({ tty: true });
   });
 
@@ -1394,6 +1457,34 @@ describe("xrun", function() {
       const xrun = new XRun();
       xrun.stopOnError = "full";
       expect(xrun.stopOnError).to.equal("full");
+    });
+
+    it("should watch for failure when stopOnError is full with callback task", () => {
+      let task1Called = false;
+      let task2Called = false;
+      const xrun = new XRun({
+        task1(done) {
+          task1Called = true;
+          setTimeout(() => {
+            done(new Error("task1 failed"));
+          }, 10);
+        },
+        task2(done) {
+          task2Called = true;
+          setTimeout(() => {
+            done();
+          }, 100);
+        }
+      });
+      xrun.stopOnError = "full";
+
+      return asyncVerify(
+        expectError(next => xrun.run(["task1", "task2"], next)),
+        err => {
+          expect(task1Called).to.be.true;
+          expect(err.message).to.include("task1 failed");
+        }
+      );
     });
   });
 

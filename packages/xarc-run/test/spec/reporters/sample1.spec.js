@@ -8,16 +8,15 @@ const chalk = require("chalk");
 const logger = require("../../../lib/logger");
 const { expectError, runTimeout, asyncVerify, runFinally } = require("run-verify");
 
-describe("sample1 console report", function() {
-  this.timeout(10000);
-  let saveLevel = chalk.level;
-  before(() => {
+describe("sample1 console report", function() {  let saveLevel = chalk.level;
+  beforeAll(() => {
     chalk.level = 0;
     logger.quiet(false);
     logger.coloring(false);
+    logger.buffering(false);
   });
 
-  after(() => {
+  afterAll(() => {
     chalk.level = saveLevel;
   });
 

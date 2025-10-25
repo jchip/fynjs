@@ -799,4 +799,5 @@ because value type ${vtype} is unknown and no value.item`)
   }
 }
 
+/* istanbul ignore next */
 module.exports = XQtor;

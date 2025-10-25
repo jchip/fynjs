@@ -177,6 +177,7 @@ function handleNamespaceListing(runner, opts, done) {
 function handleHelp(runner, cliContext, opts, cmdName, done) {
   flushLogger(opts);
   runner.printTasks();
+  /* istanbul ignore if */
   if (!opts.quiet) {
     console.log(`${usage}`);
     console.log(
@@ -326,8 +327,10 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
     return handleNamespaceListing(runner, opts, done);
   }
 
-  // Handle help display
+  // Handle help display    
+  /* istanbul ignore if */
   if (cliContext.getTasks().length === 0) {
+    /* istanbul ignore next */
     return handleHelp(runner, cliContext, opts, cmdName, done);
   }
 

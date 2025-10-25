@@ -3,6 +3,7 @@
 const { expect } = require("chai");
 const TsRunner = require("../../../cli/ts-runner");
 const env = require("../../../cli/env");
+const logger = require("../../../lib/logger");
 
 describe("ts-runner", function() {
   let originalEnv;
@@ -132,6 +133,62 @@ describe("ts-runner", function() {
         delete process.env[env.xrunId];
       }
       TsRunner.loaded = prevLoaded;
+    });
+
+    it("should log when runner is loaded and not in sub-invocation", () => {
+      // Ensure xrunId is NOT set
+      delete process.env[env.xrunId];
+
+      // Spy on logger.log
+      const originalLog = logger.log;
+      let logMessages = [];
+      logger.log = (msg) => logMessages.push(msg);
+
+      try {
+        // Mock successful tsx load with path
+        TsRunner._require = (mod) => {
+          return {};
+        };
+        TsRunner._require.resolve = (mod) => {
+          return "/some/path/to/tsx/index.js";
+        };
+
+        TsRunner.startRunner();
+
+        // Verify logger.log was called with the correct message
+        expect(logMessages).to.have.lengthOf(1);
+        expect(logMessages[0]).to.include("Loaded tsx for TypeScript files");
+        expect(TsRunner.loaded).to.equal("tsx");
+      } finally {
+        // Restore logger
+        logger.log = originalLog;
+      }
+    });
+
+    it("should not log when runner is loaded but in sub-invocation", () => {
+      // Set xrunId to simulate sub-invocation
+      process.env[env.xrunId] = "test-run";
+
+      // Spy on logger.log
+      const originalLog = logger.log;
+      let logMessages = [];
+      logger.log = (msg) => logMessages.push(msg);
+
+      try {
+        // Mock successful tsx load
+        TsRunner._require = () => ({});
+
+        TsRunner.startRunner();
+
+        // Verify logger.log was NOT called for success message
+        // (it shouldn't log when xrunId is set)
+        expect(logMessages).to.have.lengthOf(0);
+        expect(TsRunner.loaded).to.equal("tsx");
+      } finally {
+        // Restore logger and env
+        logger.log = originalLog;
+        delete process.env[env.xrunId];
+      }
     });
   });
 });

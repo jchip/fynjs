@@ -13,9 +13,10 @@ describe("npm-loader", function() {
   let testEnv;
   let xrun;
   let saveCwd;
+  let counter = 0;
 
   beforeEach(() => {
-    testDir = Path.join(os.tmpdir(), `xarc-run-test-${Date.now()}`);
+    testDir = Path.join(os.tmpdir(), `xarc-run-test-${Date.now()}-${counter++}`);
     fs.mkdirSync(testDir, { recursive: true });
     saveCwd = process.cwd();
     process.chdir(testDir);
@@ -27,10 +28,29 @@ describe("npm-loader", function() {
   });
 
   afterEach(() => {
-    // Clean up test directory
-    fs.rmSync(testDir, { recursive: true, force: true });
     env.container = process.env;
-    process.chdir(saveCwd);
+    // Change directory back BEFORE deleting to avoid ENOTEMPTY errors
+    // Ensure we're in a valid directory first
+    if (saveCwd && fs.existsSync(saveCwd)) {
+      try {
+        process.chdir(saveCwd);
+      } catch (e) {
+        // If chdir fails, try to go to temp dir as fallback
+        process.chdir(os.tmpdir());
+      }
+    } else {
+      // Fallback to temp dir if saveCwd doesn't exist
+      process.chdir(os.tmpdir());
+    }
+
+    // Now safe to delete test directory
+    if (testDir && fs.existsSync(testDir)) {
+      try {
+        fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    }
   });
 
   describe("when no package.json exists", () => {
