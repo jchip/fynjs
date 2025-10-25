@@ -184,7 +184,7 @@ describe("xrun cli", function() {
       // Verify the message was logged
       const output = stripAnsi(logOutput.join("\n"));
       expect(output).to.include("Added");
-      expect(output).to.include(".bin to PATH");
+      expect(output).to.include("to front of PATH");
 
       // Verify PATH was modified to include our directory
       const newPath = env.get(envPath.envKey);
@@ -219,7 +219,7 @@ describe("xrun cli", function() {
       // Verify the message was logged
       const output = stripAnsi(logOutput.join("\n"));
       expect(output).to.include("Added");
-      expect(output).to.include(".bin to PATH");
+      expect(output).to.include("to front of PATH");
 
       // Verify PATH was set to just our directory
       const newPath = env.get(envPath.envKey);
