@@ -8,8 +8,8 @@ const chalk = require("chalk");
 
 describe("XReporterConsole", function() {
   const saveLevel = chalk.level;
-  before(() => (chalk.level = 0));
-  after(() => (chalk.level = saveLevel));
+  beforeAll(() => (chalk.level = 0));
+  afterAll(() => (chalk.level = saveLevel));
   it("should indent by qitem level", () => {
     const xrun = new XRun();
     const reporter = new XReporterConsole(xrun);

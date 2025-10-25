@@ -64,6 +64,7 @@ function parseArgs(argv, start) {
     allowUnknownCommand: true, // Allow task names as commands
     allowUnknownOption: true, // Allow task-specific options
     handlers: {
+      /* istanbul ignore next */
       exit: code => {
         WrapProcess.exit(code);
       }

@@ -81,11 +81,11 @@ function loadTaskFile(name) {
   return optionalRequire(name, {
     fail: e => {
       const errMsg = ck`<red>Unable to load ${xsh.pathCwd.replace(name, ".")}</>`;
-      const msg2 =
-        (e.code === "ERR_REQUIRE_ESM" &&
-          /* istanbul ignore next */
-          ` === This is an issue with ts-node/register, install and use tsx ===\n\n`) ||
-        "";
+      let msg2 = "";
+      /* istanbul ignore next */
+      if (e.code === "ERR_REQUIRE_ESM") {
+        msg2 = ` === This is an issue with ts-node/register, install and use tsx ===\n\n`;
+      }
 
       logger.error(`${errMsg}: ${msg2}${xsh.pathCwd.replace(e.stack, ".", "g")}`);
     }
