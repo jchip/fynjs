@@ -46,15 +46,49 @@ function findTaskFile(xrunDir) {
   const dirFiles = Fs.readdirSync(xrunDir);
   const files = config.search;
 
+  // First check the root directory
   let xrunFile;
   files.find(n => (xrunFile = dirFiles.find(f => f.startsWith(n))));
 
-  const foundPkg = Boolean(dirFiles.find(f => f === "package.json"));
+  // If found in root, return it
+  if (xrunFile) {
+    const foundPkg = Boolean(dirFiles.find(f => f === "package.json"));
+    return {
+      found: true,
+      foundPkg,
+      xrunFile: Path.join(xrunDir, xrunFile),
+      dir: xrunDir
+    };
+  }
 
+  // If not found in root, check subdirectories: scripts/, tools/, build/, tasks/
+  const subDirs = ["scripts", "tools", "build", "tasks"];
+  for (const subDir of subDirs) {
+    const subDirPath = Path.join(xrunDir, subDir);
+    try {
+      const subDirFiles = Fs.readdirSync(subDirPath);
+      files.find(n => (xrunFile = subDirFiles.find(f => f.startsWith(n))));
+
+      if (xrunFile) {
+        const foundPkg = Boolean(dirFiles.find(f => f === "package.json"));
+        return {
+          found: true,
+          foundPkg,
+          xrunFile: Path.join(subDirPath, xrunFile),
+          dir: xrunDir
+        };
+      }
+    } catch (err) {
+      // Subdirectory doesn't exist or can't be read, skip it
+    }
+  }
+
+  // Not found anywhere
+  const foundPkg = Boolean(dirFiles.find(f => f === "package.json"));
   return {
-    found: Boolean(xrunFile),
+    found: false,
     foundPkg,
-    xrunFile: xrunFile ? Path.join(xrunDir, xrunFile) : undefined,
+    xrunFile: undefined,
     dir: xrunDir
   };
 }
