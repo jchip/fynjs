@@ -221,6 +221,111 @@ describe("task-file", function() {
     });
   });
 
+  describe("searchTaskFile in subdirectories", () => {
+    it("should find task file in scripts/ subdirectory", () => {
+      const scriptsDir = Path.join(testDir, "scripts");
+      fs.mkdirSync(scriptsDir);
+      fs.writeFileSync(Path.join(scriptsDir, "xrun-tasks.js"), "module.exports = {};");
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(scriptsDir, "xrun-tasks.js"));
+    });
+
+    it("should find task file in tools/ subdirectory", () => {
+      const toolsDir = Path.join(testDir, "tools");
+      fs.mkdirSync(toolsDir);
+      fs.writeFileSync(Path.join(toolsDir, "xrun-tasks.js"), "module.exports = {};");
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(toolsDir, "xrun-tasks.js"));
+    });
+
+    it("should find task file in build/ subdirectory", () => {
+      const buildDir = Path.join(testDir, "build");
+      fs.mkdirSync(buildDir);
+      fs.writeFileSync(Path.join(buildDir, "xrun-tasks.js"), "module.exports = {};");
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(buildDir, "xrun-tasks.js"));
+    });
+
+    it("should find task file in tasks/ subdirectory", () => {
+      const tasksDir = Path.join(testDir, "tasks");
+      fs.mkdirSync(tasksDir);
+      fs.writeFileSync(Path.join(tasksDir, "xrun-tasks.js"), "module.exports = {};");
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(tasksDir, "xrun-tasks.js"));
+    });
+
+    it("should prioritize root directory over subdirectories", () => {
+      // Create task file in root
+      fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = { root: true };");
+      // Create task file in scripts subdirectory
+      const scriptsDir = Path.join(testDir, "scripts");
+      fs.mkdirSync(scriptsDir);
+      fs.writeFileSync(Path.join(scriptsDir, "xrun-tasks.js"), "module.exports = { scripts: true };");
+
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(testDir, "xrun-tasks.js"));
+    });
+
+    it("should prioritize scripts/ over tools/ subdirectory", () => {
+      const scriptsDir = Path.join(testDir, "scripts");
+      const toolsDir = Path.join(testDir, "tools");
+      fs.mkdirSync(scriptsDir);
+      fs.mkdirSync(toolsDir);
+      fs.writeFileSync(Path.join(scriptsDir, "xrun-tasks.js"), "module.exports = { scripts: true };");
+      fs.writeFileSync(Path.join(toolsDir, "xrun-tasks.js"), "module.exports = { tools: true };");
+
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(scriptsDir, "xrun-tasks.js"));
+    });
+
+    it("should prioritize tools/ over build/ subdirectory", () => {
+      const toolsDir = Path.join(testDir, "tools");
+      const buildDir = Path.join(testDir, "build");
+      fs.mkdirSync(toolsDir);
+      fs.mkdirSync(buildDir);
+      fs.writeFileSync(Path.join(toolsDir, "xrun-tasks.js"), "module.exports = { tools: true };");
+      fs.writeFileSync(Path.join(buildDir, "xrun-tasks.js"), "module.exports = { build: true };");
+
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(toolsDir, "xrun-tasks.js"));
+    });
+
+    it("should prioritize build/ over tasks/ subdirectory", () => {
+      const buildDir = Path.join(testDir, "build");
+      const tasksDir = Path.join(testDir, "tasks");
+      fs.mkdirSync(buildDir);
+      fs.mkdirSync(tasksDir);
+      fs.writeFileSync(Path.join(buildDir, "xrun-tasks.js"), "module.exports = { build: true };");
+      fs.writeFileSync(Path.join(tasksDir, "xrun-tasks.js"), "module.exports = { tasks: true };");
+
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(buildDir, "xrun-tasks.js"));
+    });
+
+    it("should handle missing subdirectories gracefully", () => {
+      // No task file anywhere
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.false;
+    });
+
+    it("should find task file with different extensions in subdirectories", () => {
+      const scriptsDir = Path.join(testDir, "scripts");
+      fs.mkdirSync(scriptsDir);
+      fs.writeFileSync(Path.join(scriptsDir, "xrun.ts"), "export default {};");
+      const result = searchTaskFile(true, { cwd: testDir });
+      expect(result.found).to.be.true;
+      expect(result.xrunFile).to.equal(Path.join(scriptsDir, "xrun.ts"));
+    });
+  });
+
   describe("loadTaskFile", () => {
     it("should load JavaScript task file", () => {
       fs.writeFileSync("tasks.js", "module.exports = { foo: 'bar' };");
