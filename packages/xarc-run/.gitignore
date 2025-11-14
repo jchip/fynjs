@@ -5,5 +5,5 @@ coverage
 *.swp
 *.log*
 *-lock.*
-.tmp
-.temp
+.tmp*
+.temp*

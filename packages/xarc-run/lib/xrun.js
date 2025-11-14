@@ -266,7 +266,20 @@ class XRun extends EventEmitter {
 
   exit(code) {
     if (this.stopOnError) {
-      process.exit(code);
+      // Check if there are any child processes to clean up
+      const hasChildren = Object.getOwnPropertySymbols(this._taskChildren).length > 0;
+
+      if (hasChildren) {
+        // Kill all tracked child processes before exiting
+        this.killTaskChildren();
+        // Give kill operations time to complete (especially on Windows with taskkill)
+        setTimeout(() => {
+          process.exit(code);
+        }, 100);
+      } else {
+        // No children to clean up, exit immediately
+        process.exit(code);
+      }
     }
   }
 
