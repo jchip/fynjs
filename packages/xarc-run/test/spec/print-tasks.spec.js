@@ -13,6 +13,11 @@ describe("print tasks", function() {
   });
 
   it("should print tasks", () => {
+    const chalk = require("chalk");
+    // Force chalk to use colors in test environment
+    const originalLevel = chalk.level;
+    chalk.level = 3; // Force colors (3 = Truecolor, 16m colors)
+    
     const xrun = instance.xrun;
     const intercept = xstdout.intercept(true);
     xrun.load(print1);
@@ -20,6 +25,10 @@ describe("print tasks", function() {
     xrun.load("ns2", {});
     xrun.printTasks();
     intercept.restore();
+    
+    // Restore chalk level
+    chalk.level = originalLevel;
+    
     const outFile = "test/fixtures/print1.out.txt";
     const out = Fs.readFileSync(Path.resolve(outFile)).toString();
     expect(intercept.stdout.join("").trim()).to.equal(out.trim());
