@@ -16,6 +16,7 @@ const xrunInstance = require("../../../lib/xrun-instance");
 const logger = require("../../../lib/logger");
 const stripAnsi = require("strip-ansi");
 const WrapProcess = require("../../../cli/wrap-process");
+const xstdout = require("xstdout");
 
 logger.quiet(true);
 
@@ -351,13 +352,24 @@ function export const tasks = {
 `
       );
 
+      // Intercept error output to keep it within the test
+      const intercept = xstdout.intercept(true);
+      
       const result = loadTaskFile(tsFile);
+      
+      intercept.restore();
+      
+      // Verify the function handles the error gracefully
       expect(result).to.be.undefined;
+      // Verify that an error was logged (expected behavior)
+      const errorOutput = intercept.stdout.join("");
+      expect(errorOutput).to.include("Unable to load");
+      expect(errorOutput).to.include("tasks.ts");
     });
 
     it("should handle ESM TypeScript file", () => {
       const tsFile = Path.join(testDir, "tasks.ts");
-      // Write TypeScript using ESM syntax
+      // Write TypeScript using ESM syntax (with invalid syntax)
       fs.writeFileSync(
         tsFile,
         `
@@ -368,8 +380,19 @@ export default tasks;
 `
       );
 
+      // Intercept error output to keep it within the test
+      const intercept = xstdout.intercept(true);
+      
       const result = loadTaskFile(tsFile);
+      
+      intercept.restore();
+      
+      // Verify the function handles the error gracefully
       expect(result).to.be.undefined;
+      // Verify that an error was logged (expected behavior)
+      const errorOutput = intercept.stdout.join("");
+      expect(errorOutput).to.include("Unable to load");
+      expect(errorOutput).to.include("tasks.ts");
     });
   });
 
