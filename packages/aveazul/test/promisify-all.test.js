@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 const fs = require("fs");
 const path = require("path");
 

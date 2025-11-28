@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 const isBluebird = process.env.USE_BLUEBIRD === "true";
 
 describe("AveAzul.some", () => {

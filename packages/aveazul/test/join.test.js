@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("AveAzul.join", () => {
   test("should wait for all promises and pass their values to the handler", async () => {
@@ -119,10 +119,10 @@ describe("AveAzul.join", () => {
 
   test("should process all promises even when handler takes fewer parameters", async () => {
     // Create spy promises to track resolution
-    const spy1 = jest.fn().mockResolvedValue(1);
-    const spy2 = jest.fn().mockResolvedValue(2);
-    const spy3 = jest.fn().mockResolvedValue(3);
-    const spy4 = jest.fn().mockResolvedValue(4);
+    const spy1 = vi.fn().mockResolvedValue(1);
+    const spy2 = vi.fn().mockResolvedValue(2);
+    const spy3 = vi.fn().mockResolvedValue(3);
+    const spy4 = vi.fn().mockResolvedValue(4);
 
     // Handler only uses the first two values
     const result = await AveAzul.join(

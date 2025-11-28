@@ -1,8 +1,6 @@
-"use strict";
-
-const { addStaticAny } = require("../lib/any");
-const AveAzul = require("../lib/aveazul");
-const TestPromise = require("./promise-lib");
+import { addStaticAny } from "../src/any.ts";
+import { AveAzul } from "../src/index.ts";
+import TestPromise from "./promise-lib.js";
 
 if (TestPromise === AveAzul) {
   addStaticAny(AveAzul, true);

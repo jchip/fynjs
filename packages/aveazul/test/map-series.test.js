@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("AveAzul.mapSeries", () => {
   test("should transform array elements", async () => {

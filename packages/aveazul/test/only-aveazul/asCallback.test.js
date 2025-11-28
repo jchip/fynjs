@@ -1,12 +1,10 @@
-"use strict";
-
-// This test file directly imports AveAzul from the lib directory
+// This test file directly imports AveAzul from the dist directory
 // so it always tests the AveAzul implementation, even when running
 // in Bluebird test mode with USE_BLUEBIRD=true
-const AveAzul = require("../../lib/aveazul");
+import { AveAzul } from "../../src/index.ts";
 
 describe("AveAzul.prototype.asCallback error handling", () => {
-  test("should propagate errors thrown in callback when promise resolves", (done) => {
+  test("should propagate errors thrown in callback when promise resolves", async () => {
     // Mock the ___throwUncaughtError method to capture errors
     const originalThrowUncaughtError = AveAzul.___throwUncaughtError;
     const thrownErrors = [];
@@ -23,18 +21,17 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     });
 
     // Wait for the setTimeout to execute
-    setTimeout(() => {
-      // Verify the error was passed to ___throwUncaughtError
-      expect(thrownErrors.length).toBe(1);
-      expect(thrownErrors[0]).toBe(callbackError);
+    await AveAzul.delay(10);
 
-      // Restore the original method
-      AveAzul.___throwUncaughtError = originalThrowUncaughtError;
-      done();
-    }, 10);
+    // Verify the error was passed to ___throwUncaughtError
+    expect(thrownErrors.length).toBe(1);
+    expect(thrownErrors[0]).toBe(callbackError);
+
+    // Restore the original method
+    AveAzul.___throwUncaughtError = originalThrowUncaughtError;
   });
 
-  test("should propagate errors thrown in callback when promise rejects", (done) => {
+  test("should propagate errors thrown in callback when promise rejects", async () => {
     // Mock the ___throwUncaughtError method to capture errors
     const originalThrowUncaughtError = AveAzul.___throwUncaughtError;
     const thrownErrors = [];
@@ -51,18 +48,17 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     });
 
     // Wait for the setTimeout to execute
-    setTimeout(() => {
-      // Verify the error was passed to ___throwUncaughtError
-      expect(thrownErrors.length).toBe(1);
-      expect(thrownErrors[0]).toBe(callbackError);
+    await AveAzul.delay(10);
 
-      // Restore the original method
-      AveAzul.___throwUncaughtError = originalThrowUncaughtError;
-      done();
-    }, 10);
+    // Verify the error was passed to ___throwUncaughtError
+    expect(thrownErrors.length).toBe(1);
+    expect(thrownErrors[0]).toBe(callbackError);
+
+    // Restore the original method
+    AveAzul.___throwUncaughtError = originalThrowUncaughtError;
   });
 
-  test("should preserve the error object when throwing uncaught errors", (done) => {
+  test("should preserve the error object when throwing uncaught errors", async () => {
     // Mock the ___throwUncaughtError method to capture errors
     const originalThrowUncaughtError = AveAzul.___throwUncaughtError;
     const thrownErrors = [];
@@ -87,16 +83,15 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     });
 
     // Wait for the setTimeout to execute
-    setTimeout(() => {
-      // Verify the error was passed to ___throwUncaughtError
-      expect(thrownErrors.length).toBe(1);
-      expect(thrownErrors[0]).toBe(callbackError);
-      expect(thrownErrors[0].name).toBe("CustomError");
-      expect(thrownErrors[0].customProperty).toBe("test");
+    await AveAzul.delay(10);
 
-      // Restore the original method
-      AveAzul.___throwUncaughtError = originalThrowUncaughtError;
-      done();
-    }, 10);
+    // Verify the error was passed to ___throwUncaughtError
+    expect(thrownErrors.length).toBe(1);
+    expect(thrownErrors[0]).toBe(callbackError);
+    expect(thrownErrors[0].name).toBe("CustomError");
+    expect(thrownErrors[0].customProperty).toBe("test");
+
+    // Restore the original method
+    AveAzul.___throwUncaughtError = originalThrowUncaughtError;
   });
 });

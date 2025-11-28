@@ -1,9 +1,9 @@
-"use strict";
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("instance methods", () => {
   test("tap() should execute side effects and return original value", async () => {
-    const sideEffect = jest.fn();
+    const sideEffect = vi.fn();
     const result = await new AveAzul((resolve) => resolve(42)).tap(sideEffect);
 
     expect(sideEffect).toHaveBeenCalledWith(42);
@@ -89,7 +89,7 @@ describe("instance methods", () => {
   });
 
   test("tapCatch() should execute side effects on rejection", async () => {
-    const sideEffect = jest.fn();
+    const sideEffect = vi.fn();
     const promise = new AveAzul((resolve, reject) =>
       reject(new Error("test"))
     ).tapCatch(sideEffect);

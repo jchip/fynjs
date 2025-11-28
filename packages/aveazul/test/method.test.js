@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("AveAzul.method", () => {
   test("should convert a synchronous function to a promise-returning function", async () => {

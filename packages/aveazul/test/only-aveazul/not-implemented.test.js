@@ -1,9 +1,9 @@
-"use strict";
-
-const {
+import {
   createInstanceNotImplemented,
   createStaticNotImplemented,
-} = require("../../lib/not-implemented");
+  setupNotImplemented,
+} from "../../src/not-implemented.ts";
+import { AveAzul } from "../../src/index.ts";
 
 // Create a mock class to test with - not extending Promise to avoid constructor issues
 class MockClass {
@@ -17,7 +17,7 @@ describe("not-implemented", () => {
   let consoleErrorSpy;
 
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -137,14 +137,12 @@ describe("AveAzul not implemented methods", () => {
 
   beforeEach(() => {
     // Spy on console.error to prevent output during tests
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
   });
-
-  const AveAzul = require("../../lib/aveazul");
 
   // Test instance methods that should not be implemented
   describe("Instance methods", () => {

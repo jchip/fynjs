@@ -1,0 +1,18 @@
+{
+  "name": "sample-1-cjs",
+  "version": "1.0.0",
+  "description": "CJS demo for aveazul",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node demo.cjs"
+  },
+  "fyn": {
+    "dependencies": {
+      "aveazul": "../.."
+    }
+  },
+  "dependencies": {
+    "aveazul": "^1.0.0"
+  }
+}

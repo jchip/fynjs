@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("AveAzul.prototype.call", () => {
   test("should call a method on the resolved object", async () => {

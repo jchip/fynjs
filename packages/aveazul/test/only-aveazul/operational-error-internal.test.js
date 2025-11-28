@@ -1,10 +1,8 @@
-"use strict";
-
-const {
+import {
   OperationalError,
   isOperationalError,
   isProgrammerError,
-} = require("../../lib/operational-error");
+} from "../../src/operational-error.ts";
 
 // These tests are only for AveAzul's internal implementation
 // They verify the utility functions used by the error() method

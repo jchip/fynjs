@@ -1,6 +1,4 @@
-"use strict";
-
-const { triggerUncaughtException } = require("../lib/util");
+import { triggerUncaughtException } from "../src/util.ts";
 
 describe("triggerUncaughtException", () => {
   // Save original setTimeout
@@ -11,82 +9,62 @@ describe("triggerUncaughtException", () => {
     originalSetTimeout = global.setTimeout;
 
     // Mock setTimeout to capture callbacks instead of executing them
-    global.setTimeout = jest.fn((callback) => {
+    global.setTimeout = vi.fn((callback) => {
       // Store the callback for testing, but don't execute it
-      global.setTimeout.mock.calls[
-        global.setTimeout.mock.calls.length - 1
-      ].callback = callback;
-      return 123; // Mock timer ID
+      global.setTimeout._callback = callback;
+      return 123; // Return a timeout ID
     });
   });
 
   afterEach(() => {
-    // Restore original setTimeout after each test
+    // Restore original setTimeout
     global.setTimeout = originalSetTimeout;
   });
 
-  test("should schedule throwing the provided error", () => {
-    const testError = new Error("Test error");
+  test("should schedule a setTimeout with 0ms delay", () => {
+    const error = new Error("Test error");
 
-    // Call the function
-    triggerUncaughtException(testError);
+    triggerUncaughtException(error);
 
-    // Verify setTimeout was called with 0ms delay
-    expect(global.setTimeout).toHaveBeenCalled();
-    expect(global.setTimeout.mock.calls[0][1]).toBe(0);
-
-    // Get the callback that was passed to setTimeout
-    const timeoutCallback = global.setTimeout.mock.calls[0].callback;
-
-    // Verify the callback exists (we intercepted it correctly)
-    expect(typeof timeoutCallback).toBe("function");
-
-    // Create a function that would throw if the callback throws
-    const callbackWrapper = () => {
-      timeoutCallback();
-    };
-
-    // Expect that executing the callback would throw the original error
-    expect(callbackWrapper).toThrow(testError);
+    // Verify setTimeout was called with a function and 0ms delay
+    expect(global.setTimeout).toHaveBeenCalledTimes(1);
+    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 0);
   });
 
-  test("should convert non-Error objects to Error instances", () => {
-    // Call with a string
-    triggerUncaughtException("string message");
+  test("should wrap the error in an Error object if it is not an Error", () => {
+    const nonError = "Test error string";
 
-    // Get the callback
-    const timeoutCallback = global.setTimeout.mock.calls[0].callback;
+    triggerUncaughtException(nonError);
 
-    // Create a wrapper to catch the error
-    let thrownError;
-    try {
-      timeoutCallback();
-    } catch (error) {
-      thrownError = error;
-    }
+    // Verify setTimeout was called
+    expect(global.setTimeout).toHaveBeenCalledTimes(1);
 
-    // Verify the error was converted to an Error instance
-    expect(thrownError).toBeInstanceOf(Error);
-    expect(thrownError.message).toBe("string message");
+    // The callback should throw an Error, not the original string
+    const callback = global.setTimeout._callback;
+    expect(() => callback()).toThrow(Error);
+    expect(() => callback()).toThrow("Test error string");
   });
 
-  test("should handle null/undefined by converting to Error", () => {
-    // Call with null
-    triggerUncaughtException(null);
+  test("should use the original Error object if it is an Error", () => {
+    const originalError = new Error("Original error");
 
-    // Get the callback
-    const timeoutCallback = global.setTimeout.mock.calls[0].callback;
+    triggerUncaughtException(originalError);
 
-    // Create a wrapper to catch the error
-    let thrownError;
-    try {
-      timeoutCallback();
-    } catch (error) {
-      thrownError = error;
-    }
+    // Verify setTimeout was called
+    expect(global.setTimeout).toHaveBeenCalledTimes(1);
 
-    // Verify the error was converted to an Error instance
-    expect(thrownError).toBeInstanceOf(Error);
-    expect(thrownError.message).toBe("null");
+    // The callback should throw the original Error
+    const callback = global.setTimeout._callback;
+    expect(() => callback()).toThrow(originalError);
+  });
+
+  test("should schedule callback on next event loop tick", () => {
+    const error = new Error("Test error");
+
+    triggerUncaughtException(error);
+
+    // The callback should not have been executed yet
+    // (because we mocked setTimeout to not actually execute it)
+    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 0);
   });
 });

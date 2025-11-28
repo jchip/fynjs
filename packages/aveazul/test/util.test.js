@@ -1,5 +1,5 @@
-"use strict";
-const util = require("../lib/util");
+
+import * as util from "../src/util.ts";
 
 describe("util.isClass", () => {
   test("should correctly identify a class", () => {
@@ -264,5 +264,27 @@ describe("util.getObjectDataKeys", () => {
     // Object.prototype methods should be excluded
     // expect(keys).not.toContain("toString");
     // expect(keys).not.toContain("hasOwnProperty");
+  });
+
+  test("should handle objects where getOwnPropertyNames throws", () => {
+    // Create a proxy that throws when ownKeys is called during prototype traversal
+    const normalObj = { prop: "value" };
+
+    // Create an object with a problematic prototype
+    const problematicProto = new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("Cannot enumerate keys");
+        },
+      }
+    );
+
+    // Set the problematic proxy as prototype
+    Object.setPrototypeOf(normalObj, problematicProto);
+
+    // Should return partial results up to the point of failure
+    const keys = util.getObjectDataKeys(normalObj);
+    expect(keys).toContain("prop");
   });
 });

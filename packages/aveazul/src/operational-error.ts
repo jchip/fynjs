@@ -1,11 +1,11 @@
-"use strict";
-
 /**
  * OperationalError class for representing errors that are expected during normal operation
  * Similar to Bluebird's OperationalError
  */
-class OperationalError extends Error {
-  constructor(message) {
+export class OperationalError extends Error {
+  isOperational: boolean;
+
+  constructor(message: string) {
     super(message);
     this.name = "OperationalError";
     this.isOperational = true;
@@ -19,28 +19,23 @@ class OperationalError extends Error {
 
 /**
  * Check if an error is an operational error
- * @param {*} error - Error to check
- * @returns {boolean} True if the error is operational
+ * @param error - Error to check
+ * @returns True if the error is operational
  */
-function isOperationalError(error) {
+export function isOperationalError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
-  return error instanceof OperationalError || error.isOperational === true;
+  return (
+    error instanceof OperationalError ||
+    (error as { isOperational?: boolean }).isOperational === true
+  );
 }
 
 /**
  * Check if an error is a programmer error (unexpected, likely a bug)
- * @param {*} error - Error to check
- * @returns {boolean} True if the error is a programmer error
+ * @param error - Error to check
+ * @returns True if the error is a programmer error
  */
-function isProgrammerError(error) {
+export function isProgrammerError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   return !isOperationalError(error);
 }
-
-// Only export the OperationalError class
-module.exports = {
-  OperationalError,
-  // Internal utilities used by AveAzul.prototype.error
-  isOperationalError,
-  isProgrammerError,
-};

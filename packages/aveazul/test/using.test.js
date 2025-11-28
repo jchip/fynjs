@@ -1,14 +1,14 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("AveAzul.using", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should manage a single resource with cleanup", async () => {
@@ -363,14 +363,14 @@ describe("AveAzul.using", () => {
   test("should handle a practical example like file operations with mocks", async () => {
     // Mock file system operations
     const mockFS = {
-      openFile: jest.fn().mockResolvedValue({
+      openFile: vi.fn().mockResolvedValue({
         fileHandle: 123,
         path: "/path/to/file.txt",
       }),
-      readFile: jest.fn().mockImplementation((file) => {
+      readFile: vi.fn().mockImplementation((file) => {
         return Promise.resolve(`Content of ${file.path}`);
       }),
-      closeFile: jest.fn().mockResolvedValue(undefined),
+      closeFile: vi.fn().mockResolvedValue(undefined),
     };
 
     // Function to create a disposer for file handles

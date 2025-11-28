@@ -1,6 +1,6 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("AveAzul.fromCallback", () => {
   test("should convert callback-based function to promise (success case)", async () => {

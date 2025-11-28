@@ -1,6 +1,4 @@
-"use strict";
-
-const AveAzul = require("../lib/aveazul");
+import { AveAzul } from "../src/index.ts";
 
 describe("AveAzul.prototype.spread", () => {
   test("should spread array values as arguments to the handler", async () => {

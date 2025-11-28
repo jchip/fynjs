@@ -1,10 +1,10 @@
-"use strict";
 
-const AveAzul = require("./promise-lib");
+
+import AveAzul from "./promise-lib.js";
 
 describe("static methods", () => {
   test("reduce() should handle empty array without initial value and return undefined", async () => {
-    const fn = jest.fn();
+    const fn = vi.fn();
     const result = await AveAzul.reduce([], fn);
     expect(fn).not.toHaveBeenCalled();
     expect(result).toBe(undefined);
@@ -16,14 +16,14 @@ describe("static methods", () => {
   });
 
   test("reduce() should handle array with one element without initial value", async () => {
-    const fn = jest.fn(() => {});
+    const fn = vi.fn(() => {});
     const result = await AveAzul.reduce([42], fn);
     expect(fn).not.toHaveBeenCalled();
     expect(result).toBe(42);
   });
 
   test("reduce() should handle array with one element with initial value", async () => {
-    const fn = jest.fn((acc, val) => acc + val);
+    const fn = vi.fn((acc, val) => acc + val);
     const result = await AveAzul.reduce([42], fn, 10);
     expect(fn).toHaveBeenCalledWith(10, 42, 0, 1);
     expect(fn).toHaveBeenCalledTimes(1);
@@ -31,7 +31,7 @@ describe("static methods", () => {
   });
 
   test("reduce() should handle array with multiple elements without initial value", async () => {
-    const fn = jest.fn((acc, val) => (acc === undefined ? val : acc + val));
+    const fn = vi.fn((acc, val) => (acc === undefined ? val : acc + val));
     const result = await AveAzul.reduce([1, 2, 3], fn);
     expect(fn).toHaveBeenCalledTimes(2);
     expect(fn).toHaveBeenNthCalledWith(1, 1, 2, 1, 3);
@@ -40,7 +40,7 @@ describe("static methods", () => {
   });
 
   test("reduce() should handle array with multiple elements with initial value", async () => {
-    const fn = jest.fn((acc, val) => acc + val);
+    const fn = vi.fn((acc, val) => acc + val);
     const result = await AveAzul.reduce([1, 2, 3], fn, 10);
     expect(fn).toHaveBeenCalledTimes(3);
     expect(fn).toHaveBeenNthCalledWith(1, 10, 1, 0, 3);

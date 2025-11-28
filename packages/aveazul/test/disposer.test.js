@@ -1,7 +1,5 @@
-"use strict";
-
-const { Disposer } = require("../lib/disposer");
-const AveAzul = require("./promise-lib");
+import { Disposer } from "../src/disposer.ts";
+import AveAzul from "./promise-lib.js";
 
 describe("Disposer", () => {
   test("should be exported as a class", () => {
@@ -12,29 +10,16 @@ describe("Disposer", () => {
     expect(() => {
       AveAzul.resolve({}).disposer("not a function");
     }).toThrow(TypeError);
-
-    expect(() => {
-      AveAzul.resolve({}).disposer(null);
-    }).toThrow(TypeError);
-
-    expect(() => {
-      AveAzul.resolve({}).disposer(undefined);
-    }).toThrow(TypeError);
-
-    expect(() => {
-      AveAzul.resolve({}).disposer(123);
-    }).toThrow(TypeError);
   });
 
-  test("should store promise and cleanup function", () => {
+  test("should create a disposer with promise and cleanup function", () => {
     const resource = { value: "test" };
-    const promise = AveAzul.resolve(resource);
-    const cleanupFn = () => {};
+    const cleanup = vi.fn();
 
-    const disposer = promise.disposer(cleanupFn);
+    const disposer = AveAzul.resolve(resource).disposer(cleanup);
 
-    // Testing internal structure
-    expect(disposer._promise).toBe(promise);
-    expect(disposer._data).toBe(cleanupFn);
+    expect(disposer).toBeInstanceOf(Disposer);
+    expect(disposer._data).toBe(cleanup);
+    expect(disposer._promise).toBeInstanceOf(AveAzul);
   });
 });

@@ -1,14 +1,14 @@
-"use strict";
+import type { AveAzulClass } from "./aveazul.ts";
 
-function createNotImplemented(name) {
-  return function () {
+function createNotImplemented(name: string): () => never {
+  return function (): never {
     const msg = name + " Not implemented in aveazul";
     console.error(msg);
     throw new Error(msg);
   };
 }
 
-function createInstanceNotImplemented(AveAzul) {
+export function createInstanceNotImplemented(AveAzul: AveAzulClass): string[] {
   const methods = [
     "then",
     "spread",
@@ -48,8 +48,8 @@ function createInstanceNotImplemented(AveAzul) {
     "done",
   ];
 
-  const proto = AveAzul.prototype;
-  const ret = [];
+  const proto = AveAzul.prototype as Record<string, unknown>;
+  const ret: string[] = [];
   for (const method of methods) {
     if (!proto[method]) {
       ret.push(method);
@@ -59,7 +59,7 @@ function createInstanceNotImplemented(AveAzul) {
   return ret;
 }
 
-function createStaticNotImplemented(AveAzul) {
+export function createStaticNotImplemented(AveAzul: AveAzulClass): string[] {
   const methods = [
     "join",
     "try",
@@ -86,25 +86,22 @@ function createStaticNotImplemented(AveAzul) {
     "noConflict",
     "setScheduler",
   ];
-  const ret = [];
+  const ret: string[] = [];
+  const aveazul = AveAzul as unknown as Record<string, unknown>;
   for (const method of methods) {
-    if (!AveAzul[method]) {
+    if (!aveazul[method]) {
       ret.push(method);
-      AveAzul[method] = createNotImplemented("static " + method);
+      aveazul[method] = createNotImplemented("static " + method);
     }
   }
   return ret;
 }
 
-function setupNotImplemented(AveAzul) {
+export function setupNotImplemented(AveAzul: AveAzulClass): void {
   const instanceMethods = createInstanceNotImplemented(AveAzul);
   const staticMethods = createStaticNotImplemented(AveAzul);
-  AveAzul.__notImplementedInstance = instanceMethods;
-  AveAzul.__notImplementedStatic = staticMethods;
+  (AveAzul as unknown as Record<string, string[]>).__notImplementedInstance =
+    instanceMethods;
+  (AveAzul as unknown as Record<string, string[]>).__notImplementedStatic =
+    staticMethods;
 }
-
-module.exports = {
-  createInstanceNotImplemented,
-  createStaticNotImplemented,
-  setupNotImplemented,
-};

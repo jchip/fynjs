@@ -1,15 +1,14 @@
-"use strict";
-
-const AveAzul = require("../../lib/aveazul");
-const { AggregateError } = require("@jchip/error");
+import { AveAzul } from "../../src/index.ts";
+import { AggregateError } from "@jchip/error";
+import Bluebird from "bluebird";
 
 describe("AveAzul.using", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   /**
@@ -27,7 +26,7 @@ describe("AveAzul.using", () => {
     const cleanupCalled = [false, false, false];
     const resources = [{ id: 1 }, { id: 2 }, { id: 3 }];
     let uncaughtError;
-    jest.spyOn(AveAzul, "___throwUncaughtError").mockImplementation((err) => {
+    vi.spyOn(AveAzul, "___throwUncaughtError").mockImplementation((err) => {
       uncaughtError = err;
     });
 
@@ -104,9 +103,6 @@ describe("AveAzul.using", () => {
 
 // Add test for Bluebird interoperability
 describe("AveAzul.using with Bluebird", () => {
-  // Require the real Bluebird library
-  const Bluebird = require("bluebird");
-
   test("should work with disposers created by Bluebird", async () => {
     // Create a resource
     const resource = { value: "bluebird resource", disposed: false };

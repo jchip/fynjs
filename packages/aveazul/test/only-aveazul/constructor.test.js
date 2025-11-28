@@ -1,6 +1,4 @@
-"use strict";
-
-const AveAzul = require("../../lib/aveazul");
+import { AveAzul } from "../../src/index.ts";
 
 describe("constructor", () => {
   test("should create a new AveAzul instance", () => {

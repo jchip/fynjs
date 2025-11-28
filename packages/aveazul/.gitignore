@@ -25,4 +25,13 @@ yarn-error.log*
 
 # Build
 dist/
-build/ 
+dist-cjs/
+dist-esm/
+build/
+
+# fyn
+fyn-debug.log
+
+# Demo
+demo/*/fyn-lock.yaml
+demo/*/node_modules/
