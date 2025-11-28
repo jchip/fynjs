@@ -1,6 +1,6 @@
 {
   "name": "aveazul",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Bluebird drop-in replacement built on native Promise",
   "type": "module",
   "types": "dist-cjs/index.d.ts",
@@ -100,7 +100,6 @@
     "node": ">=18.0.0"
   },
   "fyn": {
-    "dependencies": {
-    }
+    "dependencies": {}
   }
 }
