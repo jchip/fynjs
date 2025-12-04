@@ -1,0 +1,645 @@
+"use strict";
+
+const expect = require("chai").expect;
+const xrun = require("../../../cli/xrun");
+const logger = require("../../../lib/logger");
+const WrapProcess = require("../../../cli/wrap-process");
+const xrunInstance = require("../../../lib/xrun-instance");
+const stripAnsi = require("strip-ansi");
+const env = require("../../../cli/env");
+const xsh = require("xsh");
+const envPath = xsh.envPath;
+const path = require("path");
+const { INTERNALS } = require("../../../lib/defaults");
+const {
+  [INTERNALS]: {
+    setupNodeModulesBin,
+    handleNoTasks,
+    handleTaskListing,
+    handleHelp,
+    setupEnvironment,
+    processTasks,
+    handleQuietFlag,
+    processEnvOptions
+  }
+} = require("../../../cli/xrun-main");
+const fs = require("fs");
+const { CliContext } = require("../../../lib/cli-context");
+
+describe("xrun cli", function() {  logger.quiet(true);
+
+  let origExit;
+  let exitCode;
+  let logOutput;
+  let origLog;
+  let origError;
+  let origLoggerLog;
+
+  beforeEach(() => {
+    origExit = WrapProcess.exit;
+    origLog = console.log;
+    origError = logger.error;
+    origLoggerLog = logger.log;
+
+    exitCode = undefined;
+    logOutput = [];
+
+    WrapProcess.exit = code => {
+      exitCode = code;
+    };
+
+    console.log = (...args) => {
+      logOutput.push(args.join(" "));
+    };
+
+    logger.error = (...args) => {
+      logOutput.push(args.join(" "));
+    };
+
+    logger.log = (...args) => {
+      logOutput.push(args.join(" "));
+    };
+  });
+
+  afterEach(() => {
+    logger.resetBuffer();
+    WrapProcess.exit = origExit;
+    console.log = origLog;
+    logger.error = origError;
+    logger.log = origLoggerLog;
+  });
+
+  it("should handle task file that exists but loads no tasks", () => {
+    const cliContext = new CliContext({
+      searchResult: {
+        xrunFile: "/home/user/project/xrun-tasks.js"
+      }
+    });
+
+    handleNoTasks(cliContext, process.cwd());
+
+    const output = logOutput.join("\n");
+    expect(output).to.include("*** No tasks found ***");
+    expect(output).to.include("your task file");
+    expect(output).to.include("didn't load any tasks or contains errors");
+    expect(output).to.include("there are multiple copies of this package");
+  });
+
+  it("should handle error in task listing", () => {
+    const runner = {
+      _tasks: {
+        names: () => {
+          throw new Error("Invalid namespace");
+        },
+        fullNames: () => {
+          throw new Error("Invalid namespace");
+        }
+      }
+    };
+    const opts = {
+      list: "invalid-namespace"
+    };
+
+    handleTaskListing(runner, opts);
+
+    expect(logOutput).to.include("Invalid namespace");
+  });
+
+  it("should display help and example when opts.quiet is falsy", () => {
+    const runner = {
+      printTasks: () => {}
+    };
+    const cmdArgs = {};
+    const opts = {
+      quiet: false
+    };
+    const cmdName = "xrun";
+
+    handleHelp(runner, cmdArgs, opts, cmdName);
+
+    const output = logOutput.join("\n");
+    expect(stripAnsi(output)).to.include("Help: xrun -h");
+    expect(stripAnsi(output)).to.include("Example: xrun build");
+  });
+
+  it("should do nothing when opts.nmbin is falsy", () => {
+    // Save original env values
+    const origPath = env.get(envPath.envKey);
+    const origXrunId = env.get(env.xrunId);
+
+    // Test with various falsy values
+    [null, undefined, false, "", 0].forEach(falsyValue => {
+      setupNodeModulesBin({ nmbin: falsyValue, cwd: process.cwd() });
+
+      // Verify no messages were logged
+      expect(logOutput).to.have.lengthOf(0);
+
+      // Verify PATH wasn't modified
+      expect(env.get(envPath.envKey)).to.equal(origPath);
+    });
+
+    // Restore original env values
+    env.set(envPath.envKey, origPath);
+    env.set(env.xrunId, origXrunId);
+  });
+
+  it("should do nothing when node_modules/.bin doesn't exist", () => {
+    // Save original env values
+    const origPath = env.get(envPath.envKey);
+    const origXrunId = env.get(env.xrunId);
+
+    // Use a path that definitely doesn't exist
+    const nonExistentPath = path.join(__dirname, "non-existent-dir");
+    setupNodeModulesBin({ nmbin: true, cwd: nonExistentPath });
+
+    // Verify no messages were logged
+    expect(logOutput).to.have.lengthOf(0);
+
+    // Verify PATH wasn't modified
+    expect(env.get(envPath.envKey)).to.equal(origPath);
+
+    // Restore original env values
+    env.set(envPath.envKey, origPath);
+    env.set(env.xrunId, origXrunId);
+  });
+
+  it("should add node_modules/.bin to PATH when not already present", () => {
+    // Save original env values
+    const origPath = env.get(envPath.envKey);
+    const origXrunId = env.get(env.xrunId);
+
+    // Create a temporary node_modules/.bin directory
+    const tempDir = path.join(__dirname, "temp-test-dir");
+    const nmBinDir = path.join(tempDir, "node_modules", ".bin");
+    fs.mkdirSync(nmBinDir, { recursive: true });
+
+    try {
+      // Set PATH to something that definitely doesn't include our temp .bin directory
+      env.set(envPath.envKey, "/usr/local/bin");
+
+      setupNodeModulesBin({ nmbin: true, cwd: tempDir });
+
+      // Verify the message was logged
+      const output = stripAnsi(logOutput.join("\n"));
+      expect(output).to.include("Added");
+      expect(output).to.include("to front of PATH");
+
+      // Verify PATH was modified to include our directory
+      const newPath = env.get(envPath.envKey);
+      expect(newPath).to.include(nmBinDir);
+      expect(newPath.startsWith(nmBinDir)).to.be.true; // Should be added to front
+    } finally {
+      // Clean up
+      fs.rmSync(tempDir, { recursive: true, force: true });
+
+      // Restore original env values
+      env.set(envPath.envKey, origPath);
+      env.set(env.xrunId, origXrunId);
+    }
+  });
+
+  it("should add node_modules/.bin to PATH when PATH is not set", () => {
+    // Save original env values
+    const origPath = env.get(envPath.envKey);
+    const origXrunId = env.get(env.xrunId);
+
+    // Create a temporary node_modules/.bin directory
+    const tempDir = path.join(__dirname, "temp-test-dir");
+    const nmBinDir = path.join(tempDir, "node_modules", ".bin");
+    fs.mkdirSync(nmBinDir, { recursive: true });
+
+    try {
+      // Remove PATH environment variable completely
+      env.del(envPath.envKey);
+
+      setupNodeModulesBin({ nmbin: true, cwd: tempDir });
+
+      // Verify the message was logged
+      const output = stripAnsi(logOutput.join("\n"));
+      expect(output).to.include("Added");
+      expect(output).to.include("to front of PATH");
+
+      // Verify PATH was set to just our directory
+      const newPath = env.get(envPath.envKey);
+      expect(newPath).to.equal(nmBinDir);
+    } finally {
+      // Clean up
+      fs.rmSync(tempDir, { recursive: true, force: true });
+
+      // Restore original env values
+      env.set(envPath.envKey, origPath);
+      env.set(env.xrunId, origXrunId);
+    }
+  });
+
+  it("should log message when PATH contains .bin but xrunId not set", () => {
+    // Save original env values
+    const origPath = env.get(envPath.envKey);
+    const origXrunId = env.get(env.xrunId);
+
+    // Create a temporary node_modules/.bin directory
+    const tempDir = path.join(__dirname, "temp-test-dir");
+    const nmBinDir = path.join(tempDir, "node_modules", ".bin");
+    fs.mkdirSync(nmBinDir, { recursive: true });
+
+    try {
+      // Set PATH to include our .bin directory
+      env.set(envPath.envKey, `${nmBinDir}${path.delimiter}/usr/local/bin`);
+      // Ensure xrunId is not set
+      env.del(env.xrunId);
+
+      setupNodeModulesBin({ nmbin: true, cwd: tempDir });
+
+      // Verify the message was logged
+      const output = stripAnsi(logOutput.join("\n"));
+      expect(output).to.include("PATH already contains");
+      expect(output).to.include(".bin");
+
+      // Verify PATH wasn't modified
+      expect(env.get(envPath.envKey)).to.equal(`${nmBinDir}${path.delimiter}/usr/local/bin`);
+    } finally {
+      // Clean up
+      fs.rmSync(tempDir, { recursive: true, force: true });
+
+      // Restore original env values
+      env.set(envPath.envKey, origPath);
+      env.set(env.xrunId, origXrunId);
+    }
+  });
+
+  it("should increment xrunId when it exists", () => {
+    // Save original env values
+    const origXrunId = env.get(env.xrunId);
+    const origForceColor = env.get(env.forceColor);
+
+    try {
+      // Set initial xrunId
+      env.set(env.xrunId, "5");
+
+      setupEnvironment();
+
+      // Verify xrunId was incremented
+      expect(env.get(env.xrunId)).to.equal("6");
+    } finally {
+      // Restore original env values
+      env.set(env.xrunId, origXrunId);
+      env.set(env.forceColor, origForceColor);
+    }
+  });
+
+  it("should initialize xrunId to '1' when not set", () => {
+    // Save original env values
+    const origXrunId = env.get(env.xrunId);
+    const origForceColor = env.get(env.forceColor);
+
+    try {
+      // Ensure xrunId is not set
+      env.del(env.xrunId);
+
+      setupEnvironment();
+
+      // Verify xrunId was initialized to "1"
+      expect(env.get(env.xrunId)).to.equal("1");
+    } finally {
+      // Restore original env values
+      env.set(env.xrunId, origXrunId);
+      env.set(env.forceColor, origForceColor);
+    }
+  });
+
+  it("should set forceColor when not already set", () => {
+    // Save original env values
+    const origXrunId = env.get(env.xrunId);
+    const origForceColor = env.get(env.forceColor);
+
+    try {
+      // Remove forceColor
+      env.del(env.forceColor);
+
+      setupEnvironment();
+
+      // Verify forceColor was set to "1"
+      expect(env.get(env.forceColor)).to.equal("1");
+    } finally {
+      // Restore original env values
+      env.set(env.xrunId, origXrunId);
+      env.set(env.forceColor, origForceColor);
+    }
+  });
+
+  it("should handle --options flag", () => {
+    xrun(["node", "xrun", "--options"], 2);
+    expect(exitCode).to.equal(0);
+  });
+
+  it("should handle --list option", () => {
+    xrun(["node", "xrun", "--quiet", "--list"], 2);
+    expect(exitCode).to.equal(0);
+    expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+    expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+    expect(logOutput.some(x => x.includes("xfoo3"))).to.be.true;
+    expect(logOutput.some(x => x.includes("xfoo4"))).to.be.true;
+  });
+
+  it("should handle --list with namespace", () => {
+    xrun(["node", "xrun", "--quiet", "--list", "1"], 2);
+    expect(exitCode).to.equal(0);
+    expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+    expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+  });
+
+  it("should handle --full option", () => {
+    xrun(["node", "xrun", "--quiet", "--list", "--full"], 2);
+    expect(exitCode).to.equal(0);
+    expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
+    expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
+  });
+
+  it("should handle --full > 1 option", () => {
+    xrun(["node", "xrun", "--quiet", "--list", "-ff"], 2);
+    expect(exitCode).to.equal(0);
+    expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
+    expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
+  });
+
+  it("should handle --ns option", () => {
+    xrun(["node", "xrun", "--quiet", "--ns"], 2);
+    expect(exitCode).to.equal(0);
+    expect(logOutput.some(x => x.includes("1"))).to.be.true;
+  });
+
+  it.skip("should handle --help option", () => {
+    xrun(["node", "xrun", "--quiet", "--help", "xfoo1"], 2);
+    expect(exitCode).to.equal(1);
+    // expect(logOutput.some(x => x.includes("help for tasks: xfoo1"))).to.be.true;
+  });
+
+  it("should handle serial tasks with --serial", () => {
+    return new Promise(resolve => {
+      xrun(["node", "xrun", "--quiet", "--serial", "xfoo1", "xfoo2"], 2, "", () => {
+        expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+        // expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+        resolve();
+      });
+    });
+  });
+
+  it("should take argv from process", () => {
+    return new Promise(resolve => {
+      Object.defineProperty(WrapProcess, "argv", {
+        get: () => ["node", "xrun", "--quiet", "--serial", "xfoo1", "xfoo2"]
+      });
+      xrun(undefined, undefined, "", () => {
+        expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+        // expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+        resolve();
+      });
+    });
+  });
+
+  it("should handle --nmbin option", () => {
+    xrun(["node", "xrun", "--quiet", "--nmbin", "xfoo1"], 2);
+    // expect(logOutput.some(x => x.includes("Added") || x.includes("PATH already contains"))).to.be
+    //   .true;
+  });
+
+  it("should handle task options", () => {
+    xrun(["node", "xrun", "--quiet", ".arg-opts", "-a=1", "--test=true"], 2);
+    // expect(logOutput.some(x => x.includes(".arg-opts"))).to.be.true;
+  });
+
+  it("should handle namespaced tasks", () => {
+    xrun(["node", "xrun", "--quiet", "1/xfoo1"], 2);
+    // expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+  });
+
+  it("should find no tasks in empty directory", () => {
+    return new Promise(resolve => {
+      xrunInstance.reset();
+      const origCwd = process.cwd();
+      const modPath = require.resolve("../../..");
+      delete require.cache[modPath];
+      const emptyCwd = path.resolve(__dirname, "../../../test/pkg-fixtures/empty");
+      process.chdir(emptyCwd);
+      xrun(["node", "xrun", "--quiet", "--list"], 2, "", err => {
+        process.chdir(origCwd);
+        const output = logOutput.join("\n");
+        expect(err.exitCode).to.equal(1);
+        expect(output).to.includes("No tasks found");
+        expect(output).to.includes(`You do not have a "xrun-tasks.js|ts"`);
+        resolve();
+      });
+    });
+  });
+
+  it("should remove leading slash from task names containing another slash", () => {
+    const tasks = ["/namespace/task1", "/another/task2", "normal-task", "/single-slash"];
+
+    const result = processTasks(tasks);
+
+    // Tasks with leading slash AND another slash should have leading slash removed
+    expect(result).to.include("namespace/task1");
+    expect(result).to.include("another/task2");
+
+    // Other tasks should remain unchanged
+    expect(result).to.include("normal-task");
+    expect(result).to.include("/single-slash"); // Leading slash remains as no other slash present
+  });
+
+  it("should join and parse tasks that represent an array", () => {
+    // Tasks that represent a split array like ["task1", "task2"]
+    const tasks = ["[task1", "task2", "task3]"];
+
+    const result = processTasks(tasks);
+
+    // Should be parsed into an array of tasks
+    expect(result).to.deep.equal(["task1 task2 task3"]);
+  });
+
+  it("should handle array tasks that fail to parse", () => {
+    // More complex array with nested arrays and concurrent tasks
+    const tasks = ["[build", "[test,lint]", "deploy]"];
+
+    const result = processTasks(tasks);
+
+    // Should be parsed into a nested array structure
+    expect(result).to.deep.equal(null);
+  });
+
+  it("should honor env.xrunQuiet in subsequent invocations", () => {
+    // Save original env values
+    const origQuiet = env.get(env.xrunQuiet);
+
+    try {
+      // Test explicit quiet flag
+      const jsonMeta1 = {
+        source: { quiet: true },
+        opts: { quiet: true }
+      };
+      handleQuietFlag(jsonMeta1, jsonMeta1.opts);
+      expect(env.get(env.xrunQuiet)).to.equal("1");
+
+      // Test inheriting quiet flag
+      const jsonMeta2 = {
+        source: { quiet: "default" },
+        opts: { quiet: false }
+      };
+      const isQuiet = handleQuietFlag(jsonMeta2, jsonMeta2.opts);
+      expect(isQuiet).to.be.true;
+      expect(jsonMeta2.opts.quiet).to.be.true;
+
+      // Test with quiet explicitly disabled
+      const jsonMeta3 = {
+        source: { quiet: false },
+        opts: { quiet: false }
+      };
+      const notQuiet = handleQuietFlag(jsonMeta3, jsonMeta3.opts);
+      expect(notQuiet).to.be.false;
+      expect(jsonMeta3.opts.quiet).to.be.false;
+    } finally {
+      // Restore original env value
+      if (origQuiet === undefined) {
+        env.del(env.xrunQuiet);
+      } else {
+        env.set(env.xrunQuiet, origQuiet);
+      }
+    }
+  });
+
+  describe("processEnvOptions (lines 342-349)", () => {
+    let savedEnvValues;
+
+    beforeEach(() => {
+      // Save current environment values that we'll modify
+      savedEnvValues = {
+        NODE_ENV: env.get("NODE_ENV"),
+        FOO: env.get("FOO"),
+        BAR: env.get("BAR"),
+        TEST_VAR: env.get("TEST_VAR"),
+        DEBUG: env.get("DEBUG"),
+        EMPTY_VAR: env.get("EMPTY_VAR")
+      };
+    });
+
+    afterEach(() => {
+      // Restore original environment values
+      Object.keys(savedEnvValues).forEach(key => {
+        if (savedEnvValues[key] === undefined) {
+          env.del(key);
+        } else {
+          env.set(key, savedEnvValues[key]);
+        }
+      });
+    });
+
+    it("should handle undefined opts.env", () => {
+      const opts = { env: undefined };
+
+      expect(() => processEnvOptions(opts)).to.not.throw();
+
+      // No environment variables should be set
+      expect(env.get("NODE_ENV")).to.equal(savedEnvValues.NODE_ENV);
+    });
+
+    it("should handle null opts.env", () => {
+      const opts = { env: null };
+
+      expect(() => processEnvOptions(opts)).to.not.throw();
+
+      // No environment variables should be set
+      expect(env.get("NODE_ENV")).to.equal(savedEnvValues.NODE_ENV);
+    });
+
+    it("should handle single env string", () => {
+      const opts = { env: "NODE_ENV=development" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+    });
+
+    it("should handle array of env strings", () => {
+      const opts = { env: ["NODE_ENV=development", "FOO=bar"] };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("FOO")).to.equal("bar");
+    });
+
+    it("should handle empty strings in env array", () => {
+      const opts = { env: ["", "NODE_ENV=development", "", "FOO=bar", ""] };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("FOO")).to.equal("bar");
+    });
+
+    it("should handle env string with empty value", () => {
+      const opts = { env: "NODE_ENV=" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("");
+    });
+
+    it("should handle env string with no equals sign", () => {
+      const opts = { env: "DEBUG" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("DEBUG")).to.equal("undefined");
+    });
+
+    it("should handle env string with multiple equals signs", () => {
+      const opts = { env: "TEST_VAR=key=value=more" };
+
+      processEnvOptions(opts);
+
+      // split("=") splits on all = signs, but destructuring only takes first two elements
+      expect(env.get("TEST_VAR")).to.equal("key");
+    });
+
+    it("should ignore env strings with empty key", () => {
+      const opts = { env: ["=invalid", "NODE_ENV=development"] };
+
+      processEnvOptions(opts);
+
+      // Empty key should be ignored
+      expect(env.get("NODE_ENV")).to.equal("development");
+    });
+
+    it("should handle mixed valid and invalid env strings", () => {
+      const opts = {
+        env: [
+          "", // empty string - should be filtered out
+          "NODE_ENV=development", // valid
+          "=invalid", // empty key - should be ignored
+          "FOO=bar", // valid
+          "DEBUG", // no value - should set to "undefined"
+          "EMPTY_VAR=" // empty value - should set to ""
+        ]
+      };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("FOO")).to.equal("bar");
+      expect(env.get("DEBUG")).to.equal("undefined");
+      expect(env.get("EMPTY_VAR")).to.equal("");
+    });
+
+    it("should overwrite existing environment variables", () => {
+      // Set initial value
+      env.set("NODE_ENV", "initial");
+      expect(env.get("NODE_ENV")).to.equal("initial");
+
+      const opts = { env: "NODE_ENV=overwritten" };
+
+      processEnvOptions(opts);
+
+      expect(env.get("NODE_ENV")).to.equal("overwritten");
+    });
+  });
+});

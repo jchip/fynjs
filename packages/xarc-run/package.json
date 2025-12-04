@@ -1,0 +1,112 @@
+{
+  "name": "@xarc/run",
+  "version": "2.3.0",
+  "description": "concurrent or serial run npm scripts, javascript tasks, and more",
+  "main": "lib/index.js",
+  "types": "lib/xrun.d.ts",
+  "scripts": {
+    "pretest": "echo hello",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:debug": "vitest --inspect-brk",
+    "lint": "eslint bin cli lib test",
+    "coveralls": "cat coverage/lcov.info | coveralls",
+    "coverage": "vitest run --coverage",
+    "check": "fyn run coverage && fyn run coveralls && fyn run lint",
+    "format": "prettier --write --print-width 100 lib/*.js test/**/*.js",
+    "xfoo2": "echo xfoo2 from npm scripts",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
+  },
+  "bin": {
+    "xrun": "bin/xrun.js",
+    "qrun": "bin/qrun.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/electrode-io/xarc-run.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com/"
+  },
+  "files": [
+    "lib",
+    "cli",
+    "bin"
+  ],
+  "keywords": [
+    "concurrent",
+    "parallel",
+    "serial",
+    "run",
+    "npm",
+    "script",
+    "scripts",
+    "xrun",
+    "command",
+    "line",
+    "build",
+    "tool",
+    "shell",
+    "flow",
+    "control",
+    "bash",
+    "zsh",
+    "make",
+    "javascript",
+    "task",
+    "series",
+    "tasks",
+    "execution",
+    "executor",
+    "tool",
+    "system",
+    "cli",
+    "stream",
+    "streaming"
+  ],
+  "author": "Joel Chen <joel123@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/electrode-io/xarc-run/issues"
+  },
+  "homepage": "https://github.com/electrode-io/xarc-run",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "chalker": "^1.2.0",
+    "insync": "^2.1.1",
+    "jaro-winkler": "^0.2.8",
+    "lodash.foreach": "^4.5.0",
+    "nix-clap": "^2.4.0",
+    "optional-require": "^2.1.0",
+    "path-is-inside": "^1.0.2",
+    "read-pkg-up": "^7.0.1",
+    "require-at": "^1.0.6",
+    "string-array": "^1.0.1",
+    "unwrap-npm-cmd": "^1.1.2",
+    "xsh": "^0.4.5"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.3",
+    "eslint": "^8.1.0",
+    "munchy": "^1.0.7",
+    "prettier": "^1.2.2",
+    "publish-util": "^2.1.0",
+    "run-verify": "^1.2.7",
+    "strip-ansi": "^6.0.0",
+    "tsx": "^4.19.4",
+    "vitest": "^4.0.3",
+    "xaa": "^1.6.0",
+    "xstdout": "^0.1.1"
+  },
+  "@xarc/run": {
+    "npm": true,
+    "tasks": {
+      "test": "echo pkg test"
+    }
+  },
+  "prettier": {
+    "printWidth": 100
+  }
+}
