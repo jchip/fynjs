@@ -43,7 +43,7 @@ function readJson(path) {
 
 const debug = false;
 
-(debug ? describe.only : describe)("scenario", function () {
+(debug ? describe.only : describe)("scenario", function() {
   let server;
   const saveExit = fyntil.exit;
   let registry;
@@ -206,7 +206,7 @@ const debug = false;
                 getFynDirArg(fynDir),
                 stepAction.extraArgs,
                 (debug && ["-q", "debug"]) || [],
-                [`--cwd=${cwd}`, "install"],
+                [`--cwd=${cwd}`, "install", "--no-audit"],
                 stepAction.forceInstall === false ? "" : "--fi"
               );
             }
@@ -289,40 +289,40 @@ const debug = false;
   const cleanUp = !debug;
   const filter = debug
     ? {
-      // When debug=false: Use this filter to configure scenarios (e.g., skip: true)
-      // When debug=true: Only scenarios listed here will run (with describe.only)
-      // Examples:
-      // "add-remove-pkg":
-      //  { stopStep: "step-02", debugStep: "step-02" }
-      // "auto-deep-resolve": {}
-      // "bin-linker": {}
-      // "build-local": {}
-      // "fyn-central": {},
-      // "fynpo-sample": { stopStep: "step-01" }
-      // "fyn-shrinkwrap": {}
-      // "local-hard-linking": {}
-      "github-refresh": { skip: true }, // Skipped by default - pushes to real GitHub
-      "git-refresh-local": {}
-      // "local-sym-linking": {}
-      // "locked-change-major": {}
-      // "locked-change-dedupe": {}
-      // "locked-change-dedupe-2": { debugStep: "step-02" }
-      // "locked-npm-dedupe": {}
-      // "locked-change-indirect": {}
-      // "missing-peer-dep": {}
-      // "nested-dep": {}
-      // "npm-shrinkwrap": {}
-      // "optional-check": {}
-      // "package-fyn": {}
-      // "platform-check": {}
-      // "platform-check-good": {}
-      // "remote-url-semver": { skip: true }  // Skip this scenario
-      // "stat-pkg": {}
-    }
+        // When debug=false: Use this filter to configure scenarios (e.g., skip: true)
+        // When debug=true: Only scenarios listed here will run (with describe.only)
+        // Examples:
+        // "add-remove-pkg":
+        //  { stopStep: "step-02", debugStep: "step-02" }
+        // "auto-deep-resolve": {}
+        // "bin-linker": {}
+        "build-local": {}
+        // "fyn-central": {},
+        // "fynpo-sample": { stopStep: "step-01" }
+        // "fyn-shrinkwrap": {}
+        // "local-hard-linking": {}
+        // "github-refresh": { skip: true }, // Skipped by default - pushes to real GitHub
+        // "git-refresh-local": {}
+        // "local-sym-linking": {}
+        // "locked-change-major": {}
+        // "locked-change-dedupe": {}
+        // "locked-change-dedupe-2": { debugStep: "step-02" }
+        // "locked-npm-dedupe": {}
+        // "locked-change-indirect": {}
+        // "missing-peer-dep": {}
+        // "nested-dep": {}
+        // "npm-shrinkwrap": {}
+        // "optional-check": {}
+        // "package-fyn": {}
+        // "platform-check": {}
+        // "platform-check-good": {}
+        // "remote-url-semver": {}
+        // "stat-pkg": {}
+      }
     : {
-      "github-refresh": { skip: true }, // Skipped by default - pushes to real GitHub
-      "remote-url-semver": { skip: false } // Skip this scenario
-    };
+        "github-refresh": { skip: true }, // Skipped by default - pushes to real GitHub
+        "remote-url-semver": { skip: false } // Skip this scenario
+      };
 
   const saveCwd = process.cwd();
   const scenarioDir = Path.join(__dirname, "../scenarios");
@@ -352,7 +352,7 @@ const debug = false;
         describeFn = describe.skip;
       }
 
-      describeFn(s, function () {
+      describeFn(s, function() {
         const clean = () => {
           Fs.rmSync(Path.join(cwd, "package.json"), { recursive: true, force: true });
           Fs.rmSync(Path.join(cwd, "fyn-lock.yaml"), { recursive: true, force: true });
@@ -364,8 +364,8 @@ const debug = false;
           // Handle cache copying for steps that need it
           const stepAction = optionalRequire(Path.join(cwd, "index.js"), { default: {} });
           if (stepAction.copyCache) {
-            const prevStepNum = parseInt(Path.basename(cwd).replace('step-', '')) - 1;
-            const prevStep = `step-${prevStepNum.toString().padStart(2, '0')}`;
+            const prevStepNum = parseInt(Path.basename(cwd).replace("step-", "")) - 1;
+            const prevStep = `step-${prevStepNum.toString().padStart(2, "0")}`;
             const prevStepDir = Path.join(Path.dirname(cwd), prevStep);
             const prevFynDir = Path.join(prevStepDir, ".fyn");
 
@@ -375,7 +375,9 @@ const debug = false;
 
               // Copy the entire .fyn directory
               const { execSync } = require("child_process");
-              execSync(`cp -r "${prevFynDir}"/* "${currentFynDir}/" 2>/dev/null || true`, { stdio: "pipe" });
+              execSync(`cp -r "${prevFynDir}"/* "${currentFynDir}/" 2>/dev/null || true`, {
+                stdio: "pipe"
+              });
             }
           }
         };

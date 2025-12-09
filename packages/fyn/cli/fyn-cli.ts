@@ -17,6 +17,7 @@ const PromiseQueue = require("../lib/util/promise-queue");
 const sortObjKeys = require("../lib/util/sort-obj-keys");
 const fyntil = require("../lib/util/fyntil");
 const showStat = require("./show-stat");
+const showAudit = require("./show-audit");
 // const showSetupInfo = require("./show-setup-info");
 // const logFormat = require("../lib/util/log-format");
 const { runNpmScript, addNpmLifecycle } = require("../lib/util/run-npm-script");
@@ -382,10 +383,11 @@ class FynCli {
    * 3. postinstall
    * 4. prepare
    */
-  install() {
+  install(argv = {}) {
     let failure;
     let installLocked;
     const start = Date.now();
+    const runAudit = argv.opts?.audit !== false;
     return Promise.try(() => this.fyn._initializePkg())
       .then(async () => {
         checkNewVersion(this.fyn._options);
@@ -494,6 +496,19 @@ class FynCli {
           chalk.green("complete in total"),
           chalk.magenta(`${(end - start) / 1000}`) + "secs"
         );
+
+        // Run security audit after install (like npm)
+        if (runAudit) {
+          try {
+            await showAudit(this.fyn, {
+              colors: this.fyn._options.colors !== false,
+              summary: true  // Show brief summary, not full report
+            });
+          } catch (err) {
+            // Audit failures should not fail the install
+            logger.warn("Security audit failed:", err.message);
+          }
+        }
       })
       .catch(err => {
         if (err.message === "No Change") {
@@ -525,6 +540,18 @@ class FynCli {
 
   stat(argv) {
     return showStat(this.fyn, argv.args.packages).finally(() => {
+      return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
+    });
+  }
+
+  audit(argv) {
+    const opts = {
+      json: argv.opts?.json || false,
+      omit: argv.opts?.omit || [],
+      auditLevel: argv.opts?.auditLevel || "info",
+      noCache: argv.opts?.noCache || false
+    };
+    return showAudit(this.fyn, opts).finally(() => {
       return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
     });
   }

@@ -283,7 +283,7 @@ const commands = {
     desc: "Install modules",
     async exec(cmd) {
       const cli = new FynCli(await pickOptions(cmd));
-      return cli.install();
+      return cli.install(cmd.jsonMeta);
     },
     options: {
       "run-npm": {
@@ -294,6 +294,11 @@ const commands = {
         alias: "fi",
         desc: "force install even if no files changed since last install",
         args: "<flag boolean>"
+      },
+      audit: {
+        desc: "run security audit after install (use --no-audit to skip)",
+        args: "<flag boolean>",
+        default: true
       }
     }
   },
@@ -320,7 +325,7 @@ const commands = {
         config.noStartupInfo = true;
         logger.info("installing...");
         fynTil.resetFynpo();
-        return new FynCli(config).install();
+        return new FynCli(config).install({ opts: { audit: meta.opts.audit } });
       });
     },
     options: {
@@ -390,6 +395,32 @@ const commands = {
     args: "<packages string..>",
     exec: async cmd => {
       return new FynCli(await pickOptions(cmd)).stat(cmd.jsonMeta);
+    }
+  },
+  audit: {
+    desc: "Check for known security vulnerabilities",
+    exec: async cmd => {
+      return new FynCli(await pickOptions(cmd)).audit(cmd.jsonMeta);
+    },
+    options: {
+      json: {
+        alias: "j",
+        args: "<flag boolean>",
+        desc: "Output audit report as JSON"
+      },
+      omit: {
+        args: "[types string..]",
+        desc: "Dependency types to omit (dev, optional, peer)"
+      },
+      "audit-level": {
+        args: "<level string>",
+        desc: "Minimum severity level to report (info, low, moderate, high, critical)",
+        default: "info"
+      },
+      "no-cache": {
+        args: "<flag boolean>",
+        desc: "Bypass the audit cache and fetch fresh data"
+      }
     }
   },
   run: {
