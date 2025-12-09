@@ -22,7 +22,8 @@ export class InstallDeps {
       logLevelOpts,
       `install`,
       `--sl`,
-      `--no-build-local`
+      `--no-build-local`,
+      `--no-audit`
     );
   }
 
