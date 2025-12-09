@@ -46,15 +46,23 @@ export class InstallDeps {
    * @param displayTitle
    */
   async runVisualInstall(pkgInfo: FynpoPackageInfo, displayTitle: string) {
+    const pkgDir = Path.join(this.topDir, pkgInfo.path);
     const ve = new VisualExec({
       displayTitle,
-      cwd: Path.join(this.topDir, pkgInfo.path),
+      cwd: pkgDir,
       command: await this.getInstallCommand(),
       visualLogger: logger,
     });
 
     ve.logFinalOutput = _.noop;
 
-    await ve.execute();
+    try {
+      await ve.execute();
+    } catch (err: any) {
+      const debugLog = Path.join(pkgDir, "fyn-debug.log");
+      logger.error(`Failed to install dependencies for ${pkgInfo.name}`);
+      logger.error(`Check debug log for details: ${debugLog}`);
+      throw err;
+    }
   }
 }

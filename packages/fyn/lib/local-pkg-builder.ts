@@ -50,12 +50,15 @@ class LocalPkgBuilder {
       this._waitItems[data.item.fullPath].resolve({});
     });
     this._promiseQ.on("failItem", data => {
+      const debugLog = Path.join(data.item.fullPath, "fyn-debug.log");
       const itemRes = {
         error: new AggregateError(
           [data.error],
-          `failed build local package at ${data.item.fullPath}`
+          `failed build local package at ${data.item.fullPath} - check ${debugLog} for details`
         )
       };
+      logger.error(`Failed to build local package at ${data.item.fullPath}`);
+      logger.error(`Check debug log for details: ${debugLog}`);
       this._waitItems[data.item.fullPath].resolve(itemRes);
       this._failedItems[data.item.fullPath] = itemRes;
     });
@@ -172,7 +175,7 @@ class LocalPkgBuilder {
       process.argv[0],
       this._fynJs,
       this._fyn._options.registry && `--reg=${this._fyn._options.registry}`,
-      "-q=d --pg=simple --no-build-local",
+      "-q=d --pg=simple --no-build-local --sl=fyn-debug.log",
       !this._fyn._options.sourceMaps && "--no-source-maps",
       "install --no-audit"
     ]
