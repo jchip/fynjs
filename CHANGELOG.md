@@ -1,3 +1,33 @@
+# 12/12/2025
+
+## Packages
+
+### Directly Updated
+
+-   `fyn@2.1.0` `(2.0.4 => 2.1.0)`
+-   `fynpo@2.1.0` `(2.0.4 => 2.1.0)`
+-   `visual-exec@0.2.0` `(0.1.14 => 0.2.0)`
+
+## Commits
+
+-   `packages/fyn`
+
+    -   chore: update dep [commit](https://github.com/electrode-io/fynpo/commit/22266684066e2b4b44c997a384039e7ad63730a5)
+    -   fyn/fynpo: improve debug log visibility for sub-fyn failures [commit](https://github.com/electrode-io/fynpo/commit/05a4128f50f608f00488b7df380ff853b7fe675d)
+    -   fyn: implement audit command [commit](https://github.com/electrode-io/fynpo/commit/af95bab9cf1243d6d334cee2c0b86105da595da0)
+    -   fyn: detect Bun runtime for global package version directories [commit](https://github.com/electrode-io/fynpo/commit/3ee576f2d8385b52492c10735aa2167fc3068049)
+    -   fyn: support overrides [commit](https://github.com/electrode-io/fynpo/commit/c0f3084050ca04d3c94eccaca6ac5dd019bd3fcf)
+
+-   `packages/fynpo`
+
+    -   fyn/fynpo: improve debug log visibility for sub-fyn failures [commit](https://github.com/electrode-io/fynpo/commit/05a4128f50f608f00488b7df380ff853b7fe675d)
+    -   fynpo: add --no-audit to invoke fyn [commit](https://github.com/electrode-io/fynpo/commit/e29a17d7d188ca0cb718864b32ec6289820bb42b)
+
+-   `packages/visual-exec`
+
+    -   [minor] VEX-2: convert visual-exec to TypeScript [commit](https://github.com/electrode-io/fynpo/commit/5634415b23c467e8f6a60adfa9b42afff4ee8a24)
+
+
 # 12/2/2025
 
 ## Packages
