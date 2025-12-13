@@ -44,22 +44,6 @@
           "path": "packages/pkg-preper"
         },
         "onPkg": {
-          "name": "bluebird",
-          "version": "3.7.2",
-          "path": "packages/bluebird"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "pkg-preper@0.1.6(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "pkg-preper",
-          "version": "0.1.6",
-          "path": "packages/pkg-preper"
-        },
-        "onPkg": {
           "name": "xsh",
           "version": "0.4.6",
           "path": "_w/xsh"
@@ -71,5 +55,5 @@
       }
     ]
   },
-  "__timestamp": 1764829881497
+  "__timestamp": 1765612124677
 }

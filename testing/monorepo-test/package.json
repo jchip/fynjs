@@ -23,6 +23,7 @@
     "@fynpo/base": "../../packages/fynpo-base",
     "fyn": "../../packages/fyn",
     "fynpo": "../../packages/fynpo",
+    "visual-exec": "../../packages/visual-exec",
     "tsx": "^4.20.6"
   }
 }

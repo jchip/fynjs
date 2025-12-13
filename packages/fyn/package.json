@@ -1,6 +1,6 @@
 {
   "name": "fyn",
-  "version": "2.0.4",
+  "version": "2.1.0",
   "description": "fyn is the NPM for fynpo -- a zero setup monorepo tool",
   "main": "./bin/fyn.js",
   "homepage": "https://jchip.github.io/fynpo/",
@@ -116,7 +116,7 @@
     "source-map": "^0.7.3",
     "strip-bom": "^4.0.0",
     "tar": "^4.4.19",
-    "visual-exec": "^0.1.14",
+    "visual-exec": "^0.2.0",
     "visual-logger": "^1.1.3",
     "xaa": "^2.0.0",
     "xenv-config": "^1.3.0",
