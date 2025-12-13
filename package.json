@@ -1,5 +1,5 @@
 {
-  "name": "fynpo-monorepo",
+  "name": "fynjs",
   "version": "0.0.1",
   "description": "A node.js JavaScript monorepo manager",
   "main": "index.js",
@@ -34,8 +34,8 @@
     "url": "https://github.com/electrode-io/fynpo/issues"
   },
   "devDependencies": {
-    "fyn": "^2.0.3",
-    "fynpo": "^2.0.3"
+    "fyn": "^2.0.4",
+    "fynpo": "^2.0.4"
   },
   "dependencies": {
     "tsx": "^4.20.6"
