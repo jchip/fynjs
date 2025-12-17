@@ -1,6 +1,6 @@
 "use strict";
 
-const pathUpEach = require("../../../lib/util/path-up-each");
+const pathUpEach = require("../../../lib/util/path-up-each").default;
 
 describe("path-up-each", function() {
   it("should return empty if path immediately triggers stop", () => {

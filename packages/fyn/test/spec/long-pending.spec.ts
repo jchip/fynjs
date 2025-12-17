@@ -4,7 +4,7 @@
 
 const sinon = require("sinon");
 const logger = require("../../lib/logger").default;
-const longPending = require("../../lib/long-pending");
+const longPending = require("../../lib/long-pending").default;
 
 describe("long-pending", function() {
   let logItems;

@@ -5,7 +5,7 @@ const chalk = require("chalk");
 const CliLogger = require("../lib/cli-logger").default;
 const logger = require("../lib/logger").default;
 const Promise = require("aveazul");
-const logFormat = require("../lib/util/log-format");
+const logFormat = require("../lib/util/log-format").default;
 const PkgStatProvider = require("../lib/pkg-stat-provider");
 const { FETCH_META } = require("../lib/log-items");
 

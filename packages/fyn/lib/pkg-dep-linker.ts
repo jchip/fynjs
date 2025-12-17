@@ -8,7 +8,7 @@ const Path = require("path");
 const Fs = require("./util/file-ops").default;
 const _ = require("lodash");
 const logger = require("./logger").default;
-const logFormat = require("./util/log-format");
+const logFormat = require("./util/log-format").default;
 const fynTil = require("./util/fyntil").default;
 
 /*

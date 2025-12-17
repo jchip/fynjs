@@ -6,7 +6,7 @@
 const Tar = require("tar");
 const logger = require("./logger").default;
 const PromiseQueue = require("./util/promise-queue");
-const logFormat = require("./util/log-format");
+const logFormat = require("./util/log-format").default;
 const { LOAD_PACKAGE } = require("./log-items");
 const { retry, missPipe } = require("./util/fyntil").default;
 const Fs = require("./util/file-ops").default;

@@ -565,7 +565,7 @@ class Fyn {
     const options = _options || this._options;
 
     if (options.pkgFile) {
-      const pathUpEach = require("./util/path-up-each");
+      const pathUpEach = require("./util/path-up-each").default;
       let pkgFile;
 
       // Search upward for package.json

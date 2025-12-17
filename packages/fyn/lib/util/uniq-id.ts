@@ -1,11 +1,12 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers,prefer-template */
 
-// generate a simple and fairly unique id
-
-module.exports = function() {
+/**
+ * Generate a simple and fairly unique id
+ * @returns unique id string
+ */
+export function uniqId(): string {
   return (
     Math.random()
       .toString(36)
@@ -13,4 +14,6 @@ module.exports = function() {
     "_" +
     Date.now().toString(36)
   );
-};
+}
+
+export default uniqId;
