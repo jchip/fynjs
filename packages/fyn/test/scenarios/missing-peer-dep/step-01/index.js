@@ -1,6 +1,6 @@
 "use strict";
 
-const logger = require("../../../../lib/logger");
+const logger = require("../../../../lib/logger").default;
 const stripAnsiModule = require("strip-ansi");
 const stripAnsi = stripAnsiModule.default || stripAnsiModule;
 

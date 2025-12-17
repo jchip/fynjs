@@ -7,7 +7,7 @@ const Promise = require("./aveazul");
 const LifecycleScripts = require("../lifecycle-scripts");
 const chalk = require("chalk");
 const logFormat = require("./log-format");
-const logger = require("../logger");
+const logger = require("../logger").default;
 const _ = require("lodash");
 
 const { INSTALL_PACKAGE } = require("../log-items");

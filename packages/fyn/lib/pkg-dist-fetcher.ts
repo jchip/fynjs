@@ -5,7 +5,7 @@
 
 const _ = require("lodash");
 const Fs = require("./util/file-ops");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const PkgDistExtractor = require("./pkg-dist-extractor");
 const PromiseQueue = require("./util/promise-queue");
 const chalk = require("chalk");
@@ -13,7 +13,7 @@ const longPending = require("./long-pending");
 const logFormat = require("./util/log-format");
 const { FETCH_PACKAGE, spinner } = require("./log-items");
 const hardLinkDir = require("./util/hard-link-dir");
-const DepItem = require("./dep-item");
+const DepItem = require("./dep-item").default;
 const { MARK_URL_SPEC } = require("./constants");
 const EventEmitter = require("events");
 

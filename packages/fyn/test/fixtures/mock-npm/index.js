@@ -8,7 +8,7 @@ const Yaml = require("js-yaml");
 const Path = require("path");
 const chalk = require("chalk");
 const Crypto = require("crypto");
-const CliLogger = require("../../../lib/cli-logger");
+const CliLogger = require("../../../lib/cli-logger").default;
 const _ = require("lodash");
 const createTgz = require("./create-tgz");
 

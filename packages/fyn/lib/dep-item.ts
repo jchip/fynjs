@@ -1,85 +1,130 @@
-// @ts-nocheck
-"use strict";
-
-const Fs = require("./util/file-ops");
-const Path = require("path");
-const semverUtil = require("./util/semver");
-const _ = require("lodash");
+import Fs from "./util/file-ops";
+import Path from "path";
+import * as semverUtil from "./util/semver";
+import _ from "lodash";
 
 /* eslint-disable no-magic-numbers, no-constant-condition, complexity */
 
-/*
+/**
  * Dependency Item
  *
- * Contains info of a dependency and its dependencies
- *
- * Use to track fetching packages when resolving versions and dependencies
- *
+ * Contains info of a dependency and its dependencies.
+ * Used to track fetching packages when resolving versions and dependencies.
  */
 
-class DepItem {
-  constructor(options, parent) {
-    // name of the package
+export interface DepItemOptions {
+  name: string;
+  semver: string;
+  /** Original top level package.json dep section (dep, dev, per, opt) */
+  src: string;
+  /** Source from the direct parent package */
+  dsrc: string;
+  resolved?: string;
+  shrinkwrap?: any;
+  deepResolve?: boolean;
+  depth?: number;
+  priority?: number;
+}
+
+interface SemverAnalysis {
+  $: string;
+  path?: string;
+  localType?: string;
+  urlType?: string;
+}
+
+interface NestedResolution {
+  _: string[];
+  [semver: string]: string | string[];
+}
+
+interface Shrinkwrap {
+  dependencies?: Record<string, { version: string }>;
+}
+
+interface PkgVersionData {
+  requests: string[][];
+  _hasNonOpt?: boolean;
+  firstReqIdx?: number;
+  dsrc: string;
+  src: string;
+  [key: string]: any;
+}
+
+export class DepItem {
+  name: string;
+  private _semver: SemverAnalysis;
+  /** Original top level package.json dep section (dep, dev, per, opt) */
+  src: string;
+  /** Source from the direct parent package */
+  dsrc: string;
+  resolved: string | undefined;
+  parent: DepItem | undefined;
+  private _shrinkwrap: Shrinkwrap | undefined;
+  private _deepRes: boolean | undefined;
+  private _nested: Record<string, NestedResolution>;
+  /** Was this item promoted to top level for flattening? */
+  promoted: boolean | undefined;
+  depth: number;
+  nameDepPath: string;
+  priority: number | undefined;
+  private _fullPath: string | undefined;
+  private _circular: boolean | undefined;
+
+  constructor(options: DepItemOptions, parent?: DepItem) {
     this.name = options.name;
-    // semver that was used to specify this dep
     this._semver = semverUtil.analyze(options.semver);
-    // original top level package.json dep section (dep, dev, per, opt)
-    //    dep - dependencies, dev: dev, opt: optional, per: peer
     this.src = options.src;
-    // dsrc: source from the direct parent package
     this.dsrc = options.dsrc;
-    // The version that was resolved
     this.resolved = options.resolved;
-    // parent dependency item that pulled this
     this.parent = parent;
     this._addShrinkwrap(_.get(parent, ["_shrinkwrap", "dependencies", this.name]));
     this._addShrinkwrap(options.shrinkwrap);
     this._deepRes = options.deepResolve;
     this._nested = {};
-    // was this item promoted to top level for flattening?
     this.promoted = undefined;
     this.depth = (parent && parent.depth + 1) || options.depth || 0;
-    this.nameDepPath = this.depth > 1 ? parent.nameDepPath + "/" + this.name : this.name;
+    this.nameDepPath = this.depth > 1 ? parent!.nameDepPath + "/" + this.name : this.name;
     this.priority = options.priority;
   }
 
-  get fullPath() {
+  get fullPath(): string | undefined {
     return this._fullPath;
   }
 
-  set fullPath(p) {
+  set fullPath(p: string | undefined) {
     this._fullPath = p;
   }
 
-  get semver() {
+  get semver(): string {
     return this._semver.$;
   }
 
-  get semverPath() {
+  get semverPath(): string | undefined {
     return this._semver.path;
   }
 
-  set localType(type) {
+  set localType(type: string | undefined) {
     this._semver.localType = type;
   }
 
-  get localType() {
+  get localType(): string | undefined {
     return this._semver.localType;
   }
 
-  get urlType() {
+  get urlType(): string | undefined {
     return this._semver.urlType;
   }
 
-  get deepResolve() {
+  get deepResolve(): boolean | undefined {
     return this._deepRes;
   }
 
-  unref() {
+  unref(): void {
     this.parent = undefined;
   }
 
-  resolve(version, meta) {
+  resolve(version: string, meta?: { versions?: Record<string, { _shrinkwrap?: any }> }): void {
     this.resolved = version;
     if (meta && meta.versions) {
       const pkg = meta.versions[version];
@@ -87,7 +132,7 @@ class DepItem {
     }
   }
 
-  _addShrinkwrap(sw) {
+  private _addShrinkwrap(sw: any): void {
     if (sw) {
       if (this._shrinkwrap) {
         this._shrinkwrap = Object.assign({}, this._shrinkwrap, sw);
@@ -97,16 +142,16 @@ class DepItem {
     }
   }
 
-  async loadShrinkwrap(dir) {
+  async loadShrinkwrap(dir: string): Promise<void> {
     const str = await Fs.readFile(Path.join(dir, "npm-shrinkwrap.json"), "utf8");
     this._addShrinkwrap(JSON.parse(str));
   }
 
-  get id() {
+  get id(): string {
     return `${this.name}@${this.resolved || this.semver}`;
   }
 
-  _saveNestedRes(name, semver, version) {
+  private _saveNestedRes(name: string, semver: string, version: string): void {
     if (!this._nested[name]) {
       this._nested[name] = { _: [] };
     }
@@ -118,9 +163,9 @@ class DepItem {
     }
   }
 
-  nestedResolve(name, semver) {
+  nestedResolve(name: string, semver: string): string | undefined {
     if (this._nested.hasOwnProperty(name) && this._nested[name][semver]) {
-      return this._nested[name][semver];
+      return this._nested[name][semver] as string;
     }
 
     if (this._shrinkwrap && this._shrinkwrap.dependencies) {
@@ -147,13 +192,13 @@ class DepItem {
     return undefined;
   }
 
-  addResolutionToParent(data, firstKnown) {
-    let pkg;
+  addResolutionToParent(data: any, firstKnown: boolean): void {
+    let pkg: any;
 
-    if (this.parent.depth) {
-      const x = this.parent;
+    if (this.parent!.depth) {
+      const x = this.parent!;
       const kpkg = data.getPkg(x);
-      pkg = kpkg[x.resolved].res;
+      pkg = kpkg[x.resolved!].res;
     } else {
       pkg = data.res;
     }
@@ -166,19 +211,19 @@ class DepItem {
     depSection[this.name] = { semver: this.semver, resolved: this.resolved };
 
     // parent is not top
-    if (this.parent.depth && !firstKnown) {
-      this.parent._saveNestedRes(this.name, this.semver, this.resolved);
+    if (this.parent!.depth && !firstKnown) {
+      this.parent!._saveNestedRes(this.name, this.semver, this.resolved!);
     }
   }
 
-  get requestPath() {
-    let x = this; // eslint-disable-line
+  get requestPath(): { opt: boolean; path: string[] } {
+    let x: DepItem = this;
     const reqPath = [`${this.dsrc};${this.semver}`];
     let opt = false;
 
     while (true) {
-      if (x.parent.depth) {
-        x = x.parent;
+      if (x.parent!.depth) {
+        x = x.parent!;
         if (x.dsrc === "opt") opt = true;
         reqPath.push(`${x.dsrc};${x.semver};${x.id}`);
       } else {
@@ -191,7 +236,7 @@ class DepItem {
     return { opt, path: reqPath.reverse() };
   }
 
-  addRequestToPkg(pkgV, firstSeen) {
+  addRequestToPkg(pkgV: PkgVersionData, firstSeen: boolean): void {
     if (pkgV[this.src] === undefined) {
       pkgV[this.src] = 0;
     }
@@ -210,7 +255,7 @@ class DepItem {
     }
   }
 
-  isCircular() {
+  isCircular(): boolean {
     if (this._circular !== undefined) {
       return this._circular;
     }
@@ -228,9 +273,9 @@ class DepItem {
     return (this._circular = false);
   }
 
-  get depPath() {
-    const deps = [];
-    let cur = this; // eslint-disable-line
+  get depPath(): string[] {
+    const deps: string[] = [];
+    let cur: DepItem | undefined = this;
     while (cur) {
       deps.push(cur.id || cur.name);
       cur = cur.parent;
@@ -239,4 +284,4 @@ class DepItem {
   }
 }
 
-module.exports = DepItem;
+export default DepItem;

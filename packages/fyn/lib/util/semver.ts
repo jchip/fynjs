@@ -1,9 +1,6 @@
-// @ts-nocheck
-"use strict";
-
-const Semver = require("semver");
-const Path = require("path");
-const os = require("os");
+import Semver from "semver";
+import Path from "path";
+import os from "os";
 
 //
 // Simplified compare two numeric versions in semver format for sorting
@@ -15,7 +12,15 @@ const os = require("os");
 
 /* eslint-disable max-statements, no-magic-numbers, complexity */
 
-function split(v, sep, index = 0) {
+export interface SemverAnalysis {
+  $: string;
+  $$?: string;
+  path?: string;
+  localType?: string;
+  urlType?: string;
+}
+
+function split(v: string, sep: string, index: number = 0): [string] | [string, string] {
   const x = v.indexOf(sep, index);
   if (x >= index) {
     return [v.substr(0, x), v.substr(x + 1)];
@@ -24,7 +29,7 @@ function split(v, sep, index = 0) {
   return [v];
 }
 
-function simpleCompare(a, b) {
+export function simpleCompare(a: string, b: string): number {
   if (a === b) {
     return 0;
   }
@@ -66,7 +71,7 @@ function simpleCompare(a, b) {
   }
 }
 
-function isVersionNewer(a, b) {
+export function isVersionNewer(a: string, b: string): boolean {
   return simpleCompare(a, b) < 0;
 }
 
@@ -78,7 +83,7 @@ function isVersionNewer(a, b) {
 // ie: 3001.0001.0000-dev-harmony-fb to 3001.1.0-dev-harmony-fb
 // and: 2.1.17+deprecated to 2.1.17
 //
-function clean(v) {
+export function clean(v: string): string {
   const f = v.split("-");
   const vpart = f[0].split("+")[0];
   const mmp = vpart.split(".").map(x => (x && parseInt(x, 10)) || 0);
@@ -89,28 +94,28 @@ function clean(v) {
 const FYN_LOCAL_TAG = "-fynlocal";
 const FYN_LOCAL_HARD_TAG = "-fynlocal_h";
 
-function isLocal(v) {
+export function isLocal(v: string): boolean {
   return v.indexOf(FYN_LOCAL_TAG) > 0;
 }
 
-function isLocalHard(v) {
+export function isLocalHard(v: string): boolean {
   return v.indexOf(FYN_LOCAL_HARD_TAG) > 0;
 }
 
-function localify(v, localType, hash = "") {
+export function localify(v: string, localType?: string, hash: string = ""): string {
   return `${v}${localType === "hard" ? FYN_LOCAL_HARD_TAG : FYN_LOCAL_TAG}${hash}`;
 }
 
-function localifyHard(v, hash = "") {
+export function localifyHard(v: string, hash: string = ""): string {
   return localify(v, "hard", hash);
 }
 
-function unlocalify(v) {
+export function unlocalify(v: string): string {
   const x = v.indexOf(FYN_LOCAL_TAG);
   return x > 0 ? v.substr(0, x) : v;
 }
 
-function localSplit(v) {
+function localSplit(v: string): [string] | [string, string] {
   const x = v.indexOf(FYN_LOCAL_TAG);
   if (x > 0) {
     return [v.substr(0, x), v.substr(x)];
@@ -120,7 +125,7 @@ function localSplit(v) {
 }
 
 // https://docs.npmjs.com/files/package.json#dependencies
-function getAsFilepath(semver) {
+export function getAsFilepath(semver: string): string | false {
   if (semver.startsWith("file:") || semver.startsWith("link:")) {
     return semver.substr(5);
   }
@@ -160,14 +165,8 @@ function getAsFilepath(semver) {
  *    - github:org/repo
  *
  */
-function checkUrl(semver) {
+export function checkUrl(semver: string): string | false {
   // check for anything that's <protocol>:
-  // semver.startsWith("http:") ||
-  // semver.startsWith("https:") ||
-  // semver.startsWith("git:") ||
-  // semver.startswith("git+") ||
-  // semver.startsWith("github:")
-
   const ix = semver.indexOf(":");
   if (ix > 0) {
     return semver.substr(0, ix);
@@ -189,13 +188,10 @@ function checkUrl(semver) {
 
 /**
  * fix some bad semver
- *
- * @param {*} semver semver to fix
- * @returns {string} semver fixed
  */
-function fixBadSv(semver) {
+function fixBadSv(semver: string): string {
   const parts = semver.split(".");
-  const removeLeadingZero = x => {
+  const removeLeadingZero = (x: string) => {
     if (x && x.length > 1) {
       return x.replace(/^0+/, "");
     }
@@ -211,16 +207,13 @@ function fixBadSv(semver) {
 
 /**
  * analyze a semver to detect its type
- *
- * @param {*} semver
- * @returns
  */
-function analyze(semver) {
-  const sv = { $: semver };
+export function analyze(semver: string): SemverAnalysis {
+  const sv: SemverAnalysis = { $: semver };
 
   const urlType = checkUrl(semver);
 
-  const setHardLocal = fp => {
+  const setHardLocal = (fp: string | false) => {
     if (fp) {
       sv.path = fp;
       sv.localType = "hard";
@@ -251,46 +244,19 @@ function analyze(semver) {
   return sv;
 }
 
-function replace(sv, replaced) {
+export function replace(sv: SemverAnalysis, replaced: string): void {
   sv.$$ = sv.$;
   sv.$ = replaced;
 }
 
-/**
- * semver utilities lib
- */
-const semverLib = {
-  satisfies: (v, semver) => {
-    return Semver.satisfies(unlocalify(v), semver);
-  },
+export function satisfies(v: string, semver: string): boolean {
+  return Semver.satisfies(unlocalify(v), semver);
+}
 
-  split,
+export function equal(v1: string, v2: string): boolean {
+  const s1 = localSplit(v1);
+  const s2 = localSplit(v2);
+  return s1[0] === s2[0] && (s1[1] && s2[1] ? s1[1] === s2[1] : true);
+}
 
-  analyze,
-
-  replace,
-
-  localify,
-  localifyHard,
-  unlocalify,
-  isLocal,
-  isLocalHard,
-
-  clean,
-
-  equal: (v1, v2) => {
-    v1 = localSplit(v1);
-    v2 = localSplit(v2);
-    return v1[0] === v2[0] && (v1[1] && v2[1] ? v1[1] === v2[1] : true);
-  },
-
-  simpleCompare,
-
-  isVersionNewer,
-
-  getAsFilepath,
-
-  checkUrl
-};
-
-module.exports = semverLib;
+export { split };

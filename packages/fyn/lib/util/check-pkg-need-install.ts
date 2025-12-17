@@ -4,7 +4,7 @@
 const { scanFileStats } = require("./stat-dir");
 const Fs = require("./file-ops");
 const Path = require("path");
-const logger = require("../logger");
+const logger = require("../logger").default;
 
 /**
  * Go into a local dep pkg's dir and see if it has one of these npm scripts:

@@ -6,7 +6,7 @@
 const Fs = require("./util/file-ops");
 const Path = require("path");
 const _ = require("lodash");
-const logger = require("./logger");
+const logger = require("./logger").default;
 
 //
 // Look at each promoted package and link their bin to node_modules/.bin

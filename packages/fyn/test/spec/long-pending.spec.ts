@@ -3,7 +3,7 @@
 /* eslint-disable prefer-spread, max-len */
 
 const sinon = require("sinon");
-const logger = require("../../lib/logger");
+const logger = require("../../lib/logger").default;
 const longPending = require("../../lib/long-pending");
 
 describe("long-pending", function() {

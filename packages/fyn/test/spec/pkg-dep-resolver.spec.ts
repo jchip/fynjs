@@ -7,7 +7,7 @@ const Fyn = require("../../lib/fyn");
 const mockNpm = require("../fixtures/mock-npm");
 const expect = require("chai").expect;
 const _ = require("lodash");
-const logger = require("../../lib/logger");
+const logger = require("../../lib/logger").default;
 const chalk = require("chalk");
 
 describe("pkg-dep-resolver", function() {

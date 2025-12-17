@@ -7,7 +7,7 @@ const Crypto = require("crypto");
 const Path = require("path");
 const Fs = require("./util/file-ops");
 const _ = require("lodash");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const logFormat = require("./util/log-format");
 const fynTil = require("./util/fyntil");
 

@@ -4,7 +4,7 @@
 /* eslint-disable no-magic-numbers, max-statements */
 
 const Tar = require("tar");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const PromiseQueue = require("./util/promise-queue");
 const logFormat = require("./util/log-format");
 const { LOAD_PACKAGE } = require("./log-items");

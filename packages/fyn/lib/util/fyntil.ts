@@ -7,7 +7,7 @@
 const Fs = require("./file-ops");
 const _ = require("lodash");
 const Path = require("path");
-const logger = require("../logger");
+const logger = require("../logger").default;
 const Promise = require("./aveazul");
 const mississippi = require("mississippi");
 const missPipe = Promise.promisify(mississippi.pipe, { context: mississippi });

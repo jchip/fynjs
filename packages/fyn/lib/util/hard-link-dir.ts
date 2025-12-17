@@ -17,7 +17,7 @@ const xaa = require("./xaa");
 const npmPacklist = require("npm-packlist");
 const Arborist = require("@npmcli/arborist");
 const fynTil = require("./fyntil");
-const logger = require("../logger");
+const logger = require("../logger").default;
 const { SourceMapGenerator } = require("source-map");
 const ci = require("ci-info");
 

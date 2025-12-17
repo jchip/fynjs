@@ -2,8 +2,8 @@
 "use strict";
 
 const chalk = require("chalk");
-const CliLogger = require("../lib/cli-logger");
-const logger = require("../lib/logger");
+const CliLogger = require("../lib/cli-logger").default;
+const logger = require("../lib/logger").default;
 const Promise = require("aveazul");
 const logFormat = require("../lib/util/log-format");
 const PkgStatProvider = require("../lib/pkg-stat-provider");

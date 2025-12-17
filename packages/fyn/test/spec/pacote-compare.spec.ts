@@ -2,7 +2,7 @@
 
 const mockNpm = require("../fixtures/mock-npm");
 const expect = require("chai").expect;
-const logger = require("../../lib/logger");
+const logger = require("../../lib/logger").default;
 const chalk = require("chalk");
 
 // Skipping this test suite as it's primarily for debugging pacote-jchip vs latest pacote

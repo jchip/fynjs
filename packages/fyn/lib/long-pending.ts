@@ -6,7 +6,7 @@
 const MAX_PENDING_SHOW = 10;
 const chalk = require("chalk");
 const logFormat = require("./util/log-format");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const _ = require("lodash");
 const { LONG_WAIT_PACKAGE } = require("./log-items");
 

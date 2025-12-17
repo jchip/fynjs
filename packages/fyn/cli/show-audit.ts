@@ -12,8 +12,8 @@
  */
 
 const Promise = require("aveazul");
-const CliLogger = require("../lib/cli-logger");
-const logger = require("../lib/logger");
+const CliLogger = require("../lib/cli-logger").default;
+const logger = require("../lib/logger").default;
 const AuditReport = require("../lib/audit/audit-report");
 const AuditFormatter = require("../lib/audit/audit-formatter");
 const PkgStatProvider = require("../lib/pkg-stat-provider");

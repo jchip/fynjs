@@ -11,7 +11,7 @@ const expect = require("chai").expect;
 const _ = require("lodash");
 const PkgDepLinker = require("../../lib/pkg-dep-linker");
 const xsh = require("xsh");
-const logger = require("../../lib/logger");
+const logger = require("../../lib/logger").default;
 
 describe("pkg-dist-fetcher", function() {
   logger._logLevel = 999;

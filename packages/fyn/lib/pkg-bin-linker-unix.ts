@@ -4,7 +4,7 @@
 /* eslint-disable global-require */
 
 const Fs = require("./util/file-ops");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const PkgBinLinkerBase = require("./pkg-bin-linker-base");
 
 //

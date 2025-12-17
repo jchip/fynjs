@@ -1,6 +1,5 @@
-// @ts-nocheck
-"use strict";
+import CliLogger from "./cli-logger";
 
-const CliLogger = require("./cli-logger");
+const logger = new CliLogger();
 
-module.exports = new CliLogger();
+export default logger;

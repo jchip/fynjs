@@ -3,7 +3,7 @@
 const LifecycleScripts = require("../../lib/lifecycle-scripts");
 const Path = require("path");
 const xstdout = require("xstdout");
-const logger = require("../../lib/logger");
+const logger = require("../../lib/logger").default;
 const chalk = require("chalk");
 const xaa = require("xaa");
 

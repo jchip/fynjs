@@ -12,7 +12,7 @@
  */
 
 const npmFetch = require("npm-registry-fetch");
-const logger = require("../logger");
+const logger = require("../logger").default;
 const {
   generateCacheKey,
   cacheAuditResult,

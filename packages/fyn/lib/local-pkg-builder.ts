@@ -11,7 +11,7 @@
 
 // const assert = require("assert");
 const Path = require("path");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const PromiseQueue = require("./util/promise-queue");
 const { VisualExec } = require("visual-exec");
 const xaa = require("xaa");

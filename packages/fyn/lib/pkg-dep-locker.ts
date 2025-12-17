@@ -22,7 +22,7 @@ const {
   LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS
 } = require("./symbols");
-const logger = require("./logger");
+const logger = require("./logger").default;
 const fyntil = require("./util/fyntil");
 
 class PkgDepLocker {

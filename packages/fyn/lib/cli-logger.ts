@@ -1,4 +1,3 @@
-// @ts-nocheck
-"use strict";
+import VisualLogger from "visual-logger";
 
-module.exports = require("visual-logger");
+export default VisualLogger;

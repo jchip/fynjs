@@ -4,7 +4,7 @@
 const Fs = require("fs");
 const Path = require("path");
 const requireAt = require("require-at");
-const logger = require("../logger");
+const logger = require("../logger").default;
 const { getGlobalNodeModules } = require("./fyntil");
 const xsh = require("xsh");
 
