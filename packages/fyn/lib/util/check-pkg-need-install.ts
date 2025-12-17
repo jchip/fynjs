@@ -1,10 +1,9 @@
 // @ts-nocheck
-"use strict";
 
-const { scanFileStats } = require("./stat-dir");
-const Fs = require("./file-ops").default;
-const Path = require("path");
-const logger = require("../logger").default;
+import { scanFileStats } from "./stat-dir";
+import Fs from "./file-ops";
+import Path from "path";
+import logger from "../logger";
 
 /**
  * Go into a local dep pkg's dir and see if it has one of these npm scripts:
@@ -75,4 +74,4 @@ async function checkPkgNeedInstall(dir, checkCtime = 0) {
   }
 }
 
-exports.checkPkgNeedInstall = checkPkgNeedInstall;
+export { checkPkgNeedInstall };

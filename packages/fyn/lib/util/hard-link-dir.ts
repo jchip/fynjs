@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable max-params, max-statements, complexity */
 
@@ -10,16 +9,16 @@
  * - Transfer symlinks (ensure the same symlink name exist but with target adjusted)
  */
 
-const Path = require("path");
-const Fs = require("./file-ops").default;
-const fs = require("fs");
-const xaa = require("./xaa");
-const npmPacklist = require("npm-packlist");
-const Arborist = require("@npmcli/arborist");
-const fynTil = require("./fyntil").default;
-const logger = require("../logger").default;
-const { SourceMapGenerator } = require("source-map");
-const ci = require("ci-info");
+import Path from "path";
+import Fs from "./file-ops";
+import fs from "fs";
+import * as xaa from "xaa";
+import npmPacklist from "npm-packlist";
+import Arborist from "@npmcli/arborist";
+import fynTil from "./fyntil";
+import logger from "../logger";
+import { SourceMapGenerator } from "source-map";
+import ci from "ci-info";
 
 /**
  * Hard link a file
@@ -410,12 +409,4 @@ async function linkSym1(src, dest) {
   return await linkPackTree({ tree, src, dest, sym1: true });
 }
 
-module.exports = {
-  link,
-  linkFile,
-  cloneFile,
-  copyFile,
-  linkSym1,
-  generatePackTree,
-  SYM_FILES
-};
+export { link, linkFile, cloneFile, copyFile, linkSym1, generatePackTree, SYM_FILES };

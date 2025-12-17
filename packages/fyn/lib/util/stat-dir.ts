@@ -1,12 +1,11 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable max-params, max-statements */
 
-const Fs = require("./file-ops").default;
-const Path = require("path");
-const mm = require("minimatch");
-const filterScanDir = require("filter-scan-dir");
+import Fs from "./file-ops";
+import Path from "path";
+import mm from "minimatch";
+import filterScanDir from "filter-scan-dir";
 
 async function _scanFileStats(dir, ignores, baseDir = "") {
   const ignore = fullPath => ignores.find(pattern => mm(fullPath, pattern, { dot: true }));
@@ -58,7 +57,7 @@ function scanFileStats(dir, options = {}) {
   return _scanFileStats(dir, ignores, "");
 }
 
-exports.scanFileStats = scanFileStats;
+export { scanFileStats };
 
 // async function test() {
 //   console.log(await scanFileStats("."));

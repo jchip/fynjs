@@ -1,12 +1,13 @@
 // @ts-nocheck
-"use strict";
 
-const Fs = require("fs");
-const Path = require("path");
-const requireAt = require("require-at");
-const logger = require("../logger").default;
-const { getGlobalNodeModules } = require("./fyntil").default;
-const xsh = require("xsh");
+import Fs from "fs";
+import Path from "path";
+import requireAt from "require-at";
+import logger from "../logger";
+import fynTil from "./fyntil";
+import xsh from "xsh";
+
+const { getGlobalNodeModules } = fynTil;
 
 let nodeGypBinPath;
 
@@ -96,7 +97,4 @@ function setupNodeGypEnv(env) {
   return setupNodeGypFromNpm(env);
 }
 
-module.exports = {
-  setupNodeGypFromNpm,
-  setupNodeGypEnv
-};
+export { setupNodeGypFromNpm, setupNodeGypEnv };
