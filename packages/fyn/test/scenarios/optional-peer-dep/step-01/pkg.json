@@ -1,0 +1,12 @@
+{
+  "name": "optional-peer-dep",
+  "version": "1.0.0",
+  "description": "Test that optional peer deps do not warn",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "repository": "test",
+  "dependencies": {
+    "mod-f": "3.0.0"
+  }
+}

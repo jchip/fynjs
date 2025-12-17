@@ -38,6 +38,7 @@ const makePackage = options => {
       "license",
       "dependencies",
       "peerDependencies",
+      "peerDependenciesMeta",
       "optionalDependencies",
       "os",
       "cpu"

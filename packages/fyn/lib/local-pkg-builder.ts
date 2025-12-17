@@ -13,7 +13,7 @@
 const Path = require("path");
 const logger = require("./logger");
 const PromiseQueue = require("./util/promise-queue");
-const VisualExec = require("visual-exec");
+const { VisualExec } = require("visual-exec");
 const xaa = require("xaa");
 const Fs = require("./util/file-ops");
 const _ = require("lodash");

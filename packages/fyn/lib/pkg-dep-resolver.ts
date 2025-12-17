@@ -196,14 +196,19 @@ class PkgDepResolver {
   }
 
   resolvePkgPeerDep(json, pkgId, depInfo) {
+    const peerDepMeta = json.peerDependenciesMeta || {};
     _.each(json.peerDependencies || json.peerDepenencies, (semver, name) => {
       const peerId = chalk.cyan(`${name}@${semver}`);
       const resolved = this.resolvePackage({ item: { name, semver }, meta: {} });
       if (!resolved) {
-        logger.warn(
-          chalk.yellow("Warning:"),
-          `peer dependencies ${peerId} of ${pkgId} ${chalk.red("is missing")}`
-        );
+        // Skip warning if peer dependency is marked as optional in peerDependenciesMeta
+        const isOptional = peerDepMeta[name] && peerDepMeta[name].optional;
+        if (!isOptional) {
+          logger.warn(
+            chalk.yellow("Warning:"),
+            `peer dependencies ${peerId} of ${pkgId} ${chalk.red("is missing")}`
+          );
+        }
       } else {
         logger.debug(
           `peer dependencies ${peerId} of ${pkgId}`,
