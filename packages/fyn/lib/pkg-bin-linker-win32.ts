@@ -1,10 +1,9 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable global-require, prefer-template */
 
-const Fs = require("./util/file-ops").default;
-const PkgBinLinkerBase = require("./pkg-bin-linker-base");
+import Fs from "./util/file-ops";
+import PkgBinLinkerBase from "./pkg-bin-linker-base";
 
 //
 // Look at each promoted package and link their bin to node_modules/.bin
@@ -80,4 +79,6 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
   }
 }
 
+export default PkgBinLinkerWin32;
+// CommonJS compatibility
 module.exports = PkgBinLinkerWin32;

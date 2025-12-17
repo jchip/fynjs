@@ -5,7 +5,7 @@
 import Fs from "./file-ops";
 import Path from "path";
 import mm from "minimatch";
-import filterScanDir from "filter-scan-dir";
+import { filterScanDir } from "filter-scan-dir";
 
 async function _scanFileStats(dir, ignores, baseDir = "") {
   const ignore = fullPath => ignores.find(pattern => mm(fullPath, pattern, { dot: true }));

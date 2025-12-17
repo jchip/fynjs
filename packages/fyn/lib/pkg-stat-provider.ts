@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /**
  * Provides programmatic access to package stat information.
@@ -9,10 +8,10 @@
  * to format the output as needed.
  */
 
-const _ = require("lodash");
-const semverUtil = require("./util/semver");
-const PkgDepLinker = require("./pkg-dep-linker");
-const { SEMVER } = require("./symbols");
+import _ from "lodash";
+import * as semverUtil from "./util/semver";
+import PkgDepLinker from "./pkg-dep-linker";
+import { SEMVER } from "./symbols";
 
 const PACKAGE_JSON = "~package.json";
 
@@ -379,4 +378,6 @@ class PkgStatProvider {
   }
 }
 
+export default PkgStatProvider;
+// CommonJS compatibility
 module.exports = PkgStatProvider;

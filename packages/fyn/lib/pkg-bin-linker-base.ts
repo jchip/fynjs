@@ -1,12 +1,11 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable global-require, max-statements, no-param-reassign */
 
-const Fs = require("./util/file-ops").default;
-const Path = require("path");
-const _ = require("lodash");
-const logger = require("./logger").default;
+import Fs from "./util/file-ops";
+import Path from "path";
+import _ from "lodash";
+import logger from "./logger";
 
 //
 // Look at each promoted package and link their bin to node_modules/.bin
@@ -215,4 +214,6 @@ class PkgBinLinkerBase {
   async _chmod() {}
 }
 
+export default PkgBinLinkerBase;
+// CommonJS compatibility
 module.exports = PkgBinLinkerBase;
