@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /**
  * Audit cache utilities for storing/retrieving npm security advisory data.
@@ -11,9 +10,9 @@
  * ensuring different dependency sets get different cache entries.
  */
 
-const cacache = require("cacache");
-const crypto = require("crypto");
-const Path = require("path");
+import cacache from "cacache";
+import crypto from "crypto";
+import Path from "path";
 
 const AUDIT_CACHE_PREFIX = "fyn-audit-";
 
@@ -94,7 +93,7 @@ async function hasAuditCache(cacheDir, key) {
   }
 }
 
-module.exports = {
+export {
   AUDIT_CACHE_PREFIX,
   generateCacheKey,
   cacheAuditResult,

@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /**
  * Core audit logic for fetching security advisories from npm registry.
@@ -11,13 +10,14 @@
  * 4. Cache response and return
  */
 
-const npmFetch = require("npm-registry-fetch");
-const logger = require("../logger").default;
-const {
+import npmFetch from "npm-registry-fetch";
+import semver from "semver";
+import logger from "../logger";
+import {
   generateCacheKey,
   cacheAuditResult,
   getCachedAuditResult
-} = require("./audit-cache");
+} from "./audit-cache";
 
 class AuditReport {
   /**
@@ -201,7 +201,6 @@ class AuditReport {
     const vulnerabilities = [];
     const { advisories } = auditResult;
     const pkgs = this._depData.pkgs;
-    const semver = require("semver");
 
     // Advisories are grouped by package name
     Object.keys(advisories).forEach(pkgName => {
@@ -240,4 +239,6 @@ class AuditReport {
   }
 }
 
+export default AuditReport;
+// CommonJS compatibility
 module.exports = AuditReport;

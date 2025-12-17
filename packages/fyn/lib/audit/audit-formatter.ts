@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /**
  * Format audit results for display.
@@ -10,8 +9,8 @@
  * - Dependency path info from PkgStatProvider
  */
 
-const chalk = require("chalk");
-const { SEMVER } = require("../symbols");
+import chalk from "chalk";
+import { SEMVER } from "../symbols";
 
 const SEVERITY_COLORS = {
   critical: chalk.red.bold,
@@ -268,4 +267,6 @@ class AuditFormatter {
   }
 }
 
+export default AuditFormatter;
+// CommonJS compatibility
 module.exports = AuditFormatter;
