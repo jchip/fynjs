@@ -1,16 +1,15 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-param-reassign */
 
-const Promise = require("./aveazul");
-const LifecycleScripts = require("../lifecycle-scripts");
-const chalk = require("chalk");
-const logFormat = require("./log-format").default;
-const logger = require("../logger").default;
-const _ = require("lodash");
+import Promise from "./aveazul";
+import LifecycleScripts from "../lifecycle-scripts";
+import chalk from "chalk";
+import logFormat from "./log-format";
+import logger from "../logger";
+import _ from "lodash";
 
-const { INSTALL_PACKAGE } = require("../log-items");
+import { INSTALL_PACKAGE } from "../log-items";
 
 const running = [];
 const updateRunning = s => {
@@ -95,4 +94,4 @@ const runNpmScript = ({
   });
 };
 
-module.exports = { addNpmLifecycle, runNpmScript };
+export { addNpmLifecycle, runNpmScript };

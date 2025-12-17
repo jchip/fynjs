@@ -19,10 +19,11 @@
  * The mtime is just fyn's bookkeeping to track "last refreshed from npm at X time".
  */
 
-const cacache = require("cacache");
-const fs = require("fs").promises;
-const path = require("path");
-const crypto = require("crypto");
+import cacache from "cacache";
+import fs from "fs/promises";
+import path from "path";
+import crypto from "crypto";
+import cacachePkg from "cacache/package.json" with { type: "json" };
 
 /**
  * Update cache entry refresh timestamp by modifying bucket file mtime.
@@ -75,7 +76,7 @@ async function getCacheInfoWithRefreshTime(cache, key) {
  */
 function getBucketPath(cache, key) {
   const hashed = hashKey(key);
-  const indexV = require("cacache/package.json")["cache-version"].index;
+  const indexV = cacachePkg["cache-version"].index;
   return path.join(
     cache,
     `index-v${indexV}`,
@@ -95,9 +96,4 @@ function hashKey(key) {
     .digest("hex");
 }
 
-module.exports = {
-  refreshCacheEntry,
-  getCacheInfoWithRefreshTime,
-  getBucketPath,
-  hashKey
-};
+export { refreshCacheEntry, getCacheInfoWithRefreshTime, getBucketPath, hashKey };

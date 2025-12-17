@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /**
  * Helper functions for creating npm environment variables.
@@ -105,4 +104,4 @@ function makeNpmEnv(data, opts, prefix, env) {
   return env;
 }
 
-module.exports = { initEnv, makeNpmEnv };
+export { initEnv, makeNpmEnv };
