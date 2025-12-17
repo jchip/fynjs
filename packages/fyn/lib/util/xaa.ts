@@ -1,4 +1,4 @@
 // @ts-nocheck
-"use strict";
 
-module.exports = require("xaa");
+import * as xaa from "xaa";
+export default xaa;

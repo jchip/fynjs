@@ -6,7 +6,7 @@ const CliLogger = require("../lib/cli-logger").default;
 const logger = require("../lib/logger").default;
 const Promise = require("aveazul");
 const logFormat = require("../lib/util/log-format").default;
-const PkgStatProvider = require("../lib/pkg-stat-provider");
+const PkgStatProvider = require("../lib/pkg-stat-provider").default;
 const { FETCH_META } = require("../lib/log-items");
 
 const PACKAGE_JSON = "~package.json";

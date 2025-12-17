@@ -1,19 +1,20 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers, max-params, max-statements, no-empty */
 
-const Path = require("path");
-const Fs = require("./util/file-ops").default;
-const ssri = require("ssri");
-const Tar = require("tar");
-const { missPipe } = require("./util/fyntil").default;
-const { cloneFile, copyFile } = require("./util/hard-link-dir");
-const logger = require("./logger").default;
-const { AggregateError } = require("@jchip/error");
-const filterScanDir = require("filter-scan-dir");
-const Crypto = require("crypto");
-const xaa = require("xaa");
+import Path from "path";
+import Fs from "./util/file-ops";
+import ssri from "ssri";
+import Tar from "tar";
+import fyntil from "./util/fyntil";
+import { cloneFile, copyFile } from "./util/hard-link-dir";
+import logger from "./logger";
+import { AggregateError } from "@jchip/error";
+import filterScanDir from "filter-scan-dir";
+import Crypto from "crypto";
+import * as xaa from "xaa";
+
+const { missPipe } = fyntil;
 
 /**
  * convert a directory tree structure to a flatten one like:
@@ -447,4 +448,4 @@ class FynCentral {
   }
 }
 
-module.exports = FynCentral;
+export default FynCentral;

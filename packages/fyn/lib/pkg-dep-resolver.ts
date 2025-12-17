@@ -1,27 +1,24 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers, max-params, max-statements, complexity, no-param-reassign */
 
-const _ = require("lodash");
-const Fs = require("./util/file-ops").default;
-const Path = require("path");
-const semverUtil = require("./util/semver");
-const Semver = require("semver");
-const chalk = require("chalk");
-const logger = require("./logger").default;
-const DepItem = require("./dep-item").default;
-const PromiseQueue = require("./util/promise-queue");
-const simpleSemverCompare = semverUtil.simpleCompare;
-const logFormat = require("./util/log-format").default;
-const { LONG_WAIT_META } = require("./log-items");
-const { checkPkgOsCpu, relativePath, unSlashNpmScope } = require("./util/fyntil").default;
-const { getDepSection, makeDepStep } = require("@fynpo/base");
-const xaa = require("./util/xaa");
-const { AggregateError } = require("@jchip/error");
-const Promise = require("aveazul");
-
-const {
+import _ from "lodash";
+import Fs from "./util/file-ops";
+import Path from "path";
+import * as semverUtil from "./util/semver";
+import Semver from "semver";
+import chalk from "chalk";
+import logger from "./logger";
+import DepItem from "./dep-item";
+import PromiseQueue from "./util/promise-queue";
+import logFormat from "./util/log-format";
+import { LONG_WAIT_META } from "./log-items";
+import fyntil from "./util/fyntil";
+import { getDepSection, makeDepStep } from "@fynpo/base";
+import xaa from "./util/xaa";
+import { AggregateError } from "@jchip/error";
+import Promise from "aveazul";
+import {
   SEMVER,
   RSEMVERS,
   LOCK_RSEMVERS,
@@ -34,7 +31,10 @@ const {
   RESOLVE_ORDER,
   PACKAGE_RAW_INFO,
   DEP_ITEM
-} = require("./symbols");
+} from "./symbols";
+
+const simpleSemverCompare = semverUtil.simpleCompare;
+const { checkPkgOsCpu, relativePath, unSlashNpmScope } = fyntil;
 
 const failMetaMsg = name =>
   `Unable to retrieve meta for package ${name} - If you've updated its version recently, try to run fyn with '--refresh-meta' again`;
@@ -1450,4 +1450,4 @@ ${item.depPath.join(" > ")}`
   }
 }
 
-module.exports = PkgDepResolver;
+export default PkgDepResolver;

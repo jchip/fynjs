@@ -1,17 +1,16 @@
 // @ts-nocheck
-"use strict";
 
-const Path = require("path");
-const Os = require("os");
-const Fs = require("./util/file-ops").default;
-const Fyn = require("./fyn");
-const PkgInstaller = require("./pkg-installer");
-const logger = require("./logger").default;
-const fynTil = require("./util/fyntil").default;
-const lockfile = require("lockfile");
-const util = require("util");
-const semver = require("semver");
-const readline = require("readline");
+import Path from "path";
+import Os from "os";
+import Fs from "./util/file-ops";
+import Fyn from "./fyn";
+import PkgInstaller from "./pkg-installer";
+import logger from "./logger";
+import fynTil from "./util/fyntil";
+import lockfile from "lockfile";
+import util from "util";
+import semver from "semver";
+import readline from "readline";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -1324,4 +1323,4 @@ class FynGlobal {
   }
 }
 
-module.exports = FynGlobal;
+export default FynGlobal;

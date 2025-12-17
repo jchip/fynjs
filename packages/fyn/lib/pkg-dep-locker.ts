@@ -1,18 +1,17 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers, no-param-reassign, max-depth */
 
-const Path = require("path");
-const crypto = require("crypto");
-const assert = require("assert");
-const Fs = require("./util/file-ops").default;
-const _ = require("lodash");
-const chalk = require("chalk");
-const simpleSemverCompare = require("./util/semver").simpleCompare;
-const Yaml = require("yamljs");
-const sortObjKeys = require("./util/sort-obj-keys").default;
-const {
+import Path from "path";
+import crypto from "crypto";
+import assert from "assert";
+import Fs from "./util/file-ops";
+import _ from "lodash";
+import chalk from "chalk";
+import { simpleCompare as simpleSemverCompare } from "./util/semver";
+import Yaml from "yamljs";
+import sortObjKeys from "./util/sort-obj-keys";
+import {
   LOCK_RSEMVERS,
   RSEMVERS,
   SORTED_VERSIONS,
@@ -21,9 +20,9 @@ const {
   LATEST_SORTED_VERSIONS,
   LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS
-} = require("./symbols");
-const logger = require("./logger").default;
-const fyntil = require("./util/fyntil").default;
+} from "./symbols";
+import logger from "./logger";
+import fyntil from "./util/fyntil";
 
 class PkgDepLocker {
   constructor(lockOnly, enableLockfile, fyn) {
@@ -525,4 +524,4 @@ class PkgDepLocker {
   }
 }
 
-module.exports = PkgDepLocker;
+export default PkgDepLocker;

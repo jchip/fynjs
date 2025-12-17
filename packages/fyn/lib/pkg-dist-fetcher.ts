@@ -1,21 +1,20 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers */
 
-const _ = require("lodash");
-const Fs = require("./util/file-ops").default;
-const logger = require("./logger").default;
-const PkgDistExtractor = require("./pkg-dist-extractor");
-const PromiseQueue = require("./util/promise-queue");
-const chalk = require("chalk");
-const longPending = require("./long-pending").default;
-const logFormat = require("./util/log-format").default;
-const { FETCH_PACKAGE, spinner } = require("./log-items");
-const hardLinkDir = require("./util/hard-link-dir");
-const DepItem = require("./dep-item").default;
-const { MARK_URL_SPEC } = require("./constants");
-const EventEmitter = require("events");
+import _ from "lodash";
+import Fs from "./util/file-ops";
+import logger from "./logger";
+import PkgDistExtractor from "./pkg-dist-extractor";
+import PromiseQueue from "./util/promise-queue";
+import chalk from "chalk";
+import longPending from "./long-pending";
+import logFormat from "./util/log-format";
+import { FETCH_PACKAGE, spinner } from "./log-items";
+import * as hardLinkDir from "./util/hard-link-dir";
+import DepItem from "./dep-item";
+import { MARK_URL_SPEC } from "./constants";
+import EventEmitter from "events";
 
 const WATCH_TIME = 2000;
 
@@ -272,4 +271,4 @@ class PkgDistFetcher {
   }
 }
 
-module.exports = PkgDistFetcher;
+export default PkgDistFetcher;

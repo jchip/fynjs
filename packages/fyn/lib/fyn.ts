@@ -1,39 +1,38 @@
 // @ts-nocheck
-"use strict";
 
-const Path = require("path");
-const util = require("util");
-const assert = require("assert");
-const semver = require("semver");
-const _ = require("lodash");
-const logger = require("./logger").default;
-const PkgDepResolver = require("./pkg-dep-resolver");
-const PkgDistFetcher = require("./pkg-dist-fetcher");
-const PkgSrcManager = require("./pkg-src-manager");
-const PkgDepLocker = require("./pkg-dep-locker");
-const DepData = require("./dep-data").default;
-const fynConfig = require("./fyn-config").default;
-const semverUtil = require("./util/semver");
-const Fs = require("./util/file-ops").default;
-const fynTil = require("./util/fyntil").default;
-const FynCentral = require("./fyn-central");
-const xaa = require("./util/xaa");
-const { checkPkgNeedInstall } = require("./util/check-pkg-need-install");
-const lockfile = require("lockfile");
+import Path from "path";
+import util from "util";
+import assert from "assert";
+import semver from "semver";
+import _ from "lodash";
+import logger from "./logger";
+import PkgDepResolver from "./pkg-dep-resolver";
+import PkgDistFetcher from "./pkg-dist-fetcher";
+import PkgSrcManager from "./pkg-src-manager";
+import PkgDepLocker from "./pkg-dep-locker";
+import DepData from "./dep-data";
+import fynConfig from "./fyn-config";
+import * as semverUtil from "./util/semver";
+import Fs from "./util/file-ops";
+import fynTil from "./util/fyntil";
+import FynCentral from "./fyn-central";
+import xaa from "./util/xaa";
+import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
+import lockfile from "lockfile";
+import ck from "chalker";
+import { PACKAGE_RAW_INFO, DEP_ITEM } from "./symbols";
+import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
+import { parseYarnLock } from "../yarn";
+import mm from "minimatch";
+import npmConfigEnv from "./util/npm-config-env";
+import PkgOptResolver from "./pkg-opt-resolver";
+import { LocalPkgBuilder } from "./local-pkg-builder";
+
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
-const ck = require("chalker");
-const { PACKAGE_RAW_INFO, DEP_ITEM } = require("./symbols");
-const { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } = require("./constants");
-const { parseYarnLock } = require("../yarn");
-const mm = require("minimatch");
+const { posixify } = fynTil;
 
 /* eslint-disable no-magic-numbers, max-statements, no-empty, complexity, no-eval */
-
-const npmConfigEnv = require("./util/npm-config-env").default;
-const PkgOptResolver = require("./pkg-opt-resolver");
-const { LocalPkgBuilder } = require("./local-pkg-builder");
-const { posixify } = require("./util/fyntil").default;
 
 class Fyn {
   constructor({ opts = {}, _cliSource = {}, _fynpo = true }) {
@@ -1153,4 +1152,4 @@ class Fyn {
   }
 }
 
-module.exports = Fyn;
+export default Fyn;

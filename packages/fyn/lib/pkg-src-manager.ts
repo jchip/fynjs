@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 //
 // Manages all sources that package data could come from.
@@ -11,34 +10,36 @@
 
 /* eslint-disable no-magic-numbers, prefer-template, max-statements, no-param-reassign, no-sequences */
 
-const Promise = require("aveazul");
-const cacache = require("cacache");
-const { refreshCacheEntry, getCacheInfoWithRefreshTime } = require("./cacache-util");
-const os = require("os");
-const pacote = require("pacote");
-const _ = require("lodash");
-const chalk = require("chalk");
-const { PassThrough } = require("stream");
-const Fs = require("./util/file-ops").default;
-const logger = require("./logger").default;
-const fs = require("fs");
-const Path = require("path");
-const PromiseQueue = require("./util/promise-queue");
-const Inflight = require("./util/inflight");
-const logFormat = require("./util/log-format").default;
-const semverUtil = require("./util/semver");
-const longPending = require("./long-pending").default;
-const { LOCAL_VERSION_MAPS, PACKAGE_RAW_INFO, DEP_ITEM } = require("./symbols");
-const { LONG_WAIT_META, FETCH_META, FETCH_PACKAGE } = require("./log-items");
-const PkgPreper = require("pkg-preper");
-const { VisualExec } = require("visual-exec");
-const { readPkgJson, missPipe } = require("./util/fyntil").default;
-const { MARK_URL_SPEC } = require("./constants");
-const nodeFetch = require("node-fetch-npm");
-const { AggregateError } = require("@jchip/error");
-const { prePackObj } = require("publish-util");
-const { PackageRef } = require("@fynpo/base");
-const Arborist = require("@npmcli/arborist");
+import Promise from "aveazul";
+import cacache from "cacache";
+import { refreshCacheEntry, getCacheInfoWithRefreshTime } from "./cacache-util";
+import os from "os";
+import pacote from "pacote";
+import _ from "lodash";
+import chalk from "chalk";
+import { PassThrough } from "stream";
+import Fs from "./util/file-ops";
+import logger from "./logger";
+import fs from "fs";
+import Path from "path";
+import PromiseQueue from "./util/promise-queue";
+import Inflight from "./util/inflight";
+import logFormat from "./util/log-format";
+import * as semverUtil from "./util/semver";
+import longPending from "./long-pending";
+import { LOCAL_VERSION_MAPS, PACKAGE_RAW_INFO, DEP_ITEM } from "./symbols";
+import { LONG_WAIT_META, FETCH_META, FETCH_PACKAGE } from "./log-items";
+import PkgPreper from "pkg-preper";
+import { VisualExec } from "visual-exec";
+import fyntil from "./util/fyntil";
+import { MARK_URL_SPEC } from "./constants";
+import nodeFetch from "node-fetch-npm";
+import { AggregateError } from "@jchip/error";
+import { prePackObj } from "publish-util";
+import { PackageRef } from "@fynpo/base";
+import Arborist from "@npmcli/arborist";
+
+const { readPkgJson, missPipe } = fyntil;
 
 const WATCH_TIME = 5000;
 
@@ -1098,5 +1099,5 @@ class PkgSrcManager {
   }
 }
 
-module.exports = PkgSrcManager;
-module.exports.META_CACHE_STALE_TIME = META_CACHE_STALE_TIME;
+export default PkgSrcManager;
+export { META_CACHE_STALE_TIME };

@@ -5,11 +5,11 @@
 const Fs = require("fs");
 const Yaml = require("js-yaml");
 const Path = require("path");
-const Fyn = require("../../lib/fyn");
+const Fyn = require("../../lib/fyn").default;
 const mockNpm = require("../fixtures/mock-npm");
 const expect = require("chai").expect;
 const _ = require("lodash");
-const PkgDepLinker = require("../../lib/pkg-dep-linker");
+const PkgDepLinker = require("../../lib/pkg-dep-linker").default;
 const xsh = require("xsh");
 const logger = require("../../lib/logger").default;
 

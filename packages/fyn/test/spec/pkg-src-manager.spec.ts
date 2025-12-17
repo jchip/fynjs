@@ -8,8 +8,8 @@ const Path = require("path");
 const _ = require("lodash");
 const xsh = require("xsh");
 const expect = require("chai").expect;
-const Fyn = require("../../lib/fyn");
-const PkgSrcManager = require("../../lib/pkg-src-manager");
+const Fyn = require("../../lib/fyn").default;
+const PkgSrcManager = require("../../lib/pkg-src-manager").default;
 const mockNpm = require("../fixtures/mock-npm");
 
 describe("pkg-src-manager", function() {

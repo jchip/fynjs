@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable max-statements */
 
@@ -9,16 +8,15 @@
  * - TODO: impl timestamp check so if no files updated then don't run
  */
 
-// const assert = require("assert");
-const Path = require("path");
-const logger = require("./logger").default;
-const PromiseQueue = require("./util/promise-queue");
-const { VisualExec } = require("visual-exec");
-const xaa = require("xaa");
-const Fs = require("./util/file-ops").default;
-const _ = require("lodash");
-const { runNpmScript } = require("./util/run-npm-script");
-const { AggregateError } = require("@jchip/error");
+import Path from "path";
+import logger from "./logger";
+import PromiseQueue from "./util/promise-queue";
+import { VisualExec } from "visual-exec";
+import * as xaa from "xaa";
+import Fs from "./util/file-ops";
+import _ from "lodash";
+import { runNpmScript } from "./util/run-npm-script";
+import { AggregateError } from "@jchip/error";
 
 class LocalPkgBuilder {
   constructor(options) {
@@ -256,4 +254,4 @@ class LocalPkgBuilder {
   }
 }
 
-exports.LocalPkgBuilder = LocalPkgBuilder;
+export { LocalPkgBuilder };

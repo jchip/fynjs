@@ -1,25 +1,25 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable max-nested-callbacks, no-param-reassign */
 
-const assert = require("assert");
-const xsh = require("xsh");
-const _ = require("lodash");
-const Promise = require("./util/aveazul");
-const PromiseQueue = require("./util/promise-queue");
-const logger = require("./logger").default;
-const Inflight = require("./util/inflight");
-const LifecycleScripts = require("./lifecycle-scripts");
-const chalk = require("chalk");
-const hardLinkDir = require("./util/hard-link-dir");
-const longPending = require("./long-pending").default;
-const logFormat = require("./util/log-format").default;
-const PkgDepLinker = require("./pkg-dep-linker");
-const semverUtil = require("./util/semver");
-const { readPkgJson } = require("./util/fyntil").default;
-const { OPTIONAL_RESOLVER } = require("./log-items");
+import assert from "assert";
+import xsh from "xsh";
+import _ from "lodash";
+import Promise from "./util/aveazul";
+import PromiseQueue from "./util/promise-queue";
+import logger from "./logger";
+import Inflight from "./util/inflight";
+import LifecycleScripts from "./lifecycle-scripts";
+import chalk from "chalk";
+import * as hardLinkDir from "./util/hard-link-dir";
+import longPending from "./long-pending";
+import logFormat from "./util/log-format";
+import PkgDepLinker from "./pkg-dep-linker";
+import * as semverUtil from "./util/semver";
+import fyntil from "./util/fyntil";
+import { OPTIONAL_RESOLVER } from "./log-items";
 
+const { readPkgJson } = fyntil;
 xsh.Promise = Promise;
 
 //
@@ -337,4 +337,4 @@ class PkgOptResolver {
   }
 }
 
-module.exports = PkgOptResolver;
+export default PkgOptResolver;

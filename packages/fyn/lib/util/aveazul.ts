@@ -1,4 +1,4 @@
 // @ts-nocheck
-"use strict";
 
-module.exports = require("aveazul");
+import Bluebird from "aveazul";
+export default Bluebird;

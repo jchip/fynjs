@@ -1,15 +1,14 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers,max-statements,prefer-template */
 
-const Crypto = require("crypto");
-const Path = require("path");
-const Fs = require("./util/file-ops").default;
-const _ = require("lodash");
-const logger = require("./logger").default;
-const logFormat = require("./util/log-format").default;
-const fynTil = require("./util/fyntil").default;
+import Crypto from "crypto";
+import Path from "path";
+import Fs from "./util/file-ops";
+import _ from "lodash";
+import logger from "./logger";
+import logFormat from "./util/log-format";
+import fynTil from "./util/fyntil";
 
 /*
  * generate data to link all packages' resolution
@@ -221,4 +220,4 @@ class PkgDepLinker {
   }
 }
 
-module.exports = PkgDepLinker;
+export default PkgDepLinker;

@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers, max-statements, no-eval, camelcase, no-param-reassign */
 
@@ -14,22 +13,23 @@
 // - Custom error handling with AggregateError for better debugging
 //
 
-const Path = require("path");
-const optionalRequire = require("optional-require")(eval("require"));
-const assert = require("assert");
-const xsh = require("xsh");
-const chalk = require("chalk");
-const _ = require("lodash");
-const logger = require("./logger").default;
-const logFormat = require("./util/log-format").default;
-const { VisualExec } = require("visual-exec");
-const fyntil = require("./util/fyntil").default;
-const requireAt = require("require-at");
-const { setupNodeGypEnv } = require("./util/setup-node-gyp");
-const xaa = require("xaa");
+import Path from "path";
+import makeOptionalRequire from "optional-require";
+import assert from "assert";
+import xsh from "xsh";
+import chalk from "chalk";
+import _ from "lodash";
+import logger from "./logger";
+import logFormat from "./util/log-format";
+import { VisualExec } from "visual-exec";
+import fyntil from "./util/fyntil";
+import requireAt from "require-at";
+import { setupNodeGypEnv } from "./util/setup-node-gyp";
+import * as xaa from "xaa";
+import npmConfigEnv from "./util/npm-config-env";
+import { AggregateError } from "@jchip/error";
 
-const npmConfigEnv = require("./util/npm-config-env").default;
-const { AggregateError } = require("@jchip/error");
+const optionalRequire = makeOptionalRequire(eval("require"));
 
 const readPkgJson = dir => {
   return fyntil.readPkgJson(dir).catch(() => {
@@ -177,4 +177,4 @@ class LifecycleScripts {
   }
 }
 
-module.exports = LifecycleScripts;
+export default LifecycleScripts;

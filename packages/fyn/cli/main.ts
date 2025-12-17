@@ -15,7 +15,7 @@ const defaultRc = require("./default-rc");
 const fynTil = require("../lib/util/fyntil").default;
 const optionalRequire = require("optional-require")(require);
 const { runInitPackage } = require("init-package");
-const FynGlobal = require("../lib/fyn-global");
+const FynGlobal = require("../lib/fyn-global").default;
 
 function setLogLevel(ll) {
   if (ll) {

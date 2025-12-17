@@ -1,4 +1,4 @@
 // @ts-nocheck
-"use strict";
 
-module.exports = require("item-queue/lib/inflight");
+import inflight from "item-queue/lib/inflight";
+export default inflight;

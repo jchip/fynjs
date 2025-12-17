@@ -1,24 +1,22 @@
 // @ts-nocheck
-"use strict";
 
-const Path = require("path");
-const Promise = require("./util/aveazul");
-const _ = require("lodash");
-const chalk = require("chalk");
-const Fs = require("./util/file-ops").default;
-const PkgDepLinker = require("./pkg-dep-linker");
-const PkgBinLinker = require("./pkg-bin-linker");
-const PkgDepLocker = require("./pkg-dep-locker");
-const logger = require("./logger").default;
-const logFormat = require("./util/log-format").default;
-const fynTil = require("./util/fyntil").default;
-const hardLinkDir = require("./util/hard-link-dir");
-const { INSTALL_PACKAGE } = require("./log-items");
-const { runNpmScript } = require("./util/run-npm-script");
-const xaa = require("./util/xaa");
-const { AggregateError } = require("@jchip/error");
-
-const { RESOLVE_ORDER, RSEMVERS, LOCK_RSEMVERS, SEMVER } = require("./symbols");
+import Path from "path";
+import Promise from "./util/aveazul";
+import _ from "lodash";
+import chalk from "chalk";
+import Fs from "./util/file-ops";
+import PkgDepLinker from "./pkg-dep-linker";
+import PkgBinLinker from "./pkg-bin-linker";
+import PkgDepLocker from "./pkg-dep-locker";
+import logger from "./logger";
+import logFormat from "./util/log-format";
+import fynTil from "./util/fyntil";
+import * as hardLinkDir from "./util/hard-link-dir";
+import { INSTALL_PACKAGE } from "./log-items";
+import { runNpmScript } from "./util/run-npm-script";
+import xaa from "./util/xaa";
+import { AggregateError } from "@jchip/error";
+import { RESOLVE_ORDER, RSEMVERS, LOCK_RSEMVERS, SEMVER } from "./symbols";
 
 /* eslint-disable max-statements,no-magic-numbers,no-empty,complexity,prefer-template,max-len, max-depth, no-param-reassign */
 
@@ -713,4 +711,4 @@ class PkgInstaller {
   }
 }
 
-module.exports = PkgInstaller;
+export default PkgInstaller;

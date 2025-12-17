@@ -1,18 +1,19 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-magic-numbers, max-statements */
 
-const Tar = require("tar");
-const logger = require("./logger").default;
-const PromiseQueue = require("./util/promise-queue");
-const logFormat = require("./util/log-format").default;
-const { LOAD_PACKAGE } = require("./log-items");
-const { retry, missPipe } = require("./util/fyntil").default;
-const Fs = require("./util/file-ops").default;
-const _ = require("lodash");
-const Path = require("path");
-const xaa = require("./util/xaa");
+import Tar from "tar";
+import logger from "./logger";
+import PromiseQueue from "./util/promise-queue";
+import logFormat from "./util/log-format";
+import { LOAD_PACKAGE } from "./log-items";
+import fyntil from "./util/fyntil";
+import Fs from "./util/file-ops";
+import _ from "lodash";
+import Path from "path";
+import xaa from "./util/xaa";
+
+const { retry, missPipe } = fyntil;
 
 class PkgDistExtractor {
   constructor(options) {
@@ -162,4 +163,4 @@ class PkgDistExtractor {
   }
 }
 
-module.exports = PkgDistExtractor;
+export default PkgDistExtractor;

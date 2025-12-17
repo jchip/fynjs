@@ -1,12 +1,9 @@
 // @ts-nocheck
-"use strict";
 
-/* eslint-disable global-require */
+import PkgBinLinkerWin32 from "./pkg-bin-linker-win32";
+import PkgBinLinkerUnix from "./pkg-bin-linker-unix";
 
 /* istanbul ignore next */
-if (process.platform === "win32") {
-  /* istanbul ignore next */
-  module.exports = require("./pkg-bin-linker-win32").default;
-} else {
-  module.exports = require("./pkg-bin-linker-unix").default;
-}
+const PkgBinLinker = process.platform === "win32" ? PkgBinLinkerWin32 : PkgBinLinkerUnix;
+
+export default PkgBinLinker;
