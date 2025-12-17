@@ -12,10 +12,10 @@ const PkgDistFetcher = require("./pkg-dist-fetcher");
 const PkgSrcManager = require("./pkg-src-manager");
 const PkgDepLocker = require("./pkg-dep-locker");
 const DepData = require("./dep-data").default;
-const fynConfig = require("./fyn-config");
+const fynConfig = require("./fyn-config").default;
 const semverUtil = require("./util/semver");
 const Fs = require("./util/file-ops");
-const fynTil = require("./util/fyntil");
+const fynTil = require("./util/fyntil").default;
 const FynCentral = require("./fyn-central");
 const xaa = require("./util/xaa");
 const { checkPkgNeedInstall } = require("./util/check-pkg-need-install");
@@ -33,7 +33,7 @@ const mm = require("minimatch");
 const npmConfigEnv = require("./util/npm-config-env");
 const PkgOptResolver = require("./pkg-opt-resolver");
 const { LocalPkgBuilder } = require("./local-pkg-builder");
-const { posixify } = require("./util/fyntil");
+const { posixify } = require("./util/fyntil").default;
 
 class Fyn {
   constructor({ opts = {}, _cliSource = {}, _fynpo = true }) {

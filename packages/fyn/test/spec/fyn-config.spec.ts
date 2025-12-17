@@ -25,7 +25,7 @@ describe("fyn-config", function() {
         spec = x;
         return { fynDir: "test" };
       };
-      const fynConfig = require("../../lib/fyn-config");
+      const fynConfig = require("../../lib/fyn-config").default;
       fynConfig({});
       expect(spec).to.exist;
       expect(spec.fynDir.post).to.exist;

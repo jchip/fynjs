@@ -17,7 +17,7 @@ const longPending = require("./long-pending");
 const logFormat = require("./util/log-format");
 const PkgDepLinker = require("./pkg-dep-linker");
 const semverUtil = require("./util/semver");
-const { readPkgJson } = require("./util/fyntil");
+const { readPkgJson } = require("./util/fyntil").default;
 const { OPTIONAL_RESOLVER } = require("./log-items");
 
 xsh.Promise = Promise;

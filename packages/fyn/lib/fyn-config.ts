@@ -1,9 +1,18 @@
 // @ts-nocheck
-"use strict";
 
-const _ = require("lodash");
-const Path = require("path");
-const xenvConfig = require("xenv-config");
+import _ from "lodash";
+import Path from "path";
+import xenvConfig from "xenv-config";
+
+/** Configuration spec for fyn environment variables */
+export interface FynConfigSpec {
+  registry: string;
+  pkgFile: string;
+  targetDir: string;
+  fynDir: string;
+  fynCacheDir: string;
+  lockfile: boolean;
+}
 
 const spec = {
   registry: { env: "FYN_REGISTRY", default: "http://localhost:4873" },
@@ -12,7 +21,7 @@ const spec = {
   fynDir: {
     env: ["FYN_DIR", "USERPROFILE", "HOME"],
     default: process.cwd(),
-    post: (v, t) => {
+    post: (v: string, t: { src: string; name: string }) => {
       if ((t.src === "env" && t.name !== "FYN_DIR") || t.src === "default") {
         return Path.join(v, ".fyn");
       }
@@ -21,7 +30,12 @@ const spec = {
   }
 };
 
-module.exports = function fynConfig(override) {
+/**
+ * Create fyn configuration from environment variables and overrides
+ * @param override - Optional configuration overrides
+ * @returns Merged configuration object
+ */
+export function fynConfig(override?: Record<string, unknown>): FynConfigSpec & Record<string, unknown> {
   const configKeys = Object.keys(spec);
   const userConfig = _.pick(override, configKeys);
   const config = xenvConfig(spec, userConfig, { sources: ["option", "env"] });
@@ -29,4 +43,6 @@ module.exports = function fynConfig(override) {
   config.lockfile = true;
 
   return Object.assign(config, _.omit(override, configKeys));
-};
+}
+
+export default fynConfig;

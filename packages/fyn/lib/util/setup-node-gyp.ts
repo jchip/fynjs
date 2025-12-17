@@ -5,7 +5,7 @@ const Fs = require("fs");
 const Path = require("path");
 const requireAt = require("require-at");
 const logger = require("../logger").default;
-const { getGlobalNodeModules } = require("./fyntil");
+const { getGlobalNodeModules } = require("./fyntil").default;
 const xsh = require("xsh");
 
 let nodeGypBinPath;

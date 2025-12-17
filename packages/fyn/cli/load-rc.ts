@@ -10,7 +10,7 @@ const _ = require("lodash");
 const logger = require("../lib/logger").default;
 const assert = require("assert");
 const defaultRc = require("./default-rc");
-const fynTil = require("../lib/util/fyntil");
+const fynTil = require("../lib/util/fyntil").default;
 
 // replace any ${ENV} values with the appropriate environ.
 // copied from https://github.com/npm/config/blob/1f47a6c6ae7864b412d45c6a4a74930cf3365395/lib/env-replace.js

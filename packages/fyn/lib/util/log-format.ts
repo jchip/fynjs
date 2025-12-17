@@ -4,7 +4,7 @@
 /* eslint-disable no-magic-numbers, no-param-reassign */
 
 const chalk = require("chalk");
-const { posixify } = require("./fyntil");
+const { posixify } = require("./fyntil").default;
 
 module.exports = {
   /**

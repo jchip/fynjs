@@ -1,23 +1,22 @@
 // @ts-nocheck
-"use strict";
 
 /* eslint-disable no-process-exit, max-params */
 /* eslint-disable no-magic-numbers,max-statements,prefer-template */
 
-const Fs = require("./file-ops");
-const _ = require("lodash");
-const Path = require("path");
-const logger = require("../logger").default;
-const Promise = require("./aveazul");
-const mississippi = require("mississippi");
+import Fs from "./file-ops";
+import _ from "lodash";
+import Path from "path";
+import logger from "../logger";
+import Promise from "./aveazul";
+import mississippi from "mississippi";
 const missPipe = Promise.promisify(mississippi.pipe, { context: mississippi });
-const { PACKAGE_RAW_INFO } = require("../symbols");
-const { PACKAGE_FYN_JSON } = require("../constants");
-const { FynpoConfigManager, FynpoDepGraph } = require("@fynpo/base");
+import { PACKAGE_RAW_INFO } from "../symbols";
+import { PACKAGE_FYN_JSON } from "../constants";
+import { FynpoConfigManager, FynpoDepGraph } from "@fynpo/base";
 
 /* eslint-disable no-magic-numbers, max-statements, no-empty, complexity, no-eval */
 
-const { isWin32, retry } = require("./base-util");
+import { isWin32, retry } from "./base-util";
 
 const DIR_SYMLINK_TYPE = isWin32 ? "junction" : "dir";
 
@@ -345,4 +344,4 @@ const fyntil = {
     Path.basename(__dirname) === "util" ? Path.join(__dirname, "../..") : Path.join(__dirname, "..")
 };
 
-module.exports = fyntil;
+export default fyntil;

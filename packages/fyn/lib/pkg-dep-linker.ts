@@ -9,7 +9,7 @@ const Fs = require("./util/file-ops");
 const _ = require("lodash");
 const logger = require("./logger").default;
 const logFormat = require("./util/log-format");
-const fynTil = require("./util/fyntil");
+const fynTil = require("./util/fyntil").default;
 
 /*
  * generate data to link all packages' resolution

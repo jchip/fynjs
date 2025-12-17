@@ -23,7 +23,7 @@ const {
   LOCAL_VERSION_MAPS
 } = require("./symbols");
 const logger = require("./logger").default;
-const fyntil = require("./util/fyntil");
+const fyntil = require("./util/fyntil").default;
 
 class PkgDepLocker {
   constructor(lockOnly, enableLockfile, fyn) {
