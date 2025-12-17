@@ -26,7 +26,7 @@ const fyntil = require("../../lib/util/fyntil").default;
 const logger = require("../../lib/logger").default;
 const mockNpm = require("../fixtures/mock-npm");
 const optionalRequire = require("optional-require")(require);
-const sortObjKeys = require("../../lib/util/sort-obj-keys");
+const sortObjKeys = require("../../lib/util/sort-obj-keys").default;
 const ci = require("ci-info");
 const xaa = require("xaa");
 

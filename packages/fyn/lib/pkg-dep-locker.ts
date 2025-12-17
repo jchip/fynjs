@@ -11,7 +11,7 @@ const _ = require("lodash");
 const chalk = require("chalk");
 const simpleSemverCompare = require("./util/semver").simpleCompare;
 const Yaml = require("yamljs");
-const sortObjKeys = require("./util/sort-obj-keys");
+const sortObjKeys = require("./util/sort-obj-keys").default;
 const {
   LOCK_RSEMVERS,
   RSEMVERS,
