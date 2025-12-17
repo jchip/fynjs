@@ -215,5 +215,3 @@ class PkgBinLinkerBase {
 }
 
 export default PkgBinLinkerBase;
-// CommonJS compatibility
-module.exports = PkgBinLinkerBase;

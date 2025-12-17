@@ -7,7 +7,7 @@
 const { describe, it } = require("mocha");
 const { expect } = require("chai");
 
-const AuditFormatter = require("../../../lib/audit/audit-formatter");
+const AuditFormatter = require("../../../lib/audit/audit-formatter").default;
 
 describe("audit-formatter", () => {
   const mockAuditResult = {

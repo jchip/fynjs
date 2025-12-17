@@ -8,7 +8,7 @@
 const { describe, it, beforeEach } = require("mocha");
 const { expect } = require("chai");
 
-const PkgStatProvider = require("../../lib/pkg-stat-provider");
+const PkgStatProvider = require("../../lib/pkg-stat-provider").default;
 
 describe("pkg-stat-provider", () => {
   // Mock Fyn instance with resolved data

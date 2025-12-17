@@ -8,7 +8,7 @@
 const { describe, it } = require("mocha");
 const { expect } = require("chai");
 
-const AuditReport = require("../../../lib/audit/audit-report");
+const AuditReport = require("../../../lib/audit/audit-report").default;
 
 describe("audit-report", () => {
   // Mock Fyn instance

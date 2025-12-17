@@ -28,7 +28,7 @@ const requireAt = require("require-at");
 const { setupNodeGypEnv } = require("./util/setup-node-gyp");
 const xaa = require("xaa");
 
-const npmConfigEnv = require("./util/npm-config-env");
+const npmConfigEnv = require("./util/npm-config-env").default;
 const { AggregateError } = require("@jchip/error");
 
 const readPkgJson = dir => {

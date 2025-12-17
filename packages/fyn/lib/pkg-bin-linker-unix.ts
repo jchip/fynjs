@@ -64,5 +64,3 @@ class PkgBinLinker extends PkgBinLinkerBase {
 }
 
 export default PkgBinLinker;
-// CommonJS compatibility
-module.exports = PkgBinLinker;

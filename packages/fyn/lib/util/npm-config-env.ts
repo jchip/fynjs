@@ -11,5 +11,3 @@ function npmConfigEnv(data, config, env) {
 }
 
 export default npmConfigEnv;
-// Also provide module.exports for CommonJS compatibility
-module.exports = npmConfigEnv;

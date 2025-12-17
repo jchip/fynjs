@@ -268,5 +268,3 @@ class AuditFormatter {
 }
 
 export default AuditFormatter;
-// CommonJS compatibility
-module.exports = AuditFormatter;

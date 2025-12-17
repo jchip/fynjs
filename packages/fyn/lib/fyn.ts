@@ -30,7 +30,7 @@ const mm = require("minimatch");
 
 /* eslint-disable no-magic-numbers, max-statements, no-empty, complexity, no-eval */
 
-const npmConfigEnv = require("./util/npm-config-env");
+const npmConfigEnv = require("./util/npm-config-env").default;
 const PkgOptResolver = require("./pkg-opt-resolver");
 const { LocalPkgBuilder } = require("./local-pkg-builder");
 const { posixify } = require("./util/fyntil").default;

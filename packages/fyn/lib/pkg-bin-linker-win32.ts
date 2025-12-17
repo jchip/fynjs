@@ -80,5 +80,3 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
 }
 
 export default PkgBinLinkerWin32;
-// CommonJS compatibility
-module.exports = PkgBinLinkerWin32;

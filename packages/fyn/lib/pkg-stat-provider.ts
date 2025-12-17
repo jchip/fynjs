@@ -379,5 +379,3 @@ class PkgStatProvider {
 }
 
 export default PkgStatProvider;
-// CommonJS compatibility
-module.exports = PkgStatProvider;

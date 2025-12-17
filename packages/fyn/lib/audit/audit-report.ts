@@ -240,5 +240,3 @@ class AuditReport {
 }
 
 export default AuditReport;
-// CommonJS compatibility
-module.exports = AuditReport;
