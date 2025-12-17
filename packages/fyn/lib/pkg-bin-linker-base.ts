@@ -3,7 +3,7 @@
 
 /* eslint-disable global-require, max-statements, no-param-reassign */
 
-const Fs = require("./util/file-ops");
+const Fs = require("./util/file-ops").default;
 const Path = require("path");
 const _ = require("lodash");
 const logger = require("./logger").default;

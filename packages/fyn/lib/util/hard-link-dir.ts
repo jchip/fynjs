@@ -11,7 +11,7 @@
  */
 
 const Path = require("path");
-const Fs = require("./file-ops");
+const Fs = require("./file-ops").default;
 const fs = require("fs");
 const xaa = require("./xaa");
 const npmPacklist = require("npm-packlist");

@@ -4,7 +4,7 @@
 /* eslint-disable no-magic-numbers */
 
 const _ = require("lodash");
-const Fs = require("./util/file-ops");
+const Fs = require("./util/file-ops").default;
 const logger = require("./logger").default;
 const PkgDistExtractor = require("./pkg-dist-extractor");
 const PromiseQueue = require("./util/promise-queue");

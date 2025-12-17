@@ -2,7 +2,7 @@
 "use strict";
 
 // const Module = require("module");
-const Fs = require("../lib/util/file-ops");
+const Fs = require("../lib/util/file-ops").default;
 const Os = require("os");
 const Path = require("path");
 const Promise = require("aveazul");

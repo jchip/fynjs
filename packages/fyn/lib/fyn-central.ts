@@ -4,7 +4,7 @@
 /* eslint-disable no-magic-numbers, max-params, max-statements, no-empty */
 
 const Path = require("path");
-const Fs = require("./util/file-ops");
+const Fs = require("./util/file-ops").default;
 const ssri = require("ssri");
 const Tar = require("tar");
 const { missPipe } = require("./util/fyntil").default;

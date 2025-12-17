@@ -4,7 +4,7 @@
 /* eslint-disable no-magic-numbers, max-params, max-statements, complexity, no-param-reassign */
 
 const _ = require("lodash");
-const Fs = require("./util/file-ops");
+const Fs = require("./util/file-ops").default;
 const Path = require("path");
 const semverUtil = require("./util/semver");
 const Semver = require("semver");

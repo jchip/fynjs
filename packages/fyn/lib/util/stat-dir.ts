@@ -3,7 +3,7 @@
 
 /* eslint-disable max-params, max-statements */
 
-const Fs = require("./file-ops");
+const Fs = require("./file-ops").default;
 const Path = require("path");
 const mm = require("minimatch");
 const filterScanDir = require("filter-scan-dir");

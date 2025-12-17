@@ -1,7 +1,6 @@
 // @ts-nocheck
-"use strict";
 
-const { isWin32, retry } = require("./base-util");
+import { isWin32, retry } from "./base-util";
 
 //
 // This rather puzzling retry clutch here is very mysterious to me as well.
@@ -19,27 +18,29 @@ const FS_RETRIES = isWin32 ? 10 : 0;
 const FS_RETRY_ERRORS = isWin32 ? ["EACCESS", "EPERM"] : [];
 const FS_RETRY_WAIT = 100;
 
-const _retry = func => retry(func, FS_RETRY_ERRORS, FS_RETRIES, FS_RETRY_WAIT);
+const _retry = (func: () => Promise<unknown>) => retry(func, FS_RETRY_ERRORS, FS_RETRIES, FS_RETRY_WAIT);
 
-module.exports = function(opfs) {
+export function wrapWin32Opfs(opfs: any) {
   if (isWin32) {
     return {
       ...opfs,
       $: {
         ...opfs.$,
-        mkdirp: (...args) => _retry(() => opfs.$.mkdirp(...args)),
-        acquireLock: (...args) => _retry(() => opfs.$.acquireLock(...args)),
-        releaseLock: (...args) => _retry(() => opfs.$.releaseLock(...args))
+        mkdirp: (...args: unknown[]) => _retry(() => opfs.$.mkdirp(...args)),
+        acquireLock: (...args: unknown[]) => _retry(() => opfs.$.acquireLock(...args)),
+        releaseLock: (...args: unknown[]) => _retry(() => opfs.$.releaseLock(...args))
       },
-      stat: (...args) => _retry(() => opfs.stat(...args)),
-      readFile: (...args) => _retry(() => opfs.readFile(...args)),
-      writeFile: (...args) => _retry(() => opfs.writeFile(...args)),
-      rename: (...args) => _retry(() => opfs.rename(...args)),
-      rmdir: (...args) => _retry(() => opfs.rmdir(...args)),
-      unlink: (...args) => _retry(() => opfs.unlink(...args)),
-      readdir: (...args) => _retry(() => opfs.readdir(...args))
+      stat: (...args: unknown[]) => _retry(() => opfs.stat(...args)),
+      readFile: (...args: unknown[]) => _retry(() => opfs.readFile(...args)),
+      writeFile: (...args: unknown[]) => _retry(() => opfs.writeFile(...args)),
+      rename: (...args: unknown[]) => _retry(() => opfs.rename(...args)),
+      rmdir: (...args: unknown[]) => _retry(() => opfs.rmdir(...args)),
+      unlink: (...args: unknown[]) => _retry(() => opfs.unlink(...args)),
+      readdir: (...args: unknown[]) => _retry(() => opfs.readdir(...args))
     };
   } else {
     return opfs;
   }
-};
+}
+
+export default wrapWin32Opfs;

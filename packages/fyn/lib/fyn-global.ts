@@ -3,7 +3,7 @@
 
 const Path = require("path");
 const Os = require("os");
-const Fs = require("./util/file-ops");
+const Fs = require("./util/file-ops").default;
 const Fyn = require("./fyn");
 const PkgInstaller = require("./pkg-installer");
 const logger = require("./logger").default;
