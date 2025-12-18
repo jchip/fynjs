@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable max-params, max-statements */
 
 import Fs from "./file-ops";
@@ -7,20 +5,20 @@ import Path from "path";
 import mm from "minimatch";
 import { filterScanDir } from "filter-scan-dir";
 
-async function _scanFileStats(dir, ignores, baseDir = "") {
-  const ignore = fullPath => ignores.find(pattern => mm(fullPath, pattern, { dot: true }));
+async function _scanFileStats(dir: string, ignores: string[], baseDir: string = "") {
+  const ignore = (fullPath: string) => ignores.find(pattern => mm(fullPath, pattern, { dot: true }));
 
   let latestMtimeMs = 0;
   let latestFile = "";
 
-  const updateLatest = (mtimeMs, file) => {
+  const updateLatest = (mtimeMs: number, file: string) => {
     if (mtimeMs > latestMtimeMs) {
       latestMtimeMs = mtimeMs;
       latestFile = file;
     }
   };
 
-  const filter = (file, path, extras) => {
+  const filter = (file: string, path: string, extras: { fullFile: string; stat: { mtimeMs: number } }) => {
     if (ignore(extras.fullFile)) {
       return false;
     }
@@ -44,7 +42,7 @@ async function _scanFileStats(dir, ignores, baseDir = "") {
   return { latestMtimeMs, latestFile };
 }
 
-function scanFileStats(dir, options = {}) {
+function scanFileStats(dir: string, options: { ignores?: string | string[]; moreIgnores?: string | string[] } = {}) {
   // TODO: make this more flexible and configurable
   const ignores = [
     `**/?(node_modules|.vscode|.DS_Store|coverage|.nyc_output|.fynpo|.git|.github|.gitignore)`,
