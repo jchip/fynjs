@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Promise from "./aveazul";
 import opfs from "opfs";
 import lockfile from "lockfile";

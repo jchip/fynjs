@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { isWin32, retry } from "./base-util";
 
 //

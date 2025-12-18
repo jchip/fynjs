@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Helper functions for creating npm environment variables.
  * Matches npm 11+ minimal approach.

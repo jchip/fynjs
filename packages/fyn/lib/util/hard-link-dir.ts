@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable max-params, max-statements, complexity */
 
 /*
