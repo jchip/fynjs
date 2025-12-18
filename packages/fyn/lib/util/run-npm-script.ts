@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-param-reassign */
 
 import Promise from "./aveazul";

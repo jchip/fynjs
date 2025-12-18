@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { makeNpmEnv } from "./make-npm-env";
 
 /*

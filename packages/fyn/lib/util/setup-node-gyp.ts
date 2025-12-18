@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Fs from "fs";
 import Path from "path";
 import requireAt from "require-at";
