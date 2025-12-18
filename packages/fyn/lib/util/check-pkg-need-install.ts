@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { scanFileStats } from "./stat-dir";
 import Fs from "./file-ops";
 import Path from "path";
@@ -34,7 +32,7 @@ import logger from "../logger";
 
 const installScripts = ["preinstall", "install", "postinstall", "prepare", "build"];
 
-async function checkPkgNeedInstall(dir, checkCtime = 0) {
+async function checkPkgNeedInstall(dir: string, checkCtime: number = 0) {
   try {
     const pkgJson = JSON.parse(await Fs.readFile(Path.join(dir, "package.json")));
     const scripts = Object.keys(pkgJson.scripts || {});

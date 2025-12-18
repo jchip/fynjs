@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-process-exit, max-params */
 /* eslint-disable no-magic-numbers,max-statements,prefer-template */
 
