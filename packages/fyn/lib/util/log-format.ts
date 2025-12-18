@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-magic-numbers, no-param-reassign */
 
 import chalk from "chalk";

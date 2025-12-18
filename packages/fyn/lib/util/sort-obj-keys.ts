@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Sort object keys alphabetically
  * @param obj - Object to sort

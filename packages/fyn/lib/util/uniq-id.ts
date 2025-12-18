@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-magic-numbers,prefer-template */
 
 /**
