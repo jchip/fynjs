@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Provides programmatic access to package stat information.
  * Can be invoked multiple times within a single process.

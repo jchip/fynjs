@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import _ from "lodash";
 import Path from "path";
 import xenvConfig from "xenv-config";
