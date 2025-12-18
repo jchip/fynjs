@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * cacache refresh utilities
  *
@@ -30,7 +29,7 @@ import cacachePkg from "cacache/package.json" with { type: "json" };
  * Does not modify file contents, only filesystem metadata.
  * Errors are silently ignored (cache refresh is non-critical).
  */
-async function refreshCacheEntry(cache, key) {
+async function refreshCacheEntry(cache: string, key: string): Promise<void> {
   const bucket = getBucketPath(cache, key);
   const time = new Date();
   try {
@@ -46,7 +45,7 @@ async function refreshCacheEntry(cache, key) {
  * Returns standard cacache.get.info() result plus refreshTime field.
  * Returns null if entry not found.
  */
-async function getCacheInfoWithRefreshTime(cache, key) {
+async function getCacheInfoWithRefreshTime(cache: string, key: string) {
   const bucket = getBucketPath(cache, key);
 
   try {
@@ -62,7 +61,7 @@ async function getCacheInfoWithRefreshTime(cache, key) {
       refreshTime: bucketStat.mtimeMs
     };
   } catch (err) {
-    if (err.code === "ENOENT") {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
     }
     throw err;
@@ -74,7 +73,7 @@ async function getCacheInfoWithRefreshTime(cache, key) {
  * Calculates path using same algorithm as cacache (SHA256 + directory segments).
  * Reads index version from cacache/package.json for compatibility.
  */
-function getBucketPath(cache, key) {
+function getBucketPath(cache: string, key: string): string {
   const hashed = hashKey(key);
   const indexV = cacachePkg["cache-version"].index;
   return path.join(
@@ -89,7 +88,7 @@ function getBucketPath(cache, key) {
 /**
  * Hash a cache key using SHA256 (matches cacache's algorithm).
  */
-function hashKey(key) {
+function hashKey(key: string): string {
   return crypto
     .createHash("sha256")
     .update(key)

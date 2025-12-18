@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import VisualLogger from "visual-logger";
 
 export const FETCH_META = "fetch meta";
