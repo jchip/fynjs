@@ -14,6 +14,7 @@
 //
 
 import Path from "path";
+import { createRequire } from "module";
 import makeOptionalRequire from "optional-require";
 import assert from "assert";
 import xsh from "xsh";
@@ -29,7 +30,7 @@ import * as xaa from "xaa";
 import npmConfigEnv from "./util/npm-config-env";
 import { AggregateError } from "@jchip/error";
 
-const optionalRequire = makeOptionalRequire(eval("require"));
+const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
 
 const readPkgJson = dir => {
   return fyntil.readPkgJson(dir).catch(() => {

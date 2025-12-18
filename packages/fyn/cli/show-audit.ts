@@ -14,9 +14,9 @@
 const Promise = require("aveazul");
 const CliLogger = require("../lib/cli-logger").default;
 const logger = require("../lib/logger").default;
-const AuditReport = require("../lib/audit/audit-report");
-const AuditFormatter = require("../lib/audit/audit-formatter");
-const PkgStatProvider = require("../lib/pkg-stat-provider");
+const AuditReport = require("../lib/audit/audit-report").default;
+const AuditFormatter = require("../lib/audit/audit-formatter").default;
+const PkgStatProvider = require("../lib/pkg-stat-provider").default;
 const { FETCH_META } = require("../lib/log-items");
 
 class ShowAudit {

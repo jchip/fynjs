@@ -10,7 +10,7 @@ import fyntil from "./util/fyntil";
 import { cloneFile, copyFile } from "./util/hard-link-dir";
 import logger from "./logger";
 import { AggregateError } from "@jchip/error";
-import filterScanDir from "filter-scan-dir";
+import { filterScanDir } from "filter-scan-dir";
 import Crypto from "crypto";
 import * as xaa from "xaa";
 
