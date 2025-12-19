@@ -38,6 +38,7 @@ import { AggregateError } from "@jchip/error";
 import { prePackObj } from "publish-util";
 import { PackageRef } from "@fynpo/base";
 import Arborist from "@npmcli/arborist";
+import { execSync } from "child_process";
 
 const { readPkgJson, missPipe } = fyntil;
 
@@ -52,10 +53,6 @@ async function checkGitRepoHasNewCommits(gitUrl, ref, cachedCommitHash) {
   if (!cachedCommitHash) return true; // No cache, assume new commits
   
   try {
-    const { execSync } = require("child_process");
-    const Path = require("path");
-    const fs = require("fs");
-    
     // Handle file:// URLs for local git repos - use git rev-parse instead of ls-remote
     let actualGitUrl = gitUrl;
     let isLocalRepo = false;

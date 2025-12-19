@@ -27,6 +27,7 @@ import mm from "minimatch";
 import npmConfigEnv from "./util/npm-config-env";
 import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
+import pathUpEach from "./util/path-up-each";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -564,7 +565,6 @@ class Fyn {
     const options = _options || this._options;
 
     if (options.pkgFile) {
-      const pathUpEach = require("./util/path-up-each").default;
       let pkgFile;
 
       // Search upward for package.json

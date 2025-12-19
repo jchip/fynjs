@@ -11,6 +11,8 @@ import lockfile from "lockfile";
 import util from "util";
 import semver from "semver";
 import readline from "readline";
+import https from "https";
+import http from "http";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -364,8 +366,6 @@ class FynGlobal {
     const url = `${registry}/${encodeURIComponent(packageName).replace("%40", "@")}`;
 
     try {
-      const https = require("https");
-      const http = require("http");
       const protocol = url.startsWith("https") ? https : http;
 
       return new Promise((resolve, reject) => {
