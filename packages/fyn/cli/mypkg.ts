@@ -1,13 +1,16 @@
-// @ts-nocheck
-"use strict";
-
 /*
  * Avoid webpack bundling the whole package.json if doing require("../package.json")
  */
 
-const Fs = require("fs");
-const Path = require("path");
+import Fs from "fs";
+import Path from "path";
 
-const myPkg = JSON.parse(Fs.readFileSync(Path.join(__dirname, "../package.json")));
+interface PackageJson {
+  name: string;
+  version: string;
+  [key: string]: unknown;
+}
 
-module.exports = myPkg;
+const myPkg: PackageJson = JSON.parse(Fs.readFileSync(Path.join(__dirname, "../package.json"), "utf-8"));
+
+export = myPkg;

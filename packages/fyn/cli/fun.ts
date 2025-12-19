@@ -1,11 +1,11 @@
-// @ts-nocheck
-"use strict";
+import main from "./main";
 
-require("./main")
-  .fun()
+const { fun } = main;
+
+fun()
   .then(() => {
     process.exit(0);
   })
-  .catch(err => {
+  .catch(() => {
     process.exit(1);
   });

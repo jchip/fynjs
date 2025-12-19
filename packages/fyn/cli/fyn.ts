@@ -1,8 +1,9 @@
-// @ts-nocheck
-"use strict";
+import main from "./main";
+
+const { run } = main;
 
 if (require.main === module) {
-  require("./main").run();
-} else {
-  module.exports = require("./main").run;
+  run();
 }
+
+export = run;
