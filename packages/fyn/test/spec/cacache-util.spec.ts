@@ -11,6 +11,9 @@ import cacache from "cacache";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
 
 import {
   refreshCacheEntry,
