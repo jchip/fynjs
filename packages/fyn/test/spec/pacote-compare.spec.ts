@@ -1,9 +1,7 @@
-"use strict";
-
-const mockNpm = require("../fixtures/mock-npm");
-const expect = require("chai").expect;
-const logger = require("../../lib/logger").default;
-const chalk = require("chalk");
+import mockNpm from "../fixtures/mock-npm";
+import { expect } from "chai";
+import logger from "../../lib/logger";
+import chalk from "chalk";
 
 // Skipping this test suite as it's primarily for debugging pacote-jchip vs latest pacote
 // add ../pacote-jchip as a dependency and run this test to compare results

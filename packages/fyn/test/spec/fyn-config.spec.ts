@@ -1,15 +1,18 @@
-"use strict";
-
 /* eslint-disable prefer-spread */
 
-const mockRequire = require("mock-require");
+// This test uses CommonJS-style require/mock-require for module mocking
+// which requires require.cache manipulation - keeping createRequire for this purpose
+import { createRequire } from "module";
+import mockRequire from "mock-require";
+
+const xrequire = createRequire(import.meta.url);
 
 describe("fyn-config", function() {
   describe("fynDir", () => {
     let xenvStub;
     before(() => {
-      delete require.cache[require.resolve("../../lib/fyn-config")];
-      delete require.cache[require.resolve("xenv-config")];
+      delete xrequire.cache[xrequire.resolve("../../lib/fyn-config")];
+      delete xrequire.cache[xrequire.resolve("xenv-config")];
       mockRequire("xenv-config", function() {
         return xenvStub.apply(null, Array.prototype.slice.apply(arguments));
       });
@@ -25,7 +28,7 @@ describe("fyn-config", function() {
         spec = x;
         return { fynDir: "test" };
       };
-      const fynConfig = require("../../lib/fyn-config").default;
+      const fynConfig = xrequire("../../lib/fyn-config").default;
       fynConfig({});
       expect(spec).to.exist;
       expect(spec.fynDir.post).to.exist;

@@ -1,16 +1,14 @@
-"use strict";
-
 /* eslint-disable */
 
-const Fs = require("fs");
-const Yaml = require("js-yaml");
-const Path = require("path");
-const _ = require("lodash");
-const xsh = require("xsh");
-const expect = require("chai").expect;
-const Fyn = require("../../lib/fyn").default;
-const PkgSrcManager = require("../../lib/pkg-src-manager").default;
-const mockNpm = require("../fixtures/mock-npm");
+import Fs from "fs";
+import Yaml from "js-yaml";
+import Path from "path";
+import _ from "lodash";
+import xsh from "xsh";
+import { expect } from "chai";
+import Fyn from "../../lib/fyn";
+import PkgSrcManager from "../../lib/pkg-src-manager";
+import mockNpm from "../fixtures/mock-npm";
 
 describe("pkg-src-manager", function() {
   let fynCacheDir;

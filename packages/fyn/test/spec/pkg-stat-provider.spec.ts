@@ -5,10 +5,10 @@
  * multiple times within a single process.
  */
 
-const { describe, it, beforeEach } = require("mocha");
-const { expect } = require("chai");
+import { describe, it, beforeEach } from "mocha";
+import { expect } from "chai";
 
-const PkgStatProvider = require("../../lib/pkg-stat-provider").default;
+import PkgStatProvider from "../../lib/pkg-stat-provider";
 
 describe("pkg-stat-provider", () => {
   // Mock Fyn instance with resolved data

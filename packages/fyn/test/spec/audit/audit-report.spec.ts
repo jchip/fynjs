@@ -5,10 +5,10 @@
  * Network calls are not tested here (integration tests would cover that).
  */
 
-const { describe, it } = require("mocha");
-const { expect } = require("chai");
+import { describe, it } from "mocha";
+import { expect } from "chai";
 
-const AuditReport = require("../../../lib/audit/audit-report").default;
+import AuditReport from "../../../lib/audit/audit-report";
 
 describe("audit-report", () => {
   // Mock Fyn instance

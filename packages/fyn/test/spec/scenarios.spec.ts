@@ -1,5 +1,3 @@
-"use strict";
-
 /* eslint-disable complexity */
 
 /**
@@ -15,20 +13,25 @@
  * - Add `skip: true` to the step's index.js module exports
  */
 
-const Fs = require("fs");
-const Path = require("path");
-const _ = require("lodash");
-const Yaml = require("js-yaml");
-const Promise = require("aveazul");
-const dirTree = require("../dir-tree");
-const fynRun = require("../../cli/fyn").default;
-const fyntil = require("../../lib/util/fyntil").default;
-const logger = require("../../lib/logger").default;
-const mockNpm = require("../fixtures/mock-npm");
-const optionalRequire = require("optional-require")(require);
-const sortObjKeys = require("../../lib/util/sort-obj-keys").default;
-const ci = require("ci-info");
-const xaa = require("xaa");
+import Fs from "fs";
+import Path from "path";
+import _ from "lodash";
+import Yaml from "js-yaml";
+import Promise from "aveazul";
+import { make as dirTree } from "../dir-tree";
+import fynRun from "../../cli/fyn";
+import fyntil from "../../lib/util/fyntil";
+import logger from "../../lib/logger";
+import mockNpm from "../fixtures/mock-npm";
+import _optionalRequire from "optional-require";
+import { createRequire } from "module";
+import sortObjKeys from "../../lib/util/sort-obj-keys";
+import ci from "ci-info";
+import xaa from "xaa";
+import { execSync } from "child_process";
+
+const xrequire = createRequire(import.meta.url);
+const optionalRequire = _optionalRequire(xrequire);
 
 const BASE_ARGS = ["--pg=none", "-q=none", "--no-rcfile"];
 const getFynDirArg = dir => `--fyn-dir=${dir}`;
@@ -374,7 +377,6 @@ const debug = false;
               Fs.mkdirSync(currentFynDir, { recursive: true });
 
               // Copy the entire .fyn directory
-              const { execSync } = require("child_process");
               execSync(`cp -r "${prevFynDir}"/* "${currentFynDir}/" 2>/dev/null || true`, {
                 stdio: "pipe"
               });

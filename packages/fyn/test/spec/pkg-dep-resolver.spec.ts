@@ -1,14 +1,12 @@
-"use strict";
-
-const Fs = require("fs");
-const Yaml = require("js-yaml");
-const Path = require("path");
-const Fyn = require("../../lib/fyn").default;
-const mockNpm = require("../fixtures/mock-npm");
-const expect = require("chai").expect;
-const _ = require("lodash");
-const logger = require("../../lib/logger").default;
-const chalk = require("chalk");
+import Fs from "fs";
+import Yaml from "js-yaml";
+import Path from "path";
+import Fyn from "../../lib/fyn";
+import mockNpm from "../fixtures/mock-npm";
+import { expect } from "chai";
+import _ from "lodash";
+import logger from "../../lib/logger";
+import chalk from "chalk";
 
 describe("pkg-dep-resolver", function() {
   logger.setItemType(false);

@@ -18,7 +18,7 @@ export const sortPackageDeps = (pkg) => {
           dep[key] = pkg[x][key];
         }
       }
-      pkg[x] = exports.sortObjKeys(dep);
+      pkg[x] = sortObjKeys(dep);
     }
   });
 };

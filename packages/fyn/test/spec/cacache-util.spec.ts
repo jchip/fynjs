@@ -5,19 +5,19 @@
  * cacache's integrity guarantees across different versions.
  */
 
-const { describe, it, before, after } = require('mocha');
-const { expect } = require('chai');
-const cacache = require('cacache');
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import { describe, it, before, after } from "mocha";
+import { expect } from "chai";
+import cacache from "cacache";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
-const {
+import {
   refreshCacheEntry,
   getCacheInfoWithRefreshTime,
   getBucketPath,
   hashKey
-} = require('../../lib/cacache-util');
+} from "../../lib/cacache-util";
 
 describe('cacache-util', () => {
   const testCache = path.join(__dirname, '../.cache-util-test');

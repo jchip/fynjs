@@ -21,10 +21,10 @@ describe("fynpo utils", () => {
 
   afterAll(() => {
     try {
-      require("fs").unlinkSync(path.join(dir, "fynpo.json"));
+      fs.unlinkSync(path.join(dir, "fynpo.json"));
     } catch {}
     try {
-      require("fs").unlinkSync(path.join(dir, "fynpo.config.js"));
+      fs.unlinkSync(path.join(dir, "fynpo.config.js"));
     } catch {}
   });
 

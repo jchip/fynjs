@@ -1,7 +1,5 @@
-"use strict";
-
-const expect = require("chai").expect;
-const Semver = require("semver");
+import { expect } from "chai";
+import Semver from "semver";
 
 describe("overrides", function() {
   describe("_processOverrides", function() {

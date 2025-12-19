@@ -1,8 +1,6 @@
-"use strict";
-
-const Path = require("path");
-const hardLinkDir = require("../../../lib/util/hard-link-dir");
-const Fs = require("opfs");
+import Path from "path";
+import * as hardLinkDir from "../../../lib/util/hard-link-dir";
+import Fs from "opfs";
 
 describe("hard-link-dir", function() {
   it("should hard link a package directory", () => {

@@ -1,6 +1,4 @@
-"use strict";
-
-const semver = require("../../../lib/util/semver");
+import * as semver from "../../../lib/util/semver";
 
 describe("semver", function() {
   describe("split", function() {

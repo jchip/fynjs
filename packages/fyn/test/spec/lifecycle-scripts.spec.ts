@@ -1,11 +1,9 @@
-"use strict";
-
-const LifecycleScripts = require("../../lib/lifecycle-scripts").default;
-const Path = require("path");
-const xstdout = require("xstdout");
-const logger = require("../../lib/logger").default;
-const chalk = require("chalk");
-const xaa = require("xaa");
+import LifecycleScripts from "../../lib/lifecycle-scripts";
+import Path from "path";
+import xstdout from "xstdout";
+import logger from "../../lib/logger";
+import chalk from "chalk";
+import xaa from "xaa";
 
 describe("lifecycle-scripts", function() {
   logger.setItemType(false);

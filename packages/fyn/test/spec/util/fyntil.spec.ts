@@ -1,7 +1,5 @@
-"use strict";
-
-const { expect } = require("chai");
-const fyntil = require("../../../lib/util/fyntil").default;
+import { expect } from "chai";
+import fyntil from "../../../lib/util/fyntil";
 
 describe("fyntil", function() {
   describe("exit", function() {

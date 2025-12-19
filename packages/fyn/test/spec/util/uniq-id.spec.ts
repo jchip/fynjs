@@ -1,6 +1,4 @@
-"use strict";
-
-const uniqId = require("../../../lib/util/uniq-id").default;
+import uniqId from "../../../lib/util/uniq-id";
 
 describe("uniq-id", function() {
   it("should generate random ids", () => {

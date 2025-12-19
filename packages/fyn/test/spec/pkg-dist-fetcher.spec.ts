@@ -1,17 +1,15 @@
-"use strict";
-
 /* eslint-disable */
 
-const Fs = require("fs");
-const Yaml = require("js-yaml");
-const Path = require("path");
-const Fyn = require("../../lib/fyn").default;
-const mockNpm = require("../fixtures/mock-npm");
-const expect = require("chai").expect;
-const _ = require("lodash");
-const PkgDepLinker = require("../../lib/pkg-dep-linker").default;
-const xsh = require("xsh");
-const logger = require("../../lib/logger").default;
+import Fs from "fs";
+import Yaml from "js-yaml";
+import Path from "path";
+import Fyn from "../../lib/fyn";
+import mockNpm from "../fixtures/mock-npm";
+import { expect } from "chai";
+import _ from "lodash";
+import PkgDepLinker from "../../lib/pkg-dep-linker";
+import xsh from "xsh";
+import logger from "../../lib/logger";
 
 describe("pkg-dist-fetcher", function() {
   logger._logLevel = 999;

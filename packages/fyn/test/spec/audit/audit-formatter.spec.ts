@@ -4,10 +4,10 @@
  * Tests formatting of audit results for display.
  */
 
-const { describe, it } = require("mocha");
-const { expect } = require("chai");
+import { describe, it } from "mocha";
+import { expect } from "chai";
 
-const AuditFormatter = require("../../../lib/audit/audit-formatter").default;
+import AuditFormatter from "../../../lib/audit/audit-formatter";
 
 describe("audit-formatter", () => {
   const mockAuditResult = {

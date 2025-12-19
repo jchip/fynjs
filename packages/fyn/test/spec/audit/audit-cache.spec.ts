@@ -4,19 +4,19 @@
  * Tests cache key generation and storage/retrieval of advisory data.
  */
 
-const { describe, it, before, after } = require("mocha");
-const { expect } = require("chai");
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+import { describe, it, before, after } from "mocha";
+import { expect } from "chai";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
-const {
+import {
   AUDIT_CACHE_PREFIX,
   generateCacheKey,
   cacheAuditResult,
   getCachedAuditResult,
   hasAuditCache
-} = require("../../../lib/audit/audit-cache");
+} from "../../../lib/audit/audit-cache";
 
 describe("audit-cache", () => {
   const testCache = path.join(__dirname, "../../.audit-cache-test");
