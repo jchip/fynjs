@@ -1,16 +1,16 @@
 // @ts-nocheck
 "use strict";
 
-const os = require("os");
-const Fs = require("fs");
-const Path = require("path");
-const Yaml = require("yamljs");
-const Ini = require("ini");
-const _ = require("lodash");
-const logger = require("../lib/logger").default;
-const assert = require("assert");
-const defaultRc = require("./default-rc");
-const fynTil = require("../lib/util/fyntil").default;
+import os from "os";
+import Fs from "fs";
+import Path from "path";
+import Yaml from "yamljs";
+import Ini from "ini";
+import _ from "lodash";
+import logger from "../lib/logger";
+import assert from "assert";
+import defaultRc from "./default-rc";
+import fynTil from "../lib/util/fyntil";
 
 // replace any ${ENV} values with the appropriate environ.
 // copied from https://github.com/npm/config/blob/1f47a6c6ae7864b412d45c6a4a74930cf3365395/lib/env-replace.js
@@ -112,4 +112,4 @@ function loadRc(cwd, fynpoDir) {
   };
 }
 
-module.exports = loadRc;
+export default loadRc;

@@ -2,8 +2,7 @@ import main from "./main";
 
 const { run } = main;
 
-if (require.main === module) {
-  run();
-}
+run();
 
-export = run;
+export { run };
+export default run;

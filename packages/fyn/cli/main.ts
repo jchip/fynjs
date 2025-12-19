@@ -1,21 +1,24 @@
 // @ts-nocheck
 "use strict";
 
-const Path = require("path");
-const chalk = require("chalk");
-const Promise = require("aveazul");
-const FynCli = require("./fyn-cli");
-const _ = require("lodash");
-const CliLogger = require("../lib/cli-logger").default;
-const logger = require("../lib/logger").default;
-const { NixClap } = require("nix-clap");
-const myPkg = require("./mypkg");
-const loadRc = require("./load-rc");
-const defaultRc = require("./default-rc");
-const fynTil = require("../lib/util/fyntil").default;
-const optionalRequire = require("optional-require")(require);
-const { runInitPackage } = require("init-package");
-const FynGlobal = require("../lib/fyn-global").default;
+import Path from "path";
+import chalk from "chalk";
+import Promise from "aveazul";
+import FynCli from "./fyn-cli";
+import _ from "lodash";
+import CliLogger from "../lib/cli-logger";
+import logger from "../lib/logger";
+import { NixClap } from "nix-clap";
+import myPkg from "./mypkg";
+import loadRc from "./load-rc";
+import defaultRc from "./default-rc";
+import fynTil from "../lib/util/fyntil";
+import optionalRequireMod from "optional-require";
+import { runInitPackage } from "init-package";
+import FynGlobal from "../lib/fyn-global";
+import hardLinkDir from "../lib/util/hard-link-dir";
+
+const optionalRequire = optionalRequireMod(import.meta.url);
 
 function setLogLevel(ll) {
   if (ll) {
@@ -776,14 +779,8 @@ const fun = () => {
 };
 
 const nodeGyp = () => {
-  require("node-gyp/bin/node-gyp");
+  import("node-gyp/bin/node-gyp");
 };
 
-const hardLinkDir = require("../lib/util/hard-link-dir");
-
-module.exports = {
-  run,
-  fun,
-  nodeGyp,
-  hardLinkDir
-};
+export { run, fun, nodeGyp, hardLinkDir };
+export default { run, fun, nodeGyp, hardLinkDir };

@@ -11,13 +11,12 @@
  * 4. Formatting and displaying results (with dependency paths)
  */
 
-const Promise = require("aveazul");
-const CliLogger = require("../lib/cli-logger").default;
-const logger = require("../lib/logger").default;
-const AuditReport = require("../lib/audit/audit-report").default;
-const AuditFormatter = require("../lib/audit/audit-formatter").default;
-const PkgStatProvider = require("../lib/pkg-stat-provider").default;
-const { FETCH_META } = require("../lib/log-items");
+import CliLogger from "../lib/cli-logger";
+import logger from "../lib/logger";
+import AuditReport from "../lib/audit/audit-report";
+import AuditFormatter from "../lib/audit/audit-formatter";
+import PkgStatProvider from "../lib/pkg-stat-provider";
+import { FETCH_META } from "../lib/log-items";
 
 class ShowAudit {
   /**
@@ -118,6 +117,8 @@ class ShowAudit {
  * @param {Object} opts - CLI options { json, omit, auditLevel, noCache }
  * @returns {Promise<void>}
  */
-module.exports = (fyn, opts) => {
+const showAudit = (fyn, opts) => {
   return new ShowAudit({ fyn, opts }).runAudit();
 };
+
+export default showAudit;

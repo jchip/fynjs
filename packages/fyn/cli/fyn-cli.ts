@@ -1,37 +1,34 @@
 // @ts-nocheck
 "use strict";
 
-// const Module = require("module");
-const Fs = require("../lib/util/file-ops").default;
-const Os = require("os");
-const Path = require("path");
-const Promise = require("aveazul");
-const Fyn = require("../lib/fyn").default;
-const _ = require("lodash");
-const PkgInstaller = require("../lib/pkg-installer").default;
-// const DepData = require("../lib/dep-data");
-const semver = require("semver");
-const chalk = require("chalk");
-const logger = require("../lib/logger").default;
-const PromiseQueue = require("../lib/util/promise-queue").default;
-const sortObjKeys = require("../lib/util/sort-obj-keys").default;
-const fyntil = require("../lib/util/fyntil").default;
-const showStat = require("./show-stat");
-const showAudit = require("./show-audit");
-// const showSetupInfo = require("./show-setup-info");
-// const logFormat = require("../lib/util/log-format");
-const { runNpmScript, addNpmLifecycle } = require("../lib/util/run-npm-script");
-const { initEnv, makeNpmEnv } = require("../lib/util/make-npm-env");
-const runScript = require("@npmcli/run-script");
-const xaa = require("../lib/util/xaa").default;
-const { scanFileStats } = require("../lib/util/stat-dir");
-const { checkPkgNewVersionEngine } = require("check-pkg-new-version-engine");
-const fetch = require("node-fetch-npm");
-const myPkg = require("./mypkg");
-const { cleanErrorStack } = require("@jchip/error");
-const { setupNodeGypEnv } = require("../lib/util/setup-node-gyp");
-const hardLinkDir = require("../lib/util/hard-link-dir");
-const xsh = require("xsh");
+import Fs from "../lib/util/file-ops";
+import Os from "os";
+import Path from "path";
+import Promise from "aveazul";
+import Fyn from "../lib/fyn";
+import _ from "lodash";
+import PkgInstaller from "../lib/pkg-installer";
+import semver from "semver";
+import chalk from "chalk";
+import logger from "../lib/logger";
+import PromiseQueue from "../lib/util/promise-queue";
+import sortObjKeys from "../lib/util/sort-obj-keys";
+import fyntil from "../lib/util/fyntil";
+import showStat from "./show-stat";
+import showAudit from "./show-audit";
+import { runNpmScript, addNpmLifecycle } from "../lib/util/run-npm-script";
+import { initEnv, makeNpmEnv } from "../lib/util/make-npm-env";
+import runScript from "@npmcli/run-script";
+import xaa from "../lib/util/xaa";
+import { scanFileStats } from "../lib/util/stat-dir";
+import { checkPkgNewVersionEngine } from "check-pkg-new-version-engine";
+import fetch from "node-fetch-npm";
+import myPkg from "./mypkg";
+import { cleanErrorStack } from "@jchip/error";
+import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
+import hardLinkDir from "../lib/util/hard-link-dir";
+import xsh from "xsh";
+import { fileURLToPath } from "url";
 
 function checkNewVersion(npmConfig) {
   checkPkgNewVersionEngine({
@@ -611,7 +608,7 @@ class FynCli {
 
     // Set additional npm environment variables to match lifecycle-scripts.js
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
-    env.npm_execpath = require.resolve("../bin/fyn.js");
+    env.npm_execpath = fileURLToPath(import.meta.resolve("../bin/fyn.js"));
     env.INIT_CWD = this.fyn.cwd;
 
     // Only pass args to the main script, not pre/post scripts
@@ -668,4 +665,4 @@ class FynCli {
   }
 }
 
-module.exports = FynCli;
+export default FynCli;

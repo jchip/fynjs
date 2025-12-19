@@ -1,13 +1,13 @@
 // @ts-nocheck
 "use strict";
 
-const chalk = require("chalk");
-const CliLogger = require("../lib/cli-logger").default;
-const logger = require("../lib/logger").default;
-const Promise = require("aveazul");
-const logFormat = require("../lib/util/log-format").default;
-const PkgStatProvider = require("../lib/pkg-stat-provider").default;
-const { FETCH_META } = require("../lib/log-items");
+import chalk from "chalk";
+import CliLogger from "../lib/cli-logger";
+import logger from "../lib/logger";
+import Promise from "aveazul";
+import logFormat from "../lib/util/log-format";
+import PkgStatProvider from "../lib/pkg-stat-provider";
+import { FETCH_META } from "../lib/log-items";
 
 const PACKAGE_JSON = "~package.json";
 
@@ -103,6 +103,8 @@ class ShowStat {
   }
 }
 
-module.exports = (fyn, pkgIds) => {
+const showStat = (fyn, pkgIds) => {
   return new ShowStat({ fyn }).showStat(pkgIds);
 };
+
+export default showStat;
