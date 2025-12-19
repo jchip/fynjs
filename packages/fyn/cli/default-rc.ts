@@ -6,4 +6,4 @@ const defaultRc = {
   progress: ci.isCI ? "none" : "normal"
 } as const;
 
-export = defaultRc;
+export default defaultRc;
