@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Core audit logic for fetching security advisories from npm registry.
  *
@@ -16,18 +14,48 @@ import logger from "../logger";
 import {
   generateCacheKey,
   cacheAuditResult,
-  getCachedAuditResult
+  getCachedAuditResult,
+  type BulkPayload,
+  type AuditResult,
+  type Advisory
 } from "./audit-cache";
+import type { DepData, PkgVersion } from "../dep-data";
+
+/** Options for AuditReport constructor */
+export interface AuditReportOptions {
+  fyn: {
+    fynDir: string;
+    _options: Record<string, unknown>;
+  };
+  depData: DepData;
+  noCache?: boolean;
+  omit?: string[];
+}
+
+/** Vulnerability found during audit */
+export interface Vulnerability {
+  name: string;
+  version: string;
+  advisory: {
+    id: number;
+    title: string;
+    severity: string;
+    url: string;
+    vulnerable_versions: string;
+    patched_versions: string;
+    recommendation?: string;
+  };
+  paths: unknown[];
+}
 
 class AuditReport {
-  /**
-   * @param {Object} options
-   * @param {Object} options.fyn - Fyn instance with resolved data
-   * @param {Object} options.depData - DepData with resolved packages
-   * @param {boolean} options.noCache - Skip cache lookup
-   * @param {string[]} options.omit - Dependency types to omit (dev, optional, peer)
-   */
-  constructor(options) {
+  private _fyn: AuditReportOptions["fyn"];
+  private _depData: DepData;
+  private _noCache: boolean;
+  private _omit: string[];
+  private _cacheDir: string;
+
+  constructor(options: AuditReportOptions) {
     this._fyn = options.fyn;
     this._depData = options.depData;
     this._noCache = options.noCache || false;
@@ -38,11 +66,9 @@ class AuditReport {
   /**
    * Build bulk request payload from resolved packages.
    * Format: { "packageName": ["version1", "version2"], ... }
-   *
-   * @returns {Object} Bulk payload for npm security API
    */
-  buildBulkPayload() {
-    const payload = {};
+  buildBulkPayload(): BulkPayload {
+    const payload: BulkPayload = {};
     const pkgs = this._depData.pkgs;
     const omitDev = this._omit.includes("dev");
     const omitOptional = this._omit.includes("optional");
@@ -76,22 +102,18 @@ class AuditReport {
   /**
    * Get registry URL for audit API.
    * Uses the main registry (not scoped registries since audit is global).
-   *
-   * @returns {string} Registry URL with trailing slash
    */
-  getAuditRegistryUrl() {
-    const registry = this._fyn._options.registry || "https://registry.npmjs.org";
+  getAuditRegistryUrl(): string {
+    const registry = (this._fyn._options.registry as string) || "https://registry.npmjs.org";
     return registry.endsWith("/") ? registry : `${registry}/`;
   }
 
   /**
    * Get npm-registry-fetch options with auth.
-   *
-   * @returns {Object} Options for npm-registry-fetch
    */
-  getFetchOptions() {
+  getFetchOptions(): Record<string, unknown> {
     const opts = this._fyn._options;
-    const fetchOpts = {
+    const fetchOpts: Record<string, unknown> = {
       registry: this.getAuditRegistryUrl()
     };
 
@@ -114,10 +136,8 @@ class AuditReport {
   /**
    * Fetch advisories from npm security API.
    * Uses cache if available and noCache is false.
-   *
-   * @returns {Promise<Object>} Audit result with advisories
    */
-  async fetchAdvisories() {
+  async fetchAdvisories(): Promise<AuditResult> {
     const payload = this.buildBulkPayload();
     const packageCount = Object.keys(payload).length;
 
@@ -152,10 +172,10 @@ class AuditReport {
         gzip: true
       });
 
-      const advisories = await response.json();
+      const advisories = (await response.json()) as Record<string, Advisory[]>;
 
       // Build result object
-      const result = {
+      const result: AuditResult = {
         advisories,
         metadata: {
           totalDependencies: packageCount,
@@ -167,7 +187,7 @@ class AuditReport {
       await cacheAuditResult(this._cacheDir, cacheKey, result);
 
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       // Try to use cached data on network error
       if (!this._noCache) {
         const cached = await getCachedAuditResult(this._cacheDir, cacheKey);
@@ -177,10 +197,11 @@ class AuditReport {
         }
       }
 
-      if (err.code === "ENOTFOUND" || err.code === "ECONNREFUSED") {
-        throw new Error(`Unable to reach npm registry for audit: ${err.message}`);
+      const error = err as NodeJS.ErrnoException & { statusCode?: number };
+      if (error.code === "ENOTFOUND" || error.code === "ECONNREFUSED") {
+        throw new Error(`Unable to reach npm registry for audit: ${error.message}`);
       }
-      if (err.statusCode === 401 || err.statusCode === 403) {
+      if (error.statusCode === 401 || error.statusCode === 403) {
         throw new Error("Authentication required for security audit");
       }
       throw err;
@@ -193,12 +214,9 @@ class AuditReport {
    *
    * The bulk API returns advisories grouped by package name:
    * { "package-name": [{ id, vulnerable_versions, ... }, ...] }
-   *
-   * @param {Object} auditResult - Result from fetchAdvisories()
-   * @returns {Array} List of vulnerabilities with package info
    */
-  matchVulnerabilities(auditResult) {
-    const vulnerabilities = [];
+  matchVulnerabilities(auditResult: AuditResult): Vulnerability[] {
+    const vulnerabilities: Vulnerability[] = [];
     const { advisories } = auditResult;
     const pkgs = this._depData.pkgs;
 

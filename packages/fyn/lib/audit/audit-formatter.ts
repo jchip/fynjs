@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * Format audit results for display.
  *
@@ -11,8 +9,39 @@
 
 import chalk from "chalk";
 import { SEMVER } from "../symbols";
+import type { AuditResult, Advisory } from "./audit-cache";
+import type { Vulnerability } from "./audit-report";
 
-const SEVERITY_COLORS = {
+type SeverityLevel = "critical" | "high" | "moderate" | "low" | "info";
+
+/** Stat info for a package version */
+interface PackageStat {
+  significantPaths?: (string[] & { [SEMVER]?: string })[];
+  [key: string]: unknown;
+}
+
+/** Stat provider interface for dependency path info */
+interface StatProvider {
+  getPackageStat(name: string, version: string): Promise<PackageStat | null>;
+}
+
+/** Options for AuditFormatter constructor */
+export interface AuditFormatterOptions {
+  json?: boolean;
+  colors?: boolean;
+  auditLevel?: SeverityLevel;
+  summary?: boolean;
+  statProvider?: StatProvider | null;
+  statCache?: Record<string, PackageStat>;
+}
+
+/** Format output result */
+export interface FormatResult {
+  output: string;
+  exitCode: number;
+}
+
+const SEVERITY_COLORS: Record<SeverityLevel, chalk.Chalk> = {
   critical: chalk.red.bold,
   high: chalk.red,
   moderate: chalk.yellow,
@@ -20,19 +49,17 @@ const SEVERITY_COLORS = {
   info: chalk.blue
 };
 
-const SEVERITY_ORDER = ["critical", "high", "moderate", "low", "info"];
+const SEVERITY_ORDER: SeverityLevel[] = ["critical", "high", "moderate", "low", "info"];
 
 class AuditFormatter {
-  /**
-   * @param {Object} options
-   * @param {boolean} options.json - Output as JSON
-   * @param {boolean} options.colors - Use colors in output
-   * @param {string} options.auditLevel - Minimum severity to report
-   * @param {boolean} options.summary - Output brief summary only (like npm after install)
-   * @param {Object} options.statProvider - PkgStatProvider instance for dependency path info
-   * @param {Object} options.statCache - Pre-computed stat results keyed by "name@version"
-   */
-  constructor(options = {}) {
+  private _json: boolean;
+  private _colors: boolean;
+  private _auditLevel: SeverityLevel;
+  private _summary: boolean;
+  private _statProvider: StatProvider | null;
+  private _statCache: Record<string, PackageStat>;
+
+  constructor(options: AuditFormatterOptions = {}) {
     this._json = options.json || false;
     this._colors = options.colors !== false;
     this._auditLevel = options.auditLevel || "info";
@@ -44,35 +71,31 @@ class AuditFormatter {
   /**
    * Get severity level as number for comparison.
    */
-  getSeverityLevel(severity) {
-    const levels = { critical: 5, high: 4, moderate: 3, low: 2, info: 1 };
+  getSeverityLevel(severity: string): number {
+    const levels: Record<string, number> = { critical: 5, high: 4, moderate: 3, low: 2, info: 1 };
     return levels[severity] || 0;
   }
 
   /**
    * Check if severity meets minimum audit level.
    */
-  meetsAuditLevel(severity) {
+  meetsAuditLevel(severity: string): boolean {
     return this.getSeverityLevel(severity) >= this.getSeverityLevel(this._auditLevel);
   }
 
   /**
    * Colorize text based on severity.
    */
-  colorize(text, severity) {
+  colorize(text: string, severity: string): string {
     if (!this._colors) return text;
-    const colorFn = SEVERITY_COLORS[severity] || (t => t);
+    const colorFn = SEVERITY_COLORS[severity as SeverityLevel] || ((t: string) => t);
     return colorFn(text);
   }
 
   /**
    * Format audit result for output.
-   *
-   * @param {Object} auditResult - Result from AuditReport.fetchAdvisories()
-   * @param {Array} vulnerabilities - Matched vulnerabilities from matchVulnerabilities()
-   * @returns {Object} { output: string, exitCode: number }
    */
-  format(auditResult, vulnerabilities) {
+  format(auditResult: AuditResult, vulnerabilities: Vulnerability[]): FormatResult {
     if (this._json) {
       return this.formatJson(auditResult, vulnerabilities);
     }
@@ -86,7 +109,7 @@ class AuditFormatter {
    * Format as brief summary (like npm shows after install).
    * Example: "audited 745 packages\n3 vulnerabilities (1 moderate, 1 high, 1 critical)"
    */
-  formatSummary(auditResult, vulnerabilities) {
+  formatSummary(auditResult: AuditResult, vulnerabilities: Vulnerability[]): FormatResult {
     const filtered = vulnerabilities.filter(v => this.meetsAuditLevel(v.advisory.severity));
     const pkgCount = auditResult.metadata?.totalDependencies || 0;
 
@@ -95,7 +118,7 @@ class AuditFormatter {
     }
 
     // Count by severity
-    const counts = {};
+    const counts: Record<string, number> = {};
     filtered.forEach(v => {
       const sev = v.advisory.severity;
       counts[sev] = (counts[sev] || 0) + 1;
@@ -118,7 +141,7 @@ class AuditFormatter {
   /**
    * Format as JSON.
    */
-  formatJson(auditResult, vulnerabilities) {
+  formatJson(auditResult: AuditResult, vulnerabilities: Vulnerability[]): FormatResult {
     const filtered = vulnerabilities.filter(v => this.meetsAuditLevel(v.advisory.severity));
 
     const output = JSON.stringify(
@@ -137,19 +160,24 @@ class AuditFormatter {
   /**
    * Format as human-readable table.
    */
-  formatHuman(auditResult, vulnerabilities) {
-    const lines = [];
+  formatHuman(auditResult: AuditResult, vulnerabilities: Vulnerability[]): FormatResult {
+    const lines: string[] = [];
     const { metadata } = auditResult;
 
     // Filter by audit level
     const filtered = vulnerabilities.filter(v => this.meetsAuditLevel(v.advisory.severity));
 
     // Group by severity
-    const bySeverity = {};
-    SEVERITY_ORDER.forEach(s => (bySeverity[s] = []));
+    const bySeverity: Record<SeverityLevel, Vulnerability[]> = {
+      critical: [],
+      high: [],
+      moderate: [],
+      low: [],
+      info: []
+    };
 
     filtered.forEach(vuln => {
-      const sev = vuln.advisory.severity;
+      const sev = vuln.advisory.severity as SeverityLevel;
       if (bySeverity[sev]) {
         bySeverity[sev].push(vuln);
       }
@@ -178,7 +206,6 @@ class AuditFormatter {
         if (vulns.length === 0) return;
 
         vulns.forEach(vuln => {
-          const { advisory } = vuln;
           lines.push(this.formatVulnerability(vuln));
           lines.push("");
         });
@@ -194,9 +221,9 @@ class AuditFormatter {
   /**
    * Format a single vulnerability entry.
    */
-  formatVulnerability(vuln) {
+  formatVulnerability(vuln: Vulnerability): string {
     const { advisory, name, version } = vuln;
-    const lines = [];
+    const lines: string[] = [];
 
     // Severity and title
     const sevLabel = this.colorize(advisory.severity.toUpperCase().padEnd(10), advisory.severity);
@@ -220,8 +247,8 @@ class AuditFormatter {
     const cacheKey = `${name}@${version}`;
     const stat = this._statCache[cacheKey];
     if (stat && stat.significantPaths && stat.significantPaths.length > 0) {
-      const seenFirstLegs = new Set();
-      const uniquePaths = [];
+      const seenFirstLegs = new Set<string>();
+      const uniquePaths: (string[] & { [SEMVER]?: string })[] = [];
 
       for (const path of stat.significantPaths) {
         const firstLeg = path[0];
@@ -233,9 +260,9 @@ class AuditFormatter {
       }
 
       for (const path of uniquePaths) {
-        const semver = path[SEMVER];
+        const semverVal = path[SEMVER];
         const pathStr = path.join(" > ");
-        const fullPath = semver ? `${pathStr} (${semver})` : pathStr;
+        const fullPath = semverVal ? `${pathStr} (${semverVal})` : pathStr;
         lines.push(`  > ${fullPath}`);
       }
     }
@@ -246,11 +273,8 @@ class AuditFormatter {
   /**
    * Pre-compute stat info for all vulnerabilities.
    * Call this before format() when using a stat provider.
-   *
-   * @param {Array} vulnerabilities - List of vulnerabilities from matchVulnerabilities()
-   * @returns {Promise<void>}
    */
-  async precomputeStats(vulnerabilities) {
+  async precomputeStats(vulnerabilities: Vulnerability[]): Promise<void> {
     if (!this._statProvider) return;
 
     const filtered = vulnerabilities.filter(v => this.meetsAuditLevel(v.advisory.severity));
