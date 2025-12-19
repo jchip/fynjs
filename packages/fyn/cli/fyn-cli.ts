@@ -29,6 +29,13 @@ import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
 import hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
 import { fileURLToPath } from "url";
+import {
+  FETCH_META,
+  FETCH_PACKAGE,
+  LOAD_PACKAGE,
+  INSTALL_PACKAGE,
+  spinner
+} from "../lib/log-items";
 
 function checkNewVersion(npmConfig) {
   checkPkgNewVersionEngine({
@@ -44,14 +51,6 @@ function checkNewVersion(npmConfig) {
     }
   });
 }
-
-const {
-  FETCH_META,
-  FETCH_PACKAGE,
-  LOAD_PACKAGE,
-  INSTALL_PACKAGE,
-  spinner
-} = require("../lib/log-items");
 
 const myDir = Path.join(__dirname, "..");
 

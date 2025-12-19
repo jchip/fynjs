@@ -1,43 +1,32 @@
-"use strict";
+import Path from "path";
+import Fs from "fs";
+import Yaml from "js-yaml";
+import { fileURLToPath } from "url";
 
-// const _ = require("lodash");
-const Path = require("path");
-const Fs = require("fs");
-const Yaml = require("js-yaml");
-
-function readJson(file) {
+function readJson(file: string) {
   return JSON.parse(Fs.readFileSync(file).toString());
 }
 
-function readPackage(file) {
+interface PackageData {
+  id: string;
+}
+
+function readPackage(file: string): PackageData {
   const pkg = readJson(file);
-  // const deps = Object.assign({}, pkg.peerDependencies, pkg.optionalDependencies, pkg.dependencies);
-  // const res = {};
 
-  // Object.keys(pkg._depResolutions).forEach(depName => {
-  //   const dr = pkg._depResolutions[depName];
-  //   const semv = deps[depName] || `undefined`;
-  //   const depKey = `${dr.type}(${depName}@${semv})`;
-  //   res[depKey] = dr.resolved || "undefined";
-  //   delete deps[depName];
-  // });
-
-  const data = {
+  const data: PackageData = {
     id: pkg._id || `[${pkg.name}@${pkg.version}]`
-    // res
   };
-
-  // if (!_.isEmpty(deps)) {
-  //   data.unres = deps;
-  // }
 
   return data;
 }
 
-function dirTree(parent, dir, name) {
+type TreeNode = { [key: string]: TreeNode | string | PackageData };
+
+function dirTree(parent: TreeNode, dir: string, name: string): TreeNode {
   const meDir = Path.join(dir, name);
   const files = Fs.readdirSync(meDir);
-  const me = {};
+  const me: TreeNode = {};
   parent[name] = me;
 
   for (const f of files) {
@@ -70,13 +59,15 @@ function dirTree(parent, dir, name) {
   return parent;
 }
 
-module.exports = {
-  make: (dir, name) => {
-    return dirTree({}, dir, name);
-  }
-};
+export function make(dir: string, name: string): TreeNode {
+  return dirTree({}, dir, name);
+}
 
-if (require.main === module) {
+// Check if this module is being run directly
+const isMain = import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url === fileURLToPath(new URL(`file://${process.argv[1]}`));
+
+if (isMain) {
   const tree = dirTree({}, process.cwd(), "node_modules");
   console.log(Yaml.dump(tree));
 }
