@@ -1,10 +1,8 @@
-// @ts-nocheck
-
 /* eslint-disable global-require */
 
 import Fs from "./util/file-ops";
 import logger from "./logger";
-import PkgBinLinkerBase from "./pkg-bin-linker-base";
+import PkgBinLinkerBase, { type PkgBinLinkerOptions } from "./pkg-bin-linker-base";
 
 //
 // Look at each promoted package and link their bin to node_modules/.bin
@@ -12,7 +10,7 @@ import PkgBinLinkerBase from "./pkg-bin-linker-base";
 //
 
 class PkgBinLinker extends PkgBinLinkerBase {
-  constructor(options) {
+  constructor(options: PkgBinLinkerOptions) {
     super(options);
   }
 
@@ -20,13 +18,13 @@ class PkgBinLinker extends PkgBinLinkerBase {
   // Platform specific
   //
 
-  async _ensureGoodLink(symlink, target) {
+  protected async _ensureGoodLink(symlink: string, target: string): Promise<boolean> {
     try {
       const existTarget = await Fs.readlink(symlink);
       if (existTarget === target) {
         return true;
       }
-    } catch (err) {
+    } catch {
       //
     }
 
@@ -35,30 +33,30 @@ class PkgBinLinker extends PkgBinLinkerBase {
     return false;
   }
 
-  async _chmod(target) {
+  protected async _chmod(target: string): Promise<void> {
     try {
       await Fs.access(target, Fs.constants.X_OK);
       return;
-    } catch (e) {
+    } catch {
       //
     }
 
     try {
       await Fs.chmod(target, "0755");
-    } catch (err) {
-      logger.error(`bin-linker: chmod on ${target} failed`, err.message);
+    } catch (err: unknown) {
+      logger.error(`bin-linker: chmod on ${target} failed`, (err as Error).message);
     }
   }
 
-  async _generateBinLink(relTarget, symlink) {
-    return Fs.symlink(relTarget, symlink);
+  protected async _generateBinLink(relTarget: string, symlink: string): Promise<void> {
+    await Fs.symlink(relTarget, symlink);
   }
 
-  async _rmBinLink(symlink) {
+  protected async _rmBinLink(symlink: string): Promise<void> {
     await this._unlinkFile(symlink);
   }
 
-  async _readBinLinks() {
+  protected async _readBinLinks(): Promise<string[]> {
     return Fs.readdir(this._binDir);
   }
 }

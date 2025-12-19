@@ -1,9 +1,7 @@
-// @ts-nocheck
-
 /* eslint-disable global-require, prefer-template */
 
 import Fs from "./util/file-ops";
-import PkgBinLinkerBase from "./pkg-bin-linker-base";
+import PkgBinLinkerBase, { type PkgBinLinkerOptions } from "./pkg-bin-linker-base";
 
 //
 // Look at each promoted package and link their bin to node_modules/.bin
@@ -37,7 +35,7 @@ const CMD_BATCH = `@IF EXIST "%~dp0\\node.exe" (
 `;
 
 class PkgBinLinkerWin32 extends PkgBinLinkerBase {
-  constructor(options) {
+  constructor(options: PkgBinLinkerOptions) {
     super(options);
   }
 
@@ -45,13 +43,13 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
   // Platform specific
   //
 
-  async _ensureGoodLink(symlink, target) {
+  protected async _ensureGoodLink(symlink: string, target: string): Promise<boolean> {
     try {
       const existTarget = (await Fs.readFile(symlink)).toString();
       if (existTarget.indexOf(target) >= 0) {
         return true;
       }
-    } catch (err) {
+    } catch {
       //
     }
 
@@ -60,22 +58,22 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
     return false;
   }
 
-  async _generateBinLink(relTarget, symlink) {
+  protected async _generateBinLink(relTarget: string, symlink: string): Promise<void> {
     await this._saveCmd(symlink, CYGWIN_LINK, relTarget);
     await this._saveCmd(symlink + ".cmd", CMD_BATCH, relTarget);
   }
 
-  async _rmBinLink(symlink) {
+  protected async _rmBinLink(symlink: string): Promise<void> {
     await this._unlinkFile(symlink);
     await this._unlinkFile(symlink + ".cmd");
   }
 
-  async _readBinLinks() {
+  protected async _readBinLinks(): Promise<string[]> {
     return (await Fs.readdir(this._binDir)).filter(x => !x.endsWith(".cmd"));
   }
 
-  async _saveCmd(name, data, target) {
-    return Fs.writeFile(name, data.replace(/{{TARGET}}/g, target));
+  private async _saveCmd(name: string, data: string, target: string): Promise<void> {
+    await Fs.writeFile(name, data.replace(/{{TARGET}}/g, target));
   }
 }
 
