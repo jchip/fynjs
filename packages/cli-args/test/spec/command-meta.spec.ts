@@ -1,0 +1,286 @@
+import { describe, it, expect } from "vitest";
+import { NixClap } from "../../src/nix-clap";
+import { CommandMeta } from "../../src/command-meta";
+
+describe("CommandMeta", () => {
+  const noOutputExit = {
+    output: () => undefined,
+    exit: () => undefined
+  };
+
+  it("should properly initialize and populate all CommandMeta properties", () => {
+    const nc = new NixClap({ ...noOutputExit }).init2({
+      options: {
+        strOpt: { args: "< string>" },
+        numOpt: { args: "< number>" },
+        intOpt: { args: "< int>" },
+        boolOpt: { args: "< boolean>" },
+        arrayOpt: { args: "< string..1,Inf>" }
+      },
+      subCommands: {
+        cmd1: {
+          desc: "test command",
+          alias: ["c1", "command1"],
+          options: {
+            cmdOpt: { args: "< string>" }
+          }
+        }
+      }
+    });
+
+    const result = nc.parse([
+      "node",
+      "test.js",
+      "cmd1",
+      "--str-opt",
+      "value",
+      "--num-opt",
+      "42.5",
+      "--int-opt",
+      "42",
+      "--bool-opt",
+      "true",
+      "--array-opt",
+      "a",
+      "b",
+      "c",
+      "--cmd-opt",
+      "cmdValue",
+      "arg1",
+      "arg2"
+    ]);
+
+    const meta = result.command.jsonMeta;
+    expect(meta.opts).toEqual({
+      "str-opt": true,
+      strOpt: true,
+      "num-opt": true,
+      numOpt: true,
+      "int-opt": true,
+      intOpt: true,
+      "bool-opt": true,
+      boolOpt: true,
+      "cmd-opt": true,
+      cmdOpt: true,
+      "array-opt": true,
+      arrayOpt: true
+    });
+
+    expect(meta.subCommands.cmd1).toBeDefined();
+
+    const cmdMeta = meta.subCommands.cmd1;
+    expect(cmdMeta.name).toBe("cmd1");
+    expect(cmdMeta.alias).toBe("cmd1");
+    expect(cmdMeta.opts).toEqual({});
+    expect(cmdMeta.optsCount).toEqual({});
+    expect(cmdMeta.optsFull).toEqual({});
+    expect(cmdMeta.args).toEqual({});
+    expect(cmdMeta.argList).toEqual([]);
+    expect(cmdMeta.source).toEqual({});
+    expect(cmdMeta.verbatim).toEqual({});
+    expect(cmdMeta.subCommands).toEqual({});
+  });
+
+  it("should handle nested subcommands with metadata", () => {
+    const nc = new NixClap({ ...noOutputExit }).init2({
+      subCommands: {
+        parent: {
+          desc: "parent command",
+          subCommands: {
+            child: {
+              desc: "child command",
+              subCommands: {
+                grandchild: {
+                  desc: "grandchild command",
+                  options: {
+                    "gc-opt": { args: "< string>" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const result = nc.parse(
+      ["node", "test.js", "parent", "child", "grandchild", "--gc-opt", "value"],
+      2
+    );
+
+    const meta = result.command.jsonMeta;
+    expect(meta.subCommands.parent).toBeDefined();
+    expect(meta.subCommands.parent.subCommands.child).toBeDefined();
+    expect(meta.subCommands.parent.subCommands.child.subCommands.grandchild).toBeDefined();
+
+    const gcMeta = meta.subCommands.parent.subCommands.child.subCommands.grandchild;
+    expect(gcMeta.name).toBe("grandchild");
+    expect(gcMeta.opts["gc-opt"]).toBe("value");
+    expect(gcMeta.source["gc-opt"]).toBe("cli");
+  });
+
+  it("should handle unknown commands", () => {
+    const nc = new NixClap({
+      ...noOutputExit,
+      allowUnknownCommand: true
+    }).init2({});
+    const result = nc.parse(["node", "test.js", "unknown"], 2);
+
+    const meta = result.command.jsonMeta;
+    expect(meta.subCommands.unknown).toBeDefined();
+    expect(meta.subCommands.unknown.name).toBe("unknown");
+    expect(meta.subCommands.unknown.alias).toBe("unknown");
+    expect(meta.subCommands.unknown.opts).toEqual({});
+    expect(meta.subCommands.unknown.optsCount).toEqual({});
+    expect(meta.subCommands.unknown.optsFull).toEqual({});
+    expect(meta.subCommands.unknown.args).toEqual({});
+    expect(meta.subCommands.unknown.argList).toEqual([]);
+    expect(meta.subCommands.unknown.source).toEqual({});
+    expect(meta.subCommands.unknown.verbatim).toEqual({});
+    expect(meta.subCommands.unknown.subCommands).toEqual({});
+  });
+
+  it("should handle camelCase conversion for long options", () => {
+    const nc = new NixClap({ ...noOutputExit }).init2({
+      options: {
+        "kebab-case-opt": { args: "< string>" }
+      }
+    });
+
+    const result = nc.parse(["node", "test.js", "--kebab-case-opt", "value"], 2);
+
+    const meta = result.command.jsonMeta;
+    expect(meta.opts).toEqual({
+      "kebab-case-opt": "value",
+      kebabCaseOpt: "value"
+    });
+    expect(meta.source).toEqual({
+      "kebab-case-opt": "cli",
+      kebabCaseOpt: "cli"
+    });
+  });
+
+  it("should track option sources", () => {
+    const nc = new NixClap({ ...noOutputExit }).init2({
+      options: {
+        opt1: { args: "< string>", argDefault: "default" },
+        opt2: { args: "< string>" }
+      }
+    });
+
+    const result = nc.parse(["--opt1", "cliValue"]);
+
+    const meta = result.command.jsonMeta;
+    expect(meta.opts).toEqual({
+      opt1: "cliValue",
+      opt2: undefined
+    });
+    expect(meta.source).toEqual({
+      opt1: "cli"
+    });
+  });
+
+  describe("allowUnknownCommand configuration", () => {
+    it("should add unknown command to subCmdNodes with allowUnknownOption true", () => {
+      const nc = new NixClap({
+        ...noOutputExit,
+        allowUnknownCommand: true,
+        allowUnknownOption: true
+      }).init2({});
+
+      const result = nc.parse(["node", "test.js", "unknown", "--foo", "bar"], 2);
+      expect(result.command.subCmdNodes.unknown).toBeDefined();
+      expect(result.command.subCmdNodes.unknown.name).toBe("unknown");
+      expect(result.command.subCmdNodes.unknown.optNodes.foo).toBeDefined();
+    });
+
+    it("should treat unknown arg as subcommand when parent requires subcommand", () => {
+      // When a command has subcommands but no exec and no args, it "requires" a subcommand.
+      // If allowUnknownCommand is enabled, unknown args should become subcommands of that command.
+      const nc = new NixClap({
+        ...noOutputExit,
+        allowUnknownCommand: true,
+        allowUnknownOption: true
+      }).init2({
+        subCommands: {
+          global: {
+            desc: "Global package management",
+            // No exec, no args - requires a subcommand
+            subCommands: {
+              add: { desc: "Add a package" },
+              remove: { desc: "Remove a package" }
+            }
+          }
+        }
+      });
+
+      // 'unknown' should become a subcommand of 'global', not a sibling at root level
+      const result = nc.parse(["node", "test.js", "global", "unknown"], 2);
+      expect(result.command.subCmdNodes.global).toBeDefined();
+      expect(result.command.subCmdNodes.global.subCmdNodes.unknown).toBeDefined();
+      expect(result.command.subCmdNodes.global.subCmdNodes.unknown.name).toBe("unknown");
+    });
+
+    it("should treat unknown arg as subcommand without unknown options when parent requires subcommand", () => {
+      // Same as above but with allowUnknownOption: false (default)
+      const nc = new NixClap({
+        ...noOutputExit,
+        allowUnknownCommand: true
+        // allowUnknownOption defaults to false
+      }).init2({
+        subCommands: {
+          global: {
+            desc: "Global package management",
+            subCommands: {
+              add: { desc: "Add a package" }
+            }
+          }
+        }
+      });
+
+      // 'unknown' should become a subcommand of 'global'
+      const result = nc.parse(["node", "test.js", "global", "unknown"], 2);
+      expect(result.command.subCmdNodes.global).toBeDefined();
+      expect(result.command.subCmdNodes.global.subCmdNodes.unknown).toBeDefined();
+      expect(result.command.subCmdNodes.global.subCmdNodes.unknown.name).toBe("unknown");
+    });
+
+    it("should get root command using getRootCmd method", () => {
+      const nc = new NixClap({ ...noOutputExit }).init2({
+        subCommands: {
+          parent: {
+            desc: "parent command",
+            subCommands: {
+              child: {
+                desc: "child command"
+              }
+            }
+          }
+        }
+      });
+
+      const result = nc.parse(["node", "test.js", "parent", "child"], 2);
+      const childCmd = result.command.subCmdNodes.parent.subCmdNodes.child;
+      const rootCmd = childCmd.rootCmd;
+
+      expect(rootCmd).toBe(result.command);
+      expect(rootCmd.name).toBe("test");
+    });
+
+    it("should return args via CommandNode.args getter", () => {
+      const nc = new NixClap({ ...noOutputExit }).init2({
+        subCommands: {
+          cmd1: {
+            desc: "test command",
+            args: "<files string..>"
+          }
+        }
+      });
+
+      const result = nc.parse(["node", "test.js", "cmd1", "arg1", "arg2"]);
+
+      const cmd = result.command.subCmdNodes.cmd1;
+      expect(cmd.args).toEqual({ "0": ["arg1", "arg2"], files: ["arg1", "arg2"] });
+    });
+  });
+});

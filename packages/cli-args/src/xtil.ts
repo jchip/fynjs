@@ -1,0 +1,302 @@
+import { stripAnsi } from "./strip-ansi.ts";
+
+// Module-level config for zebra striping in help text
+let _helpZebra = true;
+
+/**
+ * Enable or disable zebra striping in help text.
+ * @param enabled - Whether to enable zebra striping
+ */
+export function setHelpZebra(enabled: boolean) {
+  _helpZebra = enabled;
+}
+
+/**
+ * Check if zebra striping is enabled.
+ * @returns Whether zebra striping is enabled
+ */
+export function isHelpZebraEnabled(): boolean {
+  return _helpZebra;
+}
+
+// Track alternating fill character for zebra pattern
+let _zebraIndex = 0;
+
+/**
+ * Reset the zebra index for a new help section.
+ */
+export function resetZebraIndex() {
+  _zebraIndex = 0;
+}
+
+/**
+ * Increment the zebra index for alternating patterns.
+ */
+export function nextZebraIndex() {
+  _zebraIndex++;
+}
+
+/**
+ * Pads the given string on the left side with a fill character until it reaches the specified width.
+ * This right-aligns the text within the given width.
+ * When helpZebra is enabled, alternates between dots and spaces for visual tracking.
+ *
+ * @param str - The string to be padded.
+ * @param width - The desired width of the resulting string after padding.
+ * @returns The padded string with fill character added to the left.
+ */
+export function padLeftFill(str: string, width: number) {
+  const len = width - noAnsiLen(str);
+  if (len <= 0) return str;
+  // Alternate between dots and spaces for zebra effect
+  const fill = _helpZebra && _zebraIndex % 2 === 1 ? "·" : " ";
+  return `${fill.repeat(len)}${str}`;
+}
+
+/**
+ * Converts a kebab-case string to camelCase.
+ *
+ * @param str - The kebab-case string to convert.
+ * @returns The camelCase version of the input string.
+ */
+export function camelCase(str: string) {
+  const parts = str.split("-").filter(Boolean);
+  return parts.length > 0 ? parts.reduce((cc, w) => `${cc}${w[0].toUpperCase()}${w.slice(1)}`) : "";
+}
+
+/**
+ * Parses a string into an integer, with optional handling for special cases and defaults.
+ *
+ * @param s - The string to parse. If the string is "inf" or "infinity" (case-insensitive), it returns `Infinity`.
+ * @param defaultN - An optional default number to return if the string is empty or undefined.
+ * @returns The parsed integer, `Infinity` for "inf" or "infinity", or the default number if provided.
+ * @throws Will throw an error if the string cannot be parsed into an integer and no default number is provided.
+ */
+export function validParseInt(s: string, defaultN?: number): number {
+  if (s) {
+    const ls = s.toLowerCase();
+
+    if (ls === "inf" || ls === "infinity") {
+      return Infinity;
+    }
+
+    const n = parseInt(ls);
+    if (Number.isInteger(n)) {
+      return n;
+    }
+  } else if (defaultN !== undefined) {
+    return defaultN;
+  }
+
+  throw new Error(`Invalid number input '${s}' - expected an integer`);
+}
+
+/**
+ * Returns the result of a function if the input is a function, otherwise returns the input value.
+ *
+ * @template T - The expected return type.
+ * @param x - The input which can be a function or a value.
+ * @returns The result of the function if `x` is a function, otherwise the value of `x`.
+ */
+export function cbOrVal<T = string>(x: unknown): T {
+  return typeof x === "function" ? x() : (x as T);
+}
+
+/**
+ * Creates a shallow copy of the given object.
+ *
+ * @template T - The type of the object to be duplicated.
+ * @param {T} obj - The object to be duplicated.
+ * @returns {T} - A shallow copy of the given object.
+ */
+export function dup<T = any>(obj: T): T {
+  const copy = {};
+  if (obj) {
+    for (const [key, val] of Object.entries(obj)) {
+      copy[key] = val && (val as any).constructor.name === "Object" ? Object.assign({}, val) : val;
+    }
+  }
+  return copy as T;
+}
+
+/**
+ * Calculates the length of a string after removing any ANSI escape codes.
+ *
+ * @param str - The input string potentially containing ANSI escape codes.
+ * @returns The length of the string without ANSI escape codes.
+ */
+export function noAnsiLen(str: string) {
+  return stripAnsi(str).length;
+}
+
+/**
+ * Pads the given string with spaces to ensure it reaches the specified width.
+ * If the string is already longer than the specified width, no padding is added.
+ *
+ * @param str - The string to be padded.
+ * @param width - The desired width of the resulting string.
+ * @returns The padded string.
+ */
+export function padStr(str: string, width: number) {
+  const len = Math.max(0, width - noAnsiLen(str));
+  return `${str}${" ".repeat(len)}`;
+}
+
+/**
+ * Pads the given string on the left side with spaces until it reaches the specified width.
+ * This right-aligns the text within the given width.
+ *
+ * @param str - The string to be padded.
+ * @param width - The desired width of the resulting string after padding.
+ * @returns The padded string with spaces added to the left.
+ */
+export function padLeft(str: string, width: number) {
+  const len = width - noAnsiLen(str);
+  return `${" ".repeat(Math.max(0, len))}${str}`;
+}
+
+/**
+ * Formats an array of strings into lines of text with specified margins and indentation,
+ * ensuring that each line does not exceed a given width.
+ *
+ * @param strs - An array of strings to be formatted.
+ * @param margin - A string to be added as a margin at the beginning of each line.
+ * @param indent - A string to be used for indentation of wrapped lines.
+ * @param lineWidth - The maximum width of each line, including the margin and indentation.
+ * @returns An array of formatted lines of text.
+ */
+export function fitLine(strs: string[], margin: string, indent: string, lineWidth: number) {
+  if (!strs || strs.length === 0) {
+    return [];
+  }
+
+  const out = [margin + strs[0]];
+
+  const add = (str: string, last: boolean) => {
+    let line = out[out.length - 1];
+    if (noAnsiLen(line) + str.length + 1 > lineWidth) {
+      out.push("");
+      line = margin + indent;
+    } else {
+      line += " ";
+    }
+    if (last) {
+      line += padLeftFill(str, lineWidth - noAnsiLen(line));
+    } else {
+      line += str;
+    }
+    out[out.length - 1] = line;
+  };
+
+  const lastIx = strs.length - 1;
+  for (let i = 1; i < strs.length; i++) {
+    add(strs[i], i === lastIx);
+  }
+
+  return out.map(x => x.trimEnd());
+}
+
+/**
+ * Adjusts an array of strings to fit within specified margins and widths.
+ *
+ * @param strs - An array of strings to be adjusted.
+ * @param margin - An optional string to be added as a margin to each line.
+ * @param indent - An optional string to be used as an indent for lines after the first.
+ * @param leftWidth - An optional number specifying the width of the left margin.
+ * @param lineWidth - An optional number specifying the maximum width of each line.
+ * @returns An array of strings adjusted to fit within the specified margins and widths.
+ */
+export function fitLines(
+  strs: string[],
+  margin?: string,
+  indent?: string,
+  leftWidth?: number,
+  lineWidth?: number
+) {
+  if (strs.length === 0) return [];
+  if (strs.length === 1) return [`${margin}${strs[0]}`];
+
+  const firstLen = noAnsiLen(strs[0]);
+
+  if (firstLen > leftWidth) {
+    const output = [`${margin}${strs[0]}`];
+    // Pad to align description at leftWidth column position
+    const padding = " ".repeat(leftWidth);
+    return output.concat(fitLine([padding].concat(strs.slice(1)), margin, indent, lineWidth));
+  }
+
+  // Check if padding to leftWidth would cause description to wrap when it could fit
+  // margin + paddedOption + " " + description
+  const descLen = noAnsiLen(strs[1] || "");
+  const paddedLineLen = margin.length + leftWidth + 1 + descLen;
+  const unPaddedLineLen = margin.length + firstLen + 1 + descLen;
+
+  if (paddedLineLen > lineWidth && unPaddedLineLen <= lineWidth) {
+    // Don't pad - description fits without padding but not with padding
+    return fitLine(strs, margin, indent, lineWidth);
+  }
+
+  return fitLine([padStr(strs[0], leftWidth)].concat(strs.slice(1)), margin, indent, lineWidth);
+}
+
+/**
+ * Converts a string argument to a boolean value.
+ *
+ * @param arg - The string to be converted to a boolean.
+ * @returns `true` if the string is not "0", "FALSE", or "NO" (case insensitive), otherwise `false`.
+ */
+export function toBoolean(arg: string) {
+  if (arg) {
+    const x = arg.toUpperCase();
+    // Handle numeric values: 0 is false, any other number is true
+    if (!isNaN(Number(arg))) {
+      return Number(arg) !== 0;
+    }
+    return x !== "FALSE" && x !== "NO" && x !== "OFF";
+  }
+  return false;
+}
+
+/**
+ *
+ * @param arg
+ * @returns
+ */
+export function isBoolean(arg: string) {
+  if (arg) {
+    const x = arg && arg.toUpperCase && arg.toUpperCase();
+    // Exclude "0" and "1" - they should be treated as numbers, not booleans
+    return x === "FALSE" || x === "TRUE" || x === "YES" || x === "NO" || x === "ON" || x === "OFF";
+  }
+  return false;
+}
+
+/**
+ * Checks if a string represents a valid number.
+ *
+ * @param arg - The string to check.
+ * @returns `true` if the string is a valid number, otherwise `false`.
+ */
+export function isNumber(arg: string) {
+  if (arg) {
+    const n = Number(arg);
+    return !isNaN(n) && isFinite(n);
+  }
+  return false;
+}
+
+export const noop = () => {};
+
+export function prefixOption(name: string) {
+  return name.length > 1 ? `--${name}` : `-${name}`;
+}
+
+/**
+ * Gets the terminal width for help text formatting.
+ * Falls back to 80 columns if terminal width cannot be determined.
+ *
+ * @returns The terminal width in columns.
+ */
+export function getTerminalWidth(): number {
+  return process.stdout.columns || 80;
+}

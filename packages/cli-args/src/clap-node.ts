@@ -1,0 +1,103 @@
+/**
+ * Represents a node in a command-line application parser.
+ *
+ * @remarks
+ * This class is used to represent commands or options in a CLI application. Each node can have a parent node,
+ * which represents a hierarchical relationship (e.g., command -> sub-command, option).
+ *
+ * @example
+ * ```typescript
+ * const rootNode = new ClapNode('root', 'rootAlias');
+ * const childNode = new ClapNode('child', 'childAlias', rootNode);
+ * rootNode.addArg('arg1');
+ * childNode.addError(new Error('An error occurred'));
+ * ```
+ *
+ * @public
+ */
+import { _PARENT } from "./symbols.ts";
+export class ClapNode {
+  /**
+   * command/option name
+   */
+  name: string;
+  /**
+   * Holds the name used in CLI to create the node, in case an alias was used.  It could be
+   * the same as name.
+   */
+  alias: string;
+  /**
+   * arguments for this node
+   */
+  argsList: string[];
+  /**
+   * As is verbatim CLI args that were consumbed by this node
+   */
+  argv: string[];
+  argsMap: Record<string, string | string[]>;
+  /**
+   * Parent node (command -> sub command, option)
+   */
+  private [_PARENT]?: ClapNode;
+
+  private _errors: Error[];
+  /**
+   *
+   * @param name - idiomatic name of the command
+   * @param inputName - name that was specified by user to trigger this command
+   * @param parent
+   */
+  constructor(name: string, alias: string, parent?: ClapNode) {
+    this.name = name;
+    this.alias = alias;
+    this.argsList = [];
+    this.argv = [];
+    this.argsMap = {};
+    if (parent) {
+      Object.defineProperty(this, _PARENT, {
+        value: parent,
+        configurable: true,
+        enumerable: false,
+        writable: true
+      });
+    }
+    this._errors = [];
+  }
+
+  /**
+   * Add an arg to this node
+   * @param arg
+   * @returns
+   */
+  addArg(arg: string) {
+    this.argsList.push(arg);
+  }
+
+  addVerbatimArg(arg: string) {
+    this.argv.push(arg);
+  }
+
+  addError(e: Error) {
+    this._errors.push(e);
+  }
+
+  get hasErrors() {
+    return this._errors.length > 0;
+  }
+
+  get error() {
+    return this._errors[0];
+  }
+
+  get errors() {
+    return this._errors;
+  }
+
+  get parent(): ClapNode {
+    return this[_PARENT];
+  }
+
+  getParent<T extends ClapNode = ClapNode>(): T {
+    return this.parent as T;
+  }
+}

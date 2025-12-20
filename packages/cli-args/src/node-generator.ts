@@ -1,0 +1,656 @@
+import assert from "assert";
+import {
+  ArgInfo,
+  BaseSpec,
+  CliBase,
+  isRootCommand,
+  UnknownCliArgError,
+  UnknownOptionError
+} from "./base.ts";
+import { ClapNode } from "./clap-node.ts";
+import { CommandNode } from "./command-node.ts";
+import { OptionBase } from "./option-base.ts";
+import { OptionNode } from "./option-node.ts";
+import { OptionMatch } from "./options.ts";
+import { isBoolean, toBoolean, isNumber } from "./xtil.ts";
+import { CommandMatched } from "./command-base.ts";
+import { unknownCommandBase, unknownCommandBaseNoOptions } from "./command-base.ts";
+import { _PARENT } from "./symbols.ts";
+
+/**
+ * Represents the source of an option in the application.
+ *
+ * - `cli`: The option was provided via the command line interface.
+ * - `user`: The option was set by the user.
+ * - `default`: The option is using the default value.
+ */
+export type OptionSource = "cli" | "user" | "default";
+
+const BUILDER_STATUS_GATHER_END = 1;
+const BUILDER_STATUS_COMPLETE = 2;
+
+/**
+ * ClapNodeBuilder is responsible for constructing and managing ClapNode instances
+ * during the command-line argument parsing process.
+ *
+ * @class
+ * @description
+ * This class provides methods to consume and process command-line arguments,
+ * building a tree-like structure of ClapNode objects that represent the parsed
+ * command, options, and their values.
+ *
+ * @remarks
+ * - The builder maintains a reference to its parent builder, allowing for nested command structures.
+ * - It handles both option and non-option arguments.
+ * - The class manages the state of completeness for the current node being built.
+ * - It interacts closely with the NixClap instance to determine how to process each argument.
+ *
+ * @example
+ * ```typescript
+ * const rootNode = new CommandNode(name, alias, command);
+ * const builder = new ClapNodeBuilder(rootNode);
+ * const result = builder.consumeOpt("-v");
+ * // Process the result...
+ * ```
+ */
+export class ClapNodeGenerator {
+  node: ClapNode;
+  parent?: ClapNodeGenerator;
+  status: number;
+  // commandContext?: CommandContext;
+  constructor(node: ClapNode, parent?: ClapNodeGenerator) {
+    this.node = node;
+    this.status = 0;
+    if (parent) {
+      this.parent = parent;
+    }
+  }
+
+  get cmdNode(): CommandNode {
+    return this.node instanceof CommandNode ? this.node : null;
+  }
+
+  get optNode(): OptionNode {
+    return this.node instanceof OptionNode ? this.node : null;
+  }
+
+  /**
+   *
+   * @param type
+   * @param value
+   * @param spec
+   * @returns
+   */
+  convertValue(type: string, value: string, base: CliBase<BaseSpec>): any {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    if (type === "number") {
+      // Use parseFloat to preserve decimals, parseInt for explicit integer type
+      return parseFloat(value);
+    } else if (type === "int" || type === "integer") {
+      return parseInt(value, 10);
+    } else if (type === "float") {
+      return parseFloat(value);
+    } else if (!type || type === "boolean") {
+      return toBoolean(value);
+    } else {
+      const customType = (base.spec.customTypes ||
+        // @ts-expect-error - coercions is deprecated legacy property name, kept for backward compatibility
+        base.spec.coercions)?.[type];
+      if (customType === undefined) {
+        // no custom type, so just keep as string
+        return value;
+      }
+
+      if (typeof customType === "string") {
+        return customType;
+      } else if (typeof customType === "function") {
+        try {
+          //
+          return customType(value);
+        } catch (e) {
+          this.node.addError(e);
+          return `${type} custom type function threw error: ${e.message}`;
+        }
+      } else if (customType instanceof RegExp) {
+        const mx = value.match(customType);
+        if (mx) {
+          return mx[0];
+        }
+
+        if (base.spec.argDefault) {
+          return base.spec.argDefault;
+        }
+
+        this.node.addError(
+          new Error(`argument '${value}' didn't match RegExp requirement for ${base.name}`)
+        );
+      } else {
+        this.node.addError(new Error(`Unknown custom type handler: ${typeof customType}`));
+      }
+    }
+
+    return value;
+  }
+
+  /**
+   *
+   * @param arg
+   * @returns
+   */
+  consumeNonOptAsCommand(arg: string, parsingCmd = ""): ClapNodeGenerator[] {
+    const cmdNode = this.cmdNode;
+    const cmd = cmdNode.cmdBase;
+
+    const createNewCommand = (matched: CommandMatched) => {
+      const node = new CommandNode(matched.name, matched.alias, matched.cmd);
+      cmdNode.addCommandNode(node);
+
+      const builder = new ClapNodeGenerator(node);
+      builder.parent = this;
+      this.endArgGathering();
+      return [builder];
+    };
+
+    // is it a sub command?
+    const matched = cmd.matchSubCommand(arg);
+    const ncConfig = this.cmdNode.cmdBase.ncConfig;
+
+    if (matched.cmd) {
+      // process as a known sub command
+      return createNewCommand(matched);
+    } else if (!this.status && cmd.expectArgs > 0) {
+      // can we take it as an argument to the command?
+      // is it a valid argument?
+      //
+      this.cmdNode.addVerbatimArg(arg);
+      this.node.addArg(arg);
+
+      if (cmd.expectArgs === this.node.argsList.length) {
+        this.endArgGathering();
+      }
+    } else if (ncConfig?.allowUnknownCommand && isRootCommand(this.cmdNode.alias)) {
+      // not allow unknown command to have sub commands
+      // and unknown commands go as sub commands of the root command
+      return createNewCommand({
+        name: arg,
+        alias: arg,
+        cmd: ncConfig.allowUnknownOption ? unknownCommandBase : unknownCommandBaseNoOptions
+      });
+    } else {
+      // Check if current command requires a subcommand:
+      // - has subcommands defined
+      // - has no exec handler
+      // - expects no arguments
+      // - AND no subcommand has been matched yet
+      const hasMatchedSubCommand = Object.keys(cmdNode.subCmdNodes).length > 0;
+      const requiresSubCommand =
+        cmd.subCmdCount > 0 && !cmd.spec.exec && cmd.expectArgs === 0 && !hasMatchedSubCommand;
+
+      // Check for unknown command fallback at root level
+      // Only trigger if:
+      // 1. We're at root level
+      // 2. No known command has been matched yet (check if root has no sub-commands)
+      // 3. No non-option arguments have been processed at root yet (first non-option arg must be unknown)
+      // 4. unknownCommandFallback is configured
+      // 5. allowUnknownCommand is not enabled
+      if (
+        isRootCommand(this.cmdNode.alias) &&
+        Object.keys(this.cmdNode.subCmdNodes).length === 0 && // Ensure no command has been matched yet
+        this.cmdNode.argsList.length === 0 && // Ensure no non-option args have been processed yet
+        ncConfig?.unknownCommandFallback &&
+        !ncConfig.allowUnknownCommand
+      ) {
+        // Verify the fallback command exists
+        const fallbackMatched = cmd.matchSubCommand(ncConfig.unknownCommandFallback);
+        if (fallbackMatched.cmd) {
+          // Create the fallback command node
+          const fallbackNode = new CommandNode(
+            fallbackMatched.name,
+            fallbackMatched.alias,
+            fallbackMatched.cmd
+          );
+          cmdNode.addCommandNode(fallbackNode);
+
+          // Create builder for fallback command
+          const fallbackBuilder = new ClapNodeGenerator(fallbackNode);
+          fallbackBuilder.parent = this;
+
+          // Add the unknown command name as the first argument to the fallback command
+          fallbackNode.addVerbatimArg(arg);
+          fallbackBuilder.node.addArg(arg);
+
+          // Return the builder so parsing continues with the fallback command
+          return [fallbackBuilder];
+        }
+        // If fallback command doesn't exist, fall through to error
+      }
+
+      if (requiresSubCommand) {
+        // Command requires a subcommand but got unknown arg
+        if (ncConfig?.allowUnknownCommand) {
+          // Treat as unknown subcommand of current command
+          return createNewCommand({
+            name: arg,
+            alias: arg,
+            cmd: ncConfig.allowUnknownOption ? unknownCommandBase : unknownCommandBaseNoOptions
+          });
+        }
+        // Error: command requires a subcommand
+        throw new UnknownCliArgError(
+          `Command '${cmd.name}' requires a subcommand. Unknown: '${arg}'.`,
+          arg
+        );
+      }
+
+      parsingCmd = parsingCmd || cmd.name;
+      this.endArgGathering();
+      // this may be a sub command for the parent, if it's a command also
+      if (this.parent && this.parent.cmdNode) {
+        return this.parent.consumeNonOptAsCommand(arg, parsingCmd);
+      }
+
+      // unknown command or invalid argument
+      throw new UnknownCliArgError(
+        `Encountered unknown CLI argument '${arg}' while parsing for command '${parsingCmd}'.`,
+        arg
+      );
+    }
+
+    return [];
+  }
+
+  /**
+   * Check that a boolean option that doesn't specify argument should auto sets true
+   *
+   * @param arg
+   * @returns
+   */
+  checkAutoBooleanOption(arg: string): boolean {
+    const opt = this.optNode.option;
+
+    if (
+      opt.expectArgs > 0 &&
+      opt.args[0].type === "boolean" && // if option is expecting the first arg as a boolean
+      this.node.argsList.length === 0 && // and no arg gathered yet
+      !isBoolean(arg) // but incoming arg doesn't look like a boolean
+    ) {
+      // a boolean option without arg is auto true, with source 'cli'
+      this.node.addArg("true");
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   *
+   * @param arg
+   * @returns
+   */
+  consumeNonOptAsOption(arg: string): ClapNodeGenerator[] {
+    if (this.checkAutoBooleanOption(arg)) {
+      this.complete();
+      // option must have a parent
+      return [null].concat(this.parent.consumeNonOpt(arg));
+    }
+
+    this.parent.cmdNode?.addVerbatimArg(arg);
+    this.node.addVerbatimArg(arg);
+    this.node.addArg(arg);
+
+    // if we have a node that remains open, then it must be expecting arguments
+    const opt = this.optNode.option;
+
+    if (this.node.argsList.length >= opt.expectArgs) {
+      this.endArgGathering();
+      return [null];
+    }
+
+    return [];
+  }
+
+  /**
+   *
+   * @param arg
+   * @returns
+   */
+  consumeNonOpt(arg: string): ClapNodeGenerator[] {
+    /**
+     * Possibilities
+     * 1. A valid subcommand
+     * 1a. A valid subcommand for a parent
+     * 2. A valid argument for a node (either command or option)
+     * 3. Unknown command and invalid argument
+     *
+     */
+    // does current node want sub command?
+    // if (this.commandContext) {
+    //   const cmd = this.commandContext[CMD];
+    // }
+
+    if (this.cmdNode) {
+      if (this.cmdNode.isGreedy) {
+        this.cmdNode.addVerbatimArg(arg);
+        this.node.addArg(arg);
+        return [];
+      }
+      return this.consumeNonOptAsCommand(arg);
+    } else {
+      return this.consumeNonOptAsOption(arg);
+    }
+  }
+
+  /**
+   *
+   * @param data
+   * @returns
+   */
+  setOptValue(data: OptionMatch, complete = false, source: OptionSource = "cli"): OptionNode {
+    const cmd = this.cmdNode.cmdBase;
+
+    // does this command want this option
+
+    const matched = cmd.options.match(data);
+
+    let node: OptionNode;
+
+    if (!matched) {
+      const allowUnknownOption = this.cmdNode?.cmdBase.allowUnknownOption;
+      if (!allowUnknownOption) {
+        // Check parent command if option doesn't match current command
+        if (allowUnknownOption === undefined && this.parent) {
+          return this.parent.setOptValue(data, complete);
+        }
+        this.node.addError(
+          new UnknownOptionError(`Encountered unknown CLI option '${data.name}'.`, data)
+        );
+      }
+      // no more parent, accept as unknown option at root command
+      node = new OptionNode(data, this.node);
+    } else {
+      node = new OptionNode(matched, this.node);
+    }
+
+    node.source = source;
+    this.cmdNode.addOptionNode(node);
+
+    if (complete) {
+      const builder = new ClapNodeGenerator(node, this);
+      builder.complete();
+    }
+
+    return node;
+  }
+
+  /**
+   * Adds an option with its arguments to the current node.
+   *
+   * @param name
+   * @param args
+   */
+  addOptionWithArgs(
+    name: string,
+    args: string[],
+    option: OptionBase,
+    source: OptionSource = "default"
+  ) {
+    const builder = this.makeOptNode({
+      name: name,
+      verbatim: name,
+      arg: "",
+      dashes: 2,
+      value: args[0],
+      option
+    })[0];
+
+    builder.optNode.source = source;
+    // apply more default args
+    for (let ix = 1; ix < args.length; ix++) {
+      builder.consumeNonOptAsOption(args[ix]);
+    }
+    builder.complete();
+    return builder.optNode;
+  }
+
+  /**
+   * Consumes and processes an option argument.
+   *
+   * This method handles various types of option formats, including short options (-a),
+   * long options (--option), negated options (--no-option), and options with values (--option=value).
+   *
+   * @param {string} opt - The option argument to process.
+   * @returns {ClapNodeGenerator[]} An array of ClapNodeBuilder instances resulting from processing the option.
+   *
+   * @remarks
+   * - If the option is "-." or "--.", it completes the current option or ends argument gathering.
+   * - For options starting with "--no-", it sets the option value to "false".
+   * - It handles combined short options (e.g., -abc) by processing each character as a separate option.
+   * - Options with values (--option=value) are parsed and the value is associated with the option.
+   * - If the current node is an option node, it completes that node before processing the new option.
+   *
+   * @example
+   * ```typescript
+   * const result = builder.consumeOpt("--verbose");
+   * // Process the result...
+   * ```
+   */
+  consumeOpt(opt: string): ClapNodeGenerator[] {
+    // -# or - or --- enters greedy mode for the command
+    if (this.cmdNode && (opt === "-#" || opt === "-" || opt === "---")) {
+      // this.cmdNode.addVerbatimArg(opt);
+      this.cmdNode.isGreedy = true;
+      return [];
+    }
+
+    if (opt === "-." || opt === "--.") {
+      if (this.optNode) {
+        // this.parent.cmdNode?.addVerbatimArg(opt);
+        this.complete();
+      } else {
+        // this.cmdNode.addVerbatimArg(opt);
+        this.cmdNode.isGreedy = false; // stop greedy mode
+        this.endArgGathering();
+      }
+      return [null];
+    }
+
+    if (this.optNode) {
+      // option ends previous option
+      this.complete();
+
+      return [null].concat(this.parent.consumeOpt(opt));
+    }
+
+    let name: string;
+    let value: string;
+    let verbatim: string;
+    let dashes: number;
+
+    if (opt.startsWith("--no-")) {
+      name = opt.substring(5);
+      value = "false";
+      verbatim = "no-";
+    } else {
+      dashes = opt.startsWith("--") ? 2 : 1;
+      name = opt.substring(dashes);
+
+      const eqX = name.indexOf("=");
+      if (eqX > 0) {
+        value = verbatim = name.substring(eqX + 1);
+        name = name.substring(0, eqX);
+      }
+
+      if (dashes === 1 && name.length > 1) {
+        const singleOpts = name.split("").slice(0, name.length - 1);
+        for (const f of singleOpts) {
+          this.setOptValue({ name: f, value: undefined, verbatim: f, dashes, arg: opt }, true);
+        }
+        name = name[name.length - 1];
+      }
+    }
+
+    this.node.addVerbatimArg(opt);
+    return this.makeOptNode({ name, value, verbatim, dashes, arg: opt });
+  }
+
+  /**
+   *
+   * @param data
+   * @returns
+   */
+  makeOptNode(data: OptionMatch): ClapNodeGenerator[] {
+    const optNode = this.setOptValue(data);
+    
+    // Check if the option node's parent command is different from current builder's command
+    // This happens when default command was inserted via option matching
+    const optParentCmd = optNode.getParent<CommandNode>();
+    const currentCmd = this.cmdNode;
+    
+    
+    const builder = new ClapNodeGenerator(optNode, this);
+    const minArg = data.value ? 1 : 0;
+    if (!(optNode.option.args.length > minArg)) {
+      builder.complete();
+    }
+
+    return [builder];
+  }
+
+  /**
+   *
+   */
+  private optEndGatherArgs() {
+    const node = this.optNode;
+    const opt = node.option;
+    const args = opt.args;
+
+    assert(
+      this.node.argsList && this.node.argsList.length >= opt.needArgs,
+      `Not enough arguments for option '${opt.name}'`
+    );
+
+    const setArg = (argIx: number, arg: ArgInfo, value: string | string[]) => {
+      const setValue = Array.isArray(value)
+        ? value.map(v => this.convertValue(arg.type, v, opt))
+        : this.convertValue(arg.type, value, opt);
+
+      if (arg.name) {
+        node.argsMap[arg.name] = setValue;
+      }
+      node.argsMap[argIx] = setValue;
+    };
+
+    if (opt.hasArgs) {
+      for (let i = 0; i < args.length && i < node.argsList.length; i++) {
+        setArg(i, args[i], node.argsList[i]);
+      }
+    } else {
+      node.argsMap[0] =
+        node.argsList.length > 0
+          ? this.convertValue(
+              isBoolean(node.argsList[0]) ? "boolean" : isNumber(node.argsList[0]) ? "number" : "string",
+              node.argsList[0],
+              opt
+            )
+          : (true as any);
+    }
+
+    if (opt.isVariadicArgs) {
+      const lastIx = args.length - 1;
+      if (node.argsList.length > lastIx) {
+        setArg(lastIx, args[lastIx], node.argsList.slice(lastIx));
+      }
+    }
+  }
+
+  /**
+   *
+   */
+  private cmdEndGatherArgs() {
+    const node = this.cmdNode;
+    const cmd = node.cmdBase;
+    const args = cmd.args;
+
+    assert(
+      this.node.argsList && this.node.argsList.length >= cmd.needArgs,
+      `Not enough arguments for command '${cmd.name}'`
+    );
+
+    const setArg = (argIx: number, arg: ArgInfo, value: any) => {
+      const setValue = Array.isArray(value)
+        ? value.map(v => this.convertValue(arg.type, v, cmd))
+        : this.convertValue(arg.type, value, cmd);
+
+      if (arg.name) {
+        node.argsMap[arg.name] = setValue;
+      }
+      node.argsMap[argIx] = setValue;
+    };
+
+    for (let i = 0; i < args.length && i < node.argsList.length; i++) {
+      setArg(i, args[i], node.argsList[i]);
+    }
+
+    if (cmd.isVariadicArgs) {
+      const lastIx = args.length - 1;
+      if (node.argsList.length > lastIx) {
+        setArg(lastIx, args[lastIx], node.argsList.slice(lastIx));
+      }
+    }
+  }
+
+  /**
+   * End a node from gathering arguments.
+   *
+   * For command, these conditions will end gathering:
+   * 1. Required args all gathered
+   * 2. A new valid sub command found
+   * 3. User explicitly terminates command with `-.`
+   *
+   * For option:
+   * 1. Required args all gathered
+   * 2. Encounter a new option, including `-.`
+   */
+  endArgGathering() {
+    if (this.status === 0) {
+      this.status = BUILDER_STATUS_GATHER_END;
+      if (this.cmdNode) {
+        this.cmdEndGatherArgs();
+      } else {
+        this.checkAutoBooleanOption(">");
+        this.optEndGatherArgs();
+      }
+    }
+  }
+
+  /**
+   *
+   */
+  completeOpt() {}
+
+  /**
+   *
+   */
+  completeCmd() {}
+
+  complete() {
+    this.endArgGathering();
+    if (this.status !== BUILDER_STATUS_COMPLETE) {
+      this.status = BUILDER_STATUS_COMPLETE;
+      if (this.cmdNode) {
+        // this is a command node
+        this.completeCmd();
+      } else {
+        this.completeOpt();
+      }
+    }
+  }
+
+  get isComplete(): boolean {
+    return this.status === BUILDER_STATUS_COMPLETE;
+  }
+}
