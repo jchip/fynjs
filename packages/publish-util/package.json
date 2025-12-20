@@ -1,0 +1,58 @@
+{
+  "name": "publish-util",
+  "version": "2.1.0",
+  "description": "Some util to clean up package.json for npm publish",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "tap",
+    "prepublishOnly": "node check.js",
+    "prepack": "node bin/publish-util-prepack",
+    "postpack": "node bin/publish-util-postpack",
+    "postinstall": "node lib/postinstall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/publish-util.git"
+  },
+  "bin": {
+    "publish-util-prepublishonly": "bin/publish-util-prepublishonly.js",
+    "publish-util-prepack": "bin/publish-util-prepack.js",
+    "publish-util-postpack": "bin/publish-util-postpack.js",
+    "do-publish": "bin/do-publish.js"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.com/",
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "keywords": [
+    "npm",
+    "publish",
+    "cleanup",
+    "clean",
+    "package.json",
+    "util"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "execa": "^5.1.1",
+    "find-up": "^5.0.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "prettier": "^2.2.1",
+    "tap": "^15.0.6"
+  },
+  "nyc": {
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "sourceMap": false
+  }
+}
