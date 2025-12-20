@@ -3,7 +3,7 @@
   "version": "1.0.6",
   "description": "Create a new fynpo monorepo",
   "main": "index.js",
-  "homepage": "https://www.electrode.io/fynpo/",
+  "homepage": "https://github.com/jchip/fynjs",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/electrode-io/fynpo.git"
+    "url": "https://github.com/jchip/fynjs.git"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.1",

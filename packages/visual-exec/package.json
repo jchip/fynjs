@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/fynpo.git",
+    "url": "https://github.com/jchip/fynjs.git",
     "directory": "packages/visual-exec"
   },
   "keywords": [

@@ -4,7 +4,7 @@
   "description": "npm install globally to provide the fynpo command",
   "preferGlobal": true,
   "main": "index.js",
-  "homepage": "https://www.electrode.io/fynpo/",
+  "homepage": "https://github.com/jchip/fynjs",
   "bin": {
     "fynpo": "dist/fynpo.js"
   },
@@ -37,7 +37,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/electrode-io/fynpo.git"
+    "url": "https://github.com/jchip/fynjs.git"
   },
   "dependencies": {
     "require-at": "^1.0.6",

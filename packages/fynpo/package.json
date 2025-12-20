@@ -3,7 +3,7 @@
   "version": "2.1.0",
   "description": "fynpo is a zero setup monorepo manager for node.js",
   "main": "dist/index.js",
-  "homepage": "https://jchip.github.io/fynpo/",
+  "homepage": "https://github.com/jchip/fynjs",
   "scripts": {
     "build": "rm -rf dist && webpack",
     "docs": "xrun xarc/docs",
@@ -37,7 +37,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/fynpo.git",
+    "url": "https://github.com/jchip/fynjs.git",
     "directory": "packages/fynpo"
   },
   "bin": {

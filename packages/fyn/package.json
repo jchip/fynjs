@@ -3,7 +3,7 @@
   "version": "2.1.0",
   "description": "fyn is the NPM for fynpo -- a zero setup monorepo tool",
   "main": "./bin/fyn.js",
-  "homepage": "https://jchip.github.io/fynpo/",
+  "homepage": "https://github.com/jchip/fynjs",
   "license": "Apache-2.0",
   "scripts": {
     "test": "xrun xarc/test-only",
@@ -67,7 +67,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/fynpo.git",
+    "url": "https://github.com/jchip/fynjs.git",
     "directory": "packages/fyn"
   },
   "publishUtil": {

@@ -3,7 +3,7 @@
   "version": "1.1.22",
   "description": "zero setup monorepo manager for node.js",
   "main": "dist/index.js",
-  "homepage": "https://jchip.github.io/fynpo/",
+  "homepage": "https://github.com/jchip/fynjs",
   "scripts": {
     "build": "rm -rf dist && tsc",
     "test": "xrun xarc/test-only",
