@@ -26,7 +26,7 @@ import fetch from "node-fetch-npm";
 import myPkg from "./mypkg";
 import { cleanErrorStack } from "@jchip/error";
 import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
-import hardLinkDir from "../lib/util/hard-link-dir";
+import * as hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
 import { fileURLToPath } from "url";
 import {

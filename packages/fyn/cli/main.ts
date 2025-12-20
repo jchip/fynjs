@@ -16,7 +16,7 @@ import fynTil from "../lib/util/fyntil";
 import optionalRequireMod from "optional-require";
 import { runInitPackage } from "init-package";
 import FynGlobal from "../lib/fyn-global";
-import hardLinkDir from "../lib/util/hard-link-dir";
+import * as hardLinkDir from "../lib/util/hard-link-dir";
 
 const optionalRequire = optionalRequireMod(import.meta.url);
 
