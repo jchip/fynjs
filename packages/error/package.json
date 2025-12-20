@@ -1,0 +1,130 @@
+{
+  "name": "@jchip/error",
+  "version": "1.0.3",
+  "description": "utilities and polyfill for node.js errors",
+  "homepage": "https://jchip.github.io/error",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "xrun xarc/test-only",
+    "lint": "xrun xarc/lint",
+    "coverage": "xrun xarc/test-cov",
+    "coveralls": "cat coverage/lcov.info | coveralls",
+    "check": "xrun --serial xarc/check coveralls",
+    "publish-util-pre": "publish-util-prepublishonly",
+    "prepublishOnly": "xrun --serial [[build, docs], xarc/check, publish-util-pre]",
+    "postpack": "publish-util-postpack",
+    "docs": "xrun xarc/docs"
+  },
+  "keywords": [
+    "errors",
+    "clean",
+    "error",
+    "stack",
+    "utilities",
+    "aggregate",
+    "error",
+    "AggregateError",
+    "polyfill",
+    "cleanErrorStack"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.16",
+    "@types/sinon": "^9.0.10",
+    "@types/sinon-chai": "^3.2.5",
+    "@typescript-eslint/eslint-plugin": "^4.11.0",
+    "@typescript-eslint/parser": "^4.11.0",
+    "@xarc/module-dev": "^4.1.0",
+    "babel-eslint": "^10.1.0",
+    "chai": "^4.3.4",
+    "coveralls": "^3.1.1",
+    "eslint": "^7.32.0",
+    "eslint-config-walmart": "^2.2.1",
+    "eslint-plugin-filenames": "^1.1.0",
+    "eslint-plugin-jsdoc": "^30.7.9",
+    "eslint-plugin-tsdoc": "^0.2.11",
+    "mocha": "^9.1.0",
+    "nyc": "^15.1.0",
+    "pirates": "^4.0.1",
+    "prettier": "^2.3.2",
+    "publish-util": "^1.1.6",
+    "run-verify": "^1.2.6",
+    "sinon": "^9.2.2",
+    "sinon-chai": "^3.5.0",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^10.2.1",
+    "typedoc": "^0.21.6",
+    "typescript": "^4.3.5"
+  },
+  "dependencies": {},
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/error"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "nyc": {
+    "extends": [
+      "@istanbuljs/nyc-config-typescript"
+    ],
+    "all": true,
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "exclude": [
+      "*clap.js",
+      "*clap.ts",
+      ".eslintrc.js",
+      "coverage",
+      "dist",
+      "docs",
+      "gulpfile.js",
+      "test",
+      "xrun*.js",
+      "xrun*.ts"
+    ],
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100,
+    "cache": false
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "@xarc/module-dev": {
+    "features": [
+      "eslint",
+      "eslintTS",
+      "mocha",
+      "prettier",
+      "typedoc",
+      "typescript"
+    ]
+  },
+  "mocha": {
+    "require": [
+      "ts-node/register",
+      "source-map-support/register",
+      "@xarc/module-dev/config/test/setup.js"
+    ],
+    "recursive": true
+  }
+}

@@ -1,0 +1,241 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>@jchip/error</title>
+	<meta name="description" content="Documentation for @jchip/error">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+	<script async src="assets/js/search.js" id="search-script"></script>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">@jchip/error</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<h1>@jchip/error</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#jchiperror--" id="jchiperror--" style="color: inherit; text-decoration: none;">
+					<h1>@jchip/error <sup><a href="https://npmjs.com/package/@jchip/error"><img src="https://versionbadg.es/jchip/error.svg" alt="Version Badge"></a></sup> <!-- omit in toc --></h1>
+				</a>
+				<p><a href="https://david-dm.org/jchip/error"><img src="https://david-dm.org/jchip/error.svg" alt="dependency status"></a>
+					<a href="https://david-dm.org/jchip/error#info=devDependencies"><img src="https://david-dm.org/jchip/error/dev-status.svg" alt="dev dependency status"></a>
+					<a href="LICENSE"><img src="https://img.shields.io/npm/l/@jchip/error.svg" alt="License"></a>
+					<a href="https://github.com/jchip/error/actions/workflows/node.js.yml"><img src="https://github.com/jchip/error/actions/workflows/node.js.yml/badge.svg" alt="build"></a>
+				<a href="https://coveralls.io/github/jchip/error?branch=main"><img src="https://coveralls.io/repos/github/jchip/error/badge.svg?branch=main" alt="coverage"></a></p>
+				<p><a href="https://npm-stat.com/charts.html?package=%40jchip%2Ferror"><img src="https://img.shields.io/npm/dm/@jchip/error.svg" alt="Downloads"></a></p>
+				<p><a href="https://npmjs.com/package/@jchip/error"><img src="https://nodei.co/npm/@jchip/error.png?downloads=true&stars=true" alt="npm badge"></a></p>
+				<p>Utilities and polyfill for node.js errors</p>
+				<a href="#api-reference-httpsjchipgithubioerror-" id="api-reference-httpsjchipgithubioerror-" style="color: inherit; text-decoration: none;">
+					<h3>API reference: <a href="https://jchip.github.io/error">https://jchip.github.io/error</a> <!-- omit in toc --></h3>
+				</a>
+				<a href="#table-of-contents-" id="table-of-contents-" style="color: inherit; text-decoration: none;">
+					<h1>Table of Contents <!-- omit in toc --></h1>
+				</a>
+				<ul>
+					<li><a href="#examples">Examples</a><ul>
+							<li><a href="#cleanerrorstack"><code>cleanErrorStack</code></a></li>
+							<li><a href="#aggregateerrorstack"><code>aggregateErrorStack</code></a></li>
+							<li><a href="#aggregateerror"><code>AggregateError</code></a></li>
+						</ul>
+					</li>
+				</ul>
+				<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
+					<h2>Examples</h2>
+				</a>
+				<a href="#cleanerrorstack" id="cleanerrorstack" style="color: inherit; text-decoration: none;">
+					<h3><code>cleanErrorStack</code></h3>
+				</a>
+				<pre><code class="language-ts"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">cleanErrorStack</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;@jchip/error&quot;</span><span style="color: #000000">;</span>
+
+<span style="color: #AF00DB">try</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;oops&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">} </span><span style="color: #AF00DB">catch</span><span style="color: #000000"> (</span><span style="color: #001080">err</span><span style="color: #000000">) {</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #795E26">cleanErrorStack</span><span style="color: #000000">(</span><span style="color: #001080">err</span><span style="color: #000000">));</span>
+<span style="color: #000000">}</span>
+</code></pre>
+				<p>Output:</p>
+				<pre><code><span style="color: #000000">Error: </span><span style="color: #001080">Cannot</span><span style="color: #000000"> </span><span style="color: #001080">find</span><span style="color: #000000"> </span><span style="color: #0000FF">module</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;oops&#039;</span>
+<span style="color: #267F99">Require</span><span style="color: #000000"> </span><span style="color: #267F99">stack</span><span style="color: #000000">:</span>
+<span style="color: #000000">- /</span><span style="color: #267F99">Users</span><span style="color: #000000">/</span><span style="color: #267F99">joel</span><span style="color: #000000">/</span><span style="color: #267F99">error</span><span style="color: #000000">/</span><span style="color: #267F99">test</span><span style="color: #000000">/</span><span style="color: #267F99">samples</span><span style="color: #000000">.</span><span style="color: #267F99">ts</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.&lt;</span><span style="color: #267F99">anonymous</span><span style="color: #000000">&gt; (</span><span style="color: #267F99">test</span><span style="color: #000000">/</span><span style="color: #267F99">samples</span><span style="color: #000000">.</span><span style="color: #267F99">js</span><span style="color: #000000">:4:3)</span>
+</code></pre>
+				<p>vs:</p>
+				<pre><code><span style="color: #000000">Error: </span><span style="color: #001080">Cannot</span><span style="color: #000000"> </span><span style="color: #001080">find</span><span style="color: #000000"> </span><span style="color: #0000FF">module</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;oops&#039;</span>
+<span style="color: #267F99">Require</span><span style="color: #000000"> </span><span style="color: #267F99">stack</span><span style="color: #000000">:</span>
+<span style="color: #000000">- /</span><span style="color: #267F99">Users</span><span style="color: #000000">/</span><span style="color: #267F99">joel</span><span style="color: #000000">/</span><span style="color: #267F99">error</span><span style="color: #000000">/</span><span style="color: #267F99">test</span><span style="color: #000000">/</span><span style="color: #267F99">samples</span><span style="color: #000000">.</span><span style="color: #267F99">js</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">_resolveFilename</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:933:15)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">_load</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:778:27)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">require</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:1005:19)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">require</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">helpers</span><span style="color: #000000">:94:18)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.&lt;</span><span style="color: #267F99">anonymous</span><span style="color: #000000">&gt; (/</span><span style="color: #267F99">Users</span><span style="color: #000000">/</span><span style="color: #267F99">joel</span><span style="color: #000000">/</span><span style="color: #267F99">error</span><span style="color: #000000">/</span><span style="color: #267F99">test</span><span style="color: #000000">/</span><span style="color: #267F99">samples</span><span style="color: #000000">.</span><span style="color: #267F99">js</span><span style="color: #000000">:4:3)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">_compile</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:1101:14)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.</span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">_extensions</span><span style="color: #000000">..</span><span style="color: #267F99">js</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:1153:10)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">load</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:981:32)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #267F99">Module</span><span style="color: #000000">.</span><span style="color: #267F99">_load</span><span style="color: #000000"> (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:822:12)</span>
+<span style="color: #000000">    </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #267F99">executeUserEntryPoint</span><span style="color: #000000"> [</span><span style="color: #267F99">as</span><span style="color: #000000"> </span><span style="color: #267F99">runMain</span><span style="color: #000000">] (</span><span style="color: #267F99">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">run_main</span><span style="color: #000000">:79:12)</span>
+</code></pre>
+				<a href="#aggregateerrorstack" id="aggregateerrorstack" style="color: inherit; text-decoration: none;">
+					<h3><code>aggregateErrorStack</code></h3>
+				</a>
+				<p>Generate stack with aggregate errors from <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError">AggregateError</a></p>
+				<p>Example:</p>
+				<pre><code class="language-ts"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">aggregateErrorStack</span><span style="color: #000000">, </span><span style="color: #001080">AggregateError</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;@jchip/error&quot;</span><span style="color: #000000">;</span>
+
+<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #795E26">aggregateErrorStack</span><span style="color: #000000">(</span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">AggregateError</span><span style="color: #000000">([</span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #267F99">Error</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;error 1&quot;</span><span style="color: #000000">)], </span><span style="color: #A31515">&quot;test&quot;</span><span style="color: #000000">)));</span>
+</code></pre>
+				<p>Output:</p>
+				<pre><code><span style="color: #000000">AggregateError: </span><span style="color: #001080">test</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.&lt;</span><span style="color: #001080">anonymous</span><span style="color: #000000">&gt; (/</span><span style="color: #001080">Users</span><span style="color: #000000">/</span><span style="color: #001080">joel</span><span style="color: #000000">/</span><span style="color: #001080">error</span><span style="color: #000000">/</span><span style="color: #001080">test</span><span style="color: #000000">/</span><span style="color: #001080">samples</span><span style="color: #000000">.</span><span style="color: #001080">js</span><span style="color: #000000">:</span><span style="color: #098658">3</span><span style="color: #000000">:</span><span style="color: #098658">33</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #795E26">_compile</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">1101</span><span style="color: #000000">:</span><span style="color: #098658">14</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.</span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #001080">_extensions</span><span style="color: #000000">..</span><span style="color: #795E26">js</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">1153</span><span style="color: #000000">:</span><span style="color: #098658">10</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">981</span><span style="color: #000000">:</span><span style="color: #098658">32</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #795E26">_load</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">822</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #001080">executeUserEntryPoint</span><span style="color: #000000"> [</span><span style="color: #AF00DB">as</span><span style="color: #000000"> </span><span style="color: #267F99">runMain</span><span style="color: #000000">] (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">run_main</span><span style="color: #000000">:</span><span style="color: #098658">79</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">    at node:internal/main/run_main_module:17:47</span>
+<span style="color: #000000">  Error: error 1</span>
+<span style="color: #000000">      at Object.&lt;</span><span style="color: #267F99">anonymous</span><span style="color: #000000">&gt; (/</span><span style="color: #001080">Users</span><span style="color: #000000">/</span><span style="color: #001080">joel</span><span style="color: #000000">/</span><span style="color: #001080">error</span><span style="color: #000000">/</span><span style="color: #001080">test</span><span style="color: #000000">/samples.js:</span><span style="color: #098658">3</span><span style="color: #000000">:</span><span style="color: #098658">53</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Module._compile (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">1101</span><span style="color: #000000">:</span><span style="color: #098658">14</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Object.Module._extensions..js (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">1153</span><span style="color: #000000">:</span><span style="color: #098658">10</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Module.load (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">981</span><span style="color: #000000">:</span><span style="color: #098658">32</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Function.Module._load (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">822</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Function.executeUserEntryPoint [as runMain] (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">run_main</span><span style="color: #000000">:</span><span style="color: #098658">79</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at node:internal/main/run_main_module:17:47</span>
+</code></pre>
+				<a href="#aggregateerror" id="aggregateerror" style="color: inherit; text-decoration: none;">
+					<h3><code>AggregateError</code></h3>
+				</a>
+				<ul>
+					<li>Polyfill for <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError">AggregateError</a></li>
+					<li>node.js 15+ has built-in <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError">AggregateError</a></li>
+				</ul>
+				<p>Example with <code>cleanErrorStack</code>:</p>
+				<pre><code class="language-ts"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">cleanErrorStack</span><span style="color: #000000">, </span><span style="color: #001080">AggregateError</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;@jchip/error&quot;</span><span style="color: #000000">;</span>
+
+<span style="color: #AF00DB">try</span><span style="color: #000000"> {</span>
+<span style="color: #000000">  </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;bad&quot;</span><span style="color: #000000">);</span>
+<span style="color: #000000">} </span><span style="color: #AF00DB">catch</span><span style="color: #000000"> (</span><span style="color: #001080">err</span><span style="color: #000000">) {</span>
+<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #795E26">cleanErrorStack</span><span style="color: #000000">(</span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">AggregateError</span><span style="color: #000000">([</span><span style="color: #001080">err</span><span style="color: #000000">], </span><span style="color: #A31515">&quot;require failed&quot;</span><span style="color: #000000">)));</span>
+<span style="color: #000000">}</span>
+</code></pre>
+				<p>Output:</p>
+				<pre><code><span style="color: #000000">AggregateError: </span><span style="color: #001080">require</span><span style="color: #000000"> </span><span style="color: #001080">failed</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.&lt;</span><span style="color: #001080">anonymous</span><span style="color: #000000">&gt; (</span><span style="color: #001080">test</span><span style="color: #000000">/</span><span style="color: #001080">samples</span><span style="color: #000000">.</span><span style="color: #001080">js</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">:</span><span style="color: #098658">31</span><span style="color: #000000">)</span>
+<span style="color: #000000">  Error: </span><span style="color: #001080">Cannot</span><span style="color: #000000"> </span><span style="color: #001080">find</span><span style="color: #000000"> </span><span style="color: #0000FF">module</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;bad&#039;</span>
+<span style="color: #000000">  </span><span style="color: #267F99">Require</span><span style="color: #000000"> </span><span style="color: #267F99">stack</span><span style="color: #000000">:</span>
+<span style="color: #000000">  - /</span><span style="color: #267F99">Users</span><span style="color: #000000">/</span><span style="color: #267F99">joel</span><span style="color: #000000">/</span><span style="color: #267F99">error</span><span style="color: #000000">/</span><span style="color: #267F99">test</span><span style="color: #000000">/</span><span style="color: #267F99">samples</span><span style="color: #000000">.</span><span style="color: #267F99">js</span>
+<span style="color: #000000">      </span><span style="color: #267F99">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.&lt;</span><span style="color: #267F99">anonymous</span><span style="color: #000000">&gt; (</span><span style="color: #267F99">test</span><span style="color: #000000">/</span><span style="color: #267F99">samples</span><span style="color: #000000">.</span><span style="color: #267F99">js</span><span style="color: #000000">:10:3)</span>
+</code></pre>
+				<p>vs:</p>
+				<pre><code><span style="color: #000000">AggregateError: </span><span style="color: #001080">require</span><span style="color: #000000"> </span><span style="color: #001080">failed</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.&lt;</span><span style="color: #001080">anonymous</span><span style="color: #000000">&gt; (/</span><span style="color: #001080">Users</span><span style="color: #000000">/</span><span style="color: #001080">joel</span><span style="color: #000000">/</span><span style="color: #001080">error</span><span style="color: #000000">/</span><span style="color: #001080">test</span><span style="color: #000000">/</span><span style="color: #001080">samples</span><span style="color: #000000">.</span><span style="color: #001080">js</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">:</span><span style="color: #098658">15</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #795E26">_compile</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">1101</span><span style="color: #000000">:</span><span style="color: #098658">14</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Object</span><span style="color: #000000">.</span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #001080">_extensions</span><span style="color: #000000">..</span><span style="color: #795E26">js</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">1153</span><span style="color: #000000">:</span><span style="color: #098658">10</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">981</span><span style="color: #000000">:</span><span style="color: #098658">32</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #001080">Module</span><span style="color: #000000">.</span><span style="color: #795E26">_load</span><span style="color: #000000"> (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #001080">internal</span><span style="color: #000000">/</span><span style="color: #001080">modules</span><span style="color: #000000">/</span><span style="color: #001080">cjs</span><span style="color: #000000">/</span><span style="color: #001080">loader</span><span style="color: #000000">:</span><span style="color: #098658">822</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #001080">at</span><span style="color: #000000"> </span><span style="color: #267F99">Function</span><span style="color: #000000">.</span><span style="color: #001080">executeUserEntryPoint</span><span style="color: #000000"> [</span><span style="color: #AF00DB">as</span><span style="color: #000000"> </span><span style="color: #267F99">runMain</span><span style="color: #000000">] (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">run_main</span><span style="color: #000000">:</span><span style="color: #098658">79</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">    at node:internal/main/run_main_module:17:47</span>
+<span style="color: #000000">  Error: Cannot find module &#039;bad&#039;</span>
+<span style="color: #000000">  Require stack:</span>
+<span style="color: #000000">  - /Users/joel/error/test/samples.js</span>
+<span style="color: #000000">      at Function.Module._resolveFilename (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">933</span><span style="color: #000000">:</span><span style="color: #098658">15</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Function.Module._load (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">778</span><span style="color: #000000">:</span><span style="color: #098658">27</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Module.require (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">1005</span><span style="color: #000000">:</span><span style="color: #098658">19</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at require (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">helpers</span><span style="color: #000000">:</span><span style="color: #098658">94</span><span style="color: #000000">:</span><span style="color: #098658">18</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Object.&lt;</span><span style="color: #267F99">anonymous</span><span style="color: #000000">&gt; (/</span><span style="color: #001080">Users</span><span style="color: #000000">/</span><span style="color: #001080">joel</span><span style="color: #000000">/</span><span style="color: #001080">error</span><span style="color: #000000">/</span><span style="color: #001080">test</span><span style="color: #000000">/samples.js:</span><span style="color: #098658">10</span><span style="color: #000000">:</span><span style="color: #098658">3</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Module._compile (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">1101</span><span style="color: #000000">:</span><span style="color: #098658">14</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Object.Module._extensions..js (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">1153</span><span style="color: #000000">:</span><span style="color: #098658">10</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Module.load (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">981</span><span style="color: #000000">:</span><span style="color: #098658">32</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Function.Module._load (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">cjs</span><span style="color: #000000">/</span><span style="color: #267F99">loader</span><span style="color: #000000">:</span><span style="color: #098658">822</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+<span style="color: #000000">      at Function.executeUserEntryPoint [as runMain] (</span><span style="color: #001080">node</span><span style="color: #000000">:</span><span style="color: #267F99">internal</span><span style="color: #000000">/</span><span style="color: #267F99">modules</span><span style="color: #000000">/</span><span style="color: #267F99">run_main</span><span style="color: #000000">:</span><span style="color: #098658">79</span><span style="color: #000000">:</span><span style="color: #098658">12</span><span style="color: #000000">)</span>
+</code></pre>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class=" ">
+						<a href="modules.html">Exports</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="classes/AggregateError.html" class="tsd-kind-icon">Aggregate<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#aggregateErrorStack" class="tsd-kind-icon">aggregate<wbr>Error<wbr>Stack</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#aggregateStack" class="tsd-kind-icon">aggregate<wbr>Stack</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#cleanErrorStack" class="tsd-kind-icon">clean<wbr>Error<wbr>Stack</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
