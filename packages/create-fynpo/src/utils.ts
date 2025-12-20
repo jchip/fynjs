@@ -4,7 +4,7 @@ import _ from "lodash";
 import shcmd from "shcmd";
 import { createRequire } from "module";
 
-const require = createRequire(__filename);
+const xrequire = createRequire(__filename);
 
 export const sortObjKeys = (obj) => {
   return _(obj).toPairs().sortBy(0).fromPairs().value();
@@ -24,7 +24,7 @@ export const sortPackageDeps = (pkg) => {
   });
 };
 
-export const myPkg = require("../package.json");
+export const myPkg = xrequire("../package.json");
 
 export function getCommitLintSetting() {
   return {
