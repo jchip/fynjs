@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
-      - run: npm i -g fyn
+      - run: npm i -g fyn@v2
       - run: fyn install --no-fynlocal
       - run: npx fynpo bootstrap
       - run: fyn ci:check
