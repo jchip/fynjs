@@ -11,7 +11,7 @@
   "optionalDependencies": {
     "provider-optional": "^1.0.0"
   },
-  "@xarc/run": {
+  "@fynjs/run": {
     "loadProviderModules": true
   }
 } 

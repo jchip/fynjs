@@ -16,10 +16,10 @@ const { optionalRequireCwd } = require("optional-require");
  */
 function detectRequirePrefix() {
   try {
-    const nmName = require.resolve("@xarc/run/bin/xrun");
+    const nmName = require.resolve("@fynjs/run/bin/xrun");
     const nmDir = Path.dirname(nmName);
     if (nmDir !== __dirname) {
-      return "@xarc/run"; // use module's full name
+      return "@fynjs/run"; // use module's full name
     }
   } catch (err) {
     //
@@ -30,6 +30,6 @@ function detectRequirePrefix() {
 
 const prefix = detectRequirePrefix();
 
-const xrun = optionalRequireCwd("@xarc/run/cli/xrun") || require(`${prefix}/cli/xrun`);
+const xrun = optionalRequireCwd("@fynjs/run/cli/xrun") || require(`${prefix}/cli/xrun`);
 
 xrun();

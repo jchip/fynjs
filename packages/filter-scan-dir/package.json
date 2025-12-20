@@ -75,7 +75,7 @@
     "@types/node": "^24.10.1",
     "@vitest/coverage-v8": "^4.0.13",
     "@vitest/ui": "^4.0.13",
-    "@xarc/run": "^2.3.0",
+    "@fynjs/run": "^2.3.0",
     "prettier": "^3.6.2",
     "publish-util": "^2.1.0",
     "ts2mjs": "^4.0.0",

@@ -26,7 +26,7 @@
   },
   "fyn": {
     "devDependencies": {
-      "@xarc/run": "../.."
+      "@fynjs/run": "../.."
     },
     "dependencies": {
       "cjs1": "../cjs1"
@@ -36,7 +36,7 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/node": "^20.8.9",
     "@xarc/module-dev": "^5.0.0",
-    "@xarc/run": "^1.1.1",
+    "@fynjs/run": "^1.1.1",
     "prettier": "^3.0.3",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",

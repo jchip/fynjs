@@ -151,7 +151,7 @@ Provider packages allow you to create reusable task libraries that can be shared
 Provider packages are automatically loaded when:
 
 1. You have no tasks loaded (automatic discovery)
-2. You explicitly enable them by setting `loadProviderModules: true` in your `@xarc/run` config
+2. You explicitly enable them by setting `loadProviderModules: true` in your `@fynjs/run` config
 
 #### Installation and Configuration
 
@@ -165,7 +165,7 @@ npm install --save-dev @my-org/build-tasks
 
 ```json
 {
-  "@xarc/run": {
+  "@fynjs/run": {
     "loadProviderModules": true
   }
 }
@@ -178,7 +178,7 @@ const { loadTasks } = require("@my-org/build-tasks");
 loadTasks();
 
 // You can also load your own tasks
-const { load } = require("@xarc/run");
+const { load } = require("@fynjs/run");
 load({
   "my-custom-task": "echo hello"
 });
@@ -192,10 +192,10 @@ To create a provider package:
 
 ```js
 // index.js of your provider package
-const { load } = require("@xarc/run");
+const { load } = require("@fynjs/run");
 
 function loadTasks(xrun) {
-  const runner = xrun || require("@xarc/run");
+  const runner = xrun || require("@fynjs/run");
 
   runner.load("build", {
     compile: "babel src -d lib",
@@ -248,7 +248,7 @@ npm install -D ts-node typescript
 ### Example TypeScript Task File
 
 ```typescript
-import { load, concurrent, serial, exec } from "@xarc/run";
+import { load, concurrent, serial, exec } from "@fynjs/run";
 
 interface BuildOptions {
   production?: boolean;
@@ -281,7 +281,7 @@ You can define simple tasks directly in `package.json` without JavaScript capabi
 ```json
 {
   "name": "my-app",
-  "@xarc/run": {
+  "@fynjs/run": {
     "tasks": {
       "hello": "echo hello from package.json",
       "build": "webpack --mode production",
@@ -306,7 +306,7 @@ Default CLI options can be specified in `package.json`:
 
 ```json
 {
-  "@xarc/run": {
+  "@fynjs/run": {
     "npm": true,
     "nmbin": true,
     "loadProviderModules": true,
@@ -351,7 +351,7 @@ const tasks = {
 Tasks can be loaded with `xrun.load`. You can specify a namespace for the tasks.
 
 ```js
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 xrun.load(tasks);
 // or load into a namespace
 xrun.load("myapp", tasks);
@@ -493,7 +493,7 @@ This is a more systematic approach to declare an [anonymous string shell command
 A task spec shell command can be declared as the task or a task in the array:
 
 ```js
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 
 const tasks = {
   hello: xrun.exec("echo hello"),
@@ -558,7 +558,7 @@ Each task in the array is executed serially if one of the following is true:
 Create an array of serial tasks within another concurrent array:
 
 ```js
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 
 const tasks = {
   foo: xrun.concurrent("a", xrun.serial("foo1", "foo2", "foo3"))
@@ -598,7 +598,7 @@ By default, an ordinary array of tasks is executed concurrently, except when it'
 If you need to have an array of tasks at the top level to execute concurrently, use the [concurrent API](concurrenttaskstask1-task2-taskn) to create it.
 
 ```js
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 
 const tasks = {
   foo: xrun.concurrent("foo1", "foo2", "foo3");
@@ -629,7 +629,7 @@ If you run a task without specifying the namespace, then it's searched through a
 
 ### Auto Complete with namespace
 
-To assist auto completion when using [@xarc/run-cli], you may specify all namespaces with a leading `/` when invoking from the command line. It will be stripped before xrun run them.
+To assist auto completion when using [@fynjs/run-cli], you may specify all namespaces with a leading `/` when invoking from the command line. It will be stripped before xrun run them.
 
 ie:
 
@@ -778,7 +778,7 @@ xrun supports different error handling modes via the `stopOnError` setting:
 
 ```js
 // Set globally
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 xrun.stopOnError = "soft";
 
 // Or via CLI
@@ -804,7 +804,7 @@ Accepted values are:
 Example:
 
 ```js
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 
 xrun.stopOnError = "full";
 ```
@@ -1008,7 +1008,7 @@ Where:
 Examples:
 
 ```js
-const xrun = require("@xarc/run");
+const xrun = require("@fynjs/run");
 
 const tasks = {
   cmd1: xrun.exec("echo hello", "tty"),
@@ -1030,7 +1030,7 @@ xrun.load(tasks);
 ```
 
 [npm scripts]: https://docs.npmjs.com/misc/scripts
-[@xarc/run-cli]: https://github.com/jchip/@xarc/run-cli
+[@fynjs/run-cli]: https://github.com/jchip/@fynjs/run-cli
 [bash]: https://www.gnu.org/software/bash/
 [zsh]: http://www.zsh.org/
 [child_process.spawn]: https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options

@@ -31,10 +31,10 @@
   },
   "fyn": {
     "dependencies": {
-      "@xarc/run": "../.."
+      "@fynjs/run": "../.."
     }
   },
   "dependencies": {
-    "@xarc/run": "^2.0.1"
+    "@fynjs/run": "^2.0.1"
   }
 }

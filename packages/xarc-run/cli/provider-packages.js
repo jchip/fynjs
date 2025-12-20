@@ -17,7 +17,7 @@ const path = require("path");
  * What's considered a provider package?
  *
  * 1. The package sets the `xrunProvider` config in its package.json
- * 2. The package has @xarc/run listed in its dependencies
+ * 2. The package has @fynjs/run listed in its dependencies
  *
  * What module does xrun require from the provider package to look for tasks?
  *
@@ -51,7 +51,7 @@ function loadProviderPackages(userPkg, saveCwd, opts) {
     }
     const provider = providerPkg.xrunProvider;
     if (!provider && !providerPkg.dependencies?.[myPkg.name]) {
-      // module is not marked as a provider and doesn't have @xarc/run as dep, assume not
+      // module is not marked as a provider and doesn't have @fynjs/run as dep, assume not
       // a provider
       return;
     }

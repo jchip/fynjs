@@ -1,4 +1,4 @@
-import { load } from "@xarc/run";
+import { load } from "@fynjs/run";
 
 load({
   hello() {

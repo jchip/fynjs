@@ -84,7 +84,7 @@ function findRunnerModule(xrunPath) {
   let runner;
   const foundReq = [
     xrunPath, // first look for it in path passed from cli
-    "@xarc/run", // let node.js resolve by package name
+    "@fynjs/run", // let node.js resolve by package name
     ".." // finally load from definitive known location
   ].find(p => p && (runner = optionalRequire(p)));
 
@@ -99,7 +99,7 @@ function findRunnerModule(xrunPath) {
  * @param {Function} done - Optional callback
  */
 function handleNoTasks(cliContext, cwd, done) {
-  const fromCwd = optionalRequire.resolve("@xarc/run") || "not found - probably not installed";
+  const fromCwd = optionalRequire.resolve("@fynjs/run") || "not found - probably not installed";
   const fromMyDir = Path.dirname(require.resolve(".."));
   const searchResult = cliContext.getSearchResult();
   const info = searchResult.xrunFile
@@ -107,7 +107,7 @@ function handleNoTasks(cliContext, cwd, done) {
 This could be due to a few reasons:
 
   1. your task file ${searchResult.xrunFile} didn't load any tasks or contains errors.
-  2. there are multiple copies of this package (@xarc/run) installed in "node_modules".
+  2. there are multiple copies of this package (@fynjs/run) installed in "node_modules".
 `
     : `
 You do not have a "xrun-tasks.js|ts" file, so the only tasks may come from your
@@ -121,7 +121,7 @@ For reference, some paths used to search for tasks:
     - dir used to search for tasks:
         '${cwd}'
 
-Some paths used to resolve @xarc/run:
+Some paths used to resolve @fynjs/run:
     - resolved from CWD: '${fromCwd}'
     - resolved from my dir: '${fromMyDir}'
 `);

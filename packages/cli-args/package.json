@@ -1,5 +1,5 @@
 {
-  "name": "nix-clap",
+  "name": "@fynjs/cli-args",
   "version": "2.4.5",
   "description": "Simple, lightweight, flexible, and comprehensive Command Line Argument Parsing for node.js",
   "engines": {
@@ -40,7 +40,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jchip/nix-clap.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/cli-args"
   },
   "files": [
     "dist-cjs",

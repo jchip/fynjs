@@ -121,7 +121,7 @@ describe("provider-packages", function() {
       expect(task2.item).to.be.a("function");
     });
 
-    it("should identify providers by @xarc/run dependency", function() {
+    it("should identify providers by @fynjs/run dependency", function() {
       const userPkg = {
         devDependencies: {
           "provider-dev": "^1.0.0"
@@ -140,7 +140,7 @@ describe("provider-packages", function() {
       expect(devTest.item).to.be.a("function");
     });
 
-    it("should skip packages without xrunProvider config or @xarc/run dependency", function() {
+    it("should skip packages without xrunProvider config or @fynjs/run dependency", function() {
       const userPkg = {
         dependencies: {
           "not-a-provider": "^1.0.0"

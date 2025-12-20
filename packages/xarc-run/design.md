@@ -1,8 +1,8 @@
-# @xarc/run Design Document
+# @fynjs/run Design Document
 
 ## Project Overview
 
-**@xarc/run** (also known as `xrun`) is a sophisticated JavaScript task runner that serves as an enhanced alternative to `npm run`. It's designed to manage and execute tasks both concurrently and serially, with extensive support for JavaScript-based task definitions, TypeScript integration, and provider package ecosystems.
+**@fynjs/run** (also known as `xrun`) is a sophisticated JavaScript task runner that serves as an enhanced alternative to `npm run`. It's designed to manage and execute tasks both concurrently and serially, with extensive support for JavaScript-based task definitions, TypeScript integration, and provider package ecosystems.
 
 ### Core Purpose
 
@@ -180,7 +180,7 @@ xrun automatically discovers provider packages when:
 Provider packages are identified by:
 
 1. **xrunProvider Configuration**: Packages with `xrunProvider` config in package.json
-2. **Dependency Detection**: Packages with `@xarc/run` as a dependency
+2. **Dependency Detection**: Packages with `@fynjs/run` as a dependency
 
 Discovery searches through `dependencies`, `devDependencies`, and `optionalDependencies`.
 
@@ -195,15 +195,15 @@ Discovery searches through `dependencies`, `devDependencies`, and `optionalDepen
     "module": "./tasks.js"  // Optional: custom entry point
   },
   "dependencies": {
-    "@xarc/run": "^2.0.0"  // This identifies it as a provider
+    "@fynjs/run": "^2.0.0"  // This identifies it as a provider
   }
 }
 
 // index.js or tasks.js
-const { load } = require("@xarc/run");
+const { load } = require("@fynjs/run");
 
 function loadTasks(xrun) {
-  const runner = xrun || require("@xarc/run");
+  const runner = xrun || require("@fynjs/run");
 
   runner.load("build", {
     compile: "babel src -d lib",
@@ -219,7 +219,7 @@ module.exports = { loadTasks };
 
 ```json
 {
-  "@xarc/run": {
+  "@fynjs/run": {
     "loadProviderModules": true // Enable provider loading
   }
 }
@@ -245,7 +245,7 @@ xrun automatically detects and loads the appropriate TypeScript runtime:
 #### **TypeScript Task Example**
 
 ```typescript
-import { load, concurrent, serial, exec } from "@xarc/run";
+import { load, concurrent, serial, exec } from "@fynjs/run";
 
 interface BuildOptions {
   production?: boolean;
@@ -440,7 +440,7 @@ Manages the hierarchical structure of task execution:
 ### Build System Integration
 
 ```javascript
-const { load, concurrent, serial, exec } = require("@xarc/run");
+const { load, concurrent, serial, exec } = require("@fynjs/run");
 
 load({
   // Development workflow
@@ -581,7 +581,7 @@ function loadTasks(xrun) {
 
 ## Conclusion
 
-@xarc/run represents a sophisticated approach to task execution that bridges the gap between simple npm scripts and complex build systems. Its flexible architecture, comprehensive feature set, and robust error handling make it suitable for everything from simple development workflows to complex CI/CD pipelines.
+@fynjs/run represents a sophisticated approach to task execution that bridges the gap between simple npm scripts and complex build systems. Its flexible architecture, comprehensive feature set, and robust error handling make it suitable for everything from simple development workflows to complex CI/CD pipelines.
 
 The architecture demonstrates a commitment to clean design principles and extensibility. The CliContext system provides proper separation of concerns, while the provider package ecosystem enables code reuse across projects. First-class TypeScript support and automatic runtime detection make it well-suited for modern JavaScript development workflows.
 

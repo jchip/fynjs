@@ -2,7 +2,7 @@
 [![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
 [![coverage][coverage-image]][coverage-url]
 
-# @xarc/run
+# @fynjs/run
 
 `npm run` enhanced - A powerful task runner and build tool for modern JavaScript projects.
 
@@ -46,7 +46,7 @@ Put your tasks in a file `xrun-tasks.js` and `xrun` will load it automatically.
 An example `xrun-tasks.js`:
 
 ```js
-const { load, exec, concurrent, serial } = require("@xarc/run");
+const { load, exec, concurrent, serial } = require("@fynjs/run");
 load({
   //
   // define a task hello, with a string definition
@@ -182,7 +182,7 @@ load({
 A popular CI/CD use case is to start servers and then run tests, which can be achieved using `xrun` JavaScript tasks:
 
 ```js
-const { concurrent, serial, load, stop } = require("@xarc/run");
+const { concurrent, serial, load, stop } = require("@fynjs/run");
 const waitOn = require("wait-on");
 
 const waitUrl = url => waitOn({ resources: [url] });
@@ -212,14 +212,14 @@ load({
 
 ### Provider Packages
 
-`@xarc/run` supports **provider packages** - reusable task libraries that can be shared across projects. This allows teams to standardize common build tasks and workflows.
+`@fynjs/run` supports **provider packages** - reusable task libraries that can be shared across projects. This allows teams to standardize common build tasks and workflows.
 
 #### What makes a provider package?
 
 A provider package is identified by either:
 
 1. Having `xrunProvider` config in its `package.json`
-2. Having `@xarc/run` as a dependency
+2. Having `@fynjs/run` as a dependency
 
 #### Creating a provider package
 
@@ -253,7 +253,7 @@ module.exports = {
 Provider packages are automatically loaded when:
 
 1. You have no tasks loaded (automatic discovery)
-2. You explicitly enable them by setting `loadProviderModules: true` in your `@xarc/run` config
+2. You explicitly enable them by setting `loadProviderModules: true` in your `@fynjs/run` config
 
 Provider tasks are loaded from:
 
@@ -269,7 +269,7 @@ Example `package.json`:
   "dependencies": {
     "my-build-tasks": "^1.0.0"
   },
-  "@xarc/run": {
+  "@fynjs/run": {
     "loadProviderModules": true
   }
 }
@@ -350,14 +350,14 @@ Here is a simple sample.
 mkdir xrun-test
 cd xrun-test
 npm init --yes
-npm install rimraf @xarc/run
+npm install rimraf @fynjs/run
 ```
 
 2. Save the following code to `xrun-tasks.js`:
 
 ```js
 "use strict";
-const { load } = require("@xarc/run");
+const { load } = require("@fynjs/run");
 
 const tasks = {
   hello: "echo hello world", // a shell command to be exec'ed
@@ -367,7 +367,7 @@ const tasks = {
   both: ["hello", "jsFunc"] // execute the two tasks serially
 };
 
-// Load the tasks into @xarc/run
+// Load the tasks into @fynjs/run
 load(tasks);
 ```
 
@@ -389,7 +389,7 @@ Here is a more complex example to showcase a few more features:
 "use strict";
 
 const util = require("util");
-const { exec, concurrent, serial, env, load } = require("@xarc/run");
+const { exec, concurrent, serial, env, load } = require("@fynjs/run");
 const rimraf = util.promisify(require("rimraf"));
 
 const tasks = {
@@ -432,7 +432,7 @@ load(tasks);
 If you'd like to get the command `xrun` globally, you can install this module globally.
 
 ```bash
-$ npm install -g @xarc/run
+$ npm install -g @fynjs/run
 ```
 
 However, it will still try to `require` and use the copy from your `node_modules` if you installed it.
@@ -444,7 +444,7 @@ If you don't want to use the CLI, you can load and invoke tasks in your JavaScri
 Example:
 
 ```js
-const { run, load, concurrent } = require("@xarc/run");
+const { run, load, concurrent } = require("@fynjs/run");
 const myTasks = require("./tools/tasks");
 
 load(myTasks);
@@ -464,7 +464,7 @@ run(concurrent("task1", "task2"), err => {
 
 Name your task file `xrun-tasks.ts` if you want to use TypeScript.
 
-You need to install a TypeScript runtime to your `node_modules`. `@xarc/run` supports both [tsx](https://www.npmjs.com/package/tsx) (recommended) and [ts-node](https://www.npmjs.com/package/ts-node):
+You need to install a TypeScript runtime to your `node_modules`. `@fynjs/run` supports both [tsx](https://www.npmjs.com/package/tsx) (recommended) and [ts-node](https://www.npmjs.com/package/ts-node):
 
 ```bash
 # Recommended: tsx (faster, better ESM support)
@@ -538,7 +538,7 @@ This is enabled by default. To turn it off use `--no-npm` option.
 $ xrun --npm test
 ```
 
-You can also specify command line options under `@xarc/run` in your `package.json`.
+You can also specify command line options under `@fynjs/run` in your `package.json`.
 
 ### Specifying Complex Tasks from command line
 
@@ -603,7 +603,7 @@ A task can be `string`, `array`, `function`, or `object`. See [reference](./REFE
 
 ## package.json
 
-You can define @xarc/run tasks and options in your `package.json`.
+You can define @fynjs/run tasks and options in your `package.json`.
 
 ## Tasks
 
@@ -616,7 +616,7 @@ For example:
 ```js
 {
   "name": "my-app",
-  "@xarc/run": {
+  "@fynjs/run": {
     "tasks": {
       "task1": "echo hello from package.json",
       "task2": "echo hello from package.json",
@@ -630,14 +630,14 @@ And you can invoke them with `xrun pkg/foo`, or `xrun foo` if there are no other
 
 ## Options
 
-Command line options can also be specified under `@xarc/run` or `xrun` inside your `package.json`.
+Command line options can also be specified under `@fynjs/run` or `xrun` inside your `package.json`.
 
 For example:
 
 ```js
 {
   "name": "my-app",
-  "@xarc/run": {
+  "@fynjs/run": {
     "npm": true
   }
 }
@@ -673,13 +673,13 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [ci-shield]: https://travis-ci.org/electrode-io/xarc-run.svg?branch=master
 [ci-url]: https://travis-ci.org/electrode-io/xarc-run
 [npm-image]: https://badge.fury.io/js/%40xarc%2Frun.svg
-[npm-url]: https://npmjs.org/package/@xarc/run
+[npm-url]: https://npmjs.org/package/@fynjs/run
 [daviddm-image]: https://david-dm.org/electrode-io/xarc-run/status.svg
 [daviddm-url]: https://david-dm.org/electrode-io/xarc-run
 [daviddm-dev-image]: https://david-dm.org/electrode-io/xarc-run/dev-status.svg
 [daviddm-dev-url]: https://david-dm.org/electrode-io/xarc-run?type=dev
 [npm scripts]: https://docs.npmjs.com/misc/scripts
-[@xarc/run-cli]: https://github.com/electrode-io/xarc-run-cli
+[@fynjs/run-cli]: https://github.com/electrode-io/xarc-run-cli
 [bash]: https://www.gnu.org/software/bash/
 [zsh]: http://www.zsh.org/
 [load tasks into namespace]: REFERENCE.md#loading-task
