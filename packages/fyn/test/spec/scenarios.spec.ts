@@ -27,7 +27,7 @@ import _optionalRequire from "optional-require";
 import { createRequire } from "module";
 import sortObjKeys from "../../lib/util/sort-obj-keys";
 import ci from "ci-info";
-import xaa from "xaa";
+import * as xaa from "xaa";
 import { execSync } from "child_process";
 
 const xrequire = createRequire(import.meta.url);
@@ -237,7 +237,7 @@ const debug = false;
               throw failError;
             }
 
-            const nmTree = dirTree.make(cwd, "node_modules");
+            const nmTree = dirTree(cwd, "node_modules");
             if (debug) {
               console.log(`directory node_modules tree:\n${Yaml.dump(nmTree, 2)}`);
             }

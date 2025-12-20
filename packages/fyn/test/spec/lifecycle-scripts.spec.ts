@@ -3,7 +3,7 @@ import Path from "path";
 import xstdout from "xstdout";
 import logger from "../../lib/logger";
 import chalk from "chalk";
-import xaa from "xaa";
+import * as xaa from "xaa";
 
 describe("lifecycle-scripts", function() {
   logger.setItemType(false);
