@@ -1,0 +1,16 @@
+{
+  "name": "bluebird-using-demo",
+  "version": "1.0.0",
+  "description": "Demo of Bluebird's using method for resource management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "bluebird": "^3.7.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+} 

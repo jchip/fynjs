@@ -1,0 +1,105 @@
+{
+  "name": "aveazul",
+  "version": "1.1.0",
+  "description": "Bluebird drop-in replacement built on native Promise",
+  "type": "module",
+  "types": "dist-cjs/index.d.ts",
+  "main": "cjs-entry.cjs",
+  "module": "dist-esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/index.js",
+      "require": "./cjs-entry.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "homepage": "https://github.com/jchip/aveazul",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "xrun [-s, build:clean, [build:esm, build:cjs], build:2cjs]",
+    "build:clean": "rm -rf dist-*",
+    "build:esm": "tsc --build tsconfig.esm.json",
+    "build:cjs": "tsc --build tsconfig.cjs.json",
+    "build:2cjs": "ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "test": "xrun -s vitest build demo:cjs demo:esm",
+    "vitest": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:bluebird": "USE_BLUEBIRD=true vitest run",
+    "demo:cjs": "cd demo/sample-1-cjs && fyn install --no-build-local && node demo.cjs",
+    "demo:esm": "cd demo/sample-1-esm && fyn install --no-build-local && node demo.js",
+    "prepublishOnly": "xrun build",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
+  },
+  "author": "Joel Chen",
+  "contributors": [
+    "Claude (AI assistant)"
+  ],
+  "files": [
+    "cjs-entry.cjs",
+    "dist-cjs",
+    "dist-esm"
+  ],
+  "keywords": [
+    "promise",
+    "async",
+    "bluebird",
+    "nodejs",
+    "node.js",
+    "promises",
+    "promise-library",
+    "native-promise",
+    "es6-promise",
+    "migration",
+    "promisify",
+    "utility",
+    "using",
+    "disposer",
+    "spread",
+    "promise-map",
+    "async-map",
+    "p-map",
+    "map-series",
+    "async-await",
+    "promise-chain",
+    "promise-utils",
+    "asynchronous",
+    "callback",
+    "promisifyall",
+    "timeout",
+    "delay",
+    "any",
+    "props",
+    "filter",
+    "reduce",
+    "aveazul",
+    "aveazul.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/aveazul.git"
+  },
+  "dependencies": {
+    "@jchip/error": "^1.0.3",
+    "xaa": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^3.2.2",
+    "@xarc/run": "^2.3.0",
+    "bluebird": "^3.7.2",
+    "publish-util": "^2.1.0",
+    "run-verify": "^1.2.7",
+    "ts2mjs": "^4.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "fyn": {
+    "dependencies": {}
+  }
+}

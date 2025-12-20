@@ -1,0 +1,23 @@
+{
+  "name": "sample-1-esm",
+  "version": "1.0.0",
+  "description": "ESM demo for aveazul",
+  "main": "index.js",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node demo.js",
+    "test-ts": "tsx demo.ts"
+  },
+  "fyn": {
+    "dependencies": {
+      "aveazul": "../.."
+    }
+  },
+  "dependencies": {
+    "aveazul": "^1.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4"
+  }
+}
