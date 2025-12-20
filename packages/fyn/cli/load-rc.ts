@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 import os from "os";
 import Fs from "fs";

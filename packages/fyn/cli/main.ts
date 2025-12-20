@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 import Path from "path";
 import chalk from "chalk";

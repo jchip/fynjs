@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 import chalk from "chalk";
 import CliLogger from "../lib/cli-logger";

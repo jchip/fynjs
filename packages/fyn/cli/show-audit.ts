@@ -1,5 +1,4 @@
 // @ts-nocheck
-"use strict";
 
 /**
  * CLI entry point for the audit command.
