@@ -1,0 +1,76 @@
+{
+  "name": "visual-logger",
+  "version": "1.1.3",
+  "description": "Visual logger for CLI in NodeJS",
+  "main": "lib/visual-logger.js",
+  "scripts": {
+    "test": "clap check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/visual-logger.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "visual",
+    "cli",
+    "logger",
+    "log",
+    "logging",
+    "console",
+    "terminal",
+    "term",
+    "update",
+    "progress",
+    "bar",
+    "stdout",
+    "tty",
+    "spinner",
+    "animation",
+    "refresh"
+  ],
+  "files": [
+    "lib"
+  ],
+  "author": "Joel Chen <joel123@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "chalk": "^4.0.0",
+    "log-update": "^4.0.0"
+  },
+  "devDependencies": {
+    "electrode-archetype-njs-module-dev": "^3.0.0",
+    "prettier": "^2.0.4",
+    "run-verify": "^1.2.4",
+    "xaa": "^1.4.0"
+  },
+  "nyc": {
+    "all": true,
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "exclude": [
+      "coverage",
+      "*clap.js",
+      "gulpfile.js",
+      "dist",
+      "test",
+      "examples"
+    ],
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100,
+    "cache": true
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "none",
+    "arrowParens": "avoid"
+  }
+}
