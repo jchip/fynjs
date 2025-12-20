@@ -233,8 +233,9 @@ class PkgDepLocker {
               if (urlMatch && currentRegistry) {
                 const lockRegistry = urlMatch[1] + "/";
                 const tarballPath = urlMatch[2];
-                // If registries don't match, use current registry
-                if (lockRegistry !== currentRegistry) {
+                const ignoreLockUrl = this._fyn._options?.ignoreLockUrl;
+                // If --ignore-lock-url is set or registries don't match, use current registry
+                if (ignoreLockUrl || lockRegistry !== currentRegistry) {
                   tarballUrl = currentRegistry.replace(/\/$/, "") + tarballPath;
                 }
               }

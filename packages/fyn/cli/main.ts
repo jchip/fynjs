@@ -209,6 +209,11 @@ const options = {
     args: "<flag boolean>",
     desc: "Ignore host in tarball URL from meta dist."
   },
+  "ignore-lock-url": {
+    args: "<flag boolean>",
+    argDefault: "false",
+    desc: "Reconstruct tarball URLs from registry config instead of lockfile"
+  },
   "show-deprecated": {
     alias: "s",
     args: "<flag boolean>",
