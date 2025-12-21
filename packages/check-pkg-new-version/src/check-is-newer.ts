@@ -1,4 +1,4 @@
-import { PkgInfo } from "check-pkg-new-version-engine";
+import { PkgInfo, CheckResult } from "check-pkg-new-version-engine";
 import semver from "semver";
 
 /**
@@ -7,12 +7,16 @@ import semver from "semver";
  * @param pkg package
  * @param distTags dist tags
  * @param tag tag to check
- * @returns true|false
+ * @returns CheckResult with isNewer and version
  */
 export function internalCheckIsNewer(
   pkg: PkgInfo,
   distTags: Record<string, string>,
   tag?: string
-): boolean {
-  return semver.gt(distTags[tag], pkg.version);
+): CheckResult {
+  const version = distTags[tag];
+  return {
+    isNewer: semver.gt(version, pkg.version),
+    version
+  };
 }

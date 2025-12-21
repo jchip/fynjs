@@ -11,8 +11,8 @@
     "coverage": "xrun xarc/test-cov",
     "coveralls": "cat coverage/lcov.info | coveralls",
     "check": "xrun --serial xarc/check coveralls",
-    "publish-util-pre": "publish-util-prepublishonly",
-    "prepublishOnly": "xrun --serial [[build, docs], xarc/check, publish-util-pre]",
+    "prepublishOnly": "xrun --serial [[build, docs], xarc/check]",
+    "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack",
     "docs": "xrun xarc/docs"
   },

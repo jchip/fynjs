@@ -1,5 +1,6 @@
 import { create } from "./create";
-import { NixClap } from "nix-clap";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { NixClap } = require("nix-clap");
 
 const nixClap = new NixClap({
   usage: "$0 [command] [options]",

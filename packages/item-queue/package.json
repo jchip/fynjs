@@ -7,10 +7,10 @@
   "scripts": {
     "build": "tsc",
     "test": "xrun --serial build xarc/test-only",
-    "publish-util-pre": "publish-util-prepublishonly",
-    "prepublishOnly": "xrun --serial [[build, docs], xarc/check, publish-util-pre]",
+    "prepublishOnly": "xrun --serial [[build, docs], xarc/check]",
     "docs": "xrun xarc/docs",
     "coverage": "xrun --serial build xarc/test-cov",
+    "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
   "repository": {

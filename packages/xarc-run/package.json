@@ -89,6 +89,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.3",
+    "esbuild": "^0.25.0",
     "eslint": "^8.1.0",
     "munchy": "^1.0.7",
     "prettier": "^1.2.2",
@@ -96,7 +97,7 @@
     "run-verify": "^1.2.7",
     "strip-ansi": "^6.0.0",
     "tsx": "^4.19.4",
-    "vitest": "^4.0.3",
+    "vitest": "^4.0.16",
     "xaa": "^1.6.0",
     "xstdout": "^0.1.1"
   },
