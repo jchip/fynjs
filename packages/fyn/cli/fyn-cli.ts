@@ -606,7 +606,7 @@ class FynCli {
 
     // Set additional npm environment variables to match lifecycle-scripts.js
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
-    env.npm_execpath = fileURLToPath(import.meta.resolve("../bin/fyn.js"));
+    env.npm_execpath = fileURLToPath(new URL("../bin/fyn.js", import.meta.url));
     env.INIT_CWD = this.fyn.cwd;
 
     // Only pass args to the main script, not pre/post scripts

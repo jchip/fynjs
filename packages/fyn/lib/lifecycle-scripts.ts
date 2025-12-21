@@ -87,7 +87,9 @@ class LifecycleScripts {
     env.npm_execpath = fynCli;
     // INIT_CWD should be the directory where fyn was invoked (matches npm behavior).
     // PWD is set to the package directory in _execute().
-    env.INIT_CWD = this._fyn.cwd || process.cwd();
+    // Use initCwd which preserves original invocation directory (important for global installs
+    // where cwd is a temp directory)
+    env.INIT_CWD = this._fyn.initCwd || this._fyn.cwd || process.cwd();
 
     return env;
   }

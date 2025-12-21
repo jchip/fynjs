@@ -8,6 +8,9 @@ const _ = require("lodash");
 
 exports.getInfo = async (cwd = process.env.INIT_CWD || process.cwd()) => {
   const pkgFile = await findUp("package.json", { cwd });
+  if (!pkgFile) {
+    throw new Error(`No package.json found starting from directory: ${cwd}`);
+  }
   const pkgDir = Path.dirname(pkgFile);
   const pkgData = await Fs.readFile(pkgFile);
   const pkg = JSON.parse(pkgData);

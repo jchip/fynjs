@@ -56,13 +56,17 @@ class FynGlobal {
    * Create a Fyn instance for global package installation
    * @param {string} cwd - Working directory for the install
    * @param {boolean} fynlocal - Whether this is a local package
+   * @param {string} [initCwd] - Original directory where fyn was invoked (for INIT_CWD)
    * @returns {Fyn} Configured Fyn instance
    */
-  _createFyn(cwd, fynlocal) {
+  _createFyn(cwd, fynlocal, initCwd) {
     process.env.FYN_CENTRAL_DIR = Path.join(this.globalRoot, "_central-storage");
     return new Fyn({
       opts: {
         cwd,
+        // initCwd preserves where fyn was originally invoked (for INIT_CWD in lifecycle scripts)
+        // This is important because cwd here is a temp directory for global installs
+        initCwd: initCwd || process.cwd(),
         targetDir: "node_modules",
         centralStore: true,
         lockfile: true,

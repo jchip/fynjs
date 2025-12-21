@@ -43,6 +43,9 @@ class Fyn {
     const options = (this._options = fynConfig(opts));
 
     this._cwd = options.cwd || process.cwd();
+    // initCwd is where fyn was originally invoked from (used for INIT_CWD in lifecycle scripts)
+    // This may differ from _cwd for global installs where _cwd is a temp directory
+    this._initCwd = options.initCwd || this._cwd;
     logger.debug(`fyn options`, JSON.stringify(fynTil.removeAuthInfo(options)));
     this.localPkgWithNestedDep = [];
     if (options.lockTime) {
@@ -646,6 +649,10 @@ class Fyn {
 
   get cwd() {
     return this._cwd;
+  }
+
+  get initCwd() {
+    return this._initCwd;
   }
 
   get forceCache() {
