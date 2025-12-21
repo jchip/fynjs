@@ -1,0 +1,11 @@
+node_modules
+.nyc_output
+coverage
+*.log
+.tmp
+.vscode
+/test
+fyn-lock.yaml
+/xclap.js
+.travis.yml
+/samples
