@@ -1,5 +1,5 @@
 {
-  "name": "create-fynpo",
+  "name": "@fynjs/create-monorepo",
   "version": "1.0.6",
   "description": "Create a new fynpo monorepo",
   "main": "index.js",
@@ -15,7 +15,8 @@
     "postpack": "publish-util-postpack"
   },
   "bin": {
-    "create-fynpo": "bin/create-fynpo.js"
+    "create-monorepo": "bin/create-monorepo.js",
+    "create-fynpo": "bin/create-monorepo.js"
   },
   "keywords": [],
   "author": "Walmart GTP.js Team and Contributors",

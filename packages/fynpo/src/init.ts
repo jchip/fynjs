@@ -67,7 +67,7 @@ export class Init {
       rootPkg = JSON.parse(fs.readFileSync(Path.join(this._cwd, "package.json")).toString());
     } catch {
       logger.error(`Could not load package.json from the directory ${this._cwd}.`);
-      logger.info(`Please use "npx create-fynpo my-app" to create a new fynpo monorepo`);
+      logger.info(`Please use "npx @fynjs/create-monorepo my-app" to create a new fynpo monorepo`);
       process.exit(1);
     }
 

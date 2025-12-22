@@ -1,4 +1,4 @@
-# create-fynpo
+# @fynjs/create-monorepo
 
 Supplement tool to create a new fynpo monorepo. The directory structure of a fynpo monorepo will look like:
 
@@ -12,7 +12,7 @@ fynpo-repo/
       package.json
 ```
 
-When run, `create-fynpo` will:
+When run, `create-monorepo` will:
 
 - Add `fynpo` as a dev dependency
 - Creat a `fynpo.json`/ `fynpo.config.js` config file
@@ -24,7 +24,7 @@ When run, `create-fynpo` will:
 To create a new fynpo monorepo,
 
 ```
-npx create-fynpo fynpo-repo
+npx @fynjs/create-monorepo fynpo-repo
 cd fynpo-repo
 fyn  # Install dependencies
 ```
@@ -38,7 +38,7 @@ fyn  # Install dependencies
 To initialize the repo without commitlint configuration, run the command with `no-commitlint` options. In this case, a simple `fynpo.json` config file will be added instead of `fynpo.config.js`.
 
 ```
-npx create-fynpo fynpo-repo --no-commitlint
+npx @fynjs/create-monorepo fynpo-repo --no-commitlint
 ```
 
 The `commitlint` configuration can always be added later by running:

@@ -5,18 +5,18 @@ title: The Packages
 
 Fynpo monorepo solution includes 4 npm packages:
 
-### [create-fynpo](https://github.com/electrode-io/fynpo/tree/master/packages/create-fynpo)
+### [@fynjs/create-monorepo](https://github.com/jchip/fynjs/tree/master/packages/create-monorepo)
 Supplement tool to create a new fynpo monorepo.
 
 ```
-npx create-fynpo fynpo-repo
+npx @fynjs/create-monorepo fynpo-repo
 cd fynpo-repo
 fyn  # Install dependencies
 ```
 
 Adds `fynpo` as a dev dependency in the monorepo and also add necessary configurations.
 
-### [fynpo](https://github.com/electrode-io/fynpo/tree/master/packages/fynpo)
+### [fynpo](https://github.com/jchip/fynjs/tree/master/packages/fynpo)
 Lerna based mono-repo management tool that the user's mono-repo installs. It supports the below listed commands.
 
 - `fynpo init` - Initialize a new fynpo monorepo. Supports `commitlint` option to add commitlint config to an existing repo.
@@ -35,7 +35,7 @@ Lerna based mono-repo management tool that the user's mono-repo installs. It sup
 
 - `fynpo publish` - Publish the packages thats been updated.
 
-### [fynpo-cli](https://github.com/electrode-io/fynpo/tree/master/packages/fynpo-cli)
+### [fynpo-cli](https://github.com/jchip/fynjs/tree/master/packages/fynpo-cli)
 A lightweight module that's only for installing to npm global.
 This allows user to invoke fynpo commands from within a package and not require npx.
 
@@ -43,7 +43,7 @@ This allows user to invoke fynpo commands from within a package and not require 
 npm i -g fynpo-cli
 ```
 
-### [fyn](https://github.com/electrode-io/fyn)
+### [fyn](https://github.com/jchip/fynjs/tree/master/packages/fyn)
 The node.js package manager that handles installing dependencies. It will have some fynpo awareness and load any relevant fynpo config when a mono-repo is detected.t's best if user has this install into npm global.
 
 ```

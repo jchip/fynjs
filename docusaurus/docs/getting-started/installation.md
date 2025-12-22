@@ -6,7 +6,7 @@ title: Installation
 To create a new fynpo monorepo:
 
 ```
-npx create-fynpo fynpo-repo
+npx @fynjs/create-monorepo fynpo-repo
 cd fynpo-repo
 fyn  # Install dependencies
 ```
@@ -21,16 +21,16 @@ Running this command will:
  - create an empty `packages` directory
  - add `commitlint` config if enabled
 
-Please visit [here](https://github.com/electrode-io/fynpo/blob/master/packages/create-fynpo/README.md) for more detailed information about `create-fynpo`.
+Please visit [here](https://github.com/jchip/fynjs/blob/master/packages/create-monorepo/README.md) for more detailed information about `@fynjs/create-monorepo`.
 
 #### Options:
 
-**`commitlint`** : Used to initialize the repo with commitlint configuration. This is enabled by default. 
+**`commitlint`** : Used to initialize the repo with commitlint configuration. This is enabled by default.
 
 To initialize the repo without commitlint configuration, run the command with `no-commitlint` options. In this case, a simple `fynpo.json` config file will be added instead of `fynpo.config.js`.
 
 ```
-npx create-fynpo fynpo-repo --no-commitlint
+npx @fynjs/create-monorepo fynpo-repo --no-commitlint
 ```
 
 The `commitlint` configuration can always be added later by running:

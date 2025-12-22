@@ -39,7 +39,7 @@ npx husky install
 npx husky add .husky/commit-msg 'npx --no-install fynpo commitlint --edit $1'
 ```
 
-**Note**: fynpo repo initialized using `create-fynpo` will alreday have `husky` added in `devDependencies` and also `husky install` added to the `prepare` script.
+**Note**: fynpo repo initialized using `@fynjs/create-monorepo` will already have `husky` added in `devDependencies` and also `husky install` added to the `prepare` script.
 
 #### Test:
 
