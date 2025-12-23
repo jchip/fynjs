@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Path from "path";
 import Os from "os";
 import Fs from "./util/file-ops";
@@ -13,29 +11,158 @@ import semver from "semver";
 import readline from "readline";
 import https from "https";
 import http from "http";
+import type { IncomingMessage } from "http";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
+
+/** Options for FynGlobal constructor */
+interface FynGlobalOptions {
+  /** Root directory for global packages (default: ~/.fyn/global) */
+  globalDir?: string;
+  /** NPM registry URL (default: https://registry.npmjs.org) */
+  registry?: string;
+  /** Node.js major version (default: auto-detect) */
+  nodeVersion?: string;
+  /** Specific tag (e.g., g1, g2) to operate on */
+  tag?: string;
+  /** Enable interactive prompts (default: true) */
+  interactive?: boolean;
+  /** Auto-confirm prompts (default: false) */
+  yes?: boolean;
+}
+
+/** Version info stored in installed.json */
+interface VersionInfo {
+  /** Installed package version */
+  version: string;
+  /** Directory ID (e.g., "g1", "g2") */
+  dir: string;
+  /** Original package spec used for install */
+  spec: string;
+  /** Semver spec used for dependency */
+  semver: string;
+  /** ISO timestamp of installation */
+  installedAt: string;
+  /** List of bin executable names */
+  bins: string[];
+  /** Whether this is a local (file:) package */
+  local: boolean;
+  /** Whether this version is currently linked/active */
+  linked: boolean;
+  /** ISO timestamp of last update */
+  updatedAt?: string;
+}
+
+/** Package entry in registry */
+interface PackageEntry {
+  /** Array of installed versions */
+  versions: VersionInfo[];
+}
+
+/** Installed packages registry (installed.json) */
+interface InstalledRegistry {
+  /** Map of package names to their entries */
+  packages: Record<string, PackageEntry>;
+}
+
+/** Result from findByTag */
+interface TagResult {
+  /** Package name */
+  packageName: string;
+  /** Version info for the tag */
+  versionInfo: VersionInfo;
+}
+
+/** Result from findInstalledPackage */
+interface InstalledPackageResult {
+  /** Directory ID */
+  dir: string;
+  /** Version metadata */
+  meta: VersionInfo;
+}
+
+/** Result from findPackageByLocalPath */
+interface LocalPathResult {
+  /** Package name */
+  packageName: string;
+  /** Matching versions */
+  versions: VersionInfo[];
+}
+
+/** Map of bin names to their paths */
+type BinMap = Record<string, string>;
+
+/** Latest version info from registry */
+interface LatestVersionInfo {
+  /** Latest version tag */
+  latest: string | undefined;
+  /** All available versions */
+  versions: string[];
+}
+
+/** Options for installGlobalPackage */
+interface InstallOptions {
+  /** Install as new tag even if same version exists */
+  newTag?: boolean;
+}
+
+/** Package.json for global install wrapper */
+interface GlobalPackageJson {
+  name: string;
+  private: boolean;
+  description: string;
+  dependencies: Record<string, string>;
+  __installedVersion?: string;
+}
+
+/** Global package info from getAllGlobalPackages */
+interface GlobalPackageInfo {
+  /** Directory ID */
+  dir: string;
+  /** Package metadata */
+  meta: VersionInfo & { package: string };
+}
 
 /**
  * FynGlobal - Global package installation manager for fyn
  * Uses composition pattern (not extending Fyn)
  */
 class FynGlobal {
+  /** Configuration options */
+  options: FynGlobalOptions;
+  /** Runtime prefix ("v" for Node, "bun" for Bun) */
+  runtimePrefix: string;
+  /** Node/Bun major version number */
+  nodeVersion: string;
+  /** Root directory for global packages */
+  globalRoot: string;
+  /** Version-specific directory */
+  versionDir: string;
+  /** Directory containing installed packages */
+  packagesDir: string;
+  /** Directory for bin symlinks */
+  globalBinDir: string;
+  /** Path to installed.json registry */
+  installedJsonPath: string;
+  /** Path to install lock file */
+  lockFile: string;
+  /** Whether interactive prompts are enabled */
+  interactive: boolean;
+  /** Auto-confirm prompts */
+  yes: boolean;
+  /** Specific tag to operate on */
+  tag: string | null;
+
   /**
    * Create a FynGlobal instance
-   * @param {Object} options - Configuration options
-   * @param {string} [options.globalDir] - Root directory for global packages (default: ~/.fyn/global)
-   * @param {string} [options.registry] - NPM registry URL (default: https://registry.npmjs.org)
-   * @param {string} [options.nodeVersion] - Node.js major version (default: auto-detect)
-   * @param {string} [options.tag] - Specific tag (e.g., g1, g2) to operate on
    */
-  constructor(options = {}) {
+  constructor(options: FynGlobalOptions = {}) {
     this.options = options;
 
     // Detect runtime: Bun vs Node.js
     const isBun = typeof process.versions.bun === "string";
-    const runtimeVersion = options.nodeVersion || process.version.match(/^v?(\d+)/)[1];
+    const runtimeVersion = options.nodeVersion || process.version.match(/^v?(\d+)/)![1];
     this.runtimePrefix = isBun ? "bun" : "v";
     this.nodeVersion = runtimeVersion; // kept for backwards compatibility
 
@@ -54,12 +181,12 @@ class FynGlobal {
 
   /**
    * Create a Fyn instance for global package installation
-   * @param {string} cwd - Working directory for the install
-   * @param {boolean} fynlocal - Whether this is a local package
-   * @param {string} [initCwd] - Original directory where fyn was invoked (for INIT_CWD)
-   * @returns {Fyn} Configured Fyn instance
+   * @param cwd - Working directory for the install
+   * @param fynlocal - Whether this is a local package
+   * @param initCwd - Original directory where fyn was invoked (for INIT_CWD)
+   * @returns Configured Fyn instance
    */
-  _createFyn(cwd, fynlocal, initCwd) {
+  _createFyn(cwd: string, fynlocal: boolean, initCwd?: string): Fyn {
     process.env.FYN_CENTRAL_DIR = Path.join(this.globalRoot, "_central-storage");
     return new Fyn({
       opts: {
@@ -82,9 +209,9 @@ class FynGlobal {
 
   /**
    * Read the installed.json registry
-   * @returns {Object} Registry object with packages info
+   * @returns Registry object with packages info
    */
-  async readInstalledJson() {
+  async readInstalledJson(): Promise<InstalledRegistry> {
     try {
       const data = await Fs.readFile(this.installedJsonPath);
       return JSON.parse(data);
@@ -97,37 +224,37 @@ class FynGlobal {
   /**
    * Write the installed.json registry
    */
-  async writeInstalledJson(registry) {
+  async writeInstalledJson(registry: InstalledRegistry): Promise<void> {
     await Fs.$.mkdirp(this.versionDir);
     await Fs.writeFile(this.installedJsonPath, JSON.stringify(registry, null, 2) + "\n");
   }
 
   /**
    * Get all versions of a package from the registry
-   * @param {string} packageName
-   * @returns {Array} Array of version info objects
+   * @param packageName - Name of the package
+   * @returns Array of version info objects
    */
-  async getPackageVersions(packageName) {
+  async getPackageVersions(packageName: string): Promise<VersionInfo[]> {
     const registry = await this.readInstalledJson();
     return registry.packages[packageName]?.versions || [];
   }
 
   /**
    * Get the linked version of a package
-   * @param {string} packageName
-   * @returns {Object|null} Version info or null
+   * @param packageName - Name of the package
+   * @returns Version info or null
    */
-  async getLinkedVersion(packageName) {
+  async getLinkedVersion(packageName: string): Promise<VersionInfo | null> {
     const versions = await this.getPackageVersions(packageName);
     return versions.find(v => v.linked) || null;
   }
 
   /**
    * Find package info by tag (e.g., g1, g2)
-   * @param {string} tag - The tag to find
-   * @returns {Object|null} Object with packageName and versionInfo, or null if not found
+   * @param tag - The tag to find
+   * @returns Object with packageName and versionInfo, or null if not found
    */
-  async findByTag(tag) {
+  async findByTag(tag: string): Promise<TagResult | null> {
     const registry = await this.readInstalledJson();
 
     for (const [packageName, pkgInfo] of Object.entries(registry.packages)) {
@@ -143,10 +270,10 @@ class FynGlobal {
 
   /**
    * Validate that the tag option points to an existing installation
-   * @returns {Object} Object with packageName and versionInfo
-   * @throws {Error} If tag is set but doesn't exist
+   * @returns Object with packageName and versionInfo
+   * @throws If tag is set but doesn't exist
    */
-  async validateTag() {
+  async validateTag(): Promise<TagResult | null> {
     if (!this.tag) return null;
 
     const found = await this.findByTag(this.tag);
@@ -159,7 +286,7 @@ class FynGlobal {
   /**
    * Add or update a package version in the registry
    */
-  async addToRegistry(packageName, versionInfo) {
+  async addToRegistry(packageName: string, versionInfo: VersionInfo): Promise<void> {
     const registry = await this.readInstalledJson();
 
     if (!registry.packages[packageName]) {
@@ -182,7 +309,7 @@ class FynGlobal {
   /**
    * Remove a version from the registry
    */
-  async removeFromRegistry(packageName, version) {
+  async removeFromRegistry(packageName: string, version: string): Promise<void> {
     const registry = await this.readInstalledJson();
 
     if (!registry.packages[packageName]) {
@@ -207,7 +334,7 @@ class FynGlobal {
   /**
    * Update linked status for a package version in registry
    */
-  async updateLinkedInRegistry(packageName, version, linked) {
+  async updateLinkedInRegistry(packageName: string, version: string, linked: boolean): Promise<void> {
     const registry = await this.readInstalledJson();
 
     if (!registry.packages[packageName]) {
@@ -233,7 +360,7 @@ class FynGlobal {
   /**
    * Prompt user for yes/no confirmation
    */
-  async promptYesNo(question) {
+  async promptYesNo(question: string): Promise<boolean> {
     // Auto-confirm if --yes flag is set
     if (this.yes) {
       return true;
@@ -261,7 +388,7 @@ class FynGlobal {
    * - file: prefix, absolute paths, or relative paths (./ or ../)
    * - npm names only have / if scoped (@scope/name), so any / without @ prefix is a path
    */
-  isLocalSpec(packageSpec) {
+  isLocalSpec(packageSpec: string): boolean {
     if (
       packageSpec.startsWith("file:") ||
       packageSpec.startsWith("/") ||
@@ -281,7 +408,7 @@ class FynGlobal {
   /**
    * Parse package spec to extract package name (async)
    */
-  async parsePackageName(packageSpec) {
+  async parsePackageName(packageSpec: string): Promise<string> {
     // Handle file: or path specs
     if (this.isLocalSpec(packageSpec)) {
       const resolvedPath = Path.resolve(packageSpec.replace(/^file:/, ""));
@@ -311,7 +438,7 @@ class FynGlobal {
   /**
    * Acquire lock for concurrent install protection
    */
-  async acquireLock() {
+  async acquireLock(): Promise<void> {
     await Fs.$.mkdirp(Path.dirname(this.lockFile));
     return createLock(this.lockFile, { wait: 10000, stale: 60000 });
   }
@@ -319,7 +446,7 @@ class FynGlobal {
   /**
    * Release install lock
    */
-  async releaseLock() {
+  async releaseLock(): Promise<void> {
     try {
       await unlock(this.lockFile);
     } catch (err) {
@@ -330,7 +457,7 @@ class FynGlobal {
   /**
    * Get next global package ID by reading directory
    */
-  async getNextGlobalId() {
+  async getNextGlobalId(): Promise<string> {
     try {
       const dirs = await Fs.readdir(this.packagesDir);
 
@@ -353,7 +480,7 @@ class FynGlobal {
    * Find an installed global package by name (returns linked version)
    * Uses the installed.json registry
    */
-  async findInstalledPackage(packageName) {
+  async findInstalledPackage(packageName: string): Promise<InstalledPackageResult | null> {
     const versions = await this.getPackageVersions(packageName);
     if (versions.length === 0) return null;
     // Return linked version first, otherwise first found
@@ -365,7 +492,7 @@ class FynGlobal {
   /**
    * Fetch latest version info from npm registry
    */
-  async fetchLatestVersion(packageName) {
+  async fetchLatestVersion(packageName: string): Promise<LatestVersionInfo | null> {
     const registry = this.options.registry || "https://registry.npmjs.org";
     const url = `${registry}/${encodeURIComponent(packageName).replace("%40", "@")}`;
 
@@ -398,9 +525,9 @@ class FynGlobal {
   /**
    * Get all globally installed packages from registry
    */
-  async getAllGlobalPackages() {
+  async getAllGlobalPackages(): Promise<GlobalPackageInfo[]> {
     const registry = await this.readInstalledJson();
-    const packages = [];
+    const packages: GlobalPackageInfo[] = [];
 
     for (const [packageName, pkgInfo] of Object.entries(registry.packages)) {
       for (const v of pkgInfo.versions || []) {
@@ -417,7 +544,7 @@ class FynGlobal {
   /**
    * Ensure global/bin symlink points to current version's bin directory
    */
-  async ensureBinSymlink() {
+  async ensureBinSymlink(): Promise<void> {
     const binSymlink = Path.join(this.globalRoot, "bin");
     const targetDir = `${this.runtimePrefix}${this.nodeVersion}/bin`;
 
@@ -438,8 +565,8 @@ class FynGlobal {
    * Discover bin executables declared in a package's package.json
    * Only returns bins from the actual package, not transitive dependencies
    */
-  async discoverBins(pkgDir, packageName) {
-    const bins = {};
+  async discoverBins(pkgDir: string, packageName: string): Promise<BinMap> {
+    const bins: BinMap = {};
     const binDir = Path.join(pkgDir, "node_modules", ".bin");
 
     // Read the installed package's package.json to get declared bins
@@ -473,7 +600,7 @@ class FynGlobal {
   /**
    * Find which package owns a bin
    */
-  async findBinOwner(binName) {
+  async findBinOwner(binName: string): Promise<string | null> {
     const registry = await this.readInstalledJson();
 
     for (const [packageName, pkgInfo] of Object.entries(registry.packages)) {
@@ -489,11 +616,11 @@ class FynGlobal {
 
   /**
    * Link bin executables to global bin directory
-   * @param {string} gId - Package directory ID (e.g., "g1")
-   * @param {Object} bins - Map of binName -> binPath
-   * @param {boolean} force - If true, overwrite existing bins
+   * @param gId - Package directory ID (e.g., "g1")
+   * @param bins - Map of binName -> binPath
+   * @param force - If true, overwrite existing bins
    */
-  async linkBins(gId, bins, force = false) {
+  async linkBins(gId: string, bins: BinMap, force: boolean = false): Promise<void> {
     await Fs.$.mkdirp(this.globalBinDir);
 
     for (const [binName, binPath] of Object.entries(bins)) {
@@ -520,7 +647,7 @@ class FynGlobal {
   /**
    * Read the actual installed version from node_modules
    */
-  async getInstalledVersion(pkgDir, packageName) {
+  async getInstalledVersion(pkgDir: string, packageName: string): Promise<string | null> {
     const installedPkgJson = Path.join(pkgDir, "node_modules", packageName, "package.json");
     try {
       const pkgJson = JSON.parse(await Fs.readFile(installedPkgJson));
@@ -536,11 +663,10 @@ class FynGlobal {
    * - Latest version wins (becomes linked)
    * - Prompts if newer version available when installing older
    * - Prompts to remove old versions after installing new
-   * @param {string} packageSpec - Package spec to install
-   * @param {Object} [options] - Install options
-   * @param {boolean} [options.newTag] - Install as new tag even if same version exists
+   * @param packageSpec - Package spec to install
+   * @param options - Install options
    */
-  async installGlobalPackage(packageSpec, options = {}) {
+  async installGlobalPackage(packageSpec: string, options: InstallOptions = {}): Promise<boolean> {
     const { newTag } = options;
     await this.acquireLock();
 
@@ -758,7 +884,7 @@ class FynGlobal {
   /**
    * Unlink bins for a specific version
    */
-  async unlinkBinsForVersion(packageName, version) {
+  async unlinkBinsForVersion(packageName: string, version: string): Promise<void> {
     const versions = await this.getPackageVersions(packageName);
     const versionInfo = versions.find(v => v.version === version);
     if (!versionInfo) return;
@@ -779,7 +905,7 @@ class FynGlobal {
   /**
    * Remove a specific version of a package
    */
-  async removeVersion(packageName, version) {
+  async removeVersion(packageName: string, version: string): Promise<boolean> {
     const versions = await this.getPackageVersions(packageName);
     const versionInfo = versions.find(v => v.version === version);
 
@@ -804,16 +930,19 @@ class FynGlobal {
 
   /**
    * Remove globally installed package version(s)
-   * @param {string} packageSpec - Package name or name@semver pattern
+   * @param packageSpec - Package name or name@semver pattern
    *   - name: remove all versions (warns if multiple, won't remove linked unless only one)
    *   - name@version: remove exact version
    *   - name@semver: remove all versions matching semver range
    *   If --tag is specified, removes that specific installation
    */
-  async removeGlobalPackage(packageSpec) {
+  async removeGlobalPackage(packageSpec: string): Promise<boolean> {
     // If --tag is specified, remove that specific installation
     if (this.tag) {
       const found = await this.validateTag();
+      if (!found) {
+        return false;
+      }
       logger.info(`Removing ${found.packageName}@${found.versionInfo.version} (${this.tag})`);
       await this.removeVersion(found.packageName, found.versionInfo.version);
       logger.info(`Removed ${found.packageName}@${found.versionInfo.version}`);
@@ -900,9 +1029,9 @@ class FynGlobal {
 
   /**
    * List globally installed packages
-   * @param {string} [filterName] - Optional package name to filter by
+   * @param filterName - Optional package name to filter by
    */
-  async listGlobalPackages(filterName) {
+  async listGlobalPackages(filterName?: string): Promise<VersionInfo[]> {
     const registry = await this.readInstalledJson();
     const packageNames = Object.keys(registry.packages);
 
@@ -978,14 +1107,19 @@ class FynGlobal {
 
   /**
    * Link (activate) a specific version of a package
-   * @param {string} packageSpec - Package name@version to link, or ignored if --tag is specified
+   * @param packageSpec - Package name@version to link, or ignored if --tag is specified
    */
-  async linkPackageVersion(packageSpec) {
-    let packageName, version, targetVersion;
+  async linkPackageVersion(packageSpec: string): Promise<boolean> {
+    let packageName: string | undefined;
+    let version: string | undefined;
+    let targetVersion: VersionInfo | undefined;
 
     // If --tag is specified, link that specific installation
     if (this.tag) {
       const found = await this.validateTag();
+      if (!found) {
+        return false;
+      }
       packageName = found.packageName;
       version = found.versionInfo.version;
       targetVersion = found.versionInfo;
@@ -1040,6 +1174,10 @@ class FynGlobal {
       }
     }
 
+    if (!targetVersion || !packageName || !version) {
+      return false;
+    }
+
     if (targetVersion.linked) {
       logger.info(`${packageName}@${version} is already linked`);
       return true;
@@ -1070,10 +1208,10 @@ class FynGlobal {
 
   /**
    * Find a package by its local path
-   * @param {string} localPath - The local path to search for
-   * @returns {Object|null} Object with packageName and versions, or null
+   * @param localPath - The local path to search for
+   * @returns Object with packageName and versions, or null
    */
-  async findPackageByLocalPath(localPath) {
+  async findPackageByLocalPath(localPath: string): Promise<LocalPathResult | null> {
     const resolvedPath = Path.resolve(localPath.replace(/^file:/, ""));
     const searchSpec = `file:${resolvedPath}`;
     const registry = await this.readInstalledJson();
@@ -1091,15 +1229,18 @@ class FynGlobal {
 
   /**
    * Update a globally installed package (linked version or specific tag)
-   * @param {string} packageSpec - Package name or local path
+   * @param packageSpec - Package name or local path
    */
-  async updateGlobalPackage(packageSpec) {
-    let targetVersion;
+  async updateGlobalPackage(packageSpec: string): Promise<boolean> {
+    let targetVersion: VersionInfo | undefined;
     let targetPackageName = packageSpec;
 
     // If --tag is specified, update that specific installation
     if (this.tag) {
       const found = await this.validateTag();
+      if (!found) {
+        return false;
+      }
       targetVersion = found.versionInfo;
       targetPackageName = found.packageName;
     } else if (packageSpec) {
@@ -1151,6 +1292,10 @@ class FynGlobal {
       return false;
     }
 
+    if (!targetVersion) {
+      return false;
+    }
+
     const pkgDir = Path.join(this.packagesDir, targetVersion.dir);
 
     logger.info(`Updating ${targetPackageName}@${targetVersion.version} (${targetVersion.dir})...`);
@@ -1197,7 +1342,7 @@ class FynGlobal {
     // Update registry with new version info
     await this.addToRegistry(targetPackageName, {
       ...targetVersion,
-      version: newVersion,
+      version: newVersion || targetVersion.version,
       bins: Object.keys(bins),
       updatedAt: new Date().toISOString()
     });
@@ -1214,7 +1359,7 @@ class FynGlobal {
   /**
    * Switch to a specific Node version's global packages
    */
-  async useNodeVersion(version) {
+  async useNodeVersion(version?: string): Promise<boolean> {
     const nodeVersion = version || this.nodeVersion;
     const versionDir = `v${nodeVersion}`;
     const currentLink = Path.join(this.globalRoot, "current");
@@ -1255,10 +1400,10 @@ class FynGlobal {
 
   /**
    * Cleanup non-linked versions of a package
-   * @param {string} [packageName] - Package name to cleanup, or all packages if not specified
-   * @returns {number} Number of versions removed
+   * @param packageName - Package name to cleanup, or all packages if not specified
+   * @returns Number of versions removed
    */
-  async cleanupPackage(packageName) {
+  async cleanupPackage(packageName?: string): Promise<number> {
     const registry = await this.readInstalledJson();
     let totalRemoved = 0;
 
@@ -1306,7 +1451,7 @@ class FynGlobal {
   /**
    * Show PATH setup instructions
    */
-  showPathSetup() {
+  showPathSetup(): void {
     const binPath = Path.join(this.globalRoot, "current", "bin");
     const isWindows = process.platform === "win32";
 
@@ -1328,3 +1473,16 @@ class FynGlobal {
 }
 
 export default FynGlobal;
+export type {
+  FynGlobalOptions,
+  VersionInfo,
+  PackageEntry,
+  InstalledRegistry,
+  TagResult,
+  InstalledPackageResult,
+  LocalPathResult,
+  BinMap,
+  LatestVersionInfo,
+  InstallOptions,
+  GlobalPackageInfo
+};
