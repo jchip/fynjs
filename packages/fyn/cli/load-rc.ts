@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import os from "os";
 import Fs from "fs";
 import Path from "path";
@@ -8,6 +6,18 @@ import _ from "lodash";
 import logger from "../lib/logger";
 import defaultRc from "./default-rc";
 import fynTil from "../lib/util/fyntil";
+
+/** RC configuration data */
+type RcData = Record<string, unknown>;
+
+/** Result from loadRc function */
+interface LoadRcResult {
+  all?: RcData;
+  npmrc: RcData;
+  data?: RcData[];
+  npmrcData?: RcData[];
+  files?: string[];
+}
 
 /**
  * Get CI environment value if detected
@@ -65,8 +75,8 @@ function getSectionPriority(section: string): number {
 
 const envExpr = /(?<!\\)(\\*)\$\{([^${}]+)\}/g;
 
-function replaceEnv(f, env) {
-  return f.replace(envExpr, (orig, esc, name) => {
+function replaceEnv(f: string, env: Record<string, string | undefined>): string {
+  return f.replace(envExpr, (orig: string, esc: string, name: string) => {
     const val = env[name] !== undefined ? env[name] : `$\{${name}}`;
 
     // consume the escape chars that are relevant.
@@ -78,10 +88,11 @@ function replaceEnv(f, env) {
   });
 }
 
-function replaceRcEnv(rc, env) {
+function replaceRcEnv(rc: RcData, env: Record<string, string | undefined>): void {
   for (const k in rc) {
-    if (rc[k] && rc[k].replace) {
-      rc[k] = replaceEnv(rc[k], env);
+    const val = rc[k];
+    if (val && typeof val === "string") {
+      rc[k] = replaceEnv(val, env);
     }
   }
 }
@@ -122,7 +133,7 @@ function applyFynrcSections(parsed: Record<string, any>): Record<string, any> {
   return result;
 }
 
-function readRc(fname: string) {
+function readRc(fname: string): RcData {
   const rcFname = Path.basename(fname);
 
   try {
@@ -137,15 +148,15 @@ function readRc(fname: string) {
     logger.debug(`Loaded ${rcFname} RC`, fname, JSON.stringify(fynTil.removeAuthInfo(rc)));
     return rc;
   } catch (e) {
-    if (e.code !== "ENOENT") {
-      logger.error(`Failed to process ${rcFname} RC file`, fname, e.message);
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") {
+      logger.error(`Failed to process ${rcFname} RC file`, fname, (e as Error).message);
     }
     return {};
   }
 }
 
-function loadRc(cwd, fynpoDir) {
-  const npmrcData = [];
+function loadRc(cwd: string | false | undefined, fynpoDir?: string): LoadRcResult {
+  const npmrcData: RcData[] = [];
 
   if (cwd === false || cwd === undefined) {
     return {
@@ -168,9 +179,9 @@ function loadRc(cwd, fynpoDir) {
 
     Path.join(cwd, ".npmrc"),
     Path.join(cwd, ".fynrc")
-  ].filter(x => x);
+  ].filter((x): x is string => Boolean(x));
 
-  const data = files.map(fp => {
+  const data = files.map((fp: string) => {
     const x = readRc(fp);
     if (fp.endsWith("npmrc")) {
       npmrcData.push(x);
@@ -178,11 +189,11 @@ function loadRc(cwd, fynpoDir) {
     return x;
   });
 
-  const all = _.merge.apply(_, [{}, defaultRc].concat(data));
-  const npmrc = _.merge.apply(_, [{}].concat(npmrcData));
+  const all = _.merge({}, defaultRc, ...data);
+  const npmrc = _.merge({}, ...npmrcData);
 
-  replaceRcEnv(all, process.env);
-  replaceRcEnv(npmrc, process.env);
+  replaceRcEnv(all, process.env as Record<string, string | undefined>);
+  replaceRcEnv(npmrc, process.env as Record<string, string | undefined>);
 
   return {
     all,

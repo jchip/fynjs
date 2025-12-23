@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Fs from "../lib/util/file-ops";
 import Os from "os";
 import Path from "path";
@@ -16,7 +14,7 @@ import fyntil from "../lib/util/fyntil";
 import showStat from "./show-stat";
 import showAudit from "./show-audit";
 import { runNpmScript, addNpmLifecycle } from "../lib/util/run-npm-script";
-import { initEnv, makeNpmEnv } from "../lib/util/make-npm-env";
+import { makeNpmEnv } from "../lib/util/make-npm-env";
 import runScript from "@npmcli/run-script";
 import xaa from "../lib/util/xaa";
 import { scanFileStats } from "../lib/util/stat-dir";
@@ -36,15 +34,127 @@ import {
   spinner
 } from "../lib/log-items";
 
-function checkNewVersion(npmConfig) {
+/** Fyn CLI options */
+interface FynCliOpts {
+  cwd: string;
+  concurrency?: number;
+  saveLogs?: string;
+  [key: string]: unknown;
+}
+
+/** Fynpo configuration */
+interface FynpoConfig {
+  config?: Record<string, unknown>;
+  dir?: string;
+}
+
+/** FynCli configuration */
+interface FynCliConfig {
+  opts: FynCliOpts;
+  noStartupInfo?: boolean;
+  _fynpo: FynpoConfig;
+  [key: string]: unknown;
+}
+
+/** Add command arguments */
+interface AddArgv {
+  packages?: string[];
+  dev?: string[];
+  optional?: string[];
+  peer?: string[];
+  pkgFyn?: boolean;
+}
+
+/** Remove command arguments */
+interface RemoveArgv {
+  packages?: string[];
+}
+
+/** Install command arguments */
+interface InstallArgv {
+  opts?: {
+    audit?: boolean;
+    [key: string]: unknown;
+  };
+}
+
+/** Stat command arguments */
+interface StatArgv {
+  args: {
+    packages?: string[];
+  };
+}
+
+/** Audit command arguments */
+interface AuditArgv {
+  opts?: {
+    json?: boolean;
+    omit?: string[];
+    auditLevel?: string;
+    noCache?: boolean;
+  };
+}
+
+/** Run command arguments */
+interface RunArgv {
+  args?: {
+    script?: string;
+    args?: string[];
+    _?: string[];
+  };
+  opts?: {
+    list?: boolean;
+  };
+  _?: string[];
+}
+
+/** Parsed CLI result */
+interface ParsedResult {
+  _?: string[];
+  [key: string]: unknown;
+}
+
+/** Package add item */
+interface AddItem {
+  $: string;
+  name: string;
+  semver: string;
+  semverPath?: string;
+  localType?: string;
+  section: string;
+  parent: Record<string, unknown>;
+  found?: string;
+  fullPath?: string;
+  version?: string;
+}
+
+/** Package.json structure */
+interface PackageJson {
+  name?: string;
+  version?: string;
+  scripts?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  fyn?: Record<string, Record<string, string>>;
+  _id?: string;
+  [key: string]: unknown;
+}
+
+function checkNewVersion(npmConfig: Record<string, unknown>): void {
   checkPkgNewVersionEngine({
     pkg: _.pick(myPkg, ["name", "version"]),
     npmConfig,
-    checkIsNewer: (pkg, distTags, tag) => {
+    checkIsNewer: (
+      pkg: { version: string },
+      distTags: Record<string, string>,
+      tag: string
+    ): { isNewer: boolean; version: string } => {
       const isNewer = semver.gt(distTags[tag], pkg.version);
       return { isNewer, version: distTags[tag] };
     },
-    fetchJSON: async (url, options) => {
+    fetchJSON: async (url: string, options: Record<string, unknown>): Promise<unknown> => {
       const res = await fetch(url, options);
       return await res.json();
     }
@@ -54,21 +164,25 @@ function checkNewVersion(npmConfig) {
 const myDir = Path.join(__dirname, "..");
 
 class FynCli {
-  constructor(config) {
+  private _config: FynCliConfig;
+  private _opts: FynCliOpts;
+  private _fyn: Fyn | undefined;
+
+  constructor(config: FynCliConfig) {
     this._config = config;
     this._opts = config.opts;
     if (config.noStartupInfo !== true) this.showStartupInfo();
     this._fyn = undefined;
   }
 
-  get fyn() {
+  get fyn(): Fyn {
     if (!this._fyn) {
       this._fyn = new Fyn(this._config);
     }
     return this._fyn;
   }
 
-  showStartupInfo() {
+  showStartupInfo(): void {
     logger.verbose(chalk.green("fyn"), "version", myPkg.version, "at", chalk.magenta(myDir));
     logger.verbose(
       chalk.green("NodeJS"),
@@ -82,11 +196,11 @@ class FynCli {
     logger.verbose("Max network concurrency is", this._opts.concurrency);
   }
 
-  async saveLogs(dbgLog) {
+  async saveLogs(dbgLog: string): Promise<void> {
     return Fs.writeFile(Path.resolve(this._opts.cwd, dbgLog), logger.logData.join("\n") + "\n");
   }
 
-  async fail(msg, err) {
+  async fail(msg: string, err: Error): Promise<void> {
     const dbgLog =
       this._opts.saveLogs || Path.join(Os.tmpdir(), `fyn-debug-${process.pid}-${Date.now()}.log`);
     logger.freezeItems(true);
@@ -107,27 +221,28 @@ class FynCli {
     fyntil.exit(err);
   }
 
-  add(argv) {
+  add(argv: AddArgv): Promise<boolean> {
     return this.fyn._initialize().then(() => this._add(argv));
   }
 
-  async _add(argv) {
-    const addSec = async (section, packages) => {
+  async _add(argv: AddArgv): Promise<boolean> {
+    const addSec = async (section: string, packages: string[] | undefined): Promise<AddItem[]> => {
       if (_.isEmpty(packages)) return [];
 
-      const items = await xaa.map(packages, async pkgSemver => {
+      const items = await xaa.map(packages!, async (pkgSemver: string) => {
         // Resolve relative to fyn's cwd, not process.cwd()
         const baseDir = this.fyn.cwd || process.cwd();
         const xfp = Path.resolve(baseDir, pkgSemver);
         const stat = await xaa.try(() => Fs.stat(xfp));
+        let resolvedPkgSemver = pkgSemver;
         if (stat && stat.isDirectory()) {
-          pkgSemver = Path.relative(baseDir, xfp);
-          if (!pkgSemver.startsWith(`..${Path.sep}`)) {
-            pkgSemver = `.${Path.sep}${pkgSemver}`;
+          resolvedPkgSemver = Path.relative(baseDir, xfp);
+          if (!resolvedPkgSemver.startsWith(`..${Path.sep}`)) {
+            resolvedPkgSemver = `.${Path.sep}${resolvedPkgSemver}`;
           }
         }
 
-        const posixPath = pkgSemver.replace(/\\/g, "/");
+        const posixPath = resolvedPkgSemver.replace(/\\/g, "/");
         const semverPath = this.fyn.pkgSrcMgr.getSemverAsFilepath(posixPath);
 
         logger.info("found semverPath", semverPath);
@@ -153,23 +268,23 @@ class FynCli {
       });
 
       if (!_.isEmpty(items)) {
-        logger.info(`Adding packages to ${section}:`, packages.join(", "));
+        logger.info(`Adding packages to ${section}:`, packages!.join(", "));
       }
 
       return items;
     };
 
-    const sections = {
+    const sections: Record<string, keyof AddArgv> = {
       dependencies: "packages",
       devDependencies: "dev",
       optionalDependencies: "optional",
       peerDependencies: "peer"
     };
 
-    let items = [];
+    let items: AddItem[] = [];
     for (const section in sections) {
       const argKey = sections[section];
-      items = items.concat(await addSec(section, argv[argKey]));
+      items = items.concat(await addSec(section, argv[argKey] as string[] | undefined));
     }
 
     if (_.isEmpty(items)) {
@@ -180,29 +295,28 @@ class FynCli {
     logger.addItem({ name: FETCH_META, color: "green", spinner });
     logger.updateItem(FETCH_META, "loading meta...");
 
-    const results = [];
+    const results: AddItem[] = [];
 
     return new PromiseQueue({
       concurrency: 10,
       stopOnError: true,
-      processItem: item => {
-        let found;
+      processItem: (item: AddItem) => {
+        let found: string | undefined;
         return xaa
-          .wrap(() => this._fyn._pkgSrcMgr.fetchLocalItem(item))
-          .then(meta => meta || this.fyn.pkgSrcMgr.fetchMeta(item))
-          .then(meta => {
+          .wrap(() => this._fyn!._pkgSrcMgr.fetchLocalItem(item))
+          .then((meta: unknown) => meta || this.fyn.pkgSrcMgr.fetchMeta(item))
+          .then((meta: { local?: boolean; name?: string; json?: { version?: string }; "dist-tags"?: Record<string, string>; versions?: Record<string, unknown> } | null) => {
             if (!meta) {
               logger.error("Unable to retrieve meta for package", item.name);
               return;
             }
-            // logger.info("adding", x.name, x.semver, meta);
             // look at dist tags
             const tags = meta["dist-tags"];
             if (meta.local) {
               logger.info("adding local package at", item.fullPath);
-              item.name = meta.name;
+              item.name = meta.name!;
               item.version = _.get(meta, "json.version");
-              found = Path.relative(this.fyn.cwd, item.fullPath).replace(/\\/g, "/");
+              found = Path.relative(this.fyn.cwd, item.fullPath!).replace(/\\/g, "/");
               if (found !== item.fullPath && !found.startsWith(".")) {
                 found = `./${found}`;
               }
@@ -212,7 +326,7 @@ class FynCli {
               if (!semver.validRange(found)) found = tags[item.semver];
             } else {
               // search
-              const versions = Object.keys(meta.versions).filter(v =>
+              const versions = Object.keys(meta.versions || {}).filter((v: string) =>
                 semver.satisfies(v, item.semver)
               );
               if (versions.length > 0) {
@@ -241,15 +355,15 @@ class FynCli {
           return false;
         }
 
-        const added = _.mapValues(sections, () => []);
+        const added: Record<string, string[]> = _.mapValues(sections, () => [] as string[]);
 
-        const pkg = this.fyn._pkg;
-        const pkgFyn = argv.pkgFyn ? (await this.fyn.loadPkgFyn()) || {} : pkg;
+        const pkg = this.fyn._pkg as PackageJson;
+        const pkgFyn = (argv.pkgFyn ? (await this.fyn.loadPkgFyn()) || {} : pkg) as PackageJson;
 
-        results.forEach(item => {
+        results.forEach((item: AddItem) => {
           if (item.semverPath) {
             // set in package-fyn
-            if (!this._fyn.isFynpo || !this._fyn._fynpo.graph.getPackageByName(item.name)) {
+            if (!this._fyn!.isFynpo || !this._fyn!._fynpo.graph.getPackageByName(item.name)) {
               _.set(pkgFyn, ["fyn", item.section, item.name], item.found);
             }
             // set in package if it's not there
@@ -262,11 +376,11 @@ class FynCli {
           added[item.section].push(item.name);
         });
 
-        Object.keys(sections).forEach(sec => {
-          if (added[sec].length > 0 && pkg[sec]) {
-            pkg[sec] = sortObjKeys(pkg[sec]);
+        Object.keys(sections).forEach((sec: string) => {
+          if (added[sec].length > 0 && (pkg as Record<string, unknown>)[sec]) {
+            (pkg as Record<string, Record<string, string>>)[sec] = sortObjKeys((pkg as Record<string, Record<string, string>>)[sec]);
             if (_.get(pkgFyn, ["fyn", sec])) {
-              pkgFyn.fyn[sec] = sortObjKeys(pkgFyn.fyn[sec]);
+              pkgFyn.fyn![sec] = sortObjKeys(pkgFyn.fyn![sec]);
             }
             logger.info(`Packages added to ${sec}:`, added[sec].join(", "));
           }
@@ -280,12 +394,12 @@ class FynCli {
       });
   }
 
-  async remove(argv) {
+  async remove(argv: RemoveArgv): Promise<boolean> {
     await this.fyn._initialize();
     return this._remove(argv);
   }
 
-  _remove(argv) {
+  _remove(argv: RemoveArgv): boolean {
     if (_.isEmpty(argv.packages)) {
       logger.error("No packages to remove");
       fyntil.exit(1);
@@ -298,22 +412,23 @@ class FynCli {
       "peerDependencies"
     ];
 
-    const packages = argv.packages.slice();
-    const removed = [];
+    const packages: (string | undefined)[] = argv.packages!.slice();
+    const removed: string[] = [];
 
-    const removeFromSection = sec => {
-      const section = _.get(this.fyn._pkg, sec);
-      const fynSection = _.get(this.fyn._pkg, ["fyn", sec], {});
+    const removeFromSection = (sec: string): void => {
+      const section = _.get(this.fyn._pkg, sec) as Record<string, string> | undefined;
+      const fynSection = _.get(this.fyn._pkg, ["fyn", sec], {}) as Record<string, string>;
 
       if (_.isEmpty(section) && _.isEmpty(fynSection)) return;
       for (let i = 0; i < packages.length; i++) {
         const pkgName = packages[i];
+        if (!pkgName) continue;
         let found = false;
-        if (fynSection.hasOwnProperty(pkgName)) {
+        if (Object.prototype.hasOwnProperty.call(fynSection, pkgName)) {
           delete fynSection[pkgName];
           found = true;
         }
-        if (section.hasOwnProperty(pkgName)) {
+        if (section && Object.prototype.hasOwnProperty.call(section, pkgName)) {
           delete section[pkgName];
           found = true;
         }
@@ -334,12 +449,12 @@ class FynCli {
 
     sections.forEach(removeFromSection);
 
-    const remaining = packages.filter(x => x);
+    const remaining = packages.filter((x): x is string => Boolean(x));
     if (!_.isEmpty(remaining)) {
       logger.error("These packages don't exist in your package.json:", remaining.join(", "));
     }
 
-    if (_.isEmpty(this.fyn._pkg.fyn)) {
+    if (_.isEmpty((this.fyn._pkg as PackageJson).fyn)) {
       _.unset(this.fyn._pkg, "fyn");
     }
 
@@ -354,7 +469,7 @@ class FynCli {
     return false;
   }
 
-  async syncLocalLinks() {
+  async syncLocalLinks(): Promise<void> {
     await this.fyn._initializePkg();
 
     const { localPkgLinks } = this.fyn._installConfig;
@@ -378,9 +493,9 @@ class FynCli {
    * 3. postinstall
    * 4. prepare
    */
-  install(argv = {}) {
-    let failure;
-    let installLocked;
+  install(argv: InstallArgv = {}): Promise<Error | undefined> {
+    let failure: Error | undefined;
+    let installLocked: boolean | undefined;
     const start = Date.now();
     const runAudit = argv.opts?.audit !== false;
     return Promise.try(() => this.fyn._initializePkg())
@@ -533,13 +648,13 @@ class FynCli {
       });
   }
 
-  stat(argv) {
+  stat(argv: StatArgv): Promise<void> {
     return showStat(this.fyn, argv.args.packages).finally(() => {
       return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
     });
   }
 
-  audit(argv) {
+  audit(argv: AuditArgv): Promise<number> {
     const opts = {
       json: argv.opts?.json || false,
       omit: argv.opts?.omit || [],
@@ -551,10 +666,23 @@ class FynCli {
     });
   }
 
-  async runScript(pkg, script, env, scriptArgs = []) {
-    const config = x => this.fyn.allrc[x];
+  async runScript(
+    pkg: PackageJson,
+    script: string,
+    env: Record<string, string | undefined>,
+    scriptArgs: string[] = []
+  ): Promise<unknown> {
+    const config = (x: string): unknown => this.fyn.allrc[x];
 
-    const options = {
+    const options: {
+      event: string;
+      path: string;
+      pkg: PackageJson;
+      env: Record<string, string | undefined>;
+      stdio: string;
+      scriptShell?: string;
+      args?: string[];
+    } = {
       event: script,
       path: this.fyn.cwd,
       pkg,
@@ -562,7 +690,7 @@ class FynCli {
       stdio: "inherit"
     };
 
-    const scriptShell = config("script-shell");
+    const scriptShell = config("script-shell") as string | undefined;
     if (scriptShell) {
       options.scriptShell = scriptShell;
     }
@@ -574,16 +702,19 @@ class FynCli {
     return runScript(options);
   }
 
-  async runScripts(scripts, { single, scriptArgs } = {}) {
+  async runScripts(
+    scripts: string[],
+    { single, scriptArgs }: { single?: boolean; scriptArgs?: string[] } = {}
+  ): Promise<void> {
     if (!this.fyn._pkg) {
       await this.fyn.loadPkg();
     }
 
-    const pkg = Object.assign({}, this.fyn._pkg);
+    const pkg = Object.assign({}, this.fyn._pkg) as PackageJson;
     pkg._id = `${pkg.name}@${pkg.version}`;
 
-    const _scripts = [].concat(
-      ...scripts.map(s => {
+    const _scripts: string[] = ([] as string[]).concat(
+      ...scripts.map((s: string) => {
         if (!single && !s.startsWith("pre") && !s.startsWith("post")) {
           return [`pre${s}`, s, `post${s}`];
         } else {
@@ -599,7 +730,7 @@ class FynCli {
 
     // add fynpo top dir node_modules/.bin to PATH
     if (this._config._fynpo.config) {
-      xsh.envPath.addToFront(Path.join(this._config._fynpo.dir, "node_modules/.bin"), env);
+      xsh.envPath.addToFront(Path.join(this._config._fynpo.dir!, "node_modules/.bin"), env);
     }
 
     setupNodeGypEnv(env);
@@ -613,7 +744,7 @@ class FynCli {
     const mainScript = scripts[scripts.length - 1];
     return Promise.each(
       _scripts,
-      s => {
+      (s: string) => {
         if (_.get(pkg, ["scripts", s])) {
           // Only pass args to the main script
           const args = s === mainScript ? scriptArgs : [];
@@ -623,17 +754,22 @@ class FynCli {
     );
   }
 
-  async run(argv, script = "", cmd = null, parsed = null) {
+  async run(
+    argv: RunArgv,
+    script = "",
+    _cmd: unknown = null,
+    parsed: ParsedResult | null = null
+  ): Promise<void> {
     if (!this._config._fynpo) {
-      this._config._fynpo = {};
+      this._config._fynpo = {} as FynpoConfig;
     }
 
-    script = script || argv.args?.script;
-    if (argv.opts?.list || !script) {
+    const resolvedScript = script || argv.args?.script;
+    if (argv.opts?.list || !resolvedScript) {
       try {
         await this.fyn.loadPkg();
         if (!argv.opts?.list) {
-          console.log(`Lifecycle scripts included in ${this.fyn._pkg.name}:\n`);
+          console.log(`Lifecycle scripts included in ${(this.fyn._pkg as PackageJson).name}:\n`);
         }
         console.log(Object.keys(_.get(this.fyn._pkg, "scripts", {})).join("\n"));
       } finally {
@@ -643,9 +779,9 @@ class FynCli {
 
     await this.fyn.loadPkg();
 
-    if (!_.get(this.fyn._pkg, ["scripts", script])) {
+    if (!_.get(this.fyn._pkg, ["scripts", resolvedScript])) {
       logger.error(
-        `Error: missing script: ${JSON.stringify(script)} - not found in package.json scripts`
+        `Error: missing script: ${JSON.stringify(resolvedScript)} - not found in package.json scripts`
       );
       fyntil.exit(1);
     }
@@ -659,7 +795,7 @@ class FynCli {
     const argsAfterDashDash = parsed?._ || [];
     const scriptArgs = [...argsBeforeDashDash, ...argsAfterDashDash];
 
-    return this.runScripts([script], { scriptArgs });
+    return this.runScripts([resolvedScript!], { scriptArgs });
   }
 }
 
