@@ -1,46 +1,41 @@
 /**
  * Symbol definitions for fyn internal metadata
  *
- * These symbols are used as object keys to store metadata without
- * polluting the regular property namespace. They enable type-safe
- * access to hidden properties on package metadata objects.
+ * Re-exports symbols from the main symbols.ts file and adds
+ * type-safe interfaces for accessing symbol-keyed properties.
  */
 
-/** Resolved semvers from lock file */
-export const LOCK_RSEMVERS = Symbol("lock rsemvers");
+// Re-export all symbols from the main symbols file
+export {
+  LOCK_RSEMVERS,
+  SEMVER,
+  RSEMVERS,
+  LOCK_SORTED_VERSIONS,
+  LATEST_TAG_VERSION,
+  LATEST_VERSION_TIME,
+  SORTED_VERSIONS,
+  LATEST_SORTED_VERSIONS,
+  LOCAL_VERSION_MAPS,
+  RESOLVE_ORDER,
+  PACKAGE_RAW_INFO,
+  DEP_ITEM
+} from "../symbols";
 
-/** DepInfo semver */
-export const SEMVER = Symbol("semver");
-
-/** Resolved semvers during resolution */
-export const RSEMVERS = Symbol("rsemvers");
-
-/** Sorted versions from lock file */
-export const LOCK_SORTED_VERSIONS = Symbol("lock sorted versions");
-
-/** Latest tag version (usually "latest" dist-tag) */
-export const LATEST_TAG_VERSION = Symbol("latest tag version");
-
-/** Timestamp of latest version */
-export const LATEST_VERSION_TIME = Symbol("latest version time");
-
-/** All versions sorted by semver */
-export const SORTED_VERSIONS = Symbol("sorted versions");
-
-/** Latest versions sorted (subset of sorted versions) */
-export const LATEST_SORTED_VERSIONS = Symbol("latest sorted versions");
-
-/** Local version mappings for fynlocal packages */
-export const LOCAL_VERSION_MAPS = Symbol("local version maps");
-
-/** Resolution order for versions */
-export const RESOLVE_ORDER = Symbol("resolve order");
-
-/** Raw package.json info cache */
-export const PACKAGE_RAW_INFO = Symbol("package.json raw info");
-
-/** Reference to DepItem instance */
-export const DEP_ITEM = Symbol("dep item");
+// Import symbols for use in interface definitions
+import {
+  LOCK_RSEMVERS,
+  SEMVER,
+  RSEMVERS,
+  LOCK_SORTED_VERSIONS,
+  LATEST_TAG_VERSION,
+  LATEST_VERSION_TIME,
+  SORTED_VERSIONS,
+  LATEST_SORTED_VERSIONS,
+  LOCAL_VERSION_MAPS,
+  RESOLVE_ORDER,
+  PACKAGE_RAW_INFO,
+  DEP_ITEM
+} from "../symbols";
 
 /**
  * Type-safe symbol property accessors

@@ -18,7 +18,7 @@ import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import lockfile from "lockfile";
 import ck from "chalker";
-import { PACKAGE_RAW_INFO, DEP_ITEM } from "./symbols";
+import { PACKAGE_RAW_INFO, DEP_ITEM } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
 import mm from "minimatch";

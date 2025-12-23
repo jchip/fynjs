@@ -29,68 +29,14 @@ import {
   RESOLVE_ORDER,
   PACKAGE_RAW_INFO,
   DEP_ITEM
-} from "./symbols";
+} from "./types";
 import type { DepData, PkgVersion } from "./dep-data";
-
-/** Semver analysis from semverUtil.analyze() */
-interface SemverAnalysis {
-  $: string;
-  $$?: string;
-  path?: string;
-  localType?: string;
-  urlType?: string;
-}
-
-/** Package distribution info */
-interface PackageDist {
-  integrity?: string;
-  tarball?: string;
-  localPath?: string;
-  fullPath?: string;
-}
-
-/** Package version metadata from registry */
-interface PackageVersionMeta {
-  name?: string;
-  version?: string;
-  dist?: PackageDist;
-  scripts?: Record<string, string>;
-  os?: string[];
-  cpu?: string[];
-  deprecated?: string;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
-  bundleDependencies?: string[];
-  bundledDependencies?: string[];
-  local?: string;
-  hasPI?: number;
-  hasI?: number;
-  _hasShrinkwrap?: boolean;
-  _shrinkwrap?: Record<string, unknown>;
-  _missingJson?: boolean;
-  [key: string]: unknown;
-}
-
-/** Package metadata from registry (packument) */
-interface PackageMeta {
-  name?: string;
-  versions: Record<string, PackageVersionMeta>;
-  "dist-tags"?: Record<string, string>;
-  time?: Record<string, string>;
-  local?: string;
-  jsonStr?: string;
-  urlVersions?: Record<string, { version: string }>;
-  [LOCK_RSEMVERS]?: Record<string, string>;
-  [SORTED_VERSIONS]?: string[];
-  [LATEST_SORTED_VERSIONS]?: string[];
-  [LATEST_VERSION_TIME]?: Date;
-  [LOCK_SORTED_VERSIONS]?: string[];
-  [LATEST_TAG_VERSION]?: string;
-  [LOCAL_VERSION_MAPS]?: Record<string, string>;
-}
+import type {
+  SemverAnalysis,
+  PackageDist,
+  PackageVersionMeta,
+  PackageMeta
+} from "./types";
 
 /** Known package with resolved versions */
 interface KnownPackage {

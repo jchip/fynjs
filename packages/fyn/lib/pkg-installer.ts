@@ -14,7 +14,7 @@ import { INSTALL_PACKAGE } from "./log-items";
 import { runNpmScript } from "./util/run-npm-script";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
-import { RESOLVE_ORDER, RSEMVERS, LOCK_RSEMVERS, SEMVER } from "./symbols";
+import { RESOLVE_ORDER, RSEMVERS, LOCK_RSEMVERS, SEMVER } from "./types";
 import type { DepData, PkgVersion } from "./dep-data";
 import type FynCentral from "./fyn-central";
 

@@ -18,7 +18,7 @@ import {
   LATEST_SORTED_VERSIONS,
   LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS
-} from "./symbols";
+} from "./types";
 import logger from "./logger";
 import fyntil from "./util/fyntil";
 import type { DepData, PkgVersion } from "./dep-data";

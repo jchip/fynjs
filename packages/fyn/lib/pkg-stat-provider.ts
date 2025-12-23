@@ -9,7 +9,7 @@
 import _ from "lodash";
 import * as semverUtil from "./util/semver";
 import PkgDepLinker from "./pkg-dep-linker";
-import { SEMVER } from "./symbols";
+import { SEMVER } from "./types";
 
 const PACKAGE_JSON = "~package.json";
 
