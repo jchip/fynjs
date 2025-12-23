@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-magic-numbers, max-statements, no-eval, camelcase, no-param-reassign */
 
 //
@@ -32,7 +30,36 @@ import { AggregateError } from "@jchip/error";
 
 const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
 
-const readPkgJson = dir => {
+/** Package.json structure */
+interface PackageJson {
+  name?: string;
+  version?: string;
+  scripts?: Record<string, string>;
+  config?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** Fyn instance interface for lifecycle scripts */
+interface FynForLifecycle {
+  allrc?: Record<string, unknown>;
+  isFynpo?: boolean;
+  _fynpo?: { dir: string };
+  initCwd?: string;
+  cwd?: string;
+}
+
+/** Options for LifecycleScripts constructor */
+interface LifecycleScriptsOptions {
+  dir: string;
+  appDir?: string;
+  json?: PackageJson;
+  _fyn?: FynForLifecycle;
+}
+
+/** Environment variables */
+type EnvVars = Record<string, string | undefined>;
+
+const readPkgJson = (dir: string): Promise<PackageJson> => {
   return fyntil.readPkgJson(dir).catch(() => {
     return {};
   });
@@ -53,16 +80,25 @@ const fynCli = requireAt(fynInstalledDir).resolve("./bin/fyn.js");
 const ONE_MB = 1024 * 1024;
 
 class LifecycleScripts {
-  constructor(options) {
+  private _fyn: FynForLifecycle;
+  private _pkgDir: string;
+  private _options: LifecycleScriptsOptions;
+  private _appDir?: string;
+  private _appPkg: PackageJson;
+  private _pkg: PackageJson;
+
+  constructor(options: string | LifecycleScriptsOptions) {
     if (typeof options === "string") {
       options = { dir: options };
     }
     this._fyn = options._fyn || {};
     this._pkgDir = options.dir;
     this._options = Object.assign({}, options);
+    this._appPkg = {};
+    this._pkg = {};
   }
 
-  makeEnv(override) {
+  makeEnv(override?: EnvVars): EnvVars {
     // let env = Object.assign({}, process.env, override);
     // this._addNpmPackageConfig(this._appPkg.config, env);
     // this._addNpmPackageConfig(this._pkg.config, env);
@@ -94,11 +130,11 @@ class LifecycleScripts {
     return env;
   }
 
-  execute(aliases, silent) {
+  execute(aliases: string | string[], silent?: boolean): Promise<unknown> {
     return xaa.wrap(() => this._execute(aliases, silent));
   }
 
-  async _initialize() {
+  async _initialize(): Promise<void> {
     const options = this._options;
     if (options.appDir && options.appDir !== options.dir) {
       this._appDir = options.appDir;
@@ -114,29 +150,35 @@ class LifecycleScripts {
     }
   }
 
-  async _execute(aliases, silent) {
-    if (!this._pkg) {
+  async _execute(aliases: string | string[], silent?: boolean): Promise<unknown> {
+    if (!this._pkg.name) {
       await this._initialize();
     }
 
     if (typeof aliases === "string") aliases = [aliases];
 
-    const name = _.keys(this._pkg.scripts).find(x => aliases.indexOf(x) >= 0);
-
-    if (!name || !this._pkg.scripts.hasOwnProperty(name)) {
+    const scripts = this._pkg.scripts;
+    if (!scripts) {
       return false;
     }
 
-    assert(
-      this._pkg.scripts[name],
-      `No npm script ${name} found in package.json in ${this._pkgDir}.`
-    );
+    const name = _.keys(scripts).find(x => aliases.indexOf(x) >= 0);
 
+    if (!name || !scripts.hasOwnProperty(name)) {
+      return false;
+    }
+
+    assert(scripts[name], `No npm script ${name} found in package.json in ${this._pkgDir}.`);
+
+    const scriptCommand = scripts[name];
     const pkgName = logFormat.pkgId(this._pkg);
     const dimPkgName = chalk.dim(pkgName);
     const scriptName = chalk.magenta(name);
-    const script = `"${chalk.cyan(this._pkg.scripts[name])}"`;
-    const pkgDir = logFormat.pkgPath(this._pkg.name, this._pkgDir.replace(this._fyn.cwd, "."));
+    const script = `"${chalk.cyan(scriptCommand)}"`;
+    const pkgDir = logFormat.pkgPath(
+      this._pkg.name,
+      this._pkgDir.replace(this._fyn.cwd || "", ".")
+    );
 
     const env = this.makeEnv({ PWD: this._pkgDir });
 
@@ -151,7 +193,7 @@ class LifecycleScripts {
         env,
         maxBuffer: 20 * ONE_MB
       },
-      this._pkg.scripts[name]
+      scriptCommand
     );
 
     // exec not silent so it's dumping to stdout
@@ -161,7 +203,7 @@ class LifecycleScripts {
     }
 
     const ve = new VisualExec({
-      command: this._pkg.scripts[name],
+      command: scriptCommand,
       cwd: this._pkgDir,
       visualLogger: logger,
       displayTitle: `Running ${scriptName} of ${pkgName}`,

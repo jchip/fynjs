@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-magic-numbers, max-statements */
 
 import Tar from "tar";
@@ -12,38 +10,84 @@ import Fs from "./util/file-ops";
 import _ from "lodash";
 import Path from "path";
 import xaa from "./util/xaa";
+import type { Readable } from "stream";
+import type { EventEmitter } from "events";
 
 const { retry, missPipe } = fyntil;
 
+/** Package info for extraction */
+interface ExtractPkg {
+  name: string;
+  version: string;
+  promoted?: boolean;
+  extracted?: string;
+}
+
+/** Data passed to processItem */
+interface ExtractData {
+  pkg: ExtractPkg;
+  result?: string | Readable;
+  listener?: EventEmitter;
+}
+
+/** Fyn instance interface for dist extractor */
+interface FynForExtractor {
+  getInstalledPkgDir(name: string, version: string, opts?: { promoted?: boolean }): string;
+  getExtraDir(name?: string): string;
+  getFvDir(version: string): string;
+  ensureProperPkgDir(pkg: ExtractPkg, fullOutDir: string): Promise<unknown>;
+  createPkgOutDir(dir: string): Promise<void>;
+  loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<unknown>;
+  isNormalLayout: boolean;
+  central: {
+    replicate(src: string, dest: string): Promise<void>;
+  };
+}
+
+/** Options for PkgDistExtractor constructor */
+interface PkgDistExtractorOptions {
+  fyn: FynForExtractor;
+}
+
+/** Queue done event data */
+interface QueueDoneData {
+  totalTime: number;
+}
+
 class PkgDistExtractor {
-  constructor(options) {
+  private _promiseQ: PromiseQueue;
+  private _fyn: FynForExtractor;
+
+  constructor(options: PkgDistExtractorOptions) {
     this._promiseQ = new PromiseQueue({
       concurrency: 4, // don't want to untar too many files at the same time
       stopOnError: true,
-      processItem: (x, id) => this.processItem(x, id)
+      processItem: (x: ExtractData, id: number) => this.processItem(x, id)
     });
     this._fyn = options.fyn;
-    this._promiseQ.on("done", x => this.done(x));
-    this._promiseQ.on("failItem", x => logger.error("dist extractor failed item", x.error));
+    this._promiseQ.on("done", (x: QueueDoneData) => this.done(x));
+    this._promiseQ.on("failItem", (x: { error: Error }) =>
+      logger.error("dist extractor failed item", x.error)
+    );
   }
 
-  addPkgDist(data) {
+  addPkgDist(data: ExtractData): void {
     this._promiseQ.addItem(data);
   }
 
-  once(evt, cb) {
+  once(evt: string, cb: (...args: unknown[]) => void): void {
     this._promiseQ.once(evt, cb);
   }
 
-  wait() {
+  wait(): Promise<void> {
     return this._promiseQ.wait();
   }
 
-  done(data) {
+  done(data: QueueDoneData): void {
     logger.debug("done dist extracting", data.totalTime / 1000);
   }
 
-  isPending() {
+  isPending(): boolean {
     return this._promiseQ.isPending;
   }
 
@@ -52,10 +96,10 @@ class PkgDistExtractor {
    *
    * Move promoted packages to top output dir
    *
-   * @param {*} pkg - package to move
-   * @param {*} fullOutDir - top output dir
+   * @param pkg - package to move
+   * @param fullOutDir - top output dir
    */
-  async movePromotedPkgFromFV(pkg, fullOutDir) {
+  async movePromotedPkgFromFV(pkg: ExtractPkg, fullOutDir: string): Promise<void> {
     logger.debug(
       "moving promoted extracted package",
       pkg.name,
@@ -84,10 +128,14 @@ class PkgDistExtractor {
     await xaa.try(() => Fs.rmdir(this._fyn.getFvDir(pkg.version)));
   }
 
-  async processItem(data, _id, promoted) {
+  async processItem(
+    data: ExtractData,
+    _id: number,
+    promoted?: boolean
+  ): Promise<unknown> {
     const { pkg } = data;
 
-    const promotedOpt = _.defaults({ promoted }, _.pick(pkg, "promoted"));
+    const promotedOpt = _.defaults({ promoted }, _.pick(pkg, "promoted")) as { promoted?: boolean };
     const fullOutDir = this._fyn.getInstalledPkgDir(pkg.name, pkg.version, promotedOpt);
 
     // do we have a copy of it in FV_DIR already?
@@ -110,8 +158,8 @@ class PkgDistExtractor {
       await this._fyn.createPkgOutDir(fullOutDir);
 
       const result = data.result;
-      let act;
-      let retrieve;
+      let act: string;
+      let retrieve: () => Promise<void>;
 
       if (typeof result === "string") {
         act = "hardlink";
