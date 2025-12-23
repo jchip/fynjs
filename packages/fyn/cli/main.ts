@@ -1,29 +1,75 @@
-// @ts-nocheck
-
 import Path from "path";
 import chalk from "chalk";
-import Promise from "aveazul";
 import FynCli from "./fyn-cli";
 import _ from "lodash";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
-import { NixClap } from "nix-clap";
+import {
+  NixClap,
+  type CommandSpec,
+  type ParseResult,
+  type NixClapConfig,
+  type OptionSpec,
+  type CommandMeta
+} from "nix-clap";
+import type { CommandNode } from "nix-clap/command-node";
 import myPkg from "./mypkg";
 import loadRc from "./load-rc";
 import defaultRc from "./default-rc";
 import fynTil from "../lib/util/fyntil";
-import optionalRequireMod from "optional-require";
 import { runInitPackage } from "init-package";
 import FynGlobal from "../lib/fyn-global";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 
-const optionalRequire = optionalRequireMod(import.meta.url);
+/** Environment variable mapping entry */
+interface EnvMapping {
+  optKey: string;
+  checkValue: string;
+}
 
-function setLogLevel(ll) {
+/** RC data from loadRc */
+interface RcData {
+  all?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** Fynpo configuration */
+interface FynpoConfig {
+  dir?: string;
+  config?: {
+    fyn?: {
+      options?: Record<string, unknown>;
+    };
+    [key: string]: unknown;
+  };
+}
+
+/** Options picked from command */
+interface PickedOptions {
+  opts: Record<string, unknown>;
+  rcData: RcData;
+  _cliSource: Record<string, unknown>;
+  _fynpo: FynpoConfig;
+}
+
+/** Script execution error from @npmcli/run-script */
+interface ScriptError extends Error {
+  errno?: number;
+  code?: number | string;
+  event?: string;
+  script?: string;
+  pkgid?: string;
+  path?: string;
+  cmd?: string;
+  args?: string[];
+  signal?: string;
+}
+
+function setLogLevel(ll: string | undefined): void {
   if (ll) {
     const levels = Object.keys(CliLogger.Levels);
     const real = _.find(levels, l => l.startsWith(ll));
-    const x = CliLogger.Levels[real];
+    const x = real ? CliLogger.Levels[real as keyof typeof CliLogger.Levels] : undefined;
     if (x !== undefined) {
       logger._logLevel = x;
     } else {
@@ -33,69 +79,79 @@ function setLogLevel(ll) {
   }
 }
 
-const pickEnvOptions = () => {
-  const mapping = {
+const pickEnvOptions = (): Record<string, boolean> => {
+  const mapping: Record<string, EnvMapping> = {
     NODE_ENV: { optKey: "production", checkValue: "production" }
   };
 
-  return Object.keys(mapping).reduce((cfg, envKey) => {
-    if (process.env.hasOwnProperty(envKey)) {
+  return Object.keys(mapping).reduce((cfg: Record<string, boolean>, envKey: string) => {
+    if (Object.prototype.hasOwnProperty.call(process.env, envKey)) {
       const m = mapping[envKey];
       const ev = process.env[envKey];
       cfg[m.optKey] = ev === m.checkValue;
       logger.info(`setting option ${m.optKey} to ${cfg[m.optKey]} by env ${envKey} value ${ev}`);
     }
+    return cfg;
   }, {});
 };
 
-const pickOptions = async (cmd, checkFynpo = true) => {
+const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedOptions> => {
   const meta = cmd.jsonMeta;
   // Global options (like --cwd) are stored in cmd.rootCmd.opts
   // Merge root command options with command-specific options
   const rootOpts = cmd.rootCmd?.opts || {};
   const cmdOpts = cmd.opts || {};
-  const allOpts = Object.assign({}, rootOpts, cmdOpts, meta.opts);
-  setLogLevel(allOpts.logLevel);
+  const allOpts: Record<string, unknown> = Object.assign({}, rootOpts, cmdOpts, meta.opts);
+  setLogLevel(allOpts.logLevel as string | undefined);
 
-  chalk.enabled = allOpts.colors;
+  chalk.enabled = allOpts.colors as boolean;
 
-  let cwd = allOpts.cwd || process.cwd();
+  let cwd = (allOpts.cwd as string) || process.cwd();
 
   if (!Path.isAbsolute(cwd)) {
     cwd = Path.join(process.cwd(), cwd);
   }
 
-  let fynpo = {};
+  let fynpo: FynpoConfig = {};
 
   if (checkFynpo) {
     try {
       fynpo = await fynTil.loadFynpo(cwd);
     } catch (err) {
-      logger.error(err.stack);
+      logger.error((err as Error).stack);
       process.exit(1);
     }
   }
 
-  const rcData = loadRc(allOpts.rcfile === false ? false : cwd, fynpo.dir);
+  const rcData: RcData = loadRc(allOpts.rcfile === false ? false : cwd, fynpo.dir);
 
   const rc = rcData.all || defaultRc;
 
   _.defaults(allOpts, rc);
-  cmd.applyConfig(pickEnvOptions());
+  (cmd as CommandNode & { applyConfig: (cfg: Record<string, unknown>) => void }).applyConfig(
+    pickEnvOptions()
+  );
 
   allOpts.cwd = cwd;
   meta.opts.cwd = cwd;
 
-  chalk.enabled = allOpts.colors;
+  chalk.enabled = allOpts.colors as boolean;
 
-  if (meta.source.saveLogs && !meta.source.saveLogs.startsWith("cli")) {
+  const sourceValue = meta.source.saveLogs;
+  if (
+    sourceValue &&
+    typeof sourceValue === "string" &&
+    !sourceValue.startsWith("cli")
+  ) {
     allOpts.saveLogs = undefined;
     meta.opts.saveLogs = undefined;
   }
 
   // Preserve cwd from CLI/config, don't let fynpo config override it
-  const savedCwd = allOpts.cwd;
-  cmd.applyConfig(_.get(fynpo, "config.fyn.options", {}));
+  const savedCwd = allOpts.cwd as string;
+  (cmd as CommandNode & { applyConfig: (cfg: Record<string, unknown>) => void }).applyConfig(
+    _.get(fynpo, "config.fyn.options", {})
+  );
   if (savedCwd) {
     allOpts.cwd = savedCwd;
     meta.opts.cwd = savedCwd;
@@ -103,13 +159,13 @@ const pickOptions = async (cmd, checkFynpo = true) => {
 
   logger.debug("Final RC", JSON.stringify(fynTil.removeAuthInfo(allOpts)));
 
-  setLogLevel(allOpts.logLevel);
-  if (allOpts.progress) logger.setItemType(allOpts.progress);
+  setLogLevel(allOpts.logLevel as string | undefined);
+  if (allOpts.progress) logger.setItemType(allOpts.progress as string);
 
   return { opts: allOpts, rcData, _cliSource: meta.source, _fynpo: fynpo };
 };
 
-const options = {
+const options: Record<string, OptionSpec> = {
   fynlocal: {
     args: "<flag boolean>",
     desc: "enable/disable fynlocal mode",
@@ -284,11 +340,11 @@ const options = {
   }
 };
 
-const commands = {
+const commands: Record<string, CommandSpec> = {
   install: {
     alias: "i",
     desc: "Install modules",
-    async exec(cmd) {
+    async exec(cmd: CommandNode) {
       const cli = new FynCli(await pickOptions(cmd));
       return cli.install(cmd.jsonMeta);
     },
@@ -314,19 +370,19 @@ const commands = {
     args: "[packages string..]",
     usage: "$0 $1 [packages..] [--dev <dev packages>]",
     desc: "add packages to package.json",
-    exec: async cmd => {
+    exec: async (cmd: CommandNode) => {
       const meta = cmd.jsonMeta;
+      const config: Record<string, unknown> = await pickOptions(cmd);
       // Global options (like --cwd) are stored in cmd.rootCmd.opts
       // Merge root command options into meta.opts so pickOptions can access them
       if (cmd.rootCmd && cmd.rootCmd.opts) {
         Object.assign(meta.opts, cmd.rootCmd.opts);
       }
-      const config = await pickOptions(cmd);
       const lockFile = config.lockfile;
       config.lockfile = false;
       const cli = new FynCli(config);
       const opts = Object.assign({}, meta.opts, meta.args);
-      return cli.add(opts).then(added => {
+      return cli.add(opts).then((added: boolean) => {
         if (!added || !meta.opts.install) return;
         config.lockfile = lockFile;
         config.noStartupInfo = true;
@@ -366,26 +422,26 @@ const commands = {
     alias: "rm",
     args: "<packages string..>",
     desc: "Remove packages from package.json and install",
-    exec: async cmd => {
+    exec: async (cmd: CommandNode) => {
       const meta = cmd.jsonMeta;
       // Global options (like --cwd) are stored in cmd.rootCmd.opts
       // Merge root command options into meta.opts for consistent access
       if (cmd.rootCmd && cmd.rootCmd.opts) {
         Object.assign(meta.opts, cmd.rootCmd.opts);
       }
-      const options = await pickOptions(cmd);
-      const lockFile = options.lockfile;
-      options.lockfile = false;
-      const cli = new FynCli(options);
+      const pickOpts: Record<string, unknown> = await pickOptions(cmd);
+      const lockFile = pickOpts.lockfile;
+      pickOpts.lockfile = false;
+      const cli = new FynCli(pickOpts);
       const opts = Object.assign({}, meta.opts, meta.args);
       const removed = await cli.remove(opts);
       if (removed) {
         if (!meta.opts.install) return;
-        options.lockfile = lockFile;
-        options.noStartupInfo = true;
+        pickOpts.lockfile = lockFile;
+        pickOpts.noStartupInfo = true;
         fynTil.resetFynpo();
         logger.info("installing...");
-        return await new FynCli(options).install();
+        return await new FynCli(pickOpts).install();
       }
     },
     options: {
@@ -400,13 +456,13 @@ const commands = {
     desc: "Show stats of installed packages",
     usage: "$0 $1 <package-name>[@semver] [...]",
     args: "<packages string..>",
-    exec: async cmd => {
+    exec: async (cmd: CommandNode) => {
       return new FynCli(await pickOptions(cmd)).stat(cmd.jsonMeta);
     }
   },
   audit: {
     desc: "Check for known security vulnerabilities",
-    exec: async cmd => {
+    exec: async (cmd: CommandNode) => {
       return new FynCli(await pickOptions(cmd)).audit(cmd.jsonMeta);
     },
     options: {
@@ -435,12 +491,13 @@ const commands = {
     args: "[script string] [args...]",
     alias: ["rum", "r"],
     usage: "$0 $1 <command> [args...] [-- <args>...]",
-    exec: async (cmd, parsed) => {
+    exec: async (cmd: CommandNode, parsed?: ParseResult) => {
       try {
         const meta = cmd.jsonMeta;
-        const options = await pickOptions(cmd, !meta.opts.list);
-        return await new FynCli(options).run(meta, undefined, cmd, parsed);
-      } catch (err) {
+        const runOpts = await pickOptions(cmd, !meta.opts.list);
+        return await new FynCli(runOpts).run(meta, undefined, cmd, parsed);
+      } catch (e) {
+        const err = e as ScriptError;
         // Determine exit code from error
         // @npmcli/run-script uses err.code (exit code), not err.errno
         const exitCode = err.errno !== undefined ? err.errno : (err.code || 1);
@@ -448,16 +505,16 @@ const commands = {
         // Format and log the error cleanly
         if (err.event && err.script) {
           // This is a script execution error
-          logger.error(chalk.red(`Script '${err.event}' failed${err.pkgid ? ` for ${err.pkgid}` : ''}`));
+          logger.error(chalk.red(`Script '${err.event}' failed${err.pkgid ? ` for ${err.pkgid}` : ""}`));
           if (err.path) {
             logger.error(chalk.dim(`  Location: ${err.path}`));
           }
           if (err.cmd && err.args) {
-            logger.error(chalk.dim(`  Command: ${err.cmd} ${err.args.join(' ')}`));
+            logger.error(chalk.dim(`  Command: ${err.cmd} ${err.args.join(" ")}`));
           } else if (err.script) {
             logger.error(chalk.dim(`  Script: ${err.script}`));
           }
-          if (typeof exitCode === 'number') {
+          if (typeof exitCode === "number") {
             logger.error(chalk.dim(`  Exit code: ${exitCode}`));
           }
           if (err.signal) {
@@ -472,7 +529,7 @@ const commands = {
           }
         }
 
-        fynTil.exit(typeof exitCode === 'number' ? exitCode : 1);
+        fynTil.exit(typeof exitCode === "number" ? exitCode : 1);
       }
     },
     options: {
@@ -486,10 +543,10 @@ const commands = {
   init: {
     desc: "initialize a package.json file",
     usage: "$0 $1 <command> [--yes]",
-    exec: async cmd => {
+    exec: async (cmd: CommandNode) => {
       try {
-        await runInitPackage(cmd.jsonMeta.opts.yes);
-      } catch (err) {
+        await runInitPackage(cmd.jsonMeta.opts.yes as boolean);
+      } catch {
         process.exit(1);
       }
     },
@@ -505,12 +562,12 @@ const commands = {
   "sync-local": {
     desc: "Refresh locally linked package files",
     alias: "sl",
-    async exec(cmd) {
+    async exec(cmd: CommandNode) {
       try {
         const opts = await pickOptions(cmd, true);
         const cli = new FynCli(opts);
         return cli.syncLocalLinks();
-      } catch (err) {
+      } catch {
         process.exit(1);
       }
     }
@@ -530,11 +587,18 @@ const commands = {
           "yes": { alias: "y", desc: "Auto-confirm all prompts" },
           "new-tag": { args: "<flag boolean>", desc: "Install as new tag even if same version exists" }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, yes: cmd.opts?.yes, tag });
-          const packages = cmd.args?.packages || [];
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            yes: cmd.opts?.yes as boolean | undefined,
+            tag
+          });
+          const packages = (cmd.args?.packages as string[]) || [];
 
           if (packages.length === 0) {
             logger.error("No packages specified");
@@ -543,9 +607,11 @@ const commands = {
 
           for (const pkg of packages) {
             try {
-              await fynGlobal.installGlobalPackage(pkg, { newTag: cmd.opts?.newTag });
+              await fynGlobal.installGlobalPackage(pkg, {
+                newTag: cmd.opts?.newTag as boolean | undefined
+              });
             } catch (err) {
-              logger.error(`Failed to install ${pkg}: ${err.message}`);
+              logger.error(`Failed to install ${pkg}: ${(err as Error).message}`);
               fynTil.exit(1);
             }
           }
@@ -557,14 +623,24 @@ const commands = {
         alias: "rm",
         args: "[package string]",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" },
-          "yes": { alias: "y", desc: "Auto-confirm all prompts" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          },
+          yes: { alias: "y", desc: "Auto-confirm all prompts" }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, yes: cmd.opts?.yes, tag });
-          const packageSpec = cmd.args?.package;
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            yes: cmd.opts?.yes as boolean | undefined,
+            tag
+          });
+          const packageSpec = cmd.args?.package as string | undefined;
 
           if (!packageSpec && !tag) {
             logger.error("No package specified");
@@ -584,13 +660,22 @@ const commands = {
         desc: "Link (activate) a specific version",
         args: "[package string]",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, tag });
-          const packageSpec = cmd.args?.package;
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            tag
+          });
+          const packageSpec = cmd.args?.package as string | undefined;
 
           if (!packageSpec && !tag) {
             logger.error("No package specified");
@@ -611,13 +696,22 @@ const commands = {
         alias: "ls",
         args: "[name string]",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, tag });
-          await fynGlobal.listGlobalPackages(cmd.args?.name);
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            tag
+          });
+          await fynGlobal.listGlobalPackages(cmd.args?.name as string | undefined);
         }
       },
 
@@ -625,13 +719,22 @@ const commands = {
         desc: "Update a global package",
         args: "[package string]",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, tag });
-          const packageSpec = cmd.args?.package;
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            tag
+          });
+          const packageSpec = cmd.args?.package as string | undefined;
 
           const updated = await fynGlobal.updateGlobalPackage(packageSpec);
           if (!updated) {
@@ -644,13 +747,22 @@ const commands = {
         desc: "Switch to Node version's global packages",
         args: "[version string]",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, tag });
-          await fynGlobal.useNodeVersion(cmd.args?.version);
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            tag
+          });
+          await fynGlobal.useNodeVersion(cmd.args?.version as string | undefined);
         }
       },
 
@@ -658,12 +770,20 @@ const commands = {
         desc: "Remove all non-linked versions of a package",
         args: "[package string]",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir });
-          const packageName = cmd.args?.package;
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined
+          });
+          const packageName = cmd.args?.package as string | undefined;
 
           const removed = await fynGlobal.cleanupPackage(packageName);
           if (removed === 0) {
@@ -677,12 +797,21 @@ const commands = {
       "setup-path": {
         desc: "Show PATH setup instructions",
         options: {
-          "dir": { args: "<dir string>", desc: "Directory for global packages (default: ~/.fyn/global)" }
+          dir: {
+            args: "<dir string>",
+            desc: "Directory for global packages (default: ~/.fyn/global)"
+          }
         },
-        async exec(cmd) {
-          setLogLevel(cmd.opts?.logLevel || cmd.rootCmd?.opts?.logLevel);
-          const tag = cmd.getParent()?.opts?.tag;
-          const fynGlobal = new FynGlobal({ globalDir: cmd.opts?.dir, tag });
+        async exec(cmd: CommandNode) {
+          setLogLevel(
+            (cmd.opts?.logLevel as string | undefined) ||
+              (cmd.rootCmd?.opts?.logLevel as string | undefined)
+          );
+          const tag = cmd.getParent()?.opts?.tag as string | undefined;
+          const fynGlobal = new FynGlobal({
+            globalDir: cmd.opts?.dir as string | undefined,
+            tag
+          });
           fynGlobal.showPathSetup();
         }
       }
@@ -690,7 +819,9 @@ const commands = {
   }
 };
 
-const createNixClap = (handlers = {}) => {
+const createNixClap = (
+  handlers: NixClapConfig["handlers"] = {}
+): NixClap => {
   const nc = new NixClap({
     name: myPkg.name,
     usage: "$0 [options] <command>",
@@ -703,19 +834,20 @@ const createNixClap = (handlers = {}) => {
   return nc;
 };
 
-const run = async (args, start, tryRun = true) => {
+const run = async (
+  args?: string[],
+  start?: number,
+  tryRun = true
+): Promise<void> => {
   fynTil.resetFynpo();
 
   if (start === undefined && args !== undefined) {
     start = 0;
   }
 
-  // Store args and start for use in no-action handler
-  const storedArgs = args;
-  const storedStart = start;
-
-  const handlers = {
-    "parse-fail": parsed => {
+  const handlers: NixClapConfig["handlers"] = {
+    "parse-fail": (parsed?: ParseResult) => {
+      if (!parsed) return;
       // In v2, check errorNodes instead of commands
       const hasCommands =
         parsed.command &&
@@ -731,7 +863,8 @@ const run = async (args, start, tryRun = true) => {
         return;
       } else {
         // Get the NixClap instance from the parsed result
-        const nc = parsed.command?._nixClap || this;
+        type CommandWithNixClap = CommandNode & { _nixClap?: NixClap };
+        const nc = (parsed.command as CommandWithNixClap)?._nixClap;
         if (nc && nc.showError) {
           nc.showError(parsed.errorNodes?.[0]?.error);
         }
@@ -774,7 +907,7 @@ const run = async (args, start, tryRun = true) => {
   }
 };
 
-const fun = () => {
+const fun = (): Promise<void> => {
   const argv = process.argv.slice();
 
   argv.splice(2, 0, "run");
@@ -782,7 +915,7 @@ const fun = () => {
   return run(argv, 2, false);
 };
 
-const nodeGyp = () => {
+const nodeGyp = (): void => {
   import("node-gyp/bin/node-gyp");
 };
 
