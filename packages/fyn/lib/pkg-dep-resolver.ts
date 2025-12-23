@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-magic-numbers, max-params, max-statements, complexity, no-param-reassign */
 
 import _ from "lodash";
@@ -32,6 +30,307 @@ import {
   PACKAGE_RAW_INFO,
   DEP_ITEM
 } from "./symbols";
+import type { DepData, PkgVersion } from "./dep-data";
+
+/** Semver analysis from semverUtil.analyze() */
+interface SemverAnalysis {
+  $: string;
+  $$?: string;
+  path?: string;
+  localType?: string;
+  urlType?: string;
+}
+
+/** Package distribution info */
+interface PackageDist {
+  integrity?: string;
+  tarball?: string;
+  localPath?: string;
+  fullPath?: string;
+}
+
+/** Package version metadata from registry */
+interface PackageVersionMeta {
+  name?: string;
+  version?: string;
+  dist?: PackageDist;
+  scripts?: Record<string, string>;
+  os?: string[];
+  cpu?: string[];
+  deprecated?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+  bundleDependencies?: string[];
+  bundledDependencies?: string[];
+  local?: string;
+  hasPI?: number;
+  hasI?: number;
+  _hasShrinkwrap?: boolean;
+  _shrinkwrap?: Record<string, unknown>;
+  _missingJson?: boolean;
+  [key: string]: unknown;
+}
+
+/** Package metadata from registry (packument) */
+interface PackageMeta {
+  name?: string;
+  versions: Record<string, PackageVersionMeta>;
+  "dist-tags"?: Record<string, string>;
+  time?: Record<string, string>;
+  local?: string;
+  jsonStr?: string;
+  urlVersions?: Record<string, { version: string }>;
+  [LOCK_RSEMVERS]?: Record<string, string>;
+  [SORTED_VERSIONS]?: string[];
+  [LATEST_SORTED_VERSIONS]?: string[];
+  [LATEST_VERSION_TIME]?: Date;
+  [LOCK_SORTED_VERSIONS]?: string[];
+  [LATEST_TAG_VERSION]?: string;
+  [LOCAL_VERSION_MAPS]?: Record<string, string>;
+}
+
+/** Known package with resolved versions */
+interface KnownPackage {
+  [LATEST_TAG_VERSION]?: string;
+  [RSEMVERS]: Record<string, string | string[]>;
+  [LOCK_RSEMVERS]?: Record<string, string>;
+  [RESOLVE_ORDER]: string[];
+  [version: string]: PkgVersionInfo | string | string[] | Record<string, string | string[]> | undefined;
+}
+
+/** Package version info stored in dep data */
+interface PkgVersionInfo {
+  name: string;
+  version: string;
+  dist: PackageDist;
+  src: string;
+  dsrc: string;
+  res: Record<string, unknown>;
+  requests: string[][];
+  promoted?: boolean;
+  top?: boolean;
+  extracted?: boolean;
+  local?: string;
+  dir?: string;
+  str?: string;
+  json?: PackageVersionMeta;
+  deprecated?: string;
+  preInstalled?: boolean;
+  optFailed?: number;
+  fromLock?: boolean;
+  hasPI?: number;
+  hasI?: number;
+  priority: number;
+  _hasShrinkwrap?: boolean;
+  _hasNonOpt?: boolean;
+  [SEMVER]: string;
+  [DEP_ITEM]: DepItem;
+  [key: string]: unknown;
+}
+
+/** Depth info item for a package at a specific depth */
+interface DepthInfoItem {
+  items: DepItem[];
+  versions?: string[];
+  depItems?: PkgDepItems[];
+}
+
+/** Depth resolving data for a specific depth level */
+interface DepthData {
+  [pkgName: string]: DepthInfoItem;
+}
+
+/** Depth resolving state tracking */
+interface DepthResolving {
+  current?: number;
+  [depth: number]: DepthData;
+}
+
+/** Result of makePkgDepItems */
+interface PkgDepItems {
+  name: string;
+  dep?: DepItem[];
+  dev?: DepItem[];
+  opt?: DepItem[];
+  devOpt?: DepItem[];
+}
+
+/** Package.json structure */
+interface PackageJson {
+  name: string;
+  version?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  devOptDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+  bundleDependencies?: string[];
+  fyn?: {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
+    [key: string]: unknown;
+  };
+  [PACKAGE_RAW_INFO]?: { dir: string; str: string };
+  [key: string]: unknown;
+}
+
+/** Fynpo package graph interface */
+interface FynpoGraph {
+  packages: {
+    byPath: Record<string, FynpoPackage>;
+    byName: Record<string, FynpoPackage[]>;
+  };
+  getPackageByName(name: string): FynpoPackage | undefined;
+  getPackageAtDir(dir: string): FynpoPackage | undefined;
+  resolvePackage(name: string, semver: string, strict: boolean): FynpoPackage | undefined;
+  addDep(
+    fromPkg: FynpoPackage,
+    toPkg: FynpoPackage,
+    section: string,
+    steps: unknown[]
+  ): boolean;
+}
+
+/** Fynpo package info */
+interface FynpoPackage {
+  name: string;
+  version: string;
+  path: string;
+}
+
+/** Fynpo configuration and data */
+interface FynpoData {
+  config?: {
+    localDepAutoSemver?: "patch" | "minor" | "major";
+    [key: string]: unknown;
+  };
+  dir: string;
+  graph: FynpoGraph;
+  indirects: unknown[];
+}
+
+/** Fyn instance interface for dependency resolver */
+interface FynInstance {
+  concurrency: number;
+  production: boolean;
+  deepResolve?: boolean;
+  lockOnly: boolean;
+  fynlocal: boolean;
+  isFynpo: boolean;
+  preferLock: boolean;
+  alwaysFetchDist?: boolean;
+  refreshOptionals?: boolean;
+  lockTime?: Date;
+  cwd: string;
+  _fynpo?: FynpoData;
+  _pkg: PackageJson;
+  _pkgSrcMgr: PkgSrcManager;
+  _depLocker: PkgDepLocker;
+  _distFetcher: PkgDistFetcher;
+  _shownMissingFiles: Set<string>;
+  _resolutions?: Record<string, string>;
+  _resolutionsMatchers?: ResolutionMatcher[];
+  _overridesMatchers?: OverrideMatcher[];
+  depLocker: PkgDepLocker;
+  checkNoFynLocal(name: string): boolean;
+  isTopLevelFynpoInstall(): boolean;
+  createLocalPkgBuilder(localsByDepth: DepItem[][]): LocalPkgBuilder;
+}
+
+/** Package source manager interface */
+interface PkgSrcManager {
+  hasMeta(item: DepItem): boolean;
+  fetchMeta(item: DepItem): Promise<PackageMeta>;
+  fetchLocalItem(item: DepItem): Promise<PackageMeta | undefined>;
+  getLocalPackageMeta(item: DepItem, version: string): PackageMeta | undefined;
+  getAllLocalMetaOfPackage(name: string): Record<string, PackageMeta> | undefined;
+}
+
+/** Package dependency locker interface */
+interface PkgDepLocker {
+  hasLock(item: DepItem): boolean;
+  convert(item: DepItem): PackageMeta | undefined;
+  update(item: DepItem, meta: PackageMeta): PackageMeta;
+  remove(item: DepItem): void;
+  setPkgDepItems(items: PkgDepItems): void;
+}
+
+/** Package distribution fetcher interface */
+interface PkgDistFetcher {
+  putPkgInNodeModules(pkg: PkgVersionInfo, force: boolean): Promise<void>;
+}
+
+/** Local package builder interface */
+interface LocalPkgBuilder {
+  start(): void;
+}
+
+/** Resolution matcher from minimatch */
+interface ResolutionMatcher {
+  mm: { match(path: string): boolean };
+  res: string;
+}
+
+/** Override matcher for npm-style overrides */
+interface OverrideMatcher {
+  pkgName: string;
+  versionConstraint: string | null;
+  parentPath: string;
+  replacement: string;
+}
+
+/** Options passed to PkgOptResolver */
+interface PkgOptResolver {
+  isEmpty(): boolean;
+  resolve(): void;
+  isPending(): boolean;
+  add(data: { item: DepItem; meta: PackageMeta; err?: Error }): void;
+  isExtracted(name: string, version: string): boolean;
+  _depResolver: PkgDepResolver;
+}
+
+/** Yarn lock parsed data */
+interface YarnLockData {
+  [key: string]: {
+    version: string;
+    resolved?: string;
+    integrity?: string;
+    dependencies?: Record<string, string>;
+  };
+}
+
+/** Constructor options for PkgDepResolver */
+interface PkgDepResolverOptions {
+  fyn: FynInstance;
+  data: DepData;
+  optResolver: PkgOptResolver;
+  shrinkwrap?: Record<string, unknown>;
+  buildLocal?: boolean;
+  deDuping?: boolean;
+  yarnLock?: YarnLockData;
+}
+
+/** Queue depth item */
+interface QueueDepthItem {
+  queueDepth: boolean;
+  depth: number;
+}
+
+/** Promise item for queue */
+interface PromiseItem {
+  promise: Promise<unknown> | null;
+}
+
+/** Resolve result with meta and resolved version */
+interface ResolveResult {
+  meta: PackageMeta;
+  resolved: string;
+}
 
 const simpleSemverCompare = semverUtil.simpleCompare;
 const { checkPkgOsCpu, relativePath, unSlashNpmScope } = fyntil;
@@ -54,7 +353,19 @@ const failMetaMsg = name =>
  */
 
 class PkgDepResolver {
-  constructor(pkg, options) {
+  private _options: PkgDepResolverOptions;
+  private _fyn: FynInstance;
+  private _pkgSrcMgr: PkgSrcManager;
+  private _data: DepData;
+  private _promiseQ: PromiseQueue;
+  private _defer: { promise: Promise<void>; resolve: () => void; reject: (err: Error) => void };
+  private _optResolver: PkgOptResolver;
+  private _lockOnly: boolean;
+  private _depthResolving: DepthResolving | undefined;
+  private _localsByDepth?: DepItem[][];
+  private _buildLocal?: LocalPkgBuilder;
+
+  constructor(pkg: PackageJson, options: PkgDepResolverOptions) {
     this._options = Object.assign({}, options);
     // The master object
     this._fyn = this._options.fyn;
@@ -66,14 +377,14 @@ class PkgDepResolver {
     this._promiseQ = new PromiseQueue({
       concurrency: Math.max(this._fyn.concurrency * 2, 15),
       stopOnError: true,
-      processItem: x => this.processItem(x)
+      processItem: (x: string | QueueDepthItem | PromiseItem) => this.processItem(x)
     });
     this._defer = Promise.defer();
-    this._promiseQ.on("done", x => {
+    this._promiseQ.on("done", (x: { totalTime: number }) => {
       return this.done(x);
     });
-    this._promiseQ.on("pause", x => this.onPause(x));
-    this._promiseQ.on("fail", data => {
+    this._promiseQ.on("pause", (x: unknown) => this.onPause(x));
+    this._promiseQ.on("fail", (data: { error: Error }) => {
       return this._defer.reject(data.error);
     });
     // this._optResolver = new PkgOptResolver({ fyn: this._fyn, depResolver: this });
@@ -115,15 +426,15 @@ class PkgDepResolver {
     this.queueDepth(0);
   }
 
-  start() {
+  start(): void {
     this._promiseQ.resume();
   }
 
-  wait() {
+  wait(): Promise<void> {
     return this._defer.promise;
   }
 
-  checkOptResolver() {
+  checkOptResolver(): boolean {
     if (!this._optResolver.isEmpty()) {
       this._optResolver.resolve();
       return true;
@@ -141,29 +452,33 @@ class PkgDepResolver {
   // - Promote the earliest version
   // - Allow explicit config to specify what version/semver to promote
   //
-  promotePackages() {
-    let version;
+  promotePackages(): void {
+    let version: string;
 
-    const pkgsData = this._data.getPkgsData();
+    const pkgsData = this._data.getPkgsData() as Record<string, KnownPackage>;
     const names = Object.keys(pkgsData);
 
     names.forEach(name => {
       const pkg = pkgsData[name];
-      const versions = Object.keys(pkg);
+      const versions = Object.keys(pkg).filter(
+        k => typeof k === "string" && !k.startsWith("Symbol")
+      );
       // there's only one version, auto promote
       if (versions.length === 1) {
         version = versions[0];
-      } else if (!(version = _.find(versions, v => pkg[v].top))) {
+      } else if (!(version = _.find(versions, v => (pkg[v] as PkgVersionInfo)?.top) as string)) {
         // default to promote first seen version
         version = pkg[RESOLVE_ORDER][0];
         // but promote the version with the highest priority
         versions.forEach(x => {
-          if (pkg[x].priority > pkg[version].priority) {
+          const pkgX = pkg[x] as PkgVersionInfo;
+          const pkgV = pkg[version] as PkgVersionInfo;
+          if (pkgX?.priority > pkgV?.priority) {
             version = x;
           }
         });
       }
-      const pkgV = pkg[version];
+      const pkgV = pkg[version] as PkgVersionInfo;
       pkgV.promoted = true;
       const extracted = this._optResolver.isExtracted(name, version);
       if (extracted) {
@@ -172,7 +487,7 @@ class PkgDepResolver {
     });
   }
 
-  onPause() {
+  onPause(_data: unknown): void {
     // logger.info("onPause");
     // if optional resolver kicked off, then it will resume dep resolver
     // when it's done.
@@ -181,7 +496,7 @@ class PkgDepResolver {
     }
   }
 
-  done(data) {
+  done(data: { totalTime: number }): void {
     if (!this.checkOptResolver() && this._promiseQ.isPause) {
       this._promiseQ.resume();
     } else if (!this._optResolver.isPending()) {
@@ -195,11 +510,18 @@ class PkgDepResolver {
     }
   }
 
-  resolvePkgPeerDep(json, pkgId, depInfo) {
+  resolvePkgPeerDep(
+    json: PackageVersionMeta,
+    pkgId: string,
+    depInfo: PkgVersionInfo
+  ): void {
     const peerDepMeta = json.peerDependenciesMeta || {};
-    _.each(json.peerDependencies || json.peerDepenencies, (semver, name) => {
+    _.each(json.peerDependencies || (json as Record<string, unknown>).peerDepenencies as Record<string, string>, (semver: string, name: string) => {
       const peerId = chalk.cyan(`${name}@${semver}`);
-      const resolved = this.resolvePackage({ item: { name, semver }, meta: {} });
+      const resolved = this.resolvePackage({
+        item: { name, semver } as DepItem,
+        meta: { versions: {} } as PackageMeta
+      });
       if (!resolved) {
         // Skip warning if peer dependency is marked as optional in peerDependenciesMeta
         const isOptional = peerDepMeta[name] && peerDepMeta[name].optional;
@@ -219,16 +541,16 @@ class PkgDepResolver {
     });
   }
 
-  resolvePeerDep(depInfo) {
+  resolvePeerDep(depInfo: PkgVersionInfo): void {
     const json = depInfo.json;
     if (!json) return undefined;
     const pkgId = logFormat.pkgId(depInfo);
     return this.resolvePkgPeerDep(json, pkgId, depInfo);
   }
 
-  queueDepth(depth) {
+  queueDepth(depth: number): void {
     if (depth > 1) {
-      const parentDepth = this._depthResolving[depth - 1];
+      const parentDepth = this._depthResolving![depth - 1];
       // add all packages' dependencies according to their appearing order
       // that's in the parent's dependency lists, therefore guaranteeing
       // a consistent resolving order
@@ -244,16 +566,16 @@ class PkgDepResolver {
       });
     }
 
-    const depthInfo = this._depthResolving[depth];
+    const depthInfo = this._depthResolving![depth];
     if (!depthInfo) {
       // all dependencies resolved, start local package build if there are any
       if (!this._buildLocal && this._options.buildLocal && !_.isEmpty(this._localsByDepth)) {
-        this._buildLocal = this._fyn.createLocalPkgBuilder(this._localsByDepth);
+        this._buildLocal = this._fyn.createLocalPkgBuilder(this._localsByDepth!);
         this._buildLocal.start();
       }
       return;
     }
-    this._depthResolving.current = depth;
+    this._depthResolving!.current = depth;
 
     const depthPkgs = Object.keys(depthInfo);
 
@@ -267,7 +589,7 @@ class PkgDepResolver {
           // building a local package would likely require build tools that are typically
           // installed as part of the top level packages
           if (x && this._fyn.isTopLevelFynpoInstall()) {
-            const t1 = this._fyn._fynpo.graph.getPackageAtDir(Path.normalize(x.semverPath));
+            const t1 = this._fyn._fynpo!.graph.getPackageAtDir(Path.normalize(x.semverPath!));
             if (t1) {
               logger.info(
                 "installing fynpo top level modules - skip build local for package at",
@@ -277,7 +599,7 @@ class PkgDepResolver {
             }
           }
           return x;
-        });
+        }) as DepItem[];
 
       // logger.info("adding depth pkgs", depthPkgs.join(", "), locals);
 
@@ -304,22 +626,22 @@ class PkgDepResolver {
     // depthInfo.names = {};
   }
 
-  prefetchMeta(item) {
+  prefetchMeta(item: DepItem): void {
     // fire-and-forget to retrieve meta
     // if it's not local, doesn't have meta yet, and doesn't have lock data
     if (!item.semverPath && !this._pkgSrcMgr.hasMeta(item) && !this._fyn.depLocker.hasLock(item)) {
-      this._pkgSrcMgr.fetchMeta(item).catch(err => {
+      this._pkgSrcMgr.fetchMeta(item).catch((err: Error) => {
         logger.warn(`failed prefetch meta for ${item.name}@${item.semver}`, err.message);
       });
     }
   }
 
-  addDepResolving(deps) {
+  addDepResolving(deps: DepItem[]): void {
     deps.forEach(depItem => {
       const name = depItem.name;
-      const depthData = this._depthResolving[depItem.depth];
+      const depthData = this._depthResolving![depItem.depth];
       if (!depthData) {
-        this._depthResolving[depItem.depth] = {
+        this._depthResolving![depItem.depth] = {
           [name]: { items: [depItem] }
         };
       } else if (!depthData[name]) {
@@ -333,7 +655,7 @@ class PkgDepResolver {
     });
   }
 
-  addPkgDepItems(data) {
+  addPkgDepItems(data: PkgDepItems): void {
     if (data.dep) {
       this.addDepResolving(data.dep);
     }
@@ -354,8 +676,12 @@ class PkgDepResolver {
     }
   }
 
-  getAutoSemver(semver) {
-    const autoSemver = _.get(this._fyn._fynpo, "config.localDepAutoSemver");
+  getAutoSemver(semver: string): string {
+    const autoSemver = _.get(this._fyn._fynpo, "config.localDepAutoSemver") as
+      | "patch"
+      | "minor"
+      | "major"
+      | undefined;
     if (autoSemver) {
       const parsedSv = Semver.coerce(semver);
       if (parsedSv && parsedSv.raw) {
@@ -379,15 +705,21 @@ class PkgDepResolver {
   /**
    * create the dep relation items for a package
    *
-   * @param {*} pkg - the package
-   * @param {*} depItem - the dep relation item for the package, this serves as the parent
-   *                      of all the new dep items created
-   * @param {*} dev
-   * @param {*} noPrefetch
-   * @param {*} deepResolve
-   * @returns
+   * @param pkg - the package
+   * @param depItem - the dep relation item for the package, this serves as the parent
+   *                  of all the new dep items created
+   * @param dev - whether to include dev dependencies
+   * @param noPrefetch - whether to skip prefetching meta
+   * @param deepResolve - whether to deep resolve
+   * @returns PkgDepItems with dependency arrays
    */
-  makePkgDepItems(pkg, depItem, dev, noPrefetch, deepResolve) {
+  makePkgDepItems(
+    pkg: PackageJson,
+    depItem: DepItem,
+    dev?: boolean,
+    noPrefetch?: boolean,
+    deepResolve?: boolean
+  ): PkgDepItems {
     const bundled = pkg.bundleDependencies;
 
     const depPriorities = {
@@ -397,8 +729,8 @@ class PkgDepResolver {
       dep: 900000000
     };
 
-    const makeDepItems = (deps, dsrc) => {
-      const items = [];
+    const makeDepItems = (deps: Record<string, string>, dsrc: string): DepItem[] => {
+      const items: DepItem[] = [];
       const src = depItem.src || dsrc;
       const depNames = Object.keys(deps);
       for (let idx = 0; idx < depNames.length; idx++) {
@@ -406,7 +738,7 @@ class PkgDepResolver {
         if (!_.includes(bundled, name)) {
           const opt = {
             name,
-            priority: depItem.priority || depPriorities[dsrc] - idx,
+            priority: depItem.priority || depPriorities[dsrc as keyof typeof depPriorities] - idx,
             semver: deps[name],
             src,
             dsrc,
@@ -425,45 +757,49 @@ class PkgDepResolver {
     //
     // remove optional dependencies from dependencies
     //
-    const filterOptional = (deps, optDep) => {
+    const filterOptional = (
+      deps: Record<string, string>,
+      optDep: Record<string, string> | undefined | false
+    ): Record<string, string> => {
       if (_.isEmpty(optDep)) return deps;
       _.each(optDep, (v, n) => {
         if (deps[n]) {
-          optDep[n] = deps[n]; // take semver from deps
+          (optDep as Record<string, string>)[n] = deps[n]; // take semver from deps
           delete deps[n]; // and keep it as optional
         }
       });
       return deps;
     };
 
-    const findFynpoPkgOfDep = (di, steps) => {
+    const findFynpoPkgOfDep = (di: DepItem, steps: unknown[]): FynpoPackage | false => {
       const fynpoPath = di.fullPath
-        ? Path.relative(this._fyn._fynpo.dir, di.fullPath)
-        : Path.relative(this._fyn._fynpo.dir, this._fyn.cwd);
-      const fynpoPkg = this._fyn._fynpo.graph.packages.byPath[fynpoPath];
+        ? Path.relative(this._fyn._fynpo!.dir, di.fullPath)
+        : Path.relative(this._fyn._fynpo!.dir, this._fyn.cwd);
+      const fynpoPkg = this._fyn._fynpo!.graph.packages.byPath[fynpoPath];
       if (fynpoPkg) {
         steps.push(makeDepStep(fynpoPkg.name, fynpoPkg.version, di.dsrc));
         return fynpoPkg;
       }
       if (di.parent) {
-        steps.push(makeDepStep(di.name, di.version, di.dsrc));
+        // Note: di.version may be undefined at this point, makeDepStep handles that
+        steps.push(makeDepStep(di.name, (di as unknown as { version?: string }).version || "", di.dsrc));
         return findFynpoPkgOfDep(di.parent, steps);
       }
       return false;
     };
 
-    const joinFynDep = depSec => {
-      if (!this._fyn.fynlocal) return pkg[depSec];
+    const joinFynDep = (depSec: string): Record<string, string> | false | undefined => {
+      if (!this._fyn.fynlocal) return pkg[depSec] as Record<string, string> | undefined;
 
-      const deps = Object.assign({}, pkg[depSec]);
+      const deps: Record<string, string> = Object.assign({}, pkg[depSec] as Record<string, string>);
 
-      const fynDeps = _.get(pkg, ["fyn", depSec], {});
-      let fromDir = pkg[PACKAGE_RAW_INFO] && pkg[PACKAGE_RAW_INFO].dir;
+      const fynDeps: Record<string, string> = _.get(pkg, ["fyn", depSec], {});
+      let fromDir: string | undefined = pkg[PACKAGE_RAW_INFO] && pkg[PACKAGE_RAW_INFO].dir;
 
       // if in fynpo mode, gather deps that are actually local packages in the monorepo
       if (this._fyn.isFynpo) {
-        const locals = [];
-        const fynpo = this._fyn._fynpo;
+        const locals: FynpoPackage[] = [];
+        const fynpo = this._fyn._fynpo!;
         if (!fromDir) {
           // this case means a downstream pkg has a dep on a monorepo package
           fromDir = this._fyn.cwd;
@@ -501,7 +837,7 @@ class PkgDepResolver {
           }
         }
         if (locals.length > 0 && !this._options.deDuping) {
-          const revSteps = [];
+          const revSteps: unknown[] = [];
           const fynpoPkg = findFynpoPkgOfDep(depItem, revSteps);
           if (fynpoPkg) {
             const steps = revSteps.reverse();
@@ -547,17 +883,18 @@ class PkgDepResolver {
           if (!this._options.deDuping) {
             logger.verbose(`${dispSec} ${dispName} of ${ownerName} will use`, dispSemver);
           }
-        } catch (err) {
+        } catch (err: unknown) {
+          const error = err as NodeJS.ErrnoException;
           logger.warn(
             `${dispSec} ${dispName} of ${ownerName} not found`,
-            chalk.red(err.message),
+            chalk.red(error.message),
             "pkg local dir",
             chalk.blue(fromDir),
             "dep name",
             dispSemver
           );
-          if (err.code !== "ENOENT") {
-            logger.error("checking local package failed", err.stack);
+          if (error.code !== "ENOENT") {
+            logger.error("checking local package failed", error.stack);
           }
         }
       }
@@ -579,7 +916,7 @@ class PkgDepResolver {
     };
   }
 
-  findVersionFromDistTag(meta, semver) {
+  findVersionFromDistTag(meta: PackageMeta, semver: string): string | undefined {
     if (Semver.validRange(semver) === null) {
       const lockRsv = meta[LOCK_RSEMVERS];
       if (lockRsv && lockRsv[semver]) {
@@ -594,7 +931,7 @@ class PkgDepResolver {
     return undefined;
   }
 
-  _shouldDeepResolve(pkgDepInfo) {
+  _shouldDeepResolve(pkgDepInfo: PkgVersionInfo): boolean {
     // even if an item has a resolved pkg, we need to make sure the pkg is resolved
     // by more than optionals, since optionals could potentially be removed later.
     return Boolean(this._fyn.deepResolve || !pkgDepInfo._hasNonOpt);
@@ -602,34 +939,38 @@ class PkgDepResolver {
 
   /* eslint-disable max-statements, complexity */
 
-  async addPackageResolution(item, meta, resolved) {
+  async addPackageResolution(
+    item: DepItem,
+    meta: PackageMeta,
+    resolved: string
+  ): Promise<null> {
     let firstKnown = true;
     item.resolve(resolved, meta);
 
-    const pkgsData = this._data.getPkgsData(item.optFailed);
-    let pkgV; // specific version of the known package
+    const pkgsData = this._data.getPkgsData((item as unknown as { optFailed?: boolean }).optFailed) as Record<string, KnownPackage>;
+    let pkgV: PkgVersionInfo | undefined; // specific version of the known package
     let kpkg = pkgsData[item.name]; // known package
 
     if (kpkg) {
       kpkg[RESOLVE_ORDER].push(resolved);
-      pkgV = kpkg[resolved];
+      pkgV = kpkg[resolved] as PkgVersionInfo | undefined;
 
       firstKnown = this.addKnownRSemver(kpkg, item, resolved);
       const dr = this._fyn.deepResolve || item.deepResolve;
 
       // If doing deep resolve and package is already seen, then check parents
       // to make sure it's not one of them because that would be a circular dependencies
-      if (dr && pkgV && !item.optChecked && item.isCircular()) {
+      const optChecked = (item as unknown as { optChecked?: boolean }).optChecked;
+      if (dr && pkgV && !optChecked && item.isCircular()) {
         // logger.log("circular dep detected", item.name, item.resolved);
         item.unref();
-        item = undefined;
         return null;
       }
     }
 
     const metaJson = meta.versions[resolved];
 
-    const platformCheck = () => {
+    const platformCheck = (): string | true => {
       const sysCheck = checkPkgOsCpu(metaJson);
       if (sysCheck !== true) {
         return `package ${logFormat.pkgId(item)} platform check failed: ${sysCheck}`;
@@ -677,7 +1018,7 @@ class PkgDepResolver {
           (meta && meta[LATEST_TAG_VERSION]) || _.get(meta, ["dist-tags", "latest"]),
         [RSEMVERS]: {},
         [RESOLVE_ORDER]: [resolved]
-      };
+      } as unknown as KnownPackage;
 
       if (meta[LOCK_RSEMVERS]) kpkg[LOCK_RSEMVERS] = meta[LOCK_RSEMVERS];
 
@@ -688,25 +1029,26 @@ class PkgDepResolver {
 
     if (!pkgV) {
       firstSeenVersion = true;
-      pkgV = kpkg[resolved] = {
+      const newPkgV: PkgVersionInfo = {
         [item.src]: 0,
         requests: [],
         src: item.src,
         dsrc: item.dsrc,
-        dist: metaJson.dist,
+        dist: metaJson.dist!,
         name: item.name,
         version: resolved,
         [SEMVER]: item.semver,
         [DEP_ITEM]: item,
         res: {},
-        priority: item.priority
+        priority: item.priority!
       };
+      pkgV = kpkg[resolved] = newPkgV as unknown as KnownPackage[string];
       if (meta[LOCK_RSEMVERS]) pkgV.fromLock = true;
       const scripts = metaJson.scripts || {};
-      if (metaJson.hasPI || scripts.preinstall || scripts.preInstall) {
+      if (metaJson.hasPI || scripts.preinstall || (scripts as Record<string, string>).preInstall) {
         pkgV.hasPI = 1;
       }
-      if (metaJson.hasI || scripts.install || scripts.postinstall || scripts.postInstall) {
+      if (metaJson.hasI || scripts.install || scripts.postinstall || (scripts as Record<string, string>).postInstall) {
         pkgV.hasI = 1;
       }
     }
@@ -722,13 +1064,14 @@ class PkgDepResolver {
       pkgV.json = metaJson;
     }
 
-    if (!item.parent.depth) {
+    if (!item.parent!.depth) {
       pkgV.top = true;
     }
 
+    const optFailed = (item as unknown as { optFailed?: number }).optFailed;
     if (item.dsrc && item.dsrc.includes("opt")) {
       pkgV.preInstalled = true;
-      if (item.optFailed) pkgV.optFailed = item.optFailed;
+      if (optFailed) pkgV.optFailed = optFailed;
     }
 
     // TODO: remove support for local sym linked packages
@@ -755,11 +1098,11 @@ class PkgDepResolver {
       }
     }
 
-    if (!item.optFailed) {
+    if (!optFailed) {
       if (metaJson.deprecated) pkgV.deprecated = metaJson.deprecated;
       let deepRes = false;
-      if (firstSeenVersion || (deepRes = this._shouldDeepResolve(pkgV))) {
-        const pkgDepth = this._depthResolving[item.depth][item.name];
+      if (firstSeenVersion || (deepRes = this._shouldDeepResolve(pkgV as PkgVersionInfo))) {
+        const pkgDepth = this._depthResolving![item.depth][item.name];
         if (firstSeenVersion) {
           if (!pkgDepth.versions) pkgDepth.versions = [resolved];
           else pkgDepth.versions.push(resolved);
@@ -771,22 +1114,22 @@ class PkgDepResolver {
         // Alice, do not go down the rabbit hole, it will never end.
         if (!item.isCircular()) {
           pkgDepth.depItems.push(
-            this.makePkgDepItems(meta.versions[resolved], item, false, deepRes)
+            this.makePkgDepItems(meta.versions[resolved] as unknown as PackageJson, item, false, deepRes)
           );
         }
       }
-      item.addRequestToPkg(pkgV, firstSeenVersion);
+      item.addRequestToPkg(pkgV as PkgVersion, firstSeenVersion);
       item.addResolutionToParent(this._data, firstKnown);
     }
 
     return null;
   }
 
-  addKnownRSemver(kpkg, item, resolved) {
+  addKnownRSemver(kpkg: KnownPackage, item: DepItem, resolved: string): boolean {
     const lockRsv = kpkg[LOCK_RSEMVERS];
     const rsv = kpkg[RSEMVERS];
 
-    const missingVersion = (res, version) => {
+    const missingVersion = (res: string | string[] | undefined, version: string): boolean => {
       if (res) {
         return Array.isArray(res) ? res.indexOf(version) < 0 : res !== version;
       }
@@ -807,9 +1150,9 @@ class PkgDepResolver {
 
       if (rsv[semver]) {
         if (Array.isArray(rsv[semver])) {
-          rsv[semver].push(resolved);
+          (rsv[semver] as string[]).push(resolved);
         } else {
-          rsv[semver] = [rsv[semver], resolved];
+          rsv[semver] = [rsv[semver] as string, resolved];
         }
       } else {
         rsv[semver] = resolved;
@@ -819,16 +1162,26 @@ class PkgDepResolver {
     return firstKnown;
   }
 
-  resolvePackage({ item, meta, noLocal, lockOnly }) {
-    const latest = meta[LATEST_TAG_VERSION] || _.get(meta, ["dist-tags", "latest"]);
-    let latestSatisfied;
+  resolvePackage({
+    item,
+    meta,
+    noLocal,
+    lockOnly
+  }: {
+    item: DepItem;
+    meta: PackageMeta;
+    noLocal?: boolean;
+    lockOnly?: boolean;
+  }): string | false | undefined {
+    const latest = meta[LATEST_TAG_VERSION] || _.get(meta, ["dist-tags", "latest"]) as string | undefined;
+    let latestSatisfied: boolean | undefined;
 
-    const satisfies = (v, sv) => {
+    const satisfies = (v: string, sv: string): boolean => {
       if (noLocal && semverUtil.isLocal(v)) return false;
       return semverUtil.satisfies(v, sv);
     };
 
-    const checkLatestSatisfy = () => {
+    const checkLatestSatisfy = (): boolean => {
       if (latestSatisfied === undefined) {
         // since satisfy means resolve must limit to versions to before latest,
         // if latest is not defined, then consider not satisfy to allow resolving
@@ -838,10 +1191,10 @@ class PkgDepResolver {
       return latestSatisfied;
     };
 
-    const kpkg = this._data.getPkg(item); // known package
-    let foundInKnown;
+    const kpkg = this._data.getPkg(item) as KnownPackage | undefined; // known package
+    let foundInKnown: boolean | undefined;
 
-    const tryYarnLock = () => {
+    const tryYarnLock = (): string | undefined => {
       // is there yarn lock data that we should use?
       if (this._options.yarnLock) {
         const key = `${item.name}@${item.semver}`;
@@ -856,9 +1209,9 @@ class PkgDepResolver {
     };
 
     // check if the same semver has been resolved before
-    const getKnownSemver = () => {
-      const find = rsv => {
-        let x = rsv && rsv[item.semver];
+    const getKnownSemver = (): string | false | undefined => {
+      const find = (rsv: Record<string, string | string[]> | undefined): string | false | undefined => {
+        let x: string | string[] | undefined = rsv && rsv[item.semver];
         if (!x) return x;
         if (Array.isArray(x)) x = x[0];
         if (noLocal && semverUtil.isLocal(x)) return false;
@@ -872,13 +1225,13 @@ class PkgDepResolver {
       return resolved;
     };
 
-    const searchKnown = () => {
+    const searchKnown = (): string | false => {
       //
       // Search already known versions from top dep
       //
       if (!kpkg) return false;
       const rversions = kpkg[RESOLVE_ORDER];
-      let resolved;
+      let resolved: string | undefined;
       if (rversions.length > 0) {
         resolved = _.find(rversions, v => satisfies(v, item.semver));
       }
@@ -889,10 +1242,10 @@ class PkgDepResolver {
 
       foundInKnown = Boolean(resolved);
 
-      return resolved;
+      return resolved || false;
     };
 
-    const searchMeta = () => {
+    const searchMeta = (): string | undefined => {
       //
       // This sorting and semver searching is the most expensive part of the
       // resolve process, so caching them is very important for performance.
@@ -922,7 +1275,7 @@ class PkgDepResolver {
         meta[SORTED_VERSIONS] = sorted;
       }
 
-      let lockTime = this._fyn.lockTime;
+      let lockTime: Date | undefined = this._fyn.lockTime;
       let sortedVersions = meta[SORTED_VERSIONS];
 
       // can't consider any versions newer or later than latest if it satisfies the semver
@@ -935,9 +1288,13 @@ class PkgDepResolver {
         }
       }
 
-      const find = (versions, times, mustUseRealMeta) => {
-        if (!versions) return null;
-        const countVer = Object.keys(versions).length;
+      const find = (
+        versions: string[] | undefined,
+        times: Record<string, string>,
+        mustUseRealMeta?: boolean
+      ): string | undefined => {
+        if (!versions) return undefined;
+        const countVer = versions.length;
 
         return _.find(versions, v => {
           if (!satisfies(v, item.semver)) {
@@ -953,7 +1310,7 @@ class PkgDepResolver {
           }
 
           const time = new Date(times[v]);
-          if (time > lockTime) {
+          if (time > lockTime!) {
             // logger.debug("times", times);
             logger.verbose(
               item.name,
@@ -961,7 +1318,7 @@ class PkgDepResolver {
               "time",
               time.toString(),
               "is newer than lock/latest time",
-              lockTime.toString()
+              lockTime!.toString()
             );
             return false;
           }
@@ -971,12 +1328,12 @@ class PkgDepResolver {
       };
 
       // simply use latest if it satisfies, before searching through all versions
-      let resolved = (checkLatestSatisfy() && latest) || find(meta[LOCK_SORTED_VERSIONS], {});
+      let resolved: string | undefined = (checkLatestSatisfy() && latest) || find(meta[LOCK_SORTED_VERSIONS], {});
       // if not able to resolve from locked data or it's newer than latest which
       // satisfies the semver, then must resolve again with latest info.
       // must resolve with original real meta
       const mustUseRealMeta =
-        checkLatestSatisfy() && resolved && semverUtil.isVersionNewer(resolved, latest);
+        checkLatestSatisfy() && resolved && semverUtil.isVersionNewer(resolved, latest!);
       if (!resolved || mustUseRealMeta) {
         resolved = find(sortedVersions, meta.time || {}, mustUseRealMeta);
       }
@@ -986,22 +1343,22 @@ class PkgDepResolver {
       return resolved;
     };
 
-    const getLocalVersion = () => {
-      if (meta.hasOwnProperty(LOCAL_VERSION_MAPS)) {
+    const getLocalVersion = (): string | false => {
+      if (Object.prototype.hasOwnProperty.call(meta, LOCAL_VERSION_MAPS)) {
         logger.debug(
           `meta LOCAL_VERSION_MAPS for ${item.semver} - ${JSON.stringify(meta[LOCAL_VERSION_MAPS])}`
         );
-        return meta[LOCAL_VERSION_MAPS][item.semver];
+        return meta[LOCAL_VERSION_MAPS]![item.semver] || false;
       }
       return false;
     };
 
-    const getUrlVersion = () => {
+    const getUrlVersion = (): string | false => {
       if (!meta.urlVersions || !item.urlType) {
         return false;
       }
       const urlVersion = meta.urlVersions[item.semver];
-      return urlVersion && urlVersion.version;
+      return (urlVersion && urlVersion.version) || false;
     };
 
     let resolved =
@@ -1033,18 +1390,30 @@ class PkgDepResolver {
     return meta.versions ? meta.versions[resolved] && resolved : resolved;
   }
 
-  _failUnsatisfySemver(item) {
+  _failUnsatisfySemver(item: DepItem): never {
     throw new Error(
       `Unable to find a version from lock data that satisfied semver ${item.name}@${item.semver}
 ${item.depPath.join(" > ")}`
     );
   }
 
-  _resolveWithMeta({ item, meta, force, noLocal, lockOnly }) {
-    let resolved = item.nestedResolve(item.name, item.semver);
+  _resolveWithMeta({
+    item,
+    meta,
+    force,
+    noLocal,
+    lockOnly
+  }: {
+    item: DepItem;
+    meta: PackageMeta;
+    force?: boolean;
+    noLocal?: boolean;
+    lockOnly?: boolean;
+  }): ResolveResult | false {
+    let resolved: string | false | undefined = item.nestedResolve(item.name, item.semver);
 
     if (resolved) {
-      if (!meta.versions.hasOwnProperty(resolved)) {
+      if (!Object.prototype.hasOwnProperty.call(meta.versions, resolved)) {
         resolved = false;
       }
     } else {
@@ -1083,10 +1452,10 @@ ${item.depPath.join(" > ")}`
    *
    * spec: https://github.com/yarnpkg/rfcs/blob/master/implemented/0000-selective-versions-resolutions.md
    *
-   * @param {*} item
-   * @returns
+   * @param item - The dependency item
+   * @returns undefined
    */
-  _replaceWithResolutionsData(item) {
+  _replaceWithResolutionsData(item: DepItem & { _semver: SemverAnalysis }): undefined {
     if (!this._fyn._resolutions || item._semver.$$) {
       return undefined;
     }
@@ -1109,7 +1478,7 @@ ${item.depPath.join(" > ")}`
       }
     }
 
-    let nameDepPath;
+    let nameDepPath: string;
 
     if (this._fyn.isFynpo) {
       nameDepPath = `${this._fyn._pkg.name}/${item.nameDepPath}`;
@@ -1119,7 +1488,7 @@ ${item.depPath.join(" > ")}`
 
     const unslashed = unSlashNpmScope(nameDepPath);
 
-    const found = this._fyn._resolutionsMatchers.find(r => r.mm.match(unslashed));
+    const found = this._fyn._resolutionsMatchers!.find(r => r.mm.match(unslashed));
 
     if (found && found.res && found.res !== "--no-change" && found.res !== item.semver) {
       const { res } = found;
@@ -1143,10 +1512,10 @@ ${item.depPath.join(" > ")}`
    * - They can be scoped to specific parent packages
    * - They support version constraints on the source package
    *
-   * @param {*} item - The dependency item to check for overrides
-   * @returns {undefined}
+   * @param item - The dependency item to check for overrides
+   * @returns undefined
    */
-  _applyOverrides(item) {
+  _applyOverrides(item: DepItem & { _semver: SemverAnalysis }): undefined {
     if (!this._fyn._overridesMatchers || item._semver.$$) {
       return undefined;
     }
@@ -1196,11 +1565,11 @@ ${item.depPath.join(" > ")}`
   /**
    * Check if the item's semver matches the version constraint specified in the override key
    *
-   * @param {string} itemSemver - The semver from the dependency
-   * @param {string} constraint - The version constraint from override key (e.g., "^4.0.0", ">=1.0.0")
-   * @returns {boolean}
+   * @param itemSemver - The semver from the dependency
+   * @param constraint - The version constraint from override key (e.g., "^4.0.0", ">=1.0.0")
+   * @returns boolean
    */
-  _matchesVersionConstraint(itemSemver, constraint) {
+  _matchesVersionConstraint(itemSemver: string, constraint: string): boolean {
     // If the constraint is a specific version, check exact match or if itemSemver could resolve to it
     if (Semver.valid(constraint)) {
       // Exact version constraint - the item's semver should potentially resolve to this version
@@ -1227,18 +1596,18 @@ ${item.depPath.join(" > ")}`
    * For example, if override is { "foo": { "bar": "1.0.0" } },
    * parentPath would be "foo" and we check if item's parent chain includes "foo"
    *
-   * @param {*} item - The dependency item
-   * @param {string} parentPath - The parent path from the override (e.g., "foo" or "foo/baz")
-   * @returns {boolean}
+   * @param item - The dependency item
+   * @param parentPath - The parent path from the override (e.g., "foo" or "foo/baz")
+   * @returns boolean
    */
-  _matchesParentPath(item, parentPath) {
+  _matchesParentPath(item: DepItem, parentPath: string): boolean {
     if (!item.parent || item.parent.depth === 0) {
       return false;
     }
 
     // Build the parent chain
-    const parentChain = [];
-    let current = item.parent;
+    const parentChain: string[] = [];
+    let current: DepItem | undefined = item.parent;
     while (current && current.depth > 0) {
       parentChain.unshift(current.name);
       current = current.parent;
@@ -1248,7 +1617,7 @@ ${item.depPath.join(" > ")}`
     const pathParts = parentPath.split("/").filter(p => p);
 
     // Handle scoped packages in path - rejoin @scope/name
-    const normalizedParts = [];
+    const normalizedParts: string[] = [];
     for (let i = 0; i < pathParts.length; i++) {
       if (pathParts[i].startsWith("@") && i + 1 < pathParts.length) {
         normalizedParts.push(`${pathParts[i]}/${pathParts[i + 1]}`);
@@ -1275,7 +1644,7 @@ ${item.depPath.join(" > ")}`
     return true;
   }
 
-  _resolveWithLockData(item) {
+  _resolveWithLockData(item: DepItem): ResolveResult | false {
     //
     // Force resolve from lock data in regen mode if item was not a direct
     // optional dependency.
@@ -1335,31 +1704,31 @@ ${item.depPath.join(" > ")}`
     return false;
   }
 
-  processItem(name) {
-    if (name && name.promise) {
-      const p = name.promise;
-      name.promise = null;
-      return p;
+  processItem(name: string | QueueDepthItem | PromiseItem): Promise<unknown> | void {
+    if (name && (name as PromiseItem).promise) {
+      const p = (name as PromiseItem).promise;
+      (name as PromiseItem).promise = null;
+      return p as Promise<unknown>;
     }
 
-    if (name && name.queueDepth) {
-      return this.queueDepth(name.depth);
+    if (name && (name as QueueDepthItem).queueDepth) {
+      return this.queueDepth((name as QueueDepthItem).depth);
     }
 
-    const depthData = this._depthResolving[this._depthResolving.current];
+    const depthData = this._depthResolving![this._depthResolving!.current!];
     // logger.info("resolving item", name, this._depthResolving.current, di);
-    const items = depthData[name].items;
+    const items = depthData[name as string].items;
     if (items && items.length > 0) {
-      return this.resolveItem(items.shift());
+      return this.resolveItem(items.shift()!);
     }
     return undefined;
   }
 
-  resolveItem(item) {
-    const tryLocal = () => {
+  resolveItem(item: DepItem & { _semver: SemverAnalysis; _resolveByLock?: boolean }): Promise<void> {
+    const tryLocal = (): Promise<ResolveResult | false> => {
       return xaa
         .wrap(() => this._pkgSrcMgr.fetchLocalItem(item))
-        .then(meta => {
+        .then((meta: PackageMeta | undefined) => {
           if (meta) {
             const updated = this._fyn.depLocker.update(item, meta);
             return this._resolveWithMeta({ item, meta: updated, force: true });
@@ -1368,7 +1737,7 @@ ${item.depPath.join(" > ")}`
         });
     };
 
-    const tryLock = () => {
+    const tryLock = (): Promise<ResolveResult | false> => {
       return xaa.wrap(() => {
         const r = this._resolveWithLockData(item);
 
@@ -1385,14 +1754,14 @@ ${item.depPath.join(" > ")}`
     this._applyOverrides(item);
     this._replaceWithResolutionsData(item);
 
-    const promise =
+    const promise: Promise<ResolveResult | false> =
       !item.semverPath || this._fyn.preferLock
-        ? tryLock().then(r => r || (item.semverPath && tryLocal()))
+        ? tryLock().then(r => r || (item.semverPath && tryLocal()) || false)
         : tryLocal().then(r => r || tryLock());
 
     return promise
-      .then(r => {
-        if (r && !_.get(r, ["meta", "versions", r.resolved, "_missingJson"])) {
+      .then((r: ResolveResult | false | undefined) => {
+        if (r && !_.get(r, ["meta", "versions", (r as ResolveResult).resolved, "_missingJson"])) {
           return r;
         }
 
@@ -1404,14 +1773,14 @@ ${item.depPath.join(" > ")}`
         // always fetch the item and let pkg src manager deal with caching
         return this._pkgSrcMgr
           .fetchMeta(item)
-          .then(meta => {
+          .then((meta: PackageMeta) => {
             if (!meta) {
               throw new Error(failMetaMsg(item.name));
             }
             const updated = this._fyn.depLocker.update(item, meta);
             return this._resolveWithMeta({ item, meta: updated, force: true, noLocal: true });
           })
-          .catch(err => {
+          .catch((err: Error) => {
             // item is not optional => fail
             if (item.dsrc !== "opt") {
               if (err.message.includes("Unable to retrieve meta")) {
@@ -1420,16 +1789,17 @@ ${item.depPath.join(" > ")}`
                 throw new AggregateError([err], failMetaMsg(item.name));
               }
             } else {
-              item.resolved = `metaFail_${item.semver}`;
+              (item as DepItem).resolved = `metaFail_${item.semver}`;
               // add to opt resolver directly as failed package with a dummy meta
-              this._optResolver.add({ item, err, meta: { versions: { [item.resolved]: {} } } });
+              this._optResolver.add({ item, err, meta: { versions: { [(item as DepItem).resolved!]: {} } } });
             }
+            return undefined;
           });
       })
-      .then(async r => {
+      .then(async (r: ResolveResult | false | undefined) => {
         if (!r) return;
 
-        const { meta, resolved } = r;
+        const { meta, resolved } = r as ResolveResult;
 
         if (item._semver.$$ && !Semver.satisfies(resolved, item._semver.$$)) {
           logger.warn(
@@ -1440,12 +1810,12 @@ ${item.depPath.join(" > ")}`
         await this.addPackageResolution(item, meta, resolved);
       })
       .then(() => {
-        const depthData = this._depthResolving[item.depth];
+        const depthData = this._depthResolving![item.depth];
         const items = depthData[item.name].items;
 
         depthData[item.name].items = [];
 
-        return xaa.each(items, x => this.resolveItem(x));
+        return xaa.each(items, (x: DepItem) => this.resolveItem(x as DepItem & { _semver: SemverAnalysis }));
       });
   }
 }
