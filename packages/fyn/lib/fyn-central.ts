@@ -1,6 +1,4 @@
-// @ts-nocheck
-
-/* eslint-disable no-magic-numbers, max-params, max-statements, no-empty */
+/* eslint-disable no-magic-numbers, max-statements */
 
 import Path from "path";
 import Fs from "./util/file-ops";
@@ -13,11 +11,61 @@ import { AggregateError } from "@jchip/error";
 import { filterScanDir } from "filter-scan-dir";
 import Crypto from "crypto";
 import * as xaa from "xaa";
+import type { Readable } from "stream";
 
 const { missPipe } = fyntil;
 
+/** File metadata in the tree */
+interface FileInfo {
+  /** File size */
+  z: number;
+  /** Modification time in seconds */
+  m: number;
+  /** Checksum (tar header cksum) */
+  $: number | boolean;
+}
+
+/** Directory tree node - uses null prototype objects to avoid name conflicts */
+interface TreeNode {
+  /** Files in this directory */
+  "/": Record<string, FileInfo>;
+  /** Subdirectories */
+  [dir: string]: TreeNode | Record<string, FileInfo>;
+}
+
+/** Flattened tree structure */
+interface FlattenedTree {
+  dirs: string[];
+  files: string[];
+}
+
+/** Package info from integrity analysis */
+interface PackageInfo {
+  algorithm: string;
+  contentPath: string;
+  hex: string;
+  tree?: TreeNode | false;
+  exist?: boolean;
+  mutates?: boolean;
+  shaSum?: string;
+  validated?: boolean;
+}
+
+/** Tree file content structure */
+interface TreeFileContent {
+  _?: number;
+  $?: TreeNode;
+  shaSum?: string;
+  mutates?: boolean;
+}
+
+/** Options for FynCentral constructor */
+interface FynCentralOptions {
+  centralDir?: string;
+}
+
 /**
- * convert a directory tree structure to a flatten one like:
+ * Convert a directory tree structure to a flatten one like:
  * ```
  * {
  *  dirs: [
@@ -30,19 +78,19 @@ const { missPipe } = fyntil;
  * }
  * ```
  *
- * @param {*} tree - the dir tree
- * @param {*} output - output object
- * @param {*} baseDir - base dir path
+ * @param tree - the dir tree
+ * @param output - output object
+ * @param baseDir - base dir path
  * @returns flatten dir list
  */
-function flattenTree(tree, output, baseDir) {
+function flattenTree(tree: TreeNode, output: FlattenedTree, baseDir: string): FlattenedTree {
   const dirs = Object.keys(tree);
 
   for (const dir of dirs) {
     if (dir === "/") continue;
     const fdir = Path.join(baseDir, dir);
     output.dirs.push(fdir);
-    flattenTree(tree[dir], output, fdir);
+    flattenTree(tree[dir] as TreeNode, output, fdir);
   }
 
   const files = Object.keys(tree["/"]);
@@ -54,15 +102,18 @@ function flattenTree(tree, output, baseDir) {
 }
 
 /**
- * create and maintain the fyn central storage
+ * Create and maintain the fyn central storage
  */
 class FynCentral {
-  constructor({ centralDir = ".fyn/_central-storage" }) {
+  private _centralDir: string;
+  private _map: Map<string, PackageInfo>;
+
+  constructor({ centralDir = ".fyn/_central-storage" }: FynCentralOptions = {}) {
     this._centralDir = Path.resolve(centralDir);
     this._map = new Map();
   }
 
-  _analyze(integrity) {
+  _analyze(integrity: string): PackageInfo {
     const sri = ssri.parse(integrity, { single: true });
 
     const algorithm = sri.algorithm;
@@ -81,20 +132,24 @@ class FynCentral {
   }
 
   /**
-   * load a dir tree for a centrally stored package
+   * Load a dir tree for a centrally stored package
    *
-   * @param {*} integrity - package integrity checksum
-   * @param {*} _info - package info
-   * @param {*} _noSet - if true, then do not mark package in map
+   * @param integrity - package integrity checksum
+   * @param _info - package info
+   * @param _noSet - if true, then do not mark package in map
    * @returns dir tree info
    */
-  async _loadTree(integrity, _info, _noSet) {
+  async _loadTree(
+    integrity: string,
+    _info?: PackageInfo,
+    _noSet?: boolean
+  ): Promise<PackageInfo> {
     let info = _info;
     let noSet = _noSet;
 
     if (!info) {
       if (this._map.has(integrity)) {
-        info = this._map.get(integrity);
+        info = this._map.get(integrity)!;
         noSet = true;
       } else {
         info = this._analyze(integrity);
@@ -112,46 +167,46 @@ class FynCentral {
         }
       }
       return info;
-    } catch (err) {
+    } catch (_err) {
       return info;
     }
   }
 
   /**
-   * check if central has the package
+   * Check if central has the package
    *
-   * @param {*} integrity - package integrity
+   * @param integrity - package integrity
    * @returns boolean
    */
-  async has(integrity) {
+  async has(integrity: string): Promise<boolean> {
     const info = this._map.has(integrity)
-      ? this._map.get(integrity)
+      ? this._map.get(integrity)!
       : await this._loadTree(integrity);
 
     return Boolean(info.tree);
   }
 
   /**
-   * check if if a package is allowed to go into central store
+   * Check if a package is allowed to go into central store
    *
-   * @param {*} integrity  - package integrity
+   * @param integrity - package integrity
    * @returns boolean
    */
-  async allow(integrity) {
+  async allow(integrity: string): Promise<boolean> {
     const info = this._map.has(integrity)
-      ? this._map.get(integrity)
+      ? this._map.get(integrity)!
       : await this._loadTree(integrity);
 
     return info.mutates ? false : true;
   }
 
-  async getContentPath(integrity) {
+  async getContentPath(integrity: string): Promise<string> {
     return (await this.getInfo(integrity)).contentPath;
   }
 
-  async getInfo(integrity) {
+  async getInfo(integrity: string): Promise<PackageInfo> {
     if (this._map.has(integrity)) {
-      return this._map.get(integrity);
+      return this._map.get(integrity)!;
     }
     const info = await this._loadTree(integrity);
     if (!info.tree) {
@@ -160,10 +215,14 @@ class FynCentral {
     return info;
   }
 
-  async _calcContentShasum(info, pkgDir = undefined) {
+  async _calcContentShasum(info: PackageInfo, pkgDir?: string): Promise<string | undefined> {
     try {
       const packageDir = pkgDir || Path.join(info.contentPath, "package");
-      const filter = (_file, _path, extras) => {
+      const filter = (
+        _file: string,
+        _path: string,
+        extras: { stat: { mtimeMs: number; size: number }; dirFile: string }
+      ): { formatName: string } => {
         const { stat, dirFile } = extras;
         return { formatName: `${dirFile}-${stat.mtimeMs}-${stat.size}` };
       };
@@ -179,7 +238,7 @@ class FynCentral {
       });
 
       const hash = Crypto.createHash("sha512");
-      const shaSum = hash.update(JSON.stringify(files.sort())).digest("base64");
+      const shaSum = hash.update(JSON.stringify((files as string[]).sort())).digest("base64");
       return shaSum;
     } catch (_err) {
       return undefined;
@@ -192,10 +251,10 @@ class FynCentral {
    *   with a fixed timestamp to publish, so the mtime give us some assurance
    *   to know if file changed.
    *
-   * @param {*} integrity - shasum integrity for the package
-   * @returns void
+   * @param integrity - shasum integrity for the package
+   * @returns shasum or undefined
    */
-  async getContentShasum(integrity) {
+  async getContentShasum(integrity: string): Promise<string | undefined> {
     try {
       const info = await this.getInfo(integrity);
       return this._calcContentShasum(info);
@@ -204,15 +263,15 @@ class FynCentral {
     }
   }
 
-  async getMutation(integrity) {
+  async getMutation(integrity: string): Promise<boolean | undefined> {
     const info = this._map.has(integrity)
-      ? this._map.get(integrity)
+      ? this._map.get(integrity)!
       : await this._loadTree(integrity);
 
     return info.mutates;
   }
 
-  async delete(integrity) {
+  async delete(integrity: string): Promise<void> {
     const info = this._map.get(integrity);
     if (info && info.exist && info.contentPath) {
       await Fs.$.rimraf(info.contentPath);
@@ -221,43 +280,43 @@ class FynCentral {
   }
 
   /**
-   * Read the content dir tree from file into into
+   * Read the content dir tree from file into info
    *
-   * @param {*} info - info
+   * @param info - package info
    */
-  async readInfoTree(info) {
+  async readInfoTree(info: PackageInfo): Promise<void> {
     const treeFile = Path.join(info.contentPath, "tree.json");
     try {
       const data = await Fs.readFile(treeFile);
-      const tree = JSON.parse(data);
-      if (tree._ >= 1) {
+      const tree: TreeFileContent = JSON.parse(data.toString());
+      if (tree._ !== undefined && tree._ >= 1) {
         if (tree.mutates !== undefined) {
           info.mutates = tree.mutates;
         }
         info.tree = tree.$;
         info.shaSum = tree.shaSum;
       } else {
-        info.tree = tree;
+        info.tree = tree as unknown as TreeNode;
       }
     } catch (err) {
-      throw new AggregateError([err], `fyn-central: reading tree file ${treeFile}`);
+      throw new AggregateError([err as Error], `fyn-central: reading tree file ${treeFile}`);
     }
   }
 
   /**
    * Save the content dir tree from info to file
    *
-   * @param {*} info - info
-   * @param {*} path - path to save the file
+   * @param info - package info
+   * @param path - path to save the file
    */
-  async saveInfoTree(info, path) {
+  async saveInfoTree(info: PackageInfo, path?: string): Promise<void> {
     await Fs.writeFile(
       Path.join(path || info.contentPath, "tree.json"),
       JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: 1 })
     );
   }
 
-  async setMutation(integrity, mutates = true) {
+  async setMutation(integrity: string, mutates = true): Promise<void> {
     const info = await this._loadTree(integrity);
     if (!info.exist || !info.tree || info.mutates === mutates) {
       return;
@@ -266,11 +325,11 @@ class FynCentral {
     await this.saveInfoTree(info);
   }
 
-  async replicate(integrity, destDir) {
+  async replicate(integrity: string, destDir: string): Promise<void> {
     try {
       const info = await this.getInfo(integrity);
 
-      const list = flattenTree(info.tree, { dirs: [], files: [] }, "");
+      const list = flattenTree(info.tree as TreeNode, { dirs: [], files: [] }, "");
 
       for (const dir of list.dirs) {
         await Fs.$.mkdirp(Path.join(destDir, dir));
@@ -278,7 +337,7 @@ class FynCentral {
 
       await xaa.map(
         list.files,
-        file => {
+        (file: string) => {
           const src = Path.join(info.contentPath, "package", file);
           const dest = Path.join(destDir, file);
           // copy package.json because we modify it
@@ -292,16 +351,16 @@ class FynCentral {
       );
     } catch (err) {
       const msg = `fyn-central can't replicate package at ${destDir} for integrity ${integrity}`;
-      throw new AggregateError([err], msg);
+      throw new AggregateError([err as Error], msg);
     }
   }
 
-  _untarStream(tarStream, targetDir) {
+  _untarStream(tarStream: Readable, targetDir: string): Promise<TreeNode> {
     // since we are using objects to store directory tree we have to
     // create objects without the normal prototypes to avoid name conflict
     // with file names
-    const newDirObj = () => {
-      const n = Object.create(null);
+    const newDirObj = (): TreeNode => {
+      const n = Object.create(null) as TreeNode;
       n["/"] = Object.create(null);
       return n;
     };
@@ -314,13 +373,13 @@ class FynCentral {
       strip,
       strict: true,
       C: targetDir,
-      onentry: entry => {
+      onentry: (entry: Tar.ReadEntry) => {
         const parts = entry.path.split(/\/|\\/);
         const isDir = entry.type === "Directory";
         const dirs = parts.slice(strip, isDir ? parts.length : parts.length - 1);
 
-        const wtree = dirs.reduce((wt, dir) => {
-          return wt[dir] || (wt[dir] = newDirObj());
+        const wtree = dirs.reduce((wt: TreeNode, dir: string) => {
+          return (wt[dir] as TreeNode) || (wt[dir] = newDirObj());
         }, dirTree);
 
         if (isDir) return;
@@ -340,7 +399,7 @@ class FynCentral {
     return missPipe(tarStream, untarStream).then(() => dirTree);
   }
 
-  async _acquireTmpLock(info) {
+  async _acquireTmpLock(info: PackageInfo): Promise<string> {
     const tmpLock = `${info.contentPath}.lock`;
 
     try {
@@ -352,14 +411,18 @@ class FynCentral {
       });
     } catch (err) {
       logger.error("fyn-central - unable to acquire tmp lock", tmpLock);
-      const msg = err.message && err.message.replace(tmpLock, "<lockfile>");
+      const msg = (err as Error).message && (err as Error).message.replace(tmpLock, "<lockfile>");
       throw new Error(`Unable to acquire fyn-central tmp lock ${tmpLock} - ${msg}`);
     }
 
     return tmpLock;
   }
 
-  async _storeTarStream(info, integrity, _stream) {
+  async _storeTarStream(
+    info: PackageInfo,
+    _integrity: string,
+    _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
+  ): Promise<void> {
     let stream = _stream;
     const tmp = `${info.contentPath}.tmp`;
 
@@ -369,11 +432,11 @@ class FynCentral {
     if (typeof stream === "function") {
       stream = stream();
     }
-    if (stream.then) {
-      stream = await stream;
+    if ((stream as Promise<Readable>).then) {
+      stream = await (stream as Promise<Readable>);
     }
-    // TODO: user could break during untar and cause corruptted module
-    info.tree = await this._untarStream(stream, targetDir, info);
+    // TODO: user could break during untar and cause corrupted module
+    info.tree = await this._untarStream(stream as Readable, targetDir);
     info.shaSum = await this._calcContentShasum(info, targetDir);
     await this.saveInfoTree(info, tmp);
 
@@ -384,11 +447,10 @@ class FynCentral {
   /**
    * Validate the central store package content by file size and timestamp
    *
-   * @param {*} integrity - package integrity
-   *
+   * @param integrity - package integrity
    * @returns true or false
    */
-  async validate(integrity) {
+  async validate(integrity: string): Promise<boolean> {
     const info = this._map.get(integrity);
     if (info === undefined || !info.exist) {
       return false;
@@ -406,8 +468,13 @@ class FynCentral {
     return info.validated;
   }
 
-  async storeTarStream(pkgId, integrity, stream) {
-    let tmpLock = false;
+  async storeTarStream(
+    pkgId: string,
+    integrity: string,
+    stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
+  ): Promise<void> {
+    let tmpLock: string | false = false;
+    let currentStream = stream;
 
     try {
       let info = await this._loadTree(integrity);
@@ -430,15 +497,18 @@ class FynCentral {
           }
         } else {
           logger.debug("storing tar to central store", pkgId, integrity);
-          await this._storeTarStream(info, integrity, stream);
-          stream = undefined; // eslint-disable-line
+          await this._storeTarStream(info, integrity, currentStream);
+          currentStream = undefined as unknown as Readable;
           this._map.set(integrity, info);
           logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);
         }
       }
     } finally {
-      if (stream && stream.destroy !== undefined) {
-        stream.destroy();
+      if (
+        currentStream &&
+        (currentStream as Readable).destroy !== undefined
+      ) {
+        (currentStream as Readable).destroy();
       }
 
       if (tmpLock) {
