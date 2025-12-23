@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Path from "path";
 import util from "util";
 import assert from "assert";
@@ -28,6 +26,205 @@ import npmConfigEnv from "./util/npm-config-env";
 import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
 import pathUpEach from "./util/path-up-each";
+import type { IMinimatch } from "minimatch";
+import type { PkgVersion } from "./dep-data";
+
+/** CLI source tracking for options */
+interface CliSource {
+  flattenTop?: string;
+  layout?: string;
+  production?: string;
+  [key: string]: string | undefined;
+}
+
+/** Fyn options from configuration */
+interface FynOptions {
+  cwd?: string;
+  initCwd?: string;
+  lockTime?: string;
+  flattenTop?: boolean;
+  layout?: string;
+  production?: boolean;
+  pkgFile?: string;
+  pkgData?: PackageJson;
+  fynDir: string;
+  fynCacheDir: string;
+  targetDir: string;
+  registry?: string;
+  lockfile?: boolean;
+  copy?: string[];
+  centralStore?: boolean;
+  forceCache?: boolean;
+  offline?: boolean;
+  fynlocal?: boolean;
+  lockOnly?: boolean;
+  showDeprecated?: boolean;
+  refreshOptionals?: boolean;
+  ignoreDist?: boolean;
+  concurrency?: number;
+  deepResolve?: boolean;
+  preferLock?: boolean;
+  alwaysFetchDist?: boolean;
+  runNpm?: string[];
+  buildLocal?: boolean;
+  npmLock?: boolean;
+  pkgSrcMgr?: PkgSrcManager;
+  data?: DepData;
+  refreshMeta?: boolean;
+  metaMemoize?: string;
+  [key: string]: unknown;
+}
+
+/** Package.json structure */
+interface PackageJson {
+  name: string;
+  version: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  bundleDependencies?: string[];
+  scripts?: Record<string, string>;
+  resolutions?: Record<string, string>;
+  overrides?: Record<string, string | Record<string, string>>;
+  fyn?: {
+    dependencies?: Record<string, string | boolean>;
+    devDependencies?: Record<string, string | boolean>;
+    optionalDependencies?: Record<string, string | boolean>;
+    [key: string]: unknown;
+  };
+  publishUtil?: Record<string, unknown>;
+  gypfile?: boolean;
+  [PACKAGE_RAW_INFO]?: {
+    dir: string;
+    str: string;
+  };
+  [key: string]: unknown;
+}
+
+/** Package info with metadata */
+interface PkgInfo extends PackageJson {
+  promoted?: boolean;
+  dir?: string;
+  str?: string;
+  json?: PackageJson;
+  _id?: string;
+  _invalid?: boolean;
+  _origVersion?: string;
+  _hasShrinkwrap?: boolean;
+  dist?: {
+    integrity?: string;
+    tarball?: string;
+    localPath?: string;
+    fullPath?: string;
+  };
+  [DEP_ITEM]?: DepItemRef;
+}
+
+/** Dependency item reference */
+interface DepItemRef {
+  name: string;
+  version: string;
+  _resolveByLock?: boolean;
+  [key: string]: unknown;
+}
+
+/** Install configuration saved to node_modules */
+interface InstallConfig {
+  time: number;
+  centralDir?: string | false;
+  production?: boolean;
+  layout?: string;
+  localPkgLinks?: Record<string, LocalPkgLink>;
+  localsByDepth?: string[][];
+  [key: string]: unknown;
+}
+
+/** Local package link info */
+interface LocalPkgLink {
+  srcDir: string;
+  [key: string]: unknown;
+}
+
+/** Fynpo configuration */
+interface FynpoConfig {
+  centralDir?: string;
+  resolutions?: Record<string, string>;
+  overrides?: Record<string, string | Record<string, string>>;
+  command?: {
+    bootstrap?: {
+      npmRunScripts?: string | string[] | (string | string[])[];
+    };
+  };
+  [key: string]: unknown;
+}
+
+/** Fynpo data */
+interface FynpoData {
+  config?: FynpoConfig;
+  dir?: string;
+  fyn?: {
+    options?: Partial<FynOptions>;
+  };
+  graph?: {
+    getPackageAtDir(dir: string): unknown;
+  };
+  indirects?: unknown[];
+  [key: string]: unknown;
+}
+
+/** Resolution matcher */
+interface ResolutionMatcher {
+  mm: IMinimatch;
+  res: string;
+}
+
+/** Override matcher */
+interface OverrideMatcher {
+  pkgName: string;
+  versionConstraint: string | null;
+  parentPath: string;
+  replacement: string;
+}
+
+/** npm lock data structure */
+interface NpmLockData {
+  name?: string;
+  version?: string;
+  lockfileVersion?: number;
+  packages?: Record<string, unknown>;
+  dependencies?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** Yarn lock parsed data */
+interface YarnLockData {
+  [key: string]: {
+    version: string;
+    resolved?: string;
+    integrity?: string;
+    dependencies?: Record<string, string>;
+  };
+}
+
+/** Constructor options for Fyn */
+interface FynConstructorOptions {
+  opts?: Partial<FynOptions>;
+  _cliSource?: CliSource;
+  _fynpo?: boolean;
+}
+
+/** Local package install check result */
+interface LocalPkgInstallResult {
+  changed: boolean;
+  [key: string]: unknown;
+}
+
+/** Dependency info for local packages */
+interface LocalDepInfo {
+  fullPath: string;
+  [key: string]: unknown;
+}
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -36,11 +233,47 @@ const { posixify } = fynTil;
 /* eslint-disable no-magic-numbers, max-statements, no-empty, complexity, no-eval */
 
 class Fyn {
-  constructor({ opts = {}, _cliSource = {}, _fynpo = true }) {
+  // Class properties with type annotations
+  private _cliSource: CliSource;
+  private _shownMissingFiles: Set<string>;
+  private _options: FynOptions;
+  private _cwd: string;
+  private _initCwd: string;
+  private _lockTime?: Date;
+  private _installConfig: InstallConfig;
+  private _noPkgDirMatchName: boolean;
+  private _fynpo?: FynpoData;
+  private _pkg!: PackageJson;
+  private _pkgFile!: string;
+  private _pkgFyn?: Record<string, unknown>;
+  private _pkgSrcMgr!: PkgSrcManager;
+  private _depLocker!: PkgDepLocker;
+  private _distFetcher?: PkgDistFetcher;
+  private _depResolver?: PkgDepResolver;
+  private _optResolver?: PkgOptResolver;
+  private _data?: DepData;
+  private _central?: FynCentral | false;
+  private _npmLockData?: NpmLockData | null;
+  private _yarnLock?: YarnLockData;
+  private _runNpm?: string[];
+  private _resolutions?: Record<string, string>;
+  private _resolutionsMatchers?: ResolutionMatcher[];
+  private _overrides?: Record<string, string | Record<string, string>>;
+  private _overridesMatchers?: OverrideMatcher[];
+  private _changeProdMode?: string;
+  private _layout?: string;
+  private _localPkgInstall?: Record<string, LocalPkgInstallResult>;
+  private _localPkgBuilder?: LocalPkgBuilder;
+  private _npmConfigEnv?: Record<string, string>;
+
+  /** Local packages with nested dependencies */
+  localPkgWithNestedDep: LocalDepInfo[];
+
+  constructor({ opts = {}, _cliSource = {}, _fynpo = true }: FynConstructorOptions) {
     this._cliSource = { ..._cliSource };
     // Track shown "not found" messages to avoid duplicates
     this._shownMissingFiles = new Set();
-    const options = (this._options = fynConfig(opts));
+    const options = (this._options = fynConfig(opts) as FynOptions);
 
     this._cwd = options.cwd || process.cwd();
     // initCwd is where fyn was originally invoked from (used for INIT_CWD in lifecycle scripts)
@@ -61,7 +294,7 @@ class Fyn {
     }
   }
 
-  checkLayoutOption() {
+  checkLayoutOption(): void {
     const { _options, _cliSource } = this;
 
     if (_options.flattenTop === false && _cliSource.flattenTop !== "default") {
@@ -82,12 +315,12 @@ class Fyn {
     }
   }
 
-  checkFynLockExist() {
+  checkFynLockExist(): boolean {
     const fname = Path.join(this._cwd, FYN_LOCK_FILE);
     return Fs.existsSync(fname);
   }
 
-  updateConfigInLockfile(name, newValue) {
+  updateConfigInLockfile(name: string, newValue: unknown): void {
     const valueInLock = this._depLocker.getConfig(name);
     if (valueInLock !== undefined && valueInLock !== newValue) {
       if (this._cliSource[name] === "cli") {
@@ -95,7 +328,7 @@ class Fyn {
         this._depLocker.setConfig(name, newValue);
       } else {
         logger.info(`Setting ${name} to ${valueInLock} from your lockfile`);
-        this._options[name] = valueInLock;
+        (this._options as Record<string, unknown>)[name] = valueInLock;
         this._cliSource[name] = "lock";
       }
     } else {
@@ -103,7 +336,7 @@ class Fyn {
     }
   }
 
-  async readLockFiles() {
+  async readLockFiles(): Promise<boolean | null> {
     if (this._depLocker) {
       return null;
     }
@@ -126,7 +359,7 @@ class Fyn {
     // https://docs.npmjs.com/files/shrinkwrap.json.html
     for (const npmLockFile of ["npm-shrinkwrap.json", "package-lock.json"]) {
       this._npmLockData = await Fs.readFile(Path.join(this._cwd, npmLockFile))
-        .then(JSON.parse)
+        .then((data: Buffer | string) => JSON.parse(data.toString()) as NpmLockData)
         .catch(() => null);
       if (this._npmLockData) {
         logger.info(`using lock data from ${npmLockFile}.`);
@@ -139,26 +372,26 @@ class Fyn {
     if (Fs.existsSync(yarnLockName)) {
       logger.info("Reading yarn.lock");
       const yarnLockData = await Fs.readFile(yarnLockName, "utf-8");
-      this._yarnLock = parseYarnLock(yarnLockData);
+      this._yarnLock = parseYarnLock(yarnLockData) as YarnLockData;
     }
 
     return false;
   }
 
-  get isFynpo() {
+  get isFynpo(): boolean {
     return Boolean(this._fynpo && this._fynpo.config);
   }
 
-  get isNormalLayout() {
+  get isNormalLayout(): boolean {
     return this._options.layout === "normal";
   }
 
-  async _initCentralStore() {
+  async _initCentralStore(): Promise<FynCentral | false> {
     const options = this._options;
-    let centralDir;
+    let centralDir: string | undefined;
 
     if (this._installConfig.centralDir) {
-      centralDir = this._installConfig.centralDir;
+      centralDir = this._installConfig.centralDir as string;
       logger.debug(`Enabling central store using dir from install config ${centralDir}`);
     } else if ((centralDir = process.env.FYN_CENTRAL_DIR)) {
       // env wins
@@ -173,12 +406,12 @@ class Fyn {
     } else if (options.centralStore) {
       centralDir = Path.join(this.fynDir, "_central-storage");
       logger.debug(`Enabling central store by CLI flag using dir ${centralDir}`);
-    } else if (!this._fynpo.config) {
+    } else if (!this._fynpo?.config) {
       return (this._central = false);
     } else {
       centralDir = this._fynpo.config.centralDir;
       if (!centralDir) {
-        centralDir = Path.join(this._fynpo.dir, ".fynpo", "_store");
+        centralDir = Path.join(this._fynpo.dir!, ".fynpo", "_store");
       }
       logger.info(`Enabling central store by fynpo monorepo using dir ${centralDir}`);
     }
@@ -186,7 +419,7 @@ class Fyn {
     return (this._central = new FynCentral({ centralDir }));
   }
 
-  async _initialize({ noLock = false } = {}) {
+  async _initialize({ noLock = false }: { noLock?: boolean } = {}): Promise<void> {
     await this._initializePkg();
     if (!noLock) {
       await this.readLockFiles();
@@ -199,7 +432,7 @@ class Fyn {
    * @remarks - this._installConfig must've been initialized
    * @returns nothing
    */
-  checkProductionMode() {
+  checkProductionMode(): void {
     if (this._installConfig.production) {
       if (this.production) {
         // user still want production mode, do nothing
@@ -222,26 +455,26 @@ class Fyn {
     }
   }
 
-  checkNoFynLocal(name) {
+  checkNoFynLocal(name: string): boolean {
     const noFynLocal = ["dependencies", "devDependencies", "optionalDependencies"].find(sec => {
-      const semv = _.get(this._pkg, ["fyn", sec, name]);
-      return semv === false || (semv && semv.includes("no-fyn-local"));
+      const semv = _.get(this._pkg, ["fyn", sec, name]) as string | boolean | undefined;
+      return semv === false || (typeof semv === "string" && semv.includes("no-fyn-local"));
     });
 
     return Boolean(noFynLocal);
   }
 
   // are we installing modules for the top level fynpo dir
-  isTopLevelFynpoInstall() {
-    if (this._fynpo.config) {
+  isTopLevelFynpoInstall(): boolean {
+    if (this._fynpo?.config) {
       return this._fynpo.dir === this._cwd;
     }
     return false;
   }
 
-  async _initializePkg() {
+  async _initializePkg(): Promise<void> {
     if (!this._fynpo) {
-      this._fynpo = await fynTil.loadFynpo(this._cwd);
+      this._fynpo = (await fynTil.loadFynpo(this._cwd)) as FynpoData;
       // TODO: options from CLI should not be override by fynpo config options
       // Preserve cwd from CLI/config, don't let fynpo config override it
       const savedCwd = this._options.cwd;
@@ -266,7 +499,7 @@ class Fyn {
       // to get the central store config used.
       const filename = this.getInstallConfigFile();
       try {
-        const fynInstallConfig = JSON.parse(await Fs.readFile(filename));
+        const fynInstallConfig = JSON.parse(await Fs.readFile(filename)) as InstallConfig;
         logger.debug("loaded fynInstallConfig", fynInstallConfig);
         const { layout } = fynInstallConfig;
         if (layout && layout !== this._layout) {
@@ -288,16 +521,20 @@ class Fyn {
 
       this.checkProductionMode();
 
-      let fynpoNpmRun;
+      let fynpoNpmRun: string | string[] | (string | string[])[] | false | undefined;
 
-      if (this._fynpo.config) {
-        if (this._fynpo.graph.getPackageAtDir(this._cwd)) {
+      if (this._fynpo?.config) {
+        if (this._fynpo.graph?.getPackageAtDir(this._cwd)) {
           // the command.bootstrap.npmRunScripts can be
           // - a string
           // - an array of strings
           // - an array of strings and/or array of strings - each sub array indicates a list of
           //   script names and fyn will run only the first one that exist
-          fynpoNpmRun = _.get(this, "_fynpo.config.command.bootstrap.npmRunScripts", undefined);
+          fynpoNpmRun = _.get(this, "_fynpo.config.command.bootstrap.npmRunScripts", undefined) as
+            | string
+            | string[]
+            | (string | string[])[]
+            | undefined;
           if (_.isArray(fynpoNpmRun) && !_.isEmpty(fynpoNpmRun)) {
             logger.verbose("fynpo monorepo: npm run scripts", fynpoNpmRun);
           } else if (fynpoNpmRun !== false) {
@@ -314,11 +551,13 @@ class Fyn {
         }
       }
 
-      this._runNpm = _.uniq([].concat(this._options.runNpm, fynpoNpmRun).filter(x => x));
+      this._runNpm = _.uniq(
+        ([] as unknown[]).concat(this._options.runNpm, fynpoNpmRun).filter(x => x) as string[]
+      );
 
-      const resData = {
+      const resData: Record<string, string> = {
         ...this._pkg.resolutions,
-        ..._.get(this._fynpo, ["config", "resolutions"])
+        ...(_.get(this._fynpo, ["config", "resolutions"]) as Record<string, string> | undefined)
       };
 
       if (!_.isEmpty(resData)) {
@@ -337,9 +576,11 @@ class Fyn {
       }
 
       // Process npm-style overrides
-      const overridesData = {
+      const overridesData: Record<string, string | Record<string, string>> = {
         ...this._pkg.overrides,
-        ..._.get(this._fynpo, ["config", "overrides"])
+        ...(_.get(this._fynpo, ["config", "overrides"]) as
+          | Record<string, string | Record<string, string>>
+          | undefined)
       };
 
       if (!_.isEmpty(overridesData)) {
@@ -358,19 +599,22 @@ class Fyn {
    * 3. Version-conditional: "package@^1.0.0": "1.0.5"
    * 4. Reference: "$package-name" to reference a direct dependency version
    *
-   * @param {object} overrides - The overrides object from package.json
-   * @param {string} parentPath - The parent path for nested overrides
-   * @returns {Array} Array of override matcher objects
+   * @param overrides - The overrides object from package.json
+   * @param parentPath - The parent path for nested overrides
+   * @returns Array of override matcher objects
    */
-  _processOverrides(overrides, parentPath = "") {
-    const matchers = [];
+  _processOverrides(
+    overrides: Record<string, string | Record<string, string>>,
+    parentPath = ""
+  ): OverrideMatcher[] {
+    const matchers: OverrideMatcher[] = [];
 
     for (const key of Object.keys(overrides)) {
       const value = overrides[key];
 
       // Parse the key which may be "package" or "package@version"
       let pkgName = key;
-      let versionConstraint = null;
+      let versionConstraint: string | null = null;
 
       const atIdx = key.lastIndexOf("@");
       // Handle scoped packages (@scope/pkg) - @ at position 0 is scope, not version
@@ -406,7 +650,7 @@ class Fyn {
       } else if (typeof value === "object" && value !== null) {
         // Nested override - the key is the parent package
         const newParentPath = parentPath ? `${parentPath}/${pkgName}` : pkgName;
-        const nestedMatchers = this._processOverrides(value, newParentPath);
+        const nestedMatchers = this._processOverrides(value as Record<string, string>, newParentPath);
         matchers.push(...nestedMatchers);
       }
     }
@@ -416,13 +660,13 @@ class Fyn {
 
   /**
    * Get the version of a direct dependency from package.json
-   * @param {string} pkgName - Package name to look up
-   * @returns {string|null} The version or null if not found
+   * @param pkgName - Package name to look up
+   * @returns The version or null if not found
    */
-  _getDirectDependencyVersion(pkgName) {
-    const sections = ["dependencies", "devDependencies", "optionalDependencies"];
+  _getDirectDependencyVersion(pkgName: string): string | null {
+    const sections = ["dependencies", "devDependencies", "optionalDependencies"] as const;
     for (const section of sections) {
-      const version = _.get(this._pkg, [section, pkgName]);
+      const version = _.get(this._pkg, [section, pkgName]) as string | undefined;
       if (version) {
         return version;
       }
@@ -430,7 +674,7 @@ class Fyn {
     return null;
   }
 
-  async _startInstall() {
+  async _startInstall(): Promise<void> {
     if (!this._distFetcher) {
       await this._initCentralStore();
       this._distFetcher = new PkgDistFetcher({
@@ -440,17 +684,17 @@ class Fyn {
     }
   }
 
-  async saveFynpoIndirects() {
-    if (!this.isFynpo || this._fynpo.dir === this.cwd || _.isEmpty(this._fynpo.indirects)) {
+  async saveFynpoIndirects(): Promise<void> {
+    if (!this.isFynpo || this._fynpo?.dir === this.cwd || _.isEmpty(this._fynpo?.indirects)) {
       return;
     }
 
-    const lockFile = Path.join(this._fynpo.dir, ".fynpo/fynpo-data.lock");
-    const { indirects } = this._fynpo;
+    const lockFile = Path.join(this._fynpo!.dir!, ".fynpo/fynpo-data.lock");
+    const { indirects } = this._fynpo!;
 
     try {
-      const dataFile = Path.join(this._fynpo.dir, ".fynpo-data.json");
-      await Fs.$.mkdirp(Path.join(this._fynpo.dir, ".fynpo"));
+      const dataFile = Path.join(this._fynpo!.dir!, ".fynpo-data.json");
+      await Fs.$.mkdirp(Path.join(this._fynpo!.dir!, ".fynpo"));
       await Fs.$.acquireLock(lockFile, {
         wait: 5000,
         pollPeriod: 100,
@@ -458,13 +702,16 @@ class Fyn {
         retries: 10,
         retryWait: 500
       });
-      const path = posixify(Path.relative(this._fynpo.dir, this.cwd));
-      const fynpoData = await fynTil.readJson(dataFile, { indirects: { [path]: [] } });
+      const path = posixify(Path.relative(this._fynpo!.dir!, this.cwd));
+      const fynpoData = (await fynTil.readJson(dataFile, { indirects: { [path]: [] } })) as {
+        indirects: Record<string, unknown[]>;
+        __timestamp?: number;
+      };
       if (JSON.stringify(indirects) !== JSON.stringify(fynpoData.indirects[path])) {
         logger.info(
           `saving indirect dep to .fynpo-data.json. fyn recommends that you commit the file.`
         );
-        fynpoData.indirects[path] = indirects;
+        fynpoData.indirects[path] = indirects!;
         fynpoData.__timestamp = Date.now();
         await Fs.writeFile(dataFile, `${JSON.stringify(fynpoData, null, 2)}\n`);
       }
@@ -473,7 +720,7 @@ class Fyn {
     }
   }
 
-  async getLocalPkgInstall(localFullPath) {
+  async getLocalPkgInstall(localFullPath: string): Promise<LocalPkgInstallResult> {
     if (!this._localPkgInstall) {
       this._localPkgInstall = {};
     }
@@ -488,8 +735,11 @@ class Fyn {
     return this._localPkgInstall[localFullPath];
   }
 
-  async checkLocalPkgFromInstallConfigNeedInstall() {
-    const localPkgs = _.get(this._installConfig, "localPkgLinks", {});
+  async checkLocalPkgFromInstallConfigNeedInstall(): Promise<boolean> {
+    const localPkgs = _.get(this._installConfig, "localPkgLinks", {}) as Record<
+      string,
+      LocalPkgLink
+    >;
     for (const nmDir in localPkgs) {
       const localPkg = localPkgs[nmDir];
       const fullPath = Path.join(this._cwd, localPkg.srcDir);
@@ -501,25 +751,25 @@ class Fyn {
     return false;
   }
 
-  setLocalDeps(localsByDepth) {
+  setLocalDeps(localsByDepth: LocalDepInfo[][]): void {
     const pathsOnly = localsByDepth.map(locals => {
       return locals.map(x => Path.relative(this._cwd, x.fullPath));
     });
     this._installConfig.localsByDepth = pathsOnly;
   }
 
-  getInstallConfigFile() {
+  getInstallConfigFile(): string {
     return Path.join(this.getFvDir(FYN_INSTALL_CONFIG_FILE));
   }
 
-  setLocalPkgLinks(localLinks) {
+  setLocalPkgLinks(localLinks: Record<string, LocalPkgLink>): void {
     this._installConfig.localPkgLinks = localLinks;
   }
 
   // save the config to outputDir
-  async saveInstallConfig() {
+  async saveInstallConfig(): Promise<void> {
     const outputDir = this.getOutputDir();
-    const centralDir = _.get(this, "_central._centralDir", false);
+    const centralDir = _.get(this, "_central._centralDir", false) as string | false;
     const filename = this.getInstallConfigFile();
 
     if (!(await Fs.exists(outputDir))) {
@@ -527,7 +777,7 @@ class Fyn {
     }
 
     try {
-      const outputConfig = {
+      const outputConfig: InstallConfig = {
         ...this._installConfig,
         // add 5ms to ensure it's newer than fyn-lock.yaml, which was just saved
         // immediately before this
@@ -547,12 +797,14 @@ class Fyn {
     }
   }
 
-  async loadPkgFyn() {
-    this._pkgFyn = await xaa.try(() => fynTil.readJson(Path.resolve(this._cwd, PACKAGE_FYN_JSON)));
+  async loadPkgFyn(): Promise<Record<string, unknown> | undefined> {
+    this._pkgFyn = await xaa.try(() =>
+      fynTil.readJson(Path.resolve(this._cwd, PACKAGE_FYN_JSON))
+    );
     return this._pkgFyn;
   }
 
-  async savePkgFyn(pkg) {
+  async savePkgFyn(pkg?: Record<string, unknown>): Promise<void> {
     pkg = !_.isEmpty(pkg) ? pkg : this._pkgFyn;
     if (!_.isEmpty(pkg)) {
       await xaa.try(() =>
@@ -564,19 +816,19 @@ class Fyn {
     }
   }
 
-  async loadPkg(_options) {
+  async loadPkg(_options?: FynOptions): Promise<void> {
     const options = _options || this._options;
 
     if (options.pkgFile) {
-      let pkgFile;
+      let pkgFile: string;
 
       // Search upward for package.json
       if (options.pkgFile === "package.json") {
-        let foundDir = null;
+        let foundDir: string | null = null;
 
         // pathUpEach stops when callback returns true, but doesn't include that path
         // So we need to check and capture the directory ourselves
-        const paths = pathUpEach(this._cwd, path => {
+        pathUpEach(this._cwd, (path: string) => {
           const testPath = Path.join(path, "package.json");
           if (Fs.existsSync(testPath)) {
             foundDir = path;
@@ -605,24 +857,24 @@ class Fyn {
         this._pkg = await fynTil.readPkgJson(pkgFile, true);
       } catch (err) {
         logger.error("failed to read package.json file", pkgFile);
-        logger.error(err.message);
+        logger.error((err as Error).message);
         fynTil.exit(err);
       }
-      const pkgFyn = await this.loadPkgFyn(options);
+      const pkgFyn = await this.loadPkgFyn();
       if (pkgFyn) {
         logger.debug(`found ${PACKAGE_FYN_JSON}`, pkgFyn);
         _.merge(this._pkg, pkgFyn);
       }
     } else {
-      this._pkg = options.pkgData;
+      this._pkg = options.pkgData!;
     }
   }
 
-  savePkg() {
+  savePkg(): void {
     Fs.writeFileSync(this._pkgFile, `${JSON.stringify(this._pkg, null, 2)}\n`);
   }
 
-  get npmConfigEnv() {
+  get npmConfigEnv(): Record<string, string> {
     if (!this._npmConfigEnv) {
       const options = { ...this._options, cache: this._options.fynDir };
       this._npmConfigEnv = npmConfigEnv(this._pkg, options);
@@ -631,124 +883,124 @@ class Fyn {
     return this._npmConfigEnv;
   }
 
-  get allrc() {
+  get allrc(): FynOptions {
     return this._options;
   }
 
-  get copy() {
+  get copy(): string[] {
     return this._options.copy || [];
   }
 
-  get central() {
+  get central(): FynCentral | false | undefined {
     return this._central;
   }
 
-  get depLocker() {
+  get depLocker(): PkgDepLocker {
     return this._depLocker;
   }
 
-  get cwd() {
+  get cwd(): string {
     return this._cwd;
   }
 
-  get initCwd() {
+  get initCwd(): string {
     return this._initCwd;
   }
 
-  get forceCache() {
+  get forceCache(): string | false {
     return this._options.forceCache && "force-cache";
   }
 
-  get registry() {
+  get registry(): string | undefined {
     return this._options.registry;
   }
 
   // offline will disable all remote retrieving
-  get offline() {
+  get offline(): string | false {
     return this._options.offline && "offline";
   }
 
-  get fynlocal() {
+  get fynlocal(): boolean | undefined {
     return this._options.fynlocal;
   }
 
   // lock-only allows skip meta retrieval but still retrieve tgz
-  get lockOnly() {
+  get lockOnly(): string | false {
     return this._options.lockOnly && "lock-only";
   }
 
-  get lockTime() {
+  get lockTime(): Date | undefined {
     return this._lockTime;
   }
 
-  get showDeprecated() {
+  get showDeprecated(): string | false {
     return this._options.showDeprecated && "show-deprecated";
   }
 
-  get refreshOptionals() {
+  get refreshOptionals(): boolean | undefined {
     return this._options.refreshOptionals;
   }
 
-  get ignoreDist() {
+  get ignoreDist(): boolean | undefined {
     return this._options.ignoreDist;
   }
 
-  get production() {
+  get production(): boolean | undefined {
     return this._options.production;
   }
 
-  get concurrency() {
+  get concurrency(): number | undefined {
     return this._options.concurrency;
   }
 
-  get deepResolve() {
+  get deepResolve(): boolean | undefined {
     return this._options.deepResolve;
   }
 
-  get preferLock() {
+  get preferLock(): boolean | undefined {
     return this._options.preferLock;
   }
 
-  get remoteMetaDisabled() {
+  get remoteMetaDisabled(): string | false {
     // force-cache only force use cache when it exists but if it's
     // cache miss then we should retrieve from remote
     return this.lockOnly || this.offline || false;
   }
 
-  get remoteTgzDisabled() {
+  get remoteTgzDisabled(): string | false {
     // force-cache only force use cache when it exists but if it's
     // cache miss then we should retrieve from remote
     return this.offline || false;
   }
 
-  get pkgSrcMgr() {
+  get pkgSrcMgr(): PkgSrcManager {
     return this._pkgSrcMgr;
   }
 
-  get fynDir() {
+  get fynDir(): string {
     return this._options.fynDir;
   }
 
-  get targetDir() {
+  get targetDir(): string {
     return this._options.targetDir;
   }
 
-  get alwaysFetchDist() {
+  get alwaysFetchDist(): boolean | undefined {
     return this._options.alwaysFetchDist;
   }
 
-  get fynTmp() {
+  get fynTmp(): string {
     return Path.join(this.fynDir, "tmp");
   }
 
-  addLocalPkgWithNestedDep(depInfo) {
+  addLocalPkgWithNestedDep(depInfo: LocalDepInfo): void {
     this.localPkgWithNestedDep.push(depInfo);
   }
 
-  deDupeLocks() {
+  deDupeLocks(): boolean {
     let deDupe = false;
 
-    _.each(this._data.pkgs, (pkg, pkgName) => {
+    _.each(this._data!.pkgs, (pkg, pkgName) => {
       const versions = Object.keys(pkg);
       const byMaj = _.groupBy(versions, x => {
         const pts = x.split(".");
@@ -772,10 +1024,10 @@ class Fyn {
       majVersions.forEach(maj => {
         if (byMaj[maj].length > 1) {
           const removed = byMaj[maj].filter(ver => {
-            const item = pkg[ver][DEP_ITEM];
-            if (item._resolveByLock || this._npmLockData) {
+            const item = (pkg[ver] as PkgVersion)[DEP_ITEM] as DepItemRef | undefined;
+            if (item?._resolveByLock || this._npmLockData) {
               deDupe = true;
-              this._depLocker.remove(item, true);
+              this._depLocker.remove(item!, true);
               return true;
             }
             return false;
@@ -793,7 +1045,7 @@ class Fyn {
     return deDupe;
   }
 
-  createLocalPkgBuilder(localsByDepth) {
+  createLocalPkgBuilder(localsByDepth: LocalDepInfo[][]): LocalPkgBuilder {
     if (!this._localPkgBuilder) {
       this._localPkgBuilder = new LocalPkgBuilder({
         fyn: this,
@@ -805,12 +1057,22 @@ class Fyn {
     return this._localPkgBuilder;
   }
 
-  async resolveDependencies() {
+  async resolveDependencies(): Promise<void> {
     await this._initialize();
 
     this._optResolver = new PkgOptResolver({ fyn: this });
 
-    const doResolve = async ({ shrinkwrap, yarnLock, buildLocal = true, deDuping = false }) => {
+    const doResolve = async ({
+      shrinkwrap,
+      yarnLock,
+      buildLocal = true,
+      deDuping = false
+    }: {
+      shrinkwrap?: NpmLockData | null;
+      yarnLock?: YarnLockData;
+      buildLocal?: boolean;
+      deDuping?: boolean;
+    }): Promise<void> => {
       this._data = this._options.data || new DepData();
       this._depResolver = new PkgDepResolver(this._pkg, {
         fyn: this,
@@ -832,7 +1094,7 @@ class Fyn {
     });
 
     if (this._npmLockData) {
-      this.depLocker.generate(this._data);
+      this.depLocker.generate(this._data!);
     }
 
     if (
@@ -844,10 +1106,10 @@ class Fyn {
     }
   }
 
-  async fetchPackages(data) {
+  async fetchPackages(data?: DepData): Promise<unknown> {
     await this._initialize();
-    this._distFetcher.start(data || this._data || this._depResolver._data);
-    return await this._distFetcher.wait();
+    this._distFetcher!.start(data || this._data || this._depResolver!._data);
+    return await this._distFetcher!.wait();
   }
 
   /**
@@ -860,9 +1122,9 @@ class Fyn {
    * - Rare but could occur if fyn is used for monorepo and user has script
    *   that run concurrent installs
    *
-   * @returns {Promise<boolean>} if lock was acquired
+   * @returns if lock was acquired
    */
-  async createInstallLock() {
+  async createInstallLock(): Promise<boolean> {
     await this.createDir(this.getFvDir());
     const fname = this.getFvDir(".installing.lock");
     await createLock(fname, {
@@ -876,9 +1138,9 @@ class Fyn {
   /**
    * Remove lock during install
    *
-   * @returns {*} none
+   * @returns none
    */
-  async removeInstallLock() {
+  async removeInstallLock(): Promise<void> {
     const fname = this.getFvDir(".installing.lock");
     return await unlock(fname);
   }
@@ -886,13 +1148,13 @@ class Fyn {
   /**
    * Get the directory where a package should be installed/extracted into
    *
-   * @param {*} name - name of the package
-   * @param {*} version - version of the package
-   * @param {*} pkg - pkg data
+   * @param name - name of the package
+   * @param version - version of the package
+   * @param pkg - pkg data
    *
-   * @returns {string} dir for package
+   * @returns dir for package
    */
-  getInstalledPkgDir(name = "", version = "", pkg) {
+  getInstalledPkgDir(name = "", version = "", pkg?: PkgInfo): string {
     // in normal layout, promoted package should go to top node_modules dir directly
     if (this.isNormalLayout && pkg && pkg.promoted) {
       return Path.join(this.getOutputDir(), name);
@@ -914,28 +1176,28 @@ class Fyn {
     return Path.join(this.getOutputDir(), FV_DIR, "_", name);
   }
 
-  getFvDir(x) {
+  getFvDir(x?: string): string {
     return Path.join(this._cwd, this._options.targetDir, FV_DIR, x || "");
   }
 
-  getOutputDir(x) {
+  getOutputDir(x?: string): string {
     return Path.join(this._cwd, this._options.targetDir, x || "");
   }
 
-  getExtraDir(x) {
+  getExtraDir(x?: string): string {
     return Path.join(this._cwd, this._options.targetDir, ".extra", x || "");
   }
 
-  clearPkgOutDir(dir) {
-    return Fs.readdir(dir).each(f => Fs.$.rimraf(Path.join(dir, f)));
+  clearPkgOutDir(dir: string): Promise<void> {
+    return Fs.readdir(dir).each((f: string) => Fs.$.rimraf(Path.join(dir, f)));
   }
 
   /**
    * Scan FV_DIR for modules saved in the ${name}/${version} format
-   * @returns {*} pkgs under fv dir with their versions
+   * @returns pkgs under fv dir with their versions
    */
-  async loadFvVersions() {
-    const fvVersions = {};
+  async loadFvVersions(): Promise<Record<string, string[]>> {
+    const fvVersions: Record<string, string[]> = {};
     // get dir where all packages are extracted to
     const pkgStoreDir = this.getFvDir("_");
     try {
@@ -944,7 +1206,7 @@ class Fyn {
           continue; //
         }
 
-        const readVersionsOfPkg = async name => {
+        const readVersionsOfPkg = async (name: string): Promise<void> => {
           if (!fvVersions[name]) {
             fvVersions[name] = [];
           }
@@ -965,7 +1227,7 @@ class Fyn {
         }
       }
     } catch (err) {
-      if (err.code !== "ENOENT") {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
         logger.error("loadFvVersions failed", err);
       }
     }
@@ -973,7 +1235,7 @@ class Fyn {
     return fvVersions;
   }
 
-  async createPkgOutDir(dir, keep) {
+  async createPkgOutDir(dir: string, keep?: boolean): Promise<void> {
     try {
       const r = await Fs.$.mkdirp(dir);
       // mkdirp returns null if directory already exist
@@ -983,7 +1245,7 @@ class Fyn {
       }
     } catch (err) {
       // mkdirp fails with EEXIST if file exist and is not a directory
-      if (err.code === "EEXIST") {
+      if ((err as NodeJS.ErrnoException).code === "EEXIST") {
         // remove it and create as a directory
         await Fs.$.rimraf(dir);
         await Fs.$.mkdirp(dir);
@@ -993,12 +1255,12 @@ class Fyn {
     }
   }
 
-  async createDir(dir) {
+  async createDir(dir: string): Promise<void> {
     try {
       await Fs.$.mkdirp(dir);
     } catch (err) {
       // mkdirp fails with EEXIST if file exist and is not a directory
-      if (err.code === "EEXIST") {
+      if ((err as NodeJS.ErrnoException).code === "EEXIST") {
         // remove it and create as a directory
         await Fs.$.rimraf(dir);
         await Fs.$.mkdirp(dir);
@@ -1009,19 +1271,19 @@ class Fyn {
   }
 
   // fyn's directory to store all local package linking file
-  get linkDir() {
+  get linkDir(): string {
     return Path.join(this._options.fynDir, "links");
   }
 
-  async readJson(file, fallback) {
+  async readJson<T = Record<string, unknown>>(file: string, fallback?: T): Promise<T> {
     try {
-      return JSON.parse(await Fs.readFile(file));
+      return JSON.parse(await Fs.readFile(file)) as T;
     } catch (e) {
-      return fallback !== undefined ? fallback : {};
+      return (fallback !== undefined ? fallback : {}) as T;
     }
   }
 
-  async moveToFv(dir, pkg, pkgJson) {
+  async moveToFv(dir: string, pkg: PkgInfo, pkgJson: PackageJson): Promise<void> {
     const toDir = this.getInstalledPkgDir(pkgJson.name, pkgJson.version, {});
 
     try {
@@ -1038,7 +1300,7 @@ class Fyn {
     }
   }
 
-  async unlinkLocalPackage(dir, reason) {
+  async unlinkLocalPackage(dir: string, reason: string): Promise<void> {
     logger.warn(`Removing ${dir} because it's ${reason}`);
     return await Fs.$.rimraf(dir);
   }
@@ -1053,15 +1315,15 @@ class Fyn {
   // If dir exist with proper package.json, then returns it,
   // else returns undefined.
   //
-  async ensureProperPkgDir(pkg, dir) {
+  async ensureProperPkgDir(pkg: PkgInfo, dir?: string): Promise<PkgInfo | null> {
     const fullOutDir = dir || this.getInstalledPkgDir(pkg.name, pkg.version, pkg);
 
-    let ostat;
+    let ostat: Awaited<ReturnType<typeof Fs.lstat>>;
 
     try {
       ostat = await Fs.lstat(fullOutDir);
     } catch (err) {
-      if (err.code !== "ENOENT") throw err;
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
       return null;
     }
 
@@ -1084,9 +1346,9 @@ class Fyn {
     return null;
   }
 
-  async loadJsonForPkg(pkg, dir) {
+  async loadJsonForPkg(pkg: PkgInfo, dir?: string): Promise<PkgInfo> {
     const fullOutDir = dir || this.getInstalledPkgDir(pkg.name, pkg.version, pkg);
-    const json = await fynTil.readPkgJson(fullOutDir, true);
+    const json = (await fynTil.readPkgJson(fullOutDir, true)) as PkgInfo;
 
     const pkgId = `${pkg.name}@${pkg.version}`;
     const id = `${json.name}@${json.version}`;
@@ -1099,7 +1361,7 @@ class Fyn {
           `Pkg ${id} version is not valid semver and fyn was unable to fix it.`
         );
         json._origVersion = json.version;
-        json.version = cleanVersion;
+        json.version = cleanVersion!;
       }
     }
 
@@ -1118,8 +1380,8 @@ class Fyn {
     //   `Pkg in ${fullOutDir} ${id} doesn't match ${pkg.name}@${pkg.version}`
     // );
 
-    pkg.dir = json[PACKAGE_RAW_INFO].dir;
-    pkg.str = json[PACKAGE_RAW_INFO].str;
+    pkg.dir = json[PACKAGE_RAW_INFO]!.dir;
+    pkg.str = json[PACKAGE_RAW_INFO]!.str;
 
     try {
       const gypFile = Path.join(fullOutDir, "binding.gyp");
@@ -1127,7 +1389,7 @@ class Fyn {
 
       json.gypfile = true;
       const scr = json.scripts;
-      if (_.isEmpty(scr) || (!scr.install && !scr.postinstall && !scr.postInstall)) {
+      if (_.isEmpty(scr) || (!scr!.install && !scr!.postinstall && !(scr as Record<string, string>).postInstall)) {
         _.set(json, "scripts.install", "node-gyp rebuild");
       }
     } catch (err) {}
@@ -1137,7 +1399,7 @@ class Fyn {
     return json;
   }
 
-  async createSubNodeModulesDir(dir) {
+  async createSubNodeModulesDir(dir: string): Promise<string> {
     const nmDir = Path.join(dir, "node_modules");
     // const fynIgnoreFile = Path.join(nmDir, FYN_IGNORE_FILE);
 
@@ -1160,3 +1422,16 @@ class Fyn {
 }
 
 export default Fyn;
+export type {
+  FynOptions,
+  FynConstructorOptions,
+  PackageJson,
+  PkgInfo,
+  InstallConfig,
+  LocalPkgLink,
+  FynpoData,
+  FynpoConfig,
+  CliSource,
+  LocalDepInfo,
+  LocalPkgInstallResult
+};
