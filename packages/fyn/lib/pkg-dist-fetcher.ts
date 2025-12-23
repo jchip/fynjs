@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable no-magic-numbers */
 
 import _ from "lodash";
@@ -15,11 +13,81 @@ import * as hardLinkDir from "./util/hard-link-dir";
 import DepItem from "./dep-item";
 import { MARK_URL_SPEC } from "./constants";
 import EventEmitter from "events";
+import type { Readable } from "stream";
 
 const WATCH_TIME = 2000;
 
+/** Package info for fetching */
+interface FetchPkg {
+  name: string;
+  version: string;
+  local?: string;
+  promoted?: boolean;
+  extracted?: string;
+  dsrc?: string;
+  src?: string;
+  requests?: string[][];
+  dist?: {
+    tarball?: string;
+    integrity?: string;
+    fullPath?: string;
+  };
+}
+
+/** Package data structure */
+interface PackageData {
+  pkg: FetchPkg;
+  listener?: EventEmitter;
+  optional?: boolean;
+  foundAtTop?: boolean;
+}
+
+/** Find result */
+interface FindResult {
+  foundAtTop: boolean;
+  search: Array<{ dir: string; pkgJson?: Record<string, unknown> }>;
+  existDir?: string;
+  pkgJson?: Record<string, unknown> & { _invalid?: boolean; name?: string };
+}
+
+/** Fyn instance interface for dist fetcher */
+interface FynForDistFetcher {
+  concurrency: number;
+  _options: { sourceMaps?: boolean };
+  getInstalledPkgDir(name: string, version: string, opts?: { promoted?: boolean }): string;
+  ensureProperPkgDir(pkg: FetchPkg): Promise<unknown>;
+  loadJsonForPkg(
+    pkg: FetchPkg,
+    dir: string,
+    validate?: boolean
+  ): Promise<Record<string, unknown> & { _invalid?: boolean; name?: string }>;
+  isNormalLayout: boolean;
+}
+
+/** Package source manager interface */
+interface PkgSrcManager {
+  fetchTarball(pkg: FetchPkg): Promise<Readable>;
+  fetchUrlSemverMeta(depItem: DepItem): Promise<{
+    urlVersions: Record<string, { dist: { fullPath: string } }>;
+  }>;
+}
+
+/** Options for PkgDistFetcher constructor */
+interface PkgDistFetcherOptions {
+  fyn: FynForDistFetcher;
+  pkgSrcMgr: PkgSrcManager;
+}
+
 class PkgDistFetcher {
-  constructor(options) {
+  private _packages: Record<string, PackageData>;
+  private _pkgSrcMgr: PkgSrcManager;
+  private _grouping: { need: string[]; optional: string[]; byOptionalParent: string[] };
+  private _startTime: number | null;
+  private _fyn: FynForDistFetcher;
+  private _promiseQ: PromiseQueue;
+  private _distExtractor: PkgDistExtractor;
+
+  constructor(options: PkgDistFetcherOptions) {
     this._packages = {};
     this._pkgSrcMgr = options.pkgSrcMgr;
     this._grouping = {
@@ -33,19 +101,19 @@ class PkgDistFetcher {
       concurrency: this._fyn.concurrency,
       stopOnError: true,
       watchTime: WATCH_TIME,
-      processItem: x => this.fetchItem(x)
+      processItem: (x: string) => this.fetchItem(x)
     });
     this._promiseQ.on("watch", items => longPending.onWatch(items));
-    this._promiseQ.on("done", x => this.done(x));
+    this._promiseQ.on("done", () => this.done());
     this._promiseQ.on("doneItem", x => this.handleItemDone(x));
     this._promiseQ.on("failItem", x => this.handleItemFail(x));
     // down stream extractor
-    this._distExtractor = new PkgDistExtractor({ fyn: options.fyn });
+    this._distExtractor = new PkgDistExtractor({ fyn: options.fyn as unknown as Parameters<typeof PkgDistExtractor>[0]["fyn"] });
     // immediately stop if down stream extractor failed
     this._distExtractor.once("fail", () => this._promiseQ.setItemQ([]));
   }
 
-  async wait() {
+  async wait(): Promise<void> {
     try {
       await this._promiseQ.wait();
       await this._distExtractor.wait();
@@ -60,7 +128,7 @@ class PkgDistFetcher {
     }
   }
 
-  addSinglePkg(data) {
+  addSinglePkg(data: PackageData): void {
     this._addLogItem();
     const id = logFormat.pkgId(data.pkg);
     this._packages[id] = data;
@@ -68,11 +136,11 @@ class PkgDistFetcher {
     this._promiseQ.addItem(id, undefined, stopOnError);
   }
 
-  _addLogItem() {
+  _addLogItem(): void {
     logger.addItem({ name: FETCH_PACKAGE, color: "green", spinner });
   }
 
-  start(data) {
+  start(data: { getPkgsData(): Record<string, Record<string, FetchPkg>> }): void {
     this._addLogItem();
     this._startTime = Date.now();
     _.each(data.getPkgsData(), (pkg, name) => {
@@ -100,7 +168,7 @@ class PkgDistFetcher {
     this._promiseQ.addItems(itemQ);
   }
 
-  done() {
+  done(): void {
     logger.removeItem(FETCH_PACKAGE);
     if (this._startTime) {
       const time = logFormat.time(Date.now() - this._startTime);
@@ -108,11 +176,11 @@ class PkgDistFetcher {
     }
   }
 
-  isPending() {
+  isPending(): boolean {
     return this._promiseQ.isPending || this._distExtractor.isPending();
   }
 
-  handleItemDone(data) {
+  handleItemDone(data: { res?: { result?: Readable; pkg?: FetchPkg }; item: string }): void {
     const result = _.get(data, "res.result");
 
     const { item } = data;
@@ -128,7 +196,7 @@ class PkgDistFetcher {
     }
   }
 
-  handleItemFail(data) {
+  handleItemFail(data: { item: string }): void {
     const { item } = data;
     const itemData = this._packages[item];
 
@@ -137,7 +205,7 @@ class PkgDistFetcher {
     }
   }
 
-  async _hardlinkPackage(pkg, dir) {
+  async _hardlinkPackage(pkg: FetchPkg, dir?: string): Promise<boolean> {
     const dist = pkg.dist || {};
     const tarball = dist.tarball || "";
     if (dist.integrity || !tarball.startsWith(MARK_URL_SPEC)) return false;
@@ -164,7 +232,7 @@ class PkgDistFetcher {
     return true;
   }
 
-  async fetchItem(item) {
+  async fetchItem(item: string): Promise<{ result?: Readable; pkg?: FetchPkg } | undefined> {
     const { pkg } = this._packages[item];
 
     if (pkg.local) return undefined;
@@ -192,17 +260,17 @@ class PkgDistFetcher {
 
   /**
    * Check if pkg already has a copy extracted to node_modules
-   * @param {*} pkg - package info
-   * @returns {*} pkg in FV_DIR and its package.json
+   * @param pkg - package info
+   * @returns pkg in FV_DIR and its package.json
    */
-  async findPkgInNodeModules(pkg) {
+  async findPkgInNodeModules(pkg: FetchPkg): Promise<FindResult> {
     const { name, version } = pkg;
-    const result = {
+    const result: FindResult = {
       foundAtTop: false,
       search: []
     };
 
-    const find = async promoted => {
+    const find = async (promoted: boolean): Promise<boolean> => {
       const existDir = this._fyn.getInstalledPkgDir(name, version, { promoted });
       const x = { dir: existDir };
       result.search.push(x);
@@ -242,8 +310,12 @@ class PkgDistFetcher {
   //
   // Handles putting pkg into node_modules/${FV_DIR}/${version}/${pkgName}
   //
-  async putPkgInNodeModules(pkg, check, optional) {
-    const find = check ? await this.findPkgInNodeModules(pkg) : {};
+  async putPkgInNodeModules(
+    pkg: FetchPkg,
+    check?: boolean,
+    optional?: boolean
+  ): Promise<Record<string, unknown> | undefined> {
+    const find: Partial<FindResult> = check ? await this.findPkgInNodeModules(pkg) : {};
     if (find && find.pkgJson) {
       pkg.extracted = find.existDir;
       return find.pkgJson;
@@ -251,8 +323,8 @@ class PkgDistFetcher {
 
     // TODO: check if version is a symlink and create a symlink
     // hardlink to local package
-    if (pkg.local === "hard" && (await this._hardlinkPackage(pkg, find.existDir))) {
-      return find.pkgJson;
+    if (pkg.local === "hard" && (await this._hardlinkPackage(pkg, find?.existDir))) {
+      return find?.pkgJson;
     }
 
     // finally fetch tarball and extract

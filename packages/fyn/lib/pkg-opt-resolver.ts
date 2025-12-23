@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /* eslint-disable max-nested-callbacks, no-param-reassign */
 
 import assert from "assert";
@@ -22,6 +20,68 @@ import { OPTIONAL_RESOLVER } from "./log-items";
 const { readPkgJson } = fyntil;
 xsh.Promise = Promise;
 
+/** Optional dependency item */
+interface OptDepItem {
+  name: string;
+  resolved: string;
+  optChecked?: boolean;
+  optFailed?: number;
+  runningScript?: boolean;
+}
+
+/** Optional dependency data */
+interface OptDepData {
+  item: OptDepItem;
+  meta: {
+    local?: string;
+    versions: Record<
+      string,
+      {
+        local?: string;
+        optFailed?: number;
+        hasPI?: number;
+        fromLocked?: boolean;
+        scripts?: { preinstall?: string };
+        dist?: { fullPath?: string };
+        [key: string]: unknown;
+      }
+    >;
+  };
+  err?: Error;
+}
+
+/** Check result */
+interface CheckResult {
+  passed: boolean;
+  err?: Error;
+}
+
+/** Fyn instance interface for opt resolver */
+interface FynForOptResolver {
+  _options: { sourceMaps?: boolean };
+  refreshOptionals?: boolean;
+  lockOnly?: boolean;
+  cwd: string;
+  getInstalledPkgDir(name: string, version: string): string;
+  _distFetcher: {
+    findPkgInNodeModules(pkg: { name: string; version: string }): Promise<{
+      pkgJson?: Record<string, unknown>;
+      existDir?: string;
+    }>;
+    putPkgInNodeModules(
+      pkg: Record<string, unknown>,
+      check: boolean,
+      optional: boolean
+    ): Promise<unknown>;
+  };
+}
+
+/** Dep resolver interface */
+interface DepResolver {
+  addPackageResolution(item: OptDepItem, meta: OptDepData["meta"], version: string): Promise<void>;
+  start(): void;
+}
+
 //
 // resolve optional dependencies
 //
@@ -38,7 +98,20 @@ xsh.Promise = Promise;
 //
 
 class PkgOptResolver {
-  constructor(options) {
+  private _optPkgCount: number;
+  private _passedPkgs: OptDepData[];
+  private _checkedPkgs: Record<string, CheckResult>;
+  private _resolving: boolean;
+  private _extractedPkgs: Record<string, boolean>;
+  private _failedChecks: Array<{ err?: Error; data: OptDepData }>;
+  private _failedPkgs: OptDepData[];
+  private _depResolver: DepResolver;
+  private _inflights: Inflight;
+  private _fyn: FynForOptResolver;
+  private _depLinker: PkgDepLinker;
+  private _promiseQ!: PromiseQueue;
+
+  constructor(options: { depResolver: DepResolver; fyn: FynForOptResolver }) {
     this._optPkgCount = 0;
     this._passedPkgs = [];
     this._checkedPkgs = {};
@@ -53,25 +126,25 @@ class PkgOptResolver {
     this._depResolver = options.depResolver;
     this._inflights = new Inflight();
     this._fyn = options.fyn;
-    this._depLinker = new PkgDepLinker({ fyn: this._fyn });
+    this._depLinker = new PkgDepLinker({ fyn: this._fyn as unknown as Parameters<typeof PkgDepLinker>[0]["fyn"] });
     this.setupQ();
   }
 
-  setupQ() {
+  setupQ(): void {
     this._promiseQ = new PromiseQueue({
       concurrency: 2,
       stopOnError: false,
       watchTime: 2000,
-      processItem: x => this.optCheck(x)
+      processItem: (x: OptDepData) => this.optCheck(x)
     });
     this._promiseQ.on("watch", items => {
-      items.watched = items.watched.filter(x => !x.item.runningScript);
-      items.still = items.still.filter(x => !x.item.runningScript);
+      items.watched = items.watched.filter((x: { item: OptDepData }) => !x.item.item?.runningScript);
+      items.still = items.still.filter((x: { item: OptDepData }) => !x.item.item?.runningScript);
       items.total = items.watched.length + items.still.length;
       longPending.onWatch(items, {
-        makeId: item => {
-          item = item.item;
-          return chalk.magenta(`${item.name}@${item.resolved}`);
+        makeId: (item: { item: OptDepData }) => {
+          const depItem = item.item.item;
+          return chalk.magenta(`${depItem.name}@${depItem.resolved}`);
         }
       });
     });
@@ -85,16 +158,16 @@ class PkgOptResolver {
   // - the item for the optional dep
   // - the meta info for the whole package
   //
-  add(optDep) {
+  add(optDep: OptDepData): void {
     this._optPkgCount++;
     this._promiseQ.addItem(optDep, true);
   }
 
-  start() {
+  start(): void {
     this._promiseQ._process();
   }
 
-  isExtracted(name, version) {
+  isExtracted(name: string, version: string): boolean {
     return this._extractedPkgs[`${name}@${version}`];
   }
 
@@ -108,13 +181,13 @@ class PkgOptResolver {
   // - not: add item to queue for logging at end
   //
   /* eslint-disable max-statements */
-  optCheck(data) {
+  optCheck(data: OptDepData): Promise<void> {
     const name = data.item.name;
     const version = data.item.resolved;
     const pkgId = `${name}@${version}`;
     const displayId = logFormat.pkgId(data.item);
 
-    const processCheckResult = promise => {
+    const processCheckResult = (promise: Promise<CheckResult>): Promise<void> => {
       return promise.then(res => {
         if (res.passed) {
           // exec exit status 0, add to defer resolve queue
@@ -127,22 +200,26 @@ class PkgOptResolver {
       });
     };
 
-    const addChecked = res => {
+    const addChecked = (res: CheckResult): void => {
       if (!this._checkedPkgs[pkgId]) {
         this._checkedPkgs[pkgId] = res;
       }
     };
 
-    const logFail = msg => {
+    const logFail = (msg: string): void => {
       logger.warn(chalk.yellow(`optional dep check failed`), displayId, chalk.yellow(`- ${msg}`));
       logger.info(
         chalk.green(`  you may ignore this since it is optional but some features may be missing`)
       );
     };
 
-    const logPass = (msg, level) => {
+    const logPass = (msg: string, level?: string): void => {
       level = level || "verbose";
-      logger[level](chalk.green(`optional dep check passed`), displayId, chalk.green(`- ${msg}`));
+      (logger as Record<string, (...args: unknown[]) => void>)[level](
+        chalk.green(`optional dep check passed`),
+        displayId,
+        chalk.green(`- ${msg}`)
+      );
     };
 
     // already check completed, just use existing result
@@ -168,15 +245,19 @@ class PkgOptResolver {
       return processCheckResult(Promise.resolve(rx));
     }
 
-    const checkPkg = path => {
-      return readPkgJson(path, true).then(pkg => {
-        return semverUtil.equal(pkg.version, version) && { path, pkg };
+    const checkPkg = (
+      path: string
+    ): Promise<false | { path: string; pkg: Record<string, unknown> }> => {
+      return readPkgJson(path, true).then((pkg: Record<string, unknown>) => {
+        return semverUtil.equal(pkg.version as string, version) && { path, pkg };
       });
     };
 
     const fvInstalledPath = this._fyn.getInstalledPkgDir(name, version);
 
-    const linkLocalPackage = async () => {
+    const linkLocalPackage = async (): Promise<
+      false | { path: string; pkg: Record<string, unknown> }
+    > => {
       const meta = data.meta;
       const local = meta.local || _.get(meta, ["versions", version, "local"]);
       logger.debug("opt resolver", name, version, "local", local);
@@ -307,7 +388,7 @@ class PkgOptResolver {
     return processCheckResult(promise);
   }
 
-  resolve() {
+  resolve(): Promise<void> {
     this._optPkgCount = 0;
     this._resolving = true;
     this.start();
@@ -328,11 +409,11 @@ class PkgOptResolver {
     });
   }
 
-  isPending() {
+  isPending(): boolean {
     return this._resolving === true;
   }
 
-  isEmpty() {
+  isEmpty(): boolean {
     return this._optPkgCount === 0;
   }
 }
