@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import Path from "path";
 import Promise from "./util/aveazul";
 import _ from "lodash";
@@ -17,23 +15,170 @@ import { runNpmScript } from "./util/run-npm-script";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
 import { RESOLVE_ORDER, RSEMVERS, LOCK_RSEMVERS, SEMVER } from "./symbols";
+import type { DepData, PkgVersion } from "./dep-data";
+import type FynCentral from "./fyn-central";
 
 /* eslint-disable max-statements,no-magic-numbers,no-empty,complexity,prefer-template,max-len, max-depth, no-param-reassign */
 
+/** Resolution data for a dependency */
+interface ResData {
+  dep?: Record<string, { resolved: string }>;
+  opt?: Record<string, { resolved: string }>;
+  [key: string]: unknown;
+}
+
+/** Distribution info for a package */
+interface DistInfo {
+  tarball?: string;
+  shasum?: string;
+  integrity?: string;
+  fullPath?: string;
+}
+
+/** Package JSON structure */
+interface PkgJson {
+  name: string;
+  version: string;
+  scripts?: {
+    preinstall?: string;
+    install?: string;
+    postinstall?: string;
+    postInstall?: string;
+    [key: string]: string | undefined;
+  };
+  _fyn: Record<string, boolean>;
+  _from?: string;
+  _id?: string;
+  _deprecated?: string;
+  hasPI?: boolean;
+  [key: string]: unknown;
+}
+
+/** Dependency info structure */
+interface DepInfo extends PkgVersion {
+  name: string;
+  version: string;
+  dir?: string;
+  str?: string;
+  json?: PkgJson;
+  local?: string | boolean;
+  linkLocal?: boolean;
+  linkDep?: boolean;
+  top?: boolean;
+  promoted?: boolean;
+  src?: string;
+  dsrc?: string;
+  dist?: DistInfo;
+  res?: ResData;
+  deprecated?: string;
+  showDepr?: boolean;
+  firstReqIdx?: number;
+  requests: string[][];
+  install?: string[];
+  preinstall?: boolean;
+  preInstalled?: boolean;
+  optFailed?: number;
+  fynLinkData?: Record<string, boolean>;
+  _removing?: boolean;
+  _removingDeps?: boolean;
+  _removed?: boolean;
+  [SEMVER]?: string;
+}
+
+/** Package data with symbol properties */
+interface PkgData extends PkgVersion {
+  promoted?: boolean;
+  [RSEMVERS]?: Record<string, string>;
+  [LOCK_RSEMVERS]?: Record<string, string>;
+  [RESOLVE_ORDER]?: string[];
+}
+
+/** Package data collection with symbol properties */
+type PkgsData = Record<string, Record<string, PkgData> & {
+  [RSEMVERS]?: Record<string, string>;
+  [LOCK_RSEMVERS]?: Record<string, string>;
+  [RESOLVE_ORDER]?: string[];
+}>;
+
+/** Local link info for hard-linked packages */
+interface LocalLinkInfo {
+  srcDir: string;
+  sourceMaps?: boolean;
+}
+
+/** FV versions structure */
+type FvVersions = Record<string, string[] | null>;
+
+/** Fyn instance interface for installer */
+interface FynForInstaller {
+  _data: DepData;
+  _options: {
+    sourceMaps?: boolean;
+    buildLocal?: boolean;
+    flattenTop?: boolean;
+    layout?: string;
+  };
+  _cwd: string;
+  _depResolver: {
+    resolvePkgPeerDep(pkg: unknown, name: string, data: DepData): void;
+    resolvePeerDep(depInfo: DepInfo): void;
+  };
+  _pkg: Record<string, unknown>;
+  _depLocker?: PkgDepLocker;
+  _localPkgBuilder?: {
+    waitForItem(dir: string): Promise<{ error?: Error } | null>;
+  };
+  cwd: string;
+  central?: FynCentral | false;
+  showDeprecated: string | false;
+  lockOnly: string | false;
+  isNormalLayout: boolean;
+  getOutputDir(): string;
+  getInstalledPkgDir(name: string, version: string, pkg?: unknown): string;
+  getFvDir(x?: string): string;
+  loadFvVersions(): Promise<FvVersions>;
+  setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
+  createSubNodeModulesDir(dir: string): Promise<string>;
+}
+
+/** Options for PkgInstaller constructor */
+interface PkgInstallerOptions {
+  fyn: FynForInstaller;
+}
+
+/** Bin linker instance interface */
+interface BinLinkerInstance {
+  linkBin(depInfo: DepInfo): Promise<boolean>;
+  linkDepBin(depInfo: DepInfo): Promise<void>;
+  clearExtras(): Promise<void>;
+}
+
 class PkgInstaller {
-  constructor(options) {
+  private _fyn: FynForInstaller;
+  private _data: DepData;
+  private _depLinker: PkgDepLinker;
+  private _binLinker!: BinLinkerInstance;
+  private _localLinks: Record<string, LocalLinkInfo>;
+  private _stepTime!: number;
+  private _fvVersions!: FvVersions;
+  private _removedCount!: number;
+  public preInstall!: DepInfo[] | undefined;
+  public postInstall!: DepInfo[] | undefined;
+  public toLink!: DepInfo[] | undefined;
+
+  constructor(options: PkgInstallerOptions) {
     this._fyn = options.fyn;
     this._data = this._fyn._data;
-    this._depLinker = new PkgDepLinker({ fyn: this._fyn });
+    this._depLinker = new PkgDepLinker({ fyn: this._fyn as unknown as Parameters<typeof PkgDepLinker>[0]["fyn"] });
     this._localLinks = {};
   }
 
-  async install() {
+  async install(): Promise<void> {
     this._stepTime = Date.now();
 
     this.timeCheck("beginning");
     const outputDir = this._fyn.getOutputDir();
-    this._binLinker = new PkgBinLinker({ outputDir, fyn: this._fyn });
+    this._binLinker = new PkgBinLinker({ outputDir, fyn: this._fyn as unknown as Parameters<typeof PkgBinLinker>[0]["fyn"] });
     // /*deprecated*/ const fynRes = await this._depLinker.readAppFynRes(outputDir);
 
     this.preInstall = [];
@@ -43,10 +188,10 @@ class PkgInstaller {
     this._fyn._depResolver.resolvePkgPeerDep(this._fyn._pkg, "your app", this._data);
     // go through each package and insert
     // _depResolutions into its package.json
-    const pkgsData = this._data.getPkgsData();
+    const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
     this.timeCheck("queueing packages");
     for (const info of this._data.resolvedPackages) {
-      const depInfo = pkgsData[info.name][info.version];
+      const depInfo = pkgsData[info.name][info.version] as DepInfo;
       logger.debug("queuing", depInfo.name, depInfo.version, "for install");
       await this._gatherPkg(depInfo);
     }
@@ -61,7 +206,7 @@ class PkgInstaller {
     });
   }
 
-  async _linkLocalPkg(depInfo) {
+  async _linkLocalPkg(depInfo: DepInfo): Promise<void> {
     // avoid linking multiple times
     if (depInfo.linkLocal) {
       return;
@@ -75,7 +220,7 @@ class PkgInstaller {
         srcDir: Path.relative(this._fyn._cwd, depInfo.dir),
         sourceMaps
       };
-      await hardLinkDir.link(depInfo.dir, vdir, { sourceMaps });
+      await hardLinkDir.link(depInfo.dir!, vdir, { sourceMaps });
     } else {
       // await this._depLinker.symlinkLocalPackage(vdir, depInfo.dir);
       // await this._depLinker.loadLocalPackageAppFynLink(depInfo, vdir);
@@ -83,7 +228,7 @@ class PkgInstaller {
     }
   }
 
-  async _savePkgJson(log) {
+  async _savePkgJson(log?: boolean): Promise<void> {
     //
     // TODO: skip modifying package.json in node_modules
     // this was done to follow npm behavior of adding some extra fields
@@ -91,23 +236,23 @@ class PkgInstaller {
     // is not compatible with central or local mode.
     //
     //
-    for (const depInfo of this.toLink) {
+    for (const depInfo of this.toLink!) {
       // can't touch package.json if package is a symlink to the real
       // local package.
       if (depInfo.local === "sym" || depInfo._removed) {
         continue;
       }
-      depInfo.json._from = `${depInfo.name}@${depInfo[SEMVER]}`;
-      depInfo.json._id = `${depInfo.name}@${depInfo.version}`;
+      depInfo.json!._from = `${depInfo.name}@${depInfo[SEMVER]}`;
+      depInfo.json!._id = `${depInfo.name}@${depInfo.version}`;
       const outputStr = JSON.stringify(depInfo.json, null, 2);
       if (log && depInfo.linkDep) {
-        const pkgJson = depInfo.json;
+        const pkgJson = depInfo.json!;
         logger.debug("linked dependencies for", pkgJson.name, pkgJson.version);
       }
-      if (depInfo.str.trim() === outputStr.trim()) {
+      if (depInfo.str!.trim() === outputStr.trim()) {
         continue;
       }
-      let pkgJsonFp;
+      let pkgJsonFp: string;
       if (depInfo.local === "hard") {
         // do not override hard linked package.json, instead remove it and
         // write a new physical file.
@@ -115,7 +260,7 @@ class PkgInstaller {
         pkgJsonFp = Path.join(vdir, "package.json");
         await xaa.try(() => Fs.unlink(pkgJsonFp));
       } else {
-        pkgJsonFp = Path.join(depInfo.dir, "package.json");
+        pkgJsonFp = Path.join(depInfo.dir!, "package.json");
       }
       depInfo.str = outputStr;
       try {
@@ -124,7 +269,7 @@ class PkgInstaller {
         //
         // some package publish files with readonly set
         //
-        if (err.code === "EPERM") {
+        if ((err as NodeJS.ErrnoException).code === "EPERM") {
           const st = await Fs.stat(pkgJsonFp);
           // ensure allow read/write on the package.json file
           await Fs.chmod(pkgJsonFp, st.mode + 0o600);
@@ -134,7 +279,7 @@ class PkgInstaller {
     }
   }
 
-  _isDepSrcOptionalOnly(depInfo) {
+  _isDepSrcOptionalOnly(depInfo: DepInfo): boolean {
     if ((!depInfo.src || depInfo.src === "opt") && (!depInfo.dsrc || depInfo.dsrc === "opt")) {
       return true;
     }
@@ -158,18 +303,18 @@ class PkgInstaller {
     return optRequests.length === depInfo.requests.length; // all of them trace from opt
   }
 
-  async _removeDepsOf(depInfo, originId) {
+  async _removeDepsOf(depInfo: DepInfo, originId: string): Promise<void> {
     if (depInfo._removingDeps || !originId) return;
     depInfo._removingDeps = true;
 
-    const dataPackages = this._fyn._data.getPkgsData();
-    const doRemove = async section => {
+    const dataPackages = this._fyn._data.getPkgsData() as unknown as PkgsData;
+    const doRemove = async (section: Record<string, { resolved: string }> | undefined): Promise<void> => {
       if (!section) return;
       for (const name in section) {
         const pkgData = dataPackages[name];
         if (!pkgData) continue;
         const resolved = section[name].resolved;
-        const pkgDepInfo = pkgData[resolved];
+        const pkgDepInfo = pkgData[resolved] as DepInfo | undefined;
         if (!pkgDepInfo) continue;
 
         await this._removeDepsOf(pkgDepInfo, originId);
@@ -223,11 +368,11 @@ class PkgInstaller {
       }
     };
 
-    await doRemove(depInfo.res.dep);
-    await doRemove(depInfo.res.opt);
+    await doRemove(depInfo.res?.dep);
+    await doRemove(depInfo.res?.opt);
   }
 
-  async _removeFailedOptional(depInfo, causeId) {
+  async _removeFailedOptional(depInfo: DepInfo, causeId?: string): Promise<void> {
     if (depInfo._removing) return;
     depInfo._removing = true;
     // - reverse search each request path to the first opt pkg
@@ -249,7 +394,7 @@ class PkgInstaller {
 
       if (id) {
         // lookup new dep info, make sure it's optional only, and remove it
-        const upDepInfo = this._fyn._data.getPkgById(id);
+        const upDepInfo = this._fyn._data.getPkgById(id) as DepInfo;
         if (!this._isDepSrcOptionalOnly(upDepInfo)) {
           throw new Error("failure chained from pkg that's more than optional");
         }
@@ -273,7 +418,7 @@ class PkgInstaller {
     await Fs.$.rimraf(this._fyn.getInstalledPkgDir(depInfo.name, depInfo.version, depInfo));
   }
 
-  timeCheck(x) {
+  timeCheck(x: string): void {
     const tmp = Date.now();
     logger.debug(
       `${chalk.green("install time check", x)} ${logFormat.time(tmp - this._stepTime)}`,
@@ -282,21 +427,21 @@ class PkgInstaller {
     this._stepTime = tmp;
   }
 
-  async _runPreInstallScripts(depInfo) {
+  async _runPreInstallScripts(depInfo: DepInfo): Promise<void> {
     return runNpmScript({
       appDir: this._fyn.cwd,
       fyn: this._fyn,
       scripts: ["preinstall"],
       depInfo
     }).then(() => {
-      depInfo.json._fyn.preinstall = true;
+      depInfo.json!._fyn.preinstall = true;
       if (depInfo.fynLinkData) {
         depInfo.fynLinkData.preinstall = true;
       }
     });
   }
 
-  async _runPostInstallScripts(depInfo) {
+  async _runPostInstallScripts(depInfo: DepInfo): Promise<void> {
     const integrity = fynTil.distIntegrity(depInfo.dist);
     const centralBeforeSha =
       this._fyn.central &&
@@ -305,9 +450,9 @@ class PkgInstaller {
       (await this._fyn.central.getMutation(integrity)) === undefined &&
       (await this._fyn.central.getContentShasum(integrity));
 
-    let runningScript;
+    let runningScript: string | undefined;
     return xaa
-      .each(depInfo.install, installScript => {
+      .each(depInfo.install!, (installScript: string) => {
         runningScript = installScript;
         return runNpmScript({
           appDir: this._fyn.cwd,
@@ -315,7 +460,7 @@ class PkgInstaller {
           scripts: [installScript],
           depInfo
         }).then(() => {
-          depInfo.json._fyn[installScript] = true;
+          depInfo.json!._fyn[installScript] = true;
           if (depInfo.fynLinkData) {
             depInfo.fynLinkData[installScript] = true;
           }
@@ -335,7 +480,7 @@ class PkgInstaller {
           }
         }
       })
-      .catch(err => {
+      .catch((err: Error) => {
         if (this._isDepSrcOptionalOnly(depInfo)) {
           logger.info(
             "running package",
@@ -352,7 +497,7 @@ class PkgInstaller {
       });
   }
 
-  _checkDeprecated(depInfo) {
+  _checkDeprecated(depInfo: DepInfo): boolean {
     if (depInfo.deprecated && (depInfo.showDepr || this._fyn.showDeprecated)) {
       const id = logFormat.pkgId(depInfo);
       logger.warn(
@@ -372,31 +517,31 @@ class PkgInstaller {
     return false;
   }
 
-  _doInstall() {
+  _doInstall(): Promise<void> {
     const start = Date.now();
 
     this.timeCheck("starting preinstall");
 
     return (
-      Promise.map(this.preInstall, di => this._runPreInstallScripts(di), { concurrency: 3 })
+      Promise.map(this.preInstall!, (di: DepInfo) => this._runPreInstallScripts(di), { concurrency: 3 })
         .tap(() => this.timeCheck("preInstall"))
         .tap(() => {
           logger.updateItem(INSTALL_PACKAGE, `linking packages...`);
         })
         .then(() => this._linkTopPackages())
-        .return(this.toLink)
-        .each(depInfo => this._linkNestedPackages(depInfo))
+        .return(this.toLink!)
+        .each((depInfo: DepInfo) => this._linkNestedPackages(depInfo))
         .tap(() => this.timeCheck("linking packages"))
         .tap(() => logger.debug("linking bin for non-top but promoted packages"))
-        .return(this.toLink) // Link bin for all none top but promoted pkg first
-        .each(x => !x.top && x.promoted && this._binLinker.linkBin(x))
+        .return(this.toLink!) // Link bin for all none top but promoted pkg first
+        .each((x: DepInfo) => !x.top && x.promoted && this._binLinker.linkBin(x))
         .tap(() => this.timeCheck("linking bin promoted non-top"))
         .tap(() => logger.debug("linking bin for FV_DIR packages"))
-        .return(this.toLink) // Link bin for all pkg under FV_DIR
-        .each(x => !x.top && !x.promoted && this._binLinker.linkBin(x))
+        .return(this.toLink!) // Link bin for all pkg under FV_DIR
+        .each((x: DepInfo) => !x.top && !x.promoted && this._binLinker.linkBin(x))
         .tap(() => this.timeCheck("linking bin FV_DIR"))
-        .return(this.toLink) // link bin for package's dep that conflicts
-        .each(x => this._binLinker.linkDepBin(x))
+        .return(this.toLink!) // link bin for package's dep that conflicts
+        .each((x: DepInfo) => this._binLinker.linkDepBin(x))
         .tap(() => this.timeCheck("linking dep bin"))
         // we are about to run install/postInstall scripts
         // save pkg JSON to disk in case any updates were done
@@ -410,16 +555,16 @@ class PkgInstaller {
         .tap(() => this.timeCheck("_cleanOrphanedFv"))
         .then(() => this._cleanBin())
         .tap(() => this.timeCheck("_cleanBin"))
-        .return(this.postInstall)
-        .map(depInfo => this._runPostInstallScripts(depInfo), { concurrency: 3 })
+        .return(this.postInstall!)
+        .map((depInfo: DepInfo) => this._runPostInstallScripts(depInfo), { concurrency: 3 })
         .tap(() => this.timeCheck("postInstall"))
         // Go through save package.json again in case any changed
         .then(() => this._savePkgJson(true))
         .tap(() => this.timeCheck("second _savePkgJson"))
-        .return(this.toLink)
-        .filter(depInfo => this._checkDeprecated(depInfo))
+        .return(this.toLink!)
+        .filter((depInfo: DepInfo) => this._checkDeprecated(depInfo))
         .tap(() => this.timeCheck("show deprecated"))
-        .then(warned => {
+        .then((warned: DepInfo[]) => {
           if (this._fyn.showDeprecated && _.isEmpty(warned)) {
             logger.info(chalk.green("HOORAY!!! None of your dependencies are marked deprecated."));
           }
@@ -434,9 +579,9 @@ class PkgInstaller {
     );
   }
 
-  async _buildLocalPkg(depInfo) {
+  async _buildLocalPkg(depInfo: DepInfo): Promise<void> {
     if (this._fyn._options.buildLocal && this._fyn._localPkgBuilder) {
-      const itemRes = await this._fyn._localPkgBuilder.waitForItem(depInfo.dir);
+      const itemRes = await this._fyn._localPkgBuilder.waitForItem(depInfo.dir!);
       if (itemRes && itemRes.error) {
         throw new AggregateError(
           [itemRes.error],
@@ -446,7 +591,7 @@ class PkgInstaller {
     }
   }
 
-  async _gatherPkg(depInfo) {
+  async _gatherPkg(depInfo: DepInfo): Promise<void> {
     const { name, version } = depInfo;
     if (depInfo.local) {
       this.timeCheck("buildLocal");
@@ -456,9 +601,9 @@ class PkgInstaller {
       this.timeCheck("done link Local");
     }
 
-    const json = depInfo.json || {};
+    const json: PkgJson = depInfo.json || ({} as PkgJson);
 
-    if (_.isEmpty(json) || json.fromLocked) {
+    if (_.isEmpty(json) || (json as unknown as { fromLocked?: boolean }).fromLocked) {
       const dir = this._fyn.getInstalledPkgDir(name, version, depInfo);
       const file = Path.join(dir, "package.json");
       const str = (await Fs.readFile(file)).toString();
@@ -479,11 +624,11 @@ class PkgInstaller {
         json._fyn.preinstall = true;
       } else {
         logger.debug("adding preinstall step for", depInfo.dir);
-        this.preInstall.push(depInfo);
+        this.preInstall!.push(depInfo);
       }
     }
 
-    this.toLink.push(depInfo);
+    this.toLink!.push(depInfo);
 
     const install = ["install", "postinstall"].filter(x => {
       return Boolean(scripts[x]) && !json._fyn[x];
@@ -492,22 +637,22 @@ class PkgInstaller {
     if (install.length > 0) {
       logger.debug("adding install step for", depInfo.dir, install);
       depInfo.install = install;
-      this.postInstall.push(depInfo);
+      this.postInstall!.push(depInfo);
     }
   }
 
-  _cleanBin() {
+  _cleanBin(): Promise<void> {
     logger.updateItem(INSTALL_PACKAGE, "cleaning node_modules/.bin");
     return this._binLinker.clearExtras();
   }
 
-  async _initFvVersions() {
+  async _initFvVersions(): Promise<void> {
     if (!this._fvVersions) {
       this._fvVersions = await this._fyn.loadFvVersions();
     }
   }
 
-  async _cleanOrphanedFv() {
+  async _cleanOrphanedFv(): Promise<void> {
     for (const pkgName in this._fvVersions) {
       const versions = this._fvVersions[pkgName];
       if (versions !== null) {
@@ -516,14 +661,14 @@ class PkgInstaller {
     }
   }
 
-  async _cleanUp(scope) {
+  async _cleanUp(scope?: string): Promise<void> {
     const outDir = this._fyn.getOutputDir();
-    const pkgsData = this._data.getPkgsData();
+    const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
 
     scope = scope || "";
     logger.updateItem(INSTALL_PACKAGE, `cleaning extraneous packages... ${scope}`);
 
-    const installedPkgs = await xaa.try(() => Fs.readdir(Path.join(outDir, scope)), []);
+    const installedPkgs = await xaa.try(() => Fs.readdir(Path.join(outDir, scope)), []) as string[];
 
     for (const dirName of installedPkgs) {
       if (dirName.startsWith(".") || dirName.startsWith("_")) continue;
@@ -535,7 +680,7 @@ class PkgInstaller {
 
       const pkgName = Path.posix.join(scope, dirName);
       const pkgVersions = pkgsData[pkgName];
-      const topPkg = _.find(pkgVersions, x => x.promoted);
+      const topPkg = _.find(pkgVersions, (x: PkgData) => x.promoted);
 
       if (!topPkg) {
         this._removedCount++;
@@ -564,20 +709,20 @@ class PkgInstaller {
    *
    * @returns {*} none
    */
-  async _linkTopPackages() {
+  async _linkTopPackages(): Promise<void> {
     // only for detail layout
     if (this._fyn.isNormalLayout) {
       return;
     }
 
     const { flattenTop } = this._fyn._options;
-    const pkgsData = this._data.getPkgsData();
-    let createFvNmDir;
+    const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
+    let createFvNmDir: boolean | undefined;
     for (const pkgName in pkgsData) {
       const pkg = pkgsData[pkgName];
       for (const version in pkg) {
-        const verPkg = pkg[version];
-        let symLinkLocation;
+        const verPkg = pkg[version] as DepInfo;
+        let symLinkLocation: string;
         logger.debug("linkTop", pkgName, "top", verPkg.top, "promoted", verPkg.promoted);
         if (verPkg.top) {
           // top level dep from package.json, put or link it under node_modules
@@ -616,12 +761,12 @@ class PkgInstaller {
     }
   }
 
-  async _linkNestedPackages(depInfo) {
+  async _linkNestedPackages(depInfo: DepInfo): Promise<boolean | undefined> {
     this._fyn._depResolver.resolvePeerDep(depInfo);
-    await this._depLinker.linkPackage(depInfo);
+    await this._depLinker.linkPackage(depInfo as unknown as Parameters<typeof this._depLinker.linkPackage>[0]);
     //
-    if (depInfo.deprecated && !depInfo.json._deprecated) {
-      depInfo.json._deprecated = depInfo.deprecated;
+    if (depInfo.deprecated && !depInfo.json!._deprecated) {
+      depInfo.json!._deprecated = depInfo.deprecated;
       depInfo.showDepr = true;
     }
 
@@ -632,13 +777,13 @@ class PkgInstaller {
     return undefined;
   }
 
-  async _cleanUpVersions(pkgName) {
-    const pkg = this._data.getPkgsData()[pkgName];
+  async _cleanUpVersions(pkgName: string): Promise<void> {
+    const pkg = this._data.getPkgsData()[pkgName] as unknown as Record<string, PkgData>;
     const versions = this._fvVersions[pkgName];
 
     if (!versions || versions.length < 1) return;
 
-    const removed = [];
+    const removed: string[] = [];
 
     for (const ver of versions) {
       if (!pkg || !pkg[ver] || (this._fyn.isNormalLayout && pkg[ver].promoted)) {
@@ -662,7 +807,7 @@ class PkgInstaller {
         dir = Path.dirname(dir);
         await Fs.rmdir(dir);
       } catch (err) {
-        if (err.code !== "ENOTEMPTY") {
+        if ((err as NodeJS.ErrnoException).code !== "ENOTEMPTY") {
           logger.error(`fail to remove dir for package ${pkgName}`, err, dir);
         }
       }
@@ -678,7 +823,7 @@ class PkgInstaller {
           await Fs.rmdir(dir);
         }
       } catch (err) {
-        if (err.code !== "ENOTEMPTY") {
+        if ((err as NodeJS.ErrnoException).code !== "ENOTEMPTY") {
           logger.error(`fail to remove container dir for package ${pkgName}`, err, dir);
         }
       }
@@ -689,7 +834,7 @@ class PkgInstaller {
     this._fvVersions[pkgName] = null;
   }
 
-  async _removeDir(dir) {
+  async _removeDir(dir: string): Promise<void | null> {
     try {
       const stat = await Fs.stat(dir);
       if (stat.isDirectory()) {
@@ -702,9 +847,9 @@ class PkgInstaller {
     }
   }
 
-  _saveLockData() {
+  _saveLockData(): void {
     if (!this._fyn.lockOnly) {
-      const locker = this._fyn._depLocker || new PkgDepLocker(false, true, this._fyn);
+      const locker = this._fyn._depLocker || new PkgDepLocker(false, true, this._fyn as unknown as ConstructorParameters<typeof PkgDepLocker>[2]);
       locker.generate(this._fyn._data);
       locker.save(Path.join(this._fyn.cwd, "fyn-lock.yaml"));
     }
