@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import chalk from "chalk";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
@@ -10,7 +8,30 @@ import { FETCH_META } from "../lib/log-items";
 
 const PACKAGE_JSON = "~package.json";
 
-const formatPkgId = pkg => {
+/** Package info structure */
+interface PkgInfo {
+  name: string;
+  version?: string;
+  promoted?: boolean;
+}
+
+/** Package stat result */
+interface PkgStat {
+  name: string;
+  version: string;
+  dependents: PkgInfo[];
+  circularDeps?: string[][];
+  allPaths: string[][];
+  significantPaths: string[][];
+}
+
+/** Fyn instance interface for ShowStat */
+interface FynForStat {
+  _options: { buildLocal: boolean };
+  resolveDependencies(): Promise<void>;
+}
+
+const formatPkgId = (pkg: PkgInfo): string => {
   if (pkg.name === PACKAGE_JSON) {
     return chalk.cyan(pkg.name);
   }
@@ -19,14 +40,17 @@ const formatPkgId = pkg => {
 };
 
 class ShowStat {
-  constructor({ fyn }) {
+  private _fyn: FynForStat;
+  private _statProvider: PkgStatProvider;
+
+  constructor({ fyn }: { fyn: FynForStat }) {
     this._fyn = fyn;
     this._fyn._options.buildLocal = false;
     this._statProvider = new PkgStatProvider({ fyn });
   }
 
-  _show(pkgIds) {
-    return Promise.each(pkgIds, async pkgId => {
+  _show(pkgIds: string[]): Promise<void> {
+    return Promise.each(pkgIds, async (pkgId: string) => {
       const matches = this._statProvider.findMatchingVersions(pkgId);
 
       if (matches.versions.length === 0) {
@@ -41,7 +65,10 @@ class ShowStat {
           );
 
         for (const match of matches.versions) {
-          const stat = await this._statProvider.getPackageStat(match.name, match.version);
+          const stat: PkgStat | null = await this._statProvider.getPackageStat(
+            match.name,
+            match.version
+          );
           if (!stat) continue;
 
           // Show dependents
@@ -84,7 +111,7 @@ class ShowStat {
     });
   }
 
-  showStat(pkgIds) {
+  showStat(pkgIds: string[]): Promise<void> {
     const spinner = CliLogger.spinners[1];
     logger.addItem({ name: FETCH_META, color: "green", spinner });
     logger.updateItem(FETCH_META, "resolving dependencies...");
@@ -93,7 +120,7 @@ class ShowStat {
         logger.removeItem(FETCH_META);
         return this._show(pkgIds);
       })
-      .catch(err => {
+      .catch((err: Error) => {
         logger.error(err);
       })
       .finally(() => {
@@ -102,7 +129,7 @@ class ShowStat {
   }
 }
 
-const showStat = (fyn, pkgIds) => {
+const showStat = (fyn: FynForStat, pkgIds: string[]): Promise<void> => {
   return new ShowStat({ fyn }).showStat(pkgIds);
 };
 

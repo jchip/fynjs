@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * CLI entry point for the audit command.
  *
@@ -17,13 +15,32 @@ import AuditFormatter from "../lib/audit/audit-formatter";
 import PkgStatProvider from "../lib/pkg-stat-provider";
 import { FETCH_META } from "../lib/log-items";
 
+/** Dependency data structure */
+interface DepData {
+  pkgs: Record<string, unknown>;
+}
+
+/** Fyn instance interface for ShowAudit */
+interface FynForAudit {
+  _options: { buildLocal: boolean; colors?: boolean };
+  _data?: DepData;
+  resolveDependencies(): Promise<void>;
+}
+
+/** CLI options for audit command */
+interface AuditOptions {
+  json?: boolean;
+  omit?: string[];
+  auditLevel?: string;
+  noCache?: boolean;
+  summary?: boolean;
+}
+
 class ShowAudit {
-  /**
-   * @param {Object} options
-   * @param {Object} options.fyn - Fyn instance
-   * @param {Object} options.opts - CLI options
-   */
-  constructor({ fyn, opts }) {
+  private _fyn: FynForAudit;
+  private _opts: AuditOptions;
+
+  constructor({ fyn, opts }: { fyn: FynForAudit; opts?: AuditOptions }) {
     this._fyn = fyn;
     this._opts = opts || {};
     // Don't build local packages during audit
@@ -32,10 +49,8 @@ class ShowAudit {
 
   /**
    * Run the audit workflow.
-   *
-   * @returns {Promise<void>}
    */
-  async runAudit() {
+  async runAudit(): Promise<void> {
     const spinner = CliLogger.spinners[1];
 
     try {
@@ -111,12 +126,8 @@ class ShowAudit {
 
 /**
  * Entry point for audit command.
- *
- * @param {Object} fyn - Fyn instance
- * @param {Object} opts - CLI options { json, omit, auditLevel, noCache }
- * @returns {Promise<void>}
  */
-const showAudit = (fyn, opts) => {
+const showAudit = (fyn: FynForAudit, opts?: AuditOptions): Promise<void> => {
   return new ShowAudit({ fyn, opts }).runAudit();
 };
 
