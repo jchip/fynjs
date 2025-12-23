@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 //
 // Manages all sources that package data could come from.
 // - local cache
@@ -17,7 +15,7 @@ import os from "os";
 import pacote from "pacote";
 import _ from "lodash";
 import chalk from "chalk";
-import { PassThrough } from "stream";
+import { PassThrough, Readable } from "stream";
 import Fs from "./util/file-ops";
 import logger from "./logger";
 import fs from "fs";
@@ -39,6 +37,187 @@ import { prePackObj } from "publish-util";
 import { PackageRef } from "@fynpo/base";
 import Arborist from "@npmcli/arborist";
 import { execSync } from "child_process";
+import type { DepItem } from "./dep-item";
+import type { Inflight as InflightType } from "item-queue/dist/inflight";
+import type { ItemQueue } from "item-queue/dist/item-queue";
+
+/** Options for PkgSrcManager constructor */
+interface PkgSrcManagerOptions {
+  registry?: string;
+  fynCacheDir?: string;
+  fyn: FynInstance;
+  email?: string;
+  "always-auth"?: boolean;
+  username?: string;
+  password?: string;
+  [key: string]: unknown;
+}
+
+/** Fyn instance interface - subset of Fyn class used by PkgSrcManager */
+interface FynInstance {
+  concurrency: number;
+  cwd?: string;
+  _fynCacheDir: string;
+  _options: {
+    refreshMeta?: boolean;
+    metaMemoize?: string;
+  };
+  _fynpo?: {
+    config?: {
+      publishUtil?: Record<string, unknown>;
+    };
+    graph?: {
+      getPackageAtDir(path: string): unknown;
+    };
+  };
+  isFynpo: boolean;
+  forceCache: boolean | string;
+  remoteMetaDisabled: boolean | string;
+  remoteTgzDisabled: boolean | string;
+  central?: FynCentralInstance;
+  copy: string[];
+}
+
+/** FynCentral instance interface */
+interface FynCentralInstance {
+  allow(integrity: string): Promise<boolean>;
+  has(integrity: string): Promise<boolean>;
+  validate(integrity: string): Promise<boolean>;
+  getContentPath(integrity: string): Promise<string>;
+  delete(integrity: string): Promise<void>;
+  storeTarStream(
+    tarId: string,
+    integrity: string,
+    tarStream: () => Promise<Readable>
+  ): Promise<void>;
+}
+
+/** Fetch item representing a dependency to fetch */
+interface FetchItem {
+  name: string;
+  semver: string;
+  semverPath?: string;
+  localType?: string;
+  urlType?: string;
+  fullPath?: string;
+  parent?: FetchItem & { localType?: string; fullPath?: string };
+  [DEP_ITEM]?: DepItem;
+}
+
+/** Package distribution info */
+interface PkgDist {
+  integrity?: string;
+  shasum?: string;
+  tarball?: string;
+  localPath?: string;
+  fullPath?: string;
+}
+
+/** Package info/manifest */
+interface PkgInfo {
+  name: string;
+  version: string;
+  dist?: PkgDist;
+  _resolved?: string;
+  _integrity?: string;
+  _shasum?: string;
+  _id?: string;
+  _shrinkwrap?: Record<string, unknown>;
+  [DEP_ITEM]?: DepItem & { urlType?: string; semver?: string };
+  [key: string]: unknown;
+}
+
+/** npm packument (package document) */
+interface Packument {
+  name: string;
+  versions: Record<string, PkgInfo>;
+  "dist-tags": Record<string, string>;
+  readme?: string;
+  _contentLength?: number;
+  _cached?: boolean;
+  urlVersions?: Record<string, PkgInfo>;
+  [key: string]: unknown;
+}
+
+/** Local package meta */
+interface LocalMeta {
+  local: string;
+  localId: string;
+  name: string;
+  json: PkgInfo;
+  jsonStr: string;
+  versions: Record<string, PkgInfo>;
+  "dist-tags": Record<string, string>;
+  [LOCAL_VERSION_MAPS]: Record<string, string>;
+}
+
+/** Deferred promise interface */
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+}
+
+/** Queue item for meta fetching */
+interface MetaQueueItem {
+  type: "meta";
+  cacheKey: string;
+  item: FetchItem;
+  packumentUrl: string;
+  defer: Deferred<Packument>;
+}
+
+/** Meta fetch statistics */
+interface MetaStat {
+  wait: number;
+  inTx: number;
+  done: number;
+}
+
+/** Registry data mapping */
+interface RegistryData {
+  registry?: string;
+  [key: string]: string | undefined;
+}
+
+/** Pacote options */
+interface PacoteOptions {
+  cache: string;
+  email?: string;
+  alwaysAuth?: boolean;
+  username?: string;
+  password?: string;
+  Arborist: typeof Arborist;
+  [key: string]: unknown;
+}
+
+/** Tarball fetch result */
+interface TarballFetchResult {
+  then: <TResult1 = Readable | string, TResult2 = never>(
+    onfulfilled?: ((value: Readable | string) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ) => Promise<TResult1 | TResult2>;
+  catch: <TResult = never>(
+    onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null
+  ) => Promise<Readable | string | TResult>;
+  tap: (f: (x: Readable | string) => void) => Promise<Readable | string>;
+  promise: Promise<Readable | string>;
+  startTime: number;
+}
+
+/** Cache info with refresh time */
+interface CacheInfoWithRefreshTime {
+  metadata?: PkgInfo & { _resolved?: string; dist?: PkgDist };
+  integrity?: string;
+  refreshTime?: number;
+}
+
+/** Publish util config */
+interface PublishUtilConfig {
+  fynIgnore?: boolean;
+  silent?: boolean;
+  [key: string]: unknown;
+}
 
 const { readPkgJson, missPipe } = fyntil;
 
@@ -49,7 +228,11 @@ const WATCH_TIME = 5000;
 const META_CACHE_STALE_TIME = 24 * 60 * 60 * 1000;
 
 // Helper to check if git repo has new commits using fast git ls-remote or git rev-parse
-async function checkGitRepoHasNewCommits(gitUrl, ref, cachedCommitHash) {
+async function checkGitRepoHasNewCommits(
+  gitUrl: string,
+  ref: string | undefined,
+  cachedCommitHash: string | null
+): Promise<boolean | null> {
   if (!cachedCommitHash) return true; // No cache, assume new commits
   
   try {
@@ -123,13 +306,27 @@ async function checkGitRepoHasNewCommits(gitUrl, ref, cachedCommitHash) {
 }
 
 class PkgSrcManager {
-  constructor(options) {
+  private _options: PkgSrcManagerOptions;
+  private _meta: Record<string, Packument>;
+  private _cacheDir: string;
+  private _inflights: { meta: InflightType<Promise<Packument>> };
+  private _fyn: FynInstance;
+  private _localMeta: Record<string, { byPath: Record<string, LocalMeta>; byVersion: Record<string, LocalMeta> }>;
+  private _netQ: ItemQueue<MetaQueueItem>;
+  private _pacoteOpts: PacoteOptions;
+  private _regData: RegistryData;
+  private _metaStat: MetaStat;
+  private _lastMetaStatus: string;
+  private _fetching?: string[];
+  private _fetchingMsg?: string;
+
+  constructor(options: PkgSrcManagerOptions) {
     this._options = _.defaults({}, options, {
       registry: "",
       fynCacheDir: ""
     });
     this._meta = {};
-    this._cacheDir = this._options.fynCacheDir;
+    this._cacheDir = this._options.fynCacheDir!;
     fs.mkdirSync(this._cacheDir, { recursive: true });
     this._inflights = {
       meta: new Inflight()
@@ -140,16 +337,16 @@ class PkgSrcManager {
     this._netQ = new PromiseQueue({
       concurrency: this._fyn.concurrency,
       stopOnError: true,
-      processItem: x => this.processItem(x),
+      processItem: (x: MetaQueueItem) => this.processItem(x),
       watchTime: WATCH_TIME
     });
 
-    this._netQ.on("fail", data => logger.error(data));
-    this._netQ.on("watch", items => {
+    this._netQ.on("fail", (data: unknown) => logger.error(data));
+    this._netQ.on("watch", (items: unknown) => {
       longPending.onWatch(items, {
         name: LONG_WAIT_META,
-        filter: x => x.item.type === "meta",
-        makeId: x => logFormat.pkgId(x.item),
+        filter: (x: { item: MetaQueueItem }) => x.item.type === "meta",
+        makeId: (x: { item: MetaQueueItem }) => logFormat.pkgId(x.item),
         _save: false
       });
     });
@@ -157,7 +354,7 @@ class PkgSrcManager {
     const registryData = _.pickBy(
       this._options,
       (v, key) => key === "registry" || key.endsWith(":registry")
-    );
+    ) as RegistryData;
 
     const authTokens = _.pickBy(this._options, (v, key) => key.endsWith(":_authToken"));
 
@@ -173,7 +370,7 @@ class PkgSrcManager {
       },
       authTokens,
       registryData
-    );
+    ) as PacoteOptions;
 
     // Add Arborist to pacote options for git dependencies (required by pacote v21+)
     this._pacoteOpts.Arborist = Arborist;
@@ -189,13 +386,13 @@ class PkgSrcManager {
     this._lastMetaStatus = "waiting...";
   }
 
-  normalizeRegUrlSlash() {
+  normalizeRegUrlSlash(): void {
     _.each(this._regData, (v, k) => {
-      this._regData[k] = v.endsWith("/") ? v : `${v}/`;
+      this._regData[k] = v!.endsWith("/") ? v : `${v}/`;
     });
   }
 
-  getRegistryUrl(pkgName) {
+  getRegistryUrl(pkgName: string): string | undefined {
     let regUrl = this._regData.registry;
     if (pkgName.startsWith("@")) {
       const scope = pkgName.split("/")[0];
@@ -208,26 +405,26 @@ class PkgSrcManager {
     return regUrl;
   }
 
-  makePackumentUrl(pkgName) {
+  makePackumentUrl(pkgName: string): string {
     const escapedName = pkgName.replace("/", "%2f");
     const regUrl = this.getRegistryUrl(pkgName);
     return `${regUrl}${escapedName}`;
   }
 
-  processItem(x) {
+  processItem(x: MetaQueueItem): Promise<void> | undefined {
     if (x.type === "meta") {
       return this.netRetrieveMeta(x);
     }
     return undefined;
   }
 
-  makePkgCacheDir(pkgName) {
+  makePkgCacheDir(pkgName: string): string {
     const pkgCacheDir = Path.join(this._cacheDir, pkgName);
     fs.mkdirSync(pkgCacheDir, { recursive: true });
     return pkgCacheDir;
   }
 
-  getSemverAsFilepath(semver) {
+  getSemverAsFilepath(semver: string): string | false {
     if (semver.startsWith("file:")) {
       return semver.substr(5);
     } else if (semver.startsWith("/") || semver.startsWith("./") || semver.startsWith("../")) {
@@ -238,25 +435,25 @@ class PkgSrcManager {
     return false;
   }
 
-  getLocalPackageMeta(item, resolved) {
+  getLocalPackageMeta(item: FetchItem, resolved: string): LocalMeta | undefined {
     return _.get(this._localMeta, [item.name, "byVersion", resolved]);
   }
 
-  getAllLocalMetaOfPackage(name) {
+  getAllLocalMetaOfPackage(name: string): Record<string, LocalMeta> | undefined {
     return _.get(this._localMeta, [name, "byVersion"]);
   }
 
-  getPacoteOpts(extra) {
+  getPacoteOpts(extra?: Record<string, unknown>): PacoteOptions {
     return Object.assign({}, extra, this._pacoteOpts);
   }
 
-  getPublishUtil(json, fullPath) {
-    let config;
-    let pkgInfo;
-    let configFromFynpo;
+  getPublishUtil(json: PkgInfo, fullPath: string): PublishUtilConfig | undefined {
+    let config: PublishUtilConfig | undefined;
+    let pkgInfo: unknown;
+    let configFromFynpo: PublishUtilConfig | undefined;
 
-    if (this._fyn.isFynpo && (pkgInfo = this._fyn._fynpo.graph.getPackageAtDir(fullPath))) {
-      const fynpoPublishUtil = _.get(this._fyn, "_fynpo.config.publishUtil", {});
+    if (this._fyn.isFynpo && (pkgInfo = this._fyn._fynpo!.graph!.getPackageAtDir(fullPath))) {
+      const fynpoPublishUtil = _.get(this._fyn, "_fynpo.config.publishUtil", {}) as Record<string, PublishUtilConfig>;
 
       for (const ref in fynpoPublishUtil) {
         const pkgRef = new PackageRef(ref);
@@ -272,26 +469,26 @@ class PkgSrcManager {
       _.get(json, ["dependencies", "publish-util"]) ||
       _.get(json, ["devDependencies", "publish-util"])
     ) {
-      config = json.publishUtil;
+      config = json.publishUtil as PublishUtilConfig | undefined;
     }
 
     return configFromFynpo || config;
   }
 
   /* eslint-disable max-statements */
-  fetchLocalItem(item) {
+  fetchLocalItem(item: FetchItem): false | Promise<LocalMeta> {
     const localPath = item.semverPath;
 
     if (!localPath) {
       return false;
     }
 
-    let fullPath;
+    let fullPath: string;
 
     if (!Path.isAbsolute(localPath)) {
       const parent = item.parent;
-      if (parent.localType) {
-        fullPath = Path.join(parent.fullPath, localPath);
+      if (parent?.localType) {
+        fullPath = Path.join(parent.fullPath!, localPath);
       } else {
         const baseDir = this._fyn.cwd || process.cwd();
         logger.debug("fetchLocalItem resolving", localPath, "relative to", baseDir);
@@ -305,14 +502,14 @@ class PkgSrcManager {
 
     logger.debug("fetchLocalItem localPath", localPath, "fullPath", fullPath, "cwd", this._fyn.cwd);
 
-    const existLocalMeta = _.get(this._localMeta, [item.name, "byPath", fullPath]);
+    const existLocalMeta = _.get(this._localMeta, [item.name, "byPath", fullPath]) as LocalMeta | undefined;
 
     if (existLocalMeta) {
       existLocalMeta[LOCAL_VERSION_MAPS][item.semver] = existLocalMeta.localId;
       return Promise.resolve(existLocalMeta);
     }
 
-    return readPkgJson(fullPath, true, true).then(json => {
+    return readPkgJson(fullPath, true, true).then((json: PkgInfo) => {
       const publishUtilConfig = this.getPublishUtil(json, fullPath);
       if (publishUtilConfig && !publishUtilConfig.fynIgnore) {
         logger.debug(
@@ -321,18 +518,18 @@ class PkgSrcManager {
         prePackObj(json, { ...publishUtilConfig, silent: true });
       }
 
-      const version = semverUtil.localify(json.version, item.localType);
+      const version = semverUtil.localify(json.version, item.localType!);
       const name = item.name || json.name;
       json.dist = {
         localPath,
         fullPath
       };
-      const localMeta = {
-        local: item.localType,
+      const localMeta: LocalMeta = {
+        local: item.localType!,
         localId: version,
         name,
         json,
-        jsonStr: json[PACKAGE_RAW_INFO].str,
+        jsonStr: (json as any)[PACKAGE_RAW_INFO].str,
         versions: {
           [version]: json
         },
@@ -361,7 +558,7 @@ class PkgSrcManager {
     });
   }
 
-  updateFetchMetaStatus(_render) {
+  updateFetchMetaStatus(_render?: boolean): void {
     const { wait, inTx, done } = this._metaStat;
     const statStr = `(${chalk.red(wait)}⇨ ${chalk.yellow(inTx)}⇨ ${chalk.green(done)})`;
     logger.updateItem(FETCH_META, {
@@ -371,17 +568,17 @@ class PkgSrcManager {
     });
   }
 
-  netRetrieveMeta(qItem) {
+  netRetrieveMeta(qItem: MetaQueueItem): Promise<void> {
     const pkgName = qItem.item.name;
 
     const startTime = Date.now();
 
-    const updateItem = status => {
+    const updateItem = (status?: string | number): void => {
       if (status !== undefined) {
-        status = chalk.cyan(`${status}`);
+        const statusStr = chalk.cyan(`${status}`);
         const time = logFormat.time(Date.now() - startTime);
         const dispName = chalk.red.bgGreen(pkgName);
-        this._lastMetaStatus = `${status} ${time} ${dispName}`;
+        this._lastMetaStatus = `${statusStr} ${time} ${dispName}`;
         this.updateFetchMetaStatus();
       }
     };
@@ -466,11 +663,11 @@ class PkgSrcManager {
       });
   }
 
-  hasMeta(item) {
+  hasMeta(item: FetchItem): boolean {
     return Boolean(this._meta[item.name]);
   }
 
-  pkgPreperInstallDep(dir, displayTitle) {
+  pkgPreperInstallDep(dir: string, displayTitle: string): Promise<void> {
     const node = process.env.NODE || process.execPath;
     const fyn = Path.join(__dirname, "../bin/fyn.js");
     return new VisualExec({
@@ -481,7 +678,7 @@ class PkgSrcManager {
     }).execute();
   }
 
-  _getPacoteDirPacker() {
+  _getPacoteDirPacker(): (manifest: PkgInfo, dir: string) => Readable {
     const pkgPrep = new PkgPreper({
       tmpDir: this._cacheDir,
       installDependencies: this.pkgPreperInstallDep
@@ -489,14 +686,15 @@ class PkgSrcManager {
     return pkgPrep.getDirPackerCb();
   }
 
-  _packDir(manifest, dir) {
+  _packDir(manifest: PkgInfo, dir: string): Readable {
     return this._getPacoteDirPacker()(manifest, dir);
   }
 
-  fetchUrlSemverMeta(item) {
-    let dirPacker;
+  fetchUrlSemverMeta(item: FetchItem): Promise<Packument> {
+    type DirPackerError = Error & { capDir?: string; manifest?: PkgInfo };
+    let dirPacker: (manifest: PkgInfo, dir: string) => Promise<never> | Readable;
 
-    if (item.urlType.startsWith("git")) {
+    if (item.urlType!.startsWith("git")) {
       //
       // NOTE: These comments are from 2018 (npm 6.4.0 era) and may be outdated.
       // Current pacote v21+ may have improvements, but fyn still uses this workaround.
@@ -511,8 +709,8 @@ class PkgSrcManager {
       // 2. Only repacking if there are new commits OR cache is stale by time (24h fallback)
       // 3. Time-based staleness is a fallback when ls-remote fails or for commit hashes
       //
-      dirPacker = (manifest, dir) => {
-        const err = new Error("interrupt pacote");
+      dirPacker = (manifest: PkgInfo, dir: string): Promise<never> => {
+        const err: DirPackerError = new Error("interrupt pacote");
         const capDir = `${dir}-fyn`;
         return Fs.rename(dir, capDir).then(() => {
           err.capDir = capDir;
@@ -526,8 +724,8 @@ class PkgSrcManager {
 
     // For git deps with branch/tag semvers (not commit hashes), check cache first
     // to see if we can avoid cloning by checking for new commits with git ls-remote
-    let pacoteOpts = { dirPacker };
-    if (item.urlType.startsWith("git") && item.semver && !item.semver.match(/^[a-f0-9]{40}$/)) {
+    const pacoteOpts: Record<string, unknown> = { dirPacker };
+    if (item.urlType!.startsWith("git") && item.semver && !item.semver.match(/^[a-f0-9]{40}$/)) {
       // Try to find a cached version to get the commit hash
       // We'll construct a potential cache key from previous resolutions
       // This is a best-effort check - if we can't find cache, pacote will clone anyway
@@ -536,7 +734,7 @@ class PkgSrcManager {
         `fyn-tarball-for-git+https://github.com/${item.semver.replace(/^github:/, "").split("#")[0]}.git#`,
         `fyn-tarball-for-git+ssh://git@github.com/${item.semver.replace(/^github:/, "").split("#")[0]}.git#`
       ];
-      
+
       // Check if any cached entry exists and extract commit hash
       for (const baseKey of potentialCacheKeys) {
         try {
@@ -551,7 +749,7 @@ class PkgSrcManager {
 
     return pacote
       .manifest(`${item.name}@${item.semver}`, this.getPacoteOpts(pacoteOpts))
-      .then(manifest => {
+      .then((manifest: PkgInfo) => {
         manifest = Object.assign({}, manifest);
         return {
           name: item.name,
@@ -560,16 +758,17 @@ class PkgSrcManager {
           },
           urlVersions: {
             [item.semver]: manifest
-          }
-        };
+          },
+          "dist-tags": {}
+        } as Packument;
       })
-      .catch(err => {
+      .catch((err: DirPackerError) => {
         if (!err.capDir) throw err;
-        return this._prepPkgDirForManifest(item, err.manifest, err.capDir);
+        return this._prepPkgDirForManifest(item, err.manifest!, err.capDir);
       });
   }
 
-  async _prepPkgDirForManifest(item, manifest, dir) {
+  async _prepPkgDirForManifest(item: FetchItem, manifest: PkgInfo, dir: string): Promise<Packument> {
     //
     // The full git url with commit hash should be available in manifest._resolved
     // use that as cache key to lookup cached manifest
@@ -577,10 +776,10 @@ class PkgSrcManager {
     // Use semver (URL) for cache key instead of resolved commit hash
     // This allows cache sharing between different commits of the same git ref
     const tgzCacheKey = `fyn-tarball-for-${item.semver}`;
-    const tgzCacheInfo = await getCacheInfoWithRefreshTime(this._cacheDir, tgzCacheKey);
+    const tgzCacheInfo = await getCacheInfoWithRefreshTime(this._cacheDir, tgzCacheKey) as CacheInfoWithRefreshTime | null;
 
-    let pkg;
-    let integrity;
+    let pkg: PkgInfo | undefined;
+    let integrity: string | undefined;
     let shouldRefresh = false;
 
     if (tgzCacheInfo) {
@@ -712,11 +911,12 @@ class PkgSrcManager {
       },
       urlVersions: {
         [item.semver]: manifest
-      }
-    };
+      },
+      "dist-tags": {}
+    } as Packument;
   }
 
-  fetchMeta(item) {
+  fetchMeta(item: FetchItem): Promise<Packument> {
     const pkgName = item.name;
     const pkgKey = `${pkgName}@${item.urlType ? item.urlType : "semver"}`;
 
@@ -724,7 +924,7 @@ class PkgSrcManager {
       return Promise.resolve(this._meta[pkgKey]);
     }
 
-    const inflight = this._inflights.meta.get(pkgKey);
+    const inflight = this._inflights.meta.get<Promise<Packument>>(pkgKey);
     if (inflight) {
       return inflight;
     }
@@ -732,7 +932,7 @@ class PkgSrcManager {
     const packumentUrl = this.makePackumentUrl(pkgName);
     const cacheKey = `make-fetch-happen:request-cache:full:${packumentUrl}`;
 
-    const queueMetaFetchRequest = cached => {
+    const queueMetaFetchRequest = (cached?: Packument): Packument | Promise<Packument> => {
       const offline = this._fyn.remoteMetaDisabled;
 
       if (cached && this._fyn.forceCache) {
@@ -750,12 +950,12 @@ class PkgSrcManager {
 
       this.updateFetchMetaStatus(false);
 
-      const netQItem = {
+      const netQItem: MetaQueueItem = {
         type: "meta",
         cacheKey,
         item,
         packumentUrl,
-        defer: Promise.defer()
+        defer: Promise.defer<Packument>()
       };
 
       this._netQ.addItem(netQItem);
@@ -790,11 +990,11 @@ class PkgSrcManager {
     //     })
     //   )
 
-    let foundCache;
+    let foundCache: { data?: Buffer; refreshTime?: number } | undefined;
     let cacheMemoized = false;
     const metaMemoizeUrl = this._fyn._options.metaMemoize;
 
-    const promise = (item.urlType
+    const promise: Promise<Packument> = (item.urlType
       ? // when the semver is a url then the meta is not from npm registry and
         // we can't use the cache for registry
         Promise.resolve()
@@ -875,15 +1075,15 @@ class PkgSrcManager {
     return this._inflights.meta.add(pkgKey, promise);
   }
 
-  pacotePrefetch(pkgId, pkgInfo, integrity) {
+  pacotePrefetch(pkgId: string, pkgInfo: PkgInfo, integrity?: string): Promise<void> {
     const stream = this.pacoteTarballStream(pkgId, pkgInfo, integrity);
 
-    const defer = Promise.defer();
+    const defer = Promise.defer<void>();
     // Handle different stream types from different pacote versions
     // Newer pacote returns a Promise, not a stream
-    if (typeof stream.then === "function") {
+    if (typeof (stream as any).then === "function") {
       // It's a Promise, resolve it directly
-      stream.then(() => defer.resolve()).catch(defer.reject);
+      (stream as unknown as Promise<void>).then(() => defer.resolve()).catch(defer.reject);
     } else if (typeof stream.once === "function") {
       // Legacy stream with .once()
       stream.once("end", () => {
@@ -900,12 +1100,12 @@ class PkgSrcManager {
     return defer.promise;
   }
 
-  cacacheTarballStream(integrity) {
+  cacacheTarballStream(integrity: string): Readable {
     return cacache.get.stream.byDigest(this._cacheDir, integrity);
   }
 
-  pacoteTarballStream(pkgId, pkgInfo, integrity) {
-    const tarballUrl = _.get(pkgInfo, "dist.tarball");
+  pacoteTarballStream(pkgId: string, pkgInfo: PkgInfo, integrity?: string): PassThrough {
+    const tarballUrl = _.get(pkgInfo, "dist.tarball") as string | undefined;
 
     // pacote >= 21 changed the API - use RemoteFetcher with tarball URL to avoid manifest lookup
     if (tarballUrl) {
@@ -913,18 +1113,18 @@ class PkgSrcManager {
         integrity
       });
       // Create a fetcher for the tarball URL
-      const fetcher = new pacote.RemoteFetcher(tarballUrl, opts);
+      const fetcher = new (pacote as any).RemoteFetcher(tarballUrl, opts);
       // Create a passthrough stream that we can return
       const passthrough = new PassThrough();
 
       // Start the tarballStream operation and pipe to passthrough
       // We need to start this immediately so that when pacotePrefetch consumes
       // the passthrough stream, data will flow through
-      const streamPromise = fetcher.tarballStream(stream => {
+      const streamPromise = fetcher.tarballStream((stream: Readable) => {
         // Pipe the source stream to our passthrough stream
         stream.pipe(passthrough);
         // Return a promise that resolves when piping is complete
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           stream.on("end", resolve);
           stream.on("error", reject);
           passthrough.on("error", reject);
@@ -932,7 +1132,7 @@ class PkgSrcManager {
       });
 
       // If there's an error starting the stream, propagate it to the passthrough
-      streamPromise.catch(err => passthrough.destroy(err));
+      streamPromise.catch((err: Error) => passthrough.destroy(err));
 
       // Return the passthrough stream
       return passthrough;
@@ -948,9 +1148,9 @@ class PkgSrcManager {
     const passthrough = new PassThrough();
     const streamPromise = pacote.tarball.stream(
       pkgId,
-      stream => {
+      (stream: Readable) => {
         stream.pipe(passthrough);
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           stream.on("end", resolve);
           stream.on("error", reject);
           passthrough.on("error", reject);
@@ -965,11 +1165,11 @@ class PkgSrcManager {
     return passthrough;
   }
 
-  getIntegrity(item) {
-    const integrity = _.get(item, "dist.integrity");
+  getIntegrity(item: PkgInfo): string | undefined {
+    const integrity = _.get(item, "dist.integrity") as string | undefined;
     if (integrity) return integrity;
 
-    const shasum = _.get(item, "dist.shasum");
+    const shasum = _.get(item, "dist.shasum") as string | undefined;
 
     if (shasum) {
       const b64 = Buffer.from(shasum, "hex").toString("base64");
@@ -979,19 +1179,19 @@ class PkgSrcManager {
     return undefined;
   }
 
-  tarballFetchId(pkgInfo) {
+  tarballFetchId(pkgInfo: PkgInfo): string {
     const di = pkgInfo[DEP_ITEM];
     if (di && di.urlType) return `${di.name}@${di.semver}`;
 
     return `${pkgInfo.name}@${pkgInfo.version}`;
   }
 
-  async getCentralPackage(integrity, pkgInfo) {
+  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgInfo): Promise<string | Readable> {
     const { central, copy } = this._fyn;
 
     const tarId = this.tarballFetchId(pkgInfo);
 
-    const tarStream = async () => {
+    const tarStream = async (): Promise<Readable> => {
       return integrity && (await cacache.get.hasContent(this._cacheDir, integrity))
         ? this.cacacheTarballStream(integrity)
         : this.pacoteTarballStream(tarId, pkgInfo, integrity);
@@ -1039,12 +1239,12 @@ class PkgSrcManager {
     return tarStream();
   }
 
-  fetchTarball(pkgInfo) {
+  fetchTarball(pkgInfo: PkgInfo): TarballFetchResult {
     const startTime = Date.now();
     const pkgId = this.tarballFetchId(pkgInfo);
     const integrity = this.getIntegrity(pkgInfo);
 
-    const doFetch = () => {
+    const doFetch = (): Promise<string | Readable> => {
       const fetchStartTime = Date.now();
 
       if (!this._fetching) {
@@ -1059,10 +1259,10 @@ class PkgSrcManager {
       return this.pacotePrefetch(pkgId, pkgInfo, integrity).then(() => {
         const status = chalk.cyan(`200`);
         const time = logFormat.time(Date.now() - fetchStartTime);
-        const ix = this._fetching.indexOf(pkgId);
-        this._fetching.splice(ix, 1);
+        const ix = this._fetching!.indexOf(pkgId);
+        this._fetching!.splice(ix, 1);
         this._fetchingMsg = `${status} ${time} ${chalk.red.bgGreen(pkgInfo.name)}`;
-        logger.updateItem(FETCH_PACKAGE, `${this._fetching.length} ${this._fetchingMsg}`);
+        logger.updateItem(FETCH_PACKAGE, `${this._fetching!.length} ${this._fetchingMsg}`);
         return this.getCentralPackage(integrity, pkgInfo);
       });
     };
@@ -1071,10 +1271,10 @@ class PkgSrcManager {
     // - use stream from cached tarball if exist
     // - else fetch from network
 
-    const promise = cacache.get
+    const promise: Promise<string | Readable> = cacache.get
       .hasContent(this._cacheDir, integrity)
       .catch(() => false)
-      .then(content => {
+      .then((content: unknown) => {
         if (content) {
           return this.getCentralPackage(integrity, pkgInfo);
         }
@@ -1087,9 +1287,14 @@ class PkgSrcManager {
       });
 
     return {
-      then: (r, e) => promise.then(r, e),
-      catch: e => promise.catch(e),
-      tap: f => promise.then(x => (f(x), x)),
+      then: <TResult1 = Readable | string, TResult2 = never>(
+        r?: ((value: Readable | string) => TResult1 | PromiseLike<TResult1>) | null,
+        e?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+      ) => promise.then(r, e),
+      catch: <TResult = never>(
+        e?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null
+      ) => promise.catch(e),
+      tap: (f: (x: Readable | string) => void) => promise.then(x => (f(x), x)),
       promise,
       startTime
     };
@@ -1098,3 +1303,13 @@ class PkgSrcManager {
 
 export default PkgSrcManager;
 export { META_CACHE_STALE_TIME };
+export type {
+  PkgSrcManagerOptions,
+  FynInstance,
+  FetchItem,
+  PkgDist,
+  PkgInfo,
+  Packument,
+  LocalMeta,
+  TarballFetchResult
+};
