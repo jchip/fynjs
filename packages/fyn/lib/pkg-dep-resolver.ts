@@ -74,6 +74,9 @@ interface ResolverPackageJson extends PackageJson {
   [PACKAGE_RAW_INFO]?: { dir: string; str: string };
 }
 
+/** Minimal interface for dependency extraction - used by makePkgDepItems */
+type DependencySource = ResolverPackageJson | PackageVersionMeta;
+
 /** Fynpo package graph interface */
 interface FynpoGraph {
   packages: {
@@ -607,7 +610,7 @@ class PkgDepResolver {
    * @returns PkgDepItems with dependency arrays
    */
   makePkgDepItems(
-    pkg: ResolverPackageJson,
+    pkg: DependencySource,
     depItem: DepItem,
     dev?: boolean,
     noPrefetch?: boolean,
@@ -1007,7 +1010,7 @@ class PkgDepResolver {
         // Alice, do not go down the rabbit hole, it will never end.
         if (!item.isCircular()) {
           pkgDepth.depItems.push(
-            this.makePkgDepItems(meta.versions[resolved] as unknown as PackageJson, item, false, deepRes)
+            this.makePkgDepItems(meta.versions[resolved], item, false, deepRes)
           );
         }
       }

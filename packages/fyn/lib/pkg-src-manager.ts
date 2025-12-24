@@ -1076,15 +1076,15 @@ class PkgSrcManager {
   }
 
   pacotePrefetch(pkgId: string, pkgInfo: PkgInfo, integrity?: string): Promise<void> {
-    const stream = this.pacoteTarballStream(pkgId, pkgInfo, integrity);
+    const stream: PassThrough | PromiseLike<void> = this.pacoteTarballStream(pkgId, pkgInfo, integrity);
 
     const defer = Promise.defer<void>();
     // Handle different stream types from different pacote versions
     // Newer pacote returns a Promise, not a stream
-    if (typeof (stream as any).then === "function") {
+    if ("then" in stream && typeof stream.then === "function") {
       // It's a Promise, resolve it directly
-      (stream as unknown as Promise<void>).then(() => defer.resolve()).catch(defer.reject);
-    } else if (typeof stream.once === "function") {
+      stream.then(() => defer.resolve()).catch(defer.reject);
+    } else if ("once" in stream && typeof stream.once === "function") {
       // Legacy stream with .once()
       stream.once("end", () => {
         if (stream.destroy) stream.destroy();

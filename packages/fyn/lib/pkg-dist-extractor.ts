@@ -31,7 +31,7 @@ interface ExtractData {
 }
 
 /** Fyn instance interface for dist extractor */
-interface FynForExtractor {
+export interface FynForExtractor {
   getInstalledPkgDir(name: string, version: string, opts?: { promoted?: boolean }): string;
   getExtraDir(name?: string): string;
   getFvDir(version: string): string;

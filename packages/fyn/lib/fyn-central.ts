@@ -51,12 +51,17 @@ interface PackageInfo {
   validated?: boolean;
 }
 
-/** Tree file content structure */
+/** Tree file content structure (new format with version) */
 interface TreeFileContent {
-  _?: number;
+  _: number;
   $?: TreeNode;
   shaSum?: string;
   mutates?: boolean;
+}
+
+/** Type guard to check if parsed tree is new format with version */
+function isTreeFileContent(obj: unknown): obj is TreeFileContent {
+  return typeof obj === "object" && obj !== null && "_" in obj && typeof (obj as TreeFileContent)._ === "number";
 }
 
 /** Options for FynCentral constructor */
@@ -288,15 +293,16 @@ class FynCentral {
     const treeFile = Path.join(info.contentPath, "tree.json");
     try {
       const data = await Fs.readFile(treeFile);
-      const tree: TreeFileContent = JSON.parse(data.toString());
-      if (tree._ !== undefined && tree._ >= 1) {
-        if (tree.mutates !== undefined) {
-          info.mutates = tree.mutates;
+      const parsed: unknown = JSON.parse(data.toString());
+      if (isTreeFileContent(parsed) && parsed._ >= 1) {
+        if (parsed.mutates !== undefined) {
+          info.mutates = parsed.mutates;
         }
-        info.tree = tree.$;
-        info.shaSum = tree.shaSum;
+        info.tree = parsed.$;
+        info.shaSum = parsed.shaSum;
       } else {
-        info.tree = tree as unknown as TreeNode;
+        // Legacy format: tree stored directly without wrapper
+        info.tree = parsed as TreeNode;
       }
     } catch (err) {
       throw new AggregateError([err as Error], `fyn-central: reading tree file ${treeFile}`);
@@ -474,7 +480,7 @@ class FynCentral {
     stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
   ): Promise<void> {
     let tmpLock: string | false = false;
-    let currentStream = stream;
+    let currentStream: typeof stream | undefined = stream;
 
     try {
       let info = await this._loadTree(integrity);
@@ -498,7 +504,7 @@ class FynCentral {
         } else {
           logger.debug("storing tar to central store", pkgId, integrity);
           await this._storeTarStream(info, integrity, currentStream);
-          currentStream = undefined as unknown as Readable;
+          currentStream = undefined;
           this._map.set(integrity, info);
           logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);
         }

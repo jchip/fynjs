@@ -3,7 +3,7 @@
 import _ from "lodash";
 import Fs from "./util/file-ops";
 import logger from "./logger";
-import PkgDistExtractor from "./pkg-dist-extractor";
+import PkgDistExtractor, { type FynForExtractor } from "./pkg-dist-extractor";
 import PromiseQueue from "./util/promise-queue";
 import chalk from "chalk";
 import longPending from "./long-pending";
@@ -50,18 +50,10 @@ interface FindResult {
   pkgJson?: Record<string, unknown> & { _invalid?: boolean; name?: string };
 }
 
-/** Fyn instance interface for dist fetcher */
-interface FynForDistFetcher {
+/** Fyn instance interface for dist fetcher - extends extractor interface */
+interface FynForDistFetcher extends FynForExtractor {
   concurrency: number;
   _options: { sourceMaps?: boolean };
-  getInstalledPkgDir(name: string, version: string, opts?: { promoted?: boolean }): string;
-  ensureProperPkgDir(pkg: FetchPkg): Promise<unknown>;
-  loadJsonForPkg(
-    pkg: FetchPkg,
-    dir: string,
-    validate?: boolean
-  ): Promise<Record<string, unknown> & { _invalid?: boolean; name?: string }>;
-  isNormalLayout: boolean;
 }
 
 /** Package source manager interface */
@@ -108,7 +100,7 @@ class PkgDistFetcher {
     this._promiseQ.on("doneItem", x => this.handleItemDone(x));
     this._promiseQ.on("failItem", x => this.handleItemFail(x));
     // down stream extractor
-    this._distExtractor = new PkgDistExtractor({ fyn: options.fyn as unknown as Parameters<typeof PkgDistExtractor>[0]["fyn"] });
+    this._distExtractor = new PkgDistExtractor({ fyn: options.fyn });
     // immediately stop if down stream extractor failed
     this._distExtractor.once("fail", () => this._promiseQ.setItemQ([]));
   }
