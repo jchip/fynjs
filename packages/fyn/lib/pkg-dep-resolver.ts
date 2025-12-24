@@ -199,7 +199,7 @@ interface PkgOptResolver {
   resolve(): void;
   isPending(): boolean;
   add(data: { item: DepItem; meta: PackageMeta; err?: Error }): void;
-  isExtracted(name: string, version: string): boolean;
+  isExtracted(name: string, version: string): string | undefined;
   _depResolver: PkgDepResolver;
 }
 

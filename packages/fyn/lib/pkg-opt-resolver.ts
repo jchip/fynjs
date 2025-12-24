@@ -102,7 +102,7 @@ class PkgOptResolver {
   private _passedPkgs: OptDepData[];
   private _checkedPkgs: Record<string, CheckResult>;
   private _resolving: boolean;
-  private _extractedPkgs: Record<string, boolean>;
+  private _extractedPkgs: Record<string, string>;
   private _failedChecks: Array<{ err?: Error; data: OptDepData }>;
   private _failedPkgs: OptDepData[];
   private _depResolver: DepResolver;
@@ -167,7 +167,7 @@ class PkgOptResolver {
     this._promiseQ._process();
   }
 
-  isExtracted(name: string, version: string): boolean {
+  isExtracted(name: string, version: string): string | undefined {
     return this._extractedPkgs[`${name}@${version}`];
   }
 

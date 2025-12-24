@@ -53,8 +53,8 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   promoted?: boolean;
   /** Package is a direct dependency */
   top?: boolean;
-  /** Tarball has been extracted */
-  extracted?: boolean;
+  /** Extraction directory path (set when tarball is extracted) */
+  extracted?: string;
   /** Local package path */
   local?: string;
   /** Installation directory */
