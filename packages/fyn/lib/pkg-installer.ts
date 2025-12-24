@@ -14,80 +14,23 @@ import { INSTALL_PACKAGE } from "./log-items";
 import { runNpmScript } from "./util/run-npm-script";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
-import { RESOLVE_ORDER, RSEMVERS, LOCK_RSEMVERS, SEMVER } from "./types";
-import type { DepData, PkgVersion } from "./dep-data";
+import {
+  RESOLVE_ORDER,
+  RSEMVERS,
+  LOCK_RSEMVERS,
+  SEMVER,
+  type DepInfo,
+  type InstallPkgJson,
+  type ResolutionData,
+  type KnownPackage
+} from "./types";
+import type { DepData } from "./dep-data";
 import type FynCentral from "./fyn-central";
 
 /* eslint-disable max-statements,no-magic-numbers,no-empty,complexity,prefer-template,max-len, max-depth, no-param-reassign */
 
-/** Resolution data for a dependency */
-interface ResData {
-  dep?: Record<string, { resolved: string }>;
-  opt?: Record<string, { resolved: string }>;
-  [key: string]: unknown;
-}
-
-/** Distribution info for a package */
-interface DistInfo {
-  tarball?: string;
-  shasum?: string;
-  integrity?: string;
-  fullPath?: string;
-}
-
-/** Package JSON structure */
-interface PkgJson {
-  name: string;
-  version: string;
-  scripts?: {
-    preinstall?: string;
-    install?: string;
-    postinstall?: string;
-    postInstall?: string;
-    [key: string]: string | undefined;
-  };
-  _fyn: Record<string, boolean>;
-  _from?: string;
-  _id?: string;
-  _deprecated?: string;
-  hasPI?: boolean;
-  [key: string]: unknown;
-}
-
-/** Dependency info structure */
-interface DepInfo extends PkgVersion {
-  name: string;
-  version: string;
-  dir?: string;
-  str?: string;
-  json?: PkgJson;
-  local?: string | boolean;
-  linkLocal?: boolean;
-  linkDep?: boolean;
-  top?: boolean;
-  promoted?: boolean;
-  src?: string;
-  dsrc?: string;
-  dist?: DistInfo;
-  res?: ResData;
-  deprecated?: string;
-  showDepr?: boolean;
-  firstReqIdx?: number;
-  requests: string[][];
-  install?: string[];
-  preinstall?: boolean;
-  preInstalled?: boolean;
-  optFailed?: number;
-  fynLinkData?: Record<string, boolean>;
-  _removing?: boolean;
-  _removingDeps?: boolean;
-  _removed?: boolean;
-  [SEMVER]?: string;
-}
-
-/** Package data with symbol properties */
-interface PkgData extends PkgVersion {
-  promoted?: boolean;
+/** Package data with symbol properties for installer */
+interface PkgData extends DepInfo {
   [RSEMVERS]?: Record<string, string>;
   [LOCK_RSEMVERS]?: Record<string, string>;
   [RESOLVE_ORDER]?: string[];
@@ -602,7 +545,7 @@ class PkgInstaller {
       this.timeCheck("done link Local");
     }
 
-    const json: PkgJson = depInfo.json || ({} as PkgJson);
+    const json: InstallPkgJson = depInfo.json || ({} as InstallPkgJson);
 
     if (_.isEmpty(json) || (json as unknown as { fromLocked?: boolean }).fromLocked) {
       const dir = this._fyn.getInstalledPkgDir(name, version, depInfo);

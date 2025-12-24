@@ -72,3 +72,6 @@ export type {
   PromiseItem,
   ResolveResult
 } from "./resolution";
+
+// Installer types
+export type { InstallPkgJson, InstallDistInfo, DepInfo } from "./installer";
