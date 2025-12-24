@@ -75,3 +75,12 @@ export type {
 
 // Installer types
 export type { InstallPkgJson, InstallDistInfo, DepInfo } from "./installer";
+
+// Lock file types
+export type {
+  LockVersionMeta,
+  PkgLockData,
+  LockDepItem,
+  LockPkgDepItems,
+  LockFileData
+} from "./lock-file";

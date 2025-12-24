@@ -17,50 +17,17 @@ import {
   LATEST_TAG_VERSION,
   LATEST_SORTED_VERSIONS,
   LATEST_VERSION_TIME,
-  LOCAL_VERSION_MAPS
+  LOCAL_VERSION_MAPS,
+  type LockLockVersionMeta,
+  type PkgLockData,
+  type LockDepItem,
+  type LockLockPkgDepItems
 } from "./types";
 import logger from "./logger";
 import fyntil from "./util/fyntil";
 import type { DepData, PkgVersion } from "./dep-data";
 
-/** Version metadata in lock file */
-interface VersionMeta {
-  $?: string | number;
-  _?: string;
-  top?: number;
-  optFailed?: number;
-  hasPI?: number;
-  hasI?: number;
-  local?: boolean;
-  fromLocked?: boolean;
-  name?: string;
-  version?: string;
-  deprecated?: string;
-  os?: string[];
-  cpu?: string[];
-  _hasShrinkwrap?: number | boolean;
-  _missingJson?: boolean;
-  _valid?: boolean;
-  dependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  bundleDependencies?: string[];
-  dist?: {
-    integrity?: string;
-    tarball?: string;
-    fullPath?: string;
-  };
-  [key: string]: unknown;
-}
-
-/** Package lock data structure */
-interface PkgLockData {
-  _?: Record<string, string | string[]>;
-  _latest?: string;
-  [version: string]: VersionMeta | Record<string, string | string[]> | string | undefined;
-}
-
-/** Lock data with symbol properties */
+/** Lock data with symbol properties (runtime expanded form) */
 interface ConvertedLockData {
   [LATEST_TAG_VERSION]?: string;
   [LOCK_RSEMVERS]?: Record<string, string | string[]>;
@@ -69,43 +36,28 @@ interface ConvertedLockData {
   [LATEST_SORTED_VERSIONS]?: string[];
   [LATEST_VERSION_TIME]?: number;
   [LOCAL_VERSION_MAPS]?: Record<string, string>;
-  versions: Record<string, VersionMeta>;
+  versions: Record<string, LockLockVersionMeta>;
   "dist-tags"?: Record<string, string>;
   time?: Record<string, string>;
   urlVersions?: Record<string, unknown>;
 }
 
-/** Lock file data structure */
+/** Lock file data structure with symbol support */
 interface LockData {
-  $pkg?: PkgDepItems;
+  $pkg?: LockLockPkgDepItems;
   $fyn?: Record<string, unknown>;
   [pkgName: string]:
     | PkgLockData
     | ConvertedLockData
-    | PkgDepItems
+    | LockLockPkgDepItems
     | Record<string, unknown>
     | undefined;
-}
-
-/** Dependency item from pkg-dep-resolver */
-interface DepItem {
-  name: string;
-  semver?: string;
-  resolved?: string;
-  _semver?: { $: string };
-}
-
-/** Package dependency items */
-interface PkgDepItems {
-  dep?: DepItem[];
-  dev?: DepItem[];
-  opt?: DepItem[];
 }
 
 /** Package metadata from registry */
 interface PkgMeta {
   local?: boolean;
-  versions: Record<string, VersionMeta>;
+  versions: Record<string, LockLockVersionMeta>;
   "dist-tags"?: Record<string, string>;
   time?: Record<string, string>;
   urlVersions?: Record<string, unknown>;
@@ -160,7 +112,7 @@ class PkgDepLocker {
   private _config: Record<string, unknown>;
   private _fyn: FynForDepLocker;
   private _shaSum?: string | number;
-  private _$pkg?: PkgDepItems;
+  private _$pkg?: LockPkgDepItems;
   private _$pkgDiff?: { dep: Record<string, string>; dev: Record<string, string>; opt: Record<string, string> };
   private _$allPkgDiff: Record<string, string>;
 
@@ -233,7 +185,7 @@ class PkgDepLocker {
           const vpkg = pkg[version];
           if (!vpkg) return;
           const json = vpkg.json || {};
-          const meta: VersionMeta = {};
+          const meta: LockVersionMeta = {};
           const dist = vpkg.dist || {};
           if (vpkg.top) meta.top = 1;
           const scripts = json.scripts || {};
@@ -299,7 +251,7 @@ class PkgDepLocker {
   /**
    * Take dep-item with its real meta and update lock data
    */
-  update(item: DepItem, meta: PkgMeta): PkgMeta | ConvertedLockData {
+  update(item: LockDepItem, meta: PkgMeta): PkgMeta | ConvertedLockData {
     if (!this._enable || meta.local) return meta;
     let locked = this._lockData[item.name] as ConvertedLockData | PkgLockData | undefined;
     if (!locked) {
@@ -335,14 +287,14 @@ class PkgDepLocker {
     return convertedLocked;
   }
 
-  hasLock(item: DepItem): boolean {
+  hasLock(item: LockDepItem): boolean {
     return Boolean(this._enable && this._lockData[item.name]);
   }
 
   /**
    * Convert from fyn lock format to npm meta format
    */
-  convert(item: DepItem): ConvertedLockData | false | undefined {
+  convert(item: LockDepItem): ConvertedLockData | false | undefined {
     if (!this._enable) return undefined;
     let locked = this._lockData[item.name] as PkgLockData | ConvertedLockData | undefined;
     if (!locked) return false;
@@ -354,9 +306,9 @@ class PkgDepLocker {
       const sorted = Object.keys(pkgLocked)
         .filter(x => !x.startsWith("_"))
         .sort(simpleSemverCompare);
-      const versions: Record<string, VersionMeta> = {};
+      const versions: Record<string, LockVersionMeta> = {};
       _.each(sorted, (version: string) => {
-        const vpkg = pkgLocked[version] as VersionMeta;
+        const vpkg = pkgLocked[version] as LockVersionMeta;
         if (!_.isEmpty(vpkg) && vpkg._valid !== false) {
           if (vpkg.$ === "local") {
             vpkg.local = true;
@@ -432,14 +384,14 @@ class PkgDepLocker {
    * @param pkgDepItems - dep items generated by makePkgDepItems in pkg-dep-resolver.js
    * @param reset - whether to reset even if already set
    */
-  setPkgDepItems(pkgDepItems: PkgDepItems, reset = false): void {
+  setPkgDepItems(pkgDepItems: LockPkgDepItems, reset = false): void {
     if (this._$pkg && !reset) {
       return;
     }
 
     const { dep, dev, opt } = pkgDepItems;
     const items: { dep?: Record<string, string>; dev?: Record<string, string>; opt?: Record<string, string> } = {};
-    const makeDep = (acc: Record<string, string>, di: DepItem): Record<string, string> => {
+    const makeDep = (acc: Record<string, string>, di: LockDepItem): Record<string, string> => {
       acc[di.name] = di._semver!.$;
       return acc;
     };
@@ -484,7 +436,7 @@ class PkgDepLocker {
     }
     $pkgDiff.opt = diffDep(($lockPkg.opt as unknown as Record<string, string>) || {}, items.opt || {});
 
-    this._$pkg = items as PkgDepItems;
+    this._$pkg = items as LockPkgDepItems;
     this._$pkgDiff = $pkgDiff;
 
     // set diff only if existing lock data has the $pkg info
@@ -509,7 +461,7 @@ class PkgDepLocker {
    * @param item - item to remove
    * @param force - force removal
    */
-  remove(item: DepItem, force = false): void {
+  remove(item: LockDepItem, force = false): void {
     if (!this._enable) return;
 
     const locked = this._lockData[item.name] as PkgLockData | ConvertedLockData | undefined;
@@ -566,7 +518,7 @@ class PkgDepLocker {
       let copied = false;
       Object.keys(pkg).forEach((version: string) => {
         if (version.startsWith("_")) return;
-        const vpkg = pkg[version] as VersionMeta;
+        const vpkg = pkg[version] as LockVersionMeta;
         if (vpkg && vpkg.$ === "local" && vpkg._ && Path.isAbsolute(vpkg._)) {
           if (!copied) lockData[pkgName] = pkg = Object.assign({}, pkg);
           copied = true;
@@ -588,7 +540,7 @@ class PkgDepLocker {
   _fullLocalPath(base: string, lockData?: LockData): void {
     _.each(lockData || this._lockData, (pkg: PkgLockData | undefined, pkgName: string) => {
       if (!pkg || pkgName.startsWith("$")) return;
-      _.each(pkg, (vpkg: VersionMeta | undefined, key: string) => {
+      _.each(pkg, (vpkg: LockVersionMeta | undefined, key: string) => {
         if (key === "_" || key.startsWith("_")) return;
         if (vpkg && vpkg.$ === "local" && vpkg._ && !Path.isAbsolute(vpkg._)) {
           vpkg._ = Path.join(base, vpkg._);
