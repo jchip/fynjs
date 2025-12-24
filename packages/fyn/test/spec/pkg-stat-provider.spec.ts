@@ -11,9 +11,14 @@ import { expect } from "chai";
 import PkgStatProvider from "../../lib/pkg-stat-provider";
 
 describe("pkg-stat-provider", () => {
-  // Mock Fyn instance with resolved data
+  // Mock Fyn instance with resolved data - wrap each package with versions property
   const createMockFyn = (pkgs = {}, res = {}, pkg = {}) => ({
-    _data: { pkgs, res },
+    _data: {
+      pkgs: Object.fromEntries(
+        Object.entries(pkgs).map(([name, versions]) => [name, { versions }])
+      ),
+      res
+    },
     _pkg: pkg,
     _options: {}
   });

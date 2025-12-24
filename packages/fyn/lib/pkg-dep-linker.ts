@@ -37,7 +37,7 @@ interface PkgData {
 /** Fyn instance interface for dep linker */
 interface FynForDepLinker {
   _data: {
-    getPkgsData(): Record<string, Record<string, PkgData>>;
+    getPkgsData(): Record<string, { versions: Record<string, PkgData> }>;
   };
   getInstalledPkgDir(name: string, version: string, info?: unknown): string;
   createSubNodeModulesDir(pkgDir: string): Promise<string>;
@@ -157,8 +157,8 @@ class PkgDepLinker {
           // depends on a package that's not promoted to flatten top level.
           // need to create a node_modules dir within and add a symlink
           // there to the depPkg.
-          if (!pkgs[depName] || !pkgs[depName][depPkg.resolved]) return;
-          const pkgInfo = pkgs[depName][depPkg.resolved];
+          if (!pkgs[depName] || !pkgs[depName].versions[depPkg.resolved]) return;
+          const pkgInfo = pkgs[depName].versions[depPkg.resolved];
           if (!pkgInfo.promoted) {
             fvDeps.push(pkgInfo);
           }

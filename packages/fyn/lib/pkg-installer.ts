@@ -94,7 +94,8 @@ interface PkgData extends PkgVersion {
 }
 
 /** Package data collection with symbol properties */
-type PkgsData = Record<string, Record<string, PkgData> & {
+type PkgsData = Record<string, {
+  versions: Record<string, PkgData>;
   [RSEMVERS]?: Record<string, string>;
   [LOCK_RSEMVERS]?: Record<string, string>;
   [RESOLVE_ORDER]?: string[];
@@ -191,7 +192,7 @@ class PkgInstaller {
     const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
     this.timeCheck("queueing packages");
     for (const info of this._data.resolvedPackages) {
-      const depInfo = pkgsData[info.name][info.version] as DepInfo;
+      const depInfo = pkgsData[info.name].versions[info.version] as DepInfo;
       logger.debug("queuing", depInfo.name, depInfo.version, "for install");
       await this._gatherPkg(depInfo);
     }
@@ -314,7 +315,7 @@ class PkgInstaller {
         const pkgData = dataPackages[name];
         if (!pkgData) continue;
         const resolved = section[name].resolved;
-        const pkgDepInfo = pkgData[resolved] as DepInfo | undefined;
+        const pkgDepInfo = pkgData.versions[resolved] as DepInfo | undefined;
         if (!pkgDepInfo) continue;
 
         await this._removeDepsOf(pkgDepInfo, originId);
@@ -679,8 +680,8 @@ class PkgInstaller {
       }
 
       const pkgName = Path.posix.join(scope, dirName);
-      const pkgVersions = pkgsData[pkgName];
-      const topPkg = _.find(pkgVersions, (x: PkgData) => x.promoted);
+      const pkgData = pkgsData[pkgName];
+      const topPkg = pkgData && _.find(pkgData.versions, (x: PkgData) => x.promoted);
 
       if (!topPkg) {
         this._removedCount++;
@@ -720,8 +721,8 @@ class PkgInstaller {
     let createFvNmDir: boolean | undefined;
     for (const pkgName in pkgsData) {
       const pkg = pkgsData[pkgName];
-      for (const version in pkg) {
-        const verPkg = pkg[version] as DepInfo;
+      for (const version in pkg.versions) {
+        const verPkg = pkg.versions[version] as DepInfo;
         let symLinkLocation: string;
         logger.debug("linkTop", pkgName, "top", verPkg.top, "promoted", verPkg.promoted);
         if (verPkg.top) {
@@ -778,7 +779,8 @@ class PkgInstaller {
   }
 
   async _cleanUpVersions(pkgName: string): Promise<void> {
-    const pkg = this._data.getPkgsData()[pkgName] as unknown as Record<string, PkgData>;
+    const kpkg = this._data.getPkgsData()[pkgName];
+    const pkg = kpkg?.versions as unknown as Record<string, PkgData> | undefined;
     const versions = this._fvVersions[pkgName];
 
     if (!versions || versions.length < 1) return;

@@ -87,11 +87,12 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
  * Known package with resolved versions
  *
  * Tracks all resolved versions of a package during resolution.
- * Uses a Map-like structure for version lookups.
+ * Version data is stored in a separate `versions` record to avoid
+ * mixing with symbol properties.
  */
 export interface KnownPackage extends KnownPackageSymbols {
   /** Version info indexed by version string */
-  versions: Map<string, PkgVersionInfo>;
+  versions: Record<string, PkgVersionInfo>;
 }
 
 /**

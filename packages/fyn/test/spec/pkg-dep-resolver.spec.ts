@@ -38,18 +38,41 @@ describe("pkg-dep-resolver", function() {
       .join(";");
   };
 
+  // Convert old format (versions as direct keys) to new format (versions nested under 'versions' key)
+  const convertToNewFormat = pkgs => {
+    const result = {};
+    for (const name in pkgs) {
+      const pkg = pkgs[name];
+      // Check if already in new format (has 'versions' property that is an object)
+      if (pkg.versions && typeof pkg.versions === "object") {
+        result[name] = pkg;
+      } else {
+        // Convert from old format
+        result[name] = { versions: pkg };
+      }
+    }
+    return result;
+  };
+
   const sortRequests = data => {
     const sort = pkgs => {
       _.each(pkgs, pkg => {
-        _.each(pkg, v => {
+        // pkg is now a KnownPackage with versions property
+        _.each(pkg.versions, v => {
           v.requests = v.requests.map(r => r.join("!")).sort();
           if (v.src) v.src = sortSrc(v.src);
           if (v.dsrc) v.dsrc = sortSrc(v.dsrc);
           delete v.extracted;
+          // Remove dynamic source count properties (e.g., dep: 0, opt: 0)
+          // These were from the old index signature pattern
+          ["dep", "dev", "opt", "devOpt", "peer"].forEach(key => delete v[key]);
           v.dist = Object.assign({}, v.dist, { shasum: "test" });
         });
       });
     };
+    // Convert to new format if needed
+    data.pkgs = convertToNewFormat(data.pkgs);
+    data.badPkgs = convertToNewFormat(data.badPkgs);
     sort(data.pkgs);
     sort(data.badPkgs);
     return data;
@@ -58,8 +81,9 @@ describe("pkg-dep-resolver", function() {
   const cleanData = pkgs => {
     for (const name in pkgs) {
       const pkg = pkgs[name];
-      for (const ver in pkg) {
-        const verPkg = pkg[ver];
+      // pkg is now a KnownPackage with versions property
+      for (const ver in pkg.versions) {
+        const verPkg = pkg.versions[ver];
         delete verPkg.extracted;
         delete verPkg.str;
         delete verPkg.dir;
@@ -223,7 +247,7 @@ describe("pkg-dep-resolver", function() {
       // mod-a should be resolved to exactly 1.0.0 due to override
       const modA = fyn._data.pkgs["mod-a"];
       expect(modA).to.exist;
-      expect(Object.keys(modA)).to.include("1.0.0");
+      expect(Object.keys(modA.versions)).to.include("1.0.0");
     }).timeout(10000);
 
     it("should apply override with version constraint", async () => {
@@ -249,7 +273,7 @@ describe("pkg-dep-resolver", function() {
       await fyn.resolveDependencies();
       const modA = fyn._data.pkgs["mod-a"];
       expect(modA).to.exist;
-      expect(Object.keys(modA)).to.include("1.0.0");
+      expect(Object.keys(modA.versions)).to.include("1.0.0");
     }).timeout(10000);
 
     it("should apply override with $ reference to direct dependency", async () => {
@@ -281,7 +305,7 @@ describe("pkg-dep-resolver", function() {
       const modA = fyn._data.pkgs["mod-a"];
       expect(modA).to.exist;
       // Should only have version 1.0.0, not the 0.x version that mod-b would have requested
-      expect(Object.keys(modA)).to.include("1.0.0");
+      expect(Object.keys(modA.versions)).to.include("1.0.0");
     }).timeout(10000);
 
     it("should apply nested override (parent scoped)", async () => {
@@ -340,7 +364,7 @@ describe("pkg-dep-resolver", function() {
       const modA = fyn._data.pkgs["mod-a"];
       expect(modA).to.exist;
       // mod-a should NOT be 1.0.0 because the constraint didn't match
-      expect(Object.keys(modA)).to.not.include("1.0.0");
+      expect(Object.keys(modA.versions)).to.not.include("1.0.0");
     }).timeout(10000);
 
     it("should work with overrides and resolutions together", async () => {
@@ -371,8 +395,8 @@ describe("pkg-dep-resolver", function() {
       const modB = fyn._data.pkgs["mod-b"];
       expect(modA).to.exist;
       expect(modB).to.exist;
-      expect(Object.keys(modA)).to.include("1.0.0");
-      expect(Object.keys(modB)).to.include("3.0.0");
+      expect(Object.keys(modA.versions)).to.include("1.0.0");
+      expect(Object.keys(modB.versions)).to.include("3.0.0");
     }).timeout(10000);
   });
 });

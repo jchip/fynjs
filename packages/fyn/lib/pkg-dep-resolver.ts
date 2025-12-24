@@ -35,47 +35,10 @@ import type {
   SemverAnalysis,
   PackageDist,
   PackageVersionMeta,
-  PackageMeta
+  PackageMeta,
+  KnownPackage,
+  PkgVersionInfo
 } from "./types";
-
-/** Known package with resolved versions */
-interface KnownPackage {
-  [LATEST_TAG_VERSION]?: string;
-  [RSEMVERS]: Record<string, string | string[]>;
-  [LOCK_RSEMVERS]?: Record<string, string>;
-  [RESOLVE_ORDER]: string[];
-  [version: string]: PkgVersionInfo | string | string[] | Record<string, string | string[]> | undefined;
-}
-
-/** Package version info stored in dep data */
-interface PkgVersionInfo {
-  name: string;
-  version: string;
-  dist: PackageDist;
-  src: string;
-  dsrc: string;
-  res: Record<string, unknown>;
-  requests: string[][];
-  promoted?: boolean;
-  top?: boolean;
-  extracted?: boolean;
-  local?: string;
-  dir?: string;
-  str?: string;
-  json?: PackageVersionMeta;
-  deprecated?: string;
-  preInstalled?: boolean;
-  optFailed?: number;
-  fromLock?: boolean;
-  hasPI?: number;
-  hasI?: number;
-  priority: number;
-  _hasShrinkwrap?: boolean;
-  _hasNonOpt?: boolean;
-  [SEMVER]: string;
-  [DEP_ITEM]: DepItem;
-  [key: string]: unknown;
-}
 
 /** Depth info item for a package at a specific depth */
 interface DepthInfoItem {
@@ -406,25 +369,23 @@ class PkgDepResolver {
 
     names.forEach(name => {
       const pkg = pkgsData[name];
-      const versions = Object.keys(pkg).filter(
-        k => typeof k === "string" && !k.startsWith("Symbol")
-      );
+      const versions = Object.keys(pkg.versions);
       // there's only one version, auto promote
       if (versions.length === 1) {
         version = versions[0];
-      } else if (!(version = _.find(versions, v => (pkg[v] as PkgVersionInfo)?.top) as string)) {
+      } else if (!(version = _.find(versions, v => pkg.versions[v]?.top) as string)) {
         // default to promote first seen version
         version = pkg[RESOLVE_ORDER][0];
         // but promote the version with the highest priority
         versions.forEach(x => {
-          const pkgX = pkg[x] as PkgVersionInfo;
-          const pkgV = pkg[version] as PkgVersionInfo;
+          const pkgX = pkg.versions[x];
+          const pkgV = pkg.versions[version];
           if (pkgX?.priority > pkgV?.priority) {
             version = x;
           }
         });
       }
-      const pkgV = pkg[version] as PkgVersionInfo;
+      const pkgV = pkg.versions[version]!;
       pkgV.promoted = true;
       const extracted = this._optResolver.isExtracted(name, version);
       if (extracted) {
@@ -899,7 +860,7 @@ class PkgDepResolver {
 
     if (kpkg) {
       kpkg[RESOLVE_ORDER].push(resolved);
-      pkgV = kpkg[resolved] as PkgVersionInfo | undefined;
+      pkgV = kpkg.versions[resolved];
 
       firstKnown = this.addKnownRSemver(kpkg, item, resolved);
       const dr = this._fyn.deepResolve || item.deepResolve;
@@ -960,11 +921,12 @@ class PkgDepResolver {
 
     if (!kpkg) {
       kpkg = pkgsData[item.name] = {
+        versions: {},
         [LATEST_TAG_VERSION]:
           (meta && meta[LATEST_TAG_VERSION]) || _.get(meta, ["dist-tags", "latest"]),
         [RSEMVERS]: {},
         [RESOLVE_ORDER]: [resolved]
-      } as unknown as KnownPackage;
+      };
 
       if (meta[LOCK_RSEMVERS]) kpkg[LOCK_RSEMVERS] = meta[LOCK_RSEMVERS];
 
@@ -976,7 +938,6 @@ class PkgDepResolver {
     if (!pkgV) {
       firstSeenVersion = true;
       const newPkgV: PkgVersionInfo = {
-        [item.src]: 0,
         requests: [],
         src: item.src,
         dsrc: item.dsrc,
@@ -988,7 +949,7 @@ class PkgDepResolver {
         res: {},
         priority: item.priority!
       };
-      pkgV = kpkg[resolved] = newPkgV as unknown as KnownPackage[string];
+      pkgV = kpkg.versions[resolved] = newPkgV;
       if (meta[LOCK_RSEMVERS]) pkgV.fromLock = true;
       const scripts = metaJson.scripts || {};
       if (metaJson.hasPI || scripts.preinstall || (scripts as Record<string, string>).preInstall) {

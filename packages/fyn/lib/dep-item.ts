@@ -198,7 +198,7 @@ export class DepItem {
     if (this.parent!.depth) {
       const x = this.parent!;
       const kpkg = data.getPkg(x);
-      pkg = kpkg[x.resolved!].res;
+      pkg = kpkg.versions[x.resolved!].res;
     } else {
       pkg = data.res;
     }

@@ -75,9 +75,9 @@ class AuditReport {
     const omitPeer = this._omit.includes("peer");
 
     Object.keys(pkgs).forEach(name => {
-      const versions = pkgs[name];
-      Object.keys(versions).forEach(version => {
-        const pkgInfo = versions[version];
+      const kpkg = pkgs[name];
+      Object.keys(kpkg.versions).forEach(version => {
+        const pkgInfo = kpkg.versions[version];
 
         // Skip based on omit options
         if (omitDev && pkgInfo.src === "dev") return;
@@ -228,11 +228,12 @@ class AuditReport {
       if (!pkgs[pkgName]) return;
 
       // Each package can have multiple advisories
+      const kpkg = pkgs[pkgName];
       pkgAdvisories.forEach(advisory => {
         const vulnVersions = advisory.vulnerable_versions;
 
         // Check each installed version of this package
-        Object.keys(pkgs[pkgName]).forEach(version => {
+        Object.keys(kpkg.versions).forEach(version => {
           if (semver.satisfies(version, vulnVersions)) {
             vulnerabilities.push({
               name: pkgName,
@@ -246,7 +247,7 @@ class AuditReport {
                 patched_versions: advisory.patched_versions,
                 recommendation: advisory.recommendation
               },
-              paths: pkgs[pkgName][version].requests || []
+              paths: kpkg.versions[version].requests || []
             });
           }
         });

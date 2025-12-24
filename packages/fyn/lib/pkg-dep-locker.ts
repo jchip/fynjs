@@ -189,15 +189,16 @@ class PkgDepLocker {
     this._isFynFormat = true;
     const lockData = (this._lockData = { $pkg: this._$pkg });
 
-    const genFrom = (pkgsData: Record<string, Record<string, VersionPkgData>>): void => {
-      _.each(pkgsData, (pkg, name) => {
+    const genFrom = (pkgsData: Record<string, { versions: Record<string, VersionPkgData> }>): void => {
+      _.each(pkgsData, (kpkg, name) => {
+        const pkg = kpkg.versions;
         if (_.isEmpty(pkg)) return;
         const versions = Object.keys(pkg).sort(simpleSemverCompare);
         // collect all semvers that resolved to the same version
         // due to shrinkwrapping, sometimes the same semver could resolve to
         // multiple versions, causing resolved to be an array.
         let _semvers: Record<string, string[]> = _.transform(
-          (pkg as unknown as Record<symbol, Record<string, string | string[]>>)[RSEMVERS] || {},
+          (kpkg as unknown as Record<symbol, Record<string, string | string[]>>)[RSEMVERS] || {},
           (a: Record<string, string[]>, resolved: string | string[], semv: string) => {
             const x = resolved.toString();
             if (a[x]) a[x].push(semv);
@@ -221,7 +222,7 @@ class PkgDepLocker {
 
         const pkgLock = (lockData[name] as PkgLockData) || ((lockData[name] = {}) as PkgLockData);
 
-        const latestTagVersion = (pkg as unknown as Record<symbol, string>)[LATEST_TAG_VERSION];
+        const latestTagVersion = (kpkg as unknown as Record<symbol, string>)[LATEST_TAG_VERSION];
         if (latestTagVersion) {
           pkgLock._latest = latestTagVersion;
         }
@@ -290,9 +291,9 @@ class PkgDepLocker {
     };
 
     // add lock info for installed packages
-    genFrom(depData.getPkgsData() as Record<string, Record<string, VersionPkgData>>);
+    genFrom(depData.getPkgsData() as Record<string, { versions: Record<string, VersionPkgData> }>);
     // now add lock info for packages that didn't install due to failures (optionalDependencies)
-    genFrom(depData.getPkgsData(true) as Record<string, Record<string, VersionPkgData>>);
+    genFrom(depData.getPkgsData(true) as Record<string, { versions: Record<string, VersionPkgData> }>);
   }
 
   /**

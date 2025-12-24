@@ -20,9 +20,11 @@ describe("audit-report", () => {
     }
   });
 
-  // Mock DepData
+  // Mock DepData - wrap each package with versions property
   const createMockDepData = (pkgs = {}) => ({
-    pkgs
+    pkgs: Object.fromEntries(
+      Object.entries(pkgs).map(([name, versions]) => [name, { versions }])
+    )
   });
 
   describe("buildBulkPayload()", () => {

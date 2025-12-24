@@ -59,7 +59,7 @@ export interface FynForBinLinker {
   getInstalledPkgDir(name: string, version: string, info?: unknown): string;
   createSubNodeModulesDir(pkgDir: string): Promise<string>;
   _data: {
-    getPkgsData(): Record<string, Record<string, PkgData>>;
+    getPkgsData(): Record<string, { versions: Record<string, PkgData> }>;
   };
 }
 
@@ -132,7 +132,7 @@ class PkgBinLinkerBase {
       if (!pkgData[depName]) {
         return;
       }
-      const depPkg = pkgData[depName][resolved];
+      const depPkg = pkgData[depName].versions[resolved];
       let depPkgDir: string | undefined;
       const json = depPkg.json;
       if (_.isEmpty(json.bin)) {

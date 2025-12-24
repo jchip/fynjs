@@ -140,11 +140,12 @@ class PkgDistFetcher {
     logger.addItem({ name: FETCH_PACKAGE, color: "green", spinner });
   }
 
-  start(data: { getPkgsData(): Record<string, Record<string, FetchPkg>> }): void {
+  start(data: { getPkgsData(): Record<string, { versions: Record<string, FetchPkg> }> }): void {
     this._addLogItem();
     this._startTime = Date.now();
     _.each(data.getPkgsData(), (pkg, name) => {
-      _.each(pkg, (vpkg, version) => {
+      // pkg is a KnownPackage with versions property
+      _.each(pkg.versions, (vpkg, version) => {
         const id = logFormat.pkgId(name, version);
         this._packages[id] = { pkg: vpkg };
         if (vpkg.dsrc && vpkg.dsrc.includes("opt")) {

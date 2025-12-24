@@ -73,7 +73,9 @@ class PkgStatProvider {
     const name = pkgId.substr(0, sx);
     const semver = pkgId.substr(sx + 1);
 
-    return _(pkgs[name])
+    const pkg = pkgs[name];
+    if (!pkg) return [];
+    return _(pkg.versions)
       .map((vpkg, version) => {
         if (!semver || semverUtil.satisfies(version, semver)) {
           return vpkg;
@@ -110,8 +112,8 @@ class PkgStatProvider {
     // Check indirect packages
     for (const name in pkgs) {
       const pkg = pkgs[name];
-      for (const version in pkg) {
-        const vpkg = pkg[version];
+      for (const version in pkg.versions) {
+        const vpkg = pkg.versions[version];
         // no dev because those aren't installed anyways
         ["dep", "opt", "per"].forEach(s => {
           const x = vpkg.res[s];
@@ -268,11 +270,11 @@ class PkgStatProvider {
    */
   async getPackageStat(name: string, version: string): Promise<PkgStatResult | null> {
     const pkgs = this._fyn._data?.pkgs;
-    if (!pkgs || !pkgs[name] || !pkgs[name][version]) {
+    if (!pkgs || !pkgs[name] || !pkgs[name].versions[version]) {
       return null;
     }
 
-    const pkg = pkgs[name][version];
+    const pkg = pkgs[name].versions[version];
     const pkgId = `${name}@${version}`;
 
     // Find dependents
