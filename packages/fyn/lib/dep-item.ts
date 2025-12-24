@@ -2,7 +2,7 @@ import Fs from "./util/file-ops";
 import Path from "path";
 import * as semverUtil from "./util/semver";
 import _ from "lodash";
-import type { SemverAnalysis, ShrinkwrapData, ShrinkwrapDependency, NestedResolution, ResolutionData } from "./types";
+import type { SemverAnalysis, ShrinkwrapData, ShrinkwrapDependency, NestedResolution, ResolutionData, PackageMeta } from "./types";
 import type { DepData } from "./dep-data";
 
 /* eslint-disable no-magic-numbers, no-constant-condition, complexity */
@@ -28,13 +28,25 @@ export interface DepItemOptions {
   priority?: number;
 }
 
+/**
+ * Package version data for tracking dependency requests
+ *
+ * The index signature allows dynamic dependency source counters
+ * (e.g., dep: 2, dev: 1, opt: 0) alongside known properties.
+ */
 interface PkgVersionData {
+  /** All request paths that led to this package */
   requests: string[][];
+  /** Whether any request path is non-optional */
   _hasNonOpt?: boolean;
+  /** Index of first request for this package */
   firstReqIdx?: number;
+  /** Combined dependency sources (e.g., "dep;dev") */
   dsrc: string;
+  /** Combined original sources */
   src: string;
-  [key: string]: any;
+  /** Dynamic counters for each dependency source type */
+  [depSource: string]: string[][] | boolean | number | string | undefined;
 }
 
 export class DepItem {
@@ -110,7 +122,7 @@ export class DepItem {
     this.parent = undefined;
   }
 
-  resolve(version: string, meta?: { versions?: Record<string, { _shrinkwrap?: any }> }): void {
+  resolve(version: string, meta?: PackageMeta): void {
     this.resolved = version;
     if (meta && meta.versions) {
       const pkg = meta.versions[version];
