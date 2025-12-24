@@ -1001,7 +1001,7 @@ class Fyn {
     let deDupe = false;
 
     _.each(this._data!.pkgs, (pkg, pkgName) => {
-      const versions = Object.keys(pkg);
+      const versions = Object.keys(pkg.versions);
       const byMaj = _.groupBy(versions, x => {
         const pts = x.split(".");
         // when major is 0, minor becomes major, ie: 0.x.y => x major
@@ -1024,7 +1024,7 @@ class Fyn {
       majVersions.forEach(maj => {
         if (byMaj[maj].length > 1) {
           const removed = byMaj[maj].filter(ver => {
-            const item = (pkg[ver] as PkgVersion)[DEP_ITEM] as DepItemRef | undefined;
+            const item = (pkg.versions[ver] as PkgVersion)[DEP_ITEM] as DepItemRef | undefined;
             if (item?._resolveByLock || this._npmLockData) {
               deDupe = true;
               this._depLocker.remove(item!, true);
