@@ -26,6 +26,7 @@ import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
 import { fileURLToPath } from "url";
+import type { FynPackageJson } from "../lib/types";
 import {
   FETCH_META,
   FETCH_PACKAGE,
@@ -128,19 +129,8 @@ interface AddItem {
   version?: string;
 }
 
-/** Package.json structure */
-interface PackageJson {
-  name?: string;
-  version?: string;
-  scripts?: Record<string, string>;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  fyn?: Record<string, Record<string, string>>;
-  _id?: string;
-  [key: string]: unknown;
-}
+/** Package.json with optional fields for partial loading */
+type CliPackageJson = Partial<FynPackageJson>;
 
 function checkNewVersion(npmConfig: Record<string, unknown>): void {
   checkPkgNewVersionEngine({
@@ -667,7 +657,7 @@ class FynCli {
   }
 
   async runScript(
-    pkg: PackageJson,
+    pkg: CliPackageJson,
     script: string,
     env: Record<string, string | undefined>,
     scriptArgs: string[] = []
@@ -677,7 +667,7 @@ class FynCli {
     const options: {
       event: string;
       path: string;
-      pkg: PackageJson;
+      pkg: CliPackageJson;
       env: Record<string, string | undefined>;
       stdio: string;
       scriptShell?: string;

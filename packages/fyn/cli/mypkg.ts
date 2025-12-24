@@ -5,12 +5,7 @@
 import Fs from "fs";
 import Path from "path";
 import { fileURLToPath } from "url";
-
-interface PackageJson {
-  name: string;
-  version: string;
-  [key: string]: unknown;
-}
+import type { PackageJson } from "../lib/types";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = Path.dirname(__filename);

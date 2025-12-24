@@ -27,17 +27,9 @@ import { setupNodeGypEnv } from "./util/setup-node-gyp";
 import * as xaa from "xaa";
 import npmConfigEnv from "./util/npm-config-env";
 import { AggregateError } from "@jchip/error";
+import type { PackageJson } from "./types";
 
 const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
-
-/** Package.json structure */
-interface PackageJson {
-  name?: string;
-  version?: string;
-  scripts?: Record<string, string>;
-  config?: Record<string, unknown>;
-  [key: string]: unknown;
-}
 
 /** Fyn instance interface for lifecycle scripts */
 interface FynForLifecycle {
@@ -52,14 +44,14 @@ interface FynForLifecycle {
 interface LifecycleScriptsOptions {
   dir: string;
   appDir?: string;
-  json?: PackageJson;
+  json?: Partial<PackageJson>;
   _fyn?: FynForLifecycle;
 }
 
 /** Environment variables */
 type EnvVars = Record<string, string | undefined>;
 
-const readPkgJson = (dir: string): Promise<PackageJson> => {
+const readPkgJson = (dir: string): Promise<Partial<PackageJson>> => {
   return fyntil.readPkgJson(dir).catch(() => {
     return {};
   });
@@ -84,8 +76,8 @@ class LifecycleScripts {
   private _pkgDir: string;
   private _options: LifecycleScriptsOptions;
   private _appDir?: string;
-  private _appPkg: PackageJson;
-  private _pkg: PackageJson;
+  private _appPkg: Partial<PackageJson>;
+  private _pkg: Partial<PackageJson>;
 
   constructor(options: string | LifecycleScriptsOptions) {
     if (typeof options === "string") {

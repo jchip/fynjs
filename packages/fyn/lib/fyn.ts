@@ -18,7 +18,7 @@ import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import lockfile from "lockfile";
 import ck from "chalker";
-import { PACKAGE_RAW_INFO, DEP_ITEM } from "./types";
+import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
 import mm from "minimatch";
@@ -75,35 +75,13 @@ interface FynOptions {
   [key: string]: unknown;
 }
 
-/** Package.json structure */
-interface PackageJson {
-  name: string;
-  version: string;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  bundleDependencies?: string[];
-  scripts?: Record<string, string>;
-  resolutions?: Record<string, string>;
-  overrides?: Record<string, string | Record<string, string>>;
-  fyn?: {
-    dependencies?: Record<string, string | boolean>;
-    devDependencies?: Record<string, string | boolean>;
-    optionalDependencies?: Record<string, string | boolean>;
-    [key: string]: unknown;
-  };
-  publishUtil?: Record<string, unknown>;
-  gypfile?: boolean;
-  [PACKAGE_RAW_INFO]?: {
-    dir: string;
-    str: string;
-  };
-  [key: string]: unknown;
+/** Package.json with raw info symbol for fyn core */
+interface FynPackageJson extends PackageJson {
+  [PACKAGE_RAW_INFO]?: { dir: string; str: string };
 }
 
 /** Package info with metadata */
-interface PkgInfo extends PackageJson {
+interface PkgInfo extends FynPackageJson {
   promoted?: boolean;
   dir?: string;
   str?: string;

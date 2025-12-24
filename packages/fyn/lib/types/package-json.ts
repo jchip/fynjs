@@ -35,6 +35,8 @@ export interface PackageJson {
   devDependencies?: Record<string, string>;
   /** Optional dependencies */
   optionalDependencies?: Record<string, string>;
+  /** Development optional dependencies (fyn-specific) */
+  devOptDependencies?: Record<string, string>;
   /** Peer dependencies */
   peerDependencies?: Record<string, string>;
   /** Peer dependency metadata */
@@ -75,6 +77,18 @@ export interface PackageJson {
   files?: string[];
   /** Package type (module or commonjs) */
   type?: "module" | "commonjs";
+  /** npm config values (exposed via npm_package_config_* env vars) */
+  config?: Record<string, unknown>;
+  /** Yarn/npm resolution overrides for nested dependencies */
+  resolutions?: Record<string, string>;
+  /** npm overrides for nested dependencies */
+  overrides?: Record<string, string | Record<string, string>>;
+  /** Indicates package has native bindings (node-gyp) */
+  gypfile?: boolean;
+  /** fyn-specific configuration */
+  fyn?: FynConfig;
+  /** Publish utility configuration */
+  publishUtil?: Record<string, unknown>;
 }
 
 /**
@@ -147,6 +161,9 @@ export interface FynLocalConfig {
 
 /**
  * fyn configuration in package.json
+ *
+ * The `fyn` section supports dependency overrides that can use boolean
+ * values to enable/disable dependencies or string semver values.
  */
 export interface FynConfig {
   /** fynlocal mappings */
@@ -157,4 +174,12 @@ export interface FynConfig {
   lockOnly?: boolean;
   /** Save exact versions */
   saveExact?: boolean;
+  /** Dependency overrides (boolean to enable/disable, or string for version) */
+  dependencies?: Record<string, string | boolean>;
+  /** Dev dependency overrides */
+  devDependencies?: Record<string, string | boolean>;
+  /** Optional dependency overrides */
+  optionalDependencies?: Record<string, string | boolean>;
+  /** Dev optional dependency overrides */
+  devOptDependencies?: Record<string, string | boolean>;
 }

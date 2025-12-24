@@ -38,7 +38,8 @@ import type {
   PackageMeta,
   KnownPackage,
   PkgVersionInfo,
-  ResolutionData
+  ResolutionData,
+  PackageJson
 } from "./types";
 
 /** Depth info item for a package at a specific depth */
@@ -68,25 +69,9 @@ interface PkgDepItems {
   devOpt?: DepItem[];
 }
 
-/** Package.json structure */
-interface PackageJson {
-  name: string;
-  version?: string;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
-  devOptDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
-  bundleDependencies?: string[];
-  fyn?: {
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
-    optionalDependencies?: Record<string, string>;
-    [key: string]: unknown;
-  };
+/** Package.json with raw info symbol for resolver */
+interface ResolverPackageJson extends PackageJson {
   [PACKAGE_RAW_INFO]?: { dir: string; str: string };
-  [key: string]: unknown;
 }
 
 /** Fynpo package graph interface */
@@ -622,7 +607,7 @@ class PkgDepResolver {
    * @returns PkgDepItems with dependency arrays
    */
   makePkgDepItems(
-    pkg: PackageJson,
+    pkg: ResolverPackageJson,
     depItem: DepItem,
     dev?: boolean,
     noPrefetch?: boolean,
