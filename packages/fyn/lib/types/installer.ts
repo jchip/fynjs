@@ -25,6 +25,8 @@ export interface InstallPkgJson extends PackageVersionMeta {
   _deprecated?: string;
   /** Has preinstall script (boolean form for install tracking) */
   hasPI?: boolean;
+  /** Package was loaded from lock file */
+  fromLocked?: boolean;
 }
 
 /**

@@ -7,8 +7,13 @@ import _ from "lodash";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
+import type { DepInfo, ResolutionData, ResolutionEntry, PkgVersionInfo } from "./types";
 
-/** Package info for linking */
+/**
+ * Package info for linking
+ *
+ * Uses a subset of DepInfo properties needed for linking operations.
+ */
 interface PkgInfo {
   name: string;
   version: string;
@@ -20,11 +25,9 @@ interface PkgInfo {
   fynLinkData?: { targetPath: string };
 }
 
-/** Resolution data structure */
-interface ResData {
-  dep?: Record<string, { resolved: string }>;
-  per?: Record<string, { resolved: string }>;
-  opt?: Record<string, { resolved: string }>;
+/** Resolution data structure (extends ResolutionData with peer deps) */
+interface ResData extends ResolutionData {
+  per?: Record<string, ResolutionEntry>;
   [key: string]: unknown;
 }
 
@@ -35,13 +38,13 @@ interface PkgData {
 }
 
 /** Fyn instance interface for dep linker */
-interface FynForDepLinker {
+export interface FynForDepLinker {
   _data: {
-    getPkgsData(): Record<string, { versions: Record<string, PkgData> }>;
+    getPkgsData(): Record<string, { versions: Record<string, PkgVersionInfo> }>;
   };
   getInstalledPkgDir(name: string, version: string, info?: unknown): string;
   createSubNodeModulesDir(pkgDir: string): Promise<string>;
-  addLocalPkgWithNestedDep(depInfo: PkgInfo): void;
+  addLocalPkgWithNestedDep(depInfo: DepInfo): void;
   cwd: string;
 }
 
@@ -175,8 +178,8 @@ class PkgDepLinker {
     return true;
   }
 
-  async linkPackage(depInfo: PkgInfo): Promise<boolean> {
-    depInfo.linkDep = await this.addPackageRes(depInfo);
+  async linkPackage(depInfo: DepInfo): Promise<boolean> {
+    depInfo.linkDep = await this.addPackageRes(depInfo as PkgInfo);
     return depInfo.linkDep;
   }
 

@@ -181,7 +181,10 @@ export interface LockDepItem {
 }
 
 /**
- * Package dependency items grouped by type
+ * Package dependency items grouped by type (runtime form)
+ *
+ * Used when processing dependencies from package.json.
+ * Each section is an array of LockDepItem objects.
  */
 export interface LockPkgDepItems {
   /** Production dependencies */
@@ -195,13 +198,40 @@ export interface LockPkgDepItems {
 }
 
 /**
+ * Package dependency items grouped by type (serialized form)
+ *
+ * Used in the lock file's $pkg section.
+ * Each section is a Record mapping package name to semver range.
+ *
+ * @example Lock file format (YAML):
+ * ```yaml
+ * $pkg:
+ *   dep:
+ *     lodash: "^4.17.0"
+ *     express: "^4.18.0"
+ *   dev:
+ *     typescript: "^5.0.0"
+ * ```
+ */
+export interface LockPkgDepItemsSerialized {
+  /** Production dependencies: name -> semver */
+  dep?: Record<string, string>;
+  /** Development dependencies: name -> semver */
+  dev?: Record<string, string>;
+  /** Optional dependencies: name -> semver */
+  opt?: Record<string, string>;
+  /** Peer dependencies: name -> semver */
+  peer?: Record<string, string>;
+}
+
+/**
  * Root lock file data structure
  *
  * The complete structure of fyn-lock.yaml
  */
 export interface LockFileData {
-  /** Package dependency items for the project root */
-  $pkg?: LockPkgDepItems;
+  /** Package dependency items for the project root (serialized form) */
+  $pkg?: LockPkgDepItemsSerialized;
 
   /** fyn configuration snapshot */
   $fyn?: Record<string, unknown>;
@@ -212,5 +242,5 @@ export interface LockFileData {
    * Keys are package names, values are PkgLockData.
    * Keys starting with `$` are special metadata entries.
    */
-  [pkgName: string]: PkgLockData | LockPkgDepItems | Record<string, unknown> | undefined;
+  [pkgName: string]: PkgLockData | LockPkgDepItemsSerialized | Record<string, unknown> | undefined;
 }

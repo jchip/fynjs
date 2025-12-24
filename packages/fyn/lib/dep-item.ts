@@ -3,7 +3,7 @@ import Path from "path";
 import * as semverUtil from "./util/semver";
 import _ from "lodash";
 import type { SemverAnalysis, ShrinkwrapData, ShrinkwrapDependency, NestedResolution, ResolutionData, PackageMeta } from "./types";
-import type { DepData } from "./dep-data";
+import type { DepData, DepItemRef } from "./dep-data";
 
 /* eslint-disable no-magic-numbers, no-constant-condition, complexity */
 
@@ -49,8 +49,14 @@ interface PkgVersionData {
   [depSource: string]: string[][] | boolean | number | string | undefined;
 }
 
-export class DepItem {
+export class DepItem implements DepItemRef {
   name: string;
+  /** Optional dependency failure flag (truthy = failed, number for failure code) */
+  optFailed?: boolean | number;
+  /** Version string (may be set during resolution) */
+  version?: string;
+  /** Was optional check performed */
+  optChecked?: boolean;
   private _semver: SemverAnalysis;
   /** Original top level package.json dep section (dep, dev, per, opt) */
   src: string;
@@ -195,7 +201,7 @@ export class DepItem {
 
     if (this.parent!.depth) {
       const x = this.parent!;
-      const kpkg = data.getPkg(x as unknown as { name: string; optFailed?: boolean });
+      const kpkg = data.getPkg(x);
       pkg = kpkg.versions[x.resolved!].res as Record<string, Record<string, { semver?: string; resolved: string }>>;
     } else {
       pkg = data.res as Record<string, Record<string, { semver?: string; resolved: string }>>;

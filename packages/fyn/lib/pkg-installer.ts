@@ -3,9 +3,9 @@ import Promise from "./util/aveazul";
 import _ from "lodash";
 import chalk from "chalk";
 import Fs from "./util/file-ops";
-import PkgDepLinker from "./pkg-dep-linker";
-import PkgBinLinker from "./pkg-bin-linker";
-import PkgDepLocker from "./pkg-dep-locker";
+import PkgDepLinker, { type FynForDepLinker } from "./pkg-dep-linker";
+import PkgBinLinker, { type FynForBinLinker } from "./pkg-bin-linker";
+import PkgDepLocker, { type FynForDepLocker } from "./pkg-dep-locker";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
@@ -29,19 +29,14 @@ import type FynCentral from "./fyn-central";
 
 /* eslint-disable max-statements,no-magic-numbers,no-empty,complexity,prefer-template,max-len, max-depth, no-param-reassign */
 
-/** Package data with symbol properties for installer */
-interface PkgData extends DepInfo {
-  [RSEMVERS]?: Record<string, string>;
-  [LOCK_RSEMVERS]?: Record<string, string>;
-  [RESOLVE_ORDER]?: string[];
-}
-
-/** Package data collection with symbol properties */
-type PkgsData = Record<string, {
-  versions: Record<string, PkgData>;
-  [RSEMVERS]?: Record<string, string>;
-  [LOCK_RSEMVERS]?: Record<string, string>;
-  [RESOLVE_ORDER]?: string[];
+/**
+ * Extended KnownPackage with versions typed as DepInfo
+ *
+ * At runtime, version objects in the installer phase have been
+ * extended with DepInfo properties (install state, scripts, etc.).
+ */
+type InstallerPkgsData = Record<string, KnownPackage & {
+  versions: Record<string, DepInfo>;
 }>;
 
 /** Local link info for hard-linked packages */
@@ -53,14 +48,15 @@ interface LocalLinkInfo {
 /** FV versions structure */
 type FvVersions = Record<string, string[] | null>;
 
-/** Fyn instance interface for installer */
-interface FynForInstaller {
+/** Fyn instance interface for installer - extends linker and locker interfaces */
+interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLocker {
   _data: DepData;
   _options: {
     sourceMaps?: boolean;
     buildLocal?: boolean;
     flattenTop?: boolean;
     layout?: string;
+    ignoreLockUrl?: boolean;
   };
   _cwd: string;
   _depResolver: {
@@ -113,7 +109,7 @@ class PkgInstaller {
   constructor(options: PkgInstallerOptions) {
     this._fyn = options.fyn;
     this._data = this._fyn._data;
-    this._depLinker = new PkgDepLinker({ fyn: this._fyn as unknown as Parameters<typeof PkgDepLinker>[0]["fyn"] });
+    this._depLinker = new PkgDepLinker({ fyn: this._fyn });
     this._localLinks = {};
   }
 
@@ -122,7 +118,7 @@ class PkgInstaller {
 
     this.timeCheck("beginning");
     const outputDir = this._fyn.getOutputDir();
-    this._binLinker = new PkgBinLinker({ outputDir, fyn: this._fyn as unknown as Parameters<typeof PkgBinLinker>[0]["fyn"] });
+    this._binLinker = new PkgBinLinker({ outputDir, fyn: this._fyn });
     // /*deprecated*/ const fynRes = await this._depLinker.readAppFynRes(outputDir);
 
     this.preInstall = [];
@@ -132,7 +128,7 @@ class PkgInstaller {
     this._fyn._depResolver.resolvePkgPeerDep(this._fyn._pkg, "your app", this._data);
     // go through each package and insert
     // _depResolutions into its package.json
-    const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
+    const pkgsData = this._data.getPkgsData() as InstallerPkgsData;
     this.timeCheck("queueing packages");
     for (const info of this._data.resolvedPackages) {
       const depInfo = pkgsData[info.name].versions[info.version] as DepInfo;
@@ -251,7 +247,7 @@ class PkgInstaller {
     if (depInfo._removingDeps || !originId) return;
     depInfo._removingDeps = true;
 
-    const dataPackages = this._fyn._data.getPkgsData() as unknown as PkgsData;
+    const dataPackages = this._fyn._data.getPkgsData() as InstallerPkgsData;
     const doRemove = async (section: Record<string, { resolved: string }> | undefined): Promise<void> => {
       if (!section) return;
       for (const name in section) {
@@ -547,7 +543,7 @@ class PkgInstaller {
 
     const json: InstallPkgJson = depInfo.json || ({} as InstallPkgJson);
 
-    if (_.isEmpty(json) || (json as unknown as { fromLocked?: boolean }).fromLocked) {
+    if (_.isEmpty(json) || json.fromLocked) {
       const dir = this._fyn.getInstalledPkgDir(name, version, depInfo);
       const file = Path.join(dir, "package.json");
       const str = (await Fs.readFile(file)).toString();
@@ -607,7 +603,7 @@ class PkgInstaller {
 
   async _cleanUp(scope?: string): Promise<void> {
     const outDir = this._fyn.getOutputDir();
-    const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
+    const pkgsData = this._data.getPkgsData() as InstallerPkgsData;
 
     scope = scope || "";
     logger.updateItem(INSTALL_PACKAGE, `cleaning extraneous packages... ${scope}`);
@@ -660,7 +656,7 @@ class PkgInstaller {
     }
 
     const { flattenTop } = this._fyn._options;
-    const pkgsData = this._data.getPkgsData() as unknown as PkgsData;
+    const pkgsData = this._data.getPkgsData() as InstallerPkgsData;
     let createFvNmDir: boolean | undefined;
     for (const pkgName in pkgsData) {
       const pkg = pkgsData[pkgName];
@@ -707,7 +703,7 @@ class PkgInstaller {
 
   async _linkNestedPackages(depInfo: DepInfo): Promise<boolean | undefined> {
     this._fyn._depResolver.resolvePeerDep(depInfo);
-    await this._depLinker.linkPackage(depInfo as unknown as Parameters<typeof this._depLinker.linkPackage>[0]);
+    await this._depLinker.linkPackage(depInfo);
     //
     if (depInfo.deprecated && !depInfo.json!._deprecated) {
       depInfo.json!._deprecated = depInfo.deprecated;
@@ -723,7 +719,7 @@ class PkgInstaller {
 
   async _cleanUpVersions(pkgName: string): Promise<void> {
     const kpkg = this._data.getPkgsData()[pkgName];
-    const pkg = kpkg?.versions as unknown as Record<string, PkgData> | undefined;
+    const pkg = kpkg?.versions as Record<string, DepInfo> | undefined;
     const versions = this._fvVersions[pkgName];
 
     if (!versions || versions.length < 1) return;
@@ -794,7 +790,7 @@ class PkgInstaller {
 
   _saveLockData(): void {
     if (!this._fyn.lockOnly) {
-      const locker = this._fyn._depLocker || new PkgDepLocker(false, true, this._fyn as unknown as ConstructorParameters<typeof PkgDepLocker>[2]);
+      const locker = this._fyn._depLocker || new PkgDepLocker(false, true, this._fyn);
       locker.generate(this._fyn._data);
       locker.save(Path.join(this._fyn.cwd, "fyn-lock.yaml"));
     }

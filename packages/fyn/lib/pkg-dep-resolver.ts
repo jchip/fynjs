@@ -675,7 +675,7 @@ class PkgDepResolver {
       }
       if (di.parent) {
         // Note: di.version may be undefined at this point, makeDepStep handles that
-        steps.push(makeDepStep(di.name, (di as unknown as { version?: string }).version || "", di.dsrc));
+        steps.push(makeDepStep(di.name, di.version || "", di.dsrc));
         return findFynpoPkgOfDep(di.parent, steps);
       }
       return false;
@@ -840,7 +840,7 @@ class PkgDepResolver {
     let firstKnown = true;
     item.resolve(resolved, meta);
 
-    const pkgsData = this._data.getPkgsData((item as unknown as { optFailed?: boolean }).optFailed) as Record<string, KnownPackage>;
+    const pkgsData = this._data.getPkgsData(item.optFailed) as Record<string, KnownPackage>;
     let pkgV: PkgVersionInfo | undefined; // specific version of the known package
     let kpkg = pkgsData[item.name]; // known package
 
@@ -853,7 +853,7 @@ class PkgDepResolver {
 
       // If doing deep resolve and package is already seen, then check parents
       // to make sure it's not one of them because that would be a circular dependencies
-      const optChecked = (item as unknown as { optChecked?: boolean }).optChecked;
+      const optChecked = item.optChecked;
       if (dr && pkgV && !optChecked && item.isCircular()) {
         // logger.log("circular dep detected", item.name, item.resolved);
         item.unref();
@@ -961,7 +961,7 @@ class PkgDepResolver {
       pkgV.top = true;
     }
 
-    const optFailed = (item as unknown as { optFailed?: number }).optFailed;
+    const optFailed = item.optFailed;
     if (item.dsrc && item.dsrc.includes("opt")) {
       pkgV.preInstalled = true;
       if (optFailed) pkgV.optFailed = optFailed;

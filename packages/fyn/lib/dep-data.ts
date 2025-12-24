@@ -14,9 +14,15 @@ export interface DepDataInit {
   res?: Record<string, unknown>;
 }
 
-export interface DepItem {
+/**
+ * Reference to a dependency item for package lookup
+ *
+ * Used by getPkg to locate packages in the data store.
+ */
+export interface DepItemRef {
   name: string;
-  optFailed?: boolean;
+  /** Optional dependency failure flag (truthy = failed, number for failure code) */
+  optFailed?: boolean | number;
 }
 
 export interface PkgVersion {
@@ -67,7 +73,7 @@ export class DepData {
     return bad ? this.badPkgs : this.pkgs;
   }
 
-  getPkg(item: DepItem): KnownPackage {
+  getPkg(item: DepItemRef): KnownPackage {
     return this.getPkgsData(item.optFailed)[item.name];
   }
 

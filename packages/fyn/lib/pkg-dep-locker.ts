@@ -18,10 +18,12 @@ import {
   LATEST_SORTED_VERSIONS,
   LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS,
-  type LockLockVersionMeta,
+  type LockVersionMeta,
   type PkgLockData,
   type LockDepItem,
-  type LockLockPkgDepItems
+  type LockPkgDepItems,
+  type LockPkgDepItemsSerialized,
+  type KnownPackage
 } from "./types";
 import logger from "./logger";
 import fyntil from "./util/fyntil";
@@ -36,7 +38,7 @@ interface ConvertedLockData {
   [LATEST_SORTED_VERSIONS]?: string[];
   [LATEST_VERSION_TIME]?: number;
   [LOCAL_VERSION_MAPS]?: Record<string, string>;
-  versions: Record<string, LockLockVersionMeta>;
+  versions: Record<string, LockVersionMeta>;
   "dist-tags"?: Record<string, string>;
   time?: Record<string, string>;
   urlVersions?: Record<string, unknown>;
@@ -44,12 +46,12 @@ interface ConvertedLockData {
 
 /** Lock file data structure with symbol support */
 interface LockData {
-  $pkg?: LockLockPkgDepItems;
+  $pkg?: LockPkgDepItemsSerialized;
   $fyn?: Record<string, unknown>;
   [pkgName: string]:
     | PkgLockData
     | ConvertedLockData
-    | LockLockPkgDepItems
+    | LockPkgDepItemsSerialized
     | Record<string, unknown>
     | undefined;
 }
@@ -57,7 +59,7 @@ interface LockData {
 /** Package metadata from registry */
 interface PkgMeta {
   local?: boolean;
-  versions: Record<string, LockLockVersionMeta>;
+  versions: Record<string, LockVersionMeta>;
   "dist-tags"?: Record<string, string>;
   time?: Record<string, string>;
   urlVersions?: Record<string, unknown>;
@@ -96,7 +98,7 @@ interface VersionPkgData extends PkgVersion {
 }
 
 /** Fyn instance interface for dep locker */
-interface FynForDepLocker {
+export interface FynForDepLocker {
   _pkgSrcMgr?: {
     getRegistryUrl(name: string): string;
   };
@@ -112,7 +114,7 @@ class PkgDepLocker {
   private _config: Record<string, unknown>;
   private _fyn: FynForDepLocker;
   private _shaSum?: string | number;
-  private _$pkg?: LockPkgDepItems;
+  private _$pkg?: LockPkgDepItemsSerialized;
   private _$pkgDiff?: { dep: Record<string, string>; dev: Record<string, string>; opt: Record<string, string> };
   private _$allPkgDiff: Record<string, string>;
 
@@ -141,16 +143,16 @@ class PkgDepLocker {
     this._isFynFormat = true;
     const lockData = (this._lockData = { $pkg: this._$pkg });
 
-    const genFrom = (pkgsData: Record<string, { versions: Record<string, VersionPkgData> }>): void => {
+    const genFrom = (pkgsData: Record<string, KnownPackage>): void => {
       _.each(pkgsData, (kpkg, name) => {
-        const pkg = kpkg.versions;
+        const pkg = kpkg.versions as Record<string, VersionPkgData>;
         if (_.isEmpty(pkg)) return;
         const versions = Object.keys(pkg).sort(simpleSemverCompare);
         // collect all semvers that resolved to the same version
         // due to shrinkwrapping, sometimes the same semver could resolve to
         // multiple versions, causing resolved to be an array.
         let _semvers: Record<string, string[]> = _.transform(
-          (kpkg as unknown as Record<symbol, Record<string, string | string[]>>)[RSEMVERS] || {},
+          kpkg[RSEMVERS] || {},
           (a: Record<string, string[]>, resolved: string | string[], semv: string) => {
             const x = resolved.toString();
             if (a[x]) a[x].push(semv);
@@ -174,7 +176,7 @@ class PkgDepLocker {
 
         const pkgLock = (lockData[name] as PkgLockData) || ((lockData[name] = {}) as PkgLockData);
 
-        const latestTagVersion = (kpkg as unknown as Record<symbol, string>)[LATEST_TAG_VERSION];
+        const latestTagVersion = kpkg[LATEST_TAG_VERSION];
         if (latestTagVersion) {
           pkgLock._latest = latestTagVersion;
         }
@@ -243,9 +245,9 @@ class PkgDepLocker {
     };
 
     // add lock info for installed packages
-    genFrom(depData.getPkgsData() as Record<string, { versions: Record<string, VersionPkgData> }>);
+    genFrom(depData.getPkgsData());
     // now add lock info for packages that didn't install due to failures (optionalDependencies)
-    genFrom(depData.getPkgsData(true) as Record<string, { versions: Record<string, VersionPkgData> }>);
+    genFrom(depData.getPkgsData(true));
   }
 
   /**
@@ -424,19 +426,19 @@ class PkgDepLocker {
     if (dep) {
       items.dep = dep.reduce(makeDep, {});
     }
-    $pkgDiff.dep = diffDep(($lockPkg.dep as unknown as Record<string, string>) || {}, items.dep || {});
+    $pkgDiff.dep = diffDep($lockPkg.dep || {}, items.dep || {});
 
     if (dev) {
       items.dev = dev.reduce(makeDep, {});
     }
-    $pkgDiff.dev = diffDep(($lockPkg.dev as unknown as Record<string, string>) || {}, items.dev || {});
+    $pkgDiff.dev = diffDep($lockPkg.dev || {}, items.dev || {});
 
     if (opt) {
       items.opt = opt.reduce(makeDep, {});
     }
-    $pkgDiff.opt = diffDep(($lockPkg.opt as unknown as Record<string, string>) || {}, items.opt || {});
+    $pkgDiff.opt = diffDep($lockPkg.opt || {}, items.opt || {});
 
-    this._$pkg = items as LockPkgDepItems;
+    this._$pkg = items as LockPkgDepItemsSerialized;
     this._$pkgDiff = $pkgDiff;
 
     // set diff only if existing lock data has the $pkg info

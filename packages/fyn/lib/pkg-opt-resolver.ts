@@ -12,7 +12,7 @@ import chalk from "chalk";
 import * as hardLinkDir from "./util/hard-link-dir";
 import longPending from "./long-pending";
 import logFormat from "./util/log-format";
-import PkgDepLinker from "./pkg-dep-linker";
+import PkgDepLinker, { type FynForDepLinker } from "./pkg-dep-linker";
 import * as semverUtil from "./util/semver";
 import fyntil from "./util/fyntil";
 import { OPTIONAL_RESOLVER } from "./log-items";
@@ -56,13 +56,11 @@ interface CheckResult {
   err?: Error;
 }
 
-/** Fyn instance interface for opt resolver */
-interface FynForOptResolver {
+/** Fyn instance interface for opt resolver - extends dep linker interface */
+interface FynForOptResolver extends FynForDepLinker {
   _options: { sourceMaps?: boolean };
   refreshOptionals?: boolean;
   lockOnly?: boolean;
-  cwd: string;
-  getInstalledPkgDir(name: string, version: string): string;
   _distFetcher: {
     findPkgInNodeModules(pkg: { name: string; version: string }): Promise<{
       pkgJson?: Record<string, unknown>;
@@ -126,7 +124,7 @@ class PkgOptResolver {
     this._depResolver = options.depResolver;
     this._inflights = new Inflight();
     this._fyn = options.fyn;
-    this._depLinker = new PkgDepLinker({ fyn: this._fyn as unknown as Parameters<typeof PkgDepLinker>[0]["fyn"] });
+    this._depLinker = new PkgDepLinker({ fyn: this._fyn });
     this.setupQ();
   }
 

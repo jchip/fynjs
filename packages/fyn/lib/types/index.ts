@@ -82,5 +82,6 @@ export type {
   PkgLockData,
   LockDepItem,
   LockPkgDepItems,
+  LockPkgDepItemsSerialized,
   LockFileData
 } from "./lock-file";
