@@ -37,7 +37,8 @@ import type {
   PackageVersionMeta,
   PackageMeta,
   KnownPackage,
-  PkgVersionInfo
+  PkgVersionInfo,
+  ResolutionData
 } from "./types";
 
 /** Depth info item for a package at a specific depth */

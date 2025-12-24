@@ -2,6 +2,8 @@ import Fs from "./util/file-ops";
 import Path from "path";
 import * as semverUtil from "./util/semver";
 import _ from "lodash";
+import type { SemverAnalysis, ShrinkwrapData, ShrinkwrapDependency, NestedResolution, ResolutionData } from "./types";
+import type { DepData } from "./dep-data";
 
 /* eslint-disable no-magic-numbers, no-constant-condition, complexity */
 
@@ -20,26 +22,10 @@ export interface DepItemOptions {
   /** Source from the direct parent package */
   dsrc: string;
   resolved?: string;
-  shrinkwrap?: any;
+  shrinkwrap?: ShrinkwrapData;
   deepResolve?: boolean;
   depth?: number;
   priority?: number;
-}
-
-interface SemverAnalysis {
-  $: string;
-  path?: string;
-  localType?: string;
-  urlType?: string;
-}
-
-interface NestedResolution {
-  _: string[];
-  [semver: string]: string | string[];
-}
-
-interface Shrinkwrap {
-  dependencies?: Record<string, { version: string }>;
 }
 
 interface PkgVersionData {
@@ -60,7 +46,7 @@ export class DepItem {
   dsrc: string;
   resolved: string | undefined;
   parent: DepItem | undefined;
-  private _shrinkwrap: Shrinkwrap | undefined;
+  private _shrinkwrap: ShrinkwrapData | undefined;
   private _deepRes: boolean | undefined;
   private _nested: Record<string, NestedResolution>;
   /** Was this item promoted to top level for flattening? */
@@ -132,7 +118,7 @@ export class DepItem {
     }
   }
 
-  private _addShrinkwrap(sw: any): void {
+  private _addShrinkwrap(sw: ShrinkwrapData | ShrinkwrapDependency | undefined): void {
     if (sw) {
       if (this._shrinkwrap) {
         this._shrinkwrap = Object.assign({}, this._shrinkwrap, sw);
@@ -192,15 +178,15 @@ export class DepItem {
     return undefined;
   }
 
-  addResolutionToParent(data: any, firstKnown: boolean): void {
-    let pkg: any;
+  addResolutionToParent(data: DepData, firstKnown: boolean): void {
+    let pkg: Record<string, Record<string, { semver?: string; resolved: string }>>;
 
     if (this.parent!.depth) {
       const x = this.parent!;
-      const kpkg = data.getPkg(x);
-      pkg = kpkg.versions[x.resolved!].res;
+      const kpkg = data.getPkg(x as unknown as { name: string; optFailed?: boolean });
+      pkg = kpkg.versions[x.resolved!].res as Record<string, Record<string, { semver?: string; resolved: string }>>;
     } else {
-      pkg = data.res;
+      pkg = data.res as Record<string, Record<string, { semver?: string; resolved: string }>>;
     }
 
     let depSection = pkg[this.dsrc];
@@ -208,7 +194,7 @@ export class DepItem {
     if (!depSection) {
       depSection = pkg[this.dsrc] = {};
     }
-    depSection[this.name] = { semver: this.semver, resolved: this.resolved };
+    depSection[this.name] = { semver: this.semver, resolved: this.resolved! };
 
     // parent is not top
     if (this.parent!.depth && !firstKnown) {
