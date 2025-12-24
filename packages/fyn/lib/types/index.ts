@@ -29,7 +29,37 @@ export {
   type PackageMetaSymbols,
   type KnownPackageSymbols,
   type PkgVersionInfoSymbols,
-  type PkgDataSymbols
+  type PkgDataSymbols,
+  type PackageRawInfoSymbols,
+  type DepItemSymbols,
+  type SemverSymbols,
+  // Type-safe accessor functions
+  getSemver,
+  setSemver,
+  getDepItem,
+  setDepItem,
+  getRsemvers,
+  setRsemvers,
+  deleteRsemversKey,
+  getLockRsemvers,
+  setLockRsemvers,
+  deleteLockRsemversKey,
+  getResolveOrder,
+  setResolveOrder,
+  getSortedVersions,
+  setSortedVersions,
+  getLockSortedVersions,
+  setLockSortedVersions,
+  getLatestSortedVersions,
+  setLatestSortedVersions,
+  getLatestTagVersion,
+  setLatestTagVersion,
+  getLatestVersionTime,
+  setLatestVersionTime,
+  getLocalVersionMaps,
+  setLocalVersionMaps,
+  getPackageRawInfo,
+  setPackageRawInfo
 } from "./symbols";
 
 // npm Registry types

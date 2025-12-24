@@ -1156,7 +1156,7 @@ class PkgDepResolver {
         if (latest && sorted[0] !== latest) {
           if (meta.time && meta.time[latest]) {
             // just need to lock to latest time
-            meta[LATEST_VERSION_TIME] = new Date(meta.time[latest]);
+            meta[LATEST_VERSION_TIME] = new Date(meta.time[latest]).getTime();
           } else {
             // unfortunately, must filter out all versions newer than latest
             meta[LATEST_SORTED_VERSIONS] = sorted.filter(
