@@ -188,7 +188,6 @@ interface PkgOptResolver {
   resolve(): void;
   isPending(): boolean;
   add(data: { item: DepItem; meta: PackageMeta; err?: Error }): void;
-  isExtracted(name: string, version: string): string | undefined;
   _depResolver: PkgDepResolver;
 }
 
@@ -376,10 +375,6 @@ class PkgDepResolver {
       }
       const pkgV = pkg.versions[version]!;
       pkgV.promoted = true;
-      const extracted = this._optResolver.isExtracted(name, version);
-      if (extracted) {
-        pkgV.extracted = extracted;
-      }
     });
   }
 

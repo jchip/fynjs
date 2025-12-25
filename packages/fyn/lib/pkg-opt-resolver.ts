@@ -100,7 +100,6 @@ class PkgOptResolver {
   private _passedPkgs: OptDepData[];
   private _checkedPkgs: Record<string, CheckResult>;
   private _resolving: boolean;
-  private _extractedPkgs: Record<string, string>;
   private _failedChecks: Array<{ err?: Error; data: OptDepData }>;
   private _failedPkgs: OptDepData[];
   private _depResolver: DepResolver;
@@ -113,12 +112,7 @@ class PkgOptResolver {
     this._optPkgCount = 0;
     this._passedPkgs = [];
     this._checkedPkgs = {};
-    //
-    // for remembering that we've extrated a package by name@version ID
-    // to FV_DIR so we can avoid extrating it later
-    //
     this._resolving = false;
-    this._extractedPkgs = {};
     this._failedChecks = [];
     this._failedPkgs = [];
     this._depResolver = options.depResolver;
@@ -163,10 +157,6 @@ class PkgOptResolver {
 
   start(): void {
     this._promiseQ._process();
-  }
-
-  isExtracted(name: string, version: string): string | undefined {
-    return this._extractedPkgs[`${name}@${version}`];
   }
 
   //
