@@ -620,7 +620,7 @@ class PkgInstaller {
 
       const pkgName = Path.posix.join(scope, dirName);
       const pkgData = pkgsData[pkgName];
-      const topPkg = pkgData && _.find(pkgData.versions, (x: PkgData) => x.promoted);
+      const topPkg = pkgData && _.find(pkgData.versions, (x: DepInfo) => x.promoted);
 
       if (!topPkg) {
         this._removedCount++;
