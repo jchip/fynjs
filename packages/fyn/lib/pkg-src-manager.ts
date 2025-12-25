@@ -25,7 +25,7 @@ import Inflight from "./util/inflight";
 import logFormat from "./util/log-format";
 import * as semverUtil from "./util/semver";
 import longPending from "./long-pending";
-import { LOCAL_VERSION_MAPS, PACKAGE_RAW_INFO, DEP_ITEM } from "./types";
+import { LOCAL_VERSION_MAPS, DEP_ITEM, getPackageRawInfo } from "./types";
 import { LONG_WAIT_META, FETCH_META, FETCH_PACKAGE } from "./log-items";
 import PkgPreper from "pkg-preper";
 import { VisualExec } from "visual-exec";
@@ -529,7 +529,7 @@ class PkgSrcManager {
         localId: version,
         name,
         json,
-        jsonStr: (json as any)[PACKAGE_RAW_INFO].str,
+        jsonStr: getPackageRawInfo(json)!.str,
         versions: {
           [version]: json
         },
