@@ -26,7 +26,7 @@ import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
 import { fileURLToPath } from "url";
-import type { FynPackageJson } from "../lib/types";
+import type { FynPackageJson, PackageJson } from "../lib/types";
 import {
   FETCH_META,
   FETCH_PACKAGE,
