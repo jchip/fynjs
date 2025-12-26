@@ -29,7 +29,8 @@ const getLatestTag = (opts) => {
   const tagTmpl = _.get(opts, "command.publish.gitTagTemplate");
   const searchTerm = makePublishTagSearchTerm(tagTmpl);
 
-  const args = ["describe", "--long", "--first-parent", "--match", searchTerm];
+  // --tags flag includes lightweight (unannotated) tags, not just annotated ones
+  const args = ["describe", "--tags", "--long", "--first-parent", "--match", searchTerm];
   const stdout = execSync("git", args, { cwd: opts.cwd });
   const [, tagName, commitCount, sha] = /^(.*)-(\d+)-g([0-9a-f]+)$/.exec(stdout) || [];
   return { tagName, commitCount, sha };
