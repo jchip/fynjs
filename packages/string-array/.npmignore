@@ -1,0 +1,8 @@
+src/
+test/
+.github/
+*.ts
+!*.d.ts
+tsconfig*.json
+.travis.yml
+xclap.js

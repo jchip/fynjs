@@ -2,10 +2,27 @@
   "name": "string-array",
   "version": "1.0.1",
   "description": "Parse string into array of string elements",
-  "main": "lib/index.js",
+  "type": "module",
+  "types": "dist-cjs/index.d.ts",
+  "main": "dist-cjs/index.cjs",
+  "module": "dist-esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/index.js",
+      "require": "./dist-cjs/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "test": "clap test",
-    "coverage": "clap check"
+    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "xrun build",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
   },
   "repository": {
     "type": "git",
@@ -18,32 +35,25 @@
     "parser"
   ],
   "files": [
-    "lib"
+    "dist-cjs",
+    "dist-esm"
   ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
-  "devDependencies": {
-    "electrode-archetype-njs-module-dev": "^3.0.0"
+  "dependencies": {
+    "tslib": "^2.6.2"
   },
-  "nyc": {
-    "all": true,
-    "reporter": [
-      "lcov",
-      "text",
-      "text-summary"
-    ],
-    "exclude": [
-      "coverage",
-      "*clap.js",
-      "gulpfile.js",
-      "dist",
-      "test"
-    ],
-    "check-coverage": true,
-    "statements": 100,
-    "branches": 100,
-    "functions": 100,
-    "lines": 100,
-    "cache": true
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^3.2.2",
+    "prettier": "^3.5.3",
+    "publish-util": "^2.1.0",
+    "ts2mjs": "^4.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  },
+  "prettier": {
+    "printWidth": 100
   }
 }
