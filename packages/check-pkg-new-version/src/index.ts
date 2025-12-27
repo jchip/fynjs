@@ -1,2 +1,2 @@
 export * from "check-pkg-new-version-engine";
-export { checkPkgNewVersion } from "./check";
+export { checkPkgNewVersion } from "./check.ts";
