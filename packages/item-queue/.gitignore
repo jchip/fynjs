@@ -1,7 +1,10 @@
 node_modules
-.nyc_output
 coverage
 *.log
 .tmp
 .vscode
 dist
+dist-*
+lib
+*.tsbuildinfo
+fyn-lock.yaml

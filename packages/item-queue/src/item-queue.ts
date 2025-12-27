@@ -2,8 +2,7 @@
 
 import EventEmitter from "events";
 import assert from "assert";
-import _ from "lodash";
-import { Inflight, InflightRecord, RecordKey } from "./inflight";
+import { Inflight, InflightRecord, RecordKey } from "./inflight.ts";
 const PAUSE_ITEM = Symbol("pause");
 const RESUME_ITEM = Symbol("resume");
 const NOOP_ITEM = Symbol("NOOP");
@@ -187,9 +186,13 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     this._watchTime = options.watchTime;
     this._id = 1;
     this._deferred = false;
-    _.each(options.handlers, (handler: ItemQueueHandler<ItemT>, evt: string) => {
-      this.on(evt, handler);
-    });
+    if (options.handlers) {
+      for (const [evt, handler] of Object.entries(options.handlers)) {
+        if (handler) {
+          this.on(evt, handler as ItemQueueHandler<ItemT>);
+        }
+      }
+    }
   }
 
   /**
@@ -435,7 +438,10 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     const still = [];
     const now = Date.now();
 
-    _.each(this._pending.inflights, (v: InflightRecord<ItemQueueData>, id: RecordKey) => {
+    for (const [id, v] of Object.entries(this._pending.inflights) as [
+      RecordKey,
+      InflightRecord<InflightData<ItemT>>
+    ][]) {
       if (v) {
         const lastXTime = this._pending.lastCheckTime(id, now);
         const time = this._pending.time(id, now);
@@ -452,7 +458,7 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
           }
         }
       }
-    });
+    }
 
     if (watched.length > 0 || still.length > 0) {
       this._watched = true;
