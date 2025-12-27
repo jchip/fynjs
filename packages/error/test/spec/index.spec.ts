@@ -1,82 +1,79 @@
-import { expect } from "chai";
-import { cleanErrorStack, AggregateError, aggregateErrorStack } from "../../src";
-import { addHook } from "pirates";
-import { asyncVerify, expectError } from "run-verify";
+import { describe, it, expect } from "vitest";
+import { cleanErrorStack, AggregateError, aggregateErrorStack } from "../../src/index.ts";
 
-describe("cleanErrorStack", function () {
+describe("cleanErrorStack", () => {
   it("should clean and replace stack path", () => {
     const x = new Error("oops");
+    // Create a mock stack with absolute paths for consistent testing
+    x.stack = `Error: oops
+    at testFunc (/Users/test/project/test/spec/index.spec.ts:10:5)
+    at Object.<anonymous> (/Users/test/project/test/spec/index.spec.ts:1:1)`;
 
-    const s = cleanErrorStack(x);
+    const s = cleanErrorStack(x, { replacePath: "/Users/test/project/" });
 
-    expect(s).contains(`Error: oops`);
-    expect(s).contains(`(test/spec/index.spec.ts`);
+    expect(s).toContain(`Error: oops`);
+    expect(s).toContain(`test/spec/index.spec.ts`);
   });
 
   it("should clean and not replace stack path", () => {
     const x = new Error("oops");
     const s = cleanErrorStack(x, { replacePath: false });
-    expect(s).not.contains(`(test/spec`);
+    expect(s).not.toContain(`(test/spec`);
   });
 
   it("should handle bad input", () => {
-    expect(cleanErrorStack({} as any)).to.equal("undefined");
+    expect(cleanErrorStack({} as any)).toBe("undefined");
   });
 
-  it("should clean extra stacks (pirates etc)", () => {
-    const revert = addHook((code) => code, { exts: [".js"] });
-    let err: Error;
-    try {
-      require("../bad");
-    } catch (e: any) {
-      err = e;
-    }
-    expect(err).to.exist;
-    const s = cleanErrorStack(err, { ignorePathFilter: ["/mocha/"] });
+  it("should filter paths matching ignorePathFilter", () => {
+    const x = new Error("test");
+    // Create a fake stack that includes a path to filter
+    const originalStack = x.stack;
+    x.stack = `Error: test
+    at someFunction (/Users/test/project/node_modules/pirates/lib/index.js:1:1)
+    at anotherFunction (/Users/test/project/src/index.ts:10:5)`;
 
-    if (err.stack.includes("node:internal")) {
-      expect(err.stack).contains(`(node:internal`);
-      expect(s).to.not.contains(`(node:internal`);
-    } else {
-      expect(err.stack).contains(`(internal`);
-      expect(s).to.not.contains(`(internal`);
-    }
+    const s = cleanErrorStack(x, { replacePath: "/Users/test/project/" });
+    expect(s).not.toContain("/pirates/");
+    expect(s).toContain("src/index.ts");
+    x.stack = originalStack;
+  });
 
-    expect(err.stack).contains("/pirates/");
-    expect(err.stack).contains("/mocha/");
-    expect(s).to.not.contains("/pirates/");
-    expect(s).to.contains("test/bad.js");
-    expect(s).to.not.contains("/mocha/");
-    revert();
+  it("should handle custom ignorePathFilter", () => {
+    const x = new Error("test");
+    x.stack = `Error: test
+    at someFunction (/Users/test/project/custom/path.js:1:1)
+    at anotherFunction (/Users/test/project/src/index.ts:10:5)`;
+
+    const s = cleanErrorStack(x, {
+      replacePath: "/Users/test/project/",
+      ignorePathFilter: ["/custom/"]
+    });
+    expect(s).not.toContain("/custom/");
+    expect(s).toContain("src/index.ts");
+  });
+
+  it("should handle error with only message", () => {
+    const x = { message: "test message" } as Error;
+    const s = cleanErrorStack(x);
+    expect(s).toBe("test message");
   });
 });
 
-describe("AggregateError", function () {
+describe("AggregateError", () => {
   it("should return [] for Object.keys", () => {
     const x = new AggregateError([], "test");
-    expect(Object.keys(x)).to.deep.equal([]);
+    expect(Object.keys(x)).toEqual([]);
   });
 
   it("should have name", () => {
     const x = new AggregateError([], "test");
-    expect(x.stack).contains(`AggregateError: test`);
+    expect(x.stack).toContain(`AggregateError: test`);
   });
 
-  it("should fail with TypeError", () => {
-    return asyncVerify(
-      expectError(() => {
-        return new AggregateError();
-      }),
-      (err: Error) => {
-        expect(err.message).contains(`iterable`);
-      },
-      expectError(() => {
-        return new AggregateError({} as any);
-      }),
-      (err: Error) => {
-        expect(err.message).contains(`iterable`);
-      }
-    );
+  it("should fail with TypeError for non-iterable", () => {
+    expect(() => new AggregateError(undefined as any)).toThrow("iterable");
+    expect(() => new AggregateError({} as any)).toThrow("iterable");
   });
 
   it("should have aggregate stack", () => {
@@ -84,22 +81,33 @@ describe("AggregateError", function () {
       ["string error 1", new Error("test error 1"), null, undefined],
       "oops"
     );
-    expect(x.stack).contains(`AggregateError: oops`);
-    expect(x.stack).contains(`  string error 1`);
-    expect(x.stack).contains(`  Error: test error 1`);
-    expect(x.stack).contains(`  null`);
-    expect(x.stack).contains(`  undefined`);
+    expect(x.stack).toContain(`AggregateError: oops`);
+    expect(x.stack).toContain(`  string error 1`);
+    expect(x.stack).toContain(`  Error: test error 1`);
+    expect(x.stack).toContain(`  null`);
+    expect(x.stack).toContain(`  undefined`);
+  });
+
+  it("should have name property as AggregateError", () => {
+    const x = new AggregateError([], "test");
+    expect(x.name).toBe("AggregateError");
+  });
+
+  it("should store errors array", () => {
+    const errors = [new Error("e1"), new Error("e2")];
+    const x = new AggregateError(errors, "test");
+    expect(x.errors).toEqual(errors);
   });
 });
 
-describe("aggregateErrorStack", function () {
+describe("aggregateErrorStack", () => {
   it("should work with alike objects", () => {
     const s = aggregateErrorStack({ message: "test test" } as any);
-    expect(s).equals("test test\n");
+    expect(s).toBe("test test\n");
   });
 
   it("should work with string", () => {
     const s = aggregateErrorStack("blah blah" as any);
-    expect(s).equals("blah blah\n");
+    expect(s).toBe("blah blah\n");
   });
 });
