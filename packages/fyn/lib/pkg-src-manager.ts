@@ -38,8 +38,7 @@ import { PackageRef } from "@fynpo/base";
 import Arborist from "@npmcli/arborist";
 import { execSync } from "child_process";
 import type { DepItem } from "./dep-item";
-import type { Inflight as InflightType } from "item-queue/dist/inflight";
-import type { ItemQueue } from "item-queue/dist/item-queue";
+import type { Inflight as InflightType, ItemQueue } from "item-queue";
 
 /** Options for PkgSrcManager constructor */
 interface PkgSrcManagerOptions {

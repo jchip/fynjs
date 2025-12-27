@@ -1,4 +1,4 @@
-import ItemQueue from "item-queue";
+import { ItemQueue } from "item-queue";
 import Bluebird from "./aveazul";
-ItemQueue.Promise = Bluebird;
+(ItemQueue as any).Promise = Bluebird;
 export default ItemQueue;

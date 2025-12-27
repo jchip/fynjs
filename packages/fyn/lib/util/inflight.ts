@@ -1,2 +1,2 @@
-import inflight from "item-queue/lib/inflight";
-export default inflight;
+import { Inflight } from "item-queue";
+export default Inflight;
