@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect } from "vitest";
 import { deconstructMM, unrollMmMatch } from "../src/minimatch-group";
 import mm from "minimatch";
 

@@ -3,15 +3,15 @@ import { promises as Fs } from "fs";
 import { filterScanDir } from "filter-scan-dir";
 import mm from "minimatch";
 import _ from "lodash";
-import { groupMM } from "./minimatch-group";
+import { groupMM } from "./minimatch-group.ts";
 
-export * from "./fynpo-dep-graph";
+export * from "./fynpo-dep-graph.ts";
 
-export * from "./fynpo-config";
+export * from "./fynpo-config.ts";
 
-export * from "./util";
+export * from "./util.ts";
 
-export * as caching from "./caching";
+export * as caching from "./caching.ts";
 
 /**
  * Information about a package within the mono-repo

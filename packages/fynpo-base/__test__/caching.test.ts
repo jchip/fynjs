@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect } from "vitest";
 import { processInput, processOutput } from "../src/caching";
 import npmPacklist from "npm-packlist";
 import _ from "lodash";

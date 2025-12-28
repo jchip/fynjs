@@ -1,26 +1,21 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "lib": [
-      "es2018"
-    ],
-    "module": "CommonJS",
+    "lib": ["ES2018"],
+    "module": "ES2015",
     "esModuleInterop": true,
     "importHelpers": true,
     "target": "ES2018",
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
-    "types": [
-      "node",
-      "jest"
-    ],
+    "types": ["node"],
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
-    "strictFunctionTypes": true
+    "strictFunctionTypes": true,
+    "moduleResolution": "Node",
+    "rewriteRelativeImportExtensions": true
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

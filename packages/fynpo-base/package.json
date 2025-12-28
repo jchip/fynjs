@@ -2,16 +2,26 @@
   "name": "@fynpo/base",
   "version": "1.1.22",
   "description": "zero setup monorepo manager for node.js",
-  "main": "dist/index.js",
+  "type": "module",
+  "types": "dist-cjs/index.d.ts",
+  "main": "dist-cjs/index.cjs",
+  "module": "dist-esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/index.js",
+      "require": "./dist-cjs/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "homepage": "https://github.com/jchip/fynjs",
   "scripts": {
-    "build": "rm -rf dist && tsc",
-    "test": "xrun xarc/test-only",
-    "lint": "xrun xarc/lint",
-    "coverage": "xrun xarc/test-cov",
-    "docs": "xrun xarc/docs",
-    "ci:check": "xrun xarc/check",
-    "prepublishOnly": "xrun [[build, docs], xarc/check]",
+    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "xrun build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
@@ -27,20 +37,17 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@istanbuljs/nyc-config-typescript": "^1.0.1",
-    "@types/jest": "^26.0.20",
+    "@types/lodash": "^4.17.15",
     "@types/minimatch": "^3.0.5",
-    "@types/node": "^14.14.16",
-    "@xarc/module-dev": "^4.0.0",
-    "jest": "^30.0.3",
+    "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^3.2.2",
     "npm-packlist": "jchip/npm-packlist#v1",
-    "prettier": "^2.2.1",
-    "publish-util": "^2.0.0",
-    "source-map-support": "^0.5.19",
-    "ts-jest": "^29.4.0",
-    "ts-node": "^9.1.1",
-    "typedoc": "^0.28.7",
-    "typescript": "^5.8.3"
+    "prettier": "^3.5.3",
+    "publish-util": "^2.1.0",
+    "ts2mjs": "^4.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
   },
   "dependencies": {
     "filter-scan-dir": "^1.6.0",
@@ -52,24 +59,11 @@
     "tslib": "^2.8.1"
   },
   "files": [
-    "dist"
+    "dist-cjs",
+    "dist-esm"
   ],
   "prettier": {
     "printWidth": 100
-  },
-  "@xarc/module-dev": {
-    "features": [
-      "jest",
-      "jestTS",
-      "prettier",
-      "typedoc",
-      "typescript"
-    ]
-  },
-  "jest": {
-    "transform": {
-      "^.+\\.(ts|tsx)$": "ts-jest"
-    }
   },
   "fyn": {
     "dependencies": {}
