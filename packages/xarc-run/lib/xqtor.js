@@ -7,7 +7,7 @@ const XQItem = require("./xqitem");
 const exec = require("xsh").exec;
 const parseArray = require("./util/parse-array");
 const childProc = require("child_process");
-const unwrapNpmCmd = require("unwrap-npm-cmd");
+const { unwrapNpmCmd } = require("unwrap-npm-cmd");
 const updateEnv = require("./util/update-env");
 const { NixClap } = require("nix-clap");
 
