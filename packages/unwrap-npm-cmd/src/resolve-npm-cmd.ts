@@ -1,13 +1,19 @@
-"use strict";
+import Fs from "fs";
+import which from "which";
+import Path from "path";
+import { quote, unquote } from "./utils.ts";
 
-const Fs = require("fs");
-const which = require("which");
-const Path = require("path");
-
-const { quote, unquote } = require("./utils");
 const nodeJsVer = parseInt(process.versions.node.split(".")[0]);
 
-module.exports = function resolveNpmCmd(exe, options) {
+export interface ResolveResult {
+  jsFile: string;
+}
+
+export interface ResolveOptions {
+  path?: string;
+}
+
+export function resolveNpmCmd(exe: string, options?: ResolveOptions): string | ResolveResult {
   // look for the windows CMD batch npm generates for JS
   const resolvedExe = which.sync(exe, options);
   if (Path.extname(resolvedExe).toLowerCase() !== ".cmd") {
@@ -24,11 +30,11 @@ module.exports = function resolveNpmCmd(exe, options) {
   const binName = Path.basename(resolvedExe).toLowerCase();
   const resolvedDir = Path.dirname(resolvedExe);
   // handle npm
-  let nodeCmd;
+  let nodeCmd: string | undefined;
   if (binName === "npm.cmd") {
-    nodeCmd = script.find((l) => l.startsWith(`SET "NPM_CLI_JS=`)).replace(/NPM_CLI_JS=/, "");
+    nodeCmd = script.find((l) => l.startsWith(`SET "NPM_CLI_JS=`))?.replace(/NPM_CLI_JS=/, "");
   } else if (binName === "npx.cmd") {
-    nodeCmd = script.find((l) => l.startsWith(`SET "NPX_CLI_JS=`)).replace(/NPX_CLI_JS=/, "");
+    nodeCmd = script.find((l) => l.startsWith(`SET "NPX_CLI_JS=`))?.replace(/NPX_CLI_JS=/, "");
   } else {
     nodeCmd =
       script.find((l) => l.startsWith(`"%~dp0\\node.exe"`)) ||
@@ -41,7 +47,7 @@ module.exports = function resolveNpmCmd(exe, options) {
   // update JS script from batch file
   const a = nodeCmd.split(" ").filter((x) => x)[1];
   const b = a.replace(`%~dp0`, resolvedDir).replace(`%dp0%`, resolvedDir);
-  let jsFile;
+  let jsFile: string;
   if (nodeJsVer < 18) {
     jsFile = Path.normalize(b);
   } else {
@@ -50,4 +56,4 @@ module.exports = function resolveNpmCmd(exe, options) {
   }
 
   return { jsFile };
-};
+}
