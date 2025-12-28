@@ -141,7 +141,6 @@
     "eslint-plugin-filenames": "^1.1.0",
     "eslint-plugin-jsdoc": "^30.7.9",
     "mocha": "^11.7.5",
-    "mock-require": "^2.0.2",
     "node-fetch-npm": "^2.0.4",
     "null-loader": "^4.0.1",
     "nyc": "^15.1.0",
