@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 
-import { CheckResult, PkgInfo } from "./types";
+import { CheckResult, PkgInfo } from "./types.ts";
 import assert from "assert";
 
 /**
