@@ -1,0 +1,115 @@
+import { OutputInterface } from "./default-output.ts";
+export declare const Levels: {
+    readonly debug: 10;
+    readonly verbose: 20;
+    readonly info: 30;
+    readonly warn: 40;
+    readonly error: 50;
+    readonly fyi: 60;
+    readonly none: 100;
+};
+export type LogLevel = keyof typeof Levels;
+export declare const LevelColors: Record<LogLevel, string>;
+export declare const LogItemTypes: {
+    readonly normal: 9;
+    readonly simple: 1;
+    readonly none: 0;
+};
+export type LogItemType = keyof typeof LogItemTypes;
+declare const SPIN_OFF = 0;
+declare const SPIN_STARTED = 1;
+declare const SPIN_RUNNING = 2;
+type SpinState = typeof SPIN_OFF | typeof SPIN_STARTED | typeof SPIN_RUNNING;
+export interface ItemOptions {
+    name: string | symbol;
+    color?: string;
+    display?: string;
+    spinner?: string | boolean | number;
+    spinInterval?: number;
+    save?: boolean;
+    _display?: string;
+    _msg?: string;
+    _spinning?: SpinState;
+    spinIx?: number;
+}
+export interface UpdateData {
+    msg?: string;
+    display?: string;
+    _save?: boolean;
+    _render?: boolean;
+}
+export interface VisualLoggerOptions {
+    renderFps?: number;
+    output?: OutputInterface;
+    maxDots?: number;
+    updatesPerDot?: number;
+    color?: boolean;
+    saveLogs?: boolean;
+}
+export declare class VisualLogger {
+    private _options;
+    private _items;
+    private _itemOptions;
+    private _lines;
+    private _logLevel;
+    private _itemType;
+    private _logData;
+    private _output;
+    private _maxDots;
+    private _updatesPerDot;
+    private _dotUpdates;
+    private _color;
+    private _renderInterval;
+    private _spinTimers;
+    private _renderTimer;
+    private _colorPrefix;
+    private _defaultPrefix;
+    private _chalkLevel;
+    private _prefix;
+    private _dots;
+    private _backupItemType;
+    constructor(options?: VisualLoggerOptions);
+    get logData(): string[];
+    get color(): boolean;
+    set color(enable: boolean);
+    static get spinners(): string[];
+    static get Levels(): typeof Levels;
+    static get LogItemTypes(): typeof LogItemTypes;
+    private _getItemKeys;
+    addItem(options: ItemOptions): this;
+    setItemType(flag?: string | false): this;
+    hasItem(name: string | symbol): boolean;
+    removeItem(name: string | symbol): this;
+    private _colorize;
+    setPrefix(prefixStr?: string): this;
+    prefix(x?: string | false): this;
+    debug(...args: any[]): this;
+    verbose(...args: any[]): this;
+    info(...args: any[]): this;
+    log(...args: any[]): this;
+    warn(...args: any[]): this;
+    error(...args: any[]): this;
+    fyi(...args: any[]): this;
+    private _nextSpin;
+    updateItem(name: string | symbol, data?: string | UpdateData): this;
+    clearItems(): this;
+    freezeItems(showItems?: boolean): this;
+    unfreezeItems(): this;
+    shutdown(showItems?: boolean): void;
+    private _checkSimpleDots;
+    private _resetSimpleDots;
+    private _writeSimpleDot;
+    private _isAllSpinItemsStop;
+    private _startSpinTimer;
+    private _stopSpinTimer;
+    private _startItemSpinner;
+    private _stopItemSpinner;
+    private _renderOutput;
+    private _renderLine;
+    private _renderLineMsg;
+    private _save;
+    private _genLog;
+    private _log;
+    private _shouldLogItem;
+}
+export {};
