@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-const { prePack } = require("../lib/prepack");
+import { prePack } from "../dist-esm/prepack.js";
 
 prePack();

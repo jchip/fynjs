@@ -1,26 +1,30 @@
-"use strict";
+import { execa } from "execa";
+import { getInfo } from "./utils.ts";
+import * as assert from "assert";
+import * as Fs from "fs/promises";
+import * as Path from "path";
 
-const execa = require("execa");
-const { getInfo } = require("./utils");
-const assert = require("assert");
-const Fs = require("fs").promises;
-const Path = require("path");
+interface GetArgOptions {
+  opt: string;
+  msg?: string;
+  argv: string[];
+  value?: boolean;
+  valids?: string[];
+}
 
-function getArg({ opt, msg, argv, value = true, valids = [] }) {
+function getArg({ opt, msg, argv, value = true, valids = [] }: GetArgOptions): string[] {
   const tagIx = argv.indexOf(opt);
 
   if (tagIx >= 0) {
     if (value) {
       const val = argv[tagIx + 1];
       if (valids.length > 0) {
-        assert(
+        assert.ok(
           valids.includes(val),
-          `${opt} has a value ${val} but it must be one of: ${valids.join(
-            ", "
-          )}`
+          `${opt} has a value ${val} but it must be one of: ${valids.join(", ")}`
         );
       } else {
-        assert(val, `${opt} must specify a ${msg}`);
+        assert.ok(val, `${opt} must specify a ${msg}`);
       }
       argv.splice(tagIx, 2);
 
@@ -35,21 +39,28 @@ function getArg({ opt, msg, argv, value = true, valids = [] }) {
   return [];
 }
 
-async function removeFile(name) {
+async function removeFile(name?: string): Promise<void> {
   try {
     if (name) {
       await Fs.unlink(name);
     }
-  } catch {}
+  } catch {
+    // ignore errors
+  }
 }
 
-exports.npmPublish = async function npmPublish({
+export interface NpmPublishOptions {
+  exit?: boolean;
+  silent?: boolean;
+}
+
+export async function npmPublish({
   exit = true,
   silent = false,
-} = {}) {
-  const noop = () => {};
+}: NpmPublishOptions = {}): Promise<number> {
+  const noop = (): void => {};
   process.on("SIGINT", noop);
-  const argv = [].concat(process.argv.slice(2));
+  const argv = [...process.argv.slice(2)];
 
   const { pkgDir, pkgFile, pkg, pkgData } = await getInfo();
 
@@ -65,13 +76,15 @@ exports.npmPublish = async function npmPublish({
   let changedPkg = false;
   let exitCode = 0;
 
-  const tgzName = pkg.name.replace(/@/g, "").replace(/\//g, "-");
-  const tgzFile = `${tgzName}-${pkg.version}.tgz`;
+  const pkgName = (pkg.name as string) || "unknown";
+  const pkgVersion = (pkg.version as string) || "0.0.0";
+  const tgzName = pkgName.replace(/@/g, "").replace(/\//g, "-");
+  const tgzFile = `${tgzName}-${pkgVersion}.tgz`;
   const fullTgzFile = Path.join(pkgDir, tgzFile);
 
   const saveDir = process.cwd();
 
-  const restore = async () => {
+  const restore = async (): Promise<void> => {
     try {
       if (changedPkg) {
         if (!silent) {
@@ -79,11 +92,15 @@ exports.npmPublish = async function npmPublish({
         }
         await Fs.writeFile(pkgFile, pkgData);
       }
-    } catch {}
+    } catch {
+      // ignore errors
+    }
 
     try {
       process.chdir(saveDir);
-    } catch {}
+    } catch {
+      // ignore errors
+    }
 
     process.removeListener("SIGINT", noop);
   };
@@ -92,7 +109,7 @@ exports.npmPublish = async function npmPublish({
     process.env.BY_PUBLISH_UTIL = "1";
     process.chdir(pkgDir);
 
-    const scripts = pkg.scripts || {};
+    const scripts = (pkg.scripts || {}) as Record<string, string>;
 
     if (scripts.prepublish) {
       console.error(
@@ -111,31 +128,31 @@ exports.npmPublish = async function npmPublish({
       await Fs.writeFile(pkgFile, JSON.stringify(pkg, null, 2));
     }
 
-    const execaOpts = { stdout: "inherit", stderr: "inherit" };
+    const execaOpts = { stdout: "inherit" as const, stderr: "inherit" as const };
 
     if (scripts.prepublishOnly) {
-      await execa(`npm`, ["run", "prepublishOnly"], execaOpts);
+      await execa("npm", ["run", "prepublishOnly"], execaOpts);
     }
 
     await removeFile(fullTgzFile);
 
-    await execa(`npm`, [`pack`], execaOpts);
+    await execa("npm", ["pack"], execaOpts);
 
     if (scripts.publish) {
-      await execa(`npm`, [`run`, `publish`], execaOpts);
+      await execa("npm", ["run", "publish"], execaOpts);
     }
 
     if (!dryRun) {
-      const publishArgs = [`publish`].concat(tag, access, fullTgzFile, argv);
+      const publishArgs = ["publish", ...tag, ...access, fullTgzFile, ...argv];
       if (!silent) {
         console.log("publishing args:", publishArgs.join(" "));
       }
-      await execa(`npm`, publishArgs, execaOpts);
+      await execa("npm", publishArgs, execaOpts);
     } else {
-      console.log("dry-run", tgzFile, "args:", [].concat(tag, access, argv));
+      console.log("dry-run", tgzFile, "args:", [...tag, ...access, ...argv]);
     }
   } catch (err) {
-    if (err.message.includes("SIGINT")) {
+    if (err instanceof Error && err.message.includes("SIGINT")) {
       console.log("");
     } else {
       console.error("publish failed!", err);
@@ -150,4 +167,4 @@ exports.npmPublish = async function npmPublish({
   }
 
   return exitCode;
-};
+}

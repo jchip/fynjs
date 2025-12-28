@@ -1,10 +1,8 @@
-"use strict";
+import * as Fs from "fs/promises";
+import { getInfo } from "./utils.ts";
+import _ from "lodash";
 
-const Fs = require("fs").promises;
-const { getInfo } = require("./utils");
-const _ = require("lodash");
-
-async function postInstall() {
+async function postInstall(): Promise<void> {
   // can't use process.cwd() because that's this package's installed dir
   // when its postinstall is executed by npm install
   const cwd = process.env.INIT_CWD;
@@ -16,9 +14,9 @@ async function postInstall() {
 
   const { pkg, pkgFile } = await getInfo(cwd);
 
-  const addScript = (name) => {
+  const addScript = (name: string): void => {
     const script = `publish-util-${name.toLowerCase()}`;
-    const exist = _.get(pkg, `scripts.${name}`);
+    const exist = _.get(pkg, `scripts.${name}`) as string | undefined;
     if (!exist) {
       console.log(
         `adding ${name} script to your package.json with '${script}'`
@@ -38,8 +36,8 @@ async function postInstall() {
     addScript("prepack");
     addScript("postpack");
     await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
-  } catch (err) {
-    //
+  } catch {
+    // ignore errors
   }
 }
 

@@ -1,10 +1,8 @@
-"use strict";
+import * as Path from "path";
+import * as Fs from "fs/promises";
+import { getInfo } from "./utils.ts";
 
-const Path = require("path");
-const Fs = require("fs").promises;
-const { getInfo } = require("./utils");
-
-exports.postPack = async function postPack() {
+export async function postPack(): Promise<void> {
   const { pkgFile, saveFile } = await getInfo();
   const myName = Path.basename(process.argv[1]) || "publish-util-postpack";
 
@@ -19,4 +17,4 @@ exports.postPack = async function postPack() {
     console.error(`${myName} failed`, err);
     process.exit(1);
   }
-};
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-const { npmPublish } = require("../lib/npm-publish");
+import { npmPublish } from "../dist-esm/npm-publish.js";
 
 npmPublish();

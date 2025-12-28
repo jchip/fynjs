@@ -1,17 +1,27 @@
-"use strict";
-
-const Path = require("path");
-const Fs = require("fs").promises;
-const {
+import * as Path from "path";
+import * as Fs from "fs/promises";
+import {
   getInfo,
   extractFromObj,
   removeFromObj,
   keepStandardFields,
   renameFromObj,
-} = require("./utils");
-const _ = require("lodash");
+  ExtractSpec,
+  RemoveSpec,
+  RenameSpec,
+} from "./utils.ts";
+import _ from "lodash";
 
-function prePackObj(pkg, config = {}) {
+export interface PrePackConfig {
+  rename?: RenameSpec;
+  keep?: ExtractSpec;
+  remove?: RemoveSpec;
+  removeExtraKeys?: boolean;
+  autoPostPack?: boolean;
+  silent?: boolean;
+}
+
+export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig = {}): void {
   renameFromObj(pkg, config.rename);
 
   const keepObj = config.keep && extractFromObj(pkg, config.keep);
@@ -38,6 +48,7 @@ function prePackObj(pkg, config = {}) {
     }
   }
 
+  const scripts = pkg.scripts as Record<string, string> | undefined;
   if (!_.get(pkg, "scripts.postpack") && config.autoPostPack !== false) {
     if (!config.silent) {
       console.log(
@@ -47,8 +58,8 @@ function prePackObj(pkg, config = {}) {
     _.set(pkg, "scripts.postpack", "publish-util-postpack");
   }
 
-  if (pkg.scripts.prepack === "publish-util-prepack") {
-    delete pkg.scripts.prepack;
+  if (scripts?.prepack === "publish-util-prepack") {
+    delete scripts.prepack;
   }
 
   if (keepObj) {
@@ -56,15 +67,13 @@ function prePackObj(pkg, config = {}) {
   }
 }
 
-exports.prePackObj = prePackObj;
-
-exports.prePack = async function prePack() {
+export async function prePack(): Promise<void> {
   const { pkg, pkgData, saveFile, pkgFile } = await getInfo();
 
   const myName = Path.basename(process.argv[1]) || "publish-util-prepack";
 
   try {
-    const config = pkg.publishUtil || {};
+    const config = (pkg.publishUtil || {}) as PrePackConfig;
     if (!config.silent) {
       console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
     }
@@ -78,4 +87,4 @@ exports.prePack = async function prePack() {
     console.error(`${myName} failed`, err);
     process.exit(1);
   }
-};
+}

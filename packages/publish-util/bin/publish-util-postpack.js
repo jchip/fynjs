@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-const { postPack } = require("../lib/postpack");
+import { postPack } from "../dist-esm/postpack.js";
 
 postPack();

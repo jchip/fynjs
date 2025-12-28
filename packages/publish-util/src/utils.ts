@@ -1,28 +1,37 @@
-"use strict";
+import * as Fs from "fs/promises";
+import * as Os from "os";
+import * as Path from "path";
+import { findUp } from "find-up";
+import _ from "lodash";
 
-const Fs = require("fs").promises;
-const Os = require("os");
-const Path = require("path");
-const findUp = require("find-up");
-const _ = require("lodash");
+export interface PackageInfo {
+  pkgDir: string;
+  pkg: Record<string, unknown>;
+  pkgData: Buffer;
+  tmpDir: string;
+  saveName: string;
+  saveFile: string;
+  pkgFile: string;
+}
 
-exports.getInfo = async (cwd = process.env.INIT_CWD || process.cwd()) => {
+export async function getInfo(cwd: string = process.env.INIT_CWD || process.cwd()): Promise<PackageInfo> {
   const pkgFile = await findUp("package.json", { cwd });
   if (!pkgFile) {
     throw new Error(`No package.json found starting from directory: ${cwd}`);
   }
   const pkgDir = Path.dirname(pkgFile);
   const pkgData = await Fs.readFile(pkgFile);
-  const pkg = JSON.parse(pkgData);
+  const pkg = JSON.parse(pkgData.toString()) as Record<string, unknown>;
 
   const tmpDir = Os.tmpdir();
-  const saveName = `package-util-${pkg.name.replace(/[@\/]/g, "_")}_pkg.json`;
+  const pkgName = (pkg.name as string) || "unknown";
+  const saveName = `package-util-${pkgName.replace(/[@\/]/g, "_")}_pkg.json`;
   const saveFile = Path.join(tmpDir, saveName);
 
   return { pkgDir, pkg, pkgData, tmpDir, saveName, saveFile, pkgFile };
-};
+}
 
-function transferField(f, from, to) {
+function transferField(f: string, from: Record<string, unknown>, to: Record<string, unknown>): void {
   if (f.startsWith("/")) {
     const parts = f.split("/");
 
@@ -39,7 +48,7 @@ function transferField(f, from, to) {
   to[f] = from[f];
 }
 
-function deleteFields(f, obj) {
+function deleteFields(f: string, obj: Record<string, unknown>): void {
   if (f.startsWith("/")) {
     const parts = f.split("/");
 
@@ -57,7 +66,9 @@ function deleteFields(f, obj) {
   delete obj[f];
 }
 
-exports.renameFromObj = function renameFromObj(obj, rename) {
+export type RenameSpec = Record<string, string | string[]>;
+
+export function renameFromObj(obj: Record<string, unknown>, rename?: RenameSpec): void {
   if (rename) {
     for (const key in rename) {
       const data = _.get(obj, key);
@@ -67,21 +78,29 @@ exports.renameFromObj = function renameFromObj(obj, rename) {
       }
     }
   }
-};
+}
 
-exports.removeFromObj = function removeFromObj(obj, fields) {
+export type RemoveSpec = (string | Record<string, RemoveSpec>)[];
+
+export function removeFromObj(obj: Record<string, unknown>, fields: RemoveSpec): void {
   for (const f of fields) {
     if (typeof f === "string") {
       deleteFields(f, obj);
     } else {
       Object.keys(f).forEach((f2) => {
-        removeFromObj(obj[f2], f[f2]);
+        removeFromObj(obj[f2] as Record<string, unknown>, f[f2] as RemoveSpec);
       });
     }
   }
-};
+}
 
-exports.extractFromObj = function extractFromObj(obj, fields, output = {}) {
+export type ExtractSpec = (string | Record<string, ExtractSpec>)[];
+
+export function extractFromObj(
+  obj: Record<string, unknown>,
+  fields: ExtractSpec,
+  output: Record<string, unknown> = {}
+): Record<string, unknown> {
   for (const f of fields) {
     if (typeof f === "string") {
       transferField(f, obj, output);
@@ -108,16 +127,21 @@ exports.extractFromObj = function extractFromObj(obj, fields, output = {}) {
         output[f2] = obj2;
       } else {
         // extract into potential object
-        output[f2] = extractFromObj(obj2, f[f2], obj2.constructor());
+        const constructor = (obj2 as object).constructor as new () => Record<string, unknown>;
+        output[f2] = extractFromObj(
+          obj2 as Record<string, unknown>,
+          f[f2] as ExtractSpec,
+          new constructor()
+        );
       }
     }
   }
 
   return output;
-};
+}
 
 // https://docs.npmjs.com/cli/v7/configuring-npm/package-json
-exports.keepStandardFields = [
+export const keepStandardFields = [
   "name",
   "version",
   "description",

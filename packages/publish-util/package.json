@@ -2,13 +2,28 @@
   "name": "publish-util",
   "version": "2.1.0",
   "description": "Some util to clean up package.json for npm publish",
-  "main": "lib/index.js",
+  "type": "module",
+  "types": "dist-cjs/index.d.ts",
+  "main": "dist-cjs/index.cjs",
+  "module": "dist-esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/index.js",
+      "require": "./dist-cjs/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "test": "tap",
-    "prepublishOnly": "node check.js",
-    "prepack": "node bin/publish-util-prepack",
-    "postpack": "node bin/publish-util-postpack",
-    "postinstall": "node lib/postinstall.js"
+    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "node check.js && xrun build",
+    "prepack": "node bin/publish-util-prepack.js",
+    "postpack": "node bin/publish-util-postpack.js",
+    "postinstall": "node dist-esm/postinstall.js || true"
   },
   "repository": {
     "type": "git",
@@ -26,7 +41,8 @@
   },
   "files": [
     "bin",
-    "lib"
+    "dist-cjs",
+    "dist-esm"
   ],
   "keywords": [
     "npm",
@@ -39,20 +55,22 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
-    "execa": "^5.1.1",
-    "find-up": "^5.0.0",
-    "lodash": "^4.17.21"
+    "execa": "^9.5.2",
+    "find-up": "^7.0.0",
+    "lodash": "^4.17.21",
+    "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "prettier": "^2.2.1",
-    "tap": "^15.0.6"
+    "@types/lodash": "^4.17.15",
+    "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^3.2.2",
+    "prettier": "^3.5.3",
+    "ts2mjs": "^4.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
   },
-  "nyc": {
-    "reporter": [
-      "lcov",
-      "text",
-      "text-summary"
-    ],
-    "sourceMap": false
+  "prettier": {
+    "printWidth": 100
   }
 }
