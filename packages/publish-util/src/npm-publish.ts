@@ -1,8 +1,22 @@
-import { execa } from "execa";
+import { spawn } from "child_process";
 import { getInfo } from "./utils.ts";
 import * as assert from "assert";
 import * as Fs from "fs/promises";
 import * as Path from "path";
+
+function runCmd(cmd: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: "inherit", shell: process.platform === "win32" });
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`${cmd} ${args.join(" ")} exited with code ${code}`));
+      }
+    });
+    child.on("error", reject);
+  });
+}
 
 interface GetArgOptions {
   opt: string;
@@ -128,18 +142,16 @@ export async function npmPublish({
       await Fs.writeFile(pkgFile, JSON.stringify(pkg, null, 2));
     }
 
-    const execaOpts = { stdout: "inherit" as const, stderr: "inherit" as const };
-
     if (scripts.prepublishOnly) {
-      await execa("npm", ["run", "prepublishOnly"], execaOpts);
+      await runCmd("npm", ["run", "prepublishOnly"]);
     }
 
     await removeFile(fullTgzFile);
 
-    await execa("npm", ["pack"], execaOpts);
+    await runCmd("npm", ["pack"]);
 
     if (scripts.publish) {
-      await execa("npm", ["run", "publish"], execaOpts);
+      await runCmd("npm", ["run", "publish"]);
     }
 
     if (!dryRun) {
@@ -147,7 +159,7 @@ export async function npmPublish({
       if (!silent) {
         console.log("publishing args:", publishArgs.join(" "));
       }
-      await execa("npm", publishArgs, execaOpts);
+      await runCmd("npm", publishArgs);
     } else {
       console.log("dry-run", tgzFile, "args:", [...tag, ...access, ...argv]);
     }
