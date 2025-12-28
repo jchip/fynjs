@@ -1,6 +1,6 @@
 import xsh from "xsh";
 import chalk from "chalk";
-import { getDefaultLogger } from "./get-default-logger";
+import { getDefaultLogger } from "./get-default-logger.ts";
 import VisualLogger from "visual-logger";
 import hasAnsi from "has-ansi";
 import stripAnsi from "strip-ansi";

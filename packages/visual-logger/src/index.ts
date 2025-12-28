@@ -9,3 +9,6 @@ export type {
 
 export { defaultOutput } from "./default-output.ts";
 export type { VisualOutput, OutputInterface } from "./default-output.ts";
+
+// Default export for backward compatibility
+export { VisualLogger as default } from "./visual-logger.ts";

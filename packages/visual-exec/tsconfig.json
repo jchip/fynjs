@@ -1,21 +1,22 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "lib": ["ES2020"],
-    "module": "CommonJS",
+    "lib": ["ES2018"],
+    "module": "ES2015",
     "esModuleInterop": true,
-    "target": "ES2020",
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": true,
+    "target": "ES2018",
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
-    "declarationMap": true,
     "types": ["node"],
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true
+    "strictFunctionTypes": true,
+    "moduleResolution": "Node",
+    "rewriteRelativeImportExtensions": true
   },
   "include": ["src"]
 }
