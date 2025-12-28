@@ -1,0 +1,11 @@
+node_modules
+dist-cjs
+dist-esm
+*.tgz
+*-lock.*
+.vscode
+coverage
+.nyc*
+*.swp
+*.log*
+.tmp

@@ -2,11 +2,35 @@
   "name": "pkg-preper",
   "version": "0.1.6",
   "description": "Package Preparer",
-  "main": "lib/pkg-preper.js",
-  "scripts": {},
+  "type": "module",
+  "types": "dist-cjs/index.d.ts",
+  "main": "dist-cjs/index.cjs",
+  "module": "dist-esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/index.js",
+      "require": "./dist-cjs/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "xrun build",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "keywords": [],
   "files": [
-    "lib"
+    "dist-cjs",
+    "dist-esm"
   ],
   "author": "Joel Chen <joel123@gmail.com>",
   "repository": {
@@ -15,12 +39,26 @@
   },
   "license": "Artistic-2.0",
   "dependencies": {
-    "aveazul": "^1.0.2",
     "cacache": "^20.0.1",
     "mississippi": "^3.0.0",
     "npm-packlist": "^10.0.3",
     "opfs": "^1.0.6",
     "tar": "^4.4.6",
-    "visual-exec": "^0.1.0"
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/cacache": "^17.0.0",
+    "@types/node": "^22.0.0",
+    "@types/tar": "^6.1.0",
+    "@vitest/coverage-v8": "^3.2.2",
+    "prettier": "^3.5.3",
+    "publish-util": "^2.1.0",
+    "ts2mjs": "^4.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  },
+  "prettier": {
+    "printWidth": 100
   }
 }
