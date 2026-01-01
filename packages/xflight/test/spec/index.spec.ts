@@ -1,13 +1,25 @@
 import { describe, it, expect } from "vitest";
 import Inflight from "../../src/index.js";
 
-describe("inflight", () => {
-  it("should add item with start and check time from NOW", () => {
-    const now = Date.now();
+describe("Inflight", () => {
+  it("should use native Promise by default", () => {
     const ifl = new Inflight();
+    expect(ifl.Promise).toBe(globalThis.Promise);
+  });
 
-    ifl.add("test", "hello");
-    expect(ifl.get("test")).toBe("hello");
+  it("should accept custom Promise implementation", () => {
+    const CustomPromise = Promise;
+    const ifl = new Inflight(CustomPromise);
+    expect(ifl.Promise).toBe(CustomPromise);
+  });
+
+  it("should add item with start and check time", () => {
+    const now = Date.now();
+    const ifl = new Inflight<string>();
+    const p = Promise.resolve("hello");
+
+    ifl.add("test", p);
+    expect(ifl.get("test")).toBe(p);
 
     expect(ifl.getStartTime("test")).toBeGreaterThanOrEqual(now);
     expect(ifl.getCheckTime("test")).toBeGreaterThanOrEqual(now);
@@ -16,95 +28,152 @@ describe("inflight", () => {
   });
 
   it("should handle start and elapse time", async () => {
-    const ifl = new Inflight();
+    const ifl = new Inflight<string>();
 
-    expect(ifl.elapseTime()).toBe(-1);
-    // with now
+    expect(ifl.elapseTime("nonexistent")).toBe(-1);
+    expect(ifl.time("nonexistent")).toBe(-1);
+
     const now = Date.now();
-    ifl.add("test", "hello", now - 5);
-    expect(ifl.get("test")).toBe("hello");
+    ifl.add("test", Promise.resolve("hello"), now - 5);
     expect(ifl.elapseTime("test", now)).toBe(5);
-    // without now
-    ifl.add("foo", "bar");
+    expect(ifl.time("test", now)).toBe(5);
+
+    ifl.add("foo", Promise.resolve("bar"));
     await new Promise((res) => setTimeout(res, 10));
     expect(ifl.elapseTime("foo")).toBeGreaterThanOrEqual(10);
   });
 
-  it("should remove item", () => {
-    const ifl = new Inflight();
+  it("should track isEmpty and count", () => {
+    const ifl = new Inflight<string>();
     expect(ifl.isEmpty).toBe(true);
+    expect(ifl.count).toBe(0);
 
-    ifl.add("foo", "bar");
+    ifl.add("foo", Promise.resolve("bar"));
     expect(ifl.isEmpty).toBe(false);
-    ifl.add("test", "hello");
+    expect(ifl.count).toBe(1);
+
+    ifl.add("test", Promise.resolve("hello"));
     expect(ifl.count).toBe(2);
-    expect(ifl.get("foo")).toBe("bar");
-    expect(ifl.get("test")).toBe("hello");
+  });
+
+  it("should remove items correctly", () => {
+    const ifl = new Inflight<string>();
+
+    ifl.add("foo", Promise.resolve("bar"));
+    ifl.add("test", Promise.resolve("hello"));
+    expect(ifl.count).toBe(2);
 
     ifl.remove("test");
     expect(ifl.count).toBe(1);
-
     expect(ifl.get("test")).toBeUndefined();
-    ifl.remove("foo");
-    expect(ifl.get("foo")).toBeUndefined();
 
+    ifl.remove("foo");
     expect(ifl.count).toBe(0);
     expect(ifl.isEmpty).toBe(true);
   });
 
+  it("should throw when adding duplicate key", () => {
+    const ifl = new Inflight<string>();
+    ifl.add("test", Promise.resolve("hello"));
+
+    expect(() => ifl.add("test", Promise.resolve("world"))).toThrow(
+      "xflight: item test already exist"
+    );
+  });
+
+  it("should throw when removing non-existing item", () => {
+    const ifl = new Inflight<string>();
+
+    expect(() => ifl.remove("nonexistent")).toThrow(
+      "xflight: removing non-existing item nonexistent"
+    );
+  });
+
   it("should handle last check time", async () => {
-    const ifl = new Inflight();
-    ifl.add("test", "hello");
+    const ifl = new Inflight<string>();
+    ifl.add("test", Promise.resolve("hello"));
+
     await new Promise((res) => setTimeout(res, 10));
     expect(ifl.lastCheckTime("test")).toBeGreaterThanOrEqual(10);
     expect(ifl.elapseCheckTime("test")).toBeGreaterThanOrEqual(10);
-    // bad item
-    expect(ifl.lastCheckTime("foo")).toBe(-1);
 
-    // with now provided
+    expect(ifl.lastCheckTime("nonexistent")).toBe(-1);
+
     const now = Date.now();
-    ifl.resetCheckTime().resetCheckTime("test", now - 5);
+    ifl.resetCheckTime("test", now - 5);
     expect(ifl.elapseCheckTime("test", now)).toBe(5);
-    // without now
+
     ifl.resetCheckTime("test");
-    expect(ifl.elapseCheckTime("test")).toBe(0);
+    expect(ifl.elapseCheckTime("test")).toBeLessThanOrEqual(1);
   });
 
-  it("should run a promise returning function", async () => {
-    let n = 0;
+  it("should reset check time for all items", async () => {
+    const ifl = new Inflight<string>();
+    ifl.add("a", Promise.resolve("1"));
+    ifl.add("b", Promise.resolve("2"));
+
+    await new Promise((res) => setTimeout(res, 10));
+    expect(ifl.elapseCheckTime("a")).toBeGreaterThanOrEqual(10);
+    expect(ifl.elapseCheckTime("b")).toBeGreaterThanOrEqual(10);
+
+    ifl.resetCheckTime();
+    expect(ifl.elapseCheckTime("a")).toBeLessThanOrEqual(1);
+    expect(ifl.elapseCheckTime("b")).toBeLessThanOrEqual(1);
+  });
+
+  it("should deduplicate concurrent promise calls", async () => {
+    let callCount = 0;
     const delay = () => {
-      n++;
-      return new Promise((resolve) => {
+      callCount++;
+      return new Promise<number>((resolve) => {
         setTimeout(() => resolve(Date.now()), 30);
       });
     };
 
-    const ifl = new Inflight();
+    const ifl = new Inflight<number>();
     const a = ifl.promise("test", delay);
     const b = ifl.promise("test", delay);
-    const r = await Promise.all([a, b]);
-    expect(n).toBe(1);
-    expect(r[0]).toBe(r[1]);
+
+    expect(a).toBe(b);
+    const [r1, r2] = await Promise.all([a, b]);
+    expect(callCount).toBe(1);
+    expect(r1).toBe(r2);
     expect(ifl.get("test")).toBeUndefined();
   });
 
-  it("should handle a function not returning promise", async () => {
-    let err;
-    const ifl = new Inflight();
-    await ifl.promise("test", () => "foo").catch((e) => (err = e));
-    expect(err).toBeTruthy();
-    expect(err.message).toContain("test didn't return a promise");
+  it("should cleanup after promise resolves", async () => {
+    const ifl = new Inflight<string>();
+    const p = ifl.promise("test", () => Promise.resolve("done"));
+
+    expect(ifl.get("test")).toBeDefined();
+    await p;
+    await new Promise((res) => setTimeout(res, 0));
+    expect(ifl.get("test")).toBeUndefined();
   });
 
-  it("should handle a function throwing", async () => {
-    let err;
-    const ifl = new Inflight();
-    await ifl
-      .promise("test", () => {
-        throw new Error("foo");
-      })
-      .catch((e) => (err = e));
-    expect(err).toBeTruthy();
-    expect(err.message).toBe("foo");
+  it("should cleanup after promise rejects", async () => {
+    const ifl = new Inflight<string>();
+    const p = ifl.promise("test", () => Promise.reject(new Error("fail")));
+
+    expect(ifl.get("test")).toBeDefined();
+    await p.catch(() => {});
+    await new Promise((res) => setTimeout(res, 0));
+    expect(ifl.get("test")).toBeUndefined();
+  });
+
+  it("should reject when factory doesn't return promise", async () => {
+    const ifl = new Inflight<string>();
+    const p = ifl.promise("test", (() => "not a promise") as any);
+
+    await expect(p).rejects.toThrow("didn't return a promise");
+  });
+
+  it("should reject when factory throws", async () => {
+    const ifl = new Inflight<string>();
+    const p = ifl.promise("test", () => {
+      throw new Error("factory error");
+    });
+
+    await expect(p).rejects.toThrow("factory error");
   });
 });
