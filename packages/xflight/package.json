@@ -37,9 +37,6 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
-  "dependencies": {
-    "optional-require": "^2.0.1"
-  },
   "devDependencies": {
     "@types/node": "^22.15.29",
     "@vitest/coverage-v8": "^3.2.0",

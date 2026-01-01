@@ -1,5 +1,4 @@
 import assert from "node:assert";
-import { optionalRequire } from "optional-require";
 
 export interface InflightItem<T> {
     start: number;
@@ -25,17 +24,17 @@ export default class Inflight<T = any> {
     /**
      * Create a new Inflight instance.
      *
-     * By default, the constructor will try to use Bluebird or Aveazul as the Promise implementation if they are available.
-     * If you want to always use the native Promise and skip these checks, pass the global Promise as the argument:
+     * Uses native Promise by default. Pass a custom Promise implementation if needed:
      *
      * ```ts
-     * const inflight = new Inflight(Promise);
+     * import Bluebird from "bluebird";
+     * const inflight = new Inflight(Bluebird);
      * ```
      *
      * @param xPromise Optional custom Promise implementation to use.
      */
     constructor(xPromise?: PromiseConstructor) {
-        this.Promise = xPromise || optionalRequire("bluebird") || optionalRequire("aveazul") || globalThis.Promise;
+        this.Promise = xPromise || globalThis.Promise;
     }
 
     /**
