@@ -1,4 +1,7 @@
-import assert from "node:assert";
+/** Simple assert that works in browser and Node.js */
+function assert(condition: unknown, message: string): asserts condition {
+    if (!condition) throw new Error(message);
+}
 
 export interface InflightItem<T> {
     start: number;
