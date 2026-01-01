@@ -11,7 +11,7 @@ import { npmRunScriptStreaming, npmRunScript } from "./npm-run-script";
 import boxen from "boxen";
 import chalk from "chalk";
 import { FynpoDepGraph, FynpoTopoPackages, PackageDepData, FynpoPackageInfo } from "@fynpo/base";
-import ItemQueue from "item-queue";
+import { ItemQueue } from "item-queue";
 import { TopoRunner } from "./topo-runner";
 import { PkgBuildCache } from "./caching";
 import * as xaa from "xaa";

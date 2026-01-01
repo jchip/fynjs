@@ -21,6 +21,38 @@ const xrequire = eval("require"); // eslint-disable-line
 
 const globalCmnds = ["bootstrap", "local", "run"];
 
+/**
+ * Detect if an error is likely an internal fynpo bug vs a user/package issue
+ */
+const detectInternalBug = (err: any): { isInternal: boolean; hint: string } => {
+  const msg = err?.message || String(err);
+  const stack = err?.stack || "";
+
+  // Webpack module errors indicate import/export issues in fynpo's code
+  if (msg.includes("__WEBPACK_IMPORTED_MODULE_") || msg.includes("is not a constructor")) {
+    return {
+      isInternal: true,
+      hint: "This appears to be an import/export bug in fynpo's bundled code.",
+    };
+  }
+
+  // Check if error originates from fynpo's own modules
+  if (stack.includes("/fynpo/dist/") || stack.includes("/fynpo/src/")) {
+    if (
+      msg.includes("is not a function") ||
+      msg.includes("is not defined") ||
+      msg.includes("Cannot read prop")
+    ) {
+      return {
+        isInternal: true,
+        hint: "Error originated from fynpo's internal code.",
+      };
+    }
+  }
+
+  return { isInternal: false, hint: "" };
+};
+
 const readPackages = async (opts: any, cmdName: string = "") => {
   const result = await makePkgDeps(
     await readFynpoPackages(_.pick(opts, ["patterns", "cwd"])),
@@ -126,15 +158,26 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
 
     bootstrap.logErrors();
     statusCode = bootstrap.failed;
-  } catch (err) {
+  } catch (err: any) {
     if (!secondRun) {
+      const bugInfo = detectInternalBug(err);
+      if (bugInfo.isInternal) {
+        logger.error("*** INTERNAL FYNPO BUG DETECTED ***");
+        logger.error(bugInfo.hint);
+        logger.error("Please report this issue at: https://github.com/jchip/fynjs/issues");
+      }
+      logger.error("Bootstrap error:", err?.message || err);
+      if (err?.stack) {
+        logger.debug("Stack trace:", err.stack);
+      }
       bootstrap.logErrors();
       statusCode = 1;
     }
   } finally {
     if (!secondRun) {
       const sec = ((bootstrap.elapsedTime + firstRunTime) / 1000).toFixed(2);
-      logger.info(`bootstrap completed in ${sec}secs`);
+      const status = statusCode === 0 ? "completed" : "failed";
+      logger[statusCode === 0 ? "info" : "error"](`bootstrap ${status} in ${sec}secs`);
       if (statusCode !== 0 || meta.opts.saveLog) {
         Fs.writeFileSync("fynpo-debug.log", logger.logData.join("\n") + "\n");
         logger.error("Please check the file fynpo-debug.log for more info.");
