@@ -39,8 +39,6 @@ export interface InflightItem<T> {
  * ```
  */
 export class Inflight<T = unknown> {
-    /** Number of inflight items */
-    private _count = 0;
     /** Map of inflight items by key */
     private readonly _inflights = new Map<string, InflightItem<T>>();
     /** The Promise implementation used by this instance */
@@ -103,7 +101,6 @@ export class Inflight<T = unknown> {
      */
     add(key: string, value: Promise<T>, now?: Timestamp): Promise<T> {
         assert(!this._inflights.has(key), `xflight: item ${key} already exist`);
-        this._count++;
         const timestamp = now ?? Date.now();
         this._inflights.set(key, { start: timestamp, lastXTime: timestamp, value });
         return value;
@@ -127,27 +124,21 @@ export class Inflight<T = unknown> {
      */
     remove(key: string): void {
         assert(this._inflights.has(key), `xflight: removing non-existing item ${key}`);
-        assert(this._count > 0, `xflight: removing item ${key} but list is empty - count ${this._count}`);
-        this._count--;
-        if (this._count === 0) {
-            this._inflights.clear();
-        } else {
-            this._inflights.delete(key);
-        }
+        this._inflights.delete(key);
     }
 
     /**
      * Whether there are no inflight items.
      */
     get isEmpty(): boolean {
-        return this._count === 0;
+        return this._inflights.size === 0;
     }
 
     /**
      * The number of inflight items.
      */
     get count(): number {
-        return this._count;
+        return this._inflights.size;
     }
 
     /**

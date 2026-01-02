@@ -121,6 +121,14 @@ describe("Inflight", () => {
     expect(ifl.elapseCheckTime("b")).toBeLessThanOrEqual(1);
   });
 
+  it("should silently ignore resetCheckTime for non-existent key", () => {
+    const ifl = new Inflight<string>();
+    // Should not throw
+    expect(() => ifl.resetCheckTime("nonexistent")).not.toThrow();
+    // Chaining should still work
+    expect(ifl.resetCheckTime("nonexistent")).toBe(ifl);
+  });
+
   it("should deduplicate concurrent promise calls", async () => {
     let callCount = 0;
     const delay = () => {
