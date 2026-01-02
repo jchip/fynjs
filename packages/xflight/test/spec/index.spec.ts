@@ -169,6 +169,23 @@ describe("Inflight", () => {
     expect(ifl.get("test")).toBeUndefined();
   });
 
+  it("should not throw if manually removed before promise settles", async () => {
+    const ifl = new Inflight<string>();
+    let resolve: (v: string) => void;
+    const p = ifl.promise("test", () => new Promise<string>((r) => { resolve = r; }));
+
+    expect(ifl.get("test")).toBeDefined();
+    ifl.remove("test"); // Manual removal
+    expect(ifl.get("test")).toBeUndefined();
+
+    // Settle the promise - auto-cleanup should not throw
+    resolve!("done");
+    await p;
+    await new Promise((res) => setTimeout(res, 0));
+    // Should complete without error
+    expect(ifl.isEmpty).toBe(true);
+  });
+
   it("should reject when factory doesn't return promise", async () => {
     const ifl = new Inflight<string>();
     const p = ifl.promise("test", (() => "not a promise") as any);

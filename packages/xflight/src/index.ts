@@ -75,7 +75,10 @@ export class Inflight<T = unknown> {
             return existing.value;
         }
 
-        const remove = (): void => this.remove(key);
+        // Safe cleanup - don't throw if already removed manually
+        const cleanup = (): void => {
+            this._inflights.delete(key);
+        };
 
         try {
             const p = factory();
@@ -83,7 +86,7 @@ export class Inflight<T = unknown> {
                 p && typeof p.then === "function",
                 `xflight: promiseFactory for key ${key} didn't return a promise`
             );
-            this.add(key, p).then(remove, remove);
+            this.add(key, p).then(cleanup, cleanup);
             return p;
         } catch (err) {
             return this.Promise.reject(err);
