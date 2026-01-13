@@ -511,6 +511,7 @@ class PkgInstaller {
         })
         .then(() => this._saveLockData())
         .then(() => {
+          this._fyn._depResolver._logConsolidatedPeerDepWarnings();
           logger.info(`${chalk.green("done install")} ${logFormat.time(Date.now() - start)}`);
         })
         .finally(() => {

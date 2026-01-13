@@ -359,7 +359,10 @@ const debug = false;
         const clean = () => {
           Fs.rmSync(Path.join(cwd, "package.json"), { recursive: true, force: true });
           Fs.rmSync(Path.join(cwd, "fyn-lock.yaml"), { recursive: true, force: true });
-          // Don't clean .fyn here - let copyCache handle it
+          // Don't clean step-level .fyn here - let copyCache handle it
+          // But clean scenario-level .fyn directory
+          const scenarioFynDir = Path.join(cwd, ".fyn");
+          Fs.rmSync(scenarioFynDir, { recursive: true, force: true });
           Fs.rmSync(Path.join(cwd, "node_modules"), { recursive: true, force: true });
         };
 

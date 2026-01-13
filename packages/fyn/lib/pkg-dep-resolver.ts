@@ -261,6 +261,7 @@ class PkgDepResolver {
   private _depthResolving: DepthResolving | undefined;
   private _localsByDepth?: DepItem[][];
   private _buildLocal?: LocalPkgBuilder;
+  private _peerDepWarnings: Map<string, Set<string>>;
 
   constructor(pkg: PackageJson, options: PkgDepResolverOptions) {
     this._options = Object.assign({}, options);
@@ -289,6 +290,7 @@ class PkgDepResolver {
     this._optResolver._depResolver = this;
     this._promiseQ.on("empty", () => this.checkOptResolver());
     this._lockOnly = this._fyn.lockOnly;
+    this._peerDepWarnings = new Map();
     //
     // We have to resolve each package in the order they were seen
     // through the dep tree because in case an earlier resolved version
@@ -408,7 +410,7 @@ class PkgDepResolver {
   ): void {
     const peerDepMeta = json.peerDependenciesMeta || {};
     _.each(json.peerDependencies || (json as Record<string, unknown>).peerDepenencies as Record<string, string>, (semver: string, name: string) => {
-      const peerId = chalk.cyan(`${name}@${semver}`);
+      const peerId = `${name}@${semver}`;
       const resolved = this.resolvePackage({
         item: { name, semver } as DepItem,
         meta: { versions: {} } as PackageMeta
@@ -417,14 +419,15 @@ class PkgDepResolver {
         // Skip warning if peer dependency is marked as optional in peerDependenciesMeta
         const isOptional = peerDepMeta[name] && peerDepMeta[name].optional;
         if (!isOptional) {
-          logger.warn(
-            chalk.yellow("Warning:"),
-            `peer dependencies ${peerId} of ${pkgId} ${chalk.red("is missing")}`
-          );
+          // Collect warning instead of logging immediately
+          if (!this._peerDepWarnings.has(peerId)) {
+            this._peerDepWarnings.set(peerId, new Set());
+          }
+          this._peerDepWarnings.get(peerId)!.add(pkgId);
         }
       } else {
         logger.debug(
-          `peer dependencies ${peerId} of ${pkgId}`,
+          `peer dependencies ${chalk.cyan(peerId)} of ${pkgId}`,
           `${chalk.green("resolved to")} ${resolved}`
         );
         _.set(depInfo, ["res", "per", name], { resolved });
@@ -437,6 +440,40 @@ class PkgDepResolver {
     if (!json) return undefined;
     const pkgId = logFormat.pkgId(depInfo);
     return this.resolvePkgPeerDep(json, pkgId, depInfo);
+  }
+
+  _logConsolidatedPeerDepWarnings(): void {
+    if (this._peerDepWarnings.size === 0) {
+      return;
+    }
+
+    // Sort peer dependencies alphabetically
+    const sortedPeerDeps = Array.from(this._peerDepWarnings.entries()).sort((a, b) => {
+      return a[0].localeCompare(b[0]);
+    });
+
+    for (const [peerId, pkgIds] of sortedPeerDeps) {
+      // Sort requiring packages alphabetically
+      const packages = Array.from(pkgIds).sort();
+      const peerIdDisplay = chalk.cyan(peerId);
+      
+      // Use same format for all cases
+      const sampleSize = Math.min(3, packages.length);
+      const samplePackages = packages.slice(0, sampleSize);
+      const remainingCount = packages.length - sampleSize;
+      
+      let pkgList: string;
+      if (remainingCount > 0) {
+        pkgList = `${samplePackages.join(", ")}, ... and ${remainingCount} more`;
+      } else {
+        pkgList = packages.join(", ");
+      }
+      
+      logger.warn(
+        chalk.yellow("Warning:"),
+        `peer dependencies ${peerIdDisplay} ${chalk.red("is missing")} (by: ${pkgList})`
+      );
+    }
   }
 
   queueDepth(depth: number): void {
