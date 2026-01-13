@@ -7,7 +7,6 @@ const XQItem = require("./xqitem");
 const exec = require("xsh").exec;
 const parseArray = require("./util/parse-array");
 const childProc = require("child_process");
-const { unwrapNpmCmd } = require("unwrap-npm-cmd");
 const updateEnv = require("./util/update-env");
 const { NixClap } = require("nix-clap");
 
@@ -479,6 +478,9 @@ because value type ${vtype} is unknown and no value.item`)
       tty = spawn = true;
     }
 
+    // Lazy require unwrap-npm-cmd to avoid requiring it at module load time
+    // This ensures it's built by fynpo bootstrap before it's required
+    const { unwrapNpmCmd } = require("unwrap-npm-cmd");
     const cmd2 = unwrapNpmCmd(cmd, { path: env.PATH });
 
     if (tty || spawn) {

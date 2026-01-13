@@ -17,7 +17,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "rm -rf dist-* && nvx tsc --build tsconfig.esm.json && nvx tsc --build tsconfig.cjs.json && nvx ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage"
