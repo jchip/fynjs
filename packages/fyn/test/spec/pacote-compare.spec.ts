@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, beforeEach } from "vitest";
 import mockNpm from "../fixtures/mock-npm";
 import { expect } from "chai";
 import logger from "../../lib/logger";
@@ -13,11 +14,11 @@ describe.skip("pacote-compare", function() {
   chalk.enabled = false;
   let server;
 
-  before(() => {
-    return mockNpm({ logLevel: "warn" }).then(s => (server = s));
+  beforeAll(() => {
+    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
   });
 
-  after(() => {
+  afterAll(() => {
     return server.stop();
   });
 
@@ -135,5 +136,5 @@ describe.skip("pacote-compare", function() {
         }
       });
     });
-  }).timeout(30000);
+  }, { timeout: 30000 });
 });

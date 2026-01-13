@@ -1,33 +1,32 @@
 /* eslint-disable prefer-spread, max-len */
 
-import sinon from "sinon";
+import { describe, it, beforeEach, afterEach, expect } from "vitest";
+import { vi } from "vitest";
 import logger from "../../lib/logger";
 import longPending from "../../lib/long-pending";
 
 describe("long-pending", function() {
   let logItems;
   let logs;
-  let sandbox;
   beforeEach(() => {
     logs = [];
     logItems = {};
-    sandbox = sinon.createSandbox();
-    sandbox.stub(logger, "addItem").callsFake(o => {
+    vi.spyOn(logger, "addItem").mockImplementation(o => {
       logItems[o.name] = o;
     });
-    sandbox.stub(logger, "updateItem").callsFake((name, data) => {
+    vi.spyOn(logger, "updateItem").mockImplementation((name, data) => {
       logs.push(`${name}: ${data.msg}`);
     });
-    sandbox.stub(logger, "removeItem").callsFake(name => {
+    vi.spyOn(logger, "removeItem").mockImplementation(name => {
       delete logItems[name];
     });
-    sandbox.stub(logger, "hasItem").callsFake(name => {
+    vi.spyOn(logger, "hasItem").mockImplementation(name => {
       return logItems[name];
     });
   });
 
   afterEach(() => {
-    sandbox.restore();
+    vi.restoreAllMocks();
   });
 
   it("should add long wait items to logger", () => {

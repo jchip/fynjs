@@ -4,7 +4,7 @@
  * Tests cache key generation and storage/retrieval of advisory data.
  */
 
-import { describe, it, before, after } from "mocha";
+import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "chai";
 import fs from "fs";
 import path from "path";
@@ -21,14 +21,14 @@ import {
 describe("audit-cache", () => {
   const testCache = path.join(__dirname, "../../.audit-cache-test");
 
-  before(() => {
+  beforeAll(() => {
     // Clean up before tests
     try {
       fs.rmSync(testCache, { recursive: true });
     } catch (e) {}
   });
 
-  after(() => {
+  afterAll(() => {
     // Clean up after tests
     try {
       fs.rmSync(testCache, { recursive: true });

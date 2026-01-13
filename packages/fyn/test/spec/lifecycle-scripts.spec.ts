@@ -1,3 +1,4 @@
+import { describe, it, beforeEach, expect } from "vitest";
 import LifecycleScripts from "../../lib/lifecycle-scripts";
 import Path from "path";
 import xstdout from "xstdout";

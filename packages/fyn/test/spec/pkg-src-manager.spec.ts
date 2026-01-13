@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import Fs from "fs";
 import Yaml from "js-yaml";
 import Path from "path";
@@ -14,11 +15,11 @@ describe("pkg-src-manager", function() {
   let fynCacheDir;
 
   let server;
-  before(() => {
-    return mockNpm({ logLevel: "warn" }).then(s => (server = s));
+  beforeAll(() => {
+    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
   });
 
-  after(() => {
+  afterAll(() => {
     return server.stop();
   });
 

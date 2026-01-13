@@ -8,9 +8,27 @@ const Yaml = require("js-yaml");
 const Path = require("path");
 const chalk = require("chalk");
 const Crypto = require("crypto");
-const CliLogger = require("../../../lib/cli-logger").default;
+const { createRequire } = require("module");
 const _ = require("lodash");
 const createTgz = require("./create-tgz");
+
+// Use createRequire to handle TypeScript files in vitest context
+const requireFromHere = createRequire(__filename);
+let CliLogger;
+try {
+  // Try to require the TypeScript file (vitest will handle the .ts extension)
+  const cliLoggerModule = requireFromHere("../../../lib/cli-logger.ts");
+  CliLogger = cliLoggerModule.default || cliLoggerModule;
+} catch (e) {
+  // Fallback to .js if .ts doesn't work
+  try {
+    const cliLoggerModule = requireFromHere("../../../lib/cli-logger.js");
+    CliLogger = cliLoggerModule.default || cliLoggerModule;
+  } catch (e2) {
+    const cliLoggerModule = requireFromHere("../../../lib/cli-logger");
+    CliLogger = cliLoggerModule.default || cliLoggerModule;
+  }
+}
 
 const TGZ_DIR_NAME = ".tgz";
 

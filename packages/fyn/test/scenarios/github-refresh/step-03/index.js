@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const Yaml = require("js-yaml");
-const { META_CACHE_STALE_TIME } = require("../../../../lib/pkg-src-manager");
-const { getBucketPath } = require("../../../../lib/cacache-util");
+// META_CACHE_STALE_TIME is 24 hours in milliseconds (from pkg-src-manager.ts)
+const META_CACHE_STALE_TIME = 24 * 60 * 60 * 1000;
+// Note: getBucketPath is not actually used in this file, so we don't need to require it
 
 module.exports = {
   title: "should refresh stale GitHub package cache (24h fallback)",

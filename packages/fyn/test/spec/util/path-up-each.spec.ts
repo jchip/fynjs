@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import pathUpEach from "../../../lib/util/path-up-each";
 
 describe("path-up-each", function() {

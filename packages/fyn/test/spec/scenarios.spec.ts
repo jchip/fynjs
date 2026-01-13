@@ -13,6 +13,8 @@
  * - Add `skip: true` to the step's index.js module exports
  */
 
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi, expect } from "vitest";
+import { expect as chaiExpect } from "chai";
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
@@ -51,22 +53,38 @@ const debug = false;
   const saveExit = fyntil.exit;
   let registry;
   let saveCI;
-  before(() => {
+  let unhandledRejectionHandler;
+  beforeAll(() => {
     saveCI = ci.isCI;
     ci.isCI = false;
     fyntil.exit = code => {
       throw new Error(`exit ${code}`);
     };
+    // Handle unhandled rejections for "exit 0" errors (Vitest treats them differently than Mocha)
+    unhandledRejectionHandler = (reason: unknown) => {
+      if (reason instanceof Error && reason.message === "exit 0") {
+        // Ignore "exit 0" errors - these are expected when fynRun completes successfully
+        return;
+      }
+      // Re-throw other unhandled rejections
+      throw reason;
+    };
+    process.on("unhandledRejection", unhandledRejectionHandler);
     return mockNpm({ port: 0, logLevel: "warn" }).then(s => {
       server = s;
       registry = `http://localhost:${server.info.port}`;
     });
   });
 
-  after(() => {
+  afterAll(() => {
     ci.isCI = saveCI;
     fyntil.exit = saveExit;
-    return server.stop();
+    if (unhandledRejectionHandler) {
+      process.removeListener("unhandledRejection", unhandledRejectionHandler);
+    }
+    if (server) {
+      return server.stop();
+    }
   });
 
   beforeEach(() => {
@@ -74,6 +92,10 @@ const debug = false;
     logger._itemOptions = {};
     logger._lines = [];
     logger._logData = [];
+    // Make logger available to scenario step files
+    if (typeof global !== "undefined") {
+      global.__fynTestLogger = logger;
+    }
   });
 
   const nulStepAction = {
@@ -103,7 +125,7 @@ const debug = false;
         const actualLockFile = Path.join(_cwd, "fyn-lock.yaml");
         const expectLock = Yaml.safeLoad(Fs.readFileSync(expectLockFile).toString());
         const actualLock = Yaml.safeLoad(Fs.readFileSync(actualLockFile).toString());
-        expect(cleanLock(actualLock), "lock file should match").to.deep.equal(
+        chaiExpect(cleanLock(actualLock), "lock file should match").to.deep.equal(
           cleanLock(expectLock)
         );
       }
@@ -137,6 +159,8 @@ const debug = false;
       const debugLogFile = `fyn-debug-${step}.log`;
       Fs.rmSync(Path.join(cwd, debugLogFile), { recursive: true, force: true });
 
+      const timeout = debug ? 10000000 : (stepAction.timeout || undefined);
+      const testOptions = timeout ? { timeout } : {};
       const testCase = (stepAction.skip ? it.skip : it)(`${step}${stepTitle}`, () => {
         if (debug && step === options.debugStep) {
           debugger; // eslint-disable-line
@@ -221,11 +245,20 @@ const debug = false;
               );
             }
 
-            return fynRun(args.filter(x => x)).catch(err => {
-              if (err.message !== "exit 0") {
-                failError = err;
-              }
-            });
+            return fynRun(args.filter(x => x))
+              .catch(err => {
+                if (err.message !== "exit 0") {
+                  failError = err;
+                }
+                // Return undefined for "exit 0" to avoid unhandled rejection
+                return undefined;
+              })
+              .catch(err => {
+                // Catch any errors from the previous catch (shouldn't happen, but just in case)
+                if (err.message !== "exit 0") {
+                  failError = err;
+                }
+              });
           })
           .then(() => {
             if (stepAction.expectFailure) {
@@ -245,7 +278,7 @@ const debug = false;
             const expectNmTree = Yaml.safeLoad(
               Fs.readFileSync(Path.join(stepDir, "nm-tree.yaml")).toString()
             );
-            expect(nmTree).to.deep.equal(expectNmTree);
+            chaiExpect(nmTree).to.deep.equal(expectNmTree);
             verifyLock(cwd, stepDir);
           })
           .catch(err => {
@@ -275,10 +308,7 @@ const debug = false;
           .then(() => stepAction.verify(cwd, scenarioDir))
           .then(() => xaa.delay(10))
           .finally(() => stepAction.after());
-      });
-
-      if (debug) testCase.timeout(10000000);
-      else if (stepAction.timeout) testCase.timeout(stepAction.timeout);
+      }, testOptions);
     };
 
     const files = Fs.readdirSync(scenarioDir).filter(x => x.startsWith("step-"));
@@ -387,11 +417,11 @@ const debug = false;
           }
         };
 
-        before(clean);
-        before(copyCacheIfNeeded);
+        beforeAll(clean);
+        beforeAll(copyCacheIfNeeded);
 
         if (cleanUp) {
-          after(clean);
+          afterAll(clean);
         }
 
         afterEach(() => {

@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const Yaml = require("js-yaml");
-const { META_CACHE_STALE_TIME } = require("../../../../lib/pkg-src-manager");
+// META_CACHE_STALE_TIME is 24 hours in milliseconds (from pkg-src-manager.ts)
+const META_CACHE_STALE_TIME = 24 * 60 * 60 * 1000;
 
 module.exports = {
   title: "should refresh stale cache even without new commits (24h fallback) - local repo",

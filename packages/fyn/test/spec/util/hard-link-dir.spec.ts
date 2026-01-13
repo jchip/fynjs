@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import Path from "path";
 import * as hardLinkDir from "../../../lib/util/hard-link-dir";
 import Fs from "opfs";

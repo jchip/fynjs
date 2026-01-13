@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+import { describe, it, beforeAll, afterAll } from "vitest";
 import Fs from "fs";
 import Yaml from "js-yaml";
 import Path from "path";
@@ -16,13 +17,15 @@ describe("pkg-dist-fetcher", function() {
   const fynDir = Path.join(__dirname, `../.tmp_${Date.now()}`);
 
   let server;
-  before(() => {
-    return mockNpm({ logLevel: "warn" }).then(s => (server = s));
+  beforeAll(() => {
+    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
   });
 
-  after(() => {
+  afterAll(() => {
     xsh.$.rm("-rf", fynDir);
-    return server.stop();
+    if (server) {
+      return server.stop();
+    }
   });
 
   it("should fetch package tarballs for pkg-a fixture", () => {
@@ -40,5 +43,5 @@ describe("pkg-dist-fetcher", function() {
     });
     // TODO: verify tarballs actually fetched
     return fyn.resolveDependencies().then(() => fyn.fetchPackages());
-  }).timeout(10000);
+  }, { timeout: 10000 });
 });

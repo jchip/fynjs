@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import uniqId from "../../../lib/util/uniq-id";
 
 describe("uniq-id", function() {

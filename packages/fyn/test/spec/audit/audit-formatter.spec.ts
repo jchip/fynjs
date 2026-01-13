@@ -4,7 +4,7 @@
  * Tests formatting of audit results for display.
  */
 
-import { describe, it } from "mocha";
+import { describe, it } from "vitest";
 import { expect } from "chai";
 
 import AuditFormatter from "../../../lib/audit/audit-formatter";

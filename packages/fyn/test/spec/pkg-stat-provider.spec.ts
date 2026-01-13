@@ -5,7 +5,7 @@
  * multiple times within a single process.
  */
 
-import { describe, it, beforeEach } from "mocha";
+import { describe, it, beforeEach } from "vitest";
 import { expect } from "chai";
 
 import PkgStatProvider from "../../lib/pkg-stat-provider";

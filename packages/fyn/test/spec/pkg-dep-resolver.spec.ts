@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import Fs from "fs";
 import Yaml from "js-yaml";
 import Path from "path";
@@ -13,12 +14,14 @@ describe("pkg-dep-resolver", function() {
   chalk.enabled = false;
   let server;
   let fynDir;
-  before(() => {
-    return mockNpm({ logLevel: "warn" }).then(s => (server = s));
+  beforeAll(() => {
+    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
   });
 
-  after(() => {
-    return server.stop();
+  afterAll(() => {
+    if (server) {
+      return server.stop();
+    }
   });
 
   beforeEach(() => {
@@ -67,6 +70,10 @@ describe("pkg-dep-resolver", function() {
           // These were from the old index signature pattern
           ["dep", "dev", "opt", "devOpt", "peer"].forEach(key => delete v[key]);
           v.dist = Object.assign({}, v.dist, { shasum: "test" });
+          // Normalize tarball URLs to use port 4873 (expected port in test fixtures)
+          if (v.dist && v.dist.tarball) {
+            v.dist.tarball = v.dist.tarball.replace(/localhost:\d+/, "localhost:4873");
+          }
         });
       });
     };
@@ -75,7 +82,8 @@ describe("pkg-dep-resolver", function() {
     data.badPkgs = convertToNewFormat(data.badPkgs);
     sort(data.pkgs);
     sort(data.badPkgs);
-    return data;
+    // Convert to plain object to avoid DepData vs Object type mismatch
+    return JSON.parse(JSON.stringify(data));
   };
 
   const cleanData = pkgs => {
@@ -127,7 +135,7 @@ describe("pkg-dep-resolver", function() {
 
   it("should resolve dependencies once for pkg-a fixture @deepResolve true", () => {
     return testPkgAFixture(true);
-  }).timeout(10000);
+  }, { timeout: 10000 });
 
   it("should resolve dependencies repeatedly for pkg-a fixture @deepResolve true", () => {
     return testPkgAFixture(true)
@@ -140,11 +148,11 @@ describe("pkg-dep-resolver", function() {
         Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
         return testPkgAFixture(true);
       });
-  }).timeout(10000);
+  }, { timeout: 10000 });
 
   it("should resolve dependencies once for pkg-a fixture @deepResolve false", () => {
     return testPkgAFixture(false);
-  }).timeout(10000);
+  }, { timeout: 10000 });
 
   it("should resolve dependencies repeatedly for pkg-a fixture @deepResolve false", () => {
     return testPkgAFixture(false)
@@ -157,7 +165,7 @@ describe("pkg-dep-resolver", function() {
         Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
         return testPkgAFixture(false);
       });
-  }).timeout(10000);
+  }, { timeout: 10000 });
 
   it("should fail when semver doesn't resolve", () => {
     const fyn = new Fyn({
@@ -188,7 +196,7 @@ describe("pkg-dep-resolver", function() {
           `Unable to find a version from lock data that satisfied semver mod-a@^14.0.0`
         );
       });
-  }).timeout(10000);
+  }, { timeout: 10000 });
 
   it("should fail when tag doesn't resolve", () => {
     const fyn = new Fyn({
@@ -219,7 +227,7 @@ describe("pkg-dep-resolver", function() {
           `Unable to find a version from lock data that satisfied semver mod-a@blah`
         );
       });
-  }).timeout(10000);
+  }, { timeout: 10000 });
 
   it("should resolve with the `latest` tag", () => {});
 
@@ -248,7 +256,7 @@ describe("pkg-dep-resolver", function() {
       const modA = fyn._data.pkgs["mod-a"];
       expect(modA).to.exist;
       expect(Object.keys(modA.versions)).to.include("1.0.0");
-    }).timeout(10000);
+    }, { timeout: 10000 });
 
     it("should apply override with version constraint", async () => {
       const fyn = new Fyn({
@@ -274,7 +282,7 @@ describe("pkg-dep-resolver", function() {
       const modA = fyn._data.pkgs["mod-a"];
       expect(modA).to.exist;
       expect(Object.keys(modA.versions)).to.include("1.0.0");
-    }).timeout(10000);
+    }, { timeout: 10000 });
 
     it("should apply override with $ reference to direct dependency", async () => {
       // mod-b@1.0.0 depends on mod-a@^0.2.0
@@ -306,7 +314,7 @@ describe("pkg-dep-resolver", function() {
       expect(modA).to.exist;
       // Should only have version 1.0.0, not the 0.x version that mod-b would have requested
       expect(Object.keys(modA.versions)).to.include("1.0.0");
-    }).timeout(10000);
+    }, { timeout: 10000 });
 
     it("should apply nested override (parent scoped)", async () => {
       const fyn = new Fyn({
@@ -338,7 +346,7 @@ describe("pkg-dep-resolver", function() {
         // Check that the override was applied for nested dep
         expect(modG).to.exist;
       }
-    }).timeout(10000);
+    }, { timeout: 10000 });
 
     it("should not apply override when version constraint doesn't match", async () => {
       const fyn = new Fyn({
@@ -365,7 +373,7 @@ describe("pkg-dep-resolver", function() {
       expect(modA).to.exist;
       // mod-a should NOT be 1.0.0 because the constraint didn't match
       expect(Object.keys(modA.versions)).to.not.include("1.0.0");
-    }).timeout(10000);
+    }, { timeout: 10000 });
 
     it("should work with overrides and resolutions together", async () => {
       const fyn = new Fyn({
@@ -397,6 +405,6 @@ describe("pkg-dep-resolver", function() {
       expect(modB).to.exist;
       expect(Object.keys(modA.versions)).to.include("1.0.0");
       expect(Object.keys(modB.versions)).to.include("3.0.0");
-    }).timeout(10000);
+    }, { timeout: 10000 });
   });
 });

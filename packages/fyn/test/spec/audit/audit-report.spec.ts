@@ -5,7 +5,7 @@
  * Network calls are not tested here (integration tests would cover that).
  */
 
-import { describe, it } from "mocha";
+import { describe, it } from "vitest";
 import { expect } from "chai";
 
 import AuditReport from "../../../lib/audit/audit-report";

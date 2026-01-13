@@ -1,5 +1,7 @@
 /* eslint-disable prefer-spread */
 
+import { describe, it } from "vitest";
+
 // TODO: FPM-39 - mock-require is incompatible with Node.js v24 (module.parent removed)
 // Skip until migrated to vitest mocking. Original test used mock-require to stub xenv-config.
 describe.skip("fyn-config", function() {

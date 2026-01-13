@@ -5,7 +5,7 @@
  * cacache's integrity guarantees across different versions.
  */
 
-import { describe, it, before, after } from "mocha";
+import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "chai";
 import cacache from "cacache";
 import fs from "fs";
@@ -25,12 +25,12 @@ import {
 describe('cacache-util', () => {
   const testCache = path.join(__dirname, '../.cache-util-test');
 
-  before(() => {
+  beforeAll(() => {
     // Clean up before tests
     try { fs.rmSync(testCache, {recursive: true}); } catch(e) {}
   });
 
-  after(() => {
+  afterAll(() => {
     // Clean up after tests
     try { fs.rmSync(testCache, {recursive: true}); } catch(e) {}
   });

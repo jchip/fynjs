@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import * as semver from "../../../lib/util/semver";
 
 describe("semver", function() {
