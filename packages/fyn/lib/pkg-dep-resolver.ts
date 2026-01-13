@@ -411,9 +411,11 @@ class PkgDepResolver {
     const peerDepMeta = json.peerDependenciesMeta || {};
     _.each(json.peerDependencies || (json as Record<string, unknown>).peerDepenencies as Record<string, string>, (semver: string, name: string) => {
       const peerId = `${name}@${semver}`;
+      // Use resolvePackage with empty meta - it will check searchKnown() which looks at RESOLVE_ORDER
+      // This matches the original behavior that worked correctly
       const resolved = this.resolvePackage({
         item: { name, semver } as DepItem,
-        meta: { versions: {} } as PackageMeta
+        meta: {} as PackageMeta
       });
       if (!resolved) {
         // Skip warning if peer dependency is marked as optional in peerDependenciesMeta
