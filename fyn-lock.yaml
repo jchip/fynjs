@@ -1039,7 +1039,7 @@ item-queue:
   $: local
   _: ./packages/item-queue
   dependencies:
-   tslib: ^2.1.0
+   tslib: ^2.6.2
 jackspeak:
  _latest: 4.1.1
  _:
@@ -1877,7 +1877,7 @@ trim-newlines:
 tslib:
  _latest: 2.8.1
  _:
-  '^2.1.0,^2.3.1,^2.6.2,^2.8.1': 2.8.1
+  '^2.3.1,^2.6.2,^2.8.1': 2.8.1
  2.8.1:
   $: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
   _: 'https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz'
@@ -1972,6 +1972,7 @@ visual-logger:
   dependencies:
    chalk: ^4.0.0
    log-update: ^4.0.0
+   tslib: ^2.6.2
 which:
  _latest: 6.0.0
  _:

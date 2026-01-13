@@ -631,7 +631,107 @@
           "create-fynpo@1.0.6(dep)"
         ]
       }
+    ],
+    "packages/xflight": [
+      {
+        "fromPkg": {
+          "name": "xflight",
+          "version": "2.0.2",
+          "path": "packages/xflight"
+        },
+        "onPkg": {
+          "name": "string-array",
+          "version": "1.0.1",
+          "path": "packages/string-array"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "xflight@2.0.2(dev)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "xflight",
+          "version": "2.0.2",
+          "path": "packages/xflight"
+        },
+        "onPkg": {
+          "name": "unwrap-npm-cmd",
+          "version": "1.1.2",
+          "path": "packages/unwrap-npm-cmd"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "xflight@2.0.2(dev)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "xflight",
+          "version": "2.0.2",
+          "path": "packages/xflight"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "xflight@2.0.2(dev)"
+        ]
+      }
+    ],
+    "packages/create-monorepo": [
+      {
+        "fromPkg": {
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
+        },
+        "onPkg": {
+          "name": "filter-scan-dir",
+          "version": "1.6.0",
+          "path": "packages/filter-scan-dir"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/create-monorepo@1.0.6(dev)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
+        },
+        "onPkg": {
+          "name": "string-array",
+          "version": "1.0.1",
+          "path": "packages/string-array"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/create-monorepo@1.0.6(dep)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
+        },
+        "onPkg": {
+          "name": "unwrap-npm-cmd",
+          "version": "1.1.2",
+          "path": "packages/unwrap-npm-cmd"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/create-monorepo@1.0.6(dep)"
+        ]
+      }
     ]
   },
-  "__timestamp": 1766286401128
+  "__timestamp": 1768289704358
 }
