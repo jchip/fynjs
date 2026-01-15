@@ -32,6 +32,7 @@ $pkg:
   pacote: ^21.0.3
   pkg-preper: ../pkg-preper
   publish-util: ../publish-util
+  rimraf: ^6.1.2
   semver: ^7.3.5
   source-map: ^0.7.3
   strip-bom: ^4.0.0
@@ -61,7 +62,9 @@ $pkg:
   prettier: ^1.19.1
   tsx: ^4.20.3
   v8-compile-cache: ^2.3.0
-  vitest: ^2.1.8
+  vite: ^7.3.1
+  vite-node: ^5.2.0
+  vitest: ^4.0.17
   webpack: ^5.89.0
   webpack-bundle-analyzer: ^4.9.1
   webpack-cli: ^5.1.4
@@ -1258,11 +1261,50 @@ $pkg:
  0.5.7:
   $: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==
   _: 'https://registry.npmjs.org/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz'
+'@esbuild/aix-ppc64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/android-arm':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/android-arm64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/android-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
 '@esbuild/darwin-arm64':
  _latest: 0.27.2
  _:
-  0.21.5: 0.21.5
   0.25.5: 0.25.5
+  0.27.2: 0.27.2
+ 0.27.2:
+  $: sha512-davCD2Zc80nzDVRwXTcQP/28fiJbcOwvdolL0sOiOsbwBa72kegmVU0Wrh1MYrbuCL98Omp5dVhQFWRKR2ZAlg==
+  _: 'https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.27.2.tgz'
+  os:
+   - darwin
+  cpu:
+   - arm64
  0.25.5:
   $: sha512-GtaBgammVvdF7aPIgH2jxMDdivezgFu6iKpmT+48+F8Hhg5J/sfnDieg0aeG/jfSvkYQU2/pceFPDKlqZzwnfQ==
   _: 'https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.25.5.tgz'
@@ -1270,13 +1312,173 @@ $pkg:
    - darwin
   cpu:
    - arm64
- 0.21.5:
-  $: sha512-DwqXqZyuk5AiWWf3UfLiRDJ5EDd49zg6O9wclZ7kUMv2WRFr4HKjXp/5t8JZ11QbQfUS6/cRCKGwYhtNAY88kQ==
-  _: 'https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz'
-  os:
-   - darwin
-  cpu:
-   - arm64
+'@esbuild/darwin-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/freebsd-arm64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/freebsd-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-arm':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-arm64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-ia32':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-loong64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-mips64el':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-ppc64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-riscv64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-s390x':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/linux-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/netbsd-arm64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/netbsd-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/openbsd-arm64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/openbsd-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/openharmony-arm64':
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/sunos-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/win32-arm64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/win32-ia32':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
+'@esbuild/win32-x64':
+ _latest: 0.27.0
+ _:
+  0.27.2: metaFail_0.27.2
+ metaFail_0.27.2:
+  optFailed: 1
+  $: 0
+  _: null
 '@fynpo/base':
  _latest: 1.1.22-fynlocal_h
  _:
@@ -2000,6 +2202,20 @@ $pkg:
  1.0.0-next.29:
   $: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==
   _: 'https://registry.npmjs.org/@polka/url/-/url-1.0.0-next.29.tgz'
+'@rollup/rollup-android-arm-eabi':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-android-arm64':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
 '@rollup/rollup-darwin-arm64':
  _latest: 4.55.1
  _:
@@ -2011,6 +2227,139 @@ $pkg:
    - darwin
   cpu:
    - arm64
+'@rollup/rollup-darwin-x64':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-freebsd-arm64':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-freebsd-x64':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-arm-gnueabihf':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-arm-musleabihf':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-arm64-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-arm64-musl':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-loong64-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-ppc64-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-riscv64-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-riscv64-musl':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-s390x-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-x64-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-linux-x64-musl':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-openharmony-arm64':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-win32-arm64-msvc':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-win32-ia32-msvc':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-win32-x64-gnu':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
+'@rollup/rollup-win32-x64-msvc':
+ _:
+  4.55.1: metaFail_4.55.1
+ metaFail_4.55.1:
+  optFailed: 1
+  $: 0
+  _: null
 '@sigstore/bundle':
  _latest: 4.0.0
  _:
@@ -2069,6 +2418,13 @@ $pkg:
    '@sigstore/protobuf-specs': ^0.5.0
    '@sigstore/bundle': ^4.0.0
    '@sigstore/core': ^3.0.0
+'@standard-schema/spec':
+ _latest: 1.1.0
+ _:
+  ^1.0.0: 1.1.0
+ 1.1.0:
+  $: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==
+  _: 'https://registry.npmjs.org/@standard-schema/spec/-/spec-1.1.0.tgz'
 '@tufjs/canonical-json':
  _latest: 2.0.0
  _:
@@ -2086,6 +2442,23 @@ $pkg:
   dependencies:
    '@tufjs/canonical-json': 2.0.0
    minimatch: ^9.0.5
+'@types/chai':
+ _latest: 5.2.3
+ _:
+  ^5.2.2: 5.2.3
+ 5.2.3:
+  $: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==
+  _: 'https://registry.npmjs.org/@types/chai/-/chai-5.2.3.tgz'
+  dependencies:
+   '@types/deep-eql': '*'
+   assertion-error: ^2.0.1
+'@types/deep-eql':
+ _latest: 4.0.2
+ _:
+  '*': 4.0.2
+ 4.0.2:
+  $: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==
+  _: 'https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz'
 '@types/eslint':
  _latest: 7.2.9
  _:
@@ -2179,33 +2552,41 @@ $pkg:
 '@vitest/expect':
  _latest: 4.0.17
  _:
-  2.1.9: 2.1.9
- 2.1.9:
-  $: sha512-UJCIkTBenHeKT1TTlKMJWy1laZewsRIzYighyYiJKZreqtdxSos/S1t+ktRMQWu2CKqaarrkeszJx1cgC5tGZw==
-  _: 'https://registry.npmjs.org/@vitest/expect/-/expect-2.1.9.tgz'
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-mEoqP3RqhKlbmUmntNDDCJeTDavDR+fVYkSOw8qRwJFaW/0/5zA9zFeTrHqNtcmwh6j26yMmwx2PqUDPzt5ZAQ==
+  _: 'https://registry.npmjs.org/@vitest/expect/-/expect-4.0.17.tgz'
   dependencies:
-   chai: ^5.1.2
-   tinyrainbow: ^1.2.0
-   '@vitest/spy': 2.1.9
-   '@vitest/utils': 2.1.9
+   '@standard-schema/spec': ^1.0.0
+   '@types/chai': ^5.2.2
+   chai: ^6.2.1
+   tinyrainbow: ^3.0.3
+   '@vitest/spy': 4.0.17
+   '@vitest/utils': 4.0.17
 '@vitest/mocker':
  _latest: 4.0.17
  _:
-  2.1.9: 2.1.9
- 2.1.9:
-  $: sha512-tVL6uJgoUdi6icpxmdrn5YNo3g3Dxv+IHJBr0GXHaEdTcw3F+cPKnsXFhli6nO+f/6SDKPHEK1UN+k+TQv0Ehg==
-  _: 'https://registry.npmjs.org/@vitest/mocker/-/mocker-2.1.9.tgz'
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-+ZtQhLA3lDh1tI2wxe3yMsGzbp7uuJSWBM1iTIKCbppWTSBN09PUC+L+fyNlQApQoR+Ps8twt2pbSSXg2fQVEQ==
+  _: 'https://registry.npmjs.org/@vitest/mocker/-/mocker-4.0.17.tgz'
   dependencies:
    estree-walker: ^3.0.3
-   magic-string: ^0.30.12
-   '@vitest/spy': 2.1.9
+   magic-string: ^0.30.21
+   '@vitest/spy': 4.0.17
   peerDependencies:
    msw: ^2.4.9
-   vite: ^5.0.0
+   vite: '^6.0.0 || ^7.0.0-0'
 '@vitest/pretty-format':
  _latest: 4.0.17
  _:
-  '2.1.9,^2.1.9': 2.1.9
+  2.1.9: 2.1.9
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-Ah3VAYmjcEdHg6+MwFE17qyLqBHZ+ni2ScKCiW2XrlSBV4H3Z7vYfPfz7CWQ33gyu76oc0Ai36+kgLU3rfF4nw==
+  _: 'https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-4.0.17.tgz'
+  dependencies:
+   tinyrainbow: ^3.0.3
  2.1.9:
   $: sha512-KhRIdGV2U9HOUzxfiHmY8IFHTdqtOhIzCpd8WRdJiE7D/HUcZVD0EgQCVjm+Q9gkUXWgBvMmTtZgIG48wq7sOQ==
   _: 'https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-2.1.9.tgz'
@@ -2214,33 +2595,31 @@ $pkg:
 '@vitest/runner':
  _latest: 4.0.17
  _:
-  2.1.9: 2.1.9
- 2.1.9:
-  $: sha512-ZXSSqTFIrzduD63btIfEyOmNcBmQvgOVsPNPe0jYtESiXkhd8u2erDLnMxmGrDCwHCCHE7hxwRDCT3pt0esT4g==
-  _: 'https://registry.npmjs.org/@vitest/runner/-/runner-2.1.9.tgz'
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-JmuQyf8aMWoo/LmNFppdpkfRVHJcsgzkbCA+/Bk7VfNH7RE6Ut2qxegeyx2j3ojtJtKIbIGy3h+KxGfYfk28YQ==
+  _: 'https://registry.npmjs.org/@vitest/runner/-/runner-4.0.17.tgz'
   dependencies:
-   pathe: ^1.1.2
-   '@vitest/utils': 2.1.9
+   pathe: ^2.0.3
+   '@vitest/utils': 4.0.17
 '@vitest/snapshot':
  _latest: 4.0.17
  _:
-  2.1.9: 2.1.9
- 2.1.9:
-  $: sha512-oBO82rEjsxLNJincVhLhaxxZdEtV0EFHMK5Kmx5sJ6H9L183dHECjiefOAdnqpIgT5eZwT04PoggUnW88vOBNQ==
-  _: 'https://registry.npmjs.org/@vitest/snapshot/-/snapshot-2.1.9.tgz'
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-npPelD7oyL+YQM2gbIYvlavlMVWUfNNGZPcu0aEUQXt7FXTuqhmgiYupPnAanhKvyP6Srs2pIbWo30K0RbDtRQ==
+  _: 'https://registry.npmjs.org/@vitest/snapshot/-/snapshot-4.0.17.tgz'
   dependencies:
-   magic-string: ^0.30.12
-   pathe: ^1.1.2
-   '@vitest/pretty-format': 2.1.9
+   magic-string: ^0.30.21
+   pathe: ^2.0.3
+   '@vitest/pretty-format': 4.0.17
 '@vitest/spy':
  _latest: 4.0.17
  _:
-  2.1.9: 2.1.9
- 2.1.9:
-  $: sha512-E1B35FwzXXTs9FHNK6bDszs7mtydNi5MIfUWpceJ8Xbfb1gBMscAnwLbEu+B44ed6W3XjL9/ehLPHR1fkf1KLQ==
-  _: 'https://registry.npmjs.org/@vitest/spy/-/spy-2.1.9.tgz'
-  dependencies:
-   tinyspy: ^3.0.2
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-I1bQo8QaP6tZlTomQNWKJE6ym4SHf3oLS7ceNjozxxgzavRAgZDc06T7kD8gb9bXKEgcLNt00Z+kZO6KaJ62Ew==
+  _: 'https://registry.npmjs.org/@vitest/spy/-/spy-4.0.17.tgz'
 '@vitest/ui':
  _latest: 4.0.17
  _:
@@ -2263,6 +2642,13 @@ $pkg:
  _latest: 4.0.17
  _:
   2.1.9: 2.1.9
+  4.0.17: 4.0.17
+ 4.0.17:
+  $: sha512-RG6iy+IzQpa9SB8HAFHJ9Y+pTzI+h8553MrciN9eC6TFBErqrQaTas4vG+MVj8S4uKk8uTT2p0vgZPnTdxd96w==
+  _: 'https://registry.npmjs.org/@vitest/utils/-/utils-4.0.17.tgz'
+  dependencies:
+   tinyrainbow: ^3.0.3
+   '@vitest/pretty-format': 4.0.17
  2.1.9:
   $: sha512-v0psaMSkNJ3A2NMrUEHFRzJtDPFn+/VWZ5WxImB21T9fjucJRmS7xCS3ppEnARb9y11OAzaD+P2Ps+b+BGX5iQ==
   _: 'https://registry.npmjs.org/@vitest/utils/-/utils-2.1.9.tgz'
@@ -2887,16 +3273,10 @@ caniuse-lite:
 chai:
  _latest: 6.2.2
  _:
-  ^5.1.2: 5.3.3
- 5.3.3:
-  $: sha512-4zNhdJD/iOjSH0A05ea+Ke6MU5mmpQcbQsSOkgdaUMJ9zTlDTD/GYlwohmIE2u0gaxHYiVHEn1Fw9mZ/ktJWgw==
-  _: 'https://registry.npmjs.org/chai/-/chai-5.3.3.tgz'
-  dependencies:
-   assertion-error: ^2.0.1
-   check-error: ^2.1.1
-   deep-eql: ^5.0.1
-   loupe: ^3.1.0
-   pathval: ^2.0.0
+  ^6.2.1: 6.2.2
+ 6.2.2:
+  $: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==
+  _: 'https://registry.npmjs.org/chai/-/chai-6.2.2.tgz'
 chalk:
  _latest: 4.1.2
  _:
@@ -2917,13 +3297,6 @@ chalker:
   _: 'https://registry.npmjs.org/chalker/-/chalker-1.2.0.tgz'
   dependencies:
    chalk: ^4.0.0
-check-error:
- _latest: 2.1.3
- _:
-  ^2.1.1: 2.1.3
- 2.1.3:
-  $: sha512-PAJdDJusoxnwm1VwW07VWwUN1sl7smmC3OKggvndJFadxxDRyFJBX/ggnu/KE4kQAB7a3Dp8f/YXC1FlUprWmA==
-  _: 'https://registry.npmjs.org/check-error/-/check-error-2.1.3.tgz'
 check-pkg-new-version-engine:
  _latest: 1.0.3-fynlocal_h
  _:
@@ -3161,13 +3534,6 @@ debug:
   _: 'https://registry.npmjs.org/debug/-/debug-4.4.3.tgz'
   dependencies:
    ms: ^2.1.3
-deep-eql:
- _latest: 5.0.2
- _:
-  ^5.0.1: 5.0.2
- 5.0.2:
-  $: sha512-h5k/5U50IJJFpzfL6nO9jaaumfjO/f2NjK/oYB2Djzm4p9L+3T9qWpZqZ2hAbLPuuYq9wrU08WQyBTL5GbPk5Q==
-  _: 'https://registry.npmjs.org/deep-eql/-/deep-eql-5.0.2.tgz'
 define-data-property:
  _latest: 1.1.4
  _:
@@ -3372,7 +3738,7 @@ es-errors:
 es-module-lexer:
  _latest: 2.0.0
  _:
-  '^1.2.1,^1.5.4': 1.7.0
+  '^1.2.1,^1.7.0': 1.7.0
  1.7.0:
   $: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==
   _: 'https://registry.npmjs.org/es-module-lexer/-/es-module-lexer-1.7.0.tgz'
@@ -3388,8 +3754,39 @@ es-object-atoms:
 esbuild:
  _latest: 0.27.2
  _:
-  ^0.21.3: 0.21.5
   '^0.25.0,~0.25.0': 0.25.5
+  ^0.27.0: 0.27.2
+ 0.27.2:
+  hasI: 1
+  $: sha512-HyNQImnsOC7X9PMNaCIeAm4ISCQXs5a5YasTXVliKv4uuBo1dKrG0A+uQS8M5eXjVMnLg3WgXaKvprHlFJQffw==
+  _: 'https://registry.npmjs.org/esbuild/-/esbuild-0.27.2.tgz'
+  optionalDependencies:
+   '@esbuild/aix-ppc64': 0.27.2
+   '@esbuild/android-arm': 0.27.2
+   '@esbuild/android-arm64': 0.27.2
+   '@esbuild/android-x64': 0.27.2
+   '@esbuild/darwin-arm64': 0.27.2
+   '@esbuild/darwin-x64': 0.27.2
+   '@esbuild/freebsd-arm64': 0.27.2
+   '@esbuild/freebsd-x64': 0.27.2
+   '@esbuild/linux-arm': 0.27.2
+   '@esbuild/linux-arm64': 0.27.2
+   '@esbuild/linux-ia32': 0.27.2
+   '@esbuild/linux-loong64': 0.27.2
+   '@esbuild/linux-mips64el': 0.27.2
+   '@esbuild/linux-ppc64': 0.27.2
+   '@esbuild/linux-riscv64': 0.27.2
+   '@esbuild/linux-s390x': 0.27.2
+   '@esbuild/linux-x64': 0.27.2
+   '@esbuild/netbsd-arm64': 0.27.2
+   '@esbuild/netbsd-x64': 0.27.2
+   '@esbuild/openbsd-arm64': 0.27.2
+   '@esbuild/openbsd-x64': 0.27.2
+   '@esbuild/openharmony-arm64': 0.27.2
+   '@esbuild/sunos-x64': 0.27.2
+   '@esbuild/win32-arm64': 0.27.2
+   '@esbuild/win32-ia32': 0.27.2
+   '@esbuild/win32-x64': 0.27.2
  0.25.5:
   hasI: 1
   $: sha512-P8OtKZRv/5J5hhz0cUAdu/cLuPIKXpQl1R9pZtvmHWQvrAUVd0UNIPT4IB4W3rNOqVO0rlqHmCIbSwxh/c9yUQ==
@@ -3420,34 +3817,6 @@ esbuild:
    '@esbuild/win32-arm64': 0.25.5
    '@esbuild/win32-ia32': 0.25.5
    '@esbuild/win32-x64': 0.25.5
- 0.21.5:
-  hasI: 1
-  $: sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==
-  _: 'https://registry.npmjs.org/esbuild/-/esbuild-0.21.5.tgz'
-  optionalDependencies:
-   '@esbuild/aix-ppc64': 0.21.5
-   '@esbuild/android-arm': 0.21.5
-   '@esbuild/android-arm64': 0.21.5
-   '@esbuild/android-x64': 0.21.5
-   '@esbuild/darwin-arm64': 0.21.5
-   '@esbuild/darwin-x64': 0.21.5
-   '@esbuild/freebsd-arm64': 0.21.5
-   '@esbuild/freebsd-x64': 0.21.5
-   '@esbuild/linux-arm': 0.21.5
-   '@esbuild/linux-arm64': 0.21.5
-   '@esbuild/linux-ia32': 0.21.5
-   '@esbuild/linux-loong64': 0.21.5
-   '@esbuild/linux-mips64el': 0.21.5
-   '@esbuild/linux-ppc64': 0.21.5
-   '@esbuild/linux-riscv64': 0.21.5
-   '@esbuild/linux-s390x': 0.21.5
-   '@esbuild/linux-x64': 0.21.5
-   '@esbuild/netbsd-x64': 0.21.5
-   '@esbuild/openbsd-x64': 0.21.5
-   '@esbuild/sunos-x64': 0.21.5
-   '@esbuild/win32-arm64': 0.21.5
-   '@esbuild/win32-ia32': 0.21.5
-   '@esbuild/win32-x64': 0.21.5
 esbuild-loader:
  _latest: 4.4.0
  _:
@@ -3540,7 +3909,7 @@ events:
 expect-type:
  _latest: 1.3.0
  _:
-  ^1.1.0: 1.3.0
+  ^1.2.2: 1.3.0
  1.3.0:
   $: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==
   _: 'https://registry.npmjs.org/expect-type/-/expect-type-1.3.0.tgz'
@@ -3798,7 +4167,15 @@ glob:
  _:
   '^10.2.2,^10.4.1': 10.4.5
   ^11.0.3: 11.0.3
+  ^13.0.0: 13.0.0
   '^7.0.0,^7.0.5': 7.1.6
+ 13.0.0:
+  $: sha512-tvZgpqk6fz4BaNZ66ZsRaZnbHvP/jG3uKJvAZOwEVUL4RTA5nJeeLYfyN9/VA8NX/V3IBG+hkeuGpKjvELkVhA==
+  _: 'https://registry.npmjs.org/glob/-/glob-13.0.0.tgz'
+  dependencies:
+   minimatch: ^10.1.1
+   minipass: ^7.1.2
+   path-scurry: ^2.0.0
  11.0.3:
   $: sha512-2Nim7dha1KVkaiF4q6Dj+ngPPMdfvLJEOpZk/jKiUAkqKebpGAWQXAq9z1xu9HKu5lWfqw/FASuccEjyznjPaA==
   _: 'https://registry.npmjs.org/glob/-/glob-11.0.3.tgz'
@@ -4589,7 +4966,7 @@ loose-envify:
 loupe:
  _latest: 3.2.1
  _:
-  '^3.1.0,^3.1.2': 3.2.1
+  ^3.1.2: 3.2.1
  3.2.1:
   $: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==
   _: 'https://registry.npmjs.org/loupe/-/loupe-3.2.1.tgz'
@@ -4607,7 +4984,7 @@ lru-cache:
 magic-string:
  _latest: 0.30.21
  _:
-  ^0.30.12: 0.30.21
+  '^0.30.12,^0.30.21': 0.30.21
  0.30.21:
   $: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==
   _: 'https://registry.npmjs.org/magic-string/-/magic-string-0.30.21.tgz'
@@ -4732,7 +5109,7 @@ mimic-fn:
 minimatch:
  _latest: 10.1.1
  _:
-  ^10.0.3: 10.1.1
+  '^10.0.3,^10.1.1': 10.1.1
   '^3.0.4,^3.1.2': 3.1.2
   '^9.0.4,^9.0.5': 9.0.5
  10.1.1:
@@ -5128,6 +5505,13 @@ object.assign:
    define-properties: ^1.1.3
    has-symbols: ^1.0.1
    object-keys: ^1.1.1
+obug:
+ _latest: 2.1.1
+ _:
+  '^2.0.0,^2.1.1': 2.1.1
+ 2.1.1:
+  $: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==
+  _: 'https://registry.npmjs.org/obug/-/obug-2.1.1.tgz'
 once:
  _latest: 1.4.0
  _:
@@ -5228,7 +5612,7 @@ p-try:
 package-json-from-dist:
  _latest: 1.0.1
  _:
-  ^1.0.0: 1.0.1
+  '^1.0.0,^1.0.1': 1.0.1
  1.0.1:
   $: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==
   _: 'https://registry.npmjs.org/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz'
@@ -5375,16 +5759,13 @@ pathe:
  _latest: 2.0.3
  _:
   ^1.1.2: 1.1.2
+  ^2.0.3: 2.0.3
+ 2.0.3:
+  $: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==
+  _: 'https://registry.npmjs.org/pathe/-/pathe-2.0.3.tgz'
  1.1.2:
   $: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==
   _: 'https://registry.npmjs.org/pathe/-/pathe-1.1.2.tgz'
-pathval:
- _latest: 2.0.1
- _:
-  ^2.0.0: 2.0.1
- 2.0.1:
-  $: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==
-  _: 'https://registry.npmjs.org/pathval/-/pathval-2.0.1.tgz'
 picocolors:
  _latest: 1.1.1
  _:
@@ -5437,7 +5818,7 @@ pkg-preper:
 postcss:
  _latest: 8.5.6
  _:
-  ^8.4.43: 8.5.6
+  ^8.5.6: 8.5.6
  8.5.6:
   $: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==
   _: 'https://registry.npmjs.org/postcss/-/postcss-8.5.6.tgz'
@@ -5760,10 +6141,21 @@ retry:
  0.12.0:
   $: sha512-9LkiTwjUh6rT555DtE9rTX+BKByPfrMzEAtnlEtdEwr3Nkffwiihqe2bWADg+OQRjt9gl6ICdmB/ZFDCGAtSow==
   _: 'https://registry.npmjs.org/retry/-/retry-0.12.0.tgz'
+rimraf:
+ _latest: 6.1.2
+ _:
+  ^6.1.2: 6.1.2
+ 6.1.2:
+  top: 1
+  $: sha512-cFCkPslJv7BAXJsYlK1dZsbP8/ZNLkCAQ0bi1hf5EKX2QHegmDFEFA6QhuYJlk7UDdc+02JjO80YSOrWPpw06g==
+  _: 'https://registry.npmjs.org/rimraf/-/rimraf-6.1.2.tgz'
+  dependencies:
+   glob: ^13.0.0
+   package-json-from-dist: ^1.0.1
 rollup:
  _latest: 4.55.1
  _:
-  ^4.20.0: 4.55.1
+  ^4.43.0: 4.55.1
  4.55.1:
   $: sha512-wDv/Ht1BNHB4upNbK74s9usvl7hObDnvVzknxqY/E/O3X6rW1U1rV1aENEfJ54eFZDTNo7zv1f5N4edCluH7+A==
   _: 'https://registry.npmjs.org/rollup/-/rollup-4.55.1.tgz'
@@ -6107,7 +6499,7 @@ stackback:
 std-env:
  _latest: 3.10.0
  _:
-  ^3.8.0: 3.10.0
+  '^3.10.0,^3.8.0': 3.10.0
  3.10.0:
   $: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==
   _: 'https://registry.npmjs.org/std-env/-/std-env-3.10.0.tgz'
@@ -6343,41 +6735,31 @@ tinybench:
 tinyexec:
  _latest: 1.0.2
  _:
-  ^0.3.1: 0.3.2
- 0.3.2:
-  $: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==
-  _: 'https://registry.npmjs.org/tinyexec/-/tinyexec-0.3.2.tgz'
+  ^1.0.2: 1.0.2
+ 1.0.2:
+  $: sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg==
+  _: 'https://registry.npmjs.org/tinyexec/-/tinyexec-1.0.2.tgz'
 tinyglobby:
  _latest: 0.2.15
  _:
-  '^0.2.10,^0.2.12': 0.2.15
+  '^0.2.10,^0.2.12,^0.2.15': 0.2.15
  0.2.15:
   $: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==
   _: 'https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz'
   dependencies:
    fdir: ^6.5.0
    picomatch: ^4.0.3
-tinypool:
- _latest: 2.1.0
- _:
-  ^1.0.1: 1.1.1
- 1.1.1:
-  $: sha512-Zba82s87IFq9A9XmjiX5uZA/ARWDrB03OHlq+Vw1fSdt0I+4/Kutwy8BP4Y/y/aORMo61FQ0vIb5j44vSo5Pkg==
-  _: 'https://registry.npmjs.org/tinypool/-/tinypool-1.1.1.tgz'
 tinyrainbow:
  _latest: 3.0.3
  _:
   ^1.2.0: 1.2.0
+  ^3.0.3: 3.0.3
+ 3.0.3:
+  $: sha512-PSkbLUoxOFRzJYjjxHJt9xro7D+iilgMX/C9lawzVuYiIdcihh9DXmVibBe8lmcFrRi/VzlPjBxbN7rH24q8/Q==
+  _: 'https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-3.0.3.tgz'
  1.2.0:
   $: sha512-weEDEq7Z5eTHPDh4xjX789+fHfF+P8boiFB+0vbWzpbnbsEr/GRaohi/uMKxg8RZMXnl1ItAi/IUHWMsjDV7kQ==
   _: 'https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-1.2.0.tgz'
-tinyspy:
- _latest: 4.0.4
- _:
-  ^3.0.2: 3.0.2
- 3.0.2:
-  $: sha512-n1cw8k1k0x4pgA2+9XrOkFydTerNcJ1zWCO5Nn9scWHTD+5tp8dghT2x1uduQePZTZgd3Tupf+x9BxJjeJi77Q==
-  _: 'https://registry.npmjs.org/tinyspy/-/tinyspy-3.0.2.tgz'
 tmp:
  _latest: 0.2.5
  _:
@@ -6621,74 +7003,85 @@ visual-logger:
 vite:
  _latest: 7.3.1
  _:
-  ^5.0.0: 5.4.21
- 5.4.21:
-  $: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==
-  _: 'https://registry.npmjs.org/vite/-/vite-5.4.21.tgz'
+  '^6.0.0 || ^7.0.0,^7.2.2,^7.3.1': 7.3.1
+ 7.3.1:
+  top: 1
+  $: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==
+  _: 'https://registry.npmjs.org/vite/-/vite-7.3.1.tgz'
   dependencies:
-   esbuild: ^0.21.3
-   postcss: ^8.4.43
-   rollup: ^4.20.0
+   esbuild: ^0.27.0
+   fdir: ^6.5.0
+   picomatch: ^4.0.3
+   postcss: ^8.5.6
+   rollup: ^4.43.0
+   tinyglobby: ^0.2.15
   optionalDependencies:
    fsevents: ~2.3.3
   peerDependencies:
-   '@types/node': '^18.0.0 || >=20.0.0'
-   less: '*'
+   '@types/node': '^20.19.0 || >=22.12.0'
+   jiti: '>=1.21.0'
+   less: ^4.0.0
    lightningcss: ^1.21.0
-   sass: '*'
-   sass-embedded: '*'
-   stylus: '*'
-   sugarss: '*'
-   terser: ^5.4.0
+   sass: ^1.70.0
+   sass-embedded: ^1.70.0
+   stylus: '>=0.54.8'
+   sugarss: ^5.0.0
+   terser: ^5.16.0
+   tsx: ^4.8.1
+   yaml: ^2.4.2
 vite-node:
  _latest: 5.2.0
  _:
-  2.1.9: 2.1.9
- 2.1.9:
-  $: sha512-AM9aQ/IPrW/6ENLQg3AGY4K1N2TGZdR5e4gu/MmmR2xR3Ll1+dib+nook92g4TV3PXVyeyxdWwtaCAiUL0hMxA==
-  _: 'https://registry.npmjs.org/vite-node/-/vite-node-2.1.9.tgz'
+  ^5.2.0: 5.2.0
+ 5.2.0:
+  top: 1
+  $: sha512-7UT39YxUukIA97zWPXUGb0SGSiLexEGlavMwU3HDE6+d/HJhKLjLqu4eX2qv6SQiocdhKLRcusroDwXHQ6CnRQ==
+  _: 'https://registry.npmjs.org/vite-node/-/vite-node-5.2.0.tgz'
   dependencies:
    cac: ^6.7.14
-   debug: ^4.3.7
-   es-module-lexer: ^1.5.4
-   pathe: ^1.1.2
-   vite: ^5.0.0
+   es-module-lexer: ^1.7.0
+   obug: ^2.0.0
+   pathe: ^2.0.3
+   vite: ^7.2.2
 vitest:
  _latest: 4.0.17
  _:
-  ^2.1.8: 2.1.9
- 2.1.9:
+  ^4.0.17: 4.0.17
+ 4.0.17:
   top: 1
-  $: sha512-MSmPM9REYqDGBI8439mA4mWhV5sKmDlBKWIYbA3lRb2PTHACE0mgKwA8yQ2xq9vxDTuk4iPrECBAEW2aoFXY0Q==
-  _: 'https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz'
+  $: sha512-FQMeF0DJdWY0iOnbv466n/0BudNdKj1l5jYgl5JVTwjSsZSlqyXFt/9+1sEyhR6CLowbZpV7O1sCHrzBhucKKg==
+  _: 'https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz'
   dependencies:
-   chai: ^5.1.2
-   debug: ^4.3.7
-   expect-type: ^1.1.0
-   magic-string: ^0.30.12
-   pathe: ^1.1.2
-   std-env: ^3.8.0
+   es-module-lexer: ^1.7.0
+   expect-type: ^1.2.2
+   magic-string: ^0.30.21
+   obug: ^2.1.1
+   pathe: ^2.0.3
+   picomatch: ^4.0.3
+   std-env: ^3.10.0
    tinybench: ^2.9.0
-   tinyexec: ^0.3.1
-   tinypool: ^1.0.1
-   tinyrainbow: ^1.2.0
-   vite: ^5.0.0
+   tinyexec: ^1.0.2
+   tinyglobby: ^0.2.15
+   tinyrainbow: ^3.0.3
+   vite: '^6.0.0 || ^7.0.0'
    why-is-node-running: ^2.3.0
-   '@vitest/expect': 2.1.9
-   '@vitest/mocker': 2.1.9
-   '@vitest/runner': 2.1.9
-   '@vitest/snapshot': 2.1.9
-   '@vitest/pretty-format': ^2.1.9
-   '@vitest/spy': 2.1.9
-   vite-node: 2.1.9
-   '@vitest/utils': 2.1.9
+   '@vitest/expect': 4.0.17
+   '@vitest/pretty-format': 4.0.17
+   '@vitest/mocker': 4.0.17
+   '@vitest/runner': 4.0.17
+   '@vitest/spy': 4.0.17
+   '@vitest/snapshot': 4.0.17
+   '@vitest/utils': 4.0.17
   peerDependencies:
    '@edge-runtime/vm': '*'
-   '@types/node': '^18.0.0 || >=20.0.0'
+   '@opentelemetry/api': ^1.9.0
+   '@types/node': '^20.0.0 || ^22.0.0 || >=24.0.0'
    happy-dom: '*'
    jsdom: '*'
-   '@vitest/browser': 2.1.9
-   '@vitest/ui': 2.1.9
+   '@vitest/browser-playwright': 4.0.17
+   '@vitest/browser-preview': 4.0.17
+   '@vitest/browser-webdriverio': 4.0.17
+   '@vitest/ui': 4.0.17
 walk-up-path:
  _latest: 4.0.0
  _:

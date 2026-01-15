@@ -6,7 +6,7 @@
     }
   },
   "packages": ["packages/*", "_w/*"],
-  "noFynLocal": ["xsh", "npm-packlist"],
+  "noFynLocal": ["xsh"],
   "command": {
     "publish": {
       "tags": {

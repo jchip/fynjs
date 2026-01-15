@@ -26,7 +26,7 @@ describe.skip("pacote-compare", function() {
     logger._logLevel = 999;
   });
 
-  it("should compare packument results between jchip/pacote and latest pacote", () => {
+  it("should compare packument results between jchip/pacote and latest pacote", { timeout: 30000 }, () => {
     const pacoteJchip = require("pacote-jchip");
     const pacoteLatest = require("pacote");
 
@@ -136,5 +136,5 @@ describe.skip("pacote-compare", function() {
         }
       });
     });
-  }, { timeout: 30000 });
+  });
 });

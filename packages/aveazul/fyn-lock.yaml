@@ -9,7 +9,7 @@ $pkg:
   '@types/node': ^22.15.30
   '@vitest/coverage-v8': ^3.2.2
   '@xarc/run': ^2.3.0
-  bluebird: ../bluebird
+  bluebird: ^3.7.2
   publish-util: ../publish-util
   run-verify: ../run-verify
   ts2mjs: ^4.0.0
@@ -558,16 +558,6 @@ ast-v8-to-istanbul:
    '@jridgewell/trace-mapping': ^0.3.31
    estree-walker: ^3.0.3
    js-tokens: ^9.0.1
-aveazul:
- _latest: 1.1.0-fynlocal_h
- _:
-  ../aveazul: 1.1.0-fynlocal_h
- 1.1.0-fynlocal_h:
-  $: local
-  _: ./
-  dependencies:
-   '@jchip/error': ^1.0.3
-   xaa: ^2.0.0
 balanced-match:
  _latest: 3.0.1
  _:
@@ -576,15 +566,13 @@ balanced-match:
   $: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
   _: 'https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz'
 bluebird:
- _latest: 3.7.2-fynlocal_h
+ _latest: 3.7.2
  _:
-  ../bluebird: 3.7.2-fynlocal_h
- 3.7.2-fynlocal_h:
+  ^3.7.2: 3.7.2
+ 3.7.2:
   top: 1
-  $: local
-  _: ../bluebird
-  dependencies:
-   aveazul: ^1.0.1
+  $: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==
+  _: 'https://registry.npmjs.org/bluebird/-/bluebird-3.7.2.tgz'
 brace-expansion:
  _latest: 4.0.1
  _:

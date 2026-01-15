@@ -1,11 +1,11 @@
 {
   "indirects": {
-    "packages/fynpo-base": [
+    "packages/create-monorepo": [
       {
         "fromPkg": {
-          "name": "@fynpo/base",
-          "version": "1.1.22",
-          "path": "packages/fynpo-base"
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
         },
         "onPkg": {
           "name": "xsh",
@@ -14,100 +14,14 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynpo/base@1.1.22(dev)"
+          "@fynjs/create-monorepo@1.0.6(pkg)"
         ]
       },
       {
         "fromPkg": {
-          "name": "@fynpo/base",
-          "version": "1.1.22",
-          "path": "packages/fynpo-base"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynpo/base@1.1.22(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynpo/base",
-          "version": "1.1.22",
-          "path": "packages/fynpo-base"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynpo/base@1.1.22(dep)"
-        ]
-      }
-    ],
-    "_w/npm-packlist": [
-      {
-        "fromPkg": {
-          "name": "npm-packlist",
-          "version": "10.0.3",
-          "path": "_w/npm-packlist"
-        },
-        "onPkg": {
-          "name": "npm-packlist",
-          "version": "10.0.3",
-          "path": "_w/npm-packlist"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "npm-packlist@10.0.3(dep)"
-        ]
-      }
-    ],
-    "packages/pkg-preper": [
-      {
-        "fromPkg": {
-          "name": "pkg-preper",
-          "version": "0.1.6",
-          "path": "packages/pkg-preper"
-        },
-        "onPkg": {
-          "name": "visual-logger",
-          "version": "1.1.3",
-          "path": "packages/visual-logger"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "pkg-preper@0.1.6(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "pkg-preper",
-          "version": "0.1.6",
-          "path": "packages/pkg-preper"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "pkg-preper@0.1.6(dep)"
-        ]
-      }
-    ],
-    "packages/item-queue": [
-      {
-        "fromPkg": {
-          "name": "item-queue",
-          "version": "1.1.2",
-          "path": "packages/item-queue"
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
         },
         "onPkg": {
           "name": "filter-scan-dir",
@@ -116,14 +30,48 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "item-queue@1.1.2(dev)"
+          "@fynjs/create-monorepo@1.0.6(dev)"
         ]
       },
       {
         "fromPkg": {
-          "name": "item-queue",
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
+        },
+        "onPkg": {
+          "name": "string-array",
+          "version": "1.0.1",
+          "path": "packages/string-array"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/create-monorepo@1.0.6(dep)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
+        },
+        "onPkg": {
+          "name": "unwrap-npm-cmd",
           "version": "1.1.2",
-          "path": "packages/item-queue"
+          "path": "packages/unwrap-npm-cmd"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/create-monorepo@1.0.6(dep)"
+        ]
+      }
+    ],
+    "packages/visual-exec": [
+      {
+        "fromPkg": {
+          "name": "visual-exec",
+          "version": "0.2.0",
+          "path": "packages/visual-exec"
         },
         "onPkg": {
           "name": "xsh",
@@ -132,73 +80,43 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "item-queue@1.1.2(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "item-queue",
-          "version": "1.1.2",
-          "path": "packages/item-queue"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "item-queue@1.1.2(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "item-queue",
-          "version": "1.1.2",
-          "path": "packages/item-queue"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "item-queue@1.1.2(dep)"
+          "visual-exec@0.2.0(pkg)"
         ]
       }
     ],
-    "packages/fyn": [
+    "packages/xarc-run": [
       {
         "fromPkg": {
-          "name": "fyn",
-          "version": "2.1.0",
-          "path": "packages/fyn"
+          "name": "@fynjs/run",
+          "version": "2.3.0",
+          "path": "packages/xarc-run"
         },
         "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
         },
         "depSection": "dep",
         "indirectSteps": [
-          "fyn@2.1.0(dep)"
+          "@fynjs/run@2.3.0(pkg)"
         ]
-      },
+      }
+    ],
+    "packages/filter-scan-dir": [
       {
         "fromPkg": {
-          "name": "fyn",
-          "version": "2.1.0",
-          "path": "packages/fyn"
+          "name": "@fynjs/run",
+          "version": "2.3.0",
+          "path": "packages/xarc-run"
         },
         "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
         },
         "depSection": "dep",
         "indirectSteps": [
-          "fyn@2.1.0(dep)"
+          "@fynjs/run@2.3.0(dev)"
         ]
       }
     ],
@@ -252,28 +170,12 @@
         ]
       }
     ],
-    "packages/error": [
+    "packages/fyn": [
       {
         "fromPkg": {
-          "name": "@jchip/error",
-          "version": "1.0.3",
-          "path": "packages/error"
-        },
-        "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@jchip/error@1.0.3(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@jchip/error",
-          "version": "1.0.3",
-          "path": "packages/error"
+          "name": "fyn",
+          "version": "2.1.0",
+          "path": "packages/fyn"
         },
         "onPkg": {
           "name": "xsh",
@@ -282,14 +184,30 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@jchip/error@1.0.3(dev)"
+          "fyn@2.1.0(pkg)"
         ]
       },
       {
         "fromPkg": {
-          "name": "@jchip/error",
-          "version": "1.0.3",
-          "path": "packages/error"
+          "name": "visual-exec",
+          "version": "0.2.0",
+          "path": "packages/visual-exec"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "visual-exec@0.2.0(dep)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "fyn",
+          "version": "2.1.0",
+          "path": "packages/fyn"
         },
         "onPkg": {
           "name": "string-array",
@@ -298,14 +216,14 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@jchip/error@1.0.3(dep)"
+          "fyn@2.1.0(dep)"
         ]
       },
       {
         "fromPkg": {
-          "name": "@jchip/error",
-          "version": "1.0.3",
-          "path": "packages/error"
+          "name": "fyn",
+          "version": "2.1.0",
+          "path": "packages/fyn"
         },
         "onPkg": {
           "name": "unwrap-npm-cmd",
@@ -314,7 +232,91 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@jchip/error@1.0.3(dep)"
+          "fyn@2.1.0(dep)"
+        ]
+      }
+    ],
+    "packages/fynpo": [
+      {
+        "fromPkg": {
+          "name": "fynpo",
+          "version": "2.1.0",
+          "path": "packages/fynpo"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "fynpo@2.1.0(pkg)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "visual-exec",
+          "version": "0.2.0",
+          "path": "packages/visual-exec"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "visual-exec@0.2.0(dep)"
+        ]
+      }
+    ],
+    "packages/xflight": [
+      {
+        "fromPkg": {
+          "name": "xflight",
+          "version": "2.0.2",
+          "path": "packages/xflight"
+        },
+        "onPkg": {
+          "name": "string-array",
+          "version": "1.0.1",
+          "path": "packages/string-array"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "xflight@2.0.2(dev)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "xflight",
+          "version": "2.0.2",
+          "path": "packages/xflight"
+        },
+        "onPkg": {
+          "name": "unwrap-npm-cmd",
+          "version": "1.1.2",
+          "path": "packages/unwrap-npm-cmd"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "xflight@2.0.2(dev)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "xflight",
+          "version": "2.0.2",
+          "path": "packages/xflight"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "xflight@2.0.2(dev)"
         ]
       }
     ],
@@ -384,72 +386,6 @@
         ]
       }
     ],
-    "packages/check-pkg-new-version-engine": [
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version-engine",
-          "version": "1.0.3",
-          "path": "packages/check-pkg-new-version-engine"
-        },
-        "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version-engine@1.0.3(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version-engine",
-          "version": "1.0.3",
-          "path": "packages/check-pkg-new-version-engine"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version-engine@1.0.3(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version-engine",
-          "version": "1.0.3",
-          "path": "packages/check-pkg-new-version-engine"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version-engine@1.0.3(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version-engine",
-          "version": "1.0.3",
-          "path": "packages/check-pkg-new-version-engine"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version-engine@1.0.3(dep)"
-        ]
-      }
-    ],
     "packages/cli-args": [
       {
         "fromPkg": {
@@ -515,223 +451,7 @@
           "@fynjs/cli-args@2.4.5(dep)"
         ]
       }
-    ],
-    "packages/check-pkg-new-version": [
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version",
-          "version": "1.0.0",
-          "path": "packages/check-pkg-new-version"
-        },
-        "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version@1.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version",
-          "version": "1.0.0",
-          "path": "packages/check-pkg-new-version"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version@1.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version",
-          "version": "1.0.0",
-          "path": "packages/check-pkg-new-version"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version@1.0.0(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "check-pkg-new-version",
-          "version": "1.0.0",
-          "path": "packages/check-pkg-new-version"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "check-pkg-new-version@1.0.0(dep)"
-        ]
-      }
-    ],
-    "packages/create-fynpo": [
-      {
-        "fromPkg": {
-          "name": "create-fynpo",
-          "version": "1.0.6",
-          "path": "packages/create-fynpo"
-        },
-        "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "create-fynpo@1.0.6(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "create-fynpo",
-          "version": "1.0.6",
-          "path": "packages/create-fynpo"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "create-fynpo@1.0.6(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "create-fynpo",
-          "version": "1.0.6",
-          "path": "packages/create-fynpo"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "create-fynpo@1.0.6(dep)"
-        ]
-      }
-    ],
-    "packages/xflight": [
-      {
-        "fromPkg": {
-          "name": "xflight",
-          "version": "2.0.2",
-          "path": "packages/xflight"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xflight@2.0.2(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "xflight",
-          "version": "2.0.2",
-          "path": "packages/xflight"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xflight@2.0.2(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "xflight",
-          "version": "2.0.2",
-          "path": "packages/xflight"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xflight@2.0.2(dev)"
-        ]
-      }
-    ],
-    "packages/create-monorepo": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/create-monorepo",
-          "version": "1.0.6",
-          "path": "packages/create-monorepo"
-        },
-        "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/create-monorepo",
-          "version": "1.0.6",
-          "path": "packages/create-monorepo"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/create-monorepo",
-          "version": "1.0.6",
-          "path": "packages/create-monorepo"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(dep)"
-        ]
-      }
     ]
   },
-  "__timestamp": 1768289704358
+  "__timestamp": 1768463338910
 }

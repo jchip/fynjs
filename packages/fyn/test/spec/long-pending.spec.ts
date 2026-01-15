@@ -2,10 +2,12 @@
 
 import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import { vi } from "vitest";
+import chalk from "chalk";
 import logger from "../../lib/logger";
 import longPending from "../../lib/long-pending";
 
 describe("long-pending", function() {
+  chalk.level = 0;
   let logItems;
   let logs;
   beforeEach(() => {

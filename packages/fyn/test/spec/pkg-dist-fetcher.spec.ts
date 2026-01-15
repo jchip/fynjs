@@ -28,7 +28,7 @@ describe("pkg-dist-fetcher", function() {
     }
   });
 
-  it("should fetch package tarballs for pkg-a fixture", () => {
+  it("should fetch package tarballs for pkg-a fixture", { timeout: 10000 }, () => {
     const registry = `http://localhost:${server.info.port}`;
     const targetDir = `xout_${Date.now()}`;
     const fyn = new Fyn({
@@ -43,5 +43,5 @@ describe("pkg-dist-fetcher", function() {
     });
     // TODO: verify tarballs actually fetched
     return fyn.resolveDependencies().then(() => fyn.fetchPackages());
-  }, { timeout: 10000 });
+  });
 });

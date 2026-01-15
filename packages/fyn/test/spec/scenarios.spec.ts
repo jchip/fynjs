@@ -31,6 +31,7 @@ import sortObjKeys from "../../lib/util/sort-obj-keys";
 import ci from "ci-info";
 import * as xaa from "xaa";
 import { execSync } from "child_process";
+import chalk from "chalk";
 
 const xrequire = createRequire(import.meta.url);
 const optionalRequire = _optionalRequire(xrequire);
@@ -55,6 +56,7 @@ const debug = false;
   let saveCI;
   let unhandledRejectionHandler;
   beforeAll(() => {
+    chalk.level = 0;
     saveCI = ci.isCI;
     ci.isCI = false;
     fyntil.exit = code => {
@@ -161,7 +163,7 @@ const debug = false;
 
       const timeout = debug ? 10000000 : (stepAction.timeout || undefined);
       const testOptions = timeout ? { timeout } : {};
-      const testCase = (stepAction.skip ? it.skip : it)(`${step}${stepTitle}`, () => {
+      const testCase = (stepAction.skip ? it.skip : it)(`${step}${stepTitle}`, testOptions, () => {
         if (debug && step === options.debugStep) {
           debugger; // eslint-disable-line
         }
@@ -308,7 +310,7 @@ const debug = false;
           .then(() => stepAction.verify(cwd, scenarioDir))
           .then(() => xaa.delay(10))
           .finally(() => stepAction.after());
-      }, testOptions);
+      });
     };
 
     const files = Fs.readdirSync(scenarioDir).filter(x => x.startsWith("step-"));
