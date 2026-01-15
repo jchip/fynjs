@@ -4,12 +4,12 @@
   "description": "Unwrap npm's node.js bin CMD batch for js files on Windows",
   "type": "module",
   "types": "dist-cjs/index.d.ts",
-  "main": "dist-cjs/index.cjs",
+  "main": "index.cjs",
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
       "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "require": "./index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -28,6 +28,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "files": [
+    "index.cjs",
     "dist-cjs",
     "dist-esm"
   ],

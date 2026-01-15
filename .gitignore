@@ -8,3 +8,4 @@ coverage
 .temp
 _w
 *.tgz
+dist-*
