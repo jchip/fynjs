@@ -900,6 +900,7 @@ class PkgDepResolver {
 
     const metaJson = meta.versions[resolved];
 
+    const OPT_FAILED_PLATFORM = 3;
     const platformCheck = (): string | true => {
       const sysCheck = checkPkgOsCpu(metaJson);
       if (sysCheck !== true) {
@@ -922,22 +923,23 @@ class PkgDepResolver {
     // - but need to queue them up so when dep resolve queue is drained, need to
     //   wait for them to complete, and then resolve the next dep tree level
     //
+    const sysCheck = platformCheck();
     if (item.dsrc && item.dsrc.includes("opt") && !item.optChecked) {
-      const sysCheck = platformCheck();
-
       if (sysCheck !== true) {
         logger.verbose(`optional dependencies ${sysCheck}`);
+        // Mark as failed due to platform mismatch so lockfile can record it
+        if (!item.optFailed) {
+          item.optFailed = OPT_FAILED_PLATFORM;
+        }
+        item.optChecked = true;
       } else {
         logger.verbose("adding package to opt check:", item.name, item.semver, item.resolved);
-
         this._optResolver.add({ item, meta });
+        return null;
       }
-
-      return null;
     }
 
-    const sysCheck = platformCheck();
-    if (sysCheck !== true) {
+    if (sysCheck !== true && !item.optFailed) {
       logger.error(sysCheck);
       throw new Error(sysCheck);
     }
@@ -981,6 +983,15 @@ class PkgDepResolver {
       if (metaJson.hasI || scripts.install || scripts.postinstall || (scripts as Record<string, string>).postInstall) {
         pkgV.hasI = 1;
       }
+    }
+
+    if (
+      item.optFailed === OPT_FAILED_PLATFORM &&
+      !pkgV.json &&
+      (metaJson.os || metaJson.cpu)
+    ) {
+      // Store minimal os/cpu info so lockfile can record platform mismatch
+      pkgV.json = { os: metaJson.os, cpu: metaJson.cpu } as PackageVersionMeta;
     }
 
     const localFromMeta = meta.local || metaJson.local;

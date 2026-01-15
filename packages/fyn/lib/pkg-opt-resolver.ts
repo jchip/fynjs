@@ -195,6 +195,32 @@ class PkgOptResolver {
     };
 
     const logFail = (msg: string): void => {
+      // Skip warning if failure is due to platform/architecture mismatch
+      // Check using os/cpu from lockfile metadata (saved when platform check originally failed)
+      const metaJson = data.meta.versions[version];
+      if (metaJson) {
+        const OPT_FAILED_PLATFORM = 3;
+        if (metaJson.optFailed === OPT_FAILED_PLATFORM) {
+          // Platform mismatch recorded in lockfile
+          return;
+        }
+        // Check if package has os/cpu requirements that don't match current platform
+        // This works even when optFailed is set in lockfile, as os/cpu are saved there
+        const platformCheck = fyntil.checkPkgOsCpu(metaJson);
+        if (platformCheck !== true) {
+          // Platform/arch mismatch - skip warning, already logged as verbose
+          return;
+        }
+        // Also check if error message indicates platform mismatch
+        if (
+          msg.includes("platform") ||
+          msg.includes("architecture") ||
+          msg.includes("cpu/arch") ||
+          msg.includes("doesn't satisfy required")
+        ) {
+          return;
+        }
+      }
       logger.warn(chalk.yellow(`optional dep check failed`), displayId, chalk.yellow(`- ${msg}`));
       logger.info(
         chalk.green(`  you may ignore this since it is optional but some features may be missing`)
@@ -224,6 +250,20 @@ class PkgOptResolver {
     }
 
     if (!this._fyn.refreshOptionals && _.get(data, ["meta", "versions", version, "optFailed"])) {
+      // Check if this is a platform mismatch before logging warning
+      const metaJson = data.meta.versions[version];
+      if (metaJson) {
+        const platformCheck = fyntil.checkPkgOsCpu(metaJson);
+        if (platformCheck !== true) {
+          // Platform/arch mismatch - skip warning, already logged as verbose
+          const rx = {
+            passed: false,
+            err: new Error("optional dep fail by flag optFailed in lockfile - platform mismatch")
+          };
+          addChecked(rx);
+          return processCheckResult(Promise.resolve(rx));
+        }
+      }
       logFail("by flag optFailed in lockfile");
       const rx = {
         passed: false,
