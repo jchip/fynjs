@@ -8,7 +8,7 @@ $pkg:
  dev:
   '@types/node': ^22.15.30
   '@vitest/coverage-v8': ^3.2.2
-  '@xarc/run': ^2.3.0
+  '@fynjs/run': ../xarc-run
   bluebird: ^3.7.2
   publish-util: ../publish-util
   run-verify: ../run-verify
@@ -88,6 +88,28 @@ $pkg:
    - darwin
   cpu:
    - arm64
+'@fynjs/run':
+ _latest: 2.3.0-fynlocal_h
+ _:
+  ../xarc-run: 2.3.0-fynlocal_h
+ 2.3.0-fynlocal_h:
+  top: 1
+  $: local
+  _: ../xarc-run
+  dependencies:
+   chalk: ^4.1.2
+   chalker: ^1.2.0
+   insync: ^2.1.1
+   jaro-winkler: ^0.2.8
+   lodash.foreach: ^4.5.0
+   nix-clap: ^2.4.0
+   optional-require: ^2.1.0
+   path-is-inside: ^1.0.2
+   read-pkg-up: ^7.0.1
+   require-at: ^1.0.6
+   string-array: ^1.0.1
+   unwrap-npm-cmd: ^1.1.2
+   xsh: ^0.4.5
 '@isaacs/cliui':
  _latest: 8.0.2
  _:
@@ -494,28 +516,6 @@ $pkg:
    loupe: ^3.1.4
    tinyrainbow: ^2.0.0
    '@vitest/pretty-format': 3.2.4
-'@xarc/run':
- _latest: 2.3.0
- _:
-  ^2.3.0: 2.3.0
- 2.3.0:
-  top: 1
-  $: sha512-PLR1Z/3oCiTqWQhhEXNGCtSt+XgnaT68DgDtGGZwrTkkkg7m9tyn8ZVYl1/w8RLx7IaVvjAjLzhYAlmH8sNSKg==
-  _: 'https://registry.npmjs.org/@xarc/run/-/run-2.3.0.tgz'
-  dependencies:
-   chalk: ^4.1.2
-   chalker: ^1.2.0
-   insync: ^2.1.1
-   jaro-winkler: ^0.2.8
-   lodash.foreach: ^4.5.0
-   nix-clap: ^2.4.0
-   optional-require: ^2.1.0
-   path-is-inside: ^1.0.2
-   read-pkg-up: ^7.0.1
-   require-at: ^1.0.6
-   string-array: ^1.0.1
-   unwrap-npm-cmd: ^1.1.2
-   xsh: ^0.4.5
 ansi-regex:
  _latest: 6.2.2
  _:

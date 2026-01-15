@@ -87,7 +87,7 @@
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^3.2.2",
-    "@xarc/run": "^2.3.0",
+    "@fynjs/run": "^2.3.0",
     "bluebird": "^3.7.2",
     "publish-util": "^2.1.0",
     "run-verify": "^1.2.7",

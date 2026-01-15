@@ -193,20 +193,31 @@ class FynCli {
   async fail(msg: string, err: Error): Promise<void> {
     const dbgLog =
       this._opts.saveLogs || Path.join(Os.tmpdir(), `fyn-debug-${process.pid}-${Date.now()}.log`);
+    
+    // Skip redundant output if error was already logged with improved formatting
+    const alreadyLogged = (err as any)?._fynAlreadyLogged;
+    
     logger.freezeItems(true);
-    logger.error(msg, `CWD ${this.fyn.cwd}`);
-    logger.error("process.argv", process.argv);
-    logger.error(msg, "Please check for any errors that occur above.");
-    const lessCmd = chalk.magenta(`less -R ${dbgLog}`);
-    logger.error(
-      msg,
-      `Also check ${chalk.magenta(dbgLog)} for more details. ${lessCmd} if you are on Un*x.`
-    );
-    if (err.stack) {
-      logger.error(msg, cleanErrorStack(err));
-    } else if (err.message) {
-      logger.error(msg, err.message);
+    
+    if (!alreadyLogged) {
+      logger.error(msg, `CWD ${this.fyn.cwd}`);
+      logger.error("process.argv", process.argv);
+      logger.error(msg, "Please check for any errors that occur above.");
+      const lessCmd = chalk.magenta(`less -R ${dbgLog}`);
+      logger.error(
+        msg,
+        `Also check ${chalk.magenta(dbgLog)} for more details. ${lessCmd} if you are on Un*x.`
+      );
+      if (err.stack) {
+        logger.error(msg, cleanErrorStack(err));
+      } else if (err.message) {
+        logger.error(msg, err.message);
+      }
+    } else {
+      // Just save logs and exit silently since error was already displayed
+      logger.prefix("").error(""); // Add blank line for spacing
     }
+    
     await this.saveLogs(dbgLog);
     fyntil.exit(err);
   }

@@ -123,41 +123,9 @@
     "packages/aveazul": [
       {
         "fromPkg": {
-          "name": "aveazul",
-          "version": "1.1.0",
-          "path": "packages/aveazul"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "aveazul@1.1.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "aveazul",
-          "version": "1.1.0",
-          "path": "packages/aveazul"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "aveazul@1.1.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "aveazul",
-          "version": "1.1.0",
-          "path": "packages/aveazul"
+          "name": "@fynjs/run",
+          "version": "2.3.0",
+          "path": "packages/xarc-run"
         },
         "onPkg": {
           "name": "xsh",
@@ -166,7 +134,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "aveazul@1.1.0(dev)"
+          "@fynjs/run@2.3.0(dev)"
         ]
       }
     ],
@@ -453,5 +421,5 @@
       }
     ]
   },
-  "__timestamp": 1768463338910
+  "__timestamp": 1768465033694
 }

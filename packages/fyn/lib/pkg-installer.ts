@@ -524,10 +524,15 @@ class PkgInstaller {
     if (this._fyn._options.buildLocal && this._fyn._localPkgBuilder) {
       const itemRes = await this._fyn._localPkgBuilder.waitForItem(depInfo.dir!);
       if (itemRes && itemRes.error) {
-        throw new AggregateError(
+        const buildError = new AggregateError(
           [itemRes.error],
           `install fail because local package build failed: ${depInfo.dir}`
         );
+        // Preserve the _fynAlreadyLogged flag from the original error
+        if ((itemRes.error as any)?._fynAlreadyLogged) {
+          (buildError as any)._fynAlreadyLogged = true;
+        }
+        throw buildError;
       }
     }
   }

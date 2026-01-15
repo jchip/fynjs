@@ -13,6 +13,7 @@ import { VisualExec } from "visual-exec";
 import * as xaa from "xaa";
 import Fs from "./util/file-ops";
 import _ from "lodash";
+import chalk from "chalk";
 import { runNpmScript } from "./util/run-npm-script";
 import { AggregateError } from "@jchip/error";
 
@@ -47,14 +48,164 @@ class LocalPkgBuilder {
     });
     this._promiseQ.on("failItem", data => {
       const debugLog = Path.join(data.item.fullPath, "fyn-debug.log");
-      const itemRes = {
-        error: new AggregateError(
-          [data.error],
-          `failed build local package at ${data.item.fullPath} - check ${debugLog} for details`
-        )
+      const error: any = data.error;
+      const output: any = error?.output;
+      const dispPath = Path.relative(this._options.fyn._cwd, data.item.fullPath);
+      
+      // Extract primary error message
+      let primaryError: string | null = null;
+      const errorLines: string[] = [];
+      
+      if (output) {
+        const stderr = output.stderr || "";
+        const stdout = output.stdout || "";
+        
+        // Priority patterns - more specific errors first
+        const priorityPatterns = [
+          /TypeError:\s*(.+)/i,
+          /SyntaxError:\s*(.+)/i,
+          /ReferenceError:\s*(.+)/i,
+          /EACCES|ENOENT|EADDRINUSE/i, // System errors
+        ];
+        
+        const generalPatterns = [
+          /Error:\s*(.+)/i,
+          /failed|failure|fatal/i
+        ];
+        
+        // Extract error lines from stderr first (usually more relevant)
+        const stderrLines = stderr.split("\n");
+        for (let i = stderrLines.length - 1; i >= 0; i--) {
+          const line = stderrLines[i].trim();
+          if (!line) continue;
+          
+          // Check for priority errors first (TypeError, SyntaxError, etc.)
+          const priorityMatch = priorityPatterns.find(pattern => pattern.test(line));
+          if (priorityMatch) {
+            if (!primaryError) {
+              primaryError = line;
+            }
+            errorLines.unshift(line);
+            if (errorLines.length >= 10) break; // Get more lines for priority errors
+          } else {
+            // Check for general errors
+            const generalMatch = generalPatterns.find(pattern => pattern.test(line));
+            if (generalMatch) {
+              // Only set as primary if we don't have one and it's not a generic "shell cmd" wrapper
+              if (!primaryError && !line.includes("shell cmd") && !line.includes("exit code")) {
+                primaryError = line;
+              }
+              errorLines.unshift(line);
+              if (errorLines.length >= 5) break;
+            }
+          }
+        }
+        
+        // If no errors in stderr, check stdout
+        if (errorLines.length === 0) {
+          const stdoutLines = stdout.split("\n");
+          for (let i = stdoutLines.length - 1; i >= 0; i--) {
+            const line = stdoutLines[i].trim();
+            if (!line) continue;
+            
+            const priorityMatch = priorityPatterns.find(pattern => pattern.test(line));
+            if (priorityMatch) {
+              if (!primaryError) {
+                primaryError = line;
+              }
+              errorLines.unshift(line);
+              if (errorLines.length >= 10) break;
+            } else {
+              const generalMatch = generalPatterns.find(pattern => pattern.test(line));
+              if (generalMatch) {
+                if (!primaryError && !line.includes("shell cmd") && !line.includes("exit code")) {
+                  primaryError = line;
+                }
+                errorLines.unshift(line);
+                if (errorLines.length >= 5) break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Log improved error message (without prefix)
+      logger.prefix("").error(chalk.red("=".repeat(80)));
+      logger.prefix("").error(`${chalk.red("✗")} ${chalk.bold(`Failed to build local package`)} at ${chalk.blue(dispPath)}`);
+      logger.prefix("").error(chalk.red("=".repeat(80)));
+      
+      if (primaryError) {
+        logger.prefix("").error(`${chalk.red("Primary Error:")}`);
+        logger.prefix("").error(chalk.red(primaryError));
+      } else if (errorLines.length > 0) {
+        logger.prefix("").error(`${chalk.red("Error Summary:")}`);
+        errorLines.forEach(line => {
+          logger.prefix("").error(chalk.red(`  ${line}`));
+        });
+      } else if (error?.message) {
+        logger.prefix("").error(`${chalk.red("Error:")} ${error.message}`);
+      }
+      
+      // Log nested AggregateError messages - recursively extract all nested errors
+      const extractNestedErrors = (err: any, depth = 0, seen = new Set()): any[] => {
+        const errors: any[] = [];
+        if (!err || typeof err !== "object" || seen.has(err)) {
+          return errors;
+        }
+        seen.add(err);
+        
+        // Check if it's an AggregateError (has errors property)
+        try {
+          const errErrors = (err as any)?.errors;
+          if (errErrors !== undefined && errErrors !== null && Array.isArray(errErrors) && errErrors.length > 0) {
+            errErrors.forEach((nestedErr: any) => {
+              if (nestedErr && !seen.has(nestedErr)) {
+                errors.push(nestedErr);
+                // Recursively extract nested errors
+                errors.push(...extractNestedErrors(nestedErr, depth + 1, seen));
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore errors accessing the errors property
+        }
+        return errors;
       };
-      logger.error(`Failed to build local package at ${data.item.fullPath}`);
-      logger.error(`Check debug log for details: ${debugLog}`);
+      
+      const nestedErrors = extractNestedErrors(error);
+      if (nestedErrors.length > 0) {
+        logger.prefix("").error(`\n${chalk.yellow("Nested Errors:")}`);
+        const shownMessages = new Set<string>();
+        nestedErrors.forEach((nestedErr: any, idx: number) => {
+          const errMsg = nestedErr?.message || nestedErr?.toString() || String(nestedErr);
+          // Skip if it's the same as the primary error, already shown, or empty
+          if (errMsg && errMsg.trim() && errMsg !== primaryError && !shownMessages.has(errMsg)) {
+            shownMessages.add(errMsg);
+            logger.prefix("").error(chalk.yellow(`  ${idx + 1}. ${errMsg}`));
+          }
+        });
+      }
+      
+      if (error?.command) {
+        logger.prefix("").error(`\n${chalk.yellow("Command:")} ${error.command}`);
+      }
+      if (error?.code !== undefined) {
+        logger.prefix("").error(`${chalk.yellow("Exit Code:")} ${error.code}`);
+      }
+      
+      logger.prefix("").error(`\n${chalk.dim("For full error details, check:")} ${chalk.cyan(debugLog)}`);
+      logger.prefix("").error(chalk.red("=".repeat(80)));
+      
+      const buildError = new AggregateError(
+        [data.error],
+        `failed build local package at ${data.item.fullPath} - check ${debugLog} for details`
+      );
+      // Mark this error as already logged to avoid redundant output
+      (buildError as any)._fynAlreadyLogged = true;
+      
+      const itemRes = {
+        error: buildError
+      };
       this._waitItems[data.item.fullPath].resolve(itemRes);
       this._failedItems[data.item.fullPath] = itemRes;
     });
@@ -190,7 +341,15 @@ class LocalPkgBuilder {
 
     ve.logFinalOutput = _.noop;
 
-    await ve.execute();
+    try {
+      await ve.execute();
+    } catch (err: any) {
+      // Ensure error has command context for better error reporting
+      if (err && !err.command) {
+        err.command = command;
+      }
+      throw err;
+    }
 
     const pkgJsonFile = Path.join(item.fullPath, "package.json");
     let pkgJson;

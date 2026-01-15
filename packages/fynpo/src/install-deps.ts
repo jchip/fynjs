@@ -59,9 +59,10 @@ export class InstallDeps {
     try {
       await ve.execute();
     } catch (err: any) {
-      const debugLog = Path.join(pkgDir, "fyn-debug.log");
-      logger.error(`Failed to install dependencies for ${pkgInfo.name}`);
-      logger.error(`Check debug log for details: ${debugLog}`);
+      // Ensure error has command context for better error reporting
+      if (err && !err.command) {
+        err.command = await this.getInstallCommand();
+      }
       throw err;
     }
   }

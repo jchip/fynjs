@@ -55,12 +55,12 @@ $pkg:
   babel-loader: ^8.0.4
   electrode-server: ^3.0.3
   enquirer: ^2.3.6
-  esbuild-loader: ^4.4.0
+  esbuild-loader: ^4.4.2
   node-fetch-npm: ^2.0.4
   null-loader: ^4.0.1
   patch-package: ^8.0.0
   prettier: ^1.19.1
-  tsx: ^4.20.3
+  tsx: ^4.21.0
   v8-compile-cache: ^2.3.0
   vite: ^7.3.1
   vite-node: ^5.2.0
@@ -1262,7 +1262,7 @@ $pkg:
   $: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==
   _: 'https://registry.npmjs.org/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz'
 '@esbuild/aix-ppc64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1270,7 +1270,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/android-arm':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1278,7 +1278,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/android-arm64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1286,7 +1286,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/android-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1296,7 +1296,6 @@ $pkg:
 '@esbuild/darwin-arm64':
  _latest: 0.27.2
  _:
-  0.25.5: 0.25.5
   0.27.2: 0.27.2
  0.27.2:
   $: sha512-davCD2Zc80nzDVRwXTcQP/28fiJbcOwvdolL0sOiOsbwBa72kegmVU0Wrh1MYrbuCL98Omp5dVhQFWRKR2ZAlg==
@@ -1305,15 +1304,8 @@ $pkg:
    - darwin
   cpu:
    - arm64
- 0.25.5:
-  $: sha512-GtaBgammVvdF7aPIgH2jxMDdivezgFu6iKpmT+48+F8Hhg5J/sfnDieg0aeG/jfSvkYQU2/pceFPDKlqZzwnfQ==
-  _: 'https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.25.5.tgz'
-  os:
-   - darwin
-  cpu:
-   - arm64
 '@esbuild/darwin-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1321,7 +1313,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/freebsd-arm64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1329,7 +1321,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/freebsd-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1337,7 +1329,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-arm':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1345,7 +1337,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-arm64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1353,7 +1345,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-ia32':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1361,7 +1353,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-loong64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1369,7 +1361,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-mips64el':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1377,7 +1369,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-ppc64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1385,7 +1377,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-riscv64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1393,7 +1385,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-s390x':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1401,7 +1393,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/linux-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1409,7 +1401,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/netbsd-arm64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1417,7 +1409,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/netbsd-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1425,7 +1417,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/openbsd-arm64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1433,7 +1425,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/openbsd-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1448,7 +1440,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/sunos-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1456,7 +1448,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/win32-arm64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1464,7 +1456,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/win32-ia32':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -1472,7 +1464,7 @@ $pkg:
   $: 0
   _: null
 '@esbuild/win32-x64':
- _latest: 0.27.0
+ _latest: 0.27.2
  _:
   0.27.2: metaFail_0.27.2
  metaFail_0.27.2:
@@ -3754,8 +3746,7 @@ es-object-atoms:
 esbuild:
  _latest: 0.27.2
  _:
-  '^0.25.0,~0.25.0': 0.25.5
-  ^0.27.0: 0.27.2
+  '^0.27.0,^0.27.1,~0.27.0': 0.27.2
  0.27.2:
   hasI: 1
   $: sha512-HyNQImnsOC7X9PMNaCIeAm4ISCQXs5a5YasTXVliKv4uuBo1dKrG0A+uQS8M5eXjVMnLg3WgXaKvprHlFJQffw==
@@ -3787,46 +3778,16 @@ esbuild:
    '@esbuild/win32-arm64': 0.27.2
    '@esbuild/win32-ia32': 0.27.2
    '@esbuild/win32-x64': 0.27.2
- 0.25.5:
-  hasI: 1
-  $: sha512-P8OtKZRv/5J5hhz0cUAdu/cLuPIKXpQl1R9pZtvmHWQvrAUVd0UNIPT4IB4W3rNOqVO0rlqHmCIbSwxh/c9yUQ==
-  _: 'https://registry.npmjs.org/esbuild/-/esbuild-0.25.5.tgz'
-  optionalDependencies:
-   '@esbuild/aix-ppc64': 0.25.5
-   '@esbuild/android-arm': 0.25.5
-   '@esbuild/android-arm64': 0.25.5
-   '@esbuild/android-x64': 0.25.5
-   '@esbuild/darwin-arm64': 0.25.5
-   '@esbuild/darwin-x64': 0.25.5
-   '@esbuild/freebsd-arm64': 0.25.5
-   '@esbuild/freebsd-x64': 0.25.5
-   '@esbuild/linux-arm': 0.25.5
-   '@esbuild/linux-arm64': 0.25.5
-   '@esbuild/linux-ia32': 0.25.5
-   '@esbuild/linux-loong64': 0.25.5
-   '@esbuild/linux-mips64el': 0.25.5
-   '@esbuild/linux-ppc64': 0.25.5
-   '@esbuild/linux-riscv64': 0.25.5
-   '@esbuild/linux-s390x': 0.25.5
-   '@esbuild/linux-x64': 0.25.5
-   '@esbuild/netbsd-arm64': 0.25.5
-   '@esbuild/netbsd-x64': 0.25.5
-   '@esbuild/openbsd-arm64': 0.25.5
-   '@esbuild/openbsd-x64': 0.25.5
-   '@esbuild/sunos-x64': 0.25.5
-   '@esbuild/win32-arm64': 0.25.5
-   '@esbuild/win32-ia32': 0.25.5
-   '@esbuild/win32-x64': 0.25.5
 esbuild-loader:
- _latest: 4.4.0
+ _latest: 4.4.2
  _:
-  ^4.4.0: 4.4.0
- 4.4.0:
+  ^4.4.2: 4.4.2
+ 4.4.2:
   top: 1
-  $: sha512-4J+hXTpTtEdzUNLoY8ReqDNJx2NoldfiljRCiKbeYUuZmVaiJeDqFgyAzz8uOopaekwRoCcqBFyEroGQLFVZ1g==
-  _: 'https://registry.npmjs.org/esbuild-loader/-/esbuild-loader-4.4.0.tgz'
+  $: sha512-8LdoT9sC7fzfvhxhsIAiWhzLJr9yT3ggmckXxsgvM07wgrRxhuT98XhLn3E7VczU5W5AFsPKv9DdWcZIubbWkQ==
+  _: 'https://registry.npmjs.org/esbuild-loader/-/esbuild-loader-4.4.2.tgz'
   dependencies:
-   esbuild: ^0.25.0
+   esbuild: ^0.27.1
    get-tsconfig: ^4.10.1
    loader-utils: ^2.0.4
    webpack-sources: ^1.4.3
@@ -6814,15 +6775,15 @@ tslib:
   $: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
   _: 'https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz'
 tsx:
- _latest: 4.20.3
+ _latest: 4.21.0
  _:
-  ^4.20.3: 4.20.3
- 4.20.3:
+  ^4.21.0: 4.21.0
+ 4.21.0:
   top: 1
-  $: sha512-qjbnuR9Tr+FJOMBqJCW5ehvIo/buZq7vH7qD7JziU98h6l3qGy0a/yPFjwO+y0/T7GFpNgNAvEcPPVfyT8rrPQ==
-  _: 'https://registry.npmjs.org/tsx/-/tsx-4.20.3.tgz'
+  $: sha512-5C1sg4USs1lfG0GFb2RLXsdpXqBSEhAaA/0kPL01wxzpMqLILNxIxIOKiILz+cdg/pLnOUxFYOR5yhHU666wbw==
+  _: 'https://registry.npmjs.org/tsx/-/tsx-4.21.0.tgz'
   dependencies:
-   esbuild: ~0.25.0
+   esbuild: ~0.27.0
    get-tsconfig: ^4.7.5
   optionalDependencies:
    fsevents: ~2.3.3

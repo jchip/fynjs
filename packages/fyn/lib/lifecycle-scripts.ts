@@ -205,11 +205,200 @@ class LifecycleScripts {
 
     try {
       return await ve.show(child);
-    } catch (err) {
-      throw new AggregateError(
+    } catch (err: any) {
+      // Extract error information from nested errors and output
+      const output: any = err?.output;
+      let primaryError: string | null = null;
+      const errorLines: string[] = [];
+      const usefulStackLines: string[] = [];
+      
+      // First, extract nested errors recursively to find the actual error
+      const extractNestedErrors = (error: any, seen = new Set()): any[] => {
+        const errors: any[] = [];
+        if (!error || typeof error !== "object" || seen.has(error)) {
+          return errors;
+        }
+        seen.add(error);
+        
+        try {
+          const errErrors = error?.errors;
+          if (errErrors !== undefined && errErrors !== null && Array.isArray(errErrors) && errErrors.length > 0) {
+            errErrors.forEach((nestedErr: any) => {
+              if (nestedErr && !seen.has(nestedErr)) {
+                errors.push(nestedErr);
+                errors.push(...extractNestedErrors(nestedErr, seen));
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore errors accessing the errors property
+        }
+        return errors;
+      };
+      
+      const allNestedErrors = [err, ...extractNestedErrors(err)];
+      
+      // Extract useful error messages and stack traces from nested errors
+      for (const nestedErr of allNestedErrors) {
+        if (!nestedErr) continue;
+        
+        const errMsg = nestedErr?.message || nestedErr?.toString() || String(nestedErr);
+        if (errMsg && errMsg.trim()) {
+          // Skip generic wrapper messages
+          if (!errMsg.includes("Failed running npm script") && 
+              !errMsg.includes("AggregateError") &&
+              !errMsg.match(/^\s*at\s+/)) {
+            if (!primaryError && !errMsg.includes("shell cmd")) {
+              primaryError = errMsg;
+            }
+            if (!errorLines.includes(errMsg)) {
+              errorLines.push(errMsg);
+            }
+          }
+        }
+        
+        // Extract useful stack trace lines (skip internal fyn/clap code, show user code)
+        if (nestedErr?.stack) {
+          const stackLines = nestedErr.stack.split("\n");
+          for (const line of stackLines) {
+            const trimmed = line.trim();
+            // Include lines that show actual error locations (not just fyn internals)
+            if (trimmed && 
+                trimmed.startsWith("at ") && 
+                !trimmed.includes("/fyn/lib/") &&
+                !trimmed.includes("/fyn/cli/") &&
+                !trimmed.includes("/nix-clap/") &&
+                !trimmed.includes("/xsh/") &&
+                !trimmed.includes("node:internal") &&
+                usefulStackLines.length < 5) {
+              usefulStackLines.push(trimmed);
+            }
+          }
+        }
+      }
+      
+      // Also check output stderr/stdout for additional error info
+      if (output) {
+        const stderr = output.stderr || "";
+        const stdout = output.stdout || "";
+        
+        // Priority patterns - more specific errors first
+        const priorityPatterns = [
+          /TypeError:\s*(.+)/i,
+          /SyntaxError:\s*(.+)/i,
+          /ReferenceError:\s*(.+)/i,
+          /EACCES|ENOENT|EADDRINUSE/i, // System errors
+        ];
+        
+        const generalPatterns = [
+          /Error:\s*(.+)/i,
+          /failed|failure|fatal/i
+        ];
+        
+        // Extract error lines from stderr first (usually more relevant)
+        const stderrLines = stderr.split("\n");
+        for (let i = stderrLines.length - 1; i >= 0; i--) {
+          const line = stderrLines[i].trim();
+          if (!line) continue;
+          
+          const priorityMatch = priorityPatterns.find(pattern => pattern.test(line));
+          if (priorityMatch) {
+            if (!primaryError) {
+              primaryError = line;
+            }
+            if (!errorLines.includes(line)) {
+              errorLines.unshift(line);
+            }
+            if (errorLines.length >= 10) break;
+          } else {
+            const generalMatch = generalPatterns.find(pattern => pattern.test(line));
+            if (generalMatch) {
+              if (!primaryError && !line.includes("shell cmd") && !line.includes("exit code")) {
+                primaryError = line;
+              }
+              if (!errorLines.includes(line)) {
+                errorLines.unshift(line);
+              }
+              if (errorLines.length >= 5) break;
+            }
+          }
+        }
+        
+        // If no errors in stderr, check stdout
+        if (errorLines.length === 0) {
+          const stdoutLines = stdout.split("\n");
+          for (let i = stdoutLines.length - 1; i >= 0; i--) {
+            const line = stdoutLines[i].trim();
+            if (!line) continue;
+            
+            const priorityMatch = priorityPatterns.find(pattern => pattern.test(line));
+            if (priorityMatch) {
+              if (!primaryError) {
+                primaryError = line;
+              }
+              if (!errorLines.includes(line)) {
+                errorLines.unshift(line);
+              }
+              if (errorLines.length >= 10) break;
+            } else {
+              const generalMatch = generalPatterns.find(pattern => pattern.test(line));
+              if (generalMatch) {
+                if (!primaryError && !line.includes("shell cmd") && !line.includes("exit code")) {
+                  primaryError = line;
+                }
+                if (!errorLines.includes(line)) {
+                  errorLines.unshift(line);
+                }
+                if (errorLines.length >= 5) break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Log improved error message (without prefix)
+      logger.prefix("").error(chalk.red("=".repeat(80)));
+      logger.prefix("").error(`${chalk.red("✗")} ${chalk.bold(`Failed running npm script`)} ${chalk.magenta(`'${name}'`)} ${chalk.bold(`for package`)} ${chalk.blue(pkgName)} ${chalk.bold(`at`)} ${chalk.blue(pkgDir)}`);
+      logger.prefix("").error(chalk.red("=".repeat(80)));
+      
+      if (primaryError) {
+        logger.prefix("").error(`\n${chalk.red("Error:")}`);
+        logger.prefix("").error(chalk.red(primaryError));
+      } else if (errorLines.length > 0) {
+        logger.prefix("").error(`\n${chalk.red("Error Summary:")}`);
+        errorLines.slice(0, 5).forEach(line => {
+          logger.prefix("").error(chalk.red(`  ${line}`));
+        });
+      } else if (err?.message) {
+        logger.prefix("").error(`\n${chalk.red("Error:")} ${err.message}`);
+      }
+      
+      // Show useful stack trace lines if available
+      if (usefulStackLines.length > 0) {
+        logger.prefix("").error(`\n${chalk.dim("Stack trace:")}`);
+        usefulStackLines.forEach(line => {
+          logger.prefix("").error(chalk.dim(`  ${line}`));
+        });
+      }
+      
+      if (err?.command) {
+        logger.prefix("").error(`\n${chalk.yellow("Command:")} ${err.command}`);
+      }
+      if (err?.code !== undefined) {
+        logger.prefix("").error(`${chalk.yellow("Exit Code:")} ${err.code}`);
+      }
+      
+      logger.prefix("").error(`\n${chalk.dim("For full error details, check:")} ${chalk.cyan(Path.join(this._pkgDir, "fyn-debug.log"))}`);
+      logger.prefix("").error(chalk.red("=".repeat(80)) + "\n");
+      
+      const buildError = new AggregateError(
         [err],
         `Failed running npm script '${name}' for package ${pkgName} at ${pkgDir}`
       );
+      // Mark this error as already logged to avoid redundant output
+      (buildError as any)._fynAlreadyLogged = true;
+      
+      throw buildError;
     }
   }
 }

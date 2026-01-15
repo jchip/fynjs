@@ -1,5 +1,6 @@
 /* eslint-disable no-magic-numbers, consistent-return, complexity */
 
+import Path from "path";
 import _ from "lodash";
 import { ItemQueueResult } from "item-queue";
 import { logger } from "./logger";
@@ -58,53 +59,194 @@ export class Bootstrap {
       const error: any = data.error;
       const output: any = error.output;
 
-      logger.error(`=== Error: fynpo failed bootstrapping ${name} at ${path}`);
+      logger.prefix("").error(chalk.red("=".repeat(80)));
+      logger.prefix("").error(`${chalk.red("✗")} ${chalk.bold(`Failed to bootstrap ${chalk.magenta(name)}`)} at ${chalk.blue(path)}`);
+      logger.prefix("").error(chalk.red("=".repeat(80)));
 
       if (!output) {
-        logger.error(error);
+        logger.prefix("").error(`${chalk.yellow("Error:")}`, error?.message || error);
+        logger.prefix("").error(`${chalk.dim("Full error details are available in:")} ${chalk.cyan(Path.join(this.cwd, path, "fyn-debug.log"))}`);
         return;
       }
 
-      if (isCI && output) {
-        logger.error(`=== CI detected, dumping the debug logs ===`);
+      // Extract key error information
+      const stderr = output.stderr || "";
+      const stdout = output.stdout || "";
 
-        const lines = output.stdout.split("\n");
-        if (lines.length > 100) {
-          logger.error(`=== dumping last 50 lines of stdout in case the whole thing get truncated by CI ===
-${lines.slice(lines.length - 50, lines.length).join("\n")}
-`);
+      // Priority patterns - more specific errors first (TypeError, SyntaxError, etc.)
+      const priorityPatterns = [
+        /TypeError:\s*(.+)/i,
+        /SyntaxError:\s*(.+)/i,
+        /ReferenceError:\s*(.+)/i,
+        /EACCES|ENOENT|EADDRINUSE/i, // System errors
+      ];
+      
+      const generalPatterns = [
+        /Error:\s*(.+)/i,
+        /failed|failure|fatal/i
+      ];
+
+      let primaryError: string | null = null;
+      const errorLines: string[] = [];
+
+      // Extract error lines from stderr first (usually more relevant)
+      const stderrLines = stderr.split("\n");
+      for (let i = stderrLines.length - 1; i >= 0; i--) {
+        const line = stderrLines[i].trim();
+        if (!line) continue;
+        
+        // Check for priority errors first (TypeError, SyntaxError, etc.)
+        const priorityMatch = priorityPatterns.find(pattern => pattern.test(line));
+        if (priorityMatch) {
+          if (!primaryError) {
+            primaryError = line;
+          }
+          errorLines.unshift(line);
+          if (errorLines.length >= 10) break; // Get more lines for priority errors
+        } else {
+          // Check for general errors
+          const generalMatch = generalPatterns.find(pattern => pattern.test(line));
+          if (generalMatch) {
+            // Only set as primary if we don't have one and it's not a generic "shell cmd" wrapper
+            if (!primaryError && !line.includes("shell cmd") && !line.includes("exit code")) {
+              primaryError = line;
+            }
+            errorLines.unshift(line);
+            if (errorLines.length >= 5) break;
+          }
         }
-
-        const errLines = output.stderr.split("\n");
-        if (errLines.length > 100) {
-          logger.error(`=== dumping last 50 lines of stderr in case the whole thing get truncated by CI ===
-${errLines.slice(errLines.length - 50, errLines.length).join("\n")}
-`);
-        }
-
-        logger.error(`=== bootstrap ${name} failure dump of stdout for CI: ===
-
-${output.stdout}
-`);
-
-        logger.error(`=== bootstrap ${name} failure dump of stderr for CI: ===
-
-${output.stderr}
-`);
-      } else {
-        // use debug to dump them into logger so they will show up in fynpo-debug.log file
-        logger.debug(`=== bootstrap ${name} failure dump of stdout: ===
-
-${output.stdout}
-`);
-
-        logger.debug(`=== bootstrap ${name} failure dump of stderr: ===
-
-${output.stderr}
-`);
       }
-      logger.error(`=== bootstrap ${name} error message:`, error?.message);
-      logger.error(`=== END of error info for bootstrapping ${name} at ${path} ===`);
+
+      // If no errors found in stderr, check stdout
+      if (errorLines.length === 0) {
+        const stdoutLines = stdout.split("\n");
+        for (let i = stdoutLines.length - 1; i >= 0; i--) {
+          const line = stdoutLines[i].trim();
+          if (!line) continue;
+          
+          const priorityMatch = priorityPatterns.find(pattern => pattern.test(line));
+          if (priorityMatch) {
+            if (!primaryError) {
+              primaryError = line;
+            }
+            errorLines.unshift(line);
+            if (errorLines.length >= 10) break;
+          } else {
+            const generalMatch = generalPatterns.find(pattern => pattern.test(line));
+            if (generalMatch) {
+              if (!primaryError && !line.includes("shell cmd") && !line.includes("exit code")) {
+                primaryError = line;
+              }
+              errorLines.unshift(line);
+              if (errorLines.length >= 5) break;
+            }
+          }
+        }
+      }
+
+      // Display primary error prominently
+      if (primaryError) {
+        logger.prefix("").error(`${chalk.red("Primary Error:")}`);
+        logger.prefix("").error(chalk.red(primaryError));
+      } else if (errorLines.length > 0) {
+        logger.prefix("").error(`${chalk.red("Error Summary:")}`);
+        errorLines.forEach(line => {
+          logger.prefix("").error(chalk.red(`  ${line}`));
+        });
+      } else if (error?.message) {
+        logger.prefix("").error(`${chalk.red("Error:")} ${error.message}`);
+      }
+
+      // Log nested AggregateError messages - recursively extract all nested errors
+      const extractNestedErrors = (err: any, depth = 0, seen = new Set()): any[] => {
+        const errors: any[] = [];
+        if (!err || typeof err !== "object" || seen.has(err)) {
+          return errors;
+        }
+        seen.add(err);
+        
+        // Check if it's an AggregateError (has errors property)
+        try {
+          const errErrors = (err as any)?.errors;
+          if (errErrors !== undefined && errErrors !== null && Array.isArray(errErrors) && errErrors.length > 0) {
+            errErrors.forEach((nestedErr: any) => {
+              if (nestedErr && !seen.has(nestedErr)) {
+                errors.push(nestedErr);
+                // Recursively extract nested errors
+                errors.push(...extractNestedErrors(nestedErr, depth + 1, seen));
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore errors accessing the errors property
+        }
+        return errors;
+      };
+      
+      const nestedErrors = extractNestedErrors(error);
+      if (nestedErrors.length > 0) {
+        logger.prefix("").error(`\n${chalk.yellow("Nested Errors:")}`);
+        const shownMessages = new Set<string>();
+        nestedErrors.forEach((nestedErr: any, idx: number) => {
+          const errMsg = nestedErr?.message || nestedErr?.toString() || String(nestedErr);
+          // Skip if it's the same as the primary error, already shown, or empty
+          if (errMsg && errMsg.trim() && errMsg !== primaryError && !shownMessages.has(errMsg)) {
+            shownMessages.add(errMsg);
+            logger.prefix("").error(chalk.yellow(`  ${idx + 1}. ${errMsg}`));
+          }
+        });
+      }
+
+      // Show command that failed
+      if (error?.command || error?.message) {
+        logger.prefix("").error(`\n${chalk.yellow("Command:")} ${error.command || error.message}`);
+      }
+
+      // Show exit code if available
+      if (error?.code !== undefined) {
+        logger.prefix("").error(`${chalk.yellow("Exit Code:")} ${error.code}`);
+      }
+
+      // For CI or verbose mode, show full output
+      if (isCI) {
+        logger.prefix("").error(`${chalk.yellow("=".repeat(80))}`);
+        logger.prefix("").error(`${chalk.yellow("Full Output (CI mode):")}`);
+        
+        if (stdout) {
+          const stdoutLines = stdout.split("\n");
+          if (stdoutLines.length > 100) {
+            logger.prefix("").error(`${chalk.dim("Last 50 lines of stdout:")}`);
+            logger.prefix("").error(stdoutLines.slice(stdoutLines.length - 50).join("\n"));
+          } else {
+            logger.prefix("").error(`${chalk.dim("stdout:")}`);
+            logger.prefix("").error(stdout);
+          }
+        }
+
+        if (stderr) {
+          const stderrLines = stderr.split("\n");
+          if (stderrLines.length > 100) {
+            logger.prefix("").error(`${chalk.dim("Last 50 lines of stderr:")}`);
+            logger.prefix("").error(stderrLines.slice(stderrLines.length - 50).join("\n"));
+          } else {
+            logger.prefix("").error(`${chalk.dim("stderr:")}`);
+            logger.prefix("").error(stderr);
+          }
+        }
+      } else {
+        // In non-CI mode, show a summary and point to debug log
+        if (errorLines.length > 0 && errorLines.length < 10) {
+          logger.error(`\n${chalk.yellow("Error Details:")}`);
+          errorLines.forEach(line => {
+            logger.error(chalk.dim(`  ${line}`));
+          });
+        }
+      }
+
+      // Always point to debug log for full details
+      const debugLog = Path.join(this.cwd, path, "fyn-debug.log");
+      logger.error(`\n${chalk.dim("For full error details, check:")} ${chalk.cyan(debugLog)}`);
+      logger.error(chalk.red("=".repeat(80)) + "\n");
     });
   }
 
