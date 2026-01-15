@@ -109,8 +109,15 @@ const makeDepGraph = async (opts) => {
   await graph.resolve();
   const fynpoData = await readFynpoData(opts.cwd);
   if (!_.isEmpty(fynpoData.indirects)) {
+    const noFynLocal = opts.noFynLocal || [];
     _.each(fynpoData.indirects, (relations) => {
-      graph.addDepRelations(relations);
+      // Filter out relations where onPkg is in noFynLocal
+      const filtered = relations.filter(
+        (rel) => !noFynLocal.includes(rel.onPkg.name)
+      );
+      if (filtered.length) {
+        graph.addDepRelations(filtered);
+      }
     });
     graph.updateDepMap();
   }

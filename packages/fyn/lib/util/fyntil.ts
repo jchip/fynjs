@@ -94,7 +94,11 @@ const fyntil = {
         logger.info(`Detected a ${fcm.repoType} at ${fcm.topDir}`);
         process.env.FYN_FYNPO_DIR = fcm.topDir;
       }
-      const graph = new FynpoDepGraph({ cwd: fcm.topDir, patterns: config.packages });
+      const graph = new FynpoDepGraph({
+        cwd: fcm.topDir,
+        patterns: config.packages,
+        noFynLocal: config.noFynLocal,
+      });
       await graph.resolve();
 
       return (fyntil.fynpoConfig = {

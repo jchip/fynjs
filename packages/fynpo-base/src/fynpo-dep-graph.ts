@@ -259,6 +259,11 @@ export type ReadFynpoOptions = {
   patterns?: string[];
   /** top dir of the monorepo to start searching */
   cwd?: string;
+  /**
+   * List of package names to NOT resolve as local packages.
+   * These packages will always be fetched from registry instead of using local versions.
+   */
+  noFynLocal?: string[];
 };
 
 /**
@@ -661,6 +666,40 @@ export class FynpoDepGraph {
   }
 
   /**
+   * Check if a dependency should NOT be resolved as a local package.
+   *
+   * Checks both:
+   * 1. Monorepo-wide `noFynLocal` option
+   * 2. Per-package `fyn.dependencies[name]` setting (false or "no-fyn-local")
+   *
+   * @param pkgInfo - the package that has the dependency
+   * @param depName - name of the dependency to check
+   * @returns true if the dependency should NOT be resolved locally
+   */
+  checkNoFynLocal(pkgInfo: FynpoPackageInfo, depName: string): boolean {
+    // Check monorepo-wide noFynLocal list
+    if (this._options.noFynLocal?.includes(depName)) {
+      return true;
+    }
+
+    // Check per-package fyn.dependencies setting
+    const fynConfig = pkgInfo.pkgJson?.fyn as Record<string, unknown> | undefined;
+    if (fynConfig) {
+      for (const section of ["dependencies", "devDependencies", "optionalDependencies"]) {
+        const deps = fynConfig[section] as Record<string, string | boolean> | undefined;
+        if (deps) {
+          const val = deps[depName];
+          if (val === false || (typeof val === "string" && val.includes("no-fyn-local"))) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Figure out all the packages' direct dependencies on other local packages
    *
    */
@@ -679,6 +718,11 @@ export class FynpoDepGraph {
         // dep is not a local package in the monorepo, nothing to do
         /* istanbul ignore if */
         if (!byName[name]) {
+          return;
+        }
+
+        // check if this dep should not be resolved as local package
+        if (this.checkNoFynLocal(pkgInfo, name)) {
           return;
         }
 

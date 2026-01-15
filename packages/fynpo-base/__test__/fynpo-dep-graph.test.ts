@@ -174,4 +174,89 @@ describe("fynpo dep graph", () => {
 
     expect(topoSorted1).toEqual(topoSorted2);
   });
+
+  it("should skip local deps with noFynLocal option", async () => {
+    // First verify cir1 and cir2 have circular dependency without noFynLocal
+    const graph1 = new FynpoDepGraph({
+      patterns: ["packages/*"],
+      cwd: path.join(__dirname, "sample"),
+    });
+    await graph1.resolve();
+    const cir1Data1 = graph1.depMapByPath["packages/cir1"];
+    const cir2Data1 = graph1.depMapByPath["packages/cir2"];
+
+    // cir1 depends on cir2 and cir2 depends on cir1
+    expect(cir1Data1.localDepsByPath).toHaveProperty("packages/cir2");
+    expect(cir2Data1.localDepsByPath).toHaveProperty("packages/cir1");
+
+    // Now use noFynLocal to skip cir2 as local
+    const graph2 = new FynpoDepGraph({
+      patterns: ["packages/*"],
+      cwd: path.join(__dirname, "sample"),
+      noFynLocal: ["cir2"],
+    });
+    await graph2.resolve();
+    const cir1Data2 = graph2.depMapByPath["packages/cir1"];
+    const cir2Data2 = graph2.depMapByPath["packages/cir2"];
+
+    // cir1 should NOT have cir2 as local dep (skipped by noFynLocal)
+    expect(cir1Data2.localDepsByPath).not.toHaveProperty("packages/cir2");
+    // cir2 should still have cir1 as local dep
+    expect(cir2Data2.localDepsByPath).toHaveProperty("packages/cir1");
+  });
+
+  it("should skip local deps with per-package fyn config", async () => {
+    // Create a temporary package.json with fyn.dependencies config
+    const sampleDir = path.join(__dirname, "sample");
+    const cir1Dir = path.join(sampleDir, "packages/cir1");
+    const cir1PkgPath = path.join(cir1Dir, "package.json");
+    const originalPkg = Fs.readFileSync(cir1PkgPath, "utf-8");
+
+    try {
+      // Add fyn.dependencies.cir2 = false to cir1's package.json
+      const pkgJson = JSON.parse(originalPkg);
+      pkgJson.fyn = { dependencies: { cir2: false } };
+      Fs.writeFileSync(cir1PkgPath, JSON.stringify(pkgJson, null, 2));
+
+      const graph = new FynpoDepGraph({
+        patterns: ["packages/*"],
+        cwd: sampleDir,
+      });
+      await graph.resolve();
+      const cir1Data = graph.depMapByPath["packages/cir1"];
+
+      // cir1 should NOT have cir2 as local dep (skipped by fyn config)
+      expect(cir1Data.localDepsByPath).not.toHaveProperty("packages/cir2");
+    } finally {
+      // Restore original package.json
+      Fs.writeFileSync(cir1PkgPath, originalPkg);
+    }
+  });
+
+  it("should skip local deps with no-fyn-local string in semver", async () => {
+    const sampleDir = path.join(__dirname, "sample");
+    const cir1Dir = path.join(sampleDir, "packages/cir1");
+    const cir1PkgPath = path.join(cir1Dir, "package.json");
+    const originalPkg = Fs.readFileSync(cir1PkgPath, "utf-8");
+
+    try {
+      // Add fyn.dependencies.cir2 = "no-fyn-local" to cir1's package.json
+      const pkgJson = JSON.parse(originalPkg);
+      pkgJson.fyn = { dependencies: { cir2: "no-fyn-local" } };
+      Fs.writeFileSync(cir1PkgPath, JSON.stringify(pkgJson, null, 2));
+
+      const graph = new FynpoDepGraph({
+        patterns: ["packages/*"],
+        cwd: sampleDir,
+      });
+      await graph.resolve();
+      const cir1Data = graph.depMapByPath["packages/cir1"];
+
+      // cir1 should NOT have cir2 as local dep (skipped by no-fyn-local string)
+      expect(cir1Data.localDepsByPath).not.toHaveProperty("packages/cir2");
+    } finally {
+      // Restore original package.json
+      Fs.writeFileSync(cir1PkgPath, originalPkg);
+    }
+  });
 });
