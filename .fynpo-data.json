@@ -8,22 +8,6 @@
           "path": "packages/create-monorepo"
         },
         "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(pkg)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/create-monorepo",
-          "version": "1.0.6",
-          "path": "packages/create-monorepo"
-        },
-        "onPkg": {
           "name": "filter-scan-dir",
           "version": "1.6.0",
           "path": "packages/filter-scan-dir"
@@ -421,5 +405,5 @@
       }
     ]
   },
-  "__timestamp": 1768465033694
+  "__timestamp": 1769588580715
 }

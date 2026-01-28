@@ -6,6 +6,7 @@ coverage
 .vscode
 .fynpo
 .temp
+.fyn-audit.json
 _w
 *.tgz
 dist-*
