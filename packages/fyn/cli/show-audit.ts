@@ -8,6 +8,8 @@
  * 4. Formatting and displaying results (with dependency paths)
  */
 
+import Fs from "fs";
+import Path from "path";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
 import AuditReport from "../lib/audit/audit-report";
@@ -24,6 +26,7 @@ interface DepData {
 interface FynForAudit {
   _options: { buildLocal: boolean; colors?: boolean };
   _data?: DepData;
+  _cwd?: string;
   resolveDependencies(): Promise<void>;
 }
 
@@ -34,6 +37,7 @@ interface AuditOptions {
   auditLevel?: string;
   noCache?: boolean;
   summary?: boolean;
+  auditFile?: string;
 }
 
 class ShowAudit {
@@ -112,6 +116,20 @@ class ShowAudit {
       // Output the report (skip if empty)
       if (output) {
         console.log(output);
+      }
+
+      if (this._opts.auditFile) {
+        const jsonFormatter = new AuditFormatter({
+          json: true,
+          colors: false,
+          auditLevel: this._opts.auditLevel || "info"
+        });
+        const { output: jsonOutput } = jsonFormatter.format(auditResult, vulnerabilities);
+        const baseDir = this._fyn._cwd || process.cwd();
+        const targetPath = Path.isAbsolute(this._opts.auditFile)
+          ? this._opts.auditFile
+          : Path.join(baseDir, this._opts.auditFile);
+        await Fs.promises.writeFile(targetPath, jsonOutput, "utf8");
       }
 
     } catch (err) {

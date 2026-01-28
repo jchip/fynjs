@@ -23,7 +23,7 @@ export class InstallDeps {
       `install`,
       `--sl`,
       `--no-build-local`,
-      `--no-audit`
+      `--audit-file .fyn-audit.json`
     );
   }
 

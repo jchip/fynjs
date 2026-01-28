@@ -75,6 +75,7 @@ interface RemoveArgv {
 interface InstallArgv {
   opts?: {
     audit?: boolean;
+    auditFile?: string;
     [key: string]: unknown;
   };
 }
@@ -499,6 +500,7 @@ class FynCli {
     let installLocked: boolean | undefined;
     const start = Date.now();
     const runAudit = argv.opts?.audit !== false;
+    const auditFile = argv.opts?.auditFile;
     return Promise.try(() => this.fyn._initializePkg())
       .then(async () => {
         checkNewVersion(this.fyn._options);
@@ -613,7 +615,8 @@ class FynCli {
           try {
             await showAudit(this.fyn, {
               colors: this.fyn._options.colors !== false,
-              summary: true  // Show brief summary, not full report
+              summary: true,  // Show brief summary, not full report
+              auditFile
             });
           } catch (err) {
             // Audit failures should not fail the install

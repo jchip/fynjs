@@ -877,27 +877,6 @@ class PkgDepResolver {
     let firstKnown = true;
     item.resolve(resolved, meta);
 
-    const pkgsData = this._data.getPkgsData(item.optFailed) as Record<string, KnownPackage>;
-    let pkgV: PkgVersionInfo | undefined; // specific version of the known package
-    let kpkg = pkgsData[item.name]; // known package
-
-    if (kpkg) {
-      kpkg[RESOLVE_ORDER].push(resolved);
-      pkgV = kpkg.versions[resolved];
-
-      firstKnown = this.addKnownRSemver(kpkg, item, resolved);
-      const dr = this._fyn.deepResolve || item.deepResolve;
-
-      // If doing deep resolve and package is already seen, then check parents
-      // to make sure it's not one of them because that would be a circular dependencies
-      const optChecked = item.optChecked;
-      if (dr && pkgV && !optChecked && item.isCircular()) {
-        // logger.log("circular dep detected", item.name, item.resolved);
-        item.unref();
-        return null;
-      }
-    }
-
     const metaJson = meta.versions[resolved];
 
     const OPT_FAILED_PLATFORM = 3;
@@ -942,6 +921,27 @@ class PkgDepResolver {
     if (sysCheck !== true && !item.optFailed) {
       logger.error(sysCheck);
       throw new Error(sysCheck);
+    }
+
+    const pkgsData = this._data.getPkgsData(item.optFailed) as Record<string, KnownPackage>;
+    let pkgV: PkgVersionInfo | undefined; // specific version of the known package
+    let kpkg = pkgsData[item.name]; // known package
+
+    if (kpkg) {
+      kpkg[RESOLVE_ORDER].push(resolved);
+      pkgV = kpkg.versions[resolved];
+
+      firstKnown = this.addKnownRSemver(kpkg, item, resolved);
+      const dr = this._fyn.deepResolve || item.deepResolve;
+
+      // If doing deep resolve and package is already seen, then check parents
+      // to make sure it's not one of them because that would be a circular dependencies
+      const optChecked = item.optChecked;
+      if (dr && pkgV && !optChecked && item.isCircular()) {
+        // logger.log("circular dep detected", item.name, item.resolved);
+        item.unref();
+        return null;
+      }
     }
 
     if (!kpkg) {

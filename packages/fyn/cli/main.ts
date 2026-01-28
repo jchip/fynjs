@@ -362,6 +362,10 @@ const commands: Record<string, CommandSpec> = {
         desc: "run security audit after install (use --no-audit to skip)",
         args: "<flag boolean>",
         default: true
+      },
+      "audit-file": {
+        desc: "write audit report JSON to a file after install",
+        args: "<path string>"
       }
     }
   },

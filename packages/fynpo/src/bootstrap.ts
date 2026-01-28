@@ -1,5 +1,6 @@
 /* eslint-disable no-magic-numbers, consistent-return, complexity */
 
+import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
 import { ItemQueueResult } from "item-queue";
@@ -250,6 +251,117 @@ export class Bootstrap {
     });
   }
 
+  async aggregateAuditResults(): Promise<void> {
+    const reports: {
+      pkgInfo: FynpoPackageInfo;
+      report: {
+        vulnerabilities?: Array<{ advisory?: { severity?: string } }>;
+        metadata?: { totalDependencies?: number };
+      };
+    }[] = [];
+
+    for (const depData of this.topoPkgs.sorted) {
+      const pkgInfo = depData.pkgInfo;
+      const auditPath = Path.join(this.cwd, pkgInfo.path, ".fyn-audit.json");
+      try {
+        const content = await Fs.promises.readFile(auditPath, "utf8");
+        const report = JSON.parse(content);
+        reports.push({ pkgInfo, report });
+      } catch (err: any) {
+        if (err?.code !== "ENOENT") {
+          logger.warn(`Failed to read audit report for ${pkgInfo.name} at ${pkgInfo.path}: ${err.message}`);
+        }
+      }
+    }
+
+    if (reports.length === 0) {
+      logger.info("No audit reports found from bootstrap.");
+      return;
+    }
+
+    const severityOrder = ["critical", "high", "moderate", "low", "info"] as const;
+    const severityColors = {
+      critical: chalk.red.bold,
+      high: chalk.red,
+      moderate: chalk.yellow,
+      low: chalk.cyan,
+      info: chalk.blue
+    };
+
+    const totals = {
+      critical: 0,
+      high: 0,
+      moderate: 0,
+      low: 0,
+      info: 0
+    };
+    const perPackage: {
+      pkgInfo: FynpoPackageInfo;
+      counts: Record<string, number>;
+      total: number;
+    }[] = [];
+    let totalDependencies = 0;
+
+    for (const { pkgInfo, report } of reports) {
+      const vulnerabilities = Array.isArray(report.vulnerabilities) ? report.vulnerabilities : [];
+      const counts: Record<string, number> = {
+        critical: 0,
+        high: 0,
+        moderate: 0,
+        low: 0,
+        info: 0
+      };
+
+      for (const vuln of vulnerabilities) {
+        const severity = vuln?.advisory?.severity;
+        if (severity && counts[severity] !== undefined) {
+          counts[severity] += 1;
+        }
+      }
+
+      totalDependencies += report?.metadata?.totalDependencies || 0;
+      const total = vulnerabilities.length;
+      severityOrder.forEach(sev => {
+        totals[sev] += counts[sev];
+      });
+
+      if (total > 0) {
+        perPackage.push({ pkgInfo, counts, total });
+      }
+    }
+
+    const totalVulns = severityOrder.reduce((sum, sev) => sum + totals[sev], 0);
+    logger.info(chalk.bold("Security audit summary (bootstrap)"));
+    logger.info(`audited ${totalDependencies} packages across ${reports.length} workspaces`);
+
+    if (totalVulns === 0) {
+      logger.info(chalk.green("No vulnerabilities found."));
+      return;
+    }
+
+    const summaryParts = severityOrder
+      .filter(sev => totals[sev] > 0)
+      .map(sev => severityColors[sev](`${totals[sev]} ${sev}`));
+    logger.warn(`${totalVulns} vulnerabilities (${summaryParts.join(", ")})`);
+
+    if (perPackage.length > 0) {
+      const maxPackages = 20;
+      logger.warn("Vulnerabilities by package:");
+      perPackage.slice(0, maxPackages).forEach(({ pkgInfo, counts, total }) => {
+        const parts = severityOrder
+          .filter(sev => counts[sev] > 0)
+          .map(sev => severityColors[sev](`${counts[sev]} ${sev}`));
+        logger.warn(
+          `${chalk.magenta(pkgInfo.name)} ${chalk.blue(pkgInfo.path)} - ${total} total (${parts.join(", ")})`
+        );
+      });
+      if (perPackage.length > maxPackages) {
+        logger.warn(`...and ${perPackage.length - maxPackages} more packages with vulnerabilities.`);
+      }
+      logger.warn("Run `fyn audit` in a package for full details.");
+    }
+  }
+
   async exec({
     build = true, // eslint-disable-line
     fynOpts = [],
@@ -321,5 +433,7 @@ export class Bootstrap {
       },
       stopOnError: true,
     });
+
+    await this.aggregateAuditResults();
   }
 }
