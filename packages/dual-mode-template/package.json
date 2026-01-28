@@ -8,12 +8,12 @@
   },
   "type": "module",
   "types": "dist-cjs/index.d.ts",
-  "main": "dist-cjs/index.cjs",
+  "main": "index.cjs",
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
       "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "require": "./index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -23,6 +23,7 @@
     "coverage": "vitest run --coverage"
   },
   "files": [
+    "index.cjs",
     "dist-cjs",
     "dist-esm"
   ],
