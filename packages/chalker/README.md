@@ -3,7 +3,7 @@
 
 # chalker
 
-Set ansi colors in strings using `<>` markers and [chalk].
+Set ansi colors in strings using `<>` markers and [chalk] or [ansi-colors].
 
 # Usage
 
@@ -31,8 +31,16 @@ logger.log(chalker.remove(msg));
 # Install
 
 ```
-npm i --save chalker
+npm i --save chalker chalk
 ```
+
+or:
+
+```
+npm i --save chalker ansi-colors
+```
+
+`chalker` expects either [chalk] `>= 4` or [ansi-colors] `>= 4` as a peer dependency.
 
 # Demo
 
@@ -61,6 +69,9 @@ npm i --save chalker
   - ie: `&#xD83D;&#xDC69;` makes 👩
 
 #### Advanced Chalk Colors
+
+Some advanced color markers use `chalker` compatibility wrappers when Chalk does not provide
+the corresponding API directly.
 
 [Chalk advanced colors] can be applied with:
 
@@ -105,6 +116,15 @@ chalker(str, [chalkInstance]);
 
 > If `chalk.supportsColor` is `false`, then it will simply remove the `<>` markers and decode HTML entities only.
 
+### `chalker.CHALK`
+
+```js
+chalker.CHALK = require("ansi-colors");
+```
+
+Set the default colors library. By default, `chalker` loads `chalk` first and falls back to
+[ansi-colors].
+
 ### `chalker.remove`
 
 ```js
@@ -137,6 +157,7 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 ---
 
 [demo]: ./images/demo.png
+[ansi-colors]: https://www.npmjs.com/package/ansi-colors
 [chalk]: https://www.npmjs.com/package/chalk
 [chalk advanced colors]: https://github.com/chalk/chalk#256-and-truecolor-color-support
 [travis-image]: https://travis-ci.org/jchip/chalker.svg?branch=master

@@ -1,0 +1,12 @@
+{
+  "name": "chalker-demo-esm-create-require",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "chalker": "../.."
+  }
+}

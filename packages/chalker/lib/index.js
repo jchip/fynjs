@@ -3,7 +3,9 @@
 /* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template, prefer-spread */
 
 const assert = require("assert");
-const chalk = require("chalk");
+const optionalRequire = require("optional-require")(require);
+const colorConvert = require("color-convert");
+const chalk = loadColors();
 
 //
 // convert color markers in a string to terminal/ansi color codes with chalk
@@ -62,8 +64,100 @@ const htmlEntities = {
   [`&reg;`]: "\xae"
 };
 
+function loadColors() {
+  const colors = optionalRequire("chalk") || optionalRequire("ansi-colors");
+
+  if (!colors) {
+    throw new Error("chalker requires either chalk or ansi-colors to be installed");
+  }
+
+  return normalizeColors(colors);
+}
+
+function normalizeColors(colorsModule) {
+  const colors =
+    colorsModule &&
+    colorsModule.default &&
+    (typeof colorsModule.default === "function" || typeof colorsModule.default === "object")
+      ? colorsModule.default
+      : colorsModule;
+
+  return addAnsiColorsCompat(colors);
+}
+
+function addAnsiColorsCompat(colors) {
+  if (!colors || typeof colors.alias !== "function" || typeof colors.rgb === "function") {
+    return colors;
+  }
+
+  colors.rgb = function (r, g, b) {
+    return this[defineAnsiColor(colors, "rgb", [r, g, b])];
+  };
+  colors.bgRgb = function (r, g, b) {
+    return this[defineAnsiColor(colors, "bgRgb", [r, g, b], true)];
+  };
+  colors.hex = function (value) {
+    return this.rgb.apply(this, colorConvert.hex.rgb(value));
+  };
+  colors.bgHex = function (value) {
+    return this.bgRgb.apply(this, colorConvert.hex.rgb(value));
+  };
+
+  return colors;
+}
+
+function defineAnsiColor(colors, name, values, bg) {
+  const styleName = `chalker_${name}_${values.join("_")}`;
+
+  if (!colors.styles[styleName]) {
+    const prefix = bg ? 48 : 38;
+    const close = bg ? 49 : 39;
+    colors.alias(
+      styleName,
+      (text) => `\u001b[${prefix};2;${values.join(";")}m${text}\u001b[${close}m`
+    );
+  }
+
+  return styleName;
+}
+
+function convertColorModel(name, values) {
+  const bg = name.startsWith("bg");
+  const model = bg ? name[2].toLowerCase() + name.substring(3) : name;
+  const rgb =
+    model === "keyword"
+      ? colorConvert.keyword.rgb(String(values[0]).toLowerCase())
+      : colorConvert[model] && colorConvert[model].rgb.apply(colorConvert[model], values);
+
+  assert(rgb, `unknown color ${values[0]}`);
+
+  return { name: bg ? "bgRgb" : "rgb", values: rgb };
+}
+
+function applyChalkMethod(chalkInstance, name, values) {
+  if (typeof chalkInstance[name] === "function") {
+    return chalkInstance[name].apply(chalkInstance, values);
+  }
+
+  if (
+    name === "keyword" ||
+    name === "bgKeyword" ||
+    name === "hsl" ||
+    name === "bgHsl" ||
+    name === "hsv" ||
+    name === "bgHsv" ||
+    name === "hwb" ||
+    name === "bgHwb"
+  ) {
+    const converted = convertColorModel(name, values);
+    return chalkInstance[converted.name].apply(chalkInstance, converted.values);
+  }
+
+  throw new TypeError(`${name} is not a chalk function`);
+}
+
 function decodeHtml(str) {
-  return str.replace(/&[\w#]+;/g, m => {
+  return str.replace(/&[\w#]+;/g, (m) => {
     if (htmlEntities.hasOwnProperty(m)) return htmlEntities[m];
     if (m.startsWith("&#x")) {
       const s = m.substring(3, m.length - 1);
@@ -112,7 +206,7 @@ function applyChalkMarkers(markers, text, userChalk) {
         let values = marker.substring(openIx + 1, closeIx).trim();
         if (values.indexOf(",") >= 0) {
           // extract rgb/hsl/hsv/hwb values like (255, 10, 20)
-          values = values.split(",").map(x => parseInt(x.trim(), 10));
+          values = values.split(",").map((x) => parseInt(x.trim(), 10));
 
           // default no name to rgb, and bg to bgRgb
           if (!name) name = "rgb";
@@ -127,23 +221,20 @@ function applyChalkMarkers(markers, text, userChalk) {
         }
 
         try {
-          a = a[name].apply(a, values);
+          a = applyChalkMethod(a, name, values);
         } catch (err) {
-          const msg =
-            typeof a[name] !== "function"
-              ? `${name} is not a chalk function`
-              : `calling chalk.${name} failed with: ${err.message}`;
-
-          throw new Error(`marker ${marker} is invalid: ${msg}`);
+          throw new Error(
+            `marker ${marker} is invalid: calling chalk.${name} failed with: ${err.message}`
+          );
         }
       } else {
         // if not found as a basic color, then try with chalk.keyword or chalk.bgKeyword
         try {
           const kw = deQuote(marker, marker);
           if (kw.startsWith("bg-") || kw.startsWith("bg ")) {
-            a = a.bgKeyword(kw.substring(3));
+            a = applyChalkMethod(a, "bgKeyword", [kw.substring(3)]);
           } else {
-            a = a.keyword(kw);
+            a = applyChalkMethod(a, "keyword", [kw]);
           }
         } catch (err) {
           throw new Error(`marker ${marker} is not found and invalid as a keyword`);
@@ -170,7 +261,7 @@ function remove(s, keepHtml) {
 }
 
 function format(s, userChalk) {
-  userChalk = userChalk || chalk;
+  userChalk = normalizeColors(userChalk || chalker.CHALK);
 
   // skip applying ansi colors if chalk says color support is off
   if (userChalk.supportsColor === false) {
@@ -250,5 +341,7 @@ function chalker(s, ...args) {
 chalker.remove = remove;
 
 chalker.decodeHtml = decodeHtml;
+
+chalker.CHALK = chalk;
 
 module.exports = chalker;
