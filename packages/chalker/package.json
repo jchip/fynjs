@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/chalker.git"
+    "url": "git+https://github.com/jchip/chalker.git"
   },
   "scripts": {
     "test": "xrun --serial test:unit test:demo",
