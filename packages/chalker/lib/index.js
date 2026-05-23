@@ -65,10 +65,12 @@ const htmlEntities = {
 };
 
 function loadColors() {
-  const colors = optionalRequire("chalk") || optionalRequire("ansi-colors");
+  let colors = optionalRequire("chalk") || optionalRequire("ansi-colors");
 
   if (!colors) {
-    throw new Error("chalker requires either chalk or ansi-colors to be installed");
+    // just go for chalk and let require take care of errors
+    colors = require("chalk");
+    // throw new Error("chalker requires either chalk or ansi-colors to be installed");
   }
 
   return normalizeColors(colors);
