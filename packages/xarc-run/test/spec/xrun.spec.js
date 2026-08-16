@@ -62,7 +62,7 @@ describe("xrun", function() {
       () => xrun.asyncRun("foo --a=50 --bar=60"),
       () => {
         expect(context).to.be.an("object");
-        expect(context.argOpts).to.deep.equal({ a: "50", bar: "60" });
+        expect(context.argOpts).to.deep.equal({ a: 50, bar: 60 });
       }
     );
   });
@@ -158,14 +158,14 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         expect(receivedContext).to.be.an("object");
-        expect(receivedContext.argOpts.a).equal("50");
-        expect(receivedContext.argOpts.bar).equal("60");
+        expect(receivedContext.argOpts.a).equal(50);
+        expect(receivedContext.argOpts.bar).equal(60);
       },
       next => xrun.run("blah", next),
       () => {
         expect(receivedCtx).to.be.an("object");
-        expect(receivedCtx.argOpts.x).equal("500");
-        expect(receivedCtx.argOpts.abc).equal("100");
+        expect(receivedCtx.argOpts.x).equal(500);
+        expect(receivedCtx.argOpts.abc).equal(100);
       }
     );
   });

@@ -50,8 +50,11 @@ function loadProviderPackages(userPkg, saveCwd, opts) {
       return;
     }
     const provider = providerPkg.xrunProvider;
-    if (!provider && !providerPkg.dependencies?.[myPkg.name]) {
-      // module is not marked as a provider and doesn't have @fynjs/run as dep, assume not
+    // accept both the current name (@fynjs/run) and the legacy name (@xarc/run) so
+    // providers published before the rename are still detected
+    const XRUN_DEP_NAMES = [myPkg.name, "@xarc/run"];
+    if (!provider && !XRUN_DEP_NAMES.some(n => providerPkg.dependencies?.[n])) {
+      // module is not marked as a provider and doesn't have xrun as dep, assume not
       // a provider
       return;
     }
