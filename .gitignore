@@ -10,3 +10,5 @@ coverage
 _w
 *.tgz
 dist-*
+.config
+.local

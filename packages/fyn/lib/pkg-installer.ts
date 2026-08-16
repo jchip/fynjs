@@ -10,8 +10,14 @@ import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
 import * as hardLinkDir from "./util/hard-link-dir";
+import {
+  makeLocalExportsManifest,
+  reconcileLocalExports,
+  resolveLocalExportsConfig
+} from "./local-exports";
 import { INSTALL_PACKAGE } from "./log-items";
 import { runNpmScript } from "./util/run-npm-script";
+import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
 import {
@@ -211,8 +217,9 @@ class PkgInstaller {
         //
         if ((err as NodeJS.ErrnoException).code === "EPERM") {
           const st = await Fs.stat(pkgJsonFp);
-          // ensure allow read/write on the package.json file
-          await Fs.chmod(pkgJsonFp, st.mode + 0o600);
+          // OR in owner read/write; arithmetic + carried into higher mode bits
+          // for a read-only file (0o444 + 0o600 = 0o1244) and dropped owner read.
+          await Fs.chmod(pkgJsonFp, st.mode | 0o600); // eslint-disable-line no-bitwise
           await Fs.writeFile(pkgJsonFp, `${outputStr}\n`);
         }
       }
@@ -318,7 +325,13 @@ class PkgInstaller {
     // - reverse search each request path to the first opt pkg
     // - if opt pkg is diff from depInfo, then need to ensure it's opt only, else fail.
     const optReqs = depInfo.requests.map(req => {
-      return req.reverse().find(r => r.startsWith("opt"));
+      // copy before reversing: req arrays are shared request paths read by
+      // other consumers (deprecation display, _removeDepsOf), so reversing them
+      // in place would corrupt that state.
+      return req
+        .slice()
+        .reverse()
+        .find(r => r.startsWith("opt"));
     });
 
     const failedId = `${depInfo.name}@${depInfo.version}`;
@@ -509,6 +522,7 @@ class PkgInstaller {
             logger.info(chalk.green("HOORAY!!! None of your dependencies are marked deprecated."));
           }
         })
+        .then(() => this._installLocalExports())
         .then(() => this._saveLockData())
         .then(() => {
           this._fyn._depResolver._logConsolidatedPeerDepWarnings();
@@ -518,6 +532,22 @@ class PkgInstaller {
           logger.removeItem(INSTALL_PACKAGE);
         })
     );
+  }
+
+  async _installLocalExports(): Promise<void> {
+    const pkgsData = this._data.getPkgsData() as InstallerPkgsData;
+    const config = resolveLocalExportsConfig(this._fyn._pkg);
+    const manifest = await makeLocalExportsManifest({
+      cwd: this._fyn._cwd,
+      config,
+      depInfos: this.toLink!.filter((depInfo: DepInfo) => {
+        const kpkg = pkgsData[depInfo.name];
+        return kpkg && kpkg.versions && kpkg.versions[depInfo.version!] === depInfo;
+      })
+    });
+    const previous = this._fyn._installConfig.localExports;
+    await reconcileLocalExports({ cwd: this._fyn._cwd, manifest, previous });
+    this._fyn.setLocalExports(manifest);
   }
 
   async _buildLocalPkg(depInfo: DepInfo): Promise<void> {
@@ -562,13 +592,31 @@ class PkgInstaller {
     // and shouldn't persist from cached package.json
     json._fyn = {};
     const scripts = json.scripts || {};
+
+    // Security hardening: packages that did not come from a configured registry
+    // (github/git/url tarball deps) do not run their lifecycle scripts unless
+    // explicitly whitelisted in package.json `fyn.allowScripts`, or - for deps
+    // declared directly in the top-level package.json - opted in via
+    // `fyn.allowTopLevelScripts`.
+    const scriptPolicy = evaluateScriptPolicy(depInfo, this._fyn.allowScripts, {
+      allowTopLevel: this._fyn.allowTopLevelScripts
+    });
+    const blockedScripts = [];
+    const isAllowed = scriptName => {
+      if (isScriptAllowed(scriptPolicy, scriptName)) {
+        return true;
+      }
+      blockedScripts.push(scriptName);
+      return false;
+    };
+
     const hasPI = json.hasPI || Boolean(scripts.preinstall);
     const piExed = Boolean(depInfo.preinstall);
 
     if (!piExed && hasPI) {
       if (depInfo.preInstalled) {
         json._fyn.preinstall = true;
-      } else {
+      } else if (isAllowed("preinstall")) {
         logger.debug("adding preinstall step for", depInfo.dir);
         this.preInstall!.push(depInfo);
       }
@@ -577,13 +625,39 @@ class PkgInstaller {
     this.toLink!.push(depInfo);
 
     const install = ["install", "postinstall"].filter(x => {
-      return Boolean(scripts[x]) && !json._fyn[x];
+      return Boolean(scripts[x]) && !json._fyn[x] && isAllowed(x);
     });
 
     if (install.length > 0) {
       logger.debug("adding install step for", depInfo.dir, install);
       depInfo.install = install;
       this.postInstall!.push(depInfo);
+    }
+
+    if (blockedScripts.length > 0) {
+      this._warnBlockedScripts(depInfo, scriptPolicy, blockedScripts);
+    }
+  }
+
+  _warnBlockedScripts(depInfo, policy, blocked) {
+    const id = logFormat.pkgId(depInfo);
+    logger.warn(
+      `${chalk.black.bgYellow("WARN")} ${chalk.magenta("scripts blocked")} ${id}`,
+      chalk.yellow(
+        `skipped lifecycle [${blocked.join(", ")}] for non-registry (${policy.urlType}) package - not in fyn.allowScripts`
+      )
+    );
+    logger.verbose(
+      chalk.blue("  To allow, add to package.json:"),
+      chalk.cyan(
+        `"fyn": { "allowScripts": { "${policy.key}": [${blocked.map(s => `"${s}"`).join(", ")}] } }`
+      )
+    );
+    if (policy.topLevel) {
+      logger.verbose(
+        chalk.blue("  Or trust all direct deps' scripts with:"),
+        chalk.cyan(`"fyn": { "allowTopLevelScripts": true }`)
+      );
     }
   }
 
@@ -745,12 +819,16 @@ class PkgInstaller {
     for (const pkgDir of removed) {
       let dir = pkgDir;
       try {
-        // first remove the scope dir
+        // long form has an extra node_modules level between the version dir
+        // and the package's <name> dir; short form does not.
+        if (!this._fyn._shortPkgDir) {
+          dir = Path.dirname(dir);
+          await Fs.rmdir(dir);
+        }
         if (pkgName.startsWith("@")) {
           dir = Path.dirname(dir);
           await Fs.rmdir(dir);
         }
-        // next remove the version dir
         dir = Path.dirname(dir);
         await Fs.rmdir(dir);
       } catch (err) {

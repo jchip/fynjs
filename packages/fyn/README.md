@@ -77,6 +77,167 @@ production=false
 centralStore=false
 ```
 
+### Local source exports (`fyn.localExports`)
+
+A package can expose local development directories by declaring them in its
+`package.json`:
+
+```json
+{
+  "name": "@acme/ui",
+  "fyn": {
+    "localExports": {
+      "src": "./src"
+    }
+  }
+}
+```
+
+Values are producer-relative directories. The merged `package-fyn.json` may
+override this configuration; `false` disables either one named export or the
+entire `localExports` field.
+
+When the package is a fynpo package or resolves from a `file:`, `link:`, or
+explicit filesystem path dependency, fyn creates each live directory link at
+`<dir>/<package>/<export>` in the consuming package, where `<dir>` defaults to
+`_fyn`; the example above creates `_fyn/@acme/ui/src`. Registry, Git, and URL
+dependencies never create local exports, even if their package metadata declares
+them.
+
+#### Configuring the export directory
+
+The export directory is owned and configured by the **consuming** package, in
+its `package.json` (or merged `package-fyn.json`) `fyn` section:
+
+```json
+{
+  "fyn": {
+    "localExportsDir": "_fyn",
+    "localExportsDirs": {
+      "@acme/ui": "_ui",
+      "tools": "vendor/tools"
+    }
+  }
+}
+```
+
+- `localExportsDir` sets the default directory for all producers; it defaults to
+  `_fyn` when omitted.
+- `localExportsDirs` overrides the directory per producer package name.
+
+With the example above, `@acme/ui` exports land under `_ui/@acme/ui/...` and
+`tools` under `vendor/tools/tools/...`, while every other producer uses the
+`_fyn` default. Directories must be relative paths inside the consumer; absolute
+paths, `..` escapes, `node_modules`, `.git`, and nested export directories are
+rejected. Producers cannot choose where their exports are written.
+
+Each configured directory is generated, disposable content. Exclude it from Git,
+package publication, and fynpo build-cache inputs. Fyn creates the source
+surface only; the consumer remains responsible for configuring Vite aliases,
+TypeScript paths, or equivalent tool settings to use it.
+
+### Lifecycle script allow list (`fyn.allowScripts`)
+
+As a security hardening measure, `fyn` does **not** run a package's npm lifecycle
+scripts (`preinstall`, `install`, `postinstall`) during install unless the package
+came from a configured registry (the primary `registry` or a `@scope:registry`) or
+is a local `file:`/`link:`/symlink dependency.
+
+Packages pulled from other sources — `github:`, git URLs (`git+https`, `git+ssh`,
+…), and `http(s)` tarball URLs — have their lifecycle scripts **skipped by default**,
+and `fyn` prints a warning showing how to allow them.
+
+To allow specific scripts for such a package, add a `fyn.allowScripts` map to your
+`package.json`. Each key is `name@<spec-or-version>` and the value is the list of
+allowed script names:
+
+```json
+{
+  "fyn": {
+    "allowScripts": {
+      "foo@github:user/foo#v1": ["install", "postinstall"],
+      "bar@2.3.0": ["preinstall"]
+    }
+  }
+}
+```
+
+- The key matches **either** the original dependency spec (e.g. `foo@github:user/foo#v1`)
+  **or** the resolved version (e.g. `bar@2.3.0`).
+- Script names are matched case-insensitively.
+- Use `["*"]` (or `true`) as the value to allow all lifecycle scripts for that package.
+
+#### Trusting direct dependencies (`fyn.allowTopLevelScripts`)
+
+Maintaining per-package `allowScripts` entries is tedious when you have several
+non-registry dependencies you control (e.g. private `github:`/git deps with a
+build step). As an **opt-in** convenience, you can trust the lifecycle scripts of
+any non-registry package that is declared **directly** in your top-level
+`package.json` — without listing each one:
+
+```json
+{
+  "fyn": {
+    "allowTopLevelScripts": true
+  }
+}
+```
+
+- This is **off by default**; the deny-by-default policy above is unchanged.
+- It only applies to dependencies you declared directly in the top-level
+  `package.json`. Non-registry packages pulled in **transitively** stay blocked
+  and still require an explicit `fyn.allowScripts` entry.
+- `true` (or `"*"`) allows all lifecycle scripts; an array such as
+  `["install", "postinstall"]` restricts it to those script names for all direct
+  non-registry deps.
+- Allowances combine with `fyn.allowScripts`: a per-package entry can grant
+  additional scripts on top of what `allowTopLevelScripts` permits.
+
+> ⚠️ A direct `github:`/git dependency on a branch or tag still runs whatever code
+> has been pushed there. Declaring it in your `package.json` is an explicit trust
+> decision — pin to a commit/tarball you've reviewed when that matters.
+
+### Registry-only transitive dependencies (`fyn.enforceRegistryDeps`)
+
+By default, `fyn` requires that **transitive** (non-top-level) dependencies
+resolve from a published registry. This blocks a transitive dependency from
+quietly pulling code off `github:`/git/URL sources that you never chose — only
+the top-level `package.json` is allowed to declare such sources.
+
+- **On by default.** A transitive dependency from a non-registry source
+  (`github:`, `git+ssh`/`https`/`http`/`file`, `git:`, `http(s)` tarball) — or
+  one with an unparseable version selector — causes `fyn` to **abort the
+  install** with an error naming the offending package and its parent.
+- **Top-level `package.json` is unrestricted** — you may still declare `github:`,
+  git, URL, and local dependencies for your own project.
+- **Accepted for transitive deps:** registry semver/ranges/dist-tags
+  (`^1.2.3`, `1.x`, `latest`, `*`), `npm:` aliases (registry-backed), and local
+  `file:`/`link:`/symlink deps — including monorepo siblings linked by `fynpo`.
+
+To **disable** the policy (e.g. you genuinely need a transitive git/URL dep),
+turn it off in `package.json`:
+
+```json
+{
+  "fyn": {
+    "enforceRegistryDeps": false
+  }
+}
+```
+
+or per-invocation on the command line:
+
+```sh
+fyn install --no-enforce-registry-deps
+```
+
+The CLI flag takes precedence over the `package.json` setting, which takes
+precedence over the default (on).
+
+This is independent of the lifecycle-script controls above: `allowScripts` /
+`allowTopLevelScripts` decide whether *scripts run*, while `enforceRegistryDeps`
+decides whether a transitive package is *allowed at all*.
+
 ### Thank you `npm`
 
 Node Package Manager is a very large and complex piece of software. Developing `fyn` was 10 times easier because of the generous open source software from the community, especially the individual packages that are part of `npm`.

@@ -78,10 +78,15 @@ export class DepData {
   }
 
   getPkgById(id: string): KnownPackage | PkgVersionInfo | undefined {
-    const splits = id.split("@");
-    const kpkg = this.getPkgsData()[splits[0]];
+    // id is `name@version`; split at the LAST '@' so a scoped name's leading
+    // '@' (e.g. "@scope/name@1.2.3") isn't mistaken for the version separator.
+    const lastAt = id.lastIndexOf("@");
+    const sep = lastAt > 0 ? lastAt : -1;
+    const name = sep > 0 ? id.slice(0, sep) : id;
+    const version = sep > 0 ? id.slice(sep + 1) : undefined;
+    const kpkg = this.getPkgsData()[name];
     if (!kpkg) return undefined;
-    return splits[1] ? kpkg.versions[splits[1]] : kpkg;
+    return version ? kpkg.versions[version] : kpkg;
   }
 
   eachVersion(cb: (pkg: PkgVersionInfo, version: string, kpkg: KnownPackage) => void): void {

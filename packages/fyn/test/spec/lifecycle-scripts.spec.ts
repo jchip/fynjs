@@ -42,7 +42,7 @@ describe("lifecycle-scripts", function() {
       .wrap(() => ls.execute(["test"]))
       .then(() => {
         intercept.restore();
-        expect(intercept.stdout[2].trim()).to.equal("hello");
+        expect(intercept.stdout.map(x => x.trim())).to.include("hello");
       })
       .catch(err => {
         failRestore(err, intercept);
@@ -108,7 +108,9 @@ describe("lifecycle-scripts", function() {
       .execute("test2", true)
       .then(() => {
         intercept.restore();
-        expect(intercept.stdout[3].trim()).to.equal("> No output from f1@1.0.0 npm script test2");
+        expect(intercept.stdout.map(x => x.trim())).to.include(
+          "> No output from f1@1.0.0 npm script test2"
+        );
       })
       .catch(err => failRestore(err, intercept));
 

@@ -7,6 +7,7 @@ import Fs from "./util/file-ops";
 import _ from "lodash";
 import chalk from "chalk";
 import { simpleCompare as simpleSemverCompare } from "./util/semver";
+import Semver from "semver";
 import Yaml from "yamljs";
 import sortObjKeys from "./util/sort-obj-keys";
 import {
@@ -294,6 +295,53 @@ class PkgDepLocker {
   }
 
   /**
+   * Rewrite a locked tarball URL onto the current registry when the lockfile
+   * was created against a different registry host (or when --ignore-lock-url
+   * forces it), so installs don't fail trying to reach a stale registry.
+   */
+  normalizeTarballUrl(item: LockDepItem, tarballUrl?: string): string | undefined {
+    if (!tarballUrl || !this._fyn || !this._fyn._pkgSrcMgr) {
+      return tarballUrl;
+    }
+
+    const currentRegistry = this._fyn._pkgSrcMgr.getRegistryUrl(item.name);
+    // --ignore-lock-url forces rewriting even if the URL already matches
+    const ignoreLockUrl = this._fyn._options?.ignoreLockUrl;
+    if (!currentRegistry || (!ignoreLockUrl && tarballUrl.startsWith(currentRegistry))) {
+      return tarballUrl;
+    }
+
+    try {
+      const currentUrl = new URL(currentRegistry);
+      const lockedUrl = new URL(tarballUrl);
+      const currentPath = decodeURIComponent(currentUrl.pathname);
+      const lockedPath = decodeURIComponent(lockedUrl.pathname);
+
+      if (lockedPath.startsWith(currentPath)) {
+        lockedUrl.protocol = currentUrl.protocol;
+        lockedUrl.username = currentUrl.username;
+        lockedUrl.password = currentUrl.password;
+        lockedUrl.host = currentUrl.host;
+        return lockedUrl.toString();
+      }
+
+      const tarballMarker = `/${item.name}/-/`;
+      const markerIndex = lockedPath.indexOf(tarballMarker);
+
+      if (markerIndex >= 0) {
+        const rebuiltUrl = new URL(lockedPath.slice(markerIndex + 1), currentRegistry);
+        rebuiltUrl.search = lockedUrl.search;
+        rebuiltUrl.hash = lockedUrl.hash;
+        return rebuiltUrl.toString();
+      }
+    } catch (err) {
+      return tarballUrl;
+    }
+
+    return tarballUrl;
+  }
+
+  /**
    * Convert from fyn lock format to npm meta format
    */
   convert(item: LockDepItem): ConvertedLockData | false | undefined {
@@ -311,7 +359,13 @@ class PkgDepLocker {
       const versions: Record<string, LockVersionMeta> = {};
       _.each(sorted, (version: string) => {
         const vpkg = pkgLocked[version] as LockVersionMeta;
-        if (!_.isEmpty(vpkg) && vpkg._valid !== false) {
+        const isLocalVpkg = vpkg && vpkg.$ === "local";
+        // A corrupt lock (e.g. from a rebase/merge or a partial install) can carry a
+        // bogus version key, or a version whose recorded dependencies point at versions
+        // that don't exist anywhere in the lock. Trusting either yields a broken install.
+        const badVersionKey = !isLocalVpkg && !Semver.valid(version);
+        const badDeps = vpkg && vpkg.dependencies && !this._depsResolvable(vpkg.dependencies);
+        if (!_.isEmpty(vpkg) && vpkg._valid !== false && !badVersionKey && !badDeps) {
           if (vpkg.$ === "local") {
             vpkg.local = true;
             vpkg.dist = {
@@ -321,22 +375,7 @@ class PkgDepLocker {
           } else {
             // When loading from lockfile, the tarball URL may have an old registry host/port
             // We need to update it to use the current registry to avoid connection errors
-            let tarballUrl = vpkg._;
-            if (tarballUrl && this._fyn && this._fyn._pkgSrcMgr) {
-              const currentRegistry = this._fyn._pkgSrcMgr.getRegistryUrl(item.name);
-              // Check if the tarball URL starts with a different registry
-              // Format: http://host:port/package/-/package-version.tgz
-              const urlMatch = tarballUrl.match(/^(https?:\/\/[^\/]+)(\/.*)/);
-              if (urlMatch && currentRegistry) {
-                const lockRegistry = urlMatch[1] + "/";
-                const tarballPath = urlMatch[2];
-                const ignoreLockUrl = this._fyn._options?.ignoreLockUrl;
-                // If --ignore-lock-url is set or registries don't match, use current registry
-                if (ignoreLockUrl || lockRegistry !== currentRegistry) {
-                  tarballUrl = currentRegistry.replace(/\/$/, "") + tarballPath;
-                }
-              }
-            }
+            const tarballUrl = this.normalizeTarballUrl(item, vpkg._);
             vpkg.dist = {
               integrity: fyntil.shaToIntegrity(vpkg.$),
               tarball: tarballUrl
@@ -352,6 +391,17 @@ class PkgDepLocker {
           }
           versions[version] = vpkg;
         } else {
+          if (badVersionKey) {
+            logger.error(
+              `lockfile entry for ${item.name} has invalid version key "${version}"` +
+                ` - ignoring and re-resolving from registry`
+            );
+          } else if (badDeps) {
+            logger.error(
+              `lockfile entry ${item.name}@${version} has dependencies not satisfiable within` +
+                ` the lock (corrupt lock) - ignoring and re-resolving from registry`
+            );
+          }
           valid = false;
         }
       });
@@ -374,6 +424,48 @@ class PkgDepLocker {
     }
 
     return valid && (locked as ConvertedLockData);
+  }
+
+  //
+  // Check that every recorded dependency pin can be resolved within the lock data.
+  // A healthy fyn lock is self-contained: every locked package's dependency specs are
+  // satisfied by some version that also has a lock entry. A pin that points at a version
+  // absent from the lock signals corruption (e.g. a version block's deps got swapped
+  // during a rebase/merge), so the entry must be dropped and re-resolved.
+  //
+  _depsResolvable(deps: Record<string, string>): boolean {
+    for (const depName in deps) {
+      if (!this._isDepResolvable(depName, deps[depName])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  _isDepResolvable(depName: string, spec: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const depLock = this._lockData[depName] as any;
+    // dep not locked here (resolved elsewhere / fresh) - nothing to validate against
+    if (!depLock) return true;
+
+    let versions: string[];
+    let rangeMap: Record<string, unknown>;
+    if (depLock.versions) {
+      // already converted to runtime format
+      versions = Object.keys(depLock.versions);
+      rangeMap = depLock[LOCK_RSEMVERS] || {};
+    } else {
+      // serialized fyn lock format
+      versions = Object.keys(depLock).filter(k => !k.startsWith("_"));
+      rangeMap = depLock._ || {};
+    }
+
+    // the spec was already recorded as a resolved semver mapping
+    if (Object.prototype.hasOwnProperty.call(rangeMap, spec)) return true;
+    // non-semver specs (url/git/file/tag) can't be checked here - don't flag them
+    if (!Semver.validRange(spec)) return true;
+
+    return versions.some(v => Semver.valid(v) && Semver.satisfies(v, spec));
   }
 
   /**
@@ -595,6 +687,18 @@ class PkgDepLocker {
       if (!Path.isAbsolute(resolvedFilename)) resolvedFilename = Path.resolve(resolvedFilename);
       const data = (await Fs.readFile(resolvedFilename)).toString();
       this._shaSum = this.shasum(data);
+
+      // A lockfile with git conflict markers (e.g. from a rebase/merge) is corrupt
+      // and cannot be trusted. Ignore it and re-resolve everything from the registry.
+      if (/^(<<<<<<<|=======|>>>>>>>)/m.test(data)) {
+        logger.error(
+          `lockfile ${filename} has git conflict markers - ignoring it and re-resolving from registry`
+        );
+        this._shaSum = Date.now();
+        this._lockData = {};
+        return false;
+      }
+
       this._lockData = Yaml.parse(data);
 
       const basedir = Path.dirname(resolvedFilename);

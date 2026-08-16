@@ -268,6 +268,91 @@ export const lintParser = (commit, options) => {
 };
 
 /**
+ * Make a detector for packages that live in a *different* git repo nested inside
+ * the monorepo - a plain nested clone, a submodule, or a linked worktree.
+ *
+ * Such a package cannot be released by this repo: every git operation in the
+ * release path (change detection, commit collation, the publish commit's changed
+ * file list, staging bumped versions) runs against the outer repo, which has no
+ * commits and no tracked files for those paths. Left alone they silently appear
+ * in a release before the first tag exists, then silently vanish from every
+ * release after it.
+ *
+ * Detection walks up from the package dir to - but not including - the monorepo
+ * root, looking for a `.git` entry. It tests for existence rather than a
+ * directory because a submodule or worktree records `.git` as a *file*.
+ *
+ * @param cwd - monorepo root
+ *
+ * @returns function taking a package path relative to the root, returning the
+ *   dir of the foreign repo that owns it, or `undefined` if this repo owns it
+ */
+export function makeForeignRepoDetector(cwd: string): (pkgPath: string) => string | undefined {
+  const cache = new Map<string, string | undefined>();
+
+  const findRoot = (dir: string): string | undefined => {
+    if (!dir || dir === "." || dir === Path.sep) {
+      return undefined;
+    }
+    if (cache.has(dir)) {
+      return cache.get(dir);
+    }
+    // `.git` may be a dir (clone) or a file (submodule / worktree)
+    const found = Fs.existsSync(Path.join(cwd, dir, ".git")) ? dir : findRoot(Path.dirname(dir));
+    cache.set(dir, found);
+    return found;
+  };
+
+  return (pkgPath: string) => (pkgPath ? findRoot(pkgPath) : undefined);
+}
+
+/**
+ * Make a predicate that decides if a package is eligible to be published.
+ *
+ * Driven by two `command.publish` config arrays of package refs
+ * (see `PackageRef` - supports `name:`, `id:`, `path:`, `/regex/` and globs):
+ *
+ * - `includePackages` - allow list. When non-empty, only packages matching it
+ *   are eligible. Absent or empty means every package is eligible.
+ * - `excludePackages` - deny list, applied after the allow list and always wins.
+ *
+ * The allow list is checked first so the config fails closed: a newly added
+ * package under an unlisted path is not publishable until someone says so.
+ *
+ * This is only about publishing. Discovery, bootstrap and build never consult it.
+ * A package's own `"private": true` is a separate, independent veto.
+ *
+ * @param fynpoRc - fynpo config
+ *
+ * @returns predicate taking a package's info, `true` if it may be published
+ */
+export function makePublishFilter(fynpoRc: any): (pkgInfo: PackageInfo) => boolean {
+  const toRefs = (key: string) => {
+    const val = _.get(fynpoRc, `command.publish.${key}`, []);
+    // tolerate a single string for the common one-entry case
+    const list = [].concat(val || []).filter((x) => typeof x === "string" && x.trim());
+    return list.map((ref: string) => new PackageRef(ref));
+  };
+
+  const include = toRefs("includePackages");
+  const exclude = toRefs("excludePackages");
+
+  if (include.length === 0 && exclude.length === 0) {
+    return () => true;
+  }
+
+  return (pkgInfo: PackageInfo): boolean => {
+    if (!pkgInfo) {
+      return false;
+    }
+    if (include.length > 0 && !include.find((ref) => ref.match(pkgInfo))) {
+      return false;
+    }
+    return !exclude.find((ref) => ref.match(pkgInfo));
+  };
+}
+
+/**
  * match versionLocks config to packages and generate the
  * mapping of locked packages.
  *

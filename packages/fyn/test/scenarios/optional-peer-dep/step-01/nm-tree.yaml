@@ -4,7 +4,8 @@ node_modules:
     _:
       mod-f:
         3.0.0:
-          mod-f:
-            package.json:
-              id: mod-f@3.0.0
-  mod-f: '-> .f/_/mod-f/3.0.0/mod-f'
+          node_modules:
+            mod-f:
+              package.json:
+                id: mod-f@3.0.0
+  mod-f: '-> .f/_/mod-f/3.0.0/node_modules/mod-f'

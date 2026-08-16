@@ -1,6 +1,6 @@
 {
   "name": "@fynpo/base",
-  "version": "1.1.22",
+  "version": "1.1.23",
   "description": "zero setup monorepo manager for node.js",
   "type": "module",
   "types": "dist-cjs/index.d.ts",

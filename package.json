@@ -34,11 +34,17 @@
     "url": "https://github.com/jchip/fynjs/issues"
   },
   "devDependencies": {
-    "fyn": "^2.1.0",
-    "fynpo": "^2.1.0",
+    "fyn": "^2.1.1",
+    "fynpo": "^2.1.1",
     "tsx": "^4.21.0"
   },
   "dependencies": {
     "tsx": "^4.20.6"
+  },
+  "fyn": {
+    "devDependencies": {
+      "fyn": false,
+      "fynpo": false
+    }
   }
 }

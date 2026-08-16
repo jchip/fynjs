@@ -26,8 +26,17 @@ import npmConfigEnv from "./util/npm-config-env";
 import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
 import pathUpEach from "./util/path-up-each";
+import { localExportsNeedInstall } from "./local-exports";
 import type { IMinimatch } from "minimatch";
 import type { PkgVersion } from "./dep-data";
+
+/** Value form of an allow-scripts entry: `true`/`"*"` allows all lifecycle
+ * scripts; a string or array allows only those script names. */
+type AllowScriptsValue = boolean | string | string[];
+
+/** `fyn.allowScripts` whitelist - maps `name@spec` or `name@version` to the
+ * lifecycle scripts allowed for non-registry packages. */
+type AllowScriptsMap = Record<string, AllowScriptsValue>;
 
 /** CLI source tracking for options */
 interface CliSource {
@@ -68,6 +77,7 @@ interface FynOptions {
   runNpm?: string[];
   buildLocal?: boolean;
   npmLock?: boolean;
+  enforceRegistryDeps?: boolean;
   pkgSrcMgr?: PkgSrcManager;
   data?: DepData;
   refreshMeta?: boolean;
@@ -113,8 +123,10 @@ interface InstallConfig {
   centralDir?: string | false;
   production?: boolean;
   layout?: string;
+  shortPkgDir?: boolean;
   localPkgLinks?: Record<string, LocalPkgLink>;
   localsByDepth?: string[][];
+  localExports?: unknown;
   [key: string]: unknown;
 }
 
@@ -243,6 +255,10 @@ class Fyn {
   private _localPkgInstall?: Record<string, LocalPkgInstallResult>;
   private _localPkgBuilder?: LocalPkgBuilder;
   private _npmConfigEnv?: Record<string, string>;
+  private _shortPkgDir: boolean;
+  private _allowScripts?: AllowScriptsMap;
+  private _allowTopLevelScripts?: AllowScriptsValue;
+  private _enforceRegistryDeps?: boolean;
 
   /** Local packages with nested dependencies */
   localPkgWithNestedDep: LocalDepInfo[];
@@ -264,9 +280,12 @@ class Fyn {
       logger.info("dep lock time set to", this._lockTime.toString());
     }
     this._installConfig = { time: 0 };
-    // set this env for more learning and research on ensuring
-    // package dir name matches package name.
-    this._noPkgDirMatchName = Boolean(process.env.FYN_NO_PKG_DIR_MATCH_NAME);
+    // when true, store path is .f/_/<name>/<version>/<name>;
+    // when false (default), it's .f/_/<name>/<version>/node_modules/<name>
+    // so the package's real path ends in node_modules/<name> for bundlers
+    // (turbopack et al) that use that as the package boundary marker.
+    // can be overridden by an existing install's recorded value in .fyn.json.
+    this._shortPkgDir = Boolean(process.env.FYN_SHORT_PKG_DIR);
     if (!_fynpo) {
       this._fynpo = {};
     }
@@ -389,7 +408,15 @@ class Fyn {
     } else {
       centralDir = this._fynpo.config.centralDir;
       if (!centralDir) {
-        centralDir = Path.join(this._fynpo.dir!, ".fynpo", "_store");
+        // when the monorepo is a git worktree, share the central store from the
+        // main worktree instead of duplicating a .fynpo store per worktree
+        const storeBaseDir = await fynTil.resolveGitMainWorktreeDir(this._fynpo.dir!);
+        if (storeBaseDir !== this._fynpo.dir) {
+          logger.info(
+            `fynpo monorepo is a git worktree; sharing central store from main worktree ${storeBaseDir}`
+          );
+        }
+        centralDir = Path.join(storeBaseDir, ".fynpo", "_store");
       }
       logger.info(`Enabling central store by fynpo monorepo using dir ${centralDir}`);
     }
@@ -407,6 +434,7 @@ class Fyn {
 
   /**
    * Check user production mode option against saved install config in node_modules
+   *
    * @remarks - this._installConfig must've been initialized
    * @returns nothing
    */
@@ -480,13 +508,27 @@ class Fyn {
         const fynInstallConfig = JSON.parse(await Fs.readFile(filename)) as InstallConfig;
         logger.debug("loaded fynInstallConfig", fynInstallConfig);
         const { layout } = fynInstallConfig;
-        if (layout && layout !== this._layout) {
+        if (layout && layout !== this._options.layout) {
           if (this._cliSource.layout !== "default") {
             logger.warn(
-              `Forcing layout to ${layout} from ${this._layout} because your existing node_modules uses that. To change it, please remove node_modules first.`
+              `Forcing layout to ${layout} from ${this._options.layout} because your existing node_modules uses that. To change it, please remove node_modules first.`
             );
           }
-          this._layout = layout;
+          // use the layout the existing node_modules was built with; _options.layout
+          // is the single source of truth read by isNormalLayout at runtime.
+          this._options.layout = layout;
+        }
+        // absent shortPkgDir on an existing .fyn.json means it was written before
+        // the long-pkg-dir layout shipped, i.e. the store is in short form.
+        const recordedShort =
+          fynInstallConfig.shortPkgDir === undefined ? true : fynInstallConfig.shortPkgDir;
+        if (recordedShort !== this._shortPkgDir) {
+          if (process.env.FYN_SHORT_PKG_DIR !== undefined) {
+            logger.warn(
+              `Forcing pkg-dir to ${recordedShort ? "short" : "long"} form because your existing node_modules uses that. To change it, please remove node_modules first.`
+            );
+          }
+          this._shortPkgDir = recordedShort;
         }
         this._installConfig = { ...this._installConfig, ...fynInstallConfig, layout };
       } catch (err) {
@@ -726,6 +768,15 @@ class Fyn {
       }
     }
 
+    if (
+      await localExportsNeedInstall({
+        cwd: this._cwd,
+        manifest: this._installConfig.localExports
+      })
+    ) {
+      return true;
+    }
+
     return false;
   }
 
@@ -742,6 +793,10 @@ class Fyn {
 
   setLocalPkgLinks(localLinks: Record<string, LocalPkgLink>): void {
     this._installConfig.localPkgLinks = localLinks;
+  }
+
+  setLocalExports(manifest: unknown): void {
+    this._installConfig.localExports = manifest;
   }
 
   // save the config to outputDir
@@ -762,7 +817,8 @@ class Fyn {
         time: Date.now() + 5,
         centralDir,
         production: this.production,
-        layout: this._layout
+        layout: this._options.layout,
+        shortPkgDir: this._shortPkgDir
         // not a good idea to save --run-npm options to install config because
         // future fyn install will automatically run them and would be unexpected.
         // if fynpo bootstrap should run certain npm scripts, user should set those
@@ -913,6 +969,53 @@ class Fyn {
 
   get showDeprecated(): string | false {
     return this._options.showDeprecated && "show-deprecated";
+  }
+
+  // package.json `fyn.allowScripts` whitelist - maps `name@spec` or
+  // `name@version` to the lifecycle scripts allowed for packages that did not
+  // come from a configured registry (github/git/url tarball deps).
+  get allowScripts(): AllowScriptsMap {
+    if (this._allowScripts === undefined && this._pkg) {
+      this._allowScripts = (_.get(this._pkg, ["fyn", "allowScripts"]) as AllowScriptsMap) || {};
+    }
+    return this._allowScripts || {};
+  }
+
+  // package.json `fyn.allowTopLevelScripts` - opt-in (default off) to trust the
+  // lifecycle scripts of non-registry packages (github/git/url tarball) that are
+  // declared directly in the top-level package.json, without per-package
+  // `fyn.allowScripts` entries. `true`/`"*"` allows all lifecycle scripts; an
+  // array allows only those script names. Transitive deps stay blocked.
+  get allowTopLevelScripts(): AllowScriptsValue {
+    if (this._allowTopLevelScripts === undefined && this._pkg) {
+      this._allowTopLevelScripts =
+        (_.get(this._pkg, ["fyn", "allowTopLevelScripts"]) as AllowScriptsValue) || false;
+    }
+    return this._allowTopLevelScripts || false;
+  }
+
+  // Security policy: transitive (non-top-level) dependencies must resolve from
+  // a published registry. git/github/url-tarball sources and unparseable semver
+  // are rejected (hard error). Local (file:/link:/symlink, incl. fynpo
+  // siblings) and `npm:` aliases are accepted. Only the top-level package.json
+  // may declare non-registry deps.
+  //
+  // Default ON. Disable explicitly with the CLI flag
+  // `--no-enforce-registry-deps` or package.json `fyn.enforceRegistryDeps:false`.
+  // Precedence: CLI option (when given) > package.json fyn flag > default (on).
+  get enforceRegistryDeps(): boolean {
+    // an explicit CLI option always wins (e.g. --no-enforce-registry-deps)
+    const cliOpt = this._options.enforceRegistryDeps;
+    if (cliOpt !== undefined) {
+      return Boolean(cliOpt);
+    }
+    if (this._enforceRegistryDeps === undefined && this._pkg) {
+      const pkgOpt = _.get(this._pkg, ["fyn", "enforceRegistryDeps"]);
+      // default on; only an explicit `false` in package.json disables it.
+      this._enforceRegistryDeps = pkgOpt === undefined ? true : Boolean(pkgOpt);
+    }
+    // if package.json not loaded yet, default on
+    return this._enforceRegistryDeps === undefined ? true : this._enforceRegistryDeps;
   }
 
   get refreshOptionals(): boolean | undefined {
@@ -1138,17 +1241,16 @@ class Fyn {
       return Path.join(this.getOutputDir(), name);
     }
 
-    // it's important that each package is directly extracted to a directory
-    // that has name exactly the same as the package because there are code
-    // and tools that depend on that.
-    // for example: webpack module de-duping seems to depend on that, otherwise
-    // the bundle bloats.
+    // each package's real path ends in node_modules/<name> so tools (turbopack,
+    // webpack, etc) that use the node_modules/<name> suffix as a package
+    // boundary marker can identify the package root.
+    // short form (.../<version>/<name>) is preserved for legacy installs and
+    // can be opted into for new installs via FYN_SHORT_PKG_DIR=1.
     if (version) {
-      if (this._noPkgDirMatchName) {
-        return Path.join(this.getOutputDir(), FV_DIR, "_", name, version);
-      } else {
+      if (this._shortPkgDir) {
         return Path.join(this.getOutputDir(), FV_DIR, "_", name, version, name);
       }
+      return Path.join(this.getOutputDir(), FV_DIR, "_", name, version, "node_modules", name);
     }
 
     return Path.join(this.getOutputDir(), FV_DIR, "_", name);
@@ -1216,9 +1318,10 @@ class Fyn {
   async createPkgOutDir(dir: string, keep?: boolean): Promise<void> {
     try {
       const r = await Fs.$.mkdirp(dir);
-      // mkdirp returns null if directory already exist
-      // clear directory to prepare it for installing package
-      if (r === null && !keep && dir !== this.getOutputDir()) {
+      // fs.mkdirSync(recursive) returns the first created dir path, or undefined
+      // when the dir already existed (it never returns null). An existing dir
+      // means a reinstall, so clear it to prepare for installing the package.
+      if (r === undefined && !keep && dir !== this.getOutputDir()) {
         await this.clearPkgOutDir(dir);
       }
     } catch (err) {

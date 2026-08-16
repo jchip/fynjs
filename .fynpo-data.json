@@ -126,7 +126,7 @@
       {
         "fromPkg": {
           "name": "fyn",
-          "version": "2.1.0",
+          "version": "2.1.6",
           "path": "packages/fyn"
         },
         "onPkg": {
@@ -136,7 +136,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "fyn@2.1.0(pkg)"
+          "fyn@2.1.6(pkg)"
         ]
       },
       {
@@ -158,7 +158,7 @@
       {
         "fromPkg": {
           "name": "fyn",
-          "version": "2.1.0",
+          "version": "2.1.6",
           "path": "packages/fyn"
         },
         "onPkg": {
@@ -168,13 +168,13 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "fyn@2.1.0(dep)"
+          "fyn@2.1.6(dep)"
         ]
       },
       {
         "fromPkg": {
           "name": "fyn",
-          "version": "2.1.0",
+          "version": "2.1.6",
           "path": "packages/fyn"
         },
         "onPkg": {
@@ -184,7 +184,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "fyn@2.1.0(dep)"
+          "fyn@2.1.6(dep)"
         ]
       }
     ],
@@ -405,5 +405,5 @@
       }
     ]
   },
-  "__timestamp": 1769588580715
+  "__timestamp": 1786865599622
 }

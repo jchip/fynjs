@@ -25,6 +25,33 @@ import crypto from "crypto";
 import cacachePkg from "cacache/package.json" with { type: "json" };
 
 /**
+ * Hash a cache key using SHA256 (matches cacache's algorithm).
+ */
+function hashKey(key: string): string {
+  return crypto
+    .createHash("sha256")
+    .update(key)
+    .digest("hex");
+}
+
+/**
+ * Get bucket file path for a cache key.
+ * Calculates path using same algorithm as cacache (SHA256 + directory segments).
+ * Reads index version from cacache/package.json for compatibility.
+ */
+function getBucketPath(cache: string, key: string): string {
+  const hashed = hashKey(key);
+  const indexV = cacachePkg["cache-version"].index;
+  return path.join(
+    cache,
+    `index-v${indexV}`,
+    hashed.slice(0, 2),
+    hashed.slice(2, 4),
+    hashed.slice(4)
+  );
+}
+
+/**
  * Update cache entry refresh timestamp by modifying bucket file mtime.
  * Does not modify file contents, only filesystem metadata.
  * Errors are silently ignored (cache refresh is non-critical).
@@ -66,33 +93,6 @@ async function getCacheInfoWithRefreshTime(cache: string, key: string) {
     }
     throw err;
   }
-}
-
-/**
- * Get bucket file path for a cache key.
- * Calculates path using same algorithm as cacache (SHA256 + directory segments).
- * Reads index version from cacache/package.json for compatibility.
- */
-function getBucketPath(cache: string, key: string): string {
-  const hashed = hashKey(key);
-  const indexV = cacachePkg["cache-version"].index;
-  return path.join(
-    cache,
-    `index-v${indexV}`,
-    hashed.slice(0, 2),
-    hashed.slice(2, 4),
-    hashed.slice(4)
-  );
-}
-
-/**
- * Hash a cache key using SHA256 (matches cacache's algorithm).
- */
-function hashKey(key: string): string {
-  return crypto
-    .createHash("sha256")
-    .update(key)
-    .digest("hex");
 }
 
 export { refreshCacheEntry, getCacheInfoWithRefreshTime, getBucketPath, hashKey };

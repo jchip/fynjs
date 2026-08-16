@@ -36,7 +36,9 @@ import { AggregateError } from "@jchip/error";
 import { prePackObj } from "publish-util";
 import { PackageRef } from "@fynpo/base";
 import Arborist from "@npmcli/arborist";
-import { execSync } from "child_process";
+// Import the module object (not a named binding) so execFileSync is resolved at
+// call time — tests stub childProcess.execFileSync on the CJS module object.
+import childProcess from "child_process";
 import type { DepItem } from "./dep-item";
 import type { Inflight as InflightType, ItemQueue } from "item-queue";
 
@@ -226,6 +228,31 @@ const WATCH_TIME = 5000;
 // This is a fallback - git ls-remote checks for new commits more frequently
 const META_CACHE_STALE_TIME = 24 * 60 * 60 * 1000;
 
+// Git refs/committishes are letters, digits and  . _ / - ~ ^  — never shell metacharacters
+// and never a leading '-' (which git treats as an option). Reject anything else so a
+// dependency spec like "x": "github:a/b#;cmd" can't reach a shell.
+const SAFE_GIT_TOKEN = /^[A-Za-z0-9._/~^-]+$/;
+function isSafeGitToken(s: unknown): s is string {
+  return (
+    typeof s === "string" &&
+    s.length > 0 &&
+    s.length < 256 &&
+    SAFE_GIT_TOKEN.test(s) &&
+    !s.startsWith("-")
+  );
+}
+
+// A git dep spec is "pinned" when its committish (the part after '#', or the
+// whole spec if there's no '#') is a raw 40-char commit sha. Such a commit is
+// immutable, so it must NOT take the ls-remote "has new commits?" path -- that
+// path returns nothing for a raw sha and then assumes new commits, defeating
+// the prepared-tarball cache on every install.
+function isPinnedGitCommit(semver: string | undefined): boolean {
+  if (!semver) return false;
+  const committish = semver.includes("#") ? semver.split("#")[1] : semver;
+  return /^[a-f0-9]{40}$/.test(committish);
+}
+
 // Helper to check if git repo has new commits using fast git ls-remote or git rev-parse
 async function checkGitRepoHasNewCommits(
   gitUrl: string,
@@ -233,13 +260,13 @@ async function checkGitRepoHasNewCommits(
   cachedCommitHash: string | null
 ): Promise<boolean | null> {
   if (!cachedCommitHash) return true; // No cache, assume new commits
-  
+
   try {
     // Handle file:// URLs for local git repos - use git rev-parse instead of ls-remote
     let actualGitUrl = gitUrl;
     let isLocalRepo = false;
     let localRepoPath = null;
-    
+
     if (gitUrl.startsWith("file://")) {
       // Extract the local path from file:// URL
       isLocalRepo = true;
@@ -253,23 +280,28 @@ async function checkGitRepoHasNewCommits(
       isLocalRepo = true;
       localRepoPath = Path.resolve(gitUrl);
     }
-    
+
     if (isLocalRepo && localRepoPath) {
       // For local repos, use git rev-parse to get the current HEAD commit
       // This is more reliable than ls-remote for local repos
-      const output = execSync(`git rev-parse ${ref || "HEAD"}`, {
+      const safeRef = ref || "HEAD";
+      if (!isSafeGitToken(safeRef)) {
+        logger.debug(`refusing potentially unsafe git ref: ${safeRef}`);
+        return null;
+      }
+      const output = childProcess.execFileSync("git", ["rev-parse", safeRef], {
         cwd: localRepoPath,
         stdio: "pipe",
         encoding: "utf8",
         timeout: 10000 // 10 second timeout
       });
-      
+
       const latestCommit = output.trim();
       if (!latestCommit.match(/^[a-f0-9]{40}$/)) {
         logger.debug(`git rev-parse returned invalid commit hash: ${latestCommit}`);
         return null; // Can't determine
       }
-      
+
       return latestCommit !== cachedCommitHash;
     } else {
       // For remote repos, use git ls-remote
@@ -283,17 +315,22 @@ async function checkGitRepoHasNewCommits(
       } else {
         actualGitUrl = gitUrl;
       }
-      
+
       // Use git ls-remote to get the latest commit for the ref without cloning
-      const output = execSync(`git ls-remote ${actualGitUrl} ${ref || "HEAD"}`, {
+      const safeRef = ref || "HEAD";
+      if (!isSafeGitToken(safeRef) || actualGitUrl.startsWith("-")) {
+        logger.debug(`refusing potentially unsafe git url/ref: ${actualGitUrl}#${safeRef}`);
+        return null;
+      }
+      const output = childProcess.execFileSync("git", ["ls-remote", actualGitUrl, safeRef], {
         stdio: "pipe",
         encoding: "utf8",
         timeout: 10000 // 10 second timeout
       });
-      
+
       const match = output.match(/^([a-f0-9]{40})\s+/m);
       if (!match) return true; // Can't determine, assume new commits
-      
+
       const latestCommit = match[1];
       return latestCommit !== cachedCommitHash;
     }
@@ -305,6 +342,10 @@ async function checkGitRepoHasNewCommits(
 }
 
 class PkgSrcManager {
+  // exposed for tests and CJS-style consumers that read these off the class
+  static META_CACHE_STALE_TIME = META_CACHE_STALE_TIME;
+  static isPinnedGitCommit = isPinnedGitCommit;
+
   private _options: PkgSrcManagerOptions;
   private _meta: Record<string, Packument>;
   private _cacheDir: string;
@@ -599,17 +640,18 @@ class PkgSrcManager {
       logger.debug(`pacote.packument ${qItem.packumentUrl}`);
       const promise = pacote.packument(
         pkgName,
+        // pacote 21 / npm-registry-fetch 19 read camelCase options; the old
+        // kebab-case names were silently ignored. preferOnline forces a server
+        // revalidation (cache mode "no-cache") for this refresh path.
         this.getPacoteOpts({
-          "full-metadata": true,
-          "fetch-retries": 3,
-          "cache-policy": "ignore",
-          "cache-key": qItem.cacheKey,
+          fullMetadata: true,
+          fetchRetries: 3,
+          preferOnline: true,
           memoize: false
         })
       );
       return promise
         .then(x => {
-          this._metaStat.inTx--;
           // Handle case where pacote returns null/undefined for missing packages
           if (!x) {
             const msg = `pacote returned null/undefined for packument of ${pkgName}`;
@@ -638,6 +680,7 @@ class PkgSrcManager {
 
     return promise
       .then(x => {
+        this._metaStat.inTx--;
         const time = Date.now() - startTime;
         if (time > 20 * 1000) {
           logger.info(
@@ -654,10 +697,11 @@ class PkgSrcManager {
           return;
         }
         // Refresh cache timestamp after successful fetch
-        refreshCacheEntry(this._fyn._fynCacheDir, qItem.cacheKey).catch(() => {});
+        refreshCacheEntry(this._cacheDir, qItem.cacheKey).catch(() => {});
         qItem.defer.resolve(x);
       })
       .catch(err => {
+        this._metaStat.inTx--;
         qItem.defer.reject(err);
       });
   }
@@ -721,30 +765,10 @@ class PkgSrcManager {
       dirPacker = this._getPacoteDirPacker();
     }
 
-    // For git deps with branch/tag semvers (not commit hashes), check cache first
-    // to see if we can avoid cloning by checking for new commits with git ls-remote
+    // For git deps with branch/tag semvers, pacote handles clone vs cache; the
+    // actual commit-freshness check happens in _prepPkgDirForManifest after
+    // pacote resolves.
     const pacoteOpts: Record<string, unknown> = { dirPacker };
-    if (item.urlType!.startsWith("git") && item.semver && !item.semver.match(/^[a-f0-9]{40}$/)) {
-      // Try to find a cached version to get the commit hash
-      // We'll construct a potential cache key from previous resolutions
-      // This is a best-effort check - if we can't find cache, pacote will clone anyway
-      const potentialCacheKeys = [
-        // Try common cache key patterns based on semver
-        `fyn-tarball-for-git+https://github.com/${item.semver.replace(/^github:/, "").split("#")[0]}.git#`,
-        `fyn-tarball-for-git+ssh://git@github.com/${item.semver.replace(/^github:/, "").split("#")[0]}.git#`
-      ];
-
-      // Check if any cached entry exists and extract commit hash
-      for (const baseKey of potentialCacheKeys) {
-        try {
-          // List cache entries that start with this base key
-          // Note: This is approximate - we'd need to scan cache or maintain a mapping
-          // For now, we'll do the check in _prepPkgDirForManifest after pacote resolves
-        } catch (e) {
-          // Ignore - will check in _prepPkgDirForManifest
-        }
-      }
-    }
 
     return pacote
       .manifest(`${item.name}@${item.semver}`, this.getPacoteOpts(pacoteOpts))
@@ -783,30 +807,31 @@ class PkgSrcManager {
 
     if (tgzCacheInfo) {
       // Extract cached commit hash from the cached resolved URL
+      const cachedTarball = tgzCacheInfo.metadata?.dist?.tarball;
       const cachedResolved = tgzCacheInfo.metadata?._resolved ||
-                            (tgzCacheInfo.metadata?.dist?.tarball?.match(/MARK_URL_SPEC(.+)/)?.[1] ?
-                              JSON.parse(tgzCacheInfo.metadata.dist.tarball.match(/MARK_URL_SPEC(.+)/)[1])._resolved : null);
+                            (cachedTarball?.startsWith(MARK_URL_SPEC) ?
+                              JSON.parse(cachedTarball.slice(MARK_URL_SPEC.length))._resolved : null);
       const cachedCommitHash = cachedResolved?.match(/#([a-f0-9]{40})$/)?.[1];
 
       // Primary check: Use git ls-remote or git rev-parse to check for new commits (fast, no clone needed)
       // This works for branch/tag refs, but not for explicit commit hashes
-      if (!shouldRefresh && cachedCommitHash && item.semver && !item.semver.match(/^[a-f0-9]{40}$/)) {
+      if (!shouldRefresh && cachedCommitHash && item.semver && !isPinnedGitCommit(item.semver)) {
         // Extract git URL and ref from semver
         // semver format: "github:user/repo#branch" or "git+https://github.com/user/repo.git#branch" or "git+file:///path#branch"
         let gitUrl = item.semver;
         let ref = "HEAD";
-        
+
         if (gitUrl.includes("#")) {
           const parts = gitUrl.split("#");
           gitUrl = parts[0];
           ref = parts[1];
         }
-        
+
         // Strip git+ prefix if present (checkGitRepoHasNewCommits will handle file:// URLs)
         if (gitUrl.startsWith("git+")) {
           gitUrl = gitUrl.replace(/^git\+/, "");
         }
-        
+
         // Normalize git URL format for remote repos (but keep file:// URLs as-is)
         if (gitUrl.startsWith("file://")) {
           // Keep file:// URLs as-is - checkGitRepoHasNewCommits will handle them
@@ -815,25 +840,23 @@ class PkgSrcManager {
         } else if (!gitUrl.includes("://")) {
           gitUrl = `https://github.com/${gitUrl}.git`;
         }
-        
+
         const hasNewCommits = await checkGitRepoHasNewCommits(gitUrl, ref, cachedCommitHash);
         if (hasNewCommits === true) {
           shouldRefresh = true;
           logger.debug(
             `git cache for '${item.name}' has new commits (cached: ${cachedCommitHash.substring(0, 8)}, checking ${ref}), forcing refresh`
           );
-        } else {
+        } else if (tgzCacheInfo.refreshTime) {
           // No new commits OR ls-remote failed - check time-based staleness as fallback
-          if (tgzCacheInfo.refreshTime) {
-            const stale = Date.now() - tgzCacheInfo.refreshTime;
-            const staleByTime = stale >= META_CACHE_STALE_TIME;
-            if (staleByTime) {
-              shouldRefresh = true;
-              const reason = hasNewCommits === null ? "ls-remote failed" : "no new commits";
-              logger.debug(
-                `git cache for '${item.name}' (${reason}), cache is stale by time (${(stale / 1000 / 60 / 60).toFixed(1)}h old), forcing refresh`
-              );
-            }
+          const stale = Date.now() - tgzCacheInfo.refreshTime;
+          const staleByTime = stale >= META_CACHE_STALE_TIME;
+          if (staleByTime) {
+            shouldRefresh = true;
+            const reason = hasNewCommits === null ? "ls-remote failed" : "no new commits";
+            logger.debug(
+              `git cache for '${item.name}' (${reason}), cache is stale by time (${(stale / 1000 / 60 / 60).toFixed(1)}h old), forcing refresh`
+            );
           }
         }
       } else if (!shouldRefresh && tgzCacheInfo.refreshTime) {
@@ -879,7 +902,7 @@ class PkgSrcManager {
       cacheStream.on("integrity", i => (integrity = i.sha512[0].source));
       await missPipe(packStream, cacheStream);
       logger.debug("gitdep package", pkg.name, "cached with integrity", integrity);
-      
+
       // Update refresh time for the cache entry
       await refreshCacheEntry(this._cacheDir, tgzCacheKey);
     }
@@ -915,23 +938,102 @@ class PkgSrcManager {
     } as Packument;
   }
 
-  fetchMeta(item: FetchItem): Promise<Packument> {
+  fetchMeta(item: FetchItem, forceRefresh = false): Promise<Packument> {
     const pkgName = item.name;
     const pkgKey = `${pkgName}@${item.urlType ? item.urlType : "semver"}`;
 
-    if (this._meta[pkgKey]) {
-      return Promise.resolve(this._meta[pkgKey]);
-    }
+    if (!forceRefresh) {
+      if (this._meta[pkgKey]) {
+        return Promise.resolve(this._meta[pkgKey]);
+      }
 
-    const inflight = this._inflights.meta.get<Promise<Packument>>(pkgKey);
-    if (inflight) {
-      return inflight;
+      const inflight = this._inflights.meta.get<Promise<Packument>>(pkgKey);
+      if (inflight) {
+        return inflight;
+      }
     }
 
     const packumentUrl = this.makePackumentUrl(pkgName);
-    const cacheKey = `make-fetch-happen:request-cache:full:${packumentUrl}`;
+    const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
+    const legacyCacheKey = `make-fetch-happen:request-cache:full:${packumentUrl}`;
+    const cacheKeys = [cacheKey, legacyCacheKey];
+
+    let cacheMemoized = false;
+
+    const loadCachedPackument = async (key, memoize = true) => {
+      try {
+        const cached = await cacache.get(this._cacheDir, key, { memoize });
+        const info = await getCacheInfoWithRefreshTime(this._cacheDir, key);
+        return Object.assign(cached, {
+          refreshTime: info && info.refreshTime,
+          cacheKey: key
+        });
+      } catch (err) {
+        if (err.code === "ENOENT") {
+          return undefined;
+        }
+        throw err;
+      }
+    };
+
+    const loadBestCachedPackument = async (memoize = true) => {
+      const cachedEntries = (
+        await Promise.all(cacheKeys.map(key => loadCachedPackument(key, memoize)))
+      ).filter(Boolean);
+
+      if (cachedEntries.length === 0) {
+        return undefined;
+      }
+
+      return _.maxBy(cachedEntries, cached => cached.refreshTime || 0) || cachedEntries[0];
+    };
+
+    const loadPreparedUrlMeta = async () => {
+      const info = await getCacheInfoWithRefreshTime(
+        this._cacheDir,
+        `fyn-tarball-for-${item.semver}`
+      );
+      const cachedManifest = info && info.metadata;
+      if (!(cachedManifest && cachedManifest.version)) {
+        return undefined;
+      }
+
+      const tarball = JSON.stringify(
+        Object.assign(
+          _.pick(item, ["urlType", "semver"]),
+          _.pick(cachedManifest, ["_resolved", "_id"])
+        )
+      );
+      const manifest = Object.assign({}, cachedManifest, {
+        dist: {
+          integrity: info.integrity,
+          tarball: `${MARK_URL_SPEC}${tarball}`
+        }
+      });
+      return {
+        name: item.name,
+        versions: { [manifest.version]: manifest },
+        urlVersions: { [item.semver]: manifest }
+      };
+    };
+
+    const readMemoizedPackument = async () => {
+      const memoized = await loadBestCachedPackument(false);
+      if (!(memoized && memoized.data)) {
+        return undefined;
+      }
+      logger.debug(`using memoized packument cache for '${pkgName}'`);
+      cacheMemoized = true;
+      this._metaStat.wait--;
+      return JSON.parse(memoized.data.toString());
+    };
+
+    let fetchAttempted = false;
+    let foundCache;
+    let foundPackument;
 
     const queueMetaFetchRequest = (cached?: Packument): Packument | Promise<Packument> => {
+      fetchAttempted = true;
       const offline = this._fyn.remoteMetaDisabled;
 
       if (cached && this._fyn.forceCache) {
@@ -975,6 +1077,9 @@ class PkgSrcManager {
     // "make-fetch-happen:request-cache:https://registry.npmjs.org/electrode-static-paths"
     // "make-fetch-happen:request-cache:https://registry.npmjs.org/@octokit%2frest"
     //
+    // Older fyn versions used the non-standard "full:" prefix. Read both so we
+    // can consume existing cache entries after upgrading pacote/npm-registry-fetch.
+    //
 
     //
     // Much slower way to get cache with pacote
@@ -989,30 +1094,33 @@ class PkgSrcManager {
     //     })
     //   )
 
-    let foundCache: { data?: Buffer; refreshTime?: number } | undefined;
-    let cacheMemoized = false;
     const metaMemoizeUrl = this._fyn._options.metaMemoize;
 
-    const promise: Promise<Packument> = (item.urlType
-      ? // when the semver is a url then the meta is not from npm registry and
-        // we can't use the cache for registry
-        Promise.resolve()
-      : cacache.get(this._cacheDir, cacheKey, { memoize: true })
-          .then(async cached => {
-            // Add refreshTime from bucket mtime
-            if (cached) {
-              const info = await getCacheInfoWithRefreshTime(this._cacheDir, cacheKey);
-              if (info) {
-                cached.refreshTime = info.refreshTime;
-              }
-            }
-            return cached;
-          })
-    )
+    let cacheLookup;
+    if (item.urlType) {
+      // URL metadata doesn't use the registry cache, but offline mode can
+      // reconstruct it from fyn's prepared-tarball cache.
+      cacheLookup = this._fyn.remoteMetaDisabled
+        ? loadPreparedUrlMeta().then(preparedUrlMeta => ({ preparedUrlMeta }))
+        : Promise.resolve();
+    } else if (forceRefresh) {
+      // Skip local cacache + meta-mem so this queues a fresh registry fetch.
+      cacheLookup = Promise.resolve();
+    } else {
+      cacheLookup = loadBestCachedPackument(true);
+    }
+
+    const promise: Promise<Packument> = cacheLookup
       .then(cached => {
-        const packument = cached && cached.data && JSON.parse(cached.data);
+        if (cached && cached.preparedUrlMeta) {
+          cacheMemoized = true;
+          this._metaStat.wait--;
+          return cached.preparedUrlMeta;
+        }
         foundCache = cached;
-        
+        const packument = cached && cached.data && JSON.parse(cached.data);
+        foundPackument = packument;
+
         if (cached && cached.refreshTime) {
           const stale = Date.now() - cached.refreshTime;
           const since = (stale / 1000).toFixed(2);
@@ -1028,16 +1136,29 @@ class PkgSrcManager {
             return packument;
           }
         }
-        
+
         if (cached && metaMemoizeUrl) {
-          const encKey = encodeURIComponent(cacheKey);
-          return nodeFetch(`${metaMemoizeUrl}?key=${encKey}`).then(
-            res => {
+          const checkMemoizedCache = async () => {
+            for (const key of cacheKeys) {
+              const encKey = encodeURIComponent(key);
+              const res = await nodeFetch(`${metaMemoizeUrl}?key=${encKey}`);
               if (res.status === 200) {
-                logger.debug(`using memoized packument cache for '${pkgName}'`);
-                cacheMemoized = true;
-                this._metaStat.wait--;
-                return packument;
+                return true;
+              }
+            }
+            return false;
+          };
+
+          return checkMemoizedCache().then(
+            async hasMemoizedCache => {
+              if (hasMemoizedCache) {
+                const memoizedPackument = await readMemoizedPackument();
+                if (memoizedPackument) {
+                  return memoizedPackument;
+                }
+                logger.warn(
+                  `memoized packument cache for '${pkgName}' was signaled but cache entry was missing; refetching`
+                );
               }
               return queueMetaFetchRequest(packument);
             },
@@ -1048,10 +1169,19 @@ class PkgSrcManager {
         }
       })
       .catch(err => {
+        if (fetchAttempted) {
+          if (foundPackument) {
+            cacheMemoized = true;
+            logger.warn(
+              `failed to refresh packument for '${pkgName}', using stale cached metadata: ${err.message}`
+            );
+            return foundPackument;
+          }
+          throw err;
+        }
         if (foundCache) {
           const data = foundCache.data && foundCache.data.toString();
           logger.debug(`fail to process packument cache - ${err.message}; data ${data}`);
-          throw err;
         }
         return queueMetaFetchRequest();
       })
@@ -1068,9 +1198,14 @@ class PkgSrcManager {
         return meta;
       })
       .finally(() => {
-        this._inflights.meta.remove(pkgKey);
+        if (!forceRefresh) {
+          this._inflights.meta.remove(pkgKey);
+        }
       });
 
+    if (forceRefresh) {
+      return promise;
+    }
     return this._inflights.meta.add(pkgKey, promise);
   }
 
@@ -1139,7 +1274,7 @@ class PkgSrcManager {
 
     // Fallback for packages without tarball URL
     const opts = this.getPacoteOpts({
-      fullMeta: true,
+      fullMetadata: true,
       integrity,
       resolved: tarballUrl
     });
@@ -1301,7 +1436,7 @@ class PkgSrcManager {
 }
 
 export default PkgSrcManager;
-export { META_CACHE_STALE_TIME };
+export { META_CACHE_STALE_TIME, isPinnedGitCommit };
 export type {
   PkgSrcManagerOptions,
   FynInstance,

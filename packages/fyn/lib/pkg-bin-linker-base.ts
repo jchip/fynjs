@@ -65,8 +65,11 @@ export interface FynForBinLinker {
 
 /** Options for PkgBinLinker constructor */
 export interface PkgBinLinkerOptions {
-  outputDir: string;
-  fyn: FynForBinLinker;
+  /** dir under which the `.bin` dir lives; ignored when binDir is given */
+  outputDir?: string;
+  /** use this dir directly as the bin dir (e.g. global bin dir) */
+  binDir?: string;
+  fyn?: FynForBinLinker;
 }
 
 //
@@ -80,9 +83,46 @@ class PkgBinLinkerBase {
   protected _linked: Record<string, LinkedBin>;
 
   constructor(options: PkgBinLinkerOptions) {
-    this._binDir = Path.join(options.outputDir, ".bin");
-    this._fyn = options.fyn;
+    this._binDir = options.binDir || Path.join(options.outputDir as string, ".bin");
+    this._fyn = options.fyn as FynForBinLinker;
     this._linked = {};
+  }
+
+  async hasBinLink(sym: string): Promise<boolean> {
+    return Fs.exists(Path.join(this._binDir, sym));
+  }
+
+  async matchesBinPath(sym: string, target: string): Promise<boolean> {
+    const symlink = Path.join(this._binDir, sym);
+    const relTarget = Path.relative(this._binDir, target);
+    return this._isBinLinkTarget(symlink, relTarget);
+  }
+
+  async linkBinPath(
+    target: string,
+    sym: string,
+    options: { overwrite?: boolean } = {}
+  ): Promise<string> {
+    const relTarget = Path.relative(this._binDir, target);
+    const symlink = Path.join(this._binDir, sym);
+
+    await this._mkBinDir();
+
+    if (options.overwrite) {
+      await this._rmBinLink(symlink);
+    }
+
+    if (!(await this._ensureGoodLink(symlink, relTarget))) {
+      await this._generateBinLink(relTarget, symlink);
+    }
+
+    await this._chmod(target);
+
+    return relTarget;
+  }
+
+  async removeBinLink(sym: string): Promise<void> {
+    await this._rmBinLink(Path.join(this._binDir, sym));
   }
 
   async clearExtras(): Promise<void> {
@@ -280,6 +320,10 @@ class PkgBinLinkerBase {
   }
 
   // Override in subclasses
+  protected async _isBinLinkTarget(_symlink: string, _target: string): Promise<boolean> {
+    return false;
+  }
+
   protected async _ensureGoodLink(_symlink: string, _target: string): Promise<boolean> {
     return false;
   }

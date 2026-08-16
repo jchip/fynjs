@@ -1,6 +1,7 @@
 /* eslint-disable global-require, prefer-template */
 
 import Fs from "./util/file-ops";
+import Path from "path";
 import PkgBinLinkerBase, { type PkgBinLinkerOptions } from "./pkg-bin-linker-base";
 
 //
@@ -43,14 +44,18 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
   // Platform specific
   //
 
-  protected async _ensureGoodLink(symlink: string, target: string): Promise<boolean> {
+  protected async _isBinLinkTarget(symlink: string, target: string): Promise<boolean> {
     try {
       const existTarget = (await Fs.readFile(symlink)).toString();
-      if (existTarget.indexOf(target) >= 0) {
-        return true;
-      }
+      return existTarget.indexOf(target) >= 0;
     } catch {
-      //
+      return false;
+    }
+  }
+
+  protected async _ensureGoodLink(symlink: string, target: string): Promise<boolean> {
+    if (await this._isBinLinkTarget(symlink, target)) {
+      return true;
     }
 
     await this._rmBinLink(symlink);
@@ -66,6 +71,37 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
   protected async _rmBinLink(symlink: string): Promise<void> {
     await this._unlinkFile(symlink);
     await this._unlinkFile(symlink + ".cmd");
+  }
+
+  // Extract the {{TARGET}} path baked into a generated .cmd wrapper (the path
+  // after `%~dp0\`, ignoring the node.exe reference).
+  protected async _readBinLinkTarget(symlink: string): Promise<string | undefined> {
+    const content = (await Fs.readFile(symlink + ".cmd")).toString();
+    const matches = [...content.matchAll(/%~dp0[\\/]+([^"\r\n]+)/g)].map(m => m[1]);
+    return matches.find(m => m !== "node.exe");
+  }
+
+  //
+  // Platform specific: the "bin" is a pair of regular script files (cygwin +
+  // .cmd), not a symlink, so the base _cleanLink's Fs.access on the wrapper
+  // always succeeds and never cleans a stale bin. Instead, read the wrapper and
+  // remove it only if the target it points to no longer exists.
+  //
+  async _cleanLink(sym: string): Promise<boolean> {
+    const symlink = Path.join(this._binDir, sym);
+
+    try {
+      const target = await this._readBinLinkTarget(symlink);
+      if (target && (await Fs.exists(Path.join(this._binDir, target)))) {
+        return false;
+      }
+    } catch {
+      // unreadable / malformed wrapper -> treat as stale and remove
+    }
+
+    await this._rmBinLink(symlink);
+
+    return true;
   }
 
   protected async _readBinLinks(): Promise<string[]> {

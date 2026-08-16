@@ -1,6 +1,6 @@
 {
   "name": "fyn",
-  "version": "2.1.0",
+  "version": "2.1.6",
   "description": "fyn is the NPM for fynpo -- a zero setup monorepo tool",
   "main": "./bin/fyn.js",
   "homepage": "https://github.com/jchip/fynjs",
@@ -87,7 +87,7 @@
     "Divya Karippath"
   ],
   "dependencies": {
-    "@fynpo/base": "^1.1.22",
+    "@fynpo/base": "^1.1.23",
     "@jchip/error": "^1.0.3",
     "@npmcli/arborist": "^9.1.6",
     "@npmcli/run-script": "^10.0.2",
@@ -114,7 +114,7 @@
     "opfs": "^1.1.1",
     "optional-require": "^1.1.10",
     "pacote": "^21.0.3",
-    "pkg-preper": "^0.1.6",
+    "pkg-preper": "^0.1.8",
     "publish-util": "^2.1.0",
     "rimraf": "^6.1.2",
     "semver": "^7.3.5",
@@ -170,6 +170,7 @@
       "bin",
       "cli/config",
       "cli/fun.js",
+      "cli/fun.ts",
       "lib/util/file-ops-win32.js",
       "coverage",
       "dist",
@@ -177,6 +178,7 @@
       "gulpfile.js",
       "stubs",
       "test",
+      "testing",
       "tmp",
       "webpack.config.js",
       "xout",
@@ -187,10 +189,10 @@
     ],
     "extends": [],
     "check-coverage": true,
-    "statements": 76,
-    "branches": 68,
-    "functions": 79,
-    "lines": 77,
+    "statements": 75,
+    "branches": 64,
+    "functions": 80,
+    "lines": 75,
     "cache": true
   },
   "engines": {

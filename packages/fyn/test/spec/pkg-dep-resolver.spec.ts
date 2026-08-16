@@ -1,8 +1,9 @@
-import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import Fs from "fs";
 import Yaml from "js-yaml";
 import Path from "path";
 import Fyn from "../../lib/fyn";
+import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
 import { expect } from "chai";
 import _ from "lodash";
@@ -229,7 +230,101 @@ describe("pkg-dep-resolver", function() {
       });
   });
 
+  it("does not abort the install when a devOptDependencies meta fetch fails", { timeout: 10000 }, () => {
+    const fyn = new Fyn({
+      opts: {
+        registry: `http://localhost:${server.info.port}`,
+        pkgFile: false,
+        pkgData: {
+          name: "test",
+          version: "1.0.0",
+          dependencies: {
+            "mod-a": "^1.0.0"
+          },
+          devOptDependencies: {
+            "no-such-pkg-fyn-test": "^1.0.0"
+          }
+        },
+        fynDir,
+        cwd: fynDir,
+        ignoreDist: true
+      }
+    });
+    let error;
+    return fyn
+      .resolveDependencies()
+      .catch(err => (error = err))
+      .then(() => {
+        // a failing *optional* (devopt) dep must not reject the whole install
+        expect(error, error && error.message).to.not.exist;
+        // the required dependency still resolved
+        expect(fyn._data.pkgs["mod-a"]).to.exist;
+      });
+  });
+
   it("should resolve with the `latest` tag", () => {});
+
+  it("should refetch meta when cached meta has no satisfying version", { timeout: 10000 }, () => {
+    // Simulate the race where another fyn process has POSTed to meta-mem for
+    // a stale local cacache entry. The first fetchMeta returns a packument
+    // missing the version we need; the resolver must detect the miss and
+    // call fetchMeta again with forceRefresh=true to bypass the cache.
+    const realFetchMeta = PkgSrcManager.prototype.fetchMeta;
+    const stub = vi
+      .spyOn(PkgSrcManager.prototype, "fetchMeta")
+      .mockImplementation(function(this: any, item: any, forceRefresh?: any) {
+        if (item.name === "mod-a" && !forceRefresh) {
+          // Stale packument: missing the 1.1.x versions the resolver needs.
+          return Promise.resolve({
+            name: "mod-a",
+            "dist-tags": { latest: "1.0.3" },
+            versions: {
+              "0.1.0": {
+                name: "mod-a",
+                version: "0.1.0",
+                dist: { shasum: "x", tarball: "http://example/mod-a-0.1.0.tgz" }
+              },
+              "1.0.3": {
+                name: "mod-a",
+                version: "1.0.3",
+                dist: { shasum: "x", tarball: "http://example/mod-a-1.0.3.tgz" }
+              }
+            }
+          });
+        }
+        return realFetchMeta.call(this, item, forceRefresh);
+      });
+
+    const fyn = new Fyn({
+      opts: {
+        registry: `http://localhost:${server.info.port}`,
+        pkgFile: false,
+        pkgData: {
+          name: "test",
+          version: "1.0.0",
+          dependencies: {
+            "mod-a": "^1.1.0"
+          }
+        },
+        fynDir,
+        cwd: fynDir,
+        ignoreDist: true
+      }
+    });
+
+    return fyn
+      .resolveDependencies()
+      .then(() => {
+        const calls = stub.mock.calls.filter(args => args[0] && args[0].name === "mod-a");
+        expect(calls.length).to.be.at.least(2);
+        const refreshed = calls.filter(args => args[1] === true);
+        expect(refreshed.length, "expected a fetchMeta refetch with forceRefresh=true").to.be.at.least(1);
+        const resolved = Object.keys((fyn._data.pkgs["mod-a"] || {}).versions || {});
+        const found11x = resolved.some(v => v.startsWith("1.1"));
+        expect(found11x, `expected a 1.1.x version, got ${resolved.join(",")}`).to.equal(true);
+      })
+      .finally(() => stub.mockRestore());
+  });
 
   describe("overrides", function() {
     it("should apply simple package override", { timeout: 10000 }, async () => {

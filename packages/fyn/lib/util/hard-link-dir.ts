@@ -54,6 +54,7 @@ async function linkFile(srcFp, destFp, srcStat) {
 
 /**
  * Copy a file
+ *
  * @param {*} srcFp
  * @param {*} destFp
  * @returns
@@ -126,7 +127,7 @@ async function generatePackTree(path, _logger = logger) {
     path,
     includeSymlinks: fynTil.strToBool(process.env.FYN_LOCAL_PACK_SYMLINKS)
   };
-  
+
   // Check if npm-packlist expects a tree (v10+) by checking function signature
   // If it's v10+, the first arg must be a tree object, not options
   try {
@@ -137,7 +138,7 @@ async function generatePackTree(path, _logger = logger) {
     files = await npmPacklist(tree, { includeSymlinks: options.includeSymlinks });
   } catch (err) {
     // Fall back to v1.x API if v10+ fails
-    if (err.message && err.message.includes('callback is not a function')) {
+    if (err.message && err.message.includes("callback is not a function")) {
       // v1.x API: npmPacklist(options)
       files = await npmPacklist(options);
     } else {
@@ -343,16 +344,18 @@ async function linkPackTree({ tree, src, dest, sym1, sourceMaps }) {
   // create hardlinks to files (or symlinks if source is a symlink)
   //
   for (const file of files) {
-    // In non-CI mode, skip linking source map file by matching for extensions like .js.map
-    // because we rewrite their sources and copy them already
-    if (!ci.isCI && file.match(/.+\..+\.map$/)) {
+    // In non-CI mode, skip linking .js/.mjs source maps here because handleSourceMap
+    // rewrites+copies the ones referenced by their sibling script. Other maps
+    // (.d.ts.map, .css.map, ...) are NOT handled there, so they must be linked
+    // normally rather than dropped.
+    if (!ci.isCI && file.match(/\.(js|mjs)\.map$/)) {
       continue;
     }
 
     destFiles[file] = true;
     const srcFp = Path.join(src, file);
     const destFp = Path.join(dest, file);
-    
+
     // Check if source is a symlink - if so, preserve it as a symlink
     const srcLstat = await xaa.try(() => Fs.lstat(srcFp));
     if (srcLstat && srcLstat.isSymbolicLink()) {

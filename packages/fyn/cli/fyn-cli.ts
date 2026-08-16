@@ -35,6 +35,8 @@ import {
   spinner
 } from "../lib/log-items";
 
+import { syncLocalExports, localExportsScanIgnores } from "../lib/local-exports";
+
 /** Fyn CLI options */
 interface FynCliOpts {
   cwd: string;
@@ -474,13 +476,21 @@ class FynCli {
   async syncLocalLinks(): Promise<void> {
     await this.fyn._initializePkg();
 
-    const { localPkgLinks } = this.fyn._installConfig;
+    const { localPkgLinks, localExports } = this.fyn._installConfig;
+    let refreshed = false;
     if (!_.isEmpty(localPkgLinks)) {
       for (const vdir in localPkgLinks) {
         const tgtDir = Path.join(this.fyn._cwd, vdir);
         const srcDir = Path.join(this.fyn._cwd, localPkgLinks[vdir].srcDir);
         await hardLinkDir.link(srcDir, tgtDir, { sourceMaps: localPkgLinks[vdir].sourceMaps });
       }
+      refreshed = true;
+    }
+    if (localExports) {
+      await syncLocalExports({ cwd: this.fyn._cwd, manifest: localExports });
+      refreshed = true;
+    }
+    if (refreshed) {
       logger.info(`refreshed linked files for local packages`);
     } else {
       logger.info(`There are no local packages`);
@@ -510,7 +520,9 @@ class FynCli {
           !this.fyn._options.forceInstall &&
           this.fyn._installConfig.time
         ) {
-          const stats = await scanFileStats(this.fyn.cwd);
+          const stats = await scanFileStats(this.fyn.cwd, {
+            moreIgnores: localExportsScanIgnores(this.fyn._pkg)
+          });
           const { latestMtimeMs } = stats;
           logger.debug(
             "time check from install config - last install time",
@@ -770,15 +782,12 @@ class FynCli {
 
     const resolvedScript = script || argv.args?.script;
     if (argv.opts?.list || !resolvedScript) {
-      try {
-        await this.fyn.loadPkg();
-        if (!argv.opts?.list) {
-          console.log(`Lifecycle scripts included in ${(this.fyn._pkg as PackageJson).name}:\n`);
-        }
-        console.log(Object.keys(_.get(this.fyn._pkg, "scripts", {})).join("\n"));
-      } finally {
-        fyntil.exit(0);
+      await this.fyn.loadPkg();
+      if (!argv.opts?.list) {
+        console.log(`Lifecycle scripts included in ${(this.fyn._pkg as PackageJson).name}:\n`);
       }
+      console.log(Object.keys(_.get(this.fyn._pkg, "scripts", {})).join("\n"));
+      fyntil.exit(0);
     }
 
     await this.fyn.loadPkg();

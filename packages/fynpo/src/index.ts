@@ -53,11 +53,42 @@ const detectInternalBug = (err: any): { isInternal: boolean; hint: string } => {
   return { isInternal: false, hint: "" };
 };
 
+/**
+ * Discovery is implicit when fynpo.json declares no `packages` patterns. Say so,
+ * because the two discovery paths then disagree: the dep graph searches every
+ * directory for a package.json, while readFynpoPackages falls back to
+ * `packages/*` and finds nothing in a repo laid out any other way.
+ */
+const noticeImplicitDiscovery = (autoSearched: boolean, found: number) => {
+  if (!autoSearched) {
+    return;
+  }
+  if (found > 0) {
+    logger.info(
+      `No "packages" patterns in fynpo.json - searched every directory for package.json and found ${found}.`,
+      `Declare "packages" to make discovery explicit, e.g. "packages": ["packages/*"].`
+    );
+  } else {
+    logger.warn(
+      `No "packages" patterns in fynpo.json and no package.json found by searching.`,
+      `Declare "packages" in fynpo.json to say where your packages live.`
+    );
+  }
+};
+
 const readPackages = async (opts: any, cmdName: string = "") => {
-  const result = await makePkgDeps(
-    await readFynpoPackages(_.pick(opts, ["patterns", "cwd"])),
-    opts
-  );
+  const packages = await readFynpoPackages(_.pick(opts, ["patterns", "cwd"]));
+
+  if (_.isEmpty(packages)) {
+    // this path does NOT auto-search - it defaults to `packages/*`, so an empty
+    // result usually means the repo keeps its packages somewhere else
+    logger.warn(
+      `No packages found under ${JSON.stringify(opts.patterns || ["packages/*"])}.`,
+      `If your packages live elsewhere, declare them in fynpo.json, e.g. "packages": ["*"].`
+    );
+  }
+
+  const result = await makePkgDeps(packages, opts);
   if (!_.isEmpty(result.warnings)) {
     result.warnings.forEach((w) => logger.warn(w));
   }
@@ -107,6 +138,7 @@ const makeOpts = async (cmd, _parsed) => {
 const makeDepGraph = async (opts) => {
   const graph = new FynpoDepGraph(opts);
   await graph.resolve();
+  noticeImplicitDiscovery(graph.autoSearched, Object.keys(graph.packages.byName || {}).length);
   const fynpoData = await readFynpoData(opts.cwd);
   if (!_.isEmpty(fynpoData.indirects)) {
     const noFynLocal = opts.noFynLocal || [];
@@ -201,10 +233,12 @@ const execLocal = async (cmd, parsed) => {
 };
 
 const execPrepare = async (cmd, _parsed) => {
-  // In nix-clap v2, merge root command opts with subcommand opts
-  const rootOpts = cmd.rootCmd?.jsonMeta?.opts || {};
-  const cmdOpts = cmd.jsonMeta?.opts || {};
-  const opts = Object.assign({ cwd: process.cwd() }, rootOpts, cmdOpts);
+  // use makeOpts like every other command, so the configured `packages` patterns
+  // reach discovery. Building opts by hand here left readFynpoPackages on its
+  // default ["packages/*"], so any repo laid out differently found no packages -
+  // and prepare then matched the changelog against an empty list and reported
+  // "No versions found in CHANGELOG.md".
+  const opts = await makeOpts(cmd, _parsed);
 
   // prepare only applies at top level, so switch CWD there
   process.chdir(opts.cwd);
@@ -243,6 +277,19 @@ const execVersion = async (cmd, _parsed) => {
   return new Version(opts, graph).exec();
 };
 
+/**
+ * Resolve the exit code for `fynpo run`. Run.exec() signals a failing package
+ * script by setting process.exitCode (it does not throw), so honor it: a caught
+ * exception's code wins, then the code Run set, else 0. A hardcoded 0 here would
+ * mask failing package scripts (exit 0 on failure).
+ *
+ * @param thrownCode 1 when execRunScript caught an exception, else 0
+ * @param procExitCode process.exitCode as (optionally) set by Run.exec()
+ * @returns the exit code to pass to process.exit
+ */
+export const resolveRunExitCode = (thrownCode: number, procExitCode?: number): number =>
+  thrownCode || procExitCode || 0;
+
 const execRunScript = async (cmd, _parsed) => {
   const opts = await makeOpts(cmd, _parsed);
   const graph = await makeDepGraph(opts);
@@ -254,7 +301,10 @@ const execRunScript = async (cmd, _parsed) => {
   } catch (err) {
     exitCode = 1;
   } finally {
-    process.exit(exitCode);
+    // Run.exec() signals script failure via process.exitCode (it does not
+    // throw), so honor it here - otherwise a hardcoded process.exit(0) would
+    // mask failing package scripts.
+    process.exit(resolveRunExitCode(exitCode, process.exitCode));
   }
 
   return undefined;

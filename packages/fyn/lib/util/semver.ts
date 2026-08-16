@@ -57,15 +57,21 @@ export function simpleCompare(a: string, b: string): number {
   }
 
   if (partsA[1]) {
-    // both has parts after -
+    // both are prereleases of the same numeric core
     if (partsB[1]) {
+      // order per semver (descending); fall back to string compare for
+      // anything semver can't parse
+      if (Semver.valid(a) && Semver.valid(b)) {
+        return Semver.rcompare(a, b);
+      }
       return partsA[1] > partsB[1] ? -1 : 1;
     }
-    // only A has parts after -
-    return -1;
-  } else if (partsB[1]) {
-    // only B has parts after -
+    // A is a prerelease of the same core as release B => A is lower (older),
+    // so in descending order A sorts after B
     return 1;
+  } else if (partsB[1]) {
+    // B is a prerelease of the same core as release A => A is newer
+    return -1;
   } else {
     return 0; // numerical compare was the same
   }

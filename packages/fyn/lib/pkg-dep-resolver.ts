@@ -13,6 +13,7 @@ import logFormat from "./util/log-format";
 import { LONG_WAIT_META } from "./log-items";
 import fyntil from "./util/fyntil";
 import { getDepSection, makeDepStep } from "@fynpo/base";
+import { violatesRegistryPolicy } from "./util/registry-dep-policy";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
 import Promise from "aveazul";
@@ -633,6 +634,36 @@ class PkgDepResolver {
   }
 
   /**
+   * Enforce the `fyn.enforceRegistryDeps` policy on a transitive dep item.
+   * Throws (aborting the install) when the item is a non-registry source or has
+   * an unparseable semver.
+   *
+   * @param {object} item - the (transitive) dep item being added
+   * @param {object} parent - the dep item that requires `item`
+   * @returns {void}
+   */
+  _enforceRegistryDep(item, parent) {
+    const violation = violatesRegistryPolicy(item);
+    if (!violation) {
+      return;
+    }
+
+    const depId = `${item.name}@${item.semver}`;
+    let reason = `has an invalid/unparseable version "${violation.semver}"`;
+    if (violation.kind === "url") {
+      reason = `is from a non-registry source (${violation.urlType})`;
+    } else if (violation.kind === "local") {
+      reason = `is a local dependency declared below a non-registry source (${violation.urlType})`;
+    }
+
+    throw new Error(
+      `fyn.enforceRegistryDeps: transitive dependency "${depId}" required by "${parent.id}" ${reason}. ` +
+        `Only the top-level package.json may use git/github/URL dependencies - ` +
+        `transitive dependencies must come from a registry.`
+    );
+  }
+
+  /**
    * create the dep relation items for a package
    *
    * @param pkg - the package
@@ -675,6 +706,14 @@ class PkgDepResolver {
             deepResolve
           };
           const newItem = new DepItem(opt, depItem);
+
+          // Security (fyn.enforceRegistryDeps): transitive deps (those whose
+          // parent `depItem` is not the top-level package, depth >= 1) must
+          // come from a registry. Reject git/github/url sources and unparseable
+          // semver. The top-level package.json is unrestricted.
+          if (this._fyn.enforceRegistryDeps && depItem.depth >= 1) {
+            this._enforceRegistryDep(newItem, depItem);
+          }
 
           if (noPrefetch !== true) this.prefetchMeta(newItem);
           items.push(newItem);
@@ -878,6 +917,15 @@ class PkgDepResolver {
     item.resolve(resolved, meta);
 
     const metaJson = meta.versions[resolved];
+    const localFromMeta = meta.local || metaJson.local;
+    if (localFromMeta) {
+      if (!item.localType) {
+        item.localType = localFromMeta;
+      }
+      if (this._fyn.enforceRegistryDeps && item.parent.depth >= 1) {
+        this._enforceRegistryDep(item, item.parent);
+      }
+    }
 
     const OPT_FAILED_PLATFORM = 3;
     const platformCheck = (): string | true => {
@@ -994,11 +1042,7 @@ class PkgDepResolver {
       pkgV.json = { os: metaJson.os, cpu: metaJson.cpu } as PackageVersionMeta;
     }
 
-    const localFromMeta = meta.local || metaJson.local;
     if (localFromMeta) {
-      if (!item.localType) {
-        item.localType = localFromMeta;
-      }
       pkgV.local = item.localType;
       item.fullPath = pkgV.dir = pkgV.dist.fullPath;
       pkgV.str = meta.jsonStr;
@@ -1719,11 +1763,38 @@ ${item.depPath.join(" > ")}`
               throw new Error(failMetaMsg(item.name));
             }
             const updated = this._fyn.depLocker.update(item, meta);
-            return this._resolveWithMeta({ item, meta: updated, force: true, noLocal: true });
+            // First try without force: the meta may be a stale local cacache
+            // packument (e.g. surfaced via a parallel install's meta-mem signal)
+            // that doesn't contain a version satisfying item.semver. If so,
+            // bypass the cache and re-fetch directly from the registry before
+            // giving up.
+            const resolved = this._resolveWithMeta({ item, meta: updated, force: false, noLocal: true });
+            if (resolved) {
+              return resolved;
+            }
+            logger.debug(
+              `cached meta for ${item.name} has no version satisfying ${item.semver}` +
+                `; refetching from registry`
+            );
+            return this._pkgSrcMgr.fetchMeta(item, true).then(freshMeta => {
+              if (!freshMeta) {
+                throw new Error(failMetaMsg(item.name));
+              }
+              const freshUpdated = this._fyn.depLocker.update(item, freshMeta);
+              return this._resolveWithMeta({
+                item,
+                meta: freshUpdated,
+                force: true,
+                noLocal: true
+              });
+            });
           })
           .catch((err: Error) => {
-            // item is not optional => fail
-            if (item.dsrc !== "opt") {
+            // item is not optional => fail. optional sections use dsrc that
+            // *includes* "opt" (e.g. "opt", "devopt"), matching the checks
+            // elsewhere in this file — testing `!== "opt"` wrongly treated
+            // devOptDependencies as required and hard-aborted the install.
+            if (!item.dsrc || !item.dsrc.includes("opt")) {
               if (err.message.includes("Unable to retrieve meta")) {
                 throw err;
               } else {

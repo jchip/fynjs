@@ -5,6 +5,7 @@ import Chalk from "chalk";
 import assert from "assert";
 import semver from "semver";
 import { logger } from "../logger";
+import { makePublishFilter } from "../utils";
 
 const checkNupdateTag = (pkg, newV, opts) => {
   const { pkgJson } = pkg;
@@ -96,18 +97,28 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
     return undefined;
   }
 
-  const data = _.get(collated, "opts.data", { packages: {} });
+  // The readPackages-shaped package objects (pkgJson/pkgDir/path/version) live
+  // on the dep graph carried through the collate pipeline. `collated.opts.data`
+  // was never populated, which previously left this a no-op (no version bumped).
+  const graph = _.get(collated, "opts.graph");
+  const cwd = _.get(collated, "opts.cwd", process.cwd());
 
   const packages = [];
+  const updated = [];
 
-  _.each(data.packages, (pkg, name) => {
-    if (!versions.hasOwnProperty(name)) return;
+  const publishFilter = makePublishFilter(_.get(collated, "opts.fynpoRc"));
 
-    const newV = versions[name];
-    if (newV === pkg.version) return;
+  _.each(versions, (newV, name) => {
+    const pkg = graph && graph.getPackageByName(name);
+    if (!pkg || newV === pkg.version) return;
 
     if (pkg.private === true) {
       logger.info("skipping private package", pkg.name);
+      return;
+    }
+
+    if (!publishFilter(pkg)) {
+      logger.info("skipping package excluded from publishing", pkg.name);
       return;
     }
 
@@ -117,11 +128,18 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
       updateDep(pkg.pkgJson, name2, ver);
     });
 
-    packages.push(Path.join("packages", pkg.pkgDir, "package.json"));
+    updated.push(pkg);
+    // must match where the file is actually written below - a monorepo whose
+    // packages don't live under `packages/` would otherwise stage the wrong path
+    packages.push(Path.join(pkg.path, "package.json"));
   });
+
   // all updated, write to disk
-  _.each(data.packages, (pkg) => {
-    Fs.writeFileSync(pkg.pkgFile, `${JSON.stringify(pkg.pkgJson, null, 2)}\n`);
+  updated.forEach((pkg) => {
+    Fs.writeFileSync(
+      Path.join(cwd, pkg.path, "package.json"),
+      `${JSON.stringify(pkg.pkgJson, null, 2)}\n`
+    );
   });
 
   return Promise.resolve({ packages, tags });

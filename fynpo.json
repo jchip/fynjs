@@ -20,7 +20,9 @@
       }
     }
   },
-  "ignore": ["packages/pacote-jchip"],
+  "ignore": [
+    "packages/pacote-jchip"
+  ],
   "caching": {
     "enable": false,
     "server": "http://localhost:8080/upload",
@@ -33,14 +35,25 @@
   "packageCache": {
     "default": {
       "input": {
-        "npmScripts": ["prepare", "prepublish", "build:release", "build"],
-        "include": ["**/*"],
+        "npmScripts": [
+          "prepare",
+          "prepublish",
+          "build:release",
+          "build"
+        ],
+        "include": [
+          "**/*"
+        ],
         "exclude": [
           "**/?(node_modules|.vscode|.DS_Store|coverage|.nyc_output|.fynpo|.git|.github|.gitignore|docs|docusaurus|packages|tmp|.etmp|samples|dist|dist-*|build)",
           "**/*.?(log|md)"
         ],
-        "includeEnv": ["NODE_ENV"],
-        "includeVersions": ["node"]
+        "includeEnv": [
+          "NODE_ENV"
+        ],
+        "includeVersions": [
+          "node"
+        ]
       },
       "output": {
         "include": "",
@@ -55,20 +68,38 @@
   "lifecycleCache": {
     "default": {
       "input": {
-        "npmScripts": ["test", "coverage", "ci:check"],
-        "include": ["**/*"],
+        "npmScripts": [
+          "test",
+          "coverage",
+          "ci:check"
+        ],
+        "include": [
+          "**/*"
+        ],
         "exclude": [
           "**/?(node_modules|.vscode|.DS_Store|coverage|.nyc_output|.fynpo|.git|.github|.gitignore|docs|docusaurus|packages|tmp|.etmp|samples|dist|dist-*|build)",
           "**/*.?(log|md)",
           "**/.fynpo-data.json"
         ],
-        "includeEnv": ["NODE_ENV"],
-        "includeVersions": ["node"]
+        "includeEnv": [
+          "NODE_ENV"
+        ],
+        "includeVersions": [
+          "node"
+        ]
       },
       "output": {
-        "include": ["coverage"],
+        "include": [
+          "coverage"
+        ],
         "exclude": []
       }
     }
-  }
+  },
+  "versionLocks": [
+    [
+      "fynpo",
+      "fyn"
+    ]
+  ]
 }
