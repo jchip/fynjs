@@ -1,6 +1,7 @@
 {
   "name": "pkg-preper",
   "version": "0.1.8",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/pkg-preper",
   "description": "Package Preparer",
   "type": "module",
   "types": "dist-cjs/index.d.ts",
@@ -8,8 +9,14 @@
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
-      "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "import": {
+        "types": "./dist-esm/index.d.ts",
+        "default": "./dist-esm/index.js"
+      },
+      "require": {
+        "types": "./dist-cjs/index.d.ts",
+        "default": "./dist-cjs/index.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -35,7 +42,8 @@
   "author": "Joel Chen <joel123@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/pkg-preper.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/pkg-preper"
   },
   "license": "Artistic-2.0",
   "dependencies": {

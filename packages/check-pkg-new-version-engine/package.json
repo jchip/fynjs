@@ -39,7 +39,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/check-pkg-new-version-engine.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/check-pkg-new-version-engine"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",

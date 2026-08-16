@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import Path from "path";
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 import { Bootstrap } from "./bootstrap";
 import { Prepare } from "./prepare";
 import Changelog from "./update-changelog";

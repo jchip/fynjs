@@ -268,6 +268,7 @@ class LifecycleScripts {
                 !trimmed.includes("/fyn/lib/") &&
                 !trimmed.includes("/fyn/cli/") &&
                 !trimmed.includes("/nix-clap/") &&
+                !trimmed.includes("/cli-args/") &&
                 !trimmed.includes("/xsh/") &&
                 !trimmed.includes("node:internal") &&
                 usefulStackLines.length < 5) {

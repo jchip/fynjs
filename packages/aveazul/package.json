@@ -78,7 +78,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jchip/aveazul.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/aveazul"
   },
   "dependencies": {
     "@jchip/error": "^1.0.3",

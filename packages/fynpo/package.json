@@ -26,8 +26,8 @@
     "build"
   ],
   "files": [
+    "bin",
     "dist",
-    "lib",
     "templates"
   ],
   "author": "Walmart GTP.js Team and Contributors",
@@ -93,7 +93,7 @@
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
     "mkdirp": "^1.0.4",
-    "nix-clap": "^2.4.5",
+    "@fynjs/cli-args": "^2.4.5",
     "npm-packlist": "jchip/npm-packlist#v1",
     "optional-require": "^1.1.10",
     "prettier": "2.4.1",
@@ -118,7 +118,7 @@
     "@babel/preset-typescript": "^7.16.0",
     "@types/node": "^16.9.6",
     "babel-loader": "^8.0.4",
-    "publish-util": "^2.0.0",
+    "publish-util": "^2.1.0",
     "source-map-support": "^0.5.19",
     "tsx": "^4.20.6",
     "typedoc": "^0.28.14",
@@ -127,6 +127,9 @@
     "webpack": "^5.64.4",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^4.9.1"
+  },
+  "engines": {
+    "node": "^20.17.0 || >=22.9.0"
   },
   "prettier": {
     "printWidth": 100

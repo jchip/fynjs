@@ -26,7 +26,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/string-array.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/string-array"
   },
   "keywords": [
     "string",

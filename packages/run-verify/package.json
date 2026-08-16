@@ -1,6 +1,7 @@
 {
   "name": "run-verify",
   "version": "1.2.7",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/run-verify",
   "description": "Proper test verifications",
   "type": "module",
   "types": "dist-cjs/index.d.ts",
@@ -8,8 +9,14 @@
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
-      "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "import": {
+        "types": "./dist-esm/index.d.ts",
+        "default": "./dist-esm/index.js"
+      },
+      "require": {
+        "types": "./dist-cjs/index.d.ts",
+        "default": "./dist-cjs/index.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -39,7 +46,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jchip/run-verify.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/run-verify"
   },
   "files": [
     "dist-cjs",

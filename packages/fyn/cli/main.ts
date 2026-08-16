@@ -11,8 +11,8 @@ import {
   type NixClapConfig,
   type OptionSpec,
   type CommandMeta
-} from "nix-clap";
-import type { CommandNode } from "nix-clap/command-node";
+} from "@fynjs/cli-args";
+import type { CommandNode } from "@fynjs/cli-args";
 import myPkg from "./mypkg";
 import loadRc from "./load-rc";
 import defaultRc from "./default-rc";

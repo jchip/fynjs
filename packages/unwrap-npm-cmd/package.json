@@ -44,7 +44,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/unwrap-npm-cmd.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/unwrap-npm-cmd"
   },
   "dependencies": {
     "tslib": "^2.6.2",

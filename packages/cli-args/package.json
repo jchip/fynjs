@@ -1,6 +1,7 @@
 {
   "name": "@fynjs/cli-args",
   "version": "2.4.5",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/cli-args",
   "description": "Simple, lightweight, flexible, and comprehensive Command Line Argument Parsing for node.js",
   "engines": {
     "node": ">=20"
@@ -11,8 +12,14 @@
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
-      "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "import": {
+        "types": "./dist-esm/index.d.ts",
+        "default": "./dist-esm/index.js"
+      },
+      "require": {
+        "types": "./dist-cjs/index.d.ts",
+        "default": "./dist-cjs/index.cjs"
+      }
     },
     "./package.json": "./package.json"
   },

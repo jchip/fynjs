@@ -1,6 +1,7 @@
 {
   "name": "publish-util",
   "version": "2.1.0",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/publish-util",
   "description": "Some util to clean up package.json for npm publish",
   "type": "module",
   "types": "dist-cjs/index.d.ts",
@@ -8,8 +9,14 @@
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
-      "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "import": {
+        "types": "./dist-esm/index.d.ts",
+        "default": "./dist-esm/index.js"
+      },
+      "require": {
+        "types": "./dist-cjs/index.d.ts",
+        "default": "./dist-cjs/index.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -27,7 +34,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/publish-util.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/publish-util"
   },
   "bin": {
     "publish-util-prepublishonly": "bin/publish-util-prepublishonly.js",

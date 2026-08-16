@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock nix-clap module
-vi.mock("nix-clap", () => {
+vi.mock("@fynjs/cli-args", () => {
   const mockNixClap = vi.fn().mockImplementation(function(config) {
     this.version = vi.fn();
     this.init2 = vi.fn();
@@ -14,7 +14,7 @@ vi.mock("nix-clap", () => {
 });
 
 import { fynpoMain, resolveRunExitCode } from "../src/index";
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 describe("fynpo CLI", () => {
   let originalExit: typeof process.exit;

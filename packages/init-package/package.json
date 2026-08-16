@@ -8,15 +8,21 @@
   "module": "dist-esm/index.js",
   "exports": {
     ".": {
-      "import": "./dist-esm/index.js",
-      "require": "./dist-cjs/index.cjs"
+      "import": {
+        "types": "./dist-esm/index.d.ts",
+        "default": "./dist-esm/index.js"
+      },
+      "require": {
+        "types": "./dist-cjs/index.d.ts",
+        "default": "./dist-cjs/index.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
   "engines": {
     "node": ">=20"
   },
-  "homepage": "",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/init-package",
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
@@ -32,7 +38,8 @@
   "keywords": [],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/init-package"
   },
   "dependencies": {
     "lodash": "^4.17.21",

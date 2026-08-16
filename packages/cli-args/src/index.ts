@@ -7,3 +7,4 @@ export type { OptionSpec } from "./option-base.ts";
 export type { ParseResult } from "./nix-clap.ts";
 export type { NixClapConfig } from "./nix-clap.ts";
 export type { CommandExecFunc } from "./command-base.ts";
+export type { CommandNode } from "./command-node.ts";

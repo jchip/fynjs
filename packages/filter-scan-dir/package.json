@@ -41,7 +41,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jchip/filter-scan-dir.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/filter-scan-dir"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.com/"

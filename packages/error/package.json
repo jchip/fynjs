@@ -60,7 +60,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/error"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/error"
   },
   "prettier": {
     "printWidth": 100
