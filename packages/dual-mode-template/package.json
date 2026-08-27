@@ -4,7 +4,7 @@
   "private": true,
   "description": "Template for dual-mode ESM/CJS packages",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.0.0"
   },
   "type": "module",
   "types": "dist-cjs/index.d.ts",

@@ -798,7 +798,7 @@ npm install nix-clap
 
 **Requirements:**
 
-- Node.js >= 20
+- Node.js >= 22
 - ESM or CommonJS (both supported)
 
 # Interface

@@ -20,7 +20,7 @@ npm install xflight
 
 ## Requirements
 
-This package requires **Node.js >= 20**.
+This package requires **Node.js >= 22**.
 
 ## Usage
 

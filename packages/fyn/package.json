@@ -195,7 +195,7 @@
     "cache": true
   },
   "engines": {
-    "node": "^20.17.0 || >=22.9.0"
+    "node": ">=22.0.0"
   },
   "opfs": {
     "bluebird": true

@@ -5,7 +5,7 @@
   "preferGlobal": true,
   "main": "index.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.0.0"
   },
   "homepage": "https://github.com/jchip/fynjs",
   "bin": {

@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/xrun.d.ts",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "pretest": "echo hello",
