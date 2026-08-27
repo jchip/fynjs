@@ -4,7 +4,7 @@
   "description": "Wrapper for jchip/pacote fork for comparison testing",
   "main": "index.js",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "private": true,
   "dependencies": {

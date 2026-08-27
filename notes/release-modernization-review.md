@@ -111,7 +111,7 @@ Fix `packages/dual-mode-template` first — it is the pattern all 18 copy, and t
   },
   "files": ["dist-cjs", "dist-esm", "LICENSE"],
   "sideEffects": false,
-  "engines": { "node": ">=22.0.0" },
+  "engines": { "node": ">=22.12.0" },
   "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/", "provenance": true }
 }
 ```
@@ -127,15 +127,29 @@ with `moduleResolution: "NodeNext"`, no `.tsbuildinfo`/orphan-map leakage, and `
 5. Add `release.yml` with OIDC trusted publishing + provenance; refresh `ci.yml` actions and node matrix (20, 22, 24).
 6. Metadata sweep (§7).
 
-## 10. Decision log — Node floor (2026-08-27, FJM-58)
+## 10. Decision log — Node floor (2026-08-27)
 
-**Minimum Node is now `>=22.0.0`, uniform across all 25 packages** (private ones included). Folded into the next release; no dedicated major or minor bump.
+**Minimum Node is `>=22.12.0`, uniform across all 25 packages** (private ones included). Folded into the next release.
+
+Revised same-day from an initial `>=22.0.0`. The floor moved to 22.12.0 because that is where unflagged `require(esm)` lands, which is the precondition for going ESM-only (§11). At `>=22.0.0` an ESM-only package throws `ERR_REQUIRE_ESM` for any CJS consumer; at `>=22.12.0` `require()` of an ESM package just works.
 
 Previous state was five different floors: `^20.17.0 || >=22.9.0` (fyn, fynpo), `>=20` (19 packages), `>=18.0.0` (aveazul), `>=12` (filter-scan-dir), and none at all (bluebird, @fynjs/create-monorepo, pacote-jchip). Node 20 reached EOL 2026-04-30.
 
-Two consequences to keep in mind:
+`fyn`/`fynpo` previously declared `^20.17.0 || >=22.9.0`, inherited from their npm-CLI dependency generation (@npmcli/arborist@9, pacote@21, cacache@20, npm-registry-fetch@19, make-fetch-happen@15, npm-packlist@10, @npmcli/run-script@10). `>=22.12.0` now sits above that, so the earlier concern about `engines` understating the real floor is resolved.
 
-- **`fyn`/`fynpo` understate their real floor.** Their npm-CLI dependency generation — @npmcli/arborist@9, pacote@21, cacache@20, npm-registry-fetch@19, make-fetch-happen@15, npm-packlist@10, @npmcli/run-script@10 — all declare `^20.17.0 || >=22.9.0`. The true runtime floor for those two is 22.9.0, so `engines` is documentation there, not a guard. Accepted knowingly.
-- **The dual ESM/CJS build cannot be collapsed on this floor.** Unflagged `require(esm)` starts at 22.12.0, above `>=22.0.0`. So the `dist-cjs` half — and with it the §2.1/§2.2 `.d.cts` and `.ts`-specifier fixes and the §4 tarball junk — still has to be fixed rather than deleted. Revisit if the floor ever moves to 22.12.0.
+`.github/workflows/ci.yml` matrix pinned to `["22.12", "24", "26"]` — the floating `"22"` entry tested 22.latest and never verified the floor itself. Node-version claims in the `aveazul`, `@fynjs/cli-args`, and `xflight` READMEs updated to match. Root `package.json` intentionally has no `engines` (private workspace root).
 
-Also updated: node-version claims in `aveazul`, `@fynjs/cli-args`, and `xflight` READMEs. The root `package.json` still has no `engines` field (out of scope — it is the private workspace root).
+## 11. Direction — ESM-only (decided 2026-08-27, not yet implemented)
+
+The dual ESM/CJS build is being retired in favour of ESM-only across the 18 dual-mode packages. Two findings made this cheap:
+
+- **`fyn` and `fynpo` webpack-bundle everything and strip `dependencies` at pack time** (`publishUtil.remove: ["dependencies"]` for fyn; all-but-four for fynpo). The published tarballs are self-contained bundles, so all 18 packages are build-time deps consumed through webpack, which handles ESM natively. The largest internal consumer is indifferent to module format.
+- **Zero top-level await** across all 123 source files. TLA is what makes an ESM module permanently un-`require`-able (`ERR_REQUIRE_ASYNC_MODULE`); nothing here trips it.
+
+Combined with the 22.12.0 floor, `require()` of these packages keeps working for CJS consumers, so this is not the hostile break ESM-only used to be.
+
+What it removes: one of the two `tsc` builds per package, the `ts2mjs` dependency and step, the `.d.cts` gap (§2.2), the `.ts`-specifier bug in 10 packages' declarations (§2.1), the macOS-only `sed` hack, and half of every tarball. `exports` collapses to a single path.
+
+**Versioning**: `unwrap-npm-cmd` (149k downloads/mo) and `string-array` (139k/mo) are the only packages with meaningful external traffic and get an explicit **major bump** to signal the change — or a minor bump for any package whose major is 0. Both are currently 1.x, so both go to 2.0.0.
+
+Out of scope: `@fynjs/run` is CJS-only today and must keep loading arbitrary user `xrun.js`/`xclap.js` task files, so it is treated separately from the 18. The CLIs (`fyn`, `fynpo`, `fynpo-cli`, `@fynjs/create-monorepo`) are format-invisible to users.

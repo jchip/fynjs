@@ -3,7 +3,7 @@
   "version": "2.0.2",
   "description": "Handle inflight promise to avoid async duplication",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "type": "module",
   "types": "dist-cjs/index.d.ts",

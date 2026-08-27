@@ -20,7 +20,7 @@
     "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fynpo-base",
   "repository": {

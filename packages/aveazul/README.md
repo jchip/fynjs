@@ -16,7 +16,7 @@ Further, if you like Bluebird's API but want to use native Promises, AveAzul giv
 
 ## Requirements
 
-- node.js version >= 22
+- node.js version >= 22.12
 
 ## Installation
 

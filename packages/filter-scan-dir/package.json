@@ -85,7 +85,7 @@
     "vitest": "^4.0.13"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "prettier": {
     "printWidth": 100

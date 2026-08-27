@@ -15,7 +15,7 @@
     "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
