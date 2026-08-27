@@ -148,8 +148,25 @@ The dual ESM/CJS build is being retired in favour of ESM-only across the 18 dual
 
 Combined with the 22.12.0 floor, `require()` of these packages keeps working for CJS consumers, so this is not the hostile break ESM-only used to be.
 
-What it removes: one of the two `tsc` builds per package, the `ts2mjs` dependency and step, the `.d.cts` gap (§2.2), the `.ts`-specifier bug in 10 packages' declarations (§2.1), the macOS-only `sed` hack, and half of every tarball. `exports` collapses to a single path.
+What it removes: one of the two `tsc` builds per package, the `ts2mjs` dependency and step, the `.d.cts` gap (§2.2), and half of every tarball. `exports` collapses to a single path.
 
-**Versioning**: `unwrap-npm-cmd` (149k downloads/mo) and `string-array` (139k/mo) are the only packages with meaningful external traffic and get an explicit **major bump** to signal the change — or a minor bump for any package whose major is 0. Both are currently 1.x, so both go to 2.0.0.
+**What it does NOT remove — correction.** An earlier draft of this section claimed ESM-only also fixes the `.ts`-specifier bug (§2.1). It does not. Those specifiers appear in the **ESM** declarations too, e.g. `dist-esm/index.d.ts`:
+
+```ts
+export { Inflight } from "./inflight.ts";
+```
+
+The root cause is 142 `.ts` relative-import specifiers in the **source** of 12 packages, combined with `rewriteRelativeImportExtensions: true` — TypeScript rewrites the JS emit but not the `.d.ts` emit. Dropping the CJS half halves the damage and removes the `sed` hack's reason to exist, but the bug survives in the remaining half.
+
+So the migration is two independent changes:
+
+1. **Drop the CJS half** — deletes ts2mjs, the second `tsc` build, the `.d.cts` gap, half the tarball.
+2. **Convert source imports `.ts` → `.js` and drop `rewriteRelativeImportExtensions`** — fixes the broken declarations. `.js` specifiers resolving to `.ts` sources is the standard TypeScript ESM convention and is what `moduleResolution: NodeNext` expects.
+
+Source `.ts` specifier counts: cli-args 62, aveazul 25, publish-util 12, fynpo-base 8, check-pkg-new-version-engine 6, unwrap-npm-cmd 6, visual-logger 6, item-queue 5, visual-exec 5, check-pkg-new-version 4, run-verify 2, filter-scan-dir 1.
+
+**Versioning** (decided): every one of the 18 gets an explicit bump — **major** for packages at 1.x or above, **minor** for packages whose major is 0. fynpo derives this from commit messages (`[maj]` / `[min]` markers, or commit types `breaking`/`major` and `feat`/`minor`), so the rollout needs the two groups committed separately rather than hand-edited versions.
+
+**Output shape** (decided): keep `.js` with `"type": "module"` rather than emitting `.mjs` — no rename step, declarations stay `.d.ts`.
 
 Out of scope: `@fynjs/run` is CJS-only today and must keep loading arbitrary user `xrun.js`/`xclap.js` task files, so it is treated separately from the 18. The CLIs (`fyn`, `fynpo`, `fynpo-cli`, `@fynjs/create-monorepo`) are format-invisible to users.
