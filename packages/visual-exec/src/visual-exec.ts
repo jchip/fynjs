@@ -2,7 +2,7 @@ import xsh from "xsh";
 import chalk from "chalk";
 import * as fs from "fs";
 import * as path from "path";
-import { getDefaultLogger } from "./get-default-logger.ts";
+import { getDefaultLogger } from "./get-default-logger.js";
 import VisualLogger from "visual-logger";
 import hasAnsi from "has-ansi";
 import stripAnsi from "strip-ansi";

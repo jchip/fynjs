@@ -31,7 +31,7 @@ declare module "visual-logger" {
     prefix(enabled: boolean): VisualLogger;
   }
 
-  export = VisualLogger;
+  export default VisualLogger;
 }
 
 declare module "xsh" {
@@ -54,5 +54,5 @@ declare module "xsh" {
 
 declare module "has-ansi" {
   function hasAnsi(str: string): boolean;
-  export = hasAnsi;
+  export default hasAnsi;
 }
