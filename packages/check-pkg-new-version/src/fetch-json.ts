@@ -1,4 +1,8 @@
-import got from "got";
+import * as gotModule from "got";
+
+// got@11 ships CJS with ESM-style declarations, so under NodeNext the default
+// import binds the namespace. Unwrap at runtime to stay correct either way.
+const got: any = (gotModule as any).default ?? gotModule;
 
 /**
  * fetch JSON from URL

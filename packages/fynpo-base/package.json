@@ -3,19 +3,12 @@
   "version": "1.1.23",
   "description": "zero setup monorepo manager for node.js",
   "type": "module",
-  "types": "dist-cjs/index.d.ts",
-  "main": "dist-cjs/index.cjs",
-  "module": "dist-esm/index.js",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist-esm/index.d.ts",
-        "default": "./dist-esm/index.js"
-      },
-      "require": {
-        "types": "./dist-cjs/index.d.ts",
-        "default": "./dist-cjs/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -29,7 +22,7 @@
     "directory": "packages/fynpo-base"
   },
   "scripts": {
-    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "prepublishOnly": "xrun build",
@@ -55,7 +48,6 @@
     "npm-packlist": "jchip/npm-packlist#v1",
     "prettier": "^3.5.3",
     "publish-util": "^2.1.0",
-    "ts2mjs": "^4.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vitest": "^3.2.2"
@@ -70,13 +62,13 @@
     "tslib": "^2.8.1"
   },
   "files": [
-    "dist-cjs",
-    "dist-esm"
+    "dist"
   ],
   "prettier": {
     "printWidth": 100
   },
   "fyn": {
     "dependencies": {}
-  }
+  },
+  "sideEffects": false
 }

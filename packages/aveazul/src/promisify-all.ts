@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { promisify, PromisifyOptions } from "./promisify.ts";
-import { isIdentifier, isClass, isPromisified, getObjectDataKeys } from "./util.ts";
+import { promisify, PromisifyOptions } from "./promisify.js";
+import { isIdentifier, isClass, isPromisified, getObjectDataKeys } from "./util.js";
 
 const defaultSuffix = "Async";
 

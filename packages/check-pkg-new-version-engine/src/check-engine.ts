@@ -1,12 +1,12 @@
 /* eslint-disable max-statements, complexity, no-magic-numbers */
 
 import { isCI } from "ci-info";
-import { CheckNewVersionOptions, NpmConfig, PkgInfo } from "./types.ts";
+import { CheckNewVersionOptions, NpmConfig, PkgInfo } from "./types.js";
 import os from "os";
 import Path from "path";
 import { promises as Fs } from "fs";
 import mkdirp from "mkdirp";
-import { internalNotify } from "./notify-new-version.ts";
+import { internalNotify } from "./notify-new-version.js";
 
 const ACCEPT = "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*";
 const ONE_DAY = 24 * 60 * 60 * 1000;

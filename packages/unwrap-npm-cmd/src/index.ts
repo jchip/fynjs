@@ -1,9 +1,9 @@
-import { resolveNpmCmd, ResolveResult } from "./resolve-npm-cmd.ts";
-import { quote, relative, unquote } from "./utils.ts";
+import { resolveNpmCmd, ResolveResult } from "./resolve-npm-cmd.js";
+import { quote, relative, unquote } from "./utils.js";
 
-export { quote, relative, unquote } from "./utils.ts";
-export { resolveNpmCmd } from "./resolve-npm-cmd.ts";
-export type { ResolveResult, ResolveOptions } from "./resolve-npm-cmd.ts";
+export { quote, relative, unquote } from "./utils.js";
+export { resolveNpmCmd } from "./resolve-npm-cmd.js";
+export type { ResolveResult, ResolveOptions } from "./resolve-npm-cmd.js";
 
 export interface UnwrapOptions {
   path?: string;

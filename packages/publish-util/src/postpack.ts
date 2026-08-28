@@ -1,6 +1,6 @@
 import * as Path from "path";
 import * as Fs from "fs/promises";
-import { getInfo } from "./utils.ts";
+import { getInfo } from "./utils.js";
 
 export async function postPack(): Promise<void> {
   const { pkgFile, saveFile } = await getInfo();

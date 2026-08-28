@@ -1,8 +1,8 @@
-import { BaseSpec, CliBase, isRootCommand } from "./base.ts";
-import { CommandNode } from "./command-node.ts";
-import { NixClapConfig, ParseResult } from "./nix-clap.ts";
-import { GroupOptionSpec, Options } from "./options.ts";
-import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.ts";
+import { BaseSpec, CliBase, isRootCommand } from "./base.js";
+import { CommandNode } from "./command-node.js";
+import { NixClapConfig, ParseResult } from "./nix-clap.js";
+import { GroupOptionSpec, Options } from "./options.js";
+import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.js";
 
 /**
  * The execution function you provide for a command.

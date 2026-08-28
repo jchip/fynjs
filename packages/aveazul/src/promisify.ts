@@ -1,4 +1,4 @@
-import { copyOwnProperties, isPromisified } from "./util.ts";
+import { copyOwnProperties, isPromisified } from "./util.js";
 
 export interface PromisifyOptions {
   Promise?: PromiseConstructor;

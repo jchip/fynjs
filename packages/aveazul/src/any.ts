@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { toArray, isPromise } from "./util.ts";
+import { toArray, isPromise } from "./util.js";
 import { AggregateError } from "@jchip/error";
-import type { AveAzulClass } from "./aveazul.ts";
+import type { AveAzulClass } from "./aveazul.js";
 
 export function addStaticAny(AveAzul: AveAzulClass, force = false): void {
   if (force || !AveAzul.any) {

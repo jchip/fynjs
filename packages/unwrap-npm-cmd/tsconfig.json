@@ -1,21 +1,26 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "lib": ["ES2018"],
-    "module": "ES2015",
+    "lib": [
+      "ES2018"
+    ],
+    "module": "NodeNext",
     "esModuleInterop": true,
     "importHelpers": true,
     "target": "ES2018",
     "preserveConstEnums": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "declaration": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
     "strictFunctionTypes": true,
-    "moduleResolution": "Node",
-    "rewriteRelativeImportExtensions": true
+    "moduleResolution": "NodeNext"
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

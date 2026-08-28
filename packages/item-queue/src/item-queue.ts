@@ -2,7 +2,7 @@
 
 import EventEmitter from "events";
 import assert from "assert";
-import { Inflight, InflightRecord, RecordKey } from "./inflight.ts";
+import { Inflight, InflightRecord, RecordKey } from "./inflight.js";
 const PAUSE_ITEM = Symbol("pause");
 const RESUME_ITEM = Symbol("resume");
 const NOOP_ITEM = Symbol("NOOP");

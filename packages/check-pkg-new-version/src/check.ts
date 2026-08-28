@@ -1,6 +1,6 @@
-import { internalCheckIsNewer } from "./check-is-newer.ts";
-import { internalFetchJSON } from "./fetch-json.ts";
-import { getNpmRcConfig } from "./npm-config.ts";
+import { internalCheckIsNewer } from "./check-is-newer.js";
+import { internalFetchJSON } from "./fetch-json.js";
+import { getNpmRcConfig } from "./npm-config.js";
 import { CheckNewVersionOptions, checkPkgNewVersionEngine } from "check-pkg-new-version-engine";
 
 /**

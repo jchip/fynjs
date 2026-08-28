@@ -1,12 +1,7 @@
 "use strict";
 
-const x = require("./dist-cjs/index.cjs");
+// ESM-only build; this shim keeps `require("filter-scan-dir")` callable,
+// because require(esm) yields the module namespace rather than a function.
+const m = require("./dist/index.js");
 
-function filterScanDir(...args) {
-  return x.filterScanDir(...args);
-}
-
-module.exports = filterScanDir;
-
-filterScanDir.filterScanDir = x.filterScanDir;
-filterScanDir.filterScanDirSync = x.filterScanDirSync;
+module.exports = Object.assign(m.filterScanDir, m);

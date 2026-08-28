@@ -6,16 +6,16 @@ import {
   isRootCommand,
   UnknownCliArgError,
   UnknownOptionError
-} from "./base.ts";
-import { ClapNode } from "./clap-node.ts";
-import { CommandNode } from "./command-node.ts";
-import { OptionBase } from "./option-base.ts";
-import { OptionNode } from "./option-node.ts";
-import { OptionMatch } from "./options.ts";
-import { isBoolean, toBoolean, isNumber } from "./xtil.ts";
-import { CommandMatched } from "./command-base.ts";
-import { unknownCommandBase, unknownCommandBaseNoOptions } from "./command-base.ts";
-import { _PARENT } from "./symbols.ts";
+} from "./base.js";
+import { ClapNode } from "./clap-node.js";
+import { CommandNode } from "./command-node.js";
+import { OptionBase } from "./option-base.js";
+import { OptionNode } from "./option-node.js";
+import { OptionMatch } from "./options.js";
+import { isBoolean, toBoolean, isNumber } from "./xtil.js";
+import { CommandMatched } from "./command-base.js";
+import { unknownCommandBase, unknownCommandBaseNoOptions } from "./command-base.js";
+import { _PARENT } from "./symbols.js";
 
 /**
  * Represents the source of an option in the application.

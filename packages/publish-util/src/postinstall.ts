@@ -1,5 +1,5 @@
 import * as Fs from "fs/promises";
-import { getInfo } from "./utils.ts";
+import { getInfo } from "./utils.js";
 import _ from "lodash";
 
 async function postInstall(): Promise<void> {

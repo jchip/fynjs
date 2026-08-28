@@ -9,7 +9,7 @@ import {
   ExtractSpec,
   RemoveSpec,
   RenameSpec,
-} from "./utils.ts";
+} from "./utils.js";
 import _ from "lodash";
 
 export interface PrePackConfig {

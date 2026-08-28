@@ -15,7 +15,7 @@
  *
  * @public
  */
-import { _PARENT } from "./symbols.ts";
+import { _PARENT } from "./symbols.js";
 export class ClapNode {
   /**
    * command/option name

@@ -1,12 +1,12 @@
-import { ClapNode } from "./clap-node.ts";
-import { CommandBase } from "./command-base.ts";
-import { CommandMeta } from "./command-meta.ts";
-import { OptionNode } from "./option-node.ts";
-import { ClapNodeGenerator, OptionSource } from "./node-generator.ts";
-import { camelCase } from "./xtil.ts";
-import { _PARENT } from "./symbols.ts";
-import { isRootCommand } from "./base.ts";
-import { ParseResult } from "./nix-clap.ts";
+import { ClapNode } from "./clap-node.js";
+import { CommandBase } from "./command-base.js";
+import { CommandMeta } from "./command-meta.js";
+import { OptionNode } from "./option-node.js";
+import { ClapNodeGenerator, OptionSource } from "./node-generator.js";
+import { camelCase } from "./xtil.js";
+import { _PARENT } from "./symbols.js";
+import { isRootCommand } from "./base.js";
+import { ParseResult } from "./nix-clap.js";
 
 /**
  * Object representation for an instance of a command on the CLI

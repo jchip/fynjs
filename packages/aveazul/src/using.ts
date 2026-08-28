@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Disposer } from "./disposer.ts";
-import { isPromise } from "./util.ts";
+import { Disposer } from "./disposer.js";
+import { isPromise } from "./util.js";
 import { AggregateError } from "@jchip/error";
-import type { AveAzulClass } from "./aveazul.ts";
+import type { AveAzulClass } from "./aveazul.js";
 
 const SYM_FN_DISPOSE = Symbol("fnDispose");
 

@@ -1,14 +1,14 @@
-export { VisualLogger, Levels, LevelColors, LogItemTypes } from "./visual-logger.ts";
+export { VisualLogger, Levels, LevelColors, LogItemTypes } from "./visual-logger.js";
 export type {
   LogLevel,
   LogItemType,
   ItemOptions,
   UpdateData,
   VisualLoggerOptions
-} from "./visual-logger.ts";
+} from "./visual-logger.js";
 
-export { defaultOutput } from "./default-output.ts";
-export type { VisualOutput, OutputInterface } from "./default-output.ts";
+export { defaultOutput } from "./default-output.js";
+export type { VisualOutput, OutputInterface } from "./default-output.js";
 
 // Default export for backward compatibility
-export { VisualLogger as default } from "./visual-logger.ts";
+export { VisualLogger as default } from "./visual-logger.js";

@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as xaa from "xaa";
-import { promisify, PromisifyOptions } from "./promisify.ts";
-import { promisifyAll, PromisifyAllOptions } from "./promisify-all.ts";
-import { Disposer } from "./disposer.ts";
-import { using } from "./using.ts";
-import { isPromise, triggerUncaughtException, toArray } from "./util.ts";
+import { promisify, PromisifyOptions } from "./promisify.js";
+import { promisifyAll, PromisifyAllOptions } from "./promisify-all.js";
+import { Disposer } from "./disposer.js";
+import { using } from "./using.js";
+import { isPromise, triggerUncaughtException, toArray } from "./util.js";
 import { AggregateError } from "@jchip/error";
-import { OperationalError, isOperationalError, isProgrammerError } from "./operational-error.ts";
+import { OperationalError, isOperationalError, isProgrammerError } from "./operational-error.js";
 
 export interface MapOptions {
   concurrency?: number;
@@ -770,11 +770,11 @@ class AveAzul<T> extends Promise<T> {
 }
 
 // Setup the any method
-import { addStaticAny } from "./any.ts";
+import { addStaticAny } from "./any.js";
 addStaticAny(AveAzul as unknown as AveAzulClass);
 
 // Setup the not implemented methods
-import { setupNotImplemented } from "./not-implemented.ts";
+import { setupNotImplemented } from "./not-implemented.js";
 setupNotImplemented(AveAzul as unknown as AveAzulClass);
 
 export { AveAzul };

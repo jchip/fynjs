@@ -1,7 +1,7 @@
 import assert from "assert";
-import { CommandBase } from "./command-base.ts";
-import { OptionBase, OptionSpec } from "./option-base.ts";
-import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.ts";
+import { CommandBase } from "./command-base.js";
+import { OptionBase, OptionSpec } from "./option-base.js";
+import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.js";
 
 /**
  * `Record<string, OptionSpec>`

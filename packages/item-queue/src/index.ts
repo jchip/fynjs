@@ -1,7 +1,7 @@
-export { Inflight } from "./inflight.ts";
-export type { InflightRecord, RecordKey } from "./inflight.ts";
+export { Inflight } from "./inflight.js";
+export type { InflightRecord, RecordKey } from "./inflight.js";
 
-export { ItemQueue } from "./item-queue.ts";
+export { ItemQueue } from "./item-queue.js";
 export type {
   ItemQueueData,
   WatchItemInfo,
@@ -11,4 +11,4 @@ export type {
   ItemQueueHandlers,
   ProcessCb,
   ItemQueueOptions
-} from "./item-queue.ts";
+} from "./item-queue.js";

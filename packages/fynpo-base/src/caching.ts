@@ -4,7 +4,7 @@ import _ from "lodash";
 import Fs from "fs";
 import Path from "path";
 import Crypto from "crypto";
-import { checkMmMatch, deconstructMM, unrollMmMatch } from "./minimatch-group.ts";
+import { checkMmMatch, deconstructMM, unrollMmMatch } from "./minimatch-group.js";
 
 /**
  *

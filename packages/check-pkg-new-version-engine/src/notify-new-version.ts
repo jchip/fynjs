@@ -1,5 +1,5 @@
 import isInstallGlobally from "is-installed-globally";
-import { NotifyData } from "./types.ts";
+import { NotifyData } from "./types.js";
 
 /**
  * Simple notifying using console.

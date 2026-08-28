@@ -6,8 +6,8 @@ import type { ExtrasData } from "filter-scan-dir";
 import mm from "minimatch";
 import _ from "lodash";
 import Semver from "semver";
-import { groupMM, MMGroups } from "./minimatch-group.ts";
-import { posixify } from "./util.ts";
+import { groupMM, MMGroups } from "./minimatch-group.js";
+import { posixify } from "./util.js";
 import isPathInside from "is-path-inside";
 
 /**

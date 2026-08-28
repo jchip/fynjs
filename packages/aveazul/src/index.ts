@@ -1,4 +1,4 @@
-import { AveAzul } from "./aveazul.ts";
+import { AveAzul } from "./aveazul.js";
 export { AveAzul };
 export default AveAzul;
 export type {
@@ -8,10 +8,10 @@ export type {
   Deferred,
   AveAzulClass,
   AveAzulInstance,
-} from "./aveazul.ts";
-export { Disposer } from "./disposer.ts";
-export { OperationalError, isOperationalError, isProgrammerError } from "./operational-error.ts";
-export { promisify } from "./promisify.ts";
-export type { PromisifyOptions } from "./promisify.ts";
-export { promisifyAll } from "./promisify-all.ts";
-export type { PromisifyAllOptions } from "./promisify-all.ts";
+} from "./aveazul.js";
+export { Disposer } from "./disposer.js";
+export { OperationalError, isOperationalError, isProgrammerError } from "./operational-error.js";
+export { promisify } from "./promisify.js";
+export type { PromisifyOptions } from "./promisify.js";
+export { promisifyAll } from "./promisify-all.js";
+export type { PromisifyAllOptions } from "./promisify-all.js";

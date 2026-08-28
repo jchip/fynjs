@@ -1,2 +1,2 @@
-export * from "./types.ts";
-export { checkPkgNewVersionEngine } from "./check-engine.ts";
+export * from "./types.js";
+export { checkPkgNewVersionEngine } from "./check-engine.js";

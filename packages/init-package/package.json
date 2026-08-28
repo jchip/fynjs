@@ -3,19 +3,12 @@
   "version": "1.0.0",
   "description": "initialize package.json for npm package",
   "type": "module",
-  "types": "dist-cjs/index.d.ts",
-  "main": "dist-cjs/index.cjs",
-  "module": "dist-esm/index.js",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist-esm/index.d.ts",
-        "default": "./dist-esm/index.js"
-      },
-      "require": {
-        "types": "./dist-cjs/index.d.ts",
-        "default": "./dist-cjs/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -25,15 +18,14 @@
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/init-package",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "rm -rf dist-* && tsc --build tsconfig.esm.json && tsc --build tsconfig.cjs.json && ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
     "coverage": "vitest run --coverage"
   },
   "private": true,
   "author": "",
   "files": [
-    "dist-cjs",
-    "dist-esm"
+    "dist"
   ],
   "keywords": [],
   "repository": {
@@ -53,12 +45,12 @@
     "@vitest/coverage-v8": "^3.2.2",
     "enquirer": "^2.3.6",
     "prettier": "^3.5.3",
-    "ts2mjs": "^4.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vitest": "^3.2.2"
   },
   "prettier": {
     "printWidth": 100
-  }
+  },
+  "sideEffects": false
 }

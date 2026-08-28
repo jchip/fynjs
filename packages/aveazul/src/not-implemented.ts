@@ -1,4 +1,4 @@
-import type { AveAzulClass } from "./aveazul.ts";
+import type { AveAzulClass } from "./aveazul.js";
 
 function createNotImplemented(name: string): () => never {
   return function (): never {

@@ -1,15 +1,15 @@
 import Path from "path";
-import { noop, setHelpZebra } from "./xtil.ts";
+import { noop, setHelpZebra } from "./xtil.js";
 import EventEmitter from "events";
-import { Parser } from "./parser.ts";
-import { CommandBase, CommandSpec, unknownCommandBaseNoOptions } from "./command-base.ts";
-import { OptionSpec } from "./option-base.ts";
-import { CommandNode } from "./command-node.ts";
-import { isRootCommand, rootCommandName } from "./base.ts";
-import { ClapNode } from "./clap-node.ts";
-import { unknownCommandBase } from "./command-base.ts";
-import { _PARENT } from "./symbols.ts";
-import { OptionNode } from "./option-node.ts";
+import { Parser } from "./parser.js";
+import { CommandBase, CommandSpec, unknownCommandBaseNoOptions } from "./command-base.js";
+import { OptionSpec } from "./option-base.js";
+import { CommandNode } from "./command-node.js";
+import { isRootCommand, rootCommandName } from "./base.js";
+import { ClapNode } from "./clap-node.js";
+import { unknownCommandBase } from "./command-base.js";
+import { _PARENT } from "./symbols.js";
+import { OptionNode } from "./option-node.js";
 
 const HELP = Symbol("help");
 

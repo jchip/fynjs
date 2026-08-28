@@ -1,8 +1,8 @@
-import { ClapNode } from "./clap-node.ts";
-import { NixClap } from "./nix-clap.ts";
-import { ClapNodeGenerator } from "./node-generator.ts";
-import { CommandNode } from "./command-node.ts";
-import { _NEXT, _PREV } from "./symbols.ts";
+import { ClapNode } from "./clap-node.js";
+import { NixClap } from "./nix-clap.js";
+import { ClapNodeGenerator } from "./node-generator.js";
+import { CommandNode } from "./command-node.js";
+import { _NEXT, _PREV } from "./symbols.js";
 
 
 /**

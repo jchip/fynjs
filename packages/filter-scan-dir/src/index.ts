@@ -3,7 +3,7 @@
 import Fs, { Dirent, Stats } from "fs";
 import Path from "path";
 import Util from "util";
-import { direntCmp, join2 } from "./util.ts";
+import { direntCmp, join2 } from "./util.js";
 
 /**
  * type of the 3rd argument for the filter callback

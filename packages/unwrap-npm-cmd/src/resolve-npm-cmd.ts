@@ -1,7 +1,7 @@
 import Fs from "fs";
 import which from "which";
 import Path from "path";
-import { quote, unquote } from "./utils.ts";
+import { quote, unquote } from "./utils.js";
 
 const nodeJsVer = parseInt(process.versions.node.split(".")[0]);
 

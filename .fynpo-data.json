@@ -8,6 +8,22 @@
           "path": "packages/create-monorepo"
         },
         "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/create-monorepo@1.0.6(pkg)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "@fynjs/create-monorepo",
+          "version": "1.0.6",
+          "path": "packages/create-monorepo"
+        },
+        "onPkg": {
           "name": "filter-scan-dir",
           "version": "1.6.0",
           "path": "packages/filter-scan-dir"
@@ -130,6 +146,38 @@
           "path": "packages/fyn"
         },
         "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "fyn@2.1.6(pkg)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "visual-exec",
+          "version": "0.2.0",
+          "path": "packages/visual-exec"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "visual-exec@0.2.0(dep)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "fyn",
+          "version": "2.1.6",
+          "path": "packages/fyn"
+        },
+        "onPkg": {
           "name": "string-array",
           "version": "1.0.1",
           "path": "packages/string-array"
@@ -160,7 +208,7 @@
       {
         "fromPkg": {
           "name": "fynpo",
-          "version": "2.1.0",
+          "version": "2.1.6",
           "path": "packages/fynpo"
         },
         "onPkg": {
@@ -170,7 +218,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "fynpo@2.1.0(pkg)"
+          "fynpo@2.1.6(pkg)"
         ]
       },
       {
@@ -248,9 +296,9 @@
           "path": "packages/fynpo-cli"
         },
         "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "_w/xsh"
         },
         "depSection": "dep",
         "indirectSteps": [
@@ -264,9 +312,9 @@
           "path": "packages/fynpo-cli"
         },
         "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
+          "name": "filter-scan-dir",
+          "version": "1.6.0",
+          "path": "packages/filter-scan-dir"
         },
         "depSection": "dep",
         "indirectSteps": [
@@ -371,7 +419,25 @@
           "@fynjs/cli-args@2.4.5(dep)"
         ]
       }
+    ],
+    "_w/npm-packlist": [
+      {
+        "fromPkg": {
+          "name": "npm-packlist",
+          "version": "10.0.3",
+          "path": "_w/npm-packlist"
+        },
+        "onPkg": {
+          "name": "npm-packlist",
+          "version": "10.0.3",
+          "path": "_w/npm-packlist"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "npm-packlist@10.0.3(dep)"
+        ]
+      }
     ]
   },
-  "__timestamp": 1786899536459
+  "__timestamp": 1787887010522
 }

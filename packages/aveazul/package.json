@@ -3,12 +3,12 @@
   "version": "1.1.0",
   "description": "Bluebird drop-in replacement built on native Promise",
   "type": "module",
-  "types": "dist-cjs/index.d.ts",
-  "main": "cjs-entry.cjs",
-  "module": "dist-esm/index.js",
+  "types": "./dist/index.d.ts",
+  "main": "./cjs-entry.cjs",
   "exports": {
     ".": {
-      "import": "./dist-esm/index.js",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "require": "./cjs-entry.cjs"
     },
     "./package.json": "./package.json"
@@ -16,11 +16,7 @@
   "homepage": "https://github.com/jchip/aveazul",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "xrun [-s, build:clean, [build:esm, build:cjs], build:2cjs]",
-    "build:clean": "rm -rf dist-*",
-    "build:esm": "tsc --build tsconfig.esm.json",
-    "build:cjs": "tsc --build tsconfig.cjs.json",
-    "build:2cjs": "ts2mjs --cjs --skip-ts --remove-source dist-cjs",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "xrun -s vitest build demo:cjs demo:esm",
     "vitest": "vitest run",
     "test:watch": "vitest",
@@ -38,8 +34,7 @@
   ],
   "files": [
     "cjs-entry.cjs",
-    "dist-cjs",
-    "dist-esm"
+    "dist"
   ],
   "keywords": [
     "promise",
@@ -92,7 +87,6 @@
     "bluebird": "^3.7.2",
     "publish-util": "^2.1.0",
     "run-verify": "^1.2.7",
-    "ts2mjs": "^4.0.0",
     "tsx": "^4.20.6",
     "typescript": "^5.8.3",
     "vitest": "^3.2.2"
@@ -105,5 +99,6 @@
     "devDependencies": {
       "bluebird": false
     }
-  }
+  },
+  "sideEffects": false
 }

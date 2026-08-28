@@ -1,4 +1,4 @@
-import { stripAnsi } from "./strip-ansi.ts";
+import { stripAnsi } from "./strip-ansi.js";
 
 // Module-level config for zebra striping in help text
 let _helpZebra = true;

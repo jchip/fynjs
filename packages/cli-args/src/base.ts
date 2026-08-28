@@ -1,6 +1,6 @@
 import assert from "assert";
-import { validParseInt } from "./xtil.ts";
-import { OptionMatch } from "./options.ts";
+import { validParseInt } from "./xtil.js";
+import { OptionMatch } from "./options.js";
 
 const SUPPORT_TYPES = ["number", "string", "float", "boolean", "int", "integer"];
 

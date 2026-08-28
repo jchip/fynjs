@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { getInfo } from "./utils.ts";
+import { getInfo } from "./utils.js";
 import * as assert from "assert";
 import * as Fs from "fs/promises";
 import * as Path from "path";

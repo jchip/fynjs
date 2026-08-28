@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
-import { WRAPPED_FN, IS_FINALLY, DEFER_EVENT, DEFER_WAIT, DEFER_OBJ } from "./symbols.ts";
+import { WRAPPED_FN, IS_FINALLY, DEFER_EVENT, DEFER_WAIT, DEFER_OBJ } from "./symbols.js";
 
-export { WRAPPED_FN, IS_FINALLY, DEFER_EVENT, DEFER_WAIT, DEFER_OBJ } from "./symbols.ts";
+export { WRAPPED_FN, IS_FINALLY, DEFER_EVENT, DEFER_WAIT, DEFER_OBJ } from "./symbols.js";
 
 export type CheckFunction = (...args: any[]) => any;
 export type DoneCallback = (err?: Error | null, result?: any) => void;
