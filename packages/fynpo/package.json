@@ -93,7 +93,7 @@
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
     "mkdirp": "^1.0.4",
-    "@fynjs/cli-args": "^2.4.5",
+    "@fynjs/cli-args": "^1.0.0",
     "npm-packlist": "jchip/npm-packlist#v1",
     "optional-require": "^1.1.10",
     "prettier": "2.4.1",

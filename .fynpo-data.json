@@ -358,7 +358,7 @@
       {
         "fromPkg": {
           "name": "@fynjs/cli-args",
-          "version": "2.4.5",
+          "version": "1.0.0",
           "path": "packages/cli-args"
         },
         "onPkg": {
@@ -368,13 +368,13 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynjs/cli-args@2.4.5(dev)"
+          "@fynjs/cli-args@1.0.0(dev)"
         ]
       },
       {
         "fromPkg": {
           "name": "@fynjs/cli-args",
-          "version": "2.4.5",
+          "version": "1.0.0",
           "path": "packages/cli-args"
         },
         "onPkg": {
@@ -384,13 +384,13 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynjs/cli-args@2.4.5(dev)"
+          "@fynjs/cli-args@1.0.0(dev)"
         ]
       },
       {
         "fromPkg": {
           "name": "@fynjs/cli-args",
-          "version": "2.4.5",
+          "version": "1.0.0",
           "path": "packages/cli-args"
         },
         "onPkg": {
@@ -400,13 +400,13 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynjs/cli-args@2.4.5(dep)"
+          "@fynjs/cli-args@1.0.0(dep)"
         ]
       },
       {
         "fromPkg": {
           "name": "@fynjs/cli-args",
-          "version": "2.4.5",
+          "version": "1.0.0",
           "path": "packages/cli-args"
         },
         "onPkg": {
@@ -416,7 +416,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynjs/cli-args@2.4.5(dep)"
+          "@fynjs/cli-args@1.0.0(dep)"
         ]
       }
     ],
@@ -439,5 +439,5 @@
       }
     ]
   },
-  "__timestamp": 1787887010522
+  "__timestamp": 1787899117210
 }

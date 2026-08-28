@@ -1,3 +1,8 @@
+# v1.0.0
+
+- first release under the name `@fynjs/cli-args` (renamed from `nix-clap`); version series restarts at 1.0.0
+- versions below are the `nix-clap` history
+
 # v2.4.5 (2025-11-27)
 
 - fix cmd --help even if it requires args

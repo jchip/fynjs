@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/cli-args",
-  "version": "2.4.5",
+  "version": "1.0.0",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/cli-args",
   "description": "Simple, lightweight, flexible, and comprehensive Command Line Argument Parsing for node.js",
   "engines": {
@@ -36,8 +36,7 @@
     ]
   },
   "publishConfig": {
-    "access": "public",
-    "tag": "next"
+    "access": "public"
   },
   "repository": {
     "type": "git",
