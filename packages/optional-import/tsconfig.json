@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": [
+      "ES2022"
+    ],
+    "module": "NodeNext",
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "preserveConstEnums": true,
+    "sourceMap": false,
+    "declaration": true,
+    "types": [
+      "node"
+    ],
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "alwaysStrict": true,
+    "strictFunctionTypes": true,
+    "moduleResolution": "NodeNext"
+  },
+  "include": [
+    "src"
+  ]
+}

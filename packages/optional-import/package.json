@@ -1,0 +1,62 @@
+{
+  "name": "optional-import",
+  "version": "1.0.0",
+  "description": "ESM import that lets you handle module not found without try/catch, and tells 'not installed' apart from 'installed but broken'",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "xrun build",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/optional-import"
+  },
+  "keywords": [
+    "optional",
+    "import",
+    "esm",
+    "optional dependency",
+    "optional dependencies",
+    "dynamic import",
+    "import.meta.resolve",
+    "module not found"
+  ],
+  "files": [
+    "dist"
+  ],
+  "author": "Joel Chen <joel123@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^3.2.2",
+    "prettier": "^3.5.3",
+    "publish-util": "^2.1.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "sideEffects": false
+}

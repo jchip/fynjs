@@ -1,0 +1,10 @@
+node_modules
+.nyc_output
+coverage
+dist
+fyn-lock.yaml
+*.log
+
+# test fixtures: these node_modules are source, not installed packages
+!test/fixtures/**/node_modules/
+!test/fixtures/**/node_modules/**
