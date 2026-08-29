@@ -8,9 +8,10 @@ const require = createRequire(import.meta.url);
 //
 // The release build deliberately does NOT go through xrun.
 //
-// xrun's CLI does `require("chalker")`, and chalker is now ESM with top-level await, so the
-// published @xarc/run that @xarc/module-dev pulls in cannot load it - which broke the release
-// build, including the nested build fynpo runs against its local fyn dependency.
+// The published @xarc/run does `require("chalker")` in its CLI, and chalker is now ESM with top-
+// level await, so it cannot load it - which broke the release build, including the nested build
+// fynpo runs against its local fyn dependency. The local @fynjs/run fixed that with an async
+// chalker loader, but this build stays off the task runner regardless.
 //
 // These three steps are plain commands with no task-runner semantics, so depending on a task
 // runner to sequence them only bought a failure mode. xrun-tasks.ts is still there for dev tasks.

@@ -90,7 +90,7 @@
       {
         "fromPkg": {
           "name": "@fynjs/run",
-          "version": "2.3.0",
+          "version": "0.0.1",
           "path": "packages/xarc-run"
         },
         "onPkg": {
@@ -100,7 +100,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynjs/run@2.3.0(dev)"
+          "@fynjs/run@0.0.1(dev)"
         ]
       }
     ],
@@ -357,9 +357,9 @@
     "packages/cli-args": [
       {
         "fromPkg": {
-          "name": "@fynjs/cli-args",
-          "version": "1.0.0",
-          "path": "packages/cli-args"
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
         },
         "onPkg": {
           "name": "xsh",
@@ -368,71 +368,7 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "@fynjs/cli-args@1.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/cli-args",
-          "version": "1.0.0",
-          "path": "packages/cli-args"
-        },
-        "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/cli-args@1.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/cli-args",
-          "version": "1.0.0",
-          "path": "packages/cli-args"
-        },
-        "onPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/cli-args@1.0.0(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/cli-args",
-          "version": "1.0.0",
-          "path": "packages/cli-args"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/cli-args@1.0.0(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/cli-args",
-          "version": "1.0.0",
-          "path": "packages/cli-args"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/cli-args@1.0.0(dep)"
+          "@fynjs/run@0.0.1(dev)"
         ]
       }
     ],
@@ -457,57 +393,9 @@
     "packages/chalker": [
       {
         "fromPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
-        },
-        "onPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "chalker@1.3.1(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "chalker@1.3.1(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "chalker@1.3.1(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
         },
         "onPkg": {
           "name": "xsh",
@@ -516,64 +404,16 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "chalker@1.3.1(dev)"
+          "@fynjs/run@0.0.1(dev)"
         ]
       }
     ],
     "packages/xaa": [
       {
         "fromPkg": {
-          "name": "xaa",
-          "version": "2.0.0",
-          "path": "packages/xaa"
-        },
-        "onPkg": {
-          "name": "chalker",
-          "version": "1.3.1",
-          "path": "packages/chalker"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xaa@2.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "xaa",
-          "version": "2.0.0",
-          "path": "packages/xaa"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xaa@2.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "xaa",
-          "version": "2.0.0",
-          "path": "packages/xaa"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xaa@2.0.0(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "xaa",
-          "version": "2.0.0",
-          "path": "packages/xaa"
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
         },
         "onPkg": {
           "name": "xsh",
@@ -582,10 +422,10 @@
         },
         "depSection": "dep",
         "indirectSteps": [
-          "xaa@2.0.0(dev)"
+          "@fynjs/run@0.0.1(dev)"
         ]
       }
     ]
   },
-  "__timestamp": 1788036847003
+  "__timestamp": 1788043633745
 }

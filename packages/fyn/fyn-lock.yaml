@@ -51,7 +51,6 @@ $pkg:
   '@fynjs/run': ../xarc-run
   '@vitest/coverage-v8': ^4.0.18
   '@vitest/ui': ^4.0.18
-  '@xarc/module-dev': ^5.0.0
   agentkeepalive: ^3.5.3
   babel-loader: ^8.0.4
   electrode-server: ^3.0.3
@@ -2172,20 +2171,6 @@ $pkg:
  2.4.4:
   $: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==
   _: 'https://registry.npmjs.org/@types/normalize-package-data/-/normalize-package-data-2.4.4.tgz'
-'@types/strip-bom':
- _latest: 4.0.1
- _:
-  ^3.0.0: 3.0.0
- 3.0.0:
-  $: sha512-xevGOReSYGM7g/kUBZzPqCrR/KYAo+F0yiPc85WFTJa0MSLtyFTVTU6cJu/aV4mid7IffDIWqo69THF2o4JiEQ==
-  _: 'https://registry.npmjs.org/@types/strip-bom/-/strip-bom-3.0.0.tgz'
-'@types/strip-json-comments':
- _latest: 3.0.0
- _:
-  0.0.30: 0.0.30
- 0.0.30:
-  $: sha512-7NQmHra/JILCd1QqpSzl8+mJRc8ZHz3uDm8YV1Ks9IhK0epEiTw8aIErbvH9PI+6XbqhyIQy3462nEsn7UVzjQ==
-  _: 'https://registry.npmjs.org/@types/strip-json-comments/-/strip-json-comments-0.0.30.tgz'
 '@vitest/coverage-v8':
  _latest: 4.0.18
  _:
@@ -2482,43 +2467,6 @@ $pkg:
   peerDependencies:
    webpack: 5.x.x
    webpack-cli: 5.x.x
-'@xarc/module-dev':
- _latest: 5.0.0
- _:
-  ^5.0.0: 5.0.0
- 5.0.0:
-  top: 1
-  hasI: 1
-  $: sha512-FzKrTEZxjPZFuFz+ZfCoQ8urjUfbLPcoS3MpVSyGPoTvZc+c42PjFRuVspn9PYqH4LEYaOl2IoxVQZH8ht3QkQ==
-  _: 'https://registry.npmjs.org/@xarc/module-dev/-/module-dev-5.0.0.tgz'
-  dependencies:
-   '@xarc/run': ^1.0.4
-   filter-scan-dir: ^1.0.10
-   lodash: ^4.17.20
-   tsconfig: ^7.0.0
-   tslib: ^2.1.0
-   xsh: ^0.4.5
-'@xarc/run':
- _latest: 2.3.0
- _:
-  ^1.0.4: 1.1.2
- 1.1.2:
-  $: sha512-gOo7kOtJZAVkDB0DJSAR6OTZ4pTkbdzVd902WbiPYu1xxT8tkPq13PfrRwiCjmZPIGTFNIGJyQVq0OtrVTqx8w==
-  _: 'https://registry.npmjs.org/@xarc/run/-/run-1.1.2.tgz'
-  dependencies:
-   chalk: ^4.1.0
-   chalker: ^1.2.0
-   insync: ^2.1.1
-   jaro-winkler: ^0.2.8
-   lodash.foreach: ^4.5.0
-   nix-clap: ^1.3.12
-   optional-require: ^1.0.2
-   path-is-inside: ^1.0.2
-   read-pkg-up: ^7.0.1
-   require-at: ^1.0.6
-   string-array: ^1.0.1
-   unwrap-npm-cmd: ^1.1.1
-   xsh: ^0.4.5
 '@xtuc/ieee754':
  _latest: 1.2.0
  _:
@@ -2657,7 +2605,6 @@ ansi-escapes:
 ansi-regex:
  _latest: 6.2.2
  _:
-  ^3.0.0: 3.0.1
   ^4.1.0: 4.1.1
   ^5.0.1: 5.0.1
   ^6.0.1: 6.2.2
@@ -2670,9 +2617,6 @@ ansi-regex:
  4.1.1:
   $: sha512-ILlv4k/3f6vfQ4OoP2AGvirOktlQ98ZEL1k9FaQjxa3L1abBgbuTDAdPOpvbGncC0BTVQrl+OM8xZGK6tWXt7g==
   _: 'https://registry.npmjs.org/ansi-regex/-/ansi-regex-4.1.1.tgz'
- 3.0.1:
-  $: sha512-+O9Jct8wf++lXxxFc4hc8LsjaSq0HFzzL7cVsw8pRDIPdjKD2mT4ytDZlLuSBZ4cLKZFXIrMGO7DbQCtMJJMKw==
-  _: 'https://registry.npmjs.org/ansi-regex/-/ansi-regex-3.0.1.tgz'
 ansi-styles:
  _latest: 6.2.3
  _:
@@ -4879,18 +4823,12 @@ neo-async:
 nix-clap:
  _latest: 1.3.13
  _:
-  ^1.3.12: 1.3.13
   ^2.4.0: 2.4.5
  2.4.5:
   $: sha512-EUJI4U1nL0XFnBL0iu7xkod9791ggnElOaExdYufBllNOqVE+cGcCdYGaYUdbIrrcxFnwhxKILq0nf+QBC7zRQ==
   _: 'https://registry.npmjs.org/nix-clap/-/nix-clap-2.4.5.tgz'
   dependencies:
    tslib: ^2.6.2
- 1.3.13:
-  $: sha512-ejn05GSB4qDNi6nPGgR7IGkqwzL9Eh8HYoc0T7Zs6QpNUGhyiAIoKCxgsHe0VXJIFI2eVb83DYiK9xzN8OQx3Q==
-  _: 'https://registry.npmjs.org/nix-clap/-/nix-clap-1.3.13.tgz'
-  dependencies:
-   strip-ansi: ^4.0.0
 node-fetch-npm:
  _latest: 2.0.4
  _:
@@ -5116,7 +5054,7 @@ optional-import:
 optional-require:
  _latest: 2.1.0
  _:
-  '^1.0.2,^1.1.10': 1.1.10
+  ^1.1.10: 1.1.10
   ^2.1.0: 2.1.0
  2.1.0:
   top: 1
@@ -6151,7 +6089,6 @@ string_decoder:
 strip-ansi:
  _latest: 7.1.2
  _:
-  ^4.0.0: 4.0.0
   '^6.0.0,^6.0.1': 6.0.1
   ^7.0.1: 7.1.2
  7.1.2:
@@ -6164,11 +6101,6 @@ strip-ansi:
   _: 'https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz'
   dependencies:
    ansi-regex: ^5.0.1
- 4.0.0:
-  $: sha512-4XaJ2zQdCzROZDivEVIDPkcQn8LMFSa8kj8Gxb/Lnwzv9A8VctNZ+lfivC/sV3ivW8ElJTERXZoPBRrZKkNKow==
-  _: 'https://registry.npmjs.org/strip-ansi/-/strip-ansi-4.0.0.tgz'
-  dependencies:
-   ansi-regex: ^3.0.0
 strip-ansi-cjs:
  _:
   'npm:strip-ansi@^6.0.1': 6.0.1
@@ -6180,22 +6112,11 @@ strip-ansi-cjs:
 strip-bom:
  _latest: 5.0.0
  _:
-  ^3.0.0: 3.0.0
   ^4.0.0: 4.0.0
  4.0.0:
   top: 1
   $: sha512-3xurFv5tEgii33Zi8Jtp55wEIILR9eh34FAW00PZf+JnSsTmV/ioewSgQl97JHvgjoRGwPShsWm+IdrxB35d0w==
   _: 'https://registry.npmjs.org/strip-bom/-/strip-bom-4.0.0.tgz'
- 3.0.0:
-  $: sha512-vavAMRXOgBVNF6nyEEmL3DBK19iRpDcoIwW+swQ+CbGiu7lju6t+JklA1MHweoWtadgt4ISVUsXLyDq34ddcwA==
-  _: 'https://registry.npmjs.org/strip-bom/-/strip-bom-3.0.0.tgz'
-strip-json-comments:
- _latest: 5.0.3
- _:
-  ^2.0.0: 2.0.1
- 2.0.1:
-  $: sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==
-  _: 'https://registry.npmjs.org/strip-json-comments/-/strip-json-comments-2.0.1.tgz'
 supports-color:
  _latest: 10.2.2
  _:
@@ -6357,18 +6278,6 @@ treeverse:
  3.0.0:
   $: sha512-gcANaAnd2QDZFmHFEOF4k7uc1J/6a6z3DJMd/QwEyxLoKGiptJRwid582r7QIsFlFMIZ3SnxfS52S4hm2DHkuQ==
   _: 'https://registry.npmjs.org/treeverse/-/treeverse-3.0.0.tgz'
-tsconfig:
- _latest: 7.0.0
- _:
-  ^7.0.0: 7.0.0
- 7.0.0:
-  $: sha512-vZXmzPrL+EmC4T/4rVlT2jNVMWCi/O4DIiSj3UHg1OE5kCKbk4mfrXc6dZksLgRM/TZlKnousKH9bbTazUWRRw==
-  _: 'https://registry.npmjs.org/tsconfig/-/tsconfig-7.0.0.tgz'
-  dependencies:
-   '@types/strip-bom': ^3.0.0
-   '@types/strip-json-comments': 0.0.30
-   strip-bom: ^3.0.0
-   strip-json-comments: ^2.0.0
 tslib:
  _latest: 2.8.1
  _:

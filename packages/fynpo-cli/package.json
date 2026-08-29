@@ -13,11 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "xrun xarc/test-only",
-    "lint": "xrun xarc/lint",
-    "coverage": "xrun xarc/test-cov",
-    "prepublishOnly": "xrun --serial [build, xarc/check]",
-    "docs": "xrun xarc/docs",
+    "prepublishOnly": "xrun build",
+    "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "ci:check": "tsc --noEmit",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
@@ -50,7 +47,6 @@
     "@fynjs/run": "^0.0.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/node": "^14.14.16",
-    "@xarc/module-dev": "^3.2.1",
     "prettier": "^2.2.1",
     "publish-util": "^2.1.0",
     "source-map-support": "^0.5.19",
@@ -60,12 +56,5 @@
   },
   "prettier": {
     "printWidth": 100
-  },
-  "@xarc/module-dev": {
-    "features": [
-      "prettier",
-      "typedoc",
-      "typescript"
-    ]
   }
 }

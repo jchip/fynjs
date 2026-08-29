@@ -10,13 +10,9 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "test": "xrun xarc/test-only",
-    "lint": "xrun xarc/lint",
-    "docs": "xrun xarc/docs",
-    "coverage": "xrun xarc/test-cov",
-    "prepublishOnly": "xrun [[build, docs], xarc/check] && publish-util-prepublishonly",
-    "postpack": "publish-util-postpack",
-    "prepack": "publish-util-prepack"
+    "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
+    "prepublishOnly": "xrun --serial build docs && publish-util-prepublishonly",
+    "postpack": "publish-util-postpack"
   },
   "bin": {
     "create-monorepo": "bin/create-monorepo.js",
@@ -31,25 +27,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jchip/fynjs.git"
-  },
-  "devDependencies": {
-    "@fynjs/run": "^0.0.1",
-    "@istanbuljs/nyc-config-typescript": "^1.0.1",
-    "@types/node": "^14.14.16",
-    "@typescript-eslint/eslint-plugin": "^4.11.0",
-    "@typescript-eslint/parser": "^4.11.0",
-    "@xarc/module-dev": "^4.0.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^7.16.0",
-    "eslint-config-walmart": "^2.2.1",
-    "eslint-plugin-filenames": "^1.1.0",
-    "eslint-plugin-jsdoc": "^30.7.9",
-    "eslint-plugin-tsdoc": "^0.2.11",
-    "publish-util": "^2.1.0",
-    "source-map-support": "^0.5.19",
-    "ts-node": "^9.1.1",
-    "typedoc": "^0.22.1",
-    "typescript": "^5.8.3"
   },
   "dependencies": {
     "chalker": "^1.2.0",
@@ -67,17 +44,5 @@
     "bin",
     "dist",
     "templates"
-  ],
-  "prettier": {
-    "printWidth": 100
-  },
-  "@xarc/module-dev": {
-    "features": [
-      "eslint",
-      "eslintTS",
-      "prettier",
-      "typedoc",
-      "typescript"
-    ]
-  }
+  ]
 }
