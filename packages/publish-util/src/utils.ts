@@ -166,10 +166,12 @@ export const keepStandardFields = [
   "peerDependencies",
   "peerDependenciesMeta",
   "bundledDependencies",
+  "bundleDependencies", // npm accepts both spellings
   "optionalDependencies",
   "engines",
   "os",
   "cpu",
+  "libc", // glibc/musl selection, complements os/cpu
   "private",
   "publishConfig",
   //   "workspaces"
@@ -178,8 +180,15 @@ export const keepStandardFields = [
   "module",
   "type", // module type
   "types", // typescript types
+  "typings", // legacy alias of types
+  "typesVersions", // per-TS-version type mappings
+  "sideEffects", // bundler tree-shaking hint
 
   // ESM
   "exports", // subpath exports entry point
   "imports", // subpath imports entry point
+
+  // CDN entry points
+  "unpkg",
+  "jsdelivr",
 ];
