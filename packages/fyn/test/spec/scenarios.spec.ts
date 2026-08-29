@@ -25,16 +25,14 @@ import fynRun from "../../cli/fyn";
 import fyntil from "../../lib/util/fyntil";
 import logger from "../../lib/logger";
 import mockNpm from "../fixtures/mock-npm";
-import _optionalRequire from "optional-require";
-import { createRequire } from "module";
+import { makeOptionalRequire } from "optional-require";
 import sortObjKeys from "../../lib/util/sort-obj-keys";
 import ci from "ci-info";
 import * as xaa from "xaa";
 import { execSync } from "child_process";
 import chalk from "chalk";
 
-const xrequire = createRequire(import.meta.url);
-const optionalRequire = _optionalRequire(xrequire);
+const optionalRequire = makeOptionalRequire(import.meta.url);
 
 const BASE_ARGS = ["--pg=none", "-q=none", "--no-rcfile"];
 const getFynDirArg = dir => `--fyn-dir=${dir}`;

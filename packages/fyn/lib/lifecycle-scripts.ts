@@ -12,8 +12,7 @@
 //
 
 import Path from "path";
-import { createRequire } from "module";
-import makeOptionalRequire from "optional-require";
+import { makeOptionalRequire } from "optional-require";
 import assert from "assert";
 import xsh from "xsh";
 import chalk from "chalk";
@@ -29,7 +28,7 @@ import npmConfigEnv from "./util/npm-config-env";
 import { AggregateError } from "@jchip/error";
 import type { PackageJson } from "./types";
 
-const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
+const optionalRequire = makeOptionalRequire(import.meta.url);
 
 /** Fyn instance interface for lifecycle scripts */
 interface FynForLifecycle {
