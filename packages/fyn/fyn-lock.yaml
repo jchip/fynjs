@@ -39,8 +39,8 @@ $pkg:
   tar: ^4.4.19
   visual-exec: ../visual-exec
   visual-logger: ../visual-logger
-  xaa: ^2.0.0
-  xenv-config: ^1.3.0
+  xaa: ../xaa
+  xenv-config: ../xenv-config
   xsh: ../../_w/xsh
   yamljs: ^0.3.0
  dev:
@@ -1252,10 +1252,10 @@ $pkg:
   cpu:
    - arm64
 '@fynjs/cli-args':
- _latest: 2.4.5-fynlocal_h
+ _latest: 1.0.0-fynlocal_h
  _:
-  ../cli-args: 2.4.5-fynlocal_h
- 2.4.5-fynlocal_h:
+  ../cli-args: 1.0.0-fynlocal_h
+ 1.0.0-fynlocal_h:
   top: 1
   $: local
   _: ../cli-args
@@ -2943,14 +2943,17 @@ chalk:
    ansi-styles: ^4.1.0
    supports-color: ^7.1.0
 chalker:
- _latest: 1.2.0
+ _latest: 1.3.1-fynlocal_h
  _:
-  ^1.2.0: 1.2.0
- 1.2.0:
-  $: sha512-Cag6asQV/lK6AQGBWGGDt5bu+FSzo4OlLHQVrd4Io1cJCGNXIvKcaxx6JH0+iL1azQ4Bs1i7qkvzlkH2Vwo2OQ==
-  _: 'https://registry.npmjs.org/chalker/-/chalker-1.2.0.tgz'
+  ../chalker: 1.3.1-fynlocal_h
+ 1.3.1-fynlocal_h:
+  $: local
+  _: ../chalker
   dependencies:
-   chalk: ^4.0.0
+   color-convert: ^2.0.1
+  peerDependencies:
+   ansi-colors: '>=4'
+   chalk: '>=4'
 check-pkg-new-version-engine:
  _latest: 1.0.3-fynlocal_h
  _:
@@ -6774,14 +6777,14 @@ ws:
    bufferutil: ^4.0.1
    utf-8-validate: ^5.0.2
 xaa:
- _latest: 2.0.0
+ _latest: 2.0.0-fynlocal_h
  _:
+  ../xaa: 2.0.0-fynlocal_h
   ^1.6.0: 1.8.0
-  ^2.0.0: 2.0.0
- 2.0.0:
+ 2.0.0-fynlocal_h:
   top: 1
-  $: sha512-qJ58bzCh2/qzU1zSx8PQ77ySJotdSjwypxBF4i4tJzNkixjkqTSH1ryg2Gf1Z9dNyO0/jcuY2KHmrFF0Cn7YRA==
-  _: 'https://registry.npmjs.org/xaa/-/xaa-2.0.0.tgz'
+  $: local
+  _: ../xaa
   dependencies:
    tslib: ^2.6.2
  1.8.0:
@@ -6790,13 +6793,13 @@ xaa:
   dependencies:
    tslib: ^2.6.2
 xenv-config:
- _latest: 1.3.1
+ _latest: 1.3.1-fynlocal_h
  _:
-  ^1.3.0: 1.3.1
- 1.3.1:
+  ../xenv-config: 1.3.1-fynlocal_h
+ 1.3.1-fynlocal_h:
   top: 1
-  $: sha512-ekNalpPoXwgWx1tE384qlkx8+17ANcpmCtak4TYK1EsEcM+0a607TqszGHv4sWMBuogM28XyJmzcRoIgMjABIA==
-  _: 'https://registry.npmjs.org/xenv-config/-/xenv-config-1.3.1.tgz'
+  $: local
+  _: ../xenv-config
 xsh:
  _latest: 0.4.6-fynlocal_h
  _:
