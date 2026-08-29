@@ -52,6 +52,14 @@ export class Prepare {
     this._options = _.defaults(opts, overrides, this._fynpoRc);
   }
 
+  /**
+   * A release is selective when --only narrowed it to a subset of packages. Such a release is
+   * tagged in its own namespace so it does not move the repo wide changelog boundary.
+   */
+  _isSelective(): boolean {
+    return [].concat(this._options.only || []).filter(Boolean).length > 0;
+  }
+
   updateDep(pkg, name, ver) {
     ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"].forEach(
       (sec) => {
@@ -169,7 +177,10 @@ that's not latest but none set in fynpo config`
     return this._sh(`git add ${packages.map((x) => `"${x}"`).join(" ")}`)
       .then((output) => {
         logger.info("git add", output);
-        return this._sh(`git commit -n -m "[Publish]" -m " - ${this._tags.join("\n - ")}"`);
+        return this._sh(
+          `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
+            ` -m " - ${this._tags.join("\n - ")}"`
+        );
       })
       .then((output) => {
         logger.info("git commit", output);

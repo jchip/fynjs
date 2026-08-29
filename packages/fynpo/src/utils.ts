@@ -64,6 +64,88 @@ export function makePublishTagSearchTerm(tmpl: string): string {
   return (tmpl || defaultTagTemplate).replace(/{[^}]+}/g, "*").replace(/\*+/g, "*");
 }
 
+/**
+ * Subject of the git commit a selective (partial) publish creates.
+ *
+ * It must keep `startsWith("[Publish]")` true, because publish.ts identifies publish commits
+ * that way and the commitlint config ignores commits starting with it.
+ */
+export const selectivePublishSubject = "[Publish][Selective]";
+
+/** prefix that puts selective release tags in their own namespace */
+export const selectiveTagPrefix = "selective-";
+
+/**
+ * Subject line for the publish commit.
+ *
+ * @param selective whether only a subset of packages is being released
+ */
+export function makePublishCommitSubject(selective: boolean): string {
+  return selective ? selectivePublishSubject : "[Publish]";
+}
+
+/**
+ * Normalize the `--only` selection and expand it across version lock groups.
+ *
+ * Publishing half of a version lock group would break the invariant the locks exist to
+ * enforce, so selecting any member pulls in the whole group.
+ *
+ * @param only the names given to --only
+ * @param versionLocks lock groups from fynpo.json
+ * @returns the expanded set of names, or undefined when nothing was selected
+ */
+export function expandSelection(only: string[], versionLocks: string[][] = []): Set<string> {
+  const selection = new Set([].concat(only || []).filter(Boolean));
+
+  if (selection.size === 0) {
+    return undefined;
+  }
+
+  for (const group of versionLocks || []) {
+    if (group.some((name) => selection.has(name))) {
+      group.forEach((name) => selection.add(name));
+    }
+  }
+
+  return selection;
+}
+
+/**
+ * Make the git tag template for a selective release.
+ *
+ * Selective releases must NOT be found by `getLatestTag`, whose `--match` term is derived from
+ * the full-release template. `git describe --match` anchors the pattern against the whole tag
+ * name, so prefixing is what keeps the two namespaces apart: `fynpo-rel-*` cannot match
+ * `selective-fynpo-rel-...`. That is the whole mechanism by which a selective release leaves
+ * the changelog boundary where it was, so the next run still sees every other package's commits.
+ *
+ * Suffixing would NOT work - `fynpo-rel-*` would happily match `fynpo-rel-...-selective`.
+ *
+ * @param tmpl the full-release tag template
+ */
+export function makeSelectiveTagTemplate(tmpl?: string): string {
+  return `${selectiveTagPrefix}${tmpl || defaultTagTemplate}`;
+}
+
+/**
+ * Parse the package names out of a `[Publish]` commit body.
+ *
+ * The body lists what was released, one per line:
+ * ```
+ *  - optional-import@1.0.0
+ * ```
+ *
+ * @param body full commit message
+ * @returns package names, without versions
+ */
+export function parsePublishedPackageNames(body: string): string[] {
+  return body
+    .split("\n")
+    .map((x) => x.trim())
+    .filter((x) => x.startsWith(`- `) && x.lastIndexOf("@") > 2)
+    .map((x) => x.substring(2, x.lastIndexOf("@")));
+}
+
 /* eslint-disable complexity */
 
 export const locateGlobalNodeModules = async () => {

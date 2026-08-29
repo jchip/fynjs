@@ -130,6 +130,14 @@ export default class Changelog {
       });
   };
 
+  /**
+   * A release is selective when --only narrowed it to a subset of packages. Such a release is
+   * tagged in its own namespace so it does not move the repo wide changelog boundary.
+   */
+  _isSelective(): boolean {
+    return [].concat(this._options.only || []).filter(Boolean).length > 0;
+  }
+
   commitAndTagUpdates = ({ packages, tags }) => {
     if (!this._options.commit) {
       logger.warn("commit option disabled, skip committing updates.");
@@ -144,7 +152,10 @@ export default class Changelog {
     return this._sh(`git add ${this._changeLogFile} ${packages.map((x) => `"${x}"`).join(" ")}`)
       .then((output) => {
         logger.info("git add", output);
-        return this._sh(`git commit -n -m "[Publish]" -m " - ${tags.join("\n - ")}"`);
+        return this._sh(
+          `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
+            ` -m " - ${tags.join("\n - ")}"`
+        );
       })
       .then((output) => {
         logger.info("git commit", output);

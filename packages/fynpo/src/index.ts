@@ -376,6 +376,11 @@ export const fynpoMain = () => {
       desc: "force publish packages",
       allowCmd: ["updated", "changelog", "version"],
     },
+    only: {
+      args: "<vals string..>",
+      desc: "release only these packages (selective release - version lock groups expand)",
+      allowCmd: ["updated", "changelog", "version", "prepare"],
+    },
     "ignore-changes": {
       alias: "ic",
       args: "<vals string..>",

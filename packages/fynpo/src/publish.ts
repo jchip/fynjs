@@ -32,6 +32,7 @@ export default class Publish {
   _packagesToPublish: FynpoPackageInfo[];
   _fynpoRc: any;
   _tagTmpl: string;
+  _selective: boolean;
   _graph: FynpoDepGraph;
   _tgzFiles: string[];
 
@@ -51,6 +52,8 @@ export default class Publish {
 
     this._tagTmpl = gitTagTmpl;
     this._tgzFiles = [];
+    // set from the HEAD commit subject in getPackagesToPublish
+    this._selective = false;
   }
 
   _sh(command: string, cwd = this._cwd, silent = false) {
@@ -76,7 +79,13 @@ export default class Publish {
   }
 
   getLatestTag() {
-    const tagSearch = utils.makePublishTagSearchTerm(this._tagTmpl);
+    // check both namespaces: a selective release does not block a later full release from a
+    // different commit, but nothing should be published twice off the same HEAD
+    const fullSearch = utils.makePublishTagSearchTerm(this._tagTmpl);
+    const selectiveSearch = utils.makePublishTagSearchTerm(
+      utils.makeSelectiveTagTemplate(this._tagTmpl)
+    );
+    const tagSearch = `${fullSearch} ${selectiveSearch}`;
     return this._sh(`git tag --points-at HEAD --list ${tagSearch}`).then((output) => {
       const tagInfo = output.stdout.split("\n").filter((x) => x.trim().length > 0);
       if (tagInfo.length > 0) {
@@ -103,14 +112,17 @@ export default class Publish {
       return [];
     }
 
-    const packageNames = commitMsg.stdout
-      .split("\n")
-      .map((x) => x.trim())
-      .filter((x) => x.length > 0 && x.startsWith(`- `))
-      .map((x) => {
-        const ix2 = x.lastIndexOf("@");
-        return x.substring(2, ix2);
-      });
+    // a selective release only ships some packages, so it must not move the repo wide
+    // changelog boundary - it gets tagged in its own namespace instead. See addReleaseTag.
+    this._selective = commitMsg.stdout.includes(utils.selectivePublishSubject);
+    if (this._selective) {
+      logger.info(
+        `Selective publish - tagging in the '${utils.selectiveTagPrefix}' namespace so the`,
+        `changelog boundary stays at the last full release`
+      );
+    }
+
+    const packageNames = utils.parsePublishedPackageNames(commitMsg.stdout);
 
     const packagePaths = changedFiles.stdout
       .split("\n")
@@ -222,7 +234,12 @@ export default class Publish {
         commitIds = commitOutput.stdout.split("\n").filter((x) => x.trim().length > 0);
       }
 
-      newTag = utils.makePublishTag(this._tagTmpl, {
+      // a selective release is tagged in its own namespace. getLatestTag's --match comes from
+      // the full-release template and git anchors the pattern, so `fynpo-rel-*` never matches
+      // `selective-fynpo-rel-...` - which is what leaves the changelog boundary untouched.
+      const tmpl = this._selective ? utils.makeSelectiveTagTemplate(this._tagTmpl) : this._tagTmpl;
+
+      newTag = utils.makePublishTag(tmpl, {
         date: new Date(),
         gitHash: commitIds[0] || "",
       });

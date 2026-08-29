@@ -4,6 +4,7 @@ import Fs from "fs";
 import minimatch from "minimatch";
 import { logger } from "../logger";
 import { execSync } from "../child-process";
+import { selectivePublishSubject, parsePublishedPackageNames } from "../utils";
 
 const xrequire = eval("require"); // eslint-disable-line
 
@@ -11,6 +12,50 @@ export const isAnythingCommitted = (opts) => {
   const anyCommits = execSync("git", ["rev-list", "--count", "--all", "--max-count=1"], opts);
 
   return Boolean(parseInt(anyCommits, 10));
+};
+
+/**
+ * Work out, per package, which commits were already covered by a selective release.
+ *
+ * The range starts at the last FULL release tag, so it can span selective releases. Those
+ * released some packages already; re-listing their commits would double-report them in the
+ * changelog and bump them a second time for work that already shipped.
+ *
+ * `git log` is newest first, so everything after a selective publish commit in the list is
+ * older than it, i.e. already released for the packages that commit names.
+ *
+ * @param commitLines "<sha> <subject>" lines, newest first
+ * @param execOpts exec options carrying cwd
+ * @returns package name -> set of commit ids that predate its last selective release
+ */
+export const collectSelectiveBaselines = (
+  commitLines: string[],
+  execOpts
+): Record<string, Set<string>> => {
+  const excluded: Record<string, Set<string>> = {};
+  const ids = commitLines.map((line) => {
+    const idx = line.indexOf(" ");
+    return idx < 0 ? line : line.substr(0, idx);
+  });
+
+  commitLines.forEach((line, i) => {
+    const idx = line.indexOf(" ");
+    const subject = idx < 0 ? "" : line.substr(idx + 1);
+
+    if (!subject.startsWith(selectivePublishSubject)) {
+      return;
+    }
+
+    const body = execSync("git", ["log", "-1", "--pretty=%B", ids[i]], execOpts);
+    const older = ids.slice(i + 1);
+
+    for (const name of parsePublishedPackageNames(body)) {
+      excluded[name] ??= new Set<string>();
+      older.forEach((id) => excluded[name].add(id));
+    }
+  });
+
+  return excluded;
 };
 
 export const getNewCommits = (opts, changed) => {
@@ -34,6 +79,8 @@ export const getNewCommits = (opts, changed) => {
     .filter(
       (x) => x.length > 0 && !x.startsWith("Merge pull request #") && !x.includes("[no-changelog]")
     );
+
+  const selectiveBaselines = collectSelectiveBaselines(commits, execOpts);
   const commitIds = commits.reduce(
     (a, x) => {
       const idx = x.indexOf(" ");
@@ -50,11 +97,11 @@ export const getNewCommits = (opts, changed) => {
       logger.error("change log already contain a commit from new commits");
       process.exit(1);
     }
-    return { commits: commitObj, changed, opts };
+    return { commits: commitObj, changed, opts, selectiveBaselines };
   });
 };
 
-export const collateCommitsPackages = ({ commits, changed, opts }) => {
+export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaselines = {} }) => {
   const commitIds = commits.ids;
   const execOpts = {
     cwd: opts.cwd,
@@ -146,6 +193,11 @@ export const collateCommitsPackages = ({ commits, changed, opts }) => {
 
         const ownerPkg = findPkgForFile(x);
         if (ownerPkg) {
+          // already shipped for this package by an earlier selective release - checked before
+          // realPackages, so a package with nothing new left does not show up as changed at all
+          if (selectiveBaselines[ownerPkg.name]?.has(id)) {
+            return a;
+          }
           if (collated.realPackages.indexOf(ownerPkg.name) < 0) {
             collated.realPackages.push(ownerPkg.name);
             a.packages[ownerPkg.name] = { dirName: ownerPkg.dirName };

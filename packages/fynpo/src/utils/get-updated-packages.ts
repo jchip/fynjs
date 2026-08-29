@@ -8,7 +8,12 @@ import slash from "slash";
 import _ from "lodash";
 import { FynpoDepGraph } from "@fynpo/base";
 
-import { makePublishTagSearchTerm, makePublishFilter, makeForeignRepoDetector } from "../utils";
+import {
+  makePublishTagSearchTerm,
+  makePublishFilter,
+  makeForeignRepoDetector,
+  expandSelection,
+} from "../utils";
 
 const ifTagExists = (opts) => {
   let result = false;
@@ -107,7 +112,22 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
     return Boolean(root) && !allowForeign;
   };
 
+  // `--only` narrows the release to a subset. Expanded across version lock groups, because
+  // publishing half a lock group would break the invariant the locks exist to enforce.
+  const selection = expandSelection(opts.only, _.get(rc, "versionLocks", []));
+  if (selection) {
+    const unknown = [...selection].filter((name) => !packages[name]);
+    if (unknown.length) {
+      logger.error(`--only names packages that do not exist here: ${unknown.join(", ")}`);
+      process.exit(1);
+    }
+    logger.info(`Selective release, only publishing: ${[...selection].join(", ")}`);
+  }
+
   const canPublish = (name: string): boolean => {
+    if (selection && !selection.has(name)) {
+      return false;
+    }
     const infos = [].concat(packages[name] || []);
     return infos.some((info) => publishFilter(info) && !isForeign(info));
   };
