@@ -60,6 +60,7 @@ $pkg:
   null-loader: ^4.0.1
   patch-package: ^8.0.0
   prettier: ^1.19.1
+  rolldown: ^1.2.6
   tsx: ^4.21.0
   v8-compile-cache: ^2.3.0
   vite: ^7.3.1
@@ -1949,6 +1950,13 @@ $pkg:
    node-gyp: ^12.1.0
    proc-log: ^6.0.0
    which: ^6.0.0
+'@oxc-project/types':
+ _latest: 0.147.0
+ _:
+  '=0.147.0': 0.147.0
+ 0.147.0:
+  $: sha512-IJ3s6ltHLp45S0bh7phkX+gJO7A1Wuz2EaqpAhb8WjqDwbzMiWKHhyyT42tskaWjEYXtHtVCPpnBJVT9+dcRLg==
+  _: 'https://registry.npmjs.org/@oxc-project/types/-/types-0.147.0.tgz'
 '@pkgjs/parseargs':
  _latest: 0.11.0
  _:
@@ -1963,6 +1971,24 @@ $pkg:
  1.0.0-next.29:
   $: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==
   _: 'https://registry.npmjs.org/@polka/url/-/url-1.0.0-next.29.tgz'
+'@rolldown/binding-darwin-arm64':
+ _latest: 1.2.6
+ _:
+  1.2.6: 1.2.6
+ 1.2.6:
+  $: sha512-dgR56NYnvAszm7Ob1B2/Vn0e8bUQYZH2UjVaMMtMVOCKFSfjhfLmuA/9+O+F+ajUdG6B/bSssrKW6JJYASa8jA==
+  _: 'https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.2.6.tgz'
+  os:
+   - darwin
+  cpu:
+   - arm64
+'@rolldown/pluginutils':
+ _latest: 1.0.1
+ _:
+  ^1.0.0: 1.0.1
+ 1.0.1:
+  $: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==
+  _: 'https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz'
 '@rollup/rollup-darwin-arm64':
  _latest: 4.57.0
  _:
@@ -5644,6 +5670,33 @@ rimraf:
   dependencies:
    glob: ^13.0.0
    package-json-from-dist: ^1.0.1
+rolldown:
+ _latest: 1.2.6
+ _:
+  ^1.2.6: 1.2.6
+ 1.2.6:
+  top: 1
+  $: sha512-vMM4q3aixf46GiF1Kok8jDPFsEpXgFWGjUHXNkNHNm+Y2adXAG2dbX91jkti3i0ZRsOlcmbuzAz1poObSHCmUA==
+  _: 'https://registry.npmjs.org/rolldown/-/rolldown-1.2.6.tgz'
+  dependencies:
+   '@oxc-project/types': '=0.147.0'
+   '@rolldown/pluginutils': ^1.0.0
+  optionalDependencies:
+   '@rolldown/binding-darwin-arm64': 1.2.6
+   '@rolldown/binding-android-arm64': 1.2.6
+   '@rolldown/binding-win32-arm64-msvc': 1.2.6
+   '@rolldown/binding-linux-arm64-gnu': 1.2.6
+   '@rolldown/binding-linux-arm64-musl': 1.2.6
+   '@rolldown/binding-openharmony-arm64': 1.2.6
+   '@rolldown/binding-android-arm-eabi': 1.2.6
+   '@rolldown/binding-linux-arm-gnueabihf': 1.2.6
+   '@rolldown/binding-linux-ppc64-gnu': 1.2.6
+   '@rolldown/binding-linux-s390x-gnu': 1.2.6
+   '@rolldown/binding-darwin-x64': 1.2.6
+   '@rolldown/binding-win32-x64-msvc': 1.2.6
+   '@rolldown/binding-freebsd-x64': 1.2.6
+   '@rolldown/binding-linux-x64-gnu': 1.2.6
+   '@rolldown/binding-linux-x64-musl': 1.2.6
 rollup:
  _latest: 4.57.0
  _:
