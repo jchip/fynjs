@@ -6,9 +6,9 @@ $pkg:
   '@jchip/error': ../error
   xaa: ../xaa
  dev:
+  '@fynjs/run': ../xarc-run
   '@types/node': ^22.15.30
   '@vitest/coverage-v8': ^3.2.2
-  '@fynjs/run': ../xarc-run
   bluebird: ^3.7.2
   publish-util: ../publish-util
   run-verify: ../run-verify
@@ -88,10 +88,10 @@ $pkg:
   cpu:
    - arm64
 '@fynjs/run':
- _latest: 2.3.0-fynlocal_h
+ _latest: 0.0.1-fynlocal_h
  _:
-  ../xarc-run: 2.3.0-fynlocal_h
- 2.3.0-fynlocal_h:
+  ../xarc-run: 0.0.1-fynlocal_h
+ 0.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../xarc-run

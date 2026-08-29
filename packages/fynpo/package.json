@@ -116,6 +116,7 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.2.0",
     "@babel/preset-typescript": "^7.16.0",
+    "@fynjs/run": "^0.0.1",
     "@types/node": "^16.9.6",
     "babel-loader": "^8.0.4",
     "publish-util": "^2.1.0",

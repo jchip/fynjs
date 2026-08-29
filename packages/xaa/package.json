@@ -54,9 +54,9 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@fynjs/run": "^0.0.1",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^3.2.2",
-    "@xarc/run": "^2.3.0",
     "prettier": "^3.5.3",
     "publish-util": "^2.1.0",
     "source-map-support": "^0.5.21",

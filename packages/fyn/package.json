@@ -132,6 +132,7 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.2.0",
     "@babel/preset-flow": "^7.16.0",
+    "@fynjs/run": "^0.0.1",
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "@xarc/module-dev": "^5.0.0",

@@ -62,10 +62,10 @@
   "homepage": "https://github.com/jchip/filter-scan-dir",
   "dependencies": {},
   "devDependencies": {
+    "@fynjs/run": "^0.0.1",
     "@types/node": "^24.10.1",
     "@vitest/coverage-v8": "^4.0.13",
     "@vitest/ui": "^4.0.13",
-    "@fynjs/run": "^2.3.0",
     "prettier": "^3.6.2",
     "publish-util": "^2.1.0",
     "typedoc": "^0.28.14",
