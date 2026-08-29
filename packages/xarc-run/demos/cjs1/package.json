@@ -35,6 +35,6 @@
     }
   },
   "dependencies": {
-    "@fynjs/run": "^2.0.1"
+    "@fynjs/run": "^0.0.1"
   }
 }

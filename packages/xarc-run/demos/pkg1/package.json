@@ -8,10 +8,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "tsc",
-    "test": "xrun xarc/test-only",
-    "prepublishOnly": "xrun --serial [[build, docs], xarc/check]",
-    "docs": "xrun xarc/docs",
-    "coverage": "xrun xarc/test-cov"
+    "prepublishOnly": "xrun --serial build docs",
+    "docs": "typedoc --out docs src"
   },
   "author": "",
   "files": [
@@ -35,8 +33,7 @@
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/node": "^20.8.9",
-    "@xarc/module-dev": "^5.0.0",
-    "@fynjs/run": "^1.1.1",
+    "@fynjs/run": "^0.0.1",
     "prettier": "^3.0.3",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",
@@ -50,12 +47,5 @@
   },
   "prettier": {
     "printWidth": 100
-  },
-  "@xarc/module-dev": {
-    "features": [
-      "prettier",
-      "typedoc",
-      "typescript"
-    ]
   }
 }

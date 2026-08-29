@@ -1,5 +1,3 @@
-import { loadTasks } from "@xarc/module-dev";
-loadTasks();
 import { load } from "@fynjs/run";
 
 load({
