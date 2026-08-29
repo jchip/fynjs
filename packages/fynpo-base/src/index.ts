@@ -102,7 +102,12 @@ function processDirectDeps(packages) {
 function processIndirectDeps(packages, circulars) {
   let change = 0;
 
-  const add = (info, deps) => {
+  /**
+   * @param info the package whose indirect deps we are accumulating
+   * @param deps deps to walk
+   * @param seen packages already expanded in THIS traversal
+   */
+  const add = (info, deps, seen: Set<string>) => {
     _.each(deps, (dep) => {
       const depPkg = packages[dep];
       if (info.localDeps.indexOf(dep) < 0 && info.indirectDeps.indexOf(dep) < 0) {
@@ -117,12 +122,22 @@ function processIndirectDeps(packages, circulars) {
         }
         return;
       }
-      add(info, depPkg.localDeps.concat(depPkg.indirectDeps));
+      // The check above only catches a cycle that comes straight back to `info`. A cycle
+      // between two OTHER packages - e.g. aveazul devDepends on bluebird while bluebird
+      // depends on aveazul - would otherwise bounce between them forever for every package
+      // downstream of it, blowing the stack. Expanding each package once per traversal is
+      // enough: this is a transitive closure, and the outer `change > 0` loop still runs to
+      // a fixpoint.
+      if (seen.has(dep)) {
+        return;
+      }
+      seen.add(dep);
+      add(info, depPkg.localDeps.concat(depPkg.indirectDeps), seen);
     });
   };
 
   _.each(packages, (pkg) => {
-    add(pkg, pkg.localDeps.concat(pkg.indirectDeps));
+    add(pkg, pkg.localDeps.concat(pkg.indirectDeps), new Set<string>());
   });
 
   if (change > 0) {
