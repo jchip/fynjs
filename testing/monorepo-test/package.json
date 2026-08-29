@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "test": "tsx ../../packages/fyn/cli/fyn.ts --no-build-local --no-enforce-registry-deps && fynpo && fynpo run test --stream",
+    "test": "vite-node ../../packages/fyn/cli/fyn.ts -- --no-build-local --no-enforce-registry-deps && fynpo && fynpo run test --stream",
     "clean-test": "npm run clean && npm run test",
     "clean": "rm -rf .fynpo node_modules */*/node_modules */*/dist */*/fyn-lock.* fyn-lock.*",
     "prepublishOnly": "exit 1"
@@ -20,10 +20,10 @@
     "url": ""
   },
   "dependencies": {
+    "@fynjs/cli-args": "../../packages/cli-args",
     "@fynpo/base": "../../packages/fynpo-base",
     "fyn": "../../packages/fyn",
     "fynpo": "../../packages/fynpo",
-    "visual-exec": "../../packages/visual-exec",
-    "tsx": "^4.20.6"
+    "visual-exec": "../../packages/visual-exec"
   }
 }

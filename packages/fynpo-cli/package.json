@@ -18,7 +18,7 @@
     "coverage": "xrun xarc/test-cov",
     "prepublishOnly": "xrun --serial [build, xarc/check]",
     "docs": "xrun xarc/docs",
-    "ci:check": "xrun xarc/check",
+    "ci:check": "tsc --noEmit",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
