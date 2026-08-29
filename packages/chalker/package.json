@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jchip/chalker.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/chalker"
   },
   "scripts": {
     "test": "xrun --serial test:unit test:demo",
@@ -18,7 +19,9 @@
     "test:demo:esm-namespace": "cd demo/esm-namespace && fyn install && fyn test",
     "test:demo:esm-create-require": "cd demo/esm-create-require && fyn install && fyn test",
     "test:demo:esm-named-export-probe": "cd demo/esm-named-export-probe && fyn install && fyn test",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
   },
   "files": [
     "lib"
@@ -56,6 +59,7 @@
     "@xarc/run": "^2.3.0",
     "ansi-colors": "^4.1.3",
     "chalk": "^4.1.2",
+    "publish-util": "^2.1.0",
     "prettier": "^2.0.2",
     "vitest": "4.1.5"
   },
