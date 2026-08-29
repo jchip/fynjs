@@ -19,6 +19,8 @@ describe("prePackObj", () => {
       bundleDependencies: ["foo"],
       scripts: { postpack: "publish-util-postpack" },
       dependencies: { foo: "^1.0.0" },
+      peerDependencies: { react: ">=18" },
+      peerDependenciesMeta: { react: { optional: true } },
       devDependencies: { vitest: "^3.0.0" },
       prettier: { printWidth: 100 },
       nyc: { reporter: ["lcov"] },
@@ -35,6 +37,8 @@ describe("prePackObj", () => {
     expect(pkg.jsdelivr).toBe("./dist/index.umd.js");
     expect(pkg.libc).toEqual(["glibc"]);
     expect(pkg.bundleDependencies).toEqual(["foo"]);
+    expect(pkg.peerDependencies).toEqual({ react: ">=18" });
+    expect(pkg.peerDependenciesMeta).toEqual({ react: { optional: true } });
 
     expect(pkg).not.toHaveProperty("devDependencies");
     expect(pkg).not.toHaveProperty("prettier");
