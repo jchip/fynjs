@@ -2,41 +2,41 @@
 "use strict";
 
 const Path = require("path");
-const { optionalRequireCwd } = require("optional-require");
 
 /**
- * In case a package manager uses symlinks to arrange packages under node_modules, this will
- * detect whether we should use a relative path, or this module's full name, as prefix to its code
- * in order to be compatible with node's `--preserve-symlinks` flag.
+ * Find the directory holding the CLI code to run.
  *
- * The reason this is needed: In node_modules/.bin, package managers will create symlinks that
- * point directly to the bin files, and that will by pass the `--preserv-symlinks` behavior.
+ * A project can install its own @fynjs/run, and that copy should win over whichever one this bin
+ * happens to live in - so look from the project's cwd first, then from this file. Looking from
+ * this file also covers package managers that symlink node_modules/.bin straight at the bin
+ * script, which bypasses node's `--preserve-symlinks` handling.
  *
- * @returns relative path or full name to this module's code
+ * Every branch returns an absolute path. Probing by name and then requiring by name would use two
+ * different resolution bases - cwd for the probe, this file for the require - so they could land
+ * on different copies, or the require could fail outright when only the probe matched.
+ *
+ * @returns absolute path to the cli directory
  */
-function detectRequirePrefix() {
-  try {
-    const nmName = require.resolve("@fynjs/run/bin/xrun");
-    const nmDir = Path.dirname(nmName);
-    if (nmDir !== __dirname) {
-      return "@fynjs/run"; // use module's full name
+function resolveCliDir() {
+  for (const paths of [[process.cwd()], [__dirname]]) {
+    try {
+      return Path.dirname(require.resolve("@fynjs/run/cli/xrun", { paths }));
+    } catch (err) {
+      //
     }
-  } catch (err) {
-    //
   }
 
-  return ".."; // use relative path
+  // not installed under either - running from this package's own checkout
+  return Path.join(__dirname, "..", "cli");
 }
-
-const prefix = detectRequirePrefix();
 
 //
 // resolve xrun and ck from the same install so they cannot come from different copies
 //
-const cliDir = optionalRequireCwd("@fynjs/run/cli/xrun") ? "@fynjs/run" : prefix;
+const cliDir = resolveCliDir();
 
-const xrun = require(`${cliDir}/cli/xrun`);
-const ck = require(`${cliDir}/cli/ck`);
+const xrun = require(Path.join(cliDir, "xrun"));
+const ck = require(Path.join(cliDir, "ck"));
 
 //
 // chalker is ESM-only with top-level await, so it can only be loaded asynchronously. Load it
