@@ -2,9 +2,6 @@ import Fs from "opfs";
 import Path from "path";
 import _ from "lodash";
 import shcmd from "shcmd";
-import { createRequire } from "module";
-
-const xrequire = createRequire(__filename);
 
 export const sortObjKeys = (obj) => {
   return _(obj).toPairs().sortBy(0).fromPairs().value();
@@ -24,7 +21,7 @@ export const sortPackageDeps = (pkg) => {
   });
 };
 
-export const myPkg = xrequire("../package.json");
+export const myPkg = JSON.parse(Fs.readFileSync(Path.join(__dirname, "../package.json"), "utf-8"));
 
 export function getCommitLintSetting() {
   return {
