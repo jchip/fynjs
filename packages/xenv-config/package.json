@@ -5,11 +5,14 @@
   "main": "lib/xenv-config.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/xenv-config.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/xenv-config"
   },
   "scripts": {
-    "test": "clap electrode/test",
-    "coverage": "clap check"
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
   },
   "keywords": [],
   "author": "Joel Chen <joel123@gmail.com>",
@@ -18,30 +21,11 @@
     "lib"
   ],
   "devDependencies": {
-    "electrode-archetype-njs-module-dev": "^3.0.0",
-    "lodash": "^4.17.10",
-    "prettier": "^1.19.1"
-  },
-  "nyc": {
-    "check-coverage": true,
-    "lines": 100,
-    "statements": 100,
-    "functions": 100,
-    "branches": 100,
-    "cache": true,
-    "all": true,
-    "reporter": [
-      "lcov",
-      "text",
-      "text-summary"
-    ],
-    "exclude": [
-      "coverage",
-      "*clap.js",
-      "gulpfile.js",
-      "dist",
-      "test"
-    ]
+    "@vitest/coverage-v8": "^3.2.2",
+    "lodash": "^4.17.21",
+    "prettier": "^3.5.3",
+    "publish-util": "^2.1.0",
+    "vitest": "^3.2.2"
   },
   "prettier": {
     "printWidth": 100

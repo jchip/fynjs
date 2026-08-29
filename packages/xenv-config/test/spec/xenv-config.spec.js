@@ -1,7 +1,6 @@
-"use strict";
-
-const xenvConfig = require("../..");
-const { merge } = require("lodash");
+import { describe, it, expect } from "vitest";
+import xenvConfig from "../../lib/xenv-config.js";
+import { merge } from "lodash";
 
 describe("xenv-config", function() {
   describe("from env", function() {
