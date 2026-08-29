@@ -15,6 +15,14 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
+      # fynpo.json declares _w/* as monorepo packages. These jchip forks carry changes fyn
+      # depends on (npm-packlist's includeSymlinks option), so without them CI bootstraps
+      # against the registry versions and tests fail on code dev never runs. Cloned over
+      # https since the runner has no ssh key; git-clone1/git-clone2 do the same over ssh.
+      - run: |
+          mkdir -p _w
+          git clone --depth 1 https://github.com/jchip/npm-packlist.git _w/npm-packlist
+          git clone --depth 1 https://github.com/jchip/ignore-walk.git _w/ignore-walk
       - run: npm i -g fyn@v2
       - run: fyn install --no-fynlocal
       - run: npx fynpo bootstrap
