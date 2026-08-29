@@ -30,11 +30,11 @@ tslib:
   $: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
   _: 'https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz'
 xaa:
- _latest: 2.0.0
+ _latest: 2.0.0-fynlocal_h
  _:
-  ^2.0.0: 2.0.0
- 2.0.0:
-  $: sha512-qJ58bzCh2/qzU1zSx8PQ77ySJotdSjwypxBF4i4tJzNkixjkqTSH1ryg2Gf1Z9dNyO0/jcuY2KHmrFF0Cn7YRA==
-  _: 'https://registry.npmjs.org/xaa/-/xaa-2.0.0.tgz'
+  ../xaa: 2.0.0-fynlocal_h
+ 2.0.0-fynlocal_h:
+  $: local
+  _: ../xaa
   dependencies:
    tslib: ^2.6.2
