@@ -4,7 +4,7 @@ import Fs from "fs";
 import minimatch from "minimatch";
 import { logger } from "../logger";
 import { execSync } from "../child-process";
-import { selectivePublishSubject, parsePublishedPackageNames } from "../utils";
+import { selectivePublishSubject, parsePublishedPackageNames, expandSelection } from "../utils";
 
 const xrequire = eval("require"); // eslint-disable-line
 
@@ -107,6 +107,14 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
     cwd: opts.cwd,
   };
 
+  // `--only` has to be applied here too, not just in getUpdatedPackages. This function maps
+  // commits to packages purely by file path, and everything downstream (realPackages ->
+  // directBumps -> the changelog's `## Packages` section, which prepare then reads back) is
+  // derived from it. Without this, a selective run still wrote changelog entries and version
+  // bumps for every package that had commits in range.
+  const rc = opts.fynpoRc || opts;
+  const selection = expandSelection(opts.only, (rc && rc.versionLocks) || []);
+
   const collated = {
     realPackages: [],
     packages: {},
@@ -193,6 +201,10 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
 
         const ownerPkg = findPkgForFile(x);
         if (ownerPkg) {
+          // not part of this selective release
+          if (selection && !selection.has(ownerPkg.name)) {
+            return a;
+          }
           // already shipped for this package by an earlier selective release - checked before
           // realPackages, so a package with nothing new left does not show up as changed at all
           if (selectiveBaselines[ownerPkg.name]?.has(id)) {

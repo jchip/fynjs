@@ -25,7 +25,7 @@ import {
   expandSelection,
   selectivePublishSubject,
 } from "../src/utils";
-import { collectSelectiveBaselines } from "../src/utils/git-list-commits";
+import { collectSelectiveBaselines, collateCommitsPackages } from "../src/utils/git-list-commits";
 
 describe("selective release tag namespace", () => {
   //
@@ -181,5 +181,51 @@ describe("collectSelectiveBaselines", () => {
 
     expect([...baselines["pkg-a"]].sort()).toEqual(["bbb", "ccc", "ddd"]);
     expect([...baselines["pkg-b"]].sort()).toEqual(["ddd"]);
+  });
+});
+
+describe("collateCommitsPackages honors --only", () => {
+  beforeEach(() => {
+    execSync.mockReset();
+  });
+
+  // realPackages feeds directBumps, which feeds the changelog's `## Packages` section, which
+  // prepare reads back to decide versions. Filtering only in getUpdatedPackages was not enough:
+  // a selective run still wrote entries and bumps for every package with commits in range.
+  const graph = {
+    packages: {
+      byPath: {
+        "packages/optional-import": { name: "optional-import", path: "packages/optional-import" },
+        "packages/chalker": { name: "chalker", path: "packages/chalker" },
+      },
+    },
+  };
+
+  const commits = { ids: ["c1", "c2"], c1: "work on optional-import", c2: "work on chalker" };
+
+  const run = (only?: string[]) => {
+    execSync.mockImplementation((_cmd, args) => {
+      const id = args[args.length - 1];
+      return id === "c1"
+        ? "packages/optional-import/src/index.ts"
+        : "packages/chalker/src/index.ts";
+    });
+    return collateCommitsPackages({
+      commits,
+      changed: {},
+      opts: { cwd: ".", graph, only, changeLog: "" },
+      selectiveBaselines: {},
+    });
+  };
+
+  it("collates every changed package when nothing is selected", async () => {
+    const collated = await run();
+    expect(collated.realPackages.sort()).toEqual(["chalker", "optional-import"]);
+  });
+
+  it("collates only the selected package", async () => {
+    const collated = await run(["optional-import"]);
+    expect(collated.realPackages).toEqual(["optional-import"]);
+    expect(collated.packages.chalker).toBeUndefined();
   });
 });
