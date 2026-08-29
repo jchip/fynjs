@@ -1,6 +1,6 @@
 import Fs from "fs";
 import Path from "path";
-import requireAt from "require-at";
+import { createRequire } from "node:module";
 import logger from "../logger";
 import fynTil from "./fyntil";
 import xsh from "xsh";
@@ -61,7 +61,9 @@ function _getNpm7NodeGyp({ version, npmDir, xrequire }) {
 function setupNodeGypFromNpm(env) {
   try {
     const npmDir = Path.join(getGlobalNodeModules(), "npm");
-    const xrequire = requireAt(npmDir);
+    // "_" is a dummy filename so relative/bare specifiers resolve from npmDir itself -
+    // createRequire resolves against the dirname of the path it is given.
+    const xrequire = createRequire(Path.join(npmDir, "_"));
     const npmPkg = xrequire("./package.json");
     const version = parseInt(npmPkg.version.split(".")[0]);
 

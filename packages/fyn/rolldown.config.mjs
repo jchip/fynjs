@@ -1,5 +1,6 @@
 import Path from "node:path";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "rolldown";
 
 const require = createRequire(import.meta.url);
@@ -33,10 +34,42 @@ const nullCsPlugin = {
   }
 };
 
+/**
+ * shcmd (a shelljs fork) loads its commands with a computed require:
+ *
+ *   require('./commands').forEach(function (command) { require('./src/' + command); });
+ *
+ * webpack expanded that into a context module. Rolldown leaves it alone, so at runtime the
+ * bundle tries to require './src/cat' relative to dist/ and dies with MODULE_NOT_FOUND.
+ * The command list is static, so expand the loop into explicit requires at build time.
+ */
+const shcmdCommandsPlugin = {
+  name: "shcmd-static-commands",
+  transform(code, id) {
+    if (!id.replace(/\\/g, "/").endsWith("/shcmd/shell.js")) {
+      return null;
+    }
+
+    const commands = require("shcmd/commands");
+    const statik = commands.map(c => `require('./src/${c}');`).join("\n");
+    const replaced = code.replace(
+      /require\('\.\/commands'\)\.forEach\(function \(command\) \{\s*require\('\.\/src\/' \+ command\);\s*\}\);/,
+      statik
+    );
+
+    if (replaced === code) {
+      // fail loudly rather than shipping a bundle whose shell commands silently vanish
+      throw new Error("shcmd-static-commands: command loader pattern not found in shcmd/shell.js");
+    }
+
+    return { code: replaced };
+  }
+};
+
 export default defineConfig({
   input: Path.resolve("cli/main.ts"),
   platform: "node",
-  plugins: [nullCsPlugin],
+  plugins: [nullCsPlugin, shcmdCommandsPlugin],
   resolve: {
     extensions: [".ts", ".js", ".json"],
     symlinks: true,
@@ -45,6 +78,12 @@ export default defineConfig({
       "iconv-lite": Path.resolve("stubs/iconv-lite.js"),
       "./iconv-loader": Path.resolve("stubs/iconv-loader.js"),
       debug: Path.resolve("stubs/debug.js"),
+      // the real require-at uses eval("require"), which makes node unable to determine the
+      // module format of an ESM bundle that also has top-level await
+      "require-at": Path.resolve("stubs/require-at.js"),
+      // dedupe to the top-level optional-require 2.x: a nested 1.1.10 copy still has
+      // eval("require"), which breaks the ESM bundle the same way. 2.x is API compatible.
+      "optional-require": fileURLToPath(import.meta.resolve("optional-require")),
       // fyn imports lodash sub-paths, but other modules pull it in whole - override with the
       // minified copy when bundling, same as the webpack build did.
       lodash: require.resolve("lodash/lodash.min.js"),

@@ -21,7 +21,7 @@ import logger from "./logger";
 import logFormat from "./util/log-format";
 import { VisualExec } from "visual-exec";
 import fyntil from "./util/fyntil";
-import requireAt from "require-at";
+import { createRequire } from "node:module";
 import { setupNodeGypEnv } from "./util/setup-node-gyp";
 import * as xaa from "xaa";
 import npmConfigEnv from "./util/npm-config-env";
@@ -60,7 +60,10 @@ const readPkgJson = (dir: string): Promise<Partial<PackageJson>> => {
 // When running from original source, this is under lib/lifecycle-scripts.js
 // It's important to maintain same level so "../package.json" works.
 const fynInstalledDir = Path.dirname(optionalRequire.resolve("../package.json"));
-const fynCli = requireAt(fynInstalledDir).resolve("./bin/fyn.js");
+// the "_" is a dummy filename: createRequire wants the path of the file doing the requiring,
+// and resolves relative specifiers against its dirname. Passing the bare directory would
+// resolve one level too high. (require-at did the same with "._require-at_".)
+const fynCli = createRequire(Path.join(fynInstalledDir, "_")).resolve("./bin/fyn.js");
 
 /*
  * ref: https://github.com/npm/npm/blob/75b462c19ea16ef0d7f943f94ff4d255695a5c0d/lib/utils/lifecycle.js

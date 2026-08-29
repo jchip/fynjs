@@ -17,7 +17,7 @@ if (maj >= 8) {
       console.log(`Failed loading v8-compile-cache`, err);
     }
   }
-  module.exports = "../dist/fyn.js";
+  module.exports = "../dist/fyn.mjs";
 } else {
   console.log("Sorry, fyn does not support node version below 8.  Your version is", maj);
   process.exit(1);

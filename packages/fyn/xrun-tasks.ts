@@ -8,7 +8,9 @@ const { loadTasks, xrun } = require("@xarc/module-dev");
 loadTasks();
 
 xrun.load("fyn", {
-  bundle: [xrun.exec("webpack"), "v8-compile-cache"],
+  // rolldown emits an ESM bundle (dist/fyn.mjs). ESM is required, not preferred: chalker uses
+  // top-level await to reach ESM-only chalk, and no CJS output format can represent it.
+  bundle: [xrun.exec("rolldown -c rolldown.config.mjs"), "v8-compile-cache"],
 
   "v8-compile-cache": () => {
     const v8CompileCache = require.resolve("v8-compile-cache");
@@ -22,8 +24,8 @@ xrun.load("fyn", {
       async () => {
         const fyn = await which("fyn");
         const realPath = await Fs.realpath(fyn);
-        const dist = Path.join(realPath, "../../dist/fyn.js");
-        return xrun.exec(`cp dist/fyn.js ${dist}`);
+        const dist = Path.join(realPath, "../../dist/fyn.mjs");
+        return xrun.exec(`cp dist/fyn.mjs ${dist}`);
       }
     ]
   },
