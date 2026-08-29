@@ -60,7 +60,14 @@ export class Prepare {
     return [].concat(this._options.only || []).filter(Boolean).length > 0;
   }
 
-  updateDep(pkg, name, ver) {
+  /**
+   * Point a dependency range at a newly released version, keeping its semver prefix.
+   *
+   * @returns true if any section was actually changed
+   */
+  updateDep(pkg, name, ver): boolean {
+    let changed = false;
+
     ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"].forEach(
       (sec) => {
         const deps = pkg[sec];
@@ -77,9 +84,15 @@ export class Prepare {
           return;
         }
 
-        deps[name] = `${semType}${ver}`;
+        const updated = `${semType}${ver}`;
+        if (deps[name] !== updated) {
+          deps[name] = updated;
+          changed = true;
+        }
       }
     );
+
+    return changed;
   }
 
   checkGitClean = () => {
@@ -243,6 +256,37 @@ that's not latest but none set in fynpo config`
       // staged the wrong path for any repo not laid out under packages/
       packages.push(Path.join(pkg.path, "package.json"));
       updatedPackages.push(`${name}@${newV}`);
+    });
+
+    //
+    // Dependents that are NOT being released still need their ranges pointed at what was.
+    // A monorepo moves all in one: after publishing optional-import@0.0.2, chalker declaring
+    // `^0.0.1` would be unsatisfiable, since caret on a 0.0.x version means exactly that
+    // version. This matters for a selective release, where by definition most dependents are
+    // not in the changelog.
+    //
+    // Their versions are deliberately NOT bumped. A bumped-but-unpublished version sitting in
+    // git that does not exist on the registry would confuse the next release. The range
+    // rewrite is itself a real change to the package, so the next changelog run picks it up
+    // and bumps it for the right reason.
+    //
+    // These files are staged into the publish commit but their names never reach
+    // `updatedPackages`, so they stay out of the commit body - and publish.ts requires BOTH
+    // the changed path and the name in that body, so they are not published.
+    //
+    _.each(this._data.packages, (pkg, name) => {
+      if (this._versions.hasOwnProperty(name)) {
+        return; // released above, its own deps were already rewritten
+      }
+
+      const touched = _.map(this._versions, (ver, relName) =>
+        this.updateDep(pkg.pkgJson, relName, ver)
+      ).some(Boolean);
+
+      if (touched) {
+        printWarning(`Updated ${pkg.name} dependency range - not released, will bump next time`);
+        packages.push(Path.join(pkg.path, "package.json"));
+      }
     });
 
     await this.checkGitClean();

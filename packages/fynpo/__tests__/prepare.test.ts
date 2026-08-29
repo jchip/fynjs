@@ -48,6 +48,47 @@ describe("fynpo prepare", () => {
     expect(pkg.dependencies.test).toEqual("1.0.2");
   });
 
+  it("should report whether updateDep changed anything", () => {
+    // exec() uses the return value to decide which non-released dependents to stage
+    const pkg = {
+      dependencies: { released: "^1.0.0" },
+      devDependencies: { unrelated: "^2.0.0" },
+    };
+
+    expect(prepare.updateDep(pkg, "released", "1.1.0")).toBe(true);
+    expect(pkg.dependencies.released).toEqual("^1.1.0");
+
+    // same value again is not a change
+    expect(prepare.updateDep(pkg, "released", "1.1.0")).toBe(false);
+    // a name this package does not depend on is not a change
+    expect(prepare.updateDep(pkg, "not-a-dep", "9.9.9")).toBe(false);
+  });
+
+  it("should keep the semver prefix and rewrite across all dep sections", () => {
+    const pkg = {
+      dependencies: { a: "^0.0.1" },
+      devDependencies: { a: "~0.0.1" },
+      peerDependencies: { a: "0.0.1" },
+      optionalDependencies: { a: "^0.0.1" },
+    };
+
+    expect(prepare.updateDep(pkg, "a", "0.0.2")).toBe(true);
+    // caret on a 0.0.x version means exactly that version, which is precisely why a
+    // non-released dependent still has to be rewritten when its dep is published
+    expect(pkg.dependencies.a).toEqual("^0.0.2");
+    expect(pkg.devDependencies.a).toEqual("~0.0.2");
+    expect(pkg.peerDependencies.a).toEqual("0.0.2");
+    expect(pkg.optionalDependencies.a).toEqual("^0.0.2");
+  });
+
+  it("should leave non-numeric ranges alone", () => {
+    const pkg = { dependencies: { a: "workspace:*", b: "file:../b" } };
+    expect(prepare.updateDep(pkg, "a", "1.2.3")).toBe(false);
+    expect(prepare.updateDep(pkg, "b", "1.2.3")).toBe(false);
+    expect(pkg.dependencies.a).toEqual("workspace:*");
+    expect(pkg.dependencies.b).toEqual("file:../b");
+  });
+
   it("should set tag in publish config", () => {
     prepare._fynpoRc = {
       command: {
