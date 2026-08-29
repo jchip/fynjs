@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 process.env.FORCE_COLOR = "1";
 
 const require = createRequire(import.meta.url);
+
 const chalker = require("chalker");
 
 assert.equal(typeof chalker, "function");

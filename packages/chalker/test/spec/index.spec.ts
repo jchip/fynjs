@@ -1,10 +1,11 @@
-"use strict";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import chalk from "chalk";
+import ansiColors from "ansi-colors";
+import chalker from "../../src/index.ts";
 
-process.env.FORCE_COLOR = "1";
-
-const chalk = require("chalk");
-const ansiColors = require("ansi-colors");
-const chalker = require("../..");
+// FORCE_COLOR is set via vitest.config.ts `test.env` - ESM import hoisting means
+// setting it here would run after chalk/chalker (imported above) have already
+// evaluated their color-support detection.
 
 const BASIC =
   "\u001b[31m\u001b[1mred bold text\u001b[22m\u001b[39m" +
@@ -42,7 +43,7 @@ const ENGINES = [
   {
     name: "chalk",
     colors: chalk,
-    context: (level) => new chalk.Instance({ level }),
+    context: (level: number) => new chalk.Instance({ level }),
     expected: CHALK_EXPECTED
   },
   {
@@ -55,9 +56,9 @@ const ENGINES = [
 
 describe("chalker", function () {
   const originalChalk = chalker.CHALK;
-  let originalAnsiEnabled;
+  let originalAnsiEnabled: boolean;
 
-  ENGINES.forEach((engine) => {
+  ENGINES.forEach(engine => {
     describe(`with ${engine.name}`, function () {
       beforeEach(() => {
         originalAnsiEnabled = ansiColors.enabled;
@@ -188,7 +189,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
 
       it("should decode html escape code points", () => {
         const r = chalker("&#x0391; &#x398; &#8201; &#8657; &#x2666; &#xD83D;&#xDC69;");
-        const x = "\u0391 \u0398 \u2009 \u21d1 \u2666 \uD83D\uDC69";
+        const x = "Α Θ   ⇑ ♦ 👩";
         expect(r).to.equal(x);
       });
 
@@ -245,7 +246,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
         const r = chalker.remove(
           "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>"
         );
-        expect(r).to.equal("red bold text \uD83D\uDC69green on blue bold");
+        expect(r).to.equal("red bold text 👩green on blue bold");
       });
 
       it("should remove markers but keep html escapes if flag is true", () => {
@@ -259,58 +260,81 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   });
 
   describe("optional color loading", function () {
-    it("should load ansi-colors if chalk is not available", () => {
+    // These tests exercise chalker's internal use of createRequire() to
+    // optionally load chalk/ansi-colors. Since chalker is a real ESM module,
+    // there's no CommonJS `Module._load`/`require.cache` to monkey-patch like
+    // the old CJS test suite did - instead we mock `node:module`'s
+    // `createRequire` so a freshly (dynamically) imported instance of
+    // src/index.ts sees a fake `require` that can simulate missing modules.
+    it("should load ansi-colors if chalk is not available", async () => {
       const colors = ansiColors.create();
-      const calls = [];
+      const calls: string[] = [];
 
       colors.enabled = true;
-      colors.alias("red", (text) => `ansi-colors red: ${text}`);
-      const freshChalker = loadFreshWithOptionalRequire((name) => {
-        calls.push(name);
-        return name === "ansi-colors" ? colors : undefined;
+      colors.alias("red", (text: string) => `ansi-colors red: ${text}`);
+
+      vi.resetModules();
+      vi.doMock("node:module", async importOriginal => {
+        const actual = await importOriginal<typeof import("node:module")>();
+        return {
+          ...actual,
+          createRequire: () => (id: string) => {
+            calls.push(id);
+            if (id === "ansi-colors") return colors;
+            const err: NodeJS.ErrnoException = new Error(`Cannot find module '${id}'`);
+            err.code = "MODULE_NOT_FOUND";
+            throw err;
+          }
+        };
       });
 
-      expect(calls).to.deep.equal(["chalk", "ansi-colors"]);
-      expect(freshChalker.CHALK).to.equal(colors);
-      expect(freshChalker("<red>red text</red>")).to.equal("ansi-colors red: red text");
-      expect(freshChalker("<#FFA010>hex text</>")).to.equal(
-        "\u001b[38;2;255;160;16mhex text\u001b[39m"
-      );
+      try {
+        const freshModule = await import("../../src/index.ts");
+        const freshChalker = freshModule.default;
+
+        expect(calls).to.deep.equal(["chalk", "ansi-colors"]);
+        expect(freshChalker.CHALK).to.equal(colors);
+        expect(freshChalker("<red>red text</red>")).to.equal("ansi-colors red: red text");
+        expect(freshChalker("<#FFA010>hex text</>")).to.equal(
+          "\u001b[38;2;255;160;16mhex text\u001b[39m"
+        );
+      } finally {
+        vi.doUnmock("node:module");
+        vi.resetModules();
+      }
     });
 
-    it("should fail if no color library is available", () => {
-      loadFreshWithOptionalRequire(() => undefined);
+    it("should fail if no color library is available", async () => {
+      vi.resetModules();
+      vi.doMock("node:module", async importOriginal => {
+        const actual = await importOriginal<typeof import("node:module")>();
+        return {
+          ...actual,
+          createRequire: () => () => {
+            const err: NodeJS.ErrnoException = new Error(`Cannot find module`);
+            err.code = "MODULE_NOT_FOUND";
+            throw err;
+          }
+        };
+      });
+
+      try {
+        await expect(import("../../src/index.ts")).rejects.toThrow();
+      } finally {
+        vi.doUnmock("node:module");
+        vi.resetModules();
+      }
     });
   });
 });
 
-function loadFreshWithOptionalRequire(load) {
-  const Module = require("module");
-  const originalLoad = Module._load;
-  const chalkerPath = require.resolve("../..");
+function createChalk5CompatibleTestDouble(chain: string[] = []): any {
+  const ctx: any = (text: string) => `${chain.join("|")}:${text}`;
 
-  delete require.cache[chalkerPath];
-  Module._load = function (request, parent, isMain) {
-    if (request === "optional-require") {
-      return () => load;
-    }
-    return originalLoad.call(this, request, parent, isMain);
-  };
-
-  try {
-    return require("../..");
-  } finally {
-    Module._load = originalLoad;
-    delete require.cache[chalkerPath];
-    require("../..");
-  }
-}
-
-function createChalk5CompatibleTestDouble(chain = []) {
-  const ctx = (text) => `${chain.join("|")}:${text}`;
-
-  ctx.rgb = (r, g, b) => createChalk5CompatibleTestDouble(chain.concat(`rgb(${r},${g},${b})`));
-  ctx.bgRgb = (r, g, b) => createChalk5CompatibleTestDouble(chain.concat(`bgRgb(${r},${g},${b})`));
+  ctx.rgb = (r: number, g: number, b: number) =>
+    createChalk5CompatibleTestDouble(chain.concat(`rgb(${r},${g},${b})`));
+  ctx.bgRgb = (r: number, g: number, b: number) =>
+    createChalk5CompatibleTestDouble(chain.concat(`bgRgb(${r},${g},${b})`));
 
   return ctx;
 }

@@ -3,6 +3,10 @@
 process.env.FORCE_COLOR = "1";
 
 const assert = require("assert");
+
+// chalker is a real ESM-only package (Node "require(esm)": Node >=22.12 lets a CJS
+// file require() an ESM module, but the result is the module namespace object -
+// same shape `await import()` would give - not the default export itself.
 const chalker = require("chalker");
 
 assert.equal(typeof chalker, "function");

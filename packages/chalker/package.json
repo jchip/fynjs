@@ -2,13 +2,27 @@
   "name": "chalker",
   "version": "1.3.1",
   "description": "Set ansi colors in strings using XML and chalk",
-  "main": "lib/index.js",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",
     "directory": "packages/chalker"
   },
   "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "xrun --serial test:unit test:demo",
     "test:unit": "vitest run",
     "test:demo": "xrun --serial test:demo:legacy-cjs test:demo:ansi-colors-cjs test:demo:cjs-dynamic-import test:demo:esm-default test:demo:esm-namespace test:demo:esm-create-require test:demo:esm-named-export-probe",
@@ -20,11 +34,12 @@
     "test:demo:esm-create-require": "cd demo/esm-create-require && fyn install && fyn test",
     "test:demo:esm-named-export-probe": "cd demo/esm-named-export-probe && fyn install && fyn test",
     "coverage": "vitest run --coverage",
+    "prepublishOnly": "xrun build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
   "files": [
-    "lib"
+    "dist"
   ],
   "keywords": [
     "string",
@@ -39,8 +54,7 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
-    "color-convert": "^2.0.1",
-    "optional-require": "^1.1.8"
+    "color-convert": "^2.0.1"
   },
   "peerDependencies": {
     "ansi-colors": ">=4",
@@ -55,12 +69,15 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "4.1.5",
     "@xarc/run": "^2.3.0",
     "ansi-colors": "^4.1.3",
     "chalk": "^4.1.2",
     "publish-util": "^2.1.0",
     "prettier": "^2.0.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
     "vitest": "4.1.5"
   },
   "prettier": {

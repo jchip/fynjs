@@ -1,7 +1,5 @@
-"use strict";
-
-const chalk = require("chalk");
-const chalker = require("..");
+import chalk from "chalk";
+import chalker from "chalker";
 
 function demo(x, ctx) {
   const r = chalker(x, ctx);
@@ -24,7 +22,7 @@ function demo(x, ctx) {
 console.log("");
 demo("<red.bold>red bold text</red.bold> <bgBlue.green.bold>green on blue bold</>");
 
-const ctx = new chalk.constructor({ level: 2 });
+const ctx = new chalk.Instance({ level: 2 });
 demo("<(255, 10, 20).bg(20,10,255)>rgb red on blue</> <gold.bg-green>gold on green</>", ctx);
 
 demo("<cyan.bg-purple>HTML escaping: insert &lt; &gt; with &amp;lt; &amp;gt;</>");

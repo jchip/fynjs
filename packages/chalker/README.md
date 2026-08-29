@@ -8,7 +8,7 @@ Set ansi colors in strings using `<>` markers and [chalk] or [ansi-colors].
 # Usage
 
 ```js
-const chalker = require("chalker");
+import chalker from "chalker";
 
 console.log(chalker("<red.bgGreen>Red on Green Text</>"));
 
@@ -110,7 +110,7 @@ chalker(str, [chalkInstance]);
 
 - `str` - String with chalker color markers
 - `chalkInstance` - Optional custom instance of [chalk].
-  - ie: created from `new chalk.constructor({level: 2})`
+  - ie: created from `new chalk.Instance({level: 2})`
 
 **Returns:** A string with terminal/ansi color codes
 
@@ -119,11 +119,20 @@ chalker(str, [chalkInstance]);
 ### `chalker.CHALK`
 
 ```js
-chalker.CHALK = require("ansi-colors");
+import ansiColors from "ansi-colors";
+chalker.CHALK = ansiColors;
 ```
 
 Set the default colors library. By default, `chalker` loads `chalk` first and falls back to
 [ansi-colors].
+
+> `chalker` is published as an ESM-only package (`"type": "module"`). It can still be loaded
+> from CommonJS with `require("chalker")` on Node >=22.12, but since `require()` of an ESM
+> module returns the module's namespace object, you need to access `.default`:
+>
+> ```js
+> const chalker = require("chalker").default;
+> ```
 
 ### `chalker.remove`
 

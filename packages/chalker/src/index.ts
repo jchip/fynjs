@@ -1,11 +1,9 @@
-"use strict";
-
 /* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template, prefer-spread */
 
-const assert = require("assert");
-const optionalRequire = require("optional-require")(require);
-const colorConvert = require("color-convert");
-const chalk = loadColors();
+import assert from "node:assert";
+import { createRequire } from "node:module";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+import colorConvert from "color-convert";
 
 //
 // convert color markers in a string to terminal/ansi color codes with chalk
@@ -39,7 +37,21 @@ const chalk = loadColors();
 // ie: <#FF0000.bg#0000FF.orange.keyword()>
 //
 
-function deQuote(str, marker) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyColors = any;
+
+export type ChalkerFn = {
+  (s?: string | readonly string[] | null, ...args: unknown[]): string;
+  remove: (s: string, keepHtml?: boolean) => string;
+  decodeHtml: (s: string) => string;
+  CHALK: AnyColors;
+};
+
+// require() from this module's own context, used to optionally load chalk/ansi-colors
+// without failing the whole module load when neither is installed.
+const nodeRequire = createRequire(import.meta.url);
+
+function deQuote(str: string, marker: string): string {
   const q = str[0];
   if (q === `'` || q === `"` || q === "`") {
     // remove enclosing quotes ', ", or ` if they are present
@@ -53,7 +65,7 @@ function deQuote(str, marker) {
 // https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
 // https://en.wikipedia.org/wiki/Universal_Coded_Character_Set
 
-const htmlEntities = {
+const htmlEntities: Record<string, string> = {
   [`&quot;`]: `"`,
   [`&amp;`]: "&",
   [`&apos;`]: "'",
@@ -64,19 +76,52 @@ const htmlEntities = {
   [`&reg;`]: "\xae"
 };
 
-function loadColors() {
-  let colors = optionalRequire("chalk") || optionalRequire("ansi-colors");
+/**
+ * Check if an error from require() is really due to the module not being found,
+ * and not because the module itself tried to require another module that's missing.
+ */
+function isModuleNotFoundError(err: unknown, requestPath: string): boolean {
+  const e = err as NodeJS.ErrnoException & { requestPath?: string };
+  const msg = String(e && e.message ? e.message : "").split("\n")[0];
+
+  if (!msg) {
+    return false;
+  }
+
+  return Boolean(
+    e &&
+      e.code === "MODULE_NOT_FOUND" &&
+      (e.requestPath === requestPath ||
+        msg.includes(`not find module '${requestPath}'`) ||
+        msg.includes(`not find package '${requestPath}'`))
+  );
+}
+
+// try to require an optional module, returning undefined if it's simply not
+// installed, but re-throwing any other error (ie: the module itself is broken)
+function tryRequireOptional(id: string): AnyColors {
+  try {
+    return nodeRequire(id);
+  } catch (err) {
+    if (isModuleNotFoundError(err, id)) {
+      return undefined;
+    }
+    throw err;
+  }
+}
+
+function loadColors(): AnyColors {
+  let colors = tryRequireOptional("chalk") || tryRequireOptional("ansi-colors");
 
   if (!colors) {
     // just go for chalk and let require take care of errors
-    colors = require("chalk");
-    // throw new Error("chalker requires either chalk or ansi-colors to be installed");
+    colors = nodeRequire("chalk");
   }
 
   return normalizeColors(colors);
 }
 
-function normalizeColors(colorsModule) {
+function normalizeColors(colorsModule: AnyColors): AnyColors {
   const colors =
     colorsModule &&
     colorsModule.default &&
@@ -87,28 +132,33 @@ function normalizeColors(colorsModule) {
   return addAnsiColorsCompat(colors);
 }
 
-function addAnsiColorsCompat(colors) {
+function addAnsiColorsCompat(colors: AnyColors): AnyColors {
   if (!colors || typeof colors.alias !== "function" || typeof colors.rgb === "function") {
     return colors;
   }
 
-  colors.rgb = function (r, g, b) {
+  colors.rgb = function (r: number, g: number, b: number) {
     return this[defineAnsiColor(colors, "rgb", [r, g, b])];
   };
-  colors.bgRgb = function (r, g, b) {
+  colors.bgRgb = function (r: number, g: number, b: number) {
     return this[defineAnsiColor(colors, "bgRgb", [r, g, b], true)];
   };
-  colors.hex = function (value) {
+  colors.hex = function (value: string) {
     return this.rgb.apply(this, colorConvert.hex.rgb(value));
   };
-  colors.bgHex = function (value) {
+  colors.bgHex = function (value: string) {
     return this.bgRgb.apply(this, colorConvert.hex.rgb(value));
   };
 
   return colors;
 }
 
-function defineAnsiColor(colors, name, values, bg) {
+function defineAnsiColor(
+  colors: AnyColors,
+  name: string,
+  values: number[],
+  bg?: boolean
+): string {
   const styleName = `chalker_${name}_${values.join("_")}`;
 
   if (!colors.styles[styleName]) {
@@ -116,14 +166,14 @@ function defineAnsiColor(colors, name, values, bg) {
     const close = bg ? 49 : 39;
     colors.alias(
       styleName,
-      (text) => `\u001b[${prefix};2;${values.join(";")}m${text}\u001b[${close}m`
+      (text: string) => `\u001b[${prefix};2;${values.join(";")}m${text}\u001b[${close}m`
     );
   }
 
   return styleName;
 }
 
-function convertColorModel(name, values) {
+function convertColorModel(name: string, values: unknown[]): { name: string; values: number[] } {
   const bg = name.startsWith("bg");
   const model = bg ? name[2].toLowerCase() + name.substring(3) : name;
   const rgb =
@@ -136,7 +186,7 @@ function convertColorModel(name, values) {
   return { name: bg ? "bgRgb" : "rgb", values: rgb };
 }
 
-function applyChalkMethod(chalkInstance, name, values) {
+function applyChalkMethod(chalkInstance: AnyColors, name: string, values: unknown[]): AnyColors {
   if (typeof chalkInstance[name] === "function") {
     return chalkInstance[name].apply(chalkInstance, values);
   }
@@ -158,9 +208,9 @@ function applyChalkMethod(chalkInstance, name, values) {
   throw new TypeError(`${name} is not a chalk function`);
 }
 
-function decodeHtml(str) {
-  return str.replace(/&[\w#]+;/g, (m) => {
-    if (htmlEntities.hasOwnProperty(m)) return htmlEntities[m];
+function decodeHtml(str: string): string {
+  return str.replace(/&[\w#]+;/g, m => {
+    if (Object.prototype.hasOwnProperty.call(htmlEntities, m)) return htmlEntities[m];
     if (m.startsWith("&#x")) {
       const s = m.substring(3, m.length - 1);
       const p = parseInt(s, 16);
@@ -175,11 +225,11 @@ function decodeHtml(str) {
   });
 }
 
-function applyChalkMarkers(markers, text, userChalk) {
+function applyChalkMarkers(markers: string, text: string, userChalk: AnyColors): string {
   const chalkify = markers
     .trim()
     .split(".")
-    .reduce((a, marker) => {
+    .reduce((a: AnyColors, marker: string) => {
       marker = marker.trim();
 
       if (a[marker]) {
@@ -202,20 +252,20 @@ function applyChalkMarkers(markers, text, userChalk) {
         assert(closeIx > openIx, `marker ${marker} missing matching ()`);
 
         // extract name if there're something before (
-        let name = openIx > 0 && marker.substring(0, openIx).trim();
+        let name: string | false = openIx > 0 && marker.substring(0, openIx).trim();
 
         // extract values within ()
-        let values = marker.substring(openIx + 1, closeIx).trim();
-        if (values.indexOf(",") >= 0) {
+        let values: unknown = marker.substring(openIx + 1, closeIx).trim();
+        if ((values as string).indexOf(",") >= 0) {
           // extract rgb/hsl/hsv/hwb values like (255, 10, 20)
-          values = values.split(",").map((x) => parseInt(x.trim(), 10));
+          values = (values as string).split(",").map(x => parseInt(x.trim(), 10));
 
           // default no name to rgb, and bg to bgRgb
           if (!name) name = "rgb";
           else if (name === "bg") name = "bgRgb";
         } else {
           // extract a string (with or without quotes) to use for keyword
-          values = [deQuote(values.trim(), marker)];
+          values = [deQuote((values as string).trim(), marker)];
 
           // default no name to keyword, and bg to bgKeyword
           if (!name) name = "keyword";
@@ -223,10 +273,12 @@ function applyChalkMarkers(markers, text, userChalk) {
         }
 
         try {
-          a = applyChalkMethod(a, name, values);
+          a = applyChalkMethod(a, name as string, values as unknown[]);
         } catch (err) {
           throw new Error(
-            `marker ${marker} is invalid: calling chalk.${name} failed with: ${err.message}`
+            `marker ${marker} is invalid: calling chalk.${name} failed with: ${
+              (err as Error).message
+            }`
           );
         }
       } else {
@@ -257,17 +309,19 @@ function applyChalkMarkers(markers, text, userChalk) {
 }
 
 // remove the color marker like <red>text</> from strings
-function remove(s, keepHtml) {
+function remove(s: string, keepHtml?: boolean): string {
   const r = s.replace(/<[^>]*>/g, "").trim();
   return keepHtml ? r : decodeHtml(r);
 }
 
-function format(s, userChalk) {
-  userChalk = normalizeColors(userChalk || chalker.CHALK);
+type MarkerLevel = { mk?: string; ix?: number; s: string };
+
+function format(s: string | null | undefined, userChalk?: AnyColors): string {
+  userChalk = normalizeColors(userChalk || (chalker as ChalkerFn).CHALK);
 
   // skip applying ansi colors if chalk says color support is off
   if (userChalk.supportsColor === false) {
-    return remove(s);
+    return remove(s as string);
   }
 
   const tks = s && s.match(/(<[^>]+>|[^<>]+)/g);
@@ -277,7 +331,7 @@ function format(s, userChalk) {
   if (!tks) return s || "";
 
   const colorized = tks.reduceRight(
-    (a, e, ix) => {
+    (a: MarkerLevel[], e: string, ix: number) => {
       const lvl = a[a.length - 1];
 
       // text
@@ -308,7 +362,7 @@ function format(s, userChalk) {
           tks.slice(0, ix).join("") +
           `[** ${tks[ix]} **]` +
           tks.slice(ix + 1, lvl.ix).join("") +
-          `[** ${tks[lvl.ix]} **]`;
+          `[** ${tks[lvl.ix as number]} **]`;
         throw new Error(`mismatch markers: ${partial}`);
       }
 
@@ -320,30 +374,34 @@ function format(s, userChalk) {
 
       return a;
     },
-    [{ s: "" }]
+    [{ s: "" }] as MarkerLevel[]
   );
 
   return decodeHtml(colorized[0].s);
 }
 
-function chalker(s, ...args) {
+function chalker(s?: string | readonly string[] | null, ...args: unknown[]): string {
   if (Array.isArray(s)) {
     // template string tagging
     let c = "";
-    let ix;
+    let ix: number;
     for (ix = 0; ix < args.length; ix++) {
-      c = c + s[ix] + args[ix];
+      c = c + s[ix] + String(args[ix]);
     }
     return format(c + s[ix]);
   }
 
-  return format(s, ...args);
+  return format(s as string | null | undefined, args[0]);
 }
 
-chalker.remove = remove;
+(chalker as ChalkerFn).remove = remove;
 
-chalker.decodeHtml = decodeHtml;
+(chalker as ChalkerFn).decodeHtml = decodeHtml;
 
-chalker.CHALK = chalk;
+(chalker as ChalkerFn).CHALK = loadColors();
 
-module.exports = chalker;
+export default chalker as ChalkerFn;
+
+// let require(esm) in CJS consumers receive the callable directly instead of the namespace
+const chalkerExport = chalker as ChalkerFn;
+export { chalkerExport as "module.exports" };

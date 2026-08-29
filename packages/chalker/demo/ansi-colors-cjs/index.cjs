@@ -4,6 +4,7 @@ process.env.FORCE_COLOR = "1";
 
 const assert = require("assert");
 const ansiColors = require("ansi-colors");
+
 const chalker = require("chalker");
 
 ansiColors.enabled = true;
