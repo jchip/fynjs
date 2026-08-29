@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import { postPack } from "../dist-esm/postpack.js";
+import { postPack } from "../dist/postpack.js";
 
 postPack();

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import { npmPublish } from "../dist-esm/npm-publish.js";
+import { npmPublish } from "../dist/npm-publish.js";
 
 npmPublish();
