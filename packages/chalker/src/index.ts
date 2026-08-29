@@ -1,7 +1,7 @@
 /* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template, prefer-spread */
 
 import assert from "node:assert";
-import { makeOptionalRequire } from "optional-require";
+import { makeOptionalImport } from "optional-import";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import colorConvert from "color-convert";
 
@@ -47,9 +47,12 @@ export type ChalkerFn = {
   CHALK: AnyColors;
 };
 
-// optional require from this module's own context, used to optionally load
+// optional import from this module's own context, used to optionally load
 // chalk/ansi-colors without failing the whole module load when neither is installed.
-const optionalRequire = makeOptionalRequire(import.meta.url);
+//
+// `import()` reaches both CJS and ESM, so this covers ESM-only chalk 5/6 as well as
+// CJS-only ansi-colors -- `createRequire` could only ever load the latter.
+const optionalImport = makeOptionalImport(import.meta);
 
 function deQuote(str: string, marker: string): string {
   const q = str[0];
@@ -76,12 +79,12 @@ const htmlEntities: Record<string, string> = {
   [`&reg;`]: "\xae"
 };
 
-function loadColors(): AnyColors {
-  let colors = optionalRequire("chalk") || optionalRequire("ansi-colors");
+async function loadColors(): Promise<AnyColors> {
+  let colors = (await optionalImport("chalk")) || (await optionalImport("ansi-colors"));
 
   if (!colors) {
     // just go for chalk and let its module-not-found error propagate
-    colors = optionalRequire("chalk", {
+    colors = await optionalImport("chalk", {
       notFound: err => {
         throw err;
       }
@@ -368,10 +371,12 @@ function chalker(s?: string | readonly string[] | null, ...args: unknown[]): str
 
 (chalker as ChalkerFn).decodeHtml = decodeHtml;
 
-(chalker as ChalkerFn).CHALK = loadColors();
+// top-level await: consumers that statically import chalker have their own evaluation
+// deferred until this settles, so the very first format call already has colors loaded.
+//
+// This is what makes chalker unusable from `require()` -- ERR_REQUIRE_ASYNC_MODULE. That is
+// deliberate as of 2.0; loading ESM-only chalk cannot be done synchronously, so CJS consumers
+// must use `await import("chalker")`.
+(chalker as ChalkerFn).CHALK = await loadColors();
 
 export default chalker as ChalkerFn;
-
-// let require(esm) in CJS consumers receive the callable directly instead of the namespace
-const chalkerExport = chalker as ChalkerFn;
-export { chalkerExport as "module.exports" };

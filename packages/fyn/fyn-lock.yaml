@@ -2951,7 +2951,7 @@ chalker:
   _: ../chalker
   dependencies:
    color-convert: ^2.0.1
-   optional-require: ^2.1.0
+   optional-import: ^1.0.0
   peerDependencies:
    ansi-colors: '>=4'
    chalk: '>=4'
@@ -5049,6 +5049,15 @@ opfs:
   top: 1
   $: sha512-1gVNS4XUqb6RikfaHrhiS7WPR7ht3WH1nn2//65AOeSmTkzo3qosxXJX+oRlurPrnabx+uKLoi4wWr3mfgSKbg==
   _: 'https://registry.npmjs.org/opfs/-/opfs-1.1.1.tgz'
+optional-import:
+ _latest: 1.0.0-fynlocal_h
+ _:
+  ../optional-import: 1.0.0-fynlocal_h
+ 1.0.0-fynlocal_h:
+  $: local
+  _: ../optional-import
+  dependencies:
+   tslib: ^2.6.2
 optional-require:
  _latest: 2.1.0
  _:

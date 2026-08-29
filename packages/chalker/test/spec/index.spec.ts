@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import chalk from "chalk";
+import chalk, { Chalk } from "chalk";
 import ansiColors from "ansi-colors";
 import chalker from "../../src/index.ts";
 
@@ -43,7 +43,8 @@ const ENGINES = [
   {
     name: "chalk",
     colors: chalk,
-    context: (level: number) => new chalk.Instance({ level }),
+    // chalk 5+ dropped `chalk.Instance` in favor of the named `Chalk` export
+    context: (level: number) => new Chalk({ level }),
     expected: CHALK_EXPECTED
   },
   {
@@ -260,17 +261,17 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   });
 
   describe("optional color loading", function () {
-    // These tests exercise chalker's use of optional-require to optionally
-    // load chalk/ansi-colors - we mock `optional-require`'s makeOptionalRequire
+    // These tests exercise chalker's use of optional-import to optionally
+    // load chalk/ansi-colors - we mock `optional-import`'s makeOptionalImport
     // so a freshly (dynamically) imported instance of src/index.ts sees a fake
-    // optionalRequire that can simulate missing modules.
-    const makeFakeOptionalRequire =
+    // optionalImport that can simulate missing modules.
+    const makeFakeOptionalImport =
       (available: Record<string, unknown>, calls: string[]) =>
-      (id: string, opts?: { notFound?: (err: Error) => unknown }) => {
+      async (id: string, opts?: { notFound?: (err: Error) => unknown }) => {
         calls.push(id);
         if (id in available) return available[id];
-        const err: NodeJS.ErrnoException = new Error(`Cannot find module '${id}'`);
-        err.code = "MODULE_NOT_FOUND";
+        const err: NodeJS.ErrnoException = new Error(`Cannot find package '${id}'`);
+        err.code = "ERR_MODULE_NOT_FOUND";
         if (opts && opts.notFound) return opts.notFound(err);
         return undefined;
       };
@@ -283,8 +284,8 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       colors.alias("red", (text: string) => `ansi-colors red: ${text}`);
 
       vi.resetModules();
-      vi.doMock("optional-require", () => ({
-        makeOptionalRequire: () => makeFakeOptionalRequire({ "ansi-colors": colors }, calls)
+      vi.doMock("optional-import", () => ({
+        makeOptionalImport: () => makeFakeOptionalImport({ "ansi-colors": colors }, calls)
       }));
 
       try {
@@ -298,21 +299,21 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
           "\u001b[38;2;255;160;16mhex text\u001b[39m"
         );
       } finally {
-        vi.doUnmock("optional-require");
+        vi.doUnmock("optional-import");
         vi.resetModules();
       }
     });
 
     it("should fail if no color library is available", async () => {
       vi.resetModules();
-      vi.doMock("optional-require", () => ({
-        makeOptionalRequire: () => makeFakeOptionalRequire({}, [])
+      vi.doMock("optional-import", () => ({
+        makeOptionalImport: () => makeFakeOptionalImport({}, [])
       }));
 
       try {
         await expect(import("../../src/index.ts")).rejects.toThrow();
       } finally {
-        vi.doUnmock("optional-require");
+        vi.doUnmock("optional-import");
         vi.resetModules();
       }
     });
