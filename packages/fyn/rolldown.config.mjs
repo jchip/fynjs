@@ -16,12 +16,36 @@ const require = createRequire(import.meta.url);
 // `__dirname`/`__filename` do not exist in ESM. webpack left them as the CJS wrapper's runtime
 // values (node: { __dirname: false }), which for a single-file bundle resolved to dist/.
 // Re-create exactly that from import.meta.url so the 8 call sites in cli/ and lib/ keep working.
-const dirnameShim = [
+const banner = [
   `import { fileURLToPath as __fynFileURLToPath } from "node:url";`,
   `import { dirname as __fynDirname } from "node:path";`,
+  `import { createRequire as __fynCreateRequire } from "node:module";`,
   `const __filename = __fynFileURLToPath(import.meta.url);`,
-  `const __dirname = __fynDirname(__filename);`
+  `const __dirname = __fynDirname(__filename);`,
+  // stand-in for the `eval("require")` that CJS packages use to escape bundlers - see
+  // evalRequirePlugin. Resolves from dist/, matching what the eval'd require resolved to
+  // under webpack.
+  `const __fynRequire = __fynCreateRequire(import.meta.url);`
 ].join("\n");
+
+/**
+ * A number of CJS packages hide their require from bundlers with `eval("require")`. In an ESM
+ * bundle that also has top-level await, node cannot classify such a module and throws
+ * ERR_AMBIGUOUS_MODULE_SYNTAX at load. Swap the eval for a real createRequire, which is what
+ * those packages actually want.
+ *
+ * The require-at stub and the optional-require dedupe below cover the two cases known to reach
+ * this bundle today; this plugin keeps a new dependency doing the same trick from breaking it.
+ */
+const evalRequirePlugin = {
+  name: "replace-eval-require",
+  transform(code) {
+    if (!/eval\(\s*(["'])require\1\s*\)/.test(code)) {
+      return null;
+    }
+    return { code: code.replace(/eval\(\s*(["'])require\1\s*\)/g, "__fynRequire") };
+  }
+};
 
 /** node-gyp ships a Find-VisualStudio.cs that is not JavaScript - webpack used null-loader */
 const nullCsPlugin = {
@@ -69,7 +93,7 @@ const shcmdCommandsPlugin = {
 export default defineConfig({
   input: Path.resolve("cli/main.ts"),
   platform: "node",
-  plugins: [nullCsPlugin, shcmdCommandsPlugin],
+  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin],
   resolve: {
     extensions: [".ts", ".js", ".json"],
     symlinks: true,
@@ -93,8 +117,11 @@ export default defineConfig({
   output: {
     file: "dist/fyn.mjs",
     format: "esm",
-    banner: dirnameShim,
+    banner,
     minify: false,
-    inlineDynamicImports: true
+    inlineDynamicImports: true,
+    // the monorepo baseline (package.json engines: node >=22.12.0). The webpack build
+    // transpiled everything down to node18, below what fyn actually supports.
+    target: "node22"
   }
 });

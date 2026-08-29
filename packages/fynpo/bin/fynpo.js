@@ -1,25 +1,35 @@
 #!/usr/bin/env node
 
-function load() {
-  let dist;
+const Path = require("path");
+const { pathToFileURL } = require("url");
 
+//
+// The release bundle is ESM (dist/bundle.mjs) because chalker uses top-level await to optionally
+// load ESM-only chalk, and no CJS output format can represent module-scope await.
+//
+// This file stays CJS so package.json can remain type: commonjs. main() was already async, so
+// reaching the ESM bundle costs nothing extra.
+//
+async function load() {
   try {
-    dist = require("../src/index.ts");
+    const dist = require("../src/index.ts");
     console.log(`
-fynpo loaded from typescript source instead of webpack bundled source
+fynpo loaded from typescript source instead of the bundled source
 `);
+    return dist;
   } catch (err) {
-    dist = require("../dist/bundle");
+    const url = pathToFileURL(Path.join(__dirname, "../dist/bundle.mjs")).href;
+    const mod = await import(url);
+    return mod.default || mod;
   }
-
-  return dist;
 }
 
 async function main() {
   try {
-    await load().fynpoMain();
+    const mod = await load();
+    await mod.fynpoMain();
   } catch (err) {
-    console.error("fynpo failed\n\n", err && err.stack || err);
+    console.error("fynpo failed\n\n", (err && err.stack) || err);
     process.exit(1);
   }
 }

@@ -30,6 +30,17 @@ function detectRequirePrefix() {
 
 const prefix = detectRequirePrefix();
 
-const xrun = optionalRequireCwd("@fynjs/run/cli/xrun") || require(`${prefix}/cli/xrun`);
+//
+// resolve xrun and ck from the same install so they cannot come from different copies
+//
+const cliDir = optionalRequireCwd("@fynjs/run/cli/xrun") ? "@fynjs/run" : prefix;
 
-xrun();
+const xrun = require(`${cliDir}/cli/xrun`);
+const ck = require(`${cliDir}/cli/ck`);
+
+//
+// chalker is ESM-only with top-level await, so it can only be loaded asynchronously. Load it
+// here, before the CLI runs, so the synchronous `ck` log call sites throughout cli/ get colors.
+// ck.load() never rejects - colors are optional.
+//
+ck.load().then(() => xrun());

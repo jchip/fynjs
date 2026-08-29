@@ -5,7 +5,7 @@ import Promise from "aveazul";
 import { logger } from "./logger";
 import * as utils from "./utils";
 import * as _ from "lodash";
-import fyn from "fyn/bin";
+import fyn from "fyn/bin/index.js";
 import shcmd from "shcmd";
 import { FynpoDepGraph, FynpoPackageInfo } from "@fynpo/base";
 import { TopoRunner } from "./topo-runner";

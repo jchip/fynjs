@@ -16,11 +16,16 @@ const require = createRequire(import.meta.url);
 
 // `__dirname`/`__filename` do not exist in ESM. webpack left them as the CJS wrapper's runtime
 // values (node: { __dirname: false }), which for a single-file bundle resolved to dist/.
-const dirnameShim = [
+const banner = [
   `import { fileURLToPath as __fynpoFileURLToPath } from "node:url";`,
   `import { dirname as __fynpoDirname } from "node:path";`,
+  `import { createRequire as __fynpoCreateRequire } from "node:module";`,
   `const __filename = __fynpoFileURLToPath(import.meta.url);`,
-  `const __dirname = __fynpoDirname(__filename);`
+  `const __dirname = __fynpoDirname(__filename);`,
+  // stand-in for the `eval("require")` that CJS packages use to escape bundlers - see
+  // evalRequirePlugin. Resolves from dist/, which is where the bundle lives, matching what
+  // the eval'd require resolved to under webpack.
+  `const __fynpoRequire = __fynpoCreateRequire(import.meta.url);`
 ].join("\n");
 
 /** node-gyp ships a Find-VisualStudio.cs that is not JavaScript - webpack used null-loader */
@@ -65,12 +70,28 @@ const shcmdCommandsPlugin = {
   }
 };
 
+/**
+ * A number of CJS packages hide their require from bundlers with `eval("require")`. In an ESM
+ * bundle that also has top-level await, node cannot classify such a module and throws
+ * ERR_AMBIGUOUS_MODULE_SYNTAX at load. Swap the eval for a real createRequire, which is what
+ * those packages actually want.
+ */
+const evalRequirePlugin = {
+  name: "replace-eval-require",
+  transform(code) {
+    if (!/eval\(\s*(["'])require\1\s*\)/.test(code)) {
+      return null;
+    }
+    return { code: code.replace(/eval\(\s*(["'])require\1\s*\)/g, "__fynpoRequire") };
+  }
+};
+
 const stub = name => Path.resolve(`stubs/${name}`);
 
 export default defineConfig({
   input: Path.resolve("src/index.ts"),
   platform: "node",
-  plugins: [nullCsPlugin, shcmdCommandsPlugin],
+  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin],
   //
   // import-fresh and resolve-global manipulate require and cannot be bundled; they stay in
   // dependencies via publishUtil. fyn is resolved at runtime from the install.
@@ -78,7 +99,8 @@ export default defineConfig({
   external: [
     "fyn",
     "fyn/package.json",
-    "fyn/bin",
+    // ESM has no directory-index resolution, so this must name the file explicitly
+    "fyn/bin/index.js",
     "resolve-global",
     "global-dirs",
     "callsites",
@@ -121,7 +143,7 @@ export default defineConfig({
   output: {
     file: "dist/bundle.mjs",
     format: "esm",
-    banner: dirnameShim,
+    banner,
     minify: false,
     inlineDynamicImports: true,
     // the monorepo baseline (package.json engines: node >=22.12.0). The webpack build ran

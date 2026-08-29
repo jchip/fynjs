@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "homepage": "https://github.com/jchip/fynjs",
   "scripts": {
-    "build": "rm -rf dist && webpack",
+    "build": "rm -rf dist && rolldown -c rolldown.config.mjs",
     "docs": "xrun xarc/docs",
     "test": "vitest run",
     "ci:check": "vitest run",
@@ -119,6 +119,7 @@
     "@types/node": "^16.9.6",
     "babel-loader": "^8.0.4",
     "publish-util": "^2.1.0",
+    "rolldown": "^1.2.6",
     "source-map-support": "^0.5.19",
     "tsx": "^4.20.6",
     "typedoc": "^0.28.14",
