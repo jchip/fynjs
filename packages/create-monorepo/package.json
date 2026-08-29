@@ -15,7 +15,8 @@
     "docs": "xrun xarc/docs",
     "coverage": "xrun xarc/test-cov",
     "prepublishOnly": "xrun [[build, docs], xarc/check] && publish-util-prepublishonly",
-    "postpack": "publish-util-postpack"
+    "postpack": "publish-util-postpack",
+    "prepack": "publish-util-prepack"
   },
   "bin": {
     "create-monorepo": "bin/create-monorepo.js",
@@ -43,7 +44,7 @@
     "eslint-plugin-filenames": "^1.1.0",
     "eslint-plugin-jsdoc": "^30.7.9",
     "eslint-plugin-tsdoc": "^0.2.11",
-    "publish-util": "^1.1.5",
+    "publish-util": "^2.1.0",
     "source-map-support": "^0.5.19",
     "ts-node": "^9.1.1",
     "typedoc": "^0.22.1",
