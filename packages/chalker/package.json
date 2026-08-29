@@ -1,0 +1,66 @@
+{
+  "name": "chalker",
+  "version": "1.3.1",
+  "description": "Set ansi colors in strings using XML and chalk",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/chalker.git"
+  },
+  "scripts": {
+    "test": "xrun --serial test:unit test:demo",
+    "test:unit": "vitest run",
+    "test:demo": "xrun --serial test:demo:legacy-cjs test:demo:ansi-colors-cjs test:demo:cjs-dynamic-import test:demo:esm-default test:demo:esm-namespace test:demo:esm-create-require test:demo:esm-named-export-probe",
+    "test:demo:legacy-cjs": "cd demo/legacy-cjs && fyn install && fyn test",
+    "test:demo:ansi-colors-cjs": "cd demo/ansi-colors-cjs && fyn install && fyn test",
+    "test:demo:cjs-dynamic-import": "cd demo/cjs-dynamic-import && fyn install && fyn test",
+    "test:demo:esm-default": "cd demo/esm-default && fyn install && fyn test",
+    "test:demo:esm-namespace": "cd demo/esm-namespace && fyn install && fyn test",
+    "test:demo:esm-create-require": "cd demo/esm-create-require && fyn install && fyn test",
+    "test:demo:esm-named-export-probe": "cd demo/esm-named-export-probe && fyn install && fyn test",
+    "coverage": "vitest run --coverage"
+  },
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "string",
+    "terminal",
+    "ansi",
+    "colors",
+    "chalk",
+    "color",
+    "xml",
+    "marker"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "color-convert": "^2.0.1",
+    "optional-require": "^1.1.8"
+  },
+  "peerDependencies": {
+    "ansi-colors": ">=4",
+    "chalk": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "ansi-colors": {
+      "optional": true
+    },
+    "chalk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "4.1.5",
+    "@xarc/run": "^2.3.0",
+    "ansi-colors": "^4.1.3",
+    "chalk": "^4.1.2",
+    "prettier": "^2.0.2",
+    "vitest": "4.1.5"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "none"
+  }
+}

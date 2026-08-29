@@ -1,0 +1,11 @@
+{
+  "name": "chalker-demo-ansi-colors-cjs",
+  "private": true,
+  "scripts": {
+    "test": "node index.cjs"
+  },
+  "dependencies": {
+    "ansi-colors": "^4.1.3",
+    "chalker": "../.."
+  }
+}
