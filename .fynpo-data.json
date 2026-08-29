@@ -296,6 +296,22 @@
           "path": "packages/fynpo-cli"
         },
         "onPkg": {
+          "name": "chalker",
+          "version": "1.3.1",
+          "path": "packages/chalker"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "fynpo-cli@1.0.3(dep)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "fynpo-cli",
+          "version": "1.0.3",
+          "path": "packages/fynpo-cli"
+        },
+        "onPkg": {
           "name": "string-array",
           "version": "1.0.1",
           "path": "packages/string-array"
@@ -555,5 +571,5 @@
       }
     ]
   },
-  "__timestamp": 1787980617860
+  "__timestamp": 1787991152064
 }
