@@ -54,7 +54,8 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
-    "color-convert": "^2.0.1"
+    "color-convert": "^2.0.1",
+    "optional-require": "^2.1.0"
   },
   "peerDependencies": {
     "ansi-colors": ">=4",

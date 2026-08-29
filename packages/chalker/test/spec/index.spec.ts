@@ -260,12 +260,21 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
   });
 
   describe("optional color loading", function () {
-    // These tests exercise chalker's internal use of createRequire() to
-    // optionally load chalk/ansi-colors. Since chalker is a real ESM module,
-    // there's no CommonJS `Module._load`/`require.cache` to monkey-patch like
-    // the old CJS test suite did - instead we mock `node:module`'s
-    // `createRequire` so a freshly (dynamically) imported instance of
-    // src/index.ts sees a fake `require` that can simulate missing modules.
+    // These tests exercise chalker's use of optional-require to optionally
+    // load chalk/ansi-colors - we mock `optional-require`'s makeOptionalRequire
+    // so a freshly (dynamically) imported instance of src/index.ts sees a fake
+    // optionalRequire that can simulate missing modules.
+    const makeFakeOptionalRequire =
+      (available: Record<string, unknown>, calls: string[]) =>
+      (id: string, opts?: { notFound?: (err: Error) => unknown }) => {
+        calls.push(id);
+        if (id in available) return available[id];
+        const err: NodeJS.ErrnoException = new Error(`Cannot find module '${id}'`);
+        err.code = "MODULE_NOT_FOUND";
+        if (opts && opts.notFound) return opts.notFound(err);
+        return undefined;
+      };
+
     it("should load ansi-colors if chalk is not available", async () => {
       const colors = ansiColors.create();
       const calls: string[] = [];
@@ -274,19 +283,9 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       colors.alias("red", (text: string) => `ansi-colors red: ${text}`);
 
       vi.resetModules();
-      vi.doMock("node:module", async importOriginal => {
-        const actual = await importOriginal<typeof import("node:module")>();
-        return {
-          ...actual,
-          createRequire: () => (id: string) => {
-            calls.push(id);
-            if (id === "ansi-colors") return colors;
-            const err: NodeJS.ErrnoException = new Error(`Cannot find module '${id}'`);
-            err.code = "MODULE_NOT_FOUND";
-            throw err;
-          }
-        };
-      });
+      vi.doMock("optional-require", () => ({
+        makeOptionalRequire: () => makeFakeOptionalRequire({ "ansi-colors": colors }, calls)
+      }));
 
       try {
         const freshModule = await import("../../src/index.ts");
@@ -299,29 +298,21 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
           "\u001b[38;2;255;160;16mhex text\u001b[39m"
         );
       } finally {
-        vi.doUnmock("node:module");
+        vi.doUnmock("optional-require");
         vi.resetModules();
       }
     });
 
     it("should fail if no color library is available", async () => {
       vi.resetModules();
-      vi.doMock("node:module", async importOriginal => {
-        const actual = await importOriginal<typeof import("node:module")>();
-        return {
-          ...actual,
-          createRequire: () => () => {
-            const err: NodeJS.ErrnoException = new Error(`Cannot find module`);
-            err.code = "MODULE_NOT_FOUND";
-            throw err;
-          }
-        };
-      });
+      vi.doMock("optional-require", () => ({
+        makeOptionalRequire: () => makeFakeOptionalRequire({}, [])
+      }));
 
       try {
         await expect(import("../../src/index.ts")).rejects.toThrow();
       } finally {
-        vi.doUnmock("node:module");
+        vi.doUnmock("optional-require");
         vi.resetModules();
       }
     });

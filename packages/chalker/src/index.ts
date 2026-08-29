@@ -1,7 +1,7 @@
 /* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template, prefer-spread */
 
 import assert from "node:assert";
-import { createRequire } from "node:module";
+import { makeOptionalRequire } from "optional-require";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import colorConvert from "color-convert";
 
@@ -47,9 +47,9 @@ export type ChalkerFn = {
   CHALK: AnyColors;
 };
 
-// require() from this module's own context, used to optionally load chalk/ansi-colors
-// without failing the whole module load when neither is installed.
-const nodeRequire = createRequire(import.meta.url);
+// optional require from this module's own context, used to optionally load
+// chalk/ansi-colors without failing the whole module load when neither is installed.
+const optionalRequire = makeOptionalRequire(import.meta.url);
 
 function deQuote(str: string, marker: string): string {
   const q = str[0];
@@ -76,46 +76,16 @@ const htmlEntities: Record<string, string> = {
   [`&reg;`]: "\xae"
 };
 
-/**
- * Check if an error from require() is really due to the module not being found,
- * and not because the module itself tried to require another module that's missing.
- */
-function isModuleNotFoundError(err: unknown, requestPath: string): boolean {
-  const e = err as NodeJS.ErrnoException & { requestPath?: string };
-  const msg = String(e && e.message ? e.message : "").split("\n")[0];
-
-  if (!msg) {
-    return false;
-  }
-
-  return Boolean(
-    e &&
-      e.code === "MODULE_NOT_FOUND" &&
-      (e.requestPath === requestPath ||
-        msg.includes(`not find module '${requestPath}'`) ||
-        msg.includes(`not find package '${requestPath}'`))
-  );
-}
-
-// try to require an optional module, returning undefined if it's simply not
-// installed, but re-throwing any other error (ie: the module itself is broken)
-function tryRequireOptional(id: string): AnyColors {
-  try {
-    return nodeRequire(id);
-  } catch (err) {
-    if (isModuleNotFoundError(err, id)) {
-      return undefined;
-    }
-    throw err;
-  }
-}
-
 function loadColors(): AnyColors {
-  let colors = tryRequireOptional("chalk") || tryRequireOptional("ansi-colors");
+  let colors = optionalRequire("chalk") || optionalRequire("ansi-colors");
 
   if (!colors) {
-    // just go for chalk and let require take care of errors
-    colors = nodeRequire("chalk");
+    // just go for chalk and let its module-not-found error propagate
+    colors = optionalRequire("chalk", {
+      notFound: err => {
+        throw err;
+      }
+    });
   }
 
   return normalizeColors(colors);
