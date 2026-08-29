@@ -17,8 +17,7 @@
     "git-clone2": "if [ ! -d _w/ignore-walk ]; then mkdir -p _w; cd _w; git clone git@github.com:jchip/ignore-walk.git; cd ..; fi",
     "bootstrap": "fyn git-clone1 && fyn git-clone2 && fyn --no-fynlocal && fynpo",
     "install": "if [ -z \"$CI\" ]; then fynpo; fi",
-    "testing": "cd testing/monorepo-test && npm run clean-test",
-    "prepublishOnly": "npm run testing"
+    "testing": "cd testing/monorepo-test && npm run clean-test"
   },
   "files": [
     "packages",
