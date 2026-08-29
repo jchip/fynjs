@@ -55,7 +55,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "color-convert": "^2.0.1",
-    "optional-import": "^0.0.1"
+    "optional-import": "^1.0.0"
   },
   "peerDependencies": {
     "ansi-colors": ">=4",

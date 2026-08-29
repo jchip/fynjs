@@ -1,6 +1,6 @@
 {
   "name": "optional-import",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "ESM import that lets you handle module not found without try/catch, and tells 'not installed' apart from 'installed but broken'",
   "type": "module",
   "types": "./dist/index.d.ts",
