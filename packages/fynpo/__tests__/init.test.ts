@@ -65,6 +65,37 @@ describe("fynpo Init", () => {
       expect(out.trimEnd().endsWith(";")).to.equal(true);
     });
 
+    it("should write the config unformatted when prettier is not available", async () => {
+      // prettier is not a dependency of fynpo - this is the path a plain install takes
+      fs.writeFileSync(fynpoJson, JSON.stringify({ packages: ["packages/*"] }));
+
+      vi.resetModules();
+      vi.doMock("optional-require", async (importOriginal) => {
+        const actual: any = await importOriginal();
+        return {
+          ...actual,
+          optionalRequire: (name: string, ...rest: any[]) =>
+            name === "prettier" ? undefined : actual.optionalRequire(name, ...rest),
+        };
+      });
+
+      try {
+        const { Init: FreshInit } = await import("../src/init");
+        const init = new FreshInit({ cwd: dir, commitlint: true });
+        await init.updateFynpoConfig();
+
+        const out = fs.readFileSync(path.join(dir, "fynpo.config.js"), "utf8");
+        expect(out).to.contain('"use strict"');
+        expect(out).to.contain("module.exports =");
+        expect(out).to.contain("commitlint");
+        // still valid, just not run through prettier - which would have ended it with a semicolon
+        expect(out.trimEnd().endsWith(";")).to.equal(false);
+      } finally {
+        vi.doUnmock("optional-require");
+        vi.resetModules();
+      }
+    });
+
     it("should do nothing without the commitlint option", async () => {
       fs.writeFileSync(fynpoJson, JSON.stringify({ packages: ["packages/*"] }));
 
