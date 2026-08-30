@@ -111,49 +111,93 @@ function processDirectDeps(packages) {
  * @param circulars - array of package pairs that depend on each other
  */
 function processIndirectDeps(packages, circulars) {
-  let change = 0;
+  //
+  // Membership used to be `Array.indexOf` over localDeps / indirectDeps / circulars, and
+  // both the walk and the fixpoint were recursive. That is what made a cycle fatal before
+  // FPO-19, and it stayed expensive afterwards: a 500-package chain took ~17s to resolve,
+  // and a deep enough graph could still exhaust the stack through the walk alone, cycle or
+  // no cycle. Sets for membership and explicit stacks for both loops (FPO-43).
+  //
+  // The arrays are still the output, appended in the same discovery order as before - the
+  // Sets only answer "already have it?" without an O(n) scan.
+  //
+  const localDepsSet = new Map<string, Set<string>>();
+  const indirectDepsSet = new Map<string, Set<string>>();
+  const circularsSet = new Set<string>(circulars);
 
-  /**
-   * @param info the package whose indirect deps we are accumulating
-   * @param deps deps to walk
-   * @param seen packages already expanded in THIS traversal
-   */
-  const add = (info, deps, seen: Set<string>) => {
-    _.each(deps, (dep) => {
-      const depPkg = packages[dep];
-      if (info.localDeps.indexOf(dep) < 0 && info.indirectDeps.indexOf(dep) < 0) {
-        change++;
-        info.indirectDeps.push(dep);
-        depPkg.dependents.push(info.name);
-      }
-      if (depPkg.localDeps.indexOf(info.name) >= 0) {
-        const x = [info.name, depPkg.name].sort().join(",");
-        if (circulars.indexOf(x) < 0) {
-          circulars.push(x);
-        }
-        return;
-      }
-      // The check above only catches a cycle that comes straight back to `info`. A cycle
-      // between two OTHER packages - e.g. aveazul devDepends on bluebird while bluebird
-      // depends on aveazul - would otherwise bounce between them forever for every package
-      // downstream of it, blowing the stack. Expanding each package once per traversal is
-      // enough: this is a transitive closure, and the outer `change > 0` loop still runs to
-      // a fixpoint.
-      if (seen.has(dep)) {
-        return;
-      }
-      seen.add(dep);
-      add(info, depPkg.localDeps.concat(depPkg.indirectDeps), seen);
-    });
-  };
-
-  _.each(packages, (pkg) => {
-    add(pkg, pkg.localDeps.concat(pkg.indirectDeps), new Set<string>());
+  _.each(packages, (pkg, name: string) => {
+    localDepsSet.set(name, new Set(pkg.localDeps));
+    indirectDepsSet.set(name, new Set(pkg.indirectDeps));
   });
 
-  if (change > 0) {
-    processIndirectDeps(packages, circulars);
-  }
+  /**
+   * Accumulate every package reachable from `info` into its indirectDeps.
+   *
+   * Depth-first over a snapshot of each package's deps, taken as it is reached - the same
+   * order the recursive walk produced. `seen` expands each package once per traversal,
+   * which is all a transitive closure needs and is what keeps a cycle from looping.
+   *
+   * @param info the package whose indirect deps we are accumulating
+   * @returns how many indirect deps were added
+   */
+  const add = (info) => {
+    const seen = new Set<string>();
+    const infoIndirect = indirectDepsSet.get(info.name);
+    const infoLocal = localDepsSet.get(info.name);
+    let added = 0;
+
+    // each frame is a dep list plus how far into it we have gone
+    const stack: { deps: string[]; at: number }[] = [
+      { deps: info.localDeps.concat(info.indirectDeps), at: 0 },
+    ];
+
+    while (stack.length > 0) {
+      const frame = stack[stack.length - 1];
+
+      if (frame.at >= frame.deps.length) {
+        stack.pop();
+        continue;
+      }
+
+      const dep = frame.deps[frame.at++];
+      const depPkg = packages[dep];
+
+      if (!infoLocal.has(dep) && !infoIndirect.has(dep)) {
+        added++;
+        info.indirectDeps.push(dep);
+        infoIndirect.add(dep);
+        depPkg.dependents.push(info.name);
+      }
+
+      // a cycle that comes straight back to `info` - record the pair and stop descending
+      if (localDepsSet.get(dep).has(info.name)) {
+        const pair = [info.name, depPkg.name].sort().join(",");
+        if (!circularsSet.has(pair)) {
+          circularsSet.add(pair);
+          circulars.push(pair);
+        }
+        continue;
+      }
+
+      if (seen.has(dep)) {
+        continue;
+      }
+
+      seen.add(dep);
+      stack.push({ deps: depPkg.localDeps.concat(depPkg.indirectDeps), at: 0 });
+    }
+
+    return added;
+  };
+
+  // run to a fixpoint: expanding one package can give another package more to reach through
+  let change = 0;
+  do {
+    change = 0;
+    _.each(packages, (pkg) => {
+      change += add(pkg);
+    });
+  } while (change > 0);
 }
 
 /**
@@ -366,7 +410,11 @@ export function makePkgDeps(packages, opts) {
   });
 
   circulars = _.uniq(circulars).map((x) => x.split(","));
-  ignores = ignores.concat(
+
+  // Breaking a cycle costs a package: the less depended-on half of each pair is dropped from
+  // the run. That used to happen in silence, so a repo with cycles quietly processed fewer
+  // packages than it has and nothing said which ones or why (FPO-43).
+  const circularIgnores = _.uniq(
     _.map(circulars, (pair) => {
       const depA = packages[pair[0]].dependents.length;
       const depB = packages[pair[1]].dependents.length;
@@ -374,6 +422,21 @@ export function makePkgDeps(packages, opts) {
       return depA > depB ? pair[1] : pair[0];
     }).filter((x) => x)
   );
+
+  if (circulars.length > 0) {
+    warnings.push(
+      `Circular local dependencies: ${circulars.map((pair) => pair.join(" <-> ")).join(", ")}`
+    );
+
+    if (circularIgnores.length > 0) {
+      warnings.push(
+        `Ignoring ${circularIgnores.join(", ")} to break the circular dependencies above - ` +
+          `they are dropped from this run. Break the cycles to include them.`
+      );
+    }
+  }
+
+  ignores = ignores.concat(circularIgnores);
 
   ignores.forEach((x) => {
     if (packages[x]) {
