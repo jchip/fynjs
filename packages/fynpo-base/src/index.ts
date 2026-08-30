@@ -1,7 +1,7 @@
 import Path from "path";
 import { promises as Fs } from "fs";
 import { filterScanDir } from "filter-scan-dir";
-import mm from "minimatch";
+import { Minimatch } from "minimatch";
 import _ from "lodash";
 import { groupMM, MMGroups } from "./minimatch-group.js";
 import {
@@ -206,13 +206,13 @@ export async function readFynpoPackages({
   const explicit = _.isEmpty(patterns) ? scanPatterns(config) : patterns;
   const gitignore = makeGitignoreMatcher(cwd);
 
-  const excludeMms = config.exclude.map((p) => new mm.Minimatch(p));
+  const excludeMms = config.exclude.map((p) => new Minimatch(p));
   const isExcluded = (path: string) =>
     Boolean(path) && excludeMms.some((m) => m.match(path.split(Path.sep).join("/")));
 
   // `include` filters what the scan found - it does not replace the scan (FPO-17)
   const includeMms = (_.isEmpty(patterns) ? includeFilter(config) : []).map(
-    (p) => new mm.Minimatch(p)
+    (p) => new Minimatch(p)
   );
   const isIncluded = (path: string) =>
     includeMms.length === 0 || includeMms.some((m) => m.match(path.split(Path.sep).join("/")));
@@ -222,7 +222,7 @@ export async function readFynpoPackages({
   const groups: MMGroups = autoSearch
     ? { ".": null }
     : groupMM(
-        explicit.map((p) => new mm.Minimatch(p)),
+        explicit.map((p) => new Minimatch(p)),
         {}
       );
 

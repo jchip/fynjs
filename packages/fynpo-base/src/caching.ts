@@ -1,5 +1,5 @@
 import { filterScanDir, ExtrasData } from "filter-scan-dir";
-import mm from "minimatch";
+import { Minimatch } from "minimatch";
 import _ from "lodash";
 import Fs from "fs";
 import Path from "path";
@@ -160,7 +160,7 @@ async function readPackageJson(cwd: string) {
 function makeMmPatterns(patterns: string | string[], options = { dot: true }) {
   return []
     .concat(patterns)
-    .map((x: string) => x && new mm.Minimatch(x, options))
+    .map((x: string) => x && new Minimatch(x, options))
     .filter((x) => x);
 }
 
@@ -173,8 +173,8 @@ function makeMmPatterns(patterns: string | string[], options = { dot: true }) {
  */
 async function scanFiles(
   cwd: string,
-  includes: mm.IMinimatch[],
-  excludes: mm.IMinimatch[]
+  includes: Minimatch[],
+  excludes: Minimatch[]
 ): Promise<string[]> {
   const filter = (_file: string, _path: string, extras: ExtrasData) => {
     // filter-scan-dir now handles filtering symlinks when includeDir: false and includeSymlink is not set

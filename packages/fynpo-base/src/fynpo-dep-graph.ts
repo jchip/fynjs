@@ -3,14 +3,30 @@ import Path from "path";
 import { promises as Fs } from "fs";
 import { filterScanDir } from "filter-scan-dir";
 import type { ExtrasData } from "filter-scan-dir";
-import mm from "minimatch";
+import { Minimatch } from "minimatch";
 import _ from "lodash";
 import Semver from "semver";
 import { groupMM, MMGroups } from "./minimatch-group.js";
 import { posixify } from "./util.js";
-import isPathInside from "is-path-inside";
 import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";
+
+/**
+ * Check that `childPath` is inside `parentPath`.
+ *
+ * Local replacement for the `is-path-inside` package, mirroring its exact
+ * semantics: based on `path.relative`, so on win32 it inherits node's
+ * case-insensitive drive/path comparison. A path is not inside itself.
+ */
+function isPathInside(childPath: string, parentPath: string): boolean {
+  const relation = Path.relative(parentPath, childPath);
+  return Boolean(
+    relation &&
+      relation !== ".." &&
+      !relation.startsWith(`..${Path.sep}`) &&
+      relation !== Path.resolve(childPath)
+  );
+}
 
 /**
  * Basic information about a package: name, version, and its path in the monorepo
@@ -94,7 +110,7 @@ export class PackageRef {
    * create a RegExp from it.
    */
   regex?: RegExp;
-  mm?: mm.IMinimatch;
+  mm?: Minimatch;
 
   constructor(ref: string) {
     this.parseRef(ref);
@@ -141,7 +157,7 @@ export class PackageRef {
         this.regex = new RegExp(regExpStr, flagStr);
       }
     } else if (this.type === "path") {
-      this.mm = new mm.Minimatch(this.value);
+      this.mm = new Minimatch(this.value);
     }
   }
 
@@ -511,7 +527,7 @@ export class FynpoDepGraph {
 
     // `include` filters what the scan found - it does not replace the scan (FPO-17)
     const includeMms = (_.isEmpty(patterns) ? includeFilter(pkgConfig) : []).map(
-      (p) => new mm.Minimatch(p)
+      (p) => new Minimatch(p)
     );
     const isIncluded = (path: string) =>
       includeMms.length === 0 || includeMms.some((m) => m.match(posixify(path)));
@@ -521,7 +537,7 @@ export class FynpoDepGraph {
     const autoSearchFound: string[] = [];
 
     const gitignore = makeGitignoreMatcher(cwd);
-    const excludeMms = pkgConfig.exclude.map((p) => new mm.Minimatch(p));
+    const excludeMms = pkgConfig.exclude.map((p) => new Minimatch(p));
     const isExcluded = (path: string) =>
       Boolean(path) && excludeMms.some((m) => m.match(path.split(Path.sep).join("/")));
     const skipForAutoSearch = (path: string) =>
@@ -530,7 +546,7 @@ export class FynpoDepGraph {
     if (autoSearch) {
       groups = { ".": null };
     } else {
-      const mms = resolved.map((p) => new mm.Minimatch(p));
+      const mms = resolved.map((p) => new Minimatch(p));
       groups = groupMM(mms, {});
     }
 

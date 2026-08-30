@@ -1,4 +1,4 @@
-import mm from "minimatch";
+import { Minimatch, GLOBSTAR, type ParseReturnFiltered } from "minimatch";
 import _ from "lodash";
 
 /**
@@ -6,9 +6,9 @@ import _ from "lodash";
  */
 type MMGroup = {
   /** the minimatch object */
-  mm: mm.IMinimatch;
-  /** the minimatch sets */
-  set: any[][];
+  mm: Minimatch;
+  /** one expanded pattern set (a row of Minimatch.set) */
+  set: ParseReturnFiltered[];
   /** index of the set within the minimatch object */
   setIx: number;
   /** index of the first set that's not a literal string */
@@ -26,7 +26,7 @@ export type MMGroups = Record<string, MMGroup[]>;
  * @param groups - object to group the minimatch objects
  * @returns object of grouped minimatch objects
  */
-export function groupMM(mms: mm.IMinimatch[], groups: MMGroups) {
+export function groupMM(mms: Minimatch[], groups: MMGroups) {
   mms.forEach((mm) => {
     mm.set.forEach((set, setIx) => {
       const ix = set.findIndex((s) => typeof s !== "string");
@@ -57,13 +57,12 @@ export function groupMM(mms: mm.IMinimatch[], groups: MMGroups) {
  * - needs to create a new pattern at every non-string part
  * @param m0 minimatch pattern
  */
-export function deconstructMM(m0: mm.IMinimatch) {
-  const mms: mm.IMinimatch[] = [];
+export function deconstructMM(m0: Minimatch) {
+  const mms: Minimatch[] = [];
   const patterns = { m0, mms };
   const set = m0.set[0];
-  const globParts = (m0 as any).globParts[0];
+  const globParts = m0.globParts[0];
   const iParts = [];
-  const { GLOBSTAR } = mm as any;
 
   for (let ix = 0; ix < set.length; ix++) {
     const s = set[ix];
@@ -71,7 +70,7 @@ export function deconstructMM(m0: mm.IMinimatch) {
     // if we hit something that's not string, then we need a mm with just the strings
     // because a dir like "src" will not match "src/*"
     if (typeof s !== "string" && iParts.length > 0) {
-      mms.push(new mm.Minimatch(iParts.join("/"), m0.options));
+      mms.push(new Minimatch(iParts.join("/"), m0.options));
     }
 
     if (ix === set.length - 1) {
@@ -81,7 +80,7 @@ export function deconstructMM(m0: mm.IMinimatch) {
       iParts.push(g);
 
       if (typeof s !== "string") {
-        mms.push(new mm.Minimatch(iParts.join("/"), m0.options));
+        mms.push(new Minimatch(iParts.join("/"), m0.options));
       }
     }
 
@@ -101,8 +100,14 @@ export function deconstructMM(m0: mm.IMinimatch) {
  * @param patterns
  * @returns the first pattern that match or false
  */
-export function checkMmMatch(fullPath: string, patterns: mm.IMinimatch[]): false | mm.IMinimatch {
-  return !_.isEmpty(patterns) && patterns.find((patternMm) => patternMm.match(fullPath));
+export function checkMmMatch(fullPath: string, patterns: Minimatch[]): false | Minimatch {
+  // Callers append a trailing "/" to force matching a directory.  minimatch 3 never let a
+  // pattern part that can match the empty string (e.g. "?(a|b)") consume that trailing empty
+  // segment, but minimatch 10 does, so "**/?(a|b)" would wrongly match "src/".  For every
+  // other case v3's match of "dir/" is equivalent to matching "dir", so strip the trailing
+  // slash to keep the v3 semantics.
+  const path = fullPath.length > 1 && fullPath.endsWith("/") ? fullPath.slice(0, -1) : fullPath;
+  return !_.isEmpty(patterns) && patterns.find((patternMm) => patternMm.match(path));
 }
 
 /**
@@ -112,7 +117,7 @@ export function checkMmMatch(fullPath: string, patterns: mm.IMinimatch[]): false
  * @param mms
  * @returns
  */
-export function unrollMmMatch(path: string, mms: mm.IMinimatch[]): false | mm.IMinimatch {
+export function unrollMmMatch(path: string, mms: Minimatch[]): false | Minimatch {
   const parts = path.split("/");
   let rp: string;
 

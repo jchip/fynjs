@@ -42,7 +42,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/lodash": "^4.17.15",
-    "@types/minimatch": "^3.0.5",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^3.2.2",
     "npm-packlist": "jchip/npm-packlist#v1",
@@ -55,10 +54,9 @@
   "dependencies": {
     "filter-scan-dir": "^1.6.0",
     "ignore": "^7.0.6",
-    "is-path-inside": "^3.0.3",
     "lodash": "^4.17.21",
-    "minimatch": "^3.1.2",
-    "optional-require": "^1.1.10",
+    "minimatch": "^10.0.3",
+    "optional-require": "^2.1.1",
     "semver": "^7.7.2",
     "tslib": "^2.8.1"
   },
