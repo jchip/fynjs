@@ -1807,9 +1807,9 @@ Return: The number of commands with `exec` was invoked.
 
 **Note:** Default command execution is controlled by the `skipExecDefault` config option. If `skipExecDefault` is `true`, the default command will not be inserted during parsing, and therefore won't be executed.
 
-**Note:** Calling this again on the same `parsed` result runs every `exec` handler again - there is no
-"already executed" tracking. Only `parsed.execCmd` is protected: it records the first command that ran
-and is never overwritten by a later run.
+**Note:** This is meant to be called once per `parsed` result - `parse` already does it for you unless
+`skipExec` is set. There is no "already executed" tracking, so calling it a second time on the same
+result simply runs every `exec` handler again.
 
 ### `runExecAsync(parsed)`
 

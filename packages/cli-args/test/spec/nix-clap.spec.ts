@@ -1111,30 +1111,6 @@ describe("nix-clap", () => {
     expect(executed).to.be.true;
   });
 
-  it("should keep the original execCmd when runExecAsync runs the root twice", async () => {
-    let count = 0;
-    const nc = new NixClap({ ...noOutputExit, name: "test", skipExec: true })
-      .removeDefaultHandlers("no-action")
-      .init2({
-        args: "[input string]",
-        exec: () => {
-          count++;
-        }
-      });
-
-    const parsed = nc.parse(getArgv("hello"));
-
-    expect(await nc.runExecAsync(parsed)).to.equal(1);
-    const first = parsed.execCmd;
-    expect(first).to.be.ok;
-
-    // re-running the same parsed result executes root again but must not
-    // overwrite the execCmd recorded by the first run
-    expect(await nc.runExecAsync(parsed)).to.equal(1);
-    expect(count).to.equal(2);
-    expect(parsed.execCmd).to.equal(first);
-  });
-
   describe("unknownCommandFallback", () => {
     it("should treat unknown command as argument to fallback command", () => {
       const nc = new NixClap({ ...noOutputExit, unknownCommandFallback: "run" }).init({}, {

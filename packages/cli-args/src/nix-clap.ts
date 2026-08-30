@@ -937,9 +937,7 @@ export class NixClap extends EventEmitter {
     // See _shouldExecuteRootCommand() for execution conditions
     if (this._shouldExecuteRootCommand(command, count)) {
       command.cmdBase.exec(command, parsed);
-      if (!parsed.execCmd) {
-        parsed.execCmd = command;
-      }
+      parsed.execCmd = command;
       count = 1;
     }
 
@@ -972,9 +970,7 @@ export class NixClap extends EventEmitter {
     // This gives priority to root command when arguments are provided
     if (this._shouldExecuteRootCommand(command, count)) {
       await command.cmdBase.exec(command, parsed);
-      if (!parsed.execCmd) {
-        parsed.execCmd = command;
-      }
+      parsed.execCmd = command;
       count = 1;
     }
 
