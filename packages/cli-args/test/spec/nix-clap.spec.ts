@@ -1043,6 +1043,23 @@ describe("nix-clap", () => {
     expect(parsed.execCmd.name).to.equal("build");
   });
 
+  it("should invoke exec commands synchronously without a parsed result", () => {
+    const invoked: string[] = [];
+    const nc = new NixClap({ ...noOutputExit, skipExec: true }).init({}, {
+      build: {
+        desc: "Build command",
+        exec: (cmd: CommandNode) => {
+          invoked.push(cmd.name);
+        }
+      }
+    });
+
+    const parsed = nc.parse(getArgv("build"));
+    // no parsed result to record execCmd on - the exec still runs
+    expect(parsed.command.invokeExec(true)).to.equal(1);
+    expect(invoked).to.deep.equal(["build"]);
+  });
+
   it("should invoke exec commands without a parsed result", async () => {
     const invoked: string[] = [];
     const nc = new NixClap({ ...noOutputExit, skipExec: true }).init({}, {
@@ -1109,6 +1126,98 @@ describe("nix-clap", () => {
     expect(parsed.helpNode).to.be.undefined;
     nc.runExec(parsed);
     expect(executed).to.be.true;
+  });
+
+  describe("async exec handler warning", () => {
+    const capture = () => {
+      const out: string[] = [];
+      return { out, output: (x: string) => out.push(x) };
+    };
+
+    it("should warn when a sub-command exec handler returns a promise", () => {
+      const { out, output } = capture();
+      const nc = new NixClap({ output, exit: noop, name: "myprog" }).init({}, {
+        build: {
+          desc: "Build command",
+          exec: async () => undefined
+        }
+      });
+
+      nc.parse(getArgv("build"));
+
+      const msg = out.join("");
+      expect(msg).includes("async exec handler for command 'build' invoked synchronously");
+      expect(msg).includes("myprog will not wait for it");
+      expect(msg).includes("Use parseAsync instead of parse");
+    });
+
+    it("should warn once listing every async command", () => {
+      const { out, output } = capture();
+      const nc = new NixClap({ output, exit: noop, name: "myprog" }).init({}, {
+        build: { desc: "Build", exec: async () => undefined },
+        test: { desc: "Test", exec: async () => undefined }
+      });
+
+      nc.parse(getArgv("build test"));
+
+      const msg = out.join("");
+      expect(msg.match(/Warning:/g)).to.have.lengthOf(1);
+      expect(msg).includes("commands 'build', 'test' invoked synchronously");
+      expect(msg).includes("will not wait for them");
+    });
+
+    it("should warn when the root command exec handler returns a promise", () => {
+      const { out, output } = capture();
+      const nc = new NixClap({ output, exit: noop, name: "myprog", skipExec: true })
+        .removeDefaultHandlers("no-action")
+        .init2({
+          args: "[input string]",
+          exec: async () => undefined
+        });
+
+      const parsed = nc.parse(getArgv("hello"));
+      nc.runExec(parsed);
+
+      expect(out.join("")).includes("invoked synchronously");
+    });
+
+    it("should fall back to 'program' when no name is configured", () => {
+      const { out, output } = capture();
+      const nc = new NixClap({ output, exit: noop }).init({}, {
+        build: { desc: "Build", exec: async () => undefined }
+      });
+
+      nc.parse(getArgv("build"));
+      expect(out.join("")).includes("program will not wait for it");
+    });
+
+    it("should not warn for sync exec handlers", () => {
+      const { out, output } = capture();
+      const nc = new NixClap({ output, exit: noop, name: "myprog" }).init({}, {
+        build: { desc: "Build", exec: () => undefined }
+      });
+
+      nc.parse(getArgv("build"));
+      expect(out.join("")).to.not.include("Warning:");
+    });
+
+    it("should not warn when parseAsync awaits the handlers", async () => {
+      const { out, output } = capture();
+      let ran = false;
+      const nc = new NixClap({ output, exit: noop, name: "myprog" }).init({}, {
+        build: {
+          desc: "Build",
+          exec: async () => {
+            ran = true;
+          }
+        }
+      });
+
+      await nc.parseAsync(getArgv("build"));
+
+      expect(ran).to.be.true;
+      expect(out.join("")).to.not.include("Warning:");
+    });
   });
 
   describe("unknownCommandFallback", () => {

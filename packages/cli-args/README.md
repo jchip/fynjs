@@ -1822,7 +1822,15 @@ Return: A promise that resolves with the number of commands with `exec` invoked.
 **Warning:** If your `exec` handlers are async, use [`parseAsync`](#parseasyncargv-start-parsed) rather than
 reaching for this after a plain `parse`. Since `parse` already calls `runExec` unless `skipExec` is set,
 following it with `runExecAsync(parsed)` to await the handlers executes **everything a second time**,
-sub-commands included, with no warning.
+sub-commands included.
+
+`runExec` detects this for you: if any `exec` handler returns a promise it cannot await, it writes a
+warning naming the offending commands.
+
+```
+Warning: async exec handler for command 'build' invoked synchronously - myprog will not wait for it.
+Use parseAsync instead of parse, or skipExec with runExecAsync.
+```
 
 ```js
 // wrong - every exec handler runs twice

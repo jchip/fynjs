@@ -1,5 +1,5 @@
 import Path from "path";
-import { noop, setHelpZebra } from "./xtil.js";
+import { noop, setHelpZebra, isThenable } from "./xtil.js";
 import EventEmitter from "events";
 import { Parser } from "./parser.js";
 import { CommandBase, CommandSpec, unknownCommandBaseNoOptions } from "./command-base.js";
@@ -8,7 +8,7 @@ import { CommandNode } from "./command-node.js";
 import { isRootCommand, rootCommandName } from "./base.js";
 import { ClapNode } from "./clap-node.js";
 import { unknownCommandBase } from "./command-base.js";
-import { _PARENT } from "./symbols.js";
+import { _PARENT, _ASYNC_EXEC } from "./symbols.js";
 import { OptionNode } from "./option-node.js";
 
 const HELP = Symbol("help");
@@ -192,6 +192,12 @@ export type ParseResult = {
   _: string[];
   argv: string[];
   index: number;
+  /**
+   * Names of commands whose `exec` returned a promise while being invoked synchronously.
+   * Populated by `runExec` / `invokeExec` only; `runExecAsync` awaits handlers instead.
+   * @internal
+   */
+  [_ASYNC_EXEC]?: string[];
 };
 
 /**
@@ -909,6 +915,30 @@ export class NixClap extends EventEmitter {
   }
 
   /**
+   * Warn when an `exec` handler returned a promise during a synchronous run.
+   *
+   * `runExec` cannot await handlers, so an async one runs detached: `parse` returns before it
+   * settles and a rejection surfaces as an unhandled rejection. Reaching for `runExecAsync`
+   * afterwards is worse - `parse` already ran the handlers, so everything executes twice.
+   *
+   * @param parsed - the parse result to check
+   */
+  _warnAsyncExec(parsed: ParseResult) {
+    const cmds = parsed[_ASYNC_EXEC];
+    if (!cmds || cmds.length < 1) {
+      return;
+    }
+    delete parsed[_ASYNC_EXEC];
+    const names = cmds.map(x => `'${x}'`).join(", ");
+    const s = cmds.length > 1 ? "s" : "";
+    this.output(
+      `Warning: async exec handler${s} for command${s} ${names} invoked synchronously - ` +
+        `${this._name || "program"} will not wait for ${cmds.length > 1 ? "them" : "it"}.\n` +
+        `Use parseAsync instead of parse, or skipExec with runExecAsync.\n`
+    );
+  }
+
+  /**
    * Go through the commands in parsed and call their `exec` handler.
    *
    * Root command execution logic (see _shouldExecuteRootCommand and CommandNode.getExecCommands):
@@ -936,10 +966,15 @@ export class NixClap extends EventEmitter {
     // This gives priority to root command when arguments are provided
     // See _shouldExecuteRootCommand() for execution conditions
     if (this._shouldExecuteRootCommand(command, count)) {
-      command.cmdBase.exec(command, parsed);
+      const result = command.cmdBase.exec(command, parsed);
+      if (isThenable(result)) {
+        (parsed[_ASYNC_EXEC] ||= []).push(command.name);
+      }
       parsed.execCmd = command;
       count = 1;
     }
+
+    this._warnAsyncExec(parsed);
 
     // Emit no-action only if truly no command was executed
     if (count === 0 && command.cmdBase.getExecCount() > 0) {

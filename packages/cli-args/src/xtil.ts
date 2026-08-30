@@ -287,6 +287,16 @@ export function isNumber(arg: string) {
 
 export const noop = () => {};
 
+/**
+ * Check if a value is a promise-like, ie: the return of an `async` function.
+ *
+ * @param x - value to check
+ * @returns `true` if `x` has a callable `then`
+ */
+export function isThenable(x: unknown): x is PromiseLike<unknown> {
+  return !!x && typeof (x as PromiseLike<unknown>).then === "function";
+}
+
 export function prefixOption(name: string) {
   return name.length > 1 ? `--${name}` : `-${name}`;
 }

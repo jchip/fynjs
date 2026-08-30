@@ -3,8 +3,8 @@ import { CommandBase } from "./command-base.js";
 import { CommandMeta } from "./command-meta.js";
 import { OptionNode } from "./option-node.js";
 import { ClapNodeGenerator, OptionSource } from "./node-generator.js";
-import { camelCase } from "./xtil.js";
-import { _PARENT } from "./symbols.js";
+import { camelCase, isThenable } from "./xtil.js";
+import { _PARENT, _ASYNC_EXEC } from "./symbols.js";
 import { isRootCommand } from "./base.js";
 import { ParseResult } from "./nix-clap.js";
 
@@ -138,9 +138,15 @@ export class CommandNode extends ClapNode {
     const cmds = this.getExecCommands([], includeSubCommands);
 
     for (const cmd of cmds) {
-      cmd.cmdBase.exec(cmd, parsed);
-      if (parsed && !parsed.execCmd) {
-        parsed.execCmd = cmd;
+      const result = cmd.cmdBase.exec(cmd, parsed);
+      if (parsed) {
+        // a sync invocation cannot await the handler - note it so runExec can warn
+        if (isThenable(result)) {
+          (parsed[_ASYNC_EXEC] ||= []).push(cmd.name);
+        }
+        if (!parsed.execCmd) {
+          parsed.execCmd = cmd;
+        }
       }
       count++;
     }
