@@ -1,6 +1,6 @@
 "use strict";
 
-const chalk = require("chalk");
+const chalk = require("../chalk");
 const logger = require("../logger");
 const stringify = require("../stringify");
 const assert = require("assert");

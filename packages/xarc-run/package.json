@@ -75,7 +75,7 @@
   },
   "homepage": "https://github.com/jchip/fynjs",
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^6.0.0",
     "chalker": "^1.2.0",
     "insync": "^2.1.1",
     "jaro-winkler": "^0.2.8",

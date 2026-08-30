@@ -2,7 +2,7 @@
 
 const assert = require("assert");
 const defaults = require("./defaults");
-const chalk = require("chalk");
+const chalk = require("./chalk");
 const XQtor = require("./xqtor");
 const XTasks = require("./xtasks");
 const XQTree = require("./xqtree");

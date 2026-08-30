@@ -1,6 +1,6 @@
 "use strict";
 
-const chalk = require("chalk");
+const chalk = require("./chalk");
 const MSEC_IN_SECOND = 1000;
 const MSEC_IN_MINUTE = 60 * MSEC_IN_SECOND;
 

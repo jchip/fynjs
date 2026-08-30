@@ -42,7 +42,7 @@
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^6.0.0",
     "ci-info": "^3.2.0",
     "has-ansi": "^4.0.1",
     "strip-ansi": "^6.0.0",

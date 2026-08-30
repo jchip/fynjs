@@ -2,7 +2,7 @@
 
 const Path = require("path");
 const parseCmdArgs = require("./parse-cmd-args");
-const chalk = require("chalk");
+const chalk = require("../lib/chalk");
 const logger = require("../lib/logger");
 const usage = require("./usage");
 const envPath = require("xsh").envPath;

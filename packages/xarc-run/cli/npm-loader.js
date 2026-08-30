@@ -1,7 +1,7 @@
 "use strict";
 
 const logger = require("../lib/logger");
-const chalk = require("chalk");
+const chalk = require("../lib/chalk");
 const readPkgUp = require("read-pkg-up");
 const myPkg = require("../package.json");
 const config = require("./config");

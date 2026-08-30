@@ -4,7 +4,7 @@ const XReporterConsole = require("../../../lib/reporters/console");
 const XRun = require("../../../lib/xrun");
 const XQItem = require("../../../lib/xqitem");
 const expect = require("chai").expect;
-const chalk = require("chalk");
+const chalk = require("../../../lib/chalk");
 
 describe("XReporterConsole", function() {
   const saveLevel = chalk.level;

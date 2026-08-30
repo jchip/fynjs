@@ -4,7 +4,7 @@ const xrun = require("../../..");
 const sample1 = require("../../fixtures/sample1");
 const expect = require("chai").expect;
 const xstdout = require("xstdout");
-const chalk = require("chalk");
+const chalk = require("../../../lib/chalk");
 const logger = require("../../../lib/logger");
 const { expectError, runTimeout, asyncVerify, runFinally } = require("run-verify");
 

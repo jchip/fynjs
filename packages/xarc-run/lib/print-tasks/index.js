@@ -1,7 +1,7 @@
 "use strict";
 
 const stringify = require("../stringify");
-const chalk = require("chalk");
+const chalk = require("../chalk");
 const assert = require("assert");
 const Path = require("path");
 const xsh = require("xsh");

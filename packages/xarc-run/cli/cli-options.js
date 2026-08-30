@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("assert");
-const chalk = require("chalk");
+const chalk = require("../lib/chalk");
 const myPkg = require("../package.json");
 const config = require("./config");
 

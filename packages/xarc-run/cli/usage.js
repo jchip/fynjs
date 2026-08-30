@@ -1,6 +1,6 @@
 "use strict";
 
-const chalk = require("chalk");
+const chalk = require("../lib/chalk");
 const t1 = chalk.cyan("task1");
 const t2 = chalk.cyan("task2");
 const o = chalk.gray("[task options]");

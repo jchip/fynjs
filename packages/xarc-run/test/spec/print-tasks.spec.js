@@ -13,7 +13,7 @@ describe("print tasks", function() {
   });
 
   it("should print tasks", () => {
-    const chalk = require("chalk");
+    const chalk = require("../../lib/chalk");
     // Force chalk to use colors in test environment
     const originalLevel = chalk.level;
     chalk.level = 3; // Force colors (3 = Truecolor, 16m colors)
