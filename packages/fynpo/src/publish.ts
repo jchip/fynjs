@@ -130,7 +130,7 @@ export default class Publish {
       .filter((x) => Path.basename(x) === "package.json")
       .map((x) => Path.dirname(x));
 
-    const publishFilter = utils.makePublishFilter(this._fynpoRc);
+    const publishFilter = utils.makePublishFilter(this._fynpoRc, this._cwd);
 
     return Object.values(this._graph.packages.byId).filter((pkg: FynpoPackageInfo) => {
       return (

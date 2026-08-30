@@ -6,7 +6,13 @@ import _ from "lodash";
 import { cosmiconfigSync } from "cosmiconfig";
 import shcmd from "shcmd";
 import _optionalRequire from "optional-require";
-import { FynpoDepGraph, PackageInfo, PackageRef } from "@fynpo/base";
+import {
+  FynpoDepGraph,
+  PackageInfo,
+  PackageRef,
+  resolvePackagesConfig,
+  makeGitignoreMatcher,
+} from "@fynpo/base";
 import os from "os";
 import { startMetaMemoizer } from "./meta-memoizer";
 
@@ -247,9 +253,16 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
     }
   }
 
-  // add alias patterns for packages config
+  //
+  // `patterns` is discovery only. `packages` as an ARRAY is the historical shape and now means
+  // publishInclude, so it must NOT become discovery patterns - only the object form's
+  // `include` does. See FPO-17.
+  //
   if (fynpoRc.hasOwnProperty("packages")) {
-    fynpoRc.patterns = fynpoRc.packages;
+    const { include } = resolvePackagesConfig(fynpoRc.packages);
+    if (include.length > 0) {
+      fynpoRc.patterns = include;
+    }
   }
 
   return { fynpoRc, dir, fileName };
@@ -391,40 +404,48 @@ export function makeForeignRepoDetector(cwd: string): (pkgPath: string) => strin
 /**
  * Make a predicate that decides if a package is eligible to be published.
  *
- * Driven by two `command.publish` config arrays of package refs
- * (see `PackageRef` - supports `name:`, `id:`, `path:`, `/regex/` and globs):
+ * Driven by the `packages` config (see `PackageRef` - supports `name:`, `id:`,
+ * `path:`, `/regex/` and globs):
  *
- * - `includePackages` - allow list. When non-empty, only packages matching it
+ * - `publishInclude` - allow list. When non-empty, only packages matching it
  *   are eligible. Absent or empty means every package is eligible.
- * - `excludePackages` - deny list, applied after the allow list and always wins.
+ * - `publishExclude` - deny list, applied after the allow list and always wins.
+ *
+ * `packages` given as an array is the historical shape and means `publishInclude`.
  *
  * The allow list is checked first so the config fails closed: a newly added
  * package under an unlisted path is not publishable until someone says so.
+ *
+ * A gitignored package is NEVER publishable, and this veto outranks everything -
+ * `publishInclude` naming it does not lift it. Such a package is almost always a
+ * nested clone of some other repo that lives here for local linking; releasing it
+ * from this repo is never right. The veto is independent of
+ * `autoSearch.respectGitignore`, which only governs discovery. See FPO-17.
  *
  * This is only about publishing. Discovery, bootstrap and build never consult it.
  * A package's own `"private": true` is a separate, independent veto.
  *
  * @param fynpoRc - fynpo config
+ * @param cwd - repo root, used to read gitignore rules
  *
  * @returns predicate taking a package's info, `true` if it may be published
  */
-export function makePublishFilter(fynpoRc: any): (pkgInfo: PackageInfo) => boolean {
-  const toRefs = (key: string) => {
-    const val = _.get(fynpoRc, `command.publish.${key}`, []);
-    // tolerate a single string for the common one-entry case
-    const list = [].concat(val || []).filter((x) => typeof x === "string" && x.trim());
-    return list.map((ref: string) => new PackageRef(ref));
-  };
+export function makePublishFilter(
+  fynpoRc: any,
+  cwd: string = process.cwd()
+): (pkgInfo: PackageInfo) => boolean {
+  const config = resolvePackagesConfig(_.get(fynpoRc, "packages"));
+  const toRefs = (list: string[]) => list.map((ref: string) => new PackageRef(ref));
 
-  const include = toRefs("includePackages");
-  const exclude = toRefs("excludePackages");
-
-  if (include.length === 0 && exclude.length === 0) {
-    return () => true;
-  }
+  const include = toRefs(config.publishInclude);
+  const exclude = toRefs(config.publishExclude);
+  const gitignore = makeGitignoreMatcher(cwd);
 
   return (pkgInfo: PackageInfo): boolean => {
     if (!pkgInfo) {
+      return false;
+    }
+    if (gitignore.hasRules && gitignore.ignores(pkgInfo.path)) {
       return false;
     }
     if (include.length > 0 && !include.find((ref) => ref.match(pkgInfo))) {

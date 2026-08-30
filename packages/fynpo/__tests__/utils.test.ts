@@ -75,11 +75,28 @@ describe("fynpo utils", () => {
       }
     });
 
-    it("should add patterns alias from packages", () => {
+    // FPO-17: `packages` as an array means publishInclude, not discovery patterns. Aliasing it
+    // to `patterns` is what made a path listed only to get it discovered also land in fynpo's
+    // release jurisdiction.
+    it("should NOT alias an array packages config to patterns", () => {
       makeConfigFile("fynpo.json", { packages: ["packages/*"] });
 
       const config: any = utils.loadConfig(dir);
-      expect(config.fynpoRc.patterns).toEqual(["packages/*"]);
+      expect(config.fynpoRc.patterns).toBeUndefined();
+    });
+
+    it("should alias patterns from the object form's include", () => {
+      makeConfigFile("fynpo.json", { packages: { include: ["libs/*"] } });
+
+      const config: any = utils.loadConfig(dir);
+      expect(config.fynpoRc.patterns).toEqual(["libs/*"]);
+    });
+
+    it("should leave patterns unset when the object form has no include", () => {
+      makeConfigFile("fynpo.json", { packages: { autoSearch: true } });
+
+      const config: any = utils.loadConfig(dir);
+      expect(config.fynpoRc.patterns).toBeUndefined();
     });
   });
 

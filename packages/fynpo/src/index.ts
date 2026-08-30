@@ -77,7 +77,7 @@ const noticeImplicitDiscovery = (autoSearched: boolean, found: number) => {
 };
 
 const readPackages = async (opts: any, cmdName: string = "") => {
-  const packages = await readFynpoPackages(_.pick(opts, ["patterns", "cwd"]));
+  const packages = await readFynpoPackages(_.pick(opts, ["patterns", "cwd", "packages"]));
 
   if (_.isEmpty(packages)) {
     // this path does NOT auto-search - it defaults to `packages/*`, so an empty
@@ -129,7 +129,9 @@ const makeOpts = async (cmd, _parsed) => {
   const fynpo: any = utils.loadConfig(cwd);
   const optConfig = Object.assign({}, fynpo.fynpoRc, allOpts, {
     cwd: fynpo.dir,
-    patterns: fynpo.fynpoRc.packages,
+    // `packages` no longer aliases discovery patterns - loadConfig sets `patterns` only from
+    // the object form's `include` (FPO-17)
+    patterns: fynpo.fynpoRc.patterns,
   });
 
   return optConfig;

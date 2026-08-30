@@ -9,6 +9,8 @@ import Semver from "semver";
 import { groupMM, MMGroups } from "./minimatch-group.js";
 import { posixify } from "./util.js";
 import isPathInside from "is-path-inside";
+import { resolvePackagesConfig, discoveryPatterns } from "./packages-config.js";
+import { makeGitignoreMatcher } from "./gitignore.js";
 
 /**
  * Basic information about a package: name, version, and its path in the monorepo
@@ -264,6 +266,8 @@ export type ReadFynpoOptions = {
    * These packages will always be fetched from registry instead of using local versions.
    */
   noFynLocal?: string[];
+  /** raw `packages` config from fynpo.json - drives discovery and the publish sets */
+  packages?: unknown;
 };
 
 /**
@@ -497,14 +501,29 @@ export class FynpoDepGraph {
     const { patterns, cwd } = this._options;
     let groups: MMGroups;
 
-    // no patterns => setup to search for all package.json
-    const autoSearch: boolean = _.isEmpty(patterns);
+    //
+    // Discovery is driven by the `packages` config, resolved the same way readFynpoPackages
+    // resolves it so the two paths cannot drift again (FPO-17). Explicit `patterns` passed to
+    // the constructor still win, for callers that already decided.
+    //
+    const pkgConfig = resolvePackagesConfig(this._options.packages);
+    const resolved = _.isEmpty(patterns) ? discoveryPatterns(pkgConfig) : patterns;
+
+    const autoSearch: boolean = resolved === null;
     this.autoSearched = autoSearch;
     const autoSearchFound: string[] = [];
+
+    const gitignore = makeGitignoreMatcher(cwd);
+    const excludeMms = pkgConfig.exclude.map((p) => new mm.Minimatch(p));
+    const isExcluded = (path: string) =>
+      Boolean(path) && excludeMms.some((m) => m.match(path.split(Path.sep).join("/")));
+    const skipForAutoSearch = (path: string) =>
+      autoSearch && pkgConfig.autoSearch.respectGitignore && gitignore.ignores(path);
+
     if (autoSearch) {
       groups = { ".": null };
     } else {
-      const mms = patterns.map((p) => new mm.Minimatch(p));
+      const mms = resolved.map((p) => new mm.Minimatch(p));
       groups = groupMM(mms, {});
     }
 
@@ -528,6 +547,9 @@ export class FynpoDepGraph {
         concurrency: 500,
         filter: (file: string, path: string, extras: ExtrasData) => {
           if (path && path !== "." && file === "package.json") {
+            if (isExcluded(path) || skipForAutoSearch(path)) {
+              return false;
+            }
             if (extras.files.includes("fynpo.json") || foundInAutoSearch(path)) {
               //
               // We ignore dir with package.json if:
@@ -544,7 +566,7 @@ export class FynpoDepGraph {
         },
         filterDir: (dir: string, path: string, extras: any) => {
           if (dir !== "node_modules") {
-            if (foundInAutoSearch(path)) {
+            if (foundInAutoSearch(path) || isExcluded(path) || skipForAutoSearch(path)) {
               return false;
             }
             return prefix === "." && groups[prefix] === null

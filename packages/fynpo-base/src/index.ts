@@ -3,11 +3,17 @@ import { promises as Fs } from "fs";
 import { filterScanDir } from "filter-scan-dir";
 import mm from "minimatch";
 import _ from "lodash";
-import { groupMM } from "./minimatch-group.js";
+import { groupMM, MMGroups } from "./minimatch-group.js";
+import { resolvePackagesConfig, discoveryPatterns } from "./packages-config.js";
+import { makeGitignoreMatcher } from "./gitignore.js";
 
 export * from "./fynpo-dep-graph.js";
 
 export * from "./fynpo-config.js";
+
+export * from "./packages-config.js";
+
+export * from "./gitignore.js";
 
 export * from "./util.js";
 
@@ -175,15 +181,41 @@ function includeDeps(packages, level) {
 /**
  * Read the packages of a fynpo mono-repo
  *
- * @param patterns - array of minimatch patterns.  default: `["packages/*"]`
+ * Honors the same `packages` config as {@link FynpoDepGraph}, so both discovery paths agree.
+ * Passing `patterns` directly still works and takes precedence, for callers that already know
+ * what they want.
+ *
+ * @param patterns - explicit minimatch patterns. Overrides whatever `packages` config says.
+ * @param cwd - repo root
+ * @param packages - raw `packages` config, resolved via {@link resolvePackagesConfig}
  * @returns - packages from the fynpo mono-repo
  */
 export async function readFynpoPackages({
-  patterns = ["packages/*"],
+  patterns = undefined,
   cwd = process.cwd(),
-}: { patterns?: string[]; cwd?: string } = {}): Promise<Record<string, PackageInfo>> {
-  const mms = patterns.map((p) => new mm.Minimatch(p));
-  const groups = groupMM(mms, {});
+  packages = undefined,
+}: { patterns?: string[]; cwd?: string; packages?: unknown } = {}): Promise<
+  Record<string, PackageInfo>
+> {
+  const config = resolvePackagesConfig(packages);
+  const explicit = _.isEmpty(patterns) ? discoveryPatterns(config) : patterns;
+  const gitignore = makeGitignoreMatcher(cwd);
+
+  const excludeMms = config.exclude.map((p) => new mm.Minimatch(p));
+  const isExcluded = (path: string) =>
+    Boolean(path) && excludeMms.some((m) => m.match(path.split(Path.sep).join("/")));
+
+  // null patterns means auto-search: scan from the root for every package.json
+  const autoSearch = explicit === null;
+  const groups: MMGroups = autoSearch
+    ? { ".": null }
+    : groupMM(
+        explicit.map((p) => new mm.Minimatch(p)),
+        {}
+      );
+
+  const skipForAutoSearch = (path: string) =>
+    autoSearch && config.autoSearch.respectGitignore && gitignore.ignores(path);
 
   const files: string[][] = [];
   for (const prefix in groups) {
@@ -192,12 +224,28 @@ export async function readFynpoPackages({
         cwd,
         prefix,
         concurrency: 500,
-        filter: (f) => f === "package.json",
-        filterDir: (dir, _p, extras) => {
-          if (dir !== "node_modules") {
-            return Boolean(groups[prefix].find((save) => save.mm.match(extras.dirFile)));
+        filter: (f, path, extras: any) => {
+          if (f !== "package.json") {
+            return false;
           }
-          return false;
+          if (autoSearch && (!path || path === ".")) {
+            // the monorepo's own package.json is not a member
+            return false;
+          }
+          if (autoSearch && extras?.files?.includes("fynpo.json")) {
+            // a nested fynpo root is its own monorepo
+            return false;
+          }
+          return !isExcluded(path) && !skipForAutoSearch(path);
+        },
+        filterDir: (dir, path, extras) => {
+          if (dir === "node_modules" || isExcluded(path) || skipForAutoSearch(path)) {
+            return false;
+          }
+          if (autoSearch) {
+            return !dir.startsWith(".");
+          }
+          return Boolean(groups[prefix].find((save) => save.mm.match(extras.dirFile)));
         },
       })
     );

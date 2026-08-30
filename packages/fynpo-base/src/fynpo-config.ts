@@ -3,6 +3,8 @@ import Path from "path";
 
 import { optionalRequire } from "optional-require";
 
+import { resolvePackagesConfig } from "./packages-config.js";
+
 type ConfigOptions = {
   cwd?: string;
 };
@@ -116,9 +118,16 @@ export class FynpoConfigManager {
       dir = Path.dirname(dir);
     } while (++count < 50 && dir !== prevDir);
 
-    // add alias patterns for packages config
+    //
+    // `patterns` is discovery only. `packages` as an ARRAY is the historical shape and now
+    // means publishInclude, so it must NOT become discovery patterns - only the object form's
+    // `include` does. See FPO-17.
+    //
     if (this._config && this._config.hasOwnProperty("packages")) {
-      this._config.patterns = this._config.packages;
+      const { include } = resolvePackagesConfig(this._config.packages);
+      if (include.length > 0) {
+        this._config.patterns = include;
+      }
     }
 
     this._topDir = dir;

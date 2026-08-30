@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "filter-scan-dir": "^1.6.0",
+    "ignore": "^7.0.6",
     "is-path-inside": "^3.0.3",
     "lodash": "^4.17.21",
     "minimatch": "^3.1.2",
