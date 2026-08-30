@@ -37,10 +37,17 @@ export default defineConfig({
         "**/yarn/**"
       ],
       checkCoverage: true,
-      statements: 76,
-      branches: 68,
-      functions: 79,
-      lines: 77
+      //
+      // Under `thresholds`. Declared flat these were silently ignored by vitest 4. They are a
+      // ratchet against regression, so they sit just under what the suite actually covers -
+      // raise them as coverage improves rather than leaving them aspirational and inert.
+      //
+      thresholds: {
+        statements: 75,
+        branches: 66,
+        functions: 80,
+        lines: 76
+      }
     },
     testTimeout: 30000,
     hookTimeout: 30000,

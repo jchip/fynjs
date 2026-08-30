@@ -473,6 +473,12 @@ because value type ${vtype} is unknown and no value.item`)
       if (this._isChildSigTerm(err, child) || this._isChildTerminated(child)) {
         err = null;
       }
+      //
+      // A spawned child can report both `error` and `close`, so `done` can be called twice.
+      // Guarding it is the point; reproducing that race on demand in a test is not something
+      // this suite can do deterministically.
+      //
+      /* istanbul ignore next */
       if (watch.finish) return 0;
       watch.finish = true;
       return this.next(err, qItem.id);

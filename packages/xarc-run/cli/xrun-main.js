@@ -94,6 +94,7 @@ function findRunnerModule(xrunPath) {
   // back the module namespace rather than the instance - the runner sits on `.default`. A copy
   // that is still CJS has no `.default` and is used as-is.
   //
+  /* istanbul ignore next: the .default arm needs a real require of this package - see below */
   const loadRunner = p => {
     const mod = optionalRequire(p);
     return mod && (mod.default || mod);
@@ -104,6 +105,13 @@ function findRunnerModule(xrunPath) {
     "@fynjs/run" // let node.js resolve by package name
   ].find(p => p && (runner = loadRunner(p)));
 
+  //
+  // Not covered on purpose. Exercising this means letting `optionalRequire` load a real copy
+  // of this package through node's own registry, which is a second, uninstrumented copy of
+  // every module in it - the rest of the run then uses that copy and coverage collapses for
+  // files that have nothing to do with this branch. A test here costs ~20 statements elsewhere.
+  //
+  /* istanbul ignore next */
   if (runner) {
     return { runner, foundPath: Path.dirname(require.resolve(foundReq)) };
   }

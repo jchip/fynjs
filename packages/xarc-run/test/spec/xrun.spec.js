@@ -1774,4 +1774,48 @@ describe("xrun", function() {
       }
     );
   });
+  //
+  // exit() kills tracked children before leaving, so a stopped run does not orphan the
+  // processes it spawned. The delay gives the kill time to land (taskkill on Windows).
+  //
+  describe("exit with tracked children", () => {
+    it("should kill tracked children then exit", async () => {
+      const x = new XRun({});
+      const origExit = process.exit;
+      const exited = [];
+      const killed = [];
+      process.exit = code => exited.push(code);
+      x.killChildProcess = child => killed.push(child);
+
+      try {
+        x.stopOnError = "full";
+        x._taskChildren[Symbol("child")] = { pid: 4242 };
+
+        x.exit(7);
+        expect(exited, "must not exit before the children are dealt with").to.deep.equal([]);
+
+        await new Promise(resolve => setTimeout(resolve, 250));
+
+        expect(killed.map(c => c.pid)).to.deep.equal([4242]);
+        expect(exited).to.deep.equal([7]);
+      } finally {
+        process.exit = origExit;
+      }
+    });
+
+    it("should exit immediately when there are no children", () => {
+      const x = new XRun({});
+      const origExit = process.exit;
+      const exited = [];
+      process.exit = code => exited.push(code);
+
+      try {
+        x.stopOnError = "full";
+        x.exit(3);
+        expect(exited).to.deep.equal([3]);
+      } finally {
+        process.exit = origExit;
+      }
+    });
+  });
 });

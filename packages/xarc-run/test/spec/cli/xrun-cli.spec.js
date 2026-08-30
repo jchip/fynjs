@@ -13,6 +13,7 @@ import xrunMainModule from "../../../cli/xrun-main.js";
 
 const {
   [INTERNALS]: {
+    flushLogger,
     setupNodeModulesBin,
     handleNoTasks,
     handleTaskListing,
@@ -67,6 +68,17 @@ describe("xrun cli", function() {  logger.quiet(true);
     console.log = origLog;
     logger.error = origError;
     logger.log = origLoggerLog;
+  });
+
+  it("should leave the quiet setting alone when flushed without opts", () => {
+    // only opts carries a quiet preference; flushing without one must not un-quiet the logger
+    logger.quiet(true);
+    flushLogger();
+    expect(logger._quiet).to.equal(true);
+
+    flushLogger({ quiet: false });
+    expect(logger._quiet).to.equal(false);
+    logger.quiet(true);
   });
 
   it("should handle task file that exists but loads no tasks", () => {

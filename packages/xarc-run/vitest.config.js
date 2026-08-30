@@ -34,10 +34,17 @@ export default defineConfig({
         ".nycrc.yaml",
       ],
       all: true,
-      lines: 100,
-      functions: 100,
-      branches: 95, // Set to 95% to account for v8 coverage false positives with short-circuit evaluation
-      statements: 100,
+      //
+      // Under `thresholds`. Declared flat these were silently ignored by vitest 4, so the
+      // gate passed at whatever coverage happened to be.
+      //
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        statements: 100,
+        // one uncovered arm in xqtor: a task cliParser error that is not an unknown option
+        branches: 99
+      },
     },
     testTimeout: 10000,
 
