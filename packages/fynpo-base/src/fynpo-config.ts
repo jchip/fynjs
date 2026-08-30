@@ -1,7 +1,9 @@
 import Fs from "fs";
 import Path from "path";
 
-import { optionalRequire } from "optional-require";
+import { makeOptionalImport } from "optional-import";
+
+const optionalImport = makeOptionalImport(import.meta);
 
 
 type ConfigOptions = {
@@ -86,9 +88,29 @@ export class FynpoConfigManager {
         break;
       }
 
-      [".js", ".json"].find((ext) => {
-        return (this._config = optionalRequire(Path.join(dir, `fynpo.config${ext}`)));
+      //
+      // `fynpo.config.js` loads as a module: an absent file falls back, while one that exists
+      // but throws still surfaces as an error rather than being mistaken for absent.
+      //
+      // `fynpo.config.json` is NOT loaded as a module - `import()` of JSON needs an import
+      // attribute (`ERR_IMPORT_ATTRIBUTE_MISSING` without one), and reading it as JSON is what
+      // it is anyway. `readJson` already reports a malformed file and swallows only ENOENT.
+      //
+      const configMod = await optionalImport(Path.join(dir, "fynpo.config.js"), {
+        default: undefined,
       });
+
+      if (configMod) {
+        // a CJS config's `module.exports`, or an ESM config's `export default`, is on `.default`
+        this._config = configMod.default ?? configMod;
+      } else {
+        try {
+          this._config = await this.readJson(Path.join(dir, "fynpo.config.json"));
+        } catch (_e) {
+          //
+        }
+      }
+
       if (this._config) {
         this._type = "fynpo monorepo";
         break;
