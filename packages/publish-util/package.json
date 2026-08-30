@@ -55,7 +55,7 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
-    "find-up": "^7.0.0",
+    "find-up": "^8.0.0",
     "lodash": "^4.17.21",
     "tslib": "^2.6.2"
   },

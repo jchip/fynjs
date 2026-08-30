@@ -52,7 +52,3 @@ declare module "xsh" {
   export let Promise: PromiseConstructor;
 }
 
-declare module "has-ansi" {
-  function hasAnsi(str: string): boolean;
-  export default hasAnsi;
-}
