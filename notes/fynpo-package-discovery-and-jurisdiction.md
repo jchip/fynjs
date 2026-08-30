@@ -210,10 +210,18 @@ them drifting apart again — the original symptom in FPO-17 was `readFynpoPacka
 `packages/*` while `FynpoDepGraph` auto-searched, so `fynpo prepare` silently found zero
 packages in a repo laid out any other way.
 
+## Bootstrap scope — decided
+
+**Bootstrap spans the discovery set** (unchanged from today). `_w/xsh` and any other
+discovered-but-unmanaged package keeps getting its own dependencies installed, which is what
+the `_w/` workflow relies on. Jurisdiction narrows only what gets versioned, changelogged and
+published.
+
+A dedicated bootstrap-scope config is worth considering if a repo ever wants bootstrap narrowed
+independently of discovery. Deliberately not built yet — no evidence two repos want different
+answers, and adding the knob before that is speculative.
+
 ## Still open
 
-- **Bootstrap scope.** Bootstrap currently spans the discovery set, so `_w/xsh` still gets its
-  own dependencies installed. If jurisdiction should also narrow bootstrap, that is a separate
-  decision with a real cost — those packages stop being installed by fynpo.
 - **Nested `.gitignore` files** are not consulted by the matcher. Fine for a top-level ignored
   directory, incomplete if a repo declares ignores further down.
