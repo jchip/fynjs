@@ -317,7 +317,10 @@ describe("Root Command", () => {
     }).toThrow("Execution failed");
   });
 
-  it("should handle multiple runExec calls idempotently", () => {
+  // runExec is meant to be called once per parsed result.  There is no "already executed"
+  // tracking, so a second call is not a no-op - it runs every exec handler again.  Pinned
+  // here so the absence of that tracking stays a deliberate choice rather than a surprise.
+  it("should run exec handlers again on a second runExec call, not dedupe", () => {
     let execCount = 0;
 
     const nc = new NixClap({ name: "test", skipExec: true }).init2({
@@ -329,12 +332,10 @@ describe("Root Command", () => {
 
     const parsed = nc.parse(["test.txt"]);
 
-    // First execution
     const count1 = nc.runExec(parsed);
     expect(count1).toBe(1);
     expect(execCount).toBe(1);
 
-    // Second execution - should execute again since we're calling runExec again
     const count2 = nc.runExec(parsed);
     expect(count2).toBe(1);
     expect(execCount).toBe(2);
