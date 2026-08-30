@@ -18,7 +18,8 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
-    "strictFunctionTypes": true
+    "strictFunctionTypes": true,
+    "rewriteRelativeImportExtensions": true
   },
   "include": [
     "src"

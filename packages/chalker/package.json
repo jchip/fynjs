@@ -10,6 +10,18 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./chalk": {
+      "types": "./dist/chalk.d.ts",
+      "default": "./dist/chalk.js"
+    },
+    "./ansi-colors": {
+      "types": "./dist/ansi-colors.d.ts",
+      "default": "./dist/ansi-colors.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,
