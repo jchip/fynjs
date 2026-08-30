@@ -207,7 +207,7 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
       const fynpoDataEnd = await readFynpoData(bootstrap.cwd);
       if (fynpoDataEnd.__timestamp !== fynpoDataStart.__timestamp) {
         logger.info(
-          "=== fynpo data changed - running bootstrap again - fynpo recommands that you commit the .fynpo-data.json file ==="
+          "=== fynpo data changed - running bootstrap again - fynpo recommends that you commit the .fynpo-data.json file ==="
         );
         secondRun = true;
         return await execBootstrap(cmd, parsed, bootstrap.elapsedTime);
