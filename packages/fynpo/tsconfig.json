@@ -9,7 +9,7 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
-    "types": ["node", "jest"],
+    "types": ["node"],
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
