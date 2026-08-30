@@ -15,9 +15,10 @@
     "build": "tsc",
     "prepublishOnly": "xrun build",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
-    "ci:check": "tsc --noEmit",
+    "ci:check": "tsc --noEmit && vitest run",
     "prepack": "publish-util-prepack",
-    "postpack": "publish-util-postpack"
+    "postpack": "publish-util-postpack",
+    "test": "vitest run"
   },
   "files": [
     "dist"
@@ -52,7 +53,8 @@
     "source-map-support": "^0.5.19",
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.13",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.11"
   },
   "prettier": {
     "printWidth": 100
