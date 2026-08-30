@@ -34,9 +34,58 @@ const getLatestTag = (opts) => {
   const searchTerm = makePublishTagSearchTerm(tagTmpl);
 
   // --tags flag includes lightweight (unannotated) tags, not just annotated ones
-  const args = ["describe", "--tags", "--long", "--first-parent", "--match", searchTerm];
-  const stdout = execSync("git", args, { cwd: opts.cwd });
+  const describeArgs = (firstParent: boolean) =>
+    ["describe", "--tags", "--long"]
+      .concat(firstParent ? ["--first-parent"] : [])
+      .concat(["--match", searchTerm]);
+
+  const describe = (firstParent: boolean) => {
+    try {
+      return execSync("git", describeArgs(firstParent), { cwd: opts.cwd });
+    } catch {
+      return undefined;
+    }
+  };
+
+  //
+  // `--first-parent` keeps the boundary on this branch's own line, so a tag that arrived
+  // on a merged side branch can't be mistaken for the last release. But a monorepo that
+  // pulled another repo's history in through a merge has its release tags sitting on
+  // second parents, where `git describe --first-parent` fails outright rather than
+  // finding them - it used to take the whole command down with a raw execa error naming
+  // neither the tag nor the problem (FPO-46).
+  //
+  // So: ask the strict way first and keep today's answer whenever it has one, and only
+  // widen the search when it doesn't.
+  //
+  let offFirstParent = false;
+  let stdout = describe(true);
+
+  if (!stdout) {
+    stdout = describe(false);
+    offFirstParent = Boolean(stdout);
+  }
+
+  if (!stdout) {
+    logger.warn(
+      `Found release tags matching '${searchTerm}' but none of them describe HEAD - \
+they are on other branches. Proceeding with no release boundary, so every package \
+counts as changed and every commit is in range.`
+    );
+    return { tagName: undefined, commitCount: undefined, sha: undefined };
+  }
+
   const [, tagName, commitCount, sha] = /^(.*)-(\d+)-g([0-9a-f]+)$/.exec(stdout) || [];
+
+  if (!tagName) {
+    logger.warn(`Could not read a release tag out of 'git describe' output: ${stdout}`);
+  } else if (offFirstParent) {
+    logger.warn(
+      `Release tag ${tagName} is not on this branch's first-parent line - it came in \
+through a merge. Using it as the release boundary anyway.`
+    );
+  }
+
   return { tagName, commitCount, sha };
 };
 
