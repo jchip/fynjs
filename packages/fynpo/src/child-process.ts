@@ -40,17 +40,35 @@ const getExitCode = (result) => {
  */
 const wrapError = (spawned, runOpts) => {
   if (spawned.pkg) {
-    return spawned.catch((err) => {
-      // ensure exit code is always a number
-      err.exitCode = getExitCode(err);
+    return spawned.then(
+      (result) => {
+        //
+        // With `reject: false` (what `fynpo run --no-bail` passes), execa RESOLVES a failed
+        // run instead of throwing, so the rejection handler below never sees it and the
+        // result reaches the caller with no `pkg` attached. That is what made `--no-bail`
+        // report every failure as `- undefined - exit code 1` while the bail path named the
+        // package correctly (FPO-39). Annotate the resolved failure the same way.
+        //
+        if (result && result.failed) {
+          result.exitCode = getExitCode(result);
+          result.pkg = spawned.pkg;
+          result.runOpts = runOpts;
+        }
 
-      // log non-lerna error cleanly
-      err.pkg = spawned.pkg;
+        return result;
+      },
+      (err) => {
+        // ensure exit code is always a number
+        err.exitCode = getExitCode(err);
 
-      err.runOpts = runOpts;
+        // log non-lerna error cleanly
+        err.pkg = spawned.pkg;
 
-      throw err;
-    });
+        err.runOpts = runOpts;
+
+        throw err;
+      }
+    );
   }
 
   return spawned;
