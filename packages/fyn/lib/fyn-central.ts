@@ -2,7 +2,7 @@
 import Path from "path";
 import Fs from "./util/file-ops";
 import ssri from "ssri";
-import Tar from "tar";
+import * as Tar from "tar";
 import fyntil from "./util/fyntil";
 import { cloneFile, copyFile } from "./util/hard-link-dir";
 import logger from "./logger";

@@ -1,7 +1,7 @@
 
 import Fs from "./file-ops";
 import Path from "path";
-import mm from "minimatch";
+import { minimatch as mm } from "minimatch";
 import { filterScanDir } from "filter-scan-dir";
 
 async function _scanFileStats(dir: string, ignores: string[], baseDir: string = "") {

@@ -4,8 +4,14 @@ import _ from "lodash";
 import Path from "path";
 import logger from "../logger";
 import Promise from "./aveazul";
-import mississippi from "mississippi";
-const missPipe = Promise.promisify(mississippi.pipe, { context: mississippi });
+import { pipeline } from "stream/promises";
+
+/**
+ * Pipe streams together and resolve when the pipeline fully completes.
+ * Replaces mississippi.pipe with node:stream/promises pipeline.
+ */
+const missPipe = (...streams: [NodeJS.ReadableStream, ...any[]]): Promise<void> =>
+  pipeline(...(streams as [any, any]));
 import { PACKAGE_RAW_INFO } from "../symbols";
 import { PACKAGE_FYN_JSON } from "../constants";
 import { FynpoConfigManager, FynpoDepGraph } from "@fynpo/base";

@@ -21,13 +21,13 @@ import ck from "chalker/chalk";
 import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
-import mm from "minimatch";
+import { Minimatch } from "minimatch";
 import npmConfigEnv from "./util/npm-config-env";
 import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
 import pathUpEach from "./util/path-up-each";
 import { localExportsNeedInstall } from "./local-exports";
-import type { IMinimatch } from "minimatch";
+
 import type { PkgVersion } from "./dep-data";
 
 /** Value form of an allow-scripts entry: `true`/`"*"` allows all lifecycle
@@ -165,7 +165,7 @@ interface FynpoData {
 
 /** Resolution matcher */
 interface ResolutionMatcher {
-  mm: IMinimatch;
+  mm: Minimatch;
   res: string;
 }
 
@@ -590,7 +590,7 @@ class Fyn {
             `resolution path '${depPath}' can only contain '**' for wildcard matching`
           );
           const finalPath = pts.length === 1 ? `**/${unslashedPath}` : unslashedPath;
-          return { mm: new mm.Minimatch(finalPath), res: resData[depPath] };
+          return { mm: new Minimatch(finalPath), res: resData[depPath] };
         });
       }
 

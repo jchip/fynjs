@@ -1,5 +1,5 @@
 
-import Tar from "tar";
+import * as Tar from "tar";
 import logger from "./logger";
 import PromiseQueue from "./util/promise-queue";
 import logFormat from "./util/log-format";
