@@ -14,9 +14,7 @@
   },
   "author": "",
   "files": [
-    "src",
-    "lib",
-    "dist"
+    "index.js"
   ],
   "keywords": [],
   "repository": {
