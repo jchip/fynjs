@@ -233,7 +233,25 @@
           "@fynjs/run@0.0.1(dev)"
         ]
       }
+    ],
+    "packages/xsh": [
+      {
+        "fromPkg": {
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "1.0.0",
+          "path": "packages/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/run@0.0.1(dev)"
+        ]
+      }
     ]
   },
-  "__timestamp": 1788116313185
+  "__timestamp": 1788116521072
 }

@@ -13,7 +13,7 @@ npm install xsh --save-dev
 
 ## Usage
 
-xsh 1.x is an ES module written in TypeScript, requiring node >= 22.12.
+xsh >= 1.0.0 is an ES module written in TypeScript, requiring node >= 22.12.
 
 ```js
 import xsh from "xsh";

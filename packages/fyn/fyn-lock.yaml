@@ -1282,7 +1282,7 @@ $pkg:
    require-at: ^1.0.6
    string-array: ^1.0.1
    unwrap-npm-cmd: ^1.1.2
-   xsh: ^1.0.0
+   xsh: ^0.4.5
 '@fynpo/base':
  _latest: 1.1.23-fynlocal_h
  _:
@@ -6185,7 +6185,7 @@ visual-exec:
    has-ansi: ^6.0.2
    strip-ansi: ^7.2.0
    visual-logger: ^1.1.3
-   xsh: ^1.0.0
+   xsh: ^0.4.5
 visual-logger:
  _latest: 1.1.3-fynlocal_h
  _:
@@ -6495,10 +6495,10 @@ xenv-config:
   $: local
   _: ../xenv-config
 xsh:
- _latest: 1.0.0-fynlocal_h
+ _latest: 0.4.6-fynlocal_h
  _:
-  ../xsh: 1.0.0-fynlocal_h
- 1.0.0-fynlocal_h:
+  ../xsh: 0.4.6-fynlocal_h
+ 0.4.6-fynlocal_h:
   top: 1
   $: local
   _: ../xsh

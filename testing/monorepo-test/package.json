@@ -24,6 +24,7 @@
     "@fynpo/base": "../../packages/fynpo-base",
     "fyn": "../../packages/fyn",
     "fynpo": "../../packages/fynpo",
-    "visual-exec": "../../packages/visual-exec"
+    "visual-exec": "../../packages/visual-exec",
+    "xsh": "../../packages/xsh"
   }
 }
