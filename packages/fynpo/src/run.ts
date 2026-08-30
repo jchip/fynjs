@@ -19,6 +19,36 @@ import { InstallDeps } from "./install-deps";
 
 type RunResult = { failed: boolean; exitCode: number } & Error;
 
+/**
+ * Summarize a completed `fynpo run`.
+ *
+ * Takes the packages that actually executed, not the ones that merely have the script -
+ * --only/--ignore/--scope narrow the set after the candidate list is built, so reporting
+ * the candidates overstates what ran (FPO-34).
+ *
+ * @param script - npm script that was run
+ * @param executed - packages that reached execution
+ * @param duration - elapsed seconds, already formatted
+ * @returns the message to log
+ */
+export const formatRunSummary = (
+  script: string,
+  executed: { name: string }[],
+  duration: string
+): string => {
+  const pkgMsg = executed.length === 1 ? "package" : "packages";
+
+  if (executed.length === 0) {
+    return `Finished run npm script '${script}' - no packages ran in ${duration}s`;
+  }
+
+  const names = executed.map((p) => ` - ${p.name}`).join("\n");
+
+  return `Finished run npm script '${script}' in ${executed.length} ${pkgMsg} in ${duration}s:
+${names}
+`;
+};
+
 export class Run {
   _cwd;
   _script;
@@ -27,9 +57,12 @@ export class Run {
   _npmClient;
   graph: FynpoDepGraph;
   _concurrency: number;
+  /** packages that actually reached execution, in the order they were queued */
+  _executed: FynpoPackageInfo[];
   private topo: FynpoTopoPackages;
 
   constructor(opts, args, graph: FynpoDepGraph) {
+    this._executed = [];
     this._script = args.script;
     this._cwd = opts.dir || opts.cwd;
     this._options = opts;
@@ -171,6 +204,11 @@ path: ${pkg.path}`;
       return;
     }
 
+    // record what actually reached execution - packagesToRun is only filtered by script
+    // presence, while --only/--ignore/--scope are applied further down in TopoRunner, so
+    // it is not a truthful basis for the summary. See FPO-34.
+    this._executed.push(pkgInfo);
+
     this._logQueueMsg(pkgInfo);
 
     const runData: any = {
@@ -283,7 +321,9 @@ path: ${pkg.path}`;
     const joinedCommand = [this._npmClient, "run", this._script].concat(this._args).join(" ");
     const pkgMsg = count === 1 ? "package" : "packages";
 
-    logger.info(`Executing command ${joinedCommand} in ${count} ${pkgMsg}`);
+    // `count` is how many packages HAVE the script - --only/--ignore/--scope are applied
+    // later, so say "candidate" rather than implying this is what will run (FPO-34)
+    logger.info(`Executing command ${joinedCommand} in ${count} candidate ${pkgMsg}`);
 
     const timer = utils.timer();
 
@@ -318,12 +358,7 @@ path: ${pkg.path}`;
         process.exitCode = exitCode;
       } else {
         const duration = (timer() / 1000).toFixed(1);
-        const messages = packagesToRun.map((d) => ` - ${d.pkgInfo.name}`);
-        logger.info(
-          `Finished run npm script '${this._script}' in ${count} ${pkgMsg} in ${duration}s:
-${messages.join("\n")}
-`
-        );
+        logger.info(formatRunSummary(this._script, this._executed, duration));
       }
     } catch (err) {
       logger.error(`ERROR - caught exception running scripts`, err);

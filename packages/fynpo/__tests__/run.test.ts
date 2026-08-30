@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
-import { Run } from "../src/run";
+import { Run, formatRunSummary } from "../src/run";
 import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
 
@@ -97,3 +97,46 @@ describe("fynpo Run", () => {
   });
 });
 
+
+describe("formatRunSummary (FPO-34)", () => {
+  it("reports the packages that actually ran, not the candidates", () => {
+    const msg = formatRunSummary("ci:check", [{ name: "fynpo-cli" }], "0.5");
+
+    expect(msg).toContain("in 1 package in 0.5s");
+    expect(msg).toContain(" - fynpo-cli");
+  });
+
+  it("pluralizes for more than one package", () => {
+    const msg = formatRunSummary("build", [{ name: "a" }, { name: "b" }], "1.2");
+
+    expect(msg).toContain("in 2 packages in 1.2s");
+    expect(msg).toContain(" - a");
+    expect(msg).toContain(" - b");
+  });
+
+  it("says nothing ran when the filter excluded everything", () => {
+    // --only naming a package without the script leaves the candidate list non-empty
+    // but nothing executes; the old message would still have listed the candidates
+    const msg = formatRunSummary("ci:check", [], "0.1");
+
+    expect(msg).toContain("no packages ran");
+    // no bullet list of package names
+    expect(msg).not.toMatch(/^ - /m);
+  });
+});
+
+describe("Run._executed (FPO-34)", () => {
+  const sampleDir = path.join(__dirname, "../test/sample");
+  let sampleGraph: FynpoDepGraph;
+
+  beforeAll(async () => {
+    sampleGraph = new FynpoDepGraph({ cwd: sampleDir });
+    await sampleGraph.resolve();
+  });
+
+  it("starts empty so the summary cannot report unrun packages", () => {
+    const run = new Run({ cwd: sampleDir }, { script: "test" }, sampleGraph);
+
+    expect(run._executed).toEqual([]);
+  });
+});
