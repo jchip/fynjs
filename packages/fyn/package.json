@@ -137,7 +137,6 @@
     "agentkeepalive": "^3.5.3",
     "babel-loader": "^8.0.4",
     "electrode-server": "^3.0.3",
-    "enquirer": "^2.3.6",
     "esbuild-loader": "^4.4.2",
     "node-fetch-npm": "^2.0.4",
     "null-loader": "^4.0.1",
