@@ -107,7 +107,7 @@
     "make-fetch-happen": "^16.0.1",
     "minimatch": "^10.2.6",
     "@fynjs/cli-args": "^1.0.0",
-    "npm-packlist": "^10.0.3",
+    "npm-packlist": "^11.3.0",
     "npm-registry-fetch": "^20.0.1",
     "opfs": "^1.1.1",
     "optional-require": "^2.1.1",
