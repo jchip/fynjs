@@ -668,7 +668,8 @@ export class NixClap extends EventEmitter {
       if (options && options.length) {
         return ["", "Options:"].concat(options);
       }
-      /* c8 ignore next 3 */ // Subcommands now have help option added automatically
+      // Subcommands now have help option added automatically
+      /* c8 ignore next 3 */
       if (cmd.name && !isRootCommand(cmd.alias[0])) {
         return [`Command ${cmd.name} has no options`];
       }

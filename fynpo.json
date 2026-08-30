@@ -6,7 +6,6 @@
     }
   },
   "packages": ["packages/*", "_w/*"],
-  "noFynLocal": ["xsh"],
   "command": {
     "publish": {
       "tags": {

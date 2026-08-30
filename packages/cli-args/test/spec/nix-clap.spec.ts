@@ -1018,6 +1018,49 @@ describe("nix-clap", () => {
     expect(parsed.execCmd.name).to.equal("build");
   });
 
+  it("should keep the first execCmd when several commands execute", () => {
+    const invoked: string[] = [];
+    const nc = new NixClap({ ...noOutputExit, skipExec: true }).init({}, {
+      build: {
+        desc: "Build command",
+        exec: (cmd: CommandNode) => {
+          invoked.push(cmd.name);
+        }
+      },
+      test: {
+        desc: "Test command",
+        exec: (cmd: CommandNode) => {
+          invoked.push(cmd.name);
+        }
+      }
+    });
+
+    const parsed = nc.parse(getArgv("build test"));
+    nc.runExec(parsed);
+
+    expect(invoked).to.deep.equal(["build", "test"]);
+    // execCmd is set by the first command to run and not overwritten by later ones
+    expect(parsed.execCmd.name).to.equal("build");
+  });
+
+  it("should invoke exec commands without a parsed result", async () => {
+    const invoked: string[] = [];
+    const nc = new NixClap({ ...noOutputExit, skipExec: true }).init({}, {
+      build: {
+        desc: "Build command",
+        exec: (cmd: CommandNode) => {
+          invoked.push(cmd.name);
+        }
+      }
+    });
+
+    const parsed = nc.parse(getArgv("build"));
+    // no parsed result to record execCmd on - the exec still runs
+    const count = await parsed.command.invokeExecAsync(true);
+    expect(count).to.equal(1);
+    expect(invoked).to.deep.equal(["build"]);
+  });
+
   describe("unknownCommandFallback", () => {
     it("should treat unknown command as argument to fallback command", () => {
       const nc = new NixClap({ ...noOutputExit, unknownCommandFallback: "run" }).init({}, {

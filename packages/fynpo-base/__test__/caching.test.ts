@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { processInput, processOutput } from "../src/caching";
 import npmPacklist from "npm-packlist";
+import Path from "node:path";
+import { promises as Fs } from "node:fs";
 import _ from "lodash";
 
 describe("caching", function () {
@@ -37,7 +39,10 @@ describe("caching", function () {
     const b = Date.now();
     const preFiles = await npmPacklist({
       path: process.cwd(),
-    });
+      package: JSON.parse(await Fs.readFile(Path.join(process.cwd(), "package.json"), "utf8")),
+      isProjectRoot: true,
+      edgesOut: new Map(),
+    } as any);
     const output = await processOutput({
       cwd: process.cwd(),
       inputHash: "deadbeef",

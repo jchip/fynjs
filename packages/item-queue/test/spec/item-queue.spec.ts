@@ -310,4 +310,18 @@ describe("item-queue", () => {
     const wl = watches[watches.length - 1];
     expect(wl.total).toBe(0);
   });
+
+  it("should skip falsy handlers", () => {
+    const pq = new ItemQueue({
+      concurrency: 1,
+      processItem: (x) => Promise.resolve(x),
+      handlers: {
+        done: undefined,
+        failItem: () => undefined,
+      },
+    } as any);
+
+    expect(pq.listenerCount("done")).toBe(0);
+    expect(pq.listenerCount("failItem")).toBe(1);
+  });
 });

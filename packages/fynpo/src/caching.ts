@@ -400,9 +400,15 @@ export class PkgBuildCache {
   async gatherOutput(calcHash = true) {
     let preFiles = [];
     if (this.cacheRules.output.filesFromNpmPack) {
+      // npm-packlist 10+ takes an @npmcli/arborist tree node rather than an options
+      // object.  Supply the minimal stand-in the walker actually reads, same as
+      // pkg-preper does, instead of pulling in arborist just to list files.
       preFiles = await npmPacklist({
         path: Path.join(this.topDir, this.pkgInfo.path),
-      });
+        package: this.pkgInfo.pkgJson,
+        isProjectRoot: true,
+        edgesOut: new Map(),
+      } as any);
     }
     const output = await caching.processOutput({
       cwd: Path.join(this.topDir, this.pkgInfo.path),

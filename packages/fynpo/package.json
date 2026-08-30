@@ -91,7 +91,7 @@
     "item-queue": "^1.1.2",
     "lodash": "^4.17.21",
     "minimatch": "^10.0.3",
-    "npm-packlist": "jchip/npm-packlist#v1",
+    "npm-packlist": "^11.3.0",
     "optional-require": "^2.1.1",
     "prettier": "2.4.1",
     "resolve-from": "^5.0.0",
@@ -116,7 +116,7 @@
     "tsx": "^4.20.6",
     "typedoc": "^0.28.14",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.9"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=22.12.0"

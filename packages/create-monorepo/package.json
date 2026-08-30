@@ -38,7 +38,7 @@
     "publish-util": "^2.1.0",
     "typedoc": "^0.28.14",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.2"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "chalker": "^1.3.1",

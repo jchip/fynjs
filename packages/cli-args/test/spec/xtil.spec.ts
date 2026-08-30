@@ -4,6 +4,7 @@ import {
   toBoolean,
   isBoolean,
   isNumber,
+  dup,
   fitLine,
   fitLines,
   camelCase,
@@ -257,6 +258,30 @@ describe("xtil", () => {
       const result = fitLine(strs, "  ", "    ", 50);
       expect(result[0]).not.toContain("·");
       expect(result[0]).toContain("[type]");
+    });
+  });
+
+  describe("dup", () => {
+    it("should shallow copy, cloning plain-object values only", () => {
+      const nested = { d: 2 };
+      const arr = [1, 2];
+      const src = { a: null, b: 1, c: nested, e: arr, f: undefined };
+      const copy: any = dup(src);
+
+      expect(copy).not.toBe(src);
+      expect(copy.a).toBe(null);
+      expect(copy.b).toBe(1);
+      expect(copy.f).toBe(undefined);
+      // plain objects are cloned
+      expect(copy.c).toEqual(nested);
+      expect(copy.c).not.toBe(nested);
+      // anything else is carried over by reference
+      expect(copy.e).toBe(arr);
+    });
+
+    it("should return an empty object for a falsy input", () => {
+      expect(dup(null as any)).toEqual({});
+      expect(dup(undefined as any)).toEqual({});
     });
   });
 });

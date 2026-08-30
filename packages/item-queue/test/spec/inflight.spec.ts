@@ -70,4 +70,13 @@ describe("inflight", () => {
     ifl.resetCheckTime("test");
     expect(ifl.elapseCheckTime("test")).toBeLessThanOrEqual(5);
   });
+
+  it("should ignore resetCheckTime for an unknown key", () => {
+    const ifl = new Inflight();
+    ifl.add("test", "hello");
+
+    expect(ifl.resetCheckTime("foo")).toBe(ifl);
+    expect(ifl.lastCheckTime("foo")).toBe(-1);
+    expect(ifl.count).toBe(1);
+  });
 });

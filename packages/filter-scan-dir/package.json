@@ -65,13 +65,13 @@
   "devDependencies": {
     "@fynjs/run": "^0.0.1",
     "@types/node": "^24.10.1",
-    "@vitest/coverage-v8": "^4.0.13",
-    "@vitest/ui": "^4.0.13",
+    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/ui": "^4.1.11",
     "prettier": "^3.6.2",
     "publish-util": "^2.1.0",
     "typedoc": "^0.28.14",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.13"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=22.12.0"
