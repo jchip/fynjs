@@ -118,6 +118,14 @@ describe("version bumps with no release tag (FPO-44)", () => {
     expect(collated.packages.loner.newVersion).toBe("1.0.1");
   });
 
+  it("records which package.json section each dependent link comes from", () => {
+    const changed = changedNoTag();
+
+    expect(changed.depSections["app-runtime"]["lib-a"]).toBe("dep");
+    expect(changed.depSections["app-dev"]["lib-a"]).toBe("dev");
+    expect(changed.depSections.loner).toBeUndefined();
+  });
+
   it("still majors everything when lockAll asks for it", async () => {
     const changed = changedNoTag({ lockAll: true });
     const collated: any = await determinePackageVersions(makeCollated(graph, changed));
@@ -130,5 +138,62 @@ describe("version bumps with no release tag (FPO-44)", () => {
       "app-runtime": "2.0.0",
       "app-dev": "2.0.0",
     });
+  });
+});
+
+describe("bump cascade through dependents (FPO-45)", () => {
+  let dir: string;
+  let graph: FynpoDepGraph;
+
+  beforeAll(async () => {
+    dir = writeFixture();
+    graph = new FynpoDepGraph({ cwd: dir, patterns: ["packages/*"] });
+    await graph.resolve();
+    execSync.mockReturnValue("");
+  });
+
+  afterAll(() => {
+    Fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  const changedFor = () =>
+    getUpdatedPackages(graph, {
+      cwd: dir,
+      fynpoRc: {},
+      versionLockMap: {},
+      forcePublish: [],
+    }) as any;
+
+  it("gives a dependent a patch, not the dependency's major", async () => {
+    const collated: any = await determinePackageVersions(makeCollated(graph, changedFor()));
+
+    // app-runtime's own API did not change - it only needs a release to pick up lib-a@2
+    expect(collated.packages["app-runtime"].newVersion).toBe("1.0.1");
+    expect(collated.packages["app-dev"].newVersion).toBe("1.0.1");
+  });
+
+  it("inherits the dependency's bump type when configured to", async () => {
+    const rc = { versionCascade: { bumpType: "inherit" } };
+    const collated: any = await determinePackageVersions(makeCollated(graph, changedFor(), rc));
+
+    expect(collated.packages["app-runtime"].newVersion).toBe("2.0.0");
+    // a devDependency is build time only, so it never inherits, not even under `inherit`
+    expect(collated.packages["app-dev"].newVersion).toBe("1.0.1");
+    expect(collated.packages.loner.newVersion).toBe("1.0.1");
+  });
+
+  it("pulls a dependent that has no commits of its own in as a patch", async () => {
+    const collated: any = makeCollated(graph, changedFor());
+    // only lib-a has commits this time - the others arrive purely through the cascade
+    collated.realPackages = ["lib-a"];
+    collated.packages = { "lib-a": collated.packages["lib-a"] };
+
+    await determinePackageVersions(collated);
+
+    expect(collated.packages["app-runtime"].newVersion).toBe("1.0.1");
+    expect(collated.packages["app-dev"].newVersion).toBe("1.0.1");
+    expect(collated.indirectBumps.sort()).toEqual(["app-dev", "app-runtime"]);
+    // loner depends on nothing, so it is not in the cascade at all
+    expect(collated.packages.loner).toBeUndefined();
   });
 });

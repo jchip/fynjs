@@ -112,6 +112,24 @@ export const determinePackageVersions = (collated) => {
 
   const indirectBumps = [];
 
+  // How much of a dependency's bump a dependent inherits. `patch` (the default) gives a
+  // package whose own code didn't change a patch bump - it is still republished so its
+  // dependency ranges stay in sync, but it doesn't claim a breaking change it doesn't have.
+  // `inherit` is the old behavior: the dependent takes the dependency's bump type, which
+  // let one [maj] commit major every package downstream of it (FPO-45).
+  const cascadeBumpType = _.get(opts, "fynpoRc.versionCascade.bumpType", "patch");
+  const inheritCascade = cascadeBumpType === "inherit";
+  const depSections = changed.depSections || {};
+
+  // a devDependency is build time only - nothing a consumer installs changes when it moves,
+  // so it never contributes a bump type, only the patch that keeps its range current
+  const cascadeTypeOf = (name, depName) => {
+    if (!inheritCascade || depSections[name]?.[depName] === "dev") {
+      return 0;
+    }
+    return collated.packages[depName].updateType;
+  };
+
   // update any package that depend on a directly bumped packages or its version locks
   let count = 0;
   do {
@@ -123,8 +141,7 @@ export const determinePackageVersions = (collated) => {
 
       const updateTypes = deps
         .filter((depName) => collated.packages[depName])
-        .map((depName) => collated.packages[depName])
-        .map((x) => x.updateType);
+        .map((depName) => cascadeTypeOf(name, depName));
       if (updateTypes.length > 0) {
         const minBumpType = _.max([pkgType, ...updateTypes]);
         if (collated.realPackages.includes(name)) {

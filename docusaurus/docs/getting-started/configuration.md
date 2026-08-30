@@ -20,6 +20,7 @@ title: Configuration
   forcePublish: [],
   ignoreChanges: [],
   versionLocks: [],
+  versionCascade: { bumpType: "patch" },
   commitlint: {
   },
 }
@@ -207,6 +208,27 @@ Lock versions of selected packages:
 }
 ```
 Here pkg1, pkg3 are version locked and pkg2, pk4 are verison locked together.
+
+### versionCascade
+
+How much of a dependency's version bump its dependents inherit, when a package has to be
+released only because something it depends on was released.
+
+```javascript
+{
+  "versionCascade": {
+    "bumpType": "patch"
+  }
+}
+```
+
+`bumpType` is `patch` by default: a package whose own code did not change gets a patch bump.
+It is still republished so its dependency ranges stay current, but it does not claim a
+breaking change it does not have.
+
+Set it to `inherit` to take the dependency's own bump type instead, so a `[maj]` commit in a
+dependency majors everything downstream of it. A **devDependency** never contributes a bump
+type either way - it is build time only, so nothing a consumer installs changes when it moves.
 
 ### commitlint
 commit lint configuration. Refer [here](https://commitlint.js.org/#/reference-configuration) for the details of supported configurations.

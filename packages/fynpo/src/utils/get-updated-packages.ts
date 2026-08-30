@@ -42,10 +42,10 @@ const getLatestTag = (opts) => {
 
 const addDependents = (name, changed, graph: FynpoDepGraph, canPublish) => {
   const pkg = graph.getPackageByName(name);
-  const depPaths = Object.keys(graph.depMapByPath[pkg.path].dependentsByPath);
-  const dependents = depPaths.map((path) => graph.packages.byPath[path].name);
+  const dependentsByPath = graph.depMapByPath[pkg.path].dependentsByPath;
 
-  dependents.forEach((dep) => {
+  Object.keys(dependentsByPath).forEach((path) => {
+    const dep = graph.packages.byPath[path].name;
     // a dependent that can't be published must not be pulled back into the
     // changed set just because something it depends on changed
     if (!canPublish(dep)) {
@@ -56,6 +56,10 @@ const addDependents = (name, changed, graph: FynpoDepGraph, canPublish) => {
     }
     changed.depMap[dep] ??= [];
     changed.depMap[dep].push(name);
+    // which section of the dependent's package.json the link comes from, so the bump
+    // cascade can tell a runtime dep from a build time only one (FPO-45)
+    changed.depSections[dep] ??= {};
+    changed.depSections[dep][name] = dependentsByPath[path].depSection;
   });
 };
 
@@ -81,6 +85,7 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
   const changed = {
     pkgs: [],
     depMap: {},
+    depSections: {},
     verLocks: {},
     forceUpdated: [],
     latestTag: undefined,
