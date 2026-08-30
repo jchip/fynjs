@@ -327,13 +327,13 @@ describe("xrun cli", function() {  logger.quiet(true);
     }
   });
 
-  it("should handle --options flag", () => {
-    xrun(["node", "xrun", "--options"], 2);
+  it("should handle --options flag", async () => {
+    await xrun(["node", "xrun", "--options"], 2);
     expect(exitCode).to.equal(0);
   });
 
-  it("should handle --list option", () => {
-    xrun(["node", "xrun", "--quiet", "--list"], 2);
+  it("should handle --list option", async () => {
+    await xrun(["node", "xrun", "--quiet", "--list"], 2);
     expect(exitCode).to.equal(0);
     expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
     expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
@@ -341,40 +341,40 @@ describe("xrun cli", function() {  logger.quiet(true);
     expect(logOutput.some(x => x.includes("xfoo4"))).to.be.true;
   });
 
-  it("should handle --list with namespace", () => {
-    xrun(["node", "xrun", "--quiet", "--list", "1"], 2);
+  it("should handle --list with namespace", async () => {
+    await xrun(["node", "xrun", "--quiet", "--list", "1"], 2);
     expect(exitCode).to.equal(0);
     expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
     expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
   });
 
-  it("should handle --full option", () => {
-    xrun(["node", "xrun", "--quiet", "--list", "--full"], 2);
+  it("should handle --full option", async () => {
+    await xrun(["node", "xrun", "--quiet", "--list", "--full"], 2);
     expect(exitCode).to.equal(0);
     expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
     expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
   });
 
-  it("should handle --full > 1 option", () => {
-    xrun(["node", "xrun", "--quiet", "--list", "-ff"], 2);
+  it("should handle --full > 1 option", async () => {
+    await xrun(["node", "xrun", "--quiet", "--list", "-ff"], 2);
     expect(exitCode).to.equal(0);
     expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
     expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
   });
 
-  it("should handle --ns option", () => {
-    xrun(["node", "xrun", "--quiet", "--ns"], 2);
+  it("should handle --ns option", async () => {
+    await xrun(["node", "xrun", "--quiet", "--ns"], 2);
     expect(exitCode).to.equal(0);
     expect(logOutput.some(x => x.includes("1"))).to.be.true;
   });
 
-  it.skip("should handle --help option", () => {
-    xrun(["node", "xrun", "--quiet", "--help", "xfoo1"], 2);
+  it.skip("should handle --help option", async () => {
+    await xrun(["node", "xrun", "--quiet", "--help", "xfoo1"], 2);
     expect(exitCode).to.equal(1);
     // expect(logOutput.some(x => x.includes("help for tasks: xfoo1"))).to.be.true;
   });
 
-  it("should handle serial tasks with --serial", () => {
+  it("should handle serial tasks with --serial", async () => {
     return new Promise(resolve => {
       xrun(["node", "xrun", "--quiet", "--serial", "xfoo1", "xfoo2"], 2, "", () => {
         expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
@@ -397,23 +397,23 @@ describe("xrun cli", function() {  logger.quiet(true);
     });
   });
 
-  it("should handle --nmbin option", () => {
-    xrun(["node", "xrun", "--quiet", "--nmbin", "xfoo1"], 2);
+  it("should handle --nmbin option", async () => {
+    await xrun(["node", "xrun", "--quiet", "--nmbin", "xfoo1"], 2);
     // expect(logOutput.some(x => x.includes("Added") || x.includes("PATH already contains"))).to.be
     //   .true;
   });
 
-  it("should handle task options", () => {
-    xrun(["node", "xrun", "--quiet", ".arg-opts", "-a=1", "--test=true"], 2);
+  it("should handle task options", async () => {
+    await xrun(["node", "xrun", "--quiet", ".arg-opts", "-a=1", "--test=true"], 2);
     // expect(logOutput.some(x => x.includes(".arg-opts"))).to.be.true;
   });
 
-  it("should handle namespaced tasks", () => {
-    xrun(["node", "xrun", "--quiet", "1/xfoo1"], 2);
+  it("should handle namespaced tasks", async () => {
+    await xrun(["node", "xrun", "--quiet", "1/xfoo1"], 2);
     // expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
   });
 
-  it("should find no tasks in empty directory", () => {
+  it("should find no tasks in empty directory", async () => {
     return new Promise(resolve => {
       xrunInstance.reset();
       const origCwd = process.cwd();

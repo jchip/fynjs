@@ -326,19 +326,21 @@ describe("task-file", function() {
   });
 
   describe("loadTaskFile", () => {
-    it("should load JavaScript task file", () => {
+    it("should load JavaScript task file", async () => {
       fs.writeFileSync("tasks.js", "module.exports = { foo: 'bar' };");
-      const tasks = loadTaskFile(Path.join(testDir, "tasks.js"));
-      expect(tasks).to.deep.equal({ foo: "bar" });
+      const tasks = await loadTaskFile(Path.join(testDir, "tasks.js"));
+      // loading goes through import(), so a CommonJS file arrives as a namespace with its
+      // module.exports on .default - the shape processTasks unwraps
+      expect(tasks.default).to.deep.equal({ foo: "bar" });
     });
 
-    it("should handle non-existent file", () => {
-      const tasks = loadTaskFile(Path.join(testDir, "non-existent.js"));
+    it("should handle non-existent file", async () => {
+      const tasks = await loadTaskFile(Path.join(testDir, "non-existent.js"));
       expect(tasks).to.be.undefined;
     });
 
     // TODO: This test has process.cwd() issues with vitest - test isolation problem
-    it("should handle TypeScript file load error", () => {
+    it("should handle TypeScript file load error", async () => {
       const tsFile = Path.join(testDir, "tasks.ts");
       // Write invalid TypeScript that will cause a syntax error
       fs.writeFileSync(
@@ -353,7 +355,7 @@ function export const tasks = {
       // Intercept error output to keep it within the test
       const intercept = xstdout.intercept(true);
       
-      const result = loadTaskFile(tsFile);
+      const result = await loadTaskFile(tsFile);
       
       intercept.restore();
       
@@ -365,7 +367,7 @@ function export const tasks = {
       expect(errorOutput).to.include("tasks.ts");
     });
 
-    it("should handle ESM TypeScript file", () => {
+    it("should handle ESM TypeScript file", async () => {
       const tsFile = Path.join(testDir, "tasks.ts");
       // Write TypeScript using ESM syntax (with invalid syntax)
       fs.writeFileSync(
@@ -381,7 +383,7 @@ export default tasks;
       // Intercept error output to keep it within the test
       const intercept = xstdout.intercept(true);
       
-      const result = loadTaskFile(tsFile);
+      const result = await loadTaskFile(tsFile);
       
       intercept.restore();
       
@@ -494,22 +496,22 @@ export default tasks;
   });
 
   describe("loadTasks", () => {
-    it("should load tasks from task file", () => {
+    it("should load tasks from task file", async () => {
       fs.writeFileSync("xrun-tasks.js", "module.exports = { foo: 'bar' };");
       const searchResult = { found: true, xrunFile: Path.join(testDir, "xrun-tasks.js") };
-      const loaded = loadTasks({}, searchResult);
+      const loaded = await loadTasks({}, searchResult);
       expect(loaded).to.be.true;
       expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
     });
 
-    it("should load tasks from required module", () => {
+    it("should load tasks from required module", async () => {
       fs.writeFileSync("custom-tasks.js", "module.exports = { foo: 'bar' };");
-      const loaded = loadTasks({ require: ["./custom-tasks.js"] }, {});
+      const loaded = await loadTasks({ require: ["./custom-tasks.js"] }, {});
       expect(loaded).to.be.true;
       expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
     });
 
-    it("should report a task file that throws, with its stack", () => {
+    it("should report a task file that throws, with its stack", async () => {
       const errors = [];
       const origError = logger.error;
       logger.error = (...args) => errors.push(args.join(" "));
@@ -518,7 +520,7 @@ export default tasks;
         const file = Path.join(testDir, "boom-tasks.js");
         fs.writeFileSync(file, `throw new Error("boom in task file");\n`);
 
-        expect(loadTaskFile(file)).to.be.undefined;
+        expect(await loadTaskFile(file)).to.be.undefined;
 
         const output = stripAnsi(errors.join("\n"));
         expect(output).to.include("Unable to load");
@@ -528,12 +530,12 @@ export default tasks;
       }
     });
 
-    it("should handle non-existent required module", () => {
-      const loaded = loadTasks({ require: ["./non-existent.js"] }, {});
+    it("should handle non-existent required module", async () => {
+      const loaded = await loadTasks({ require: ["./non-existent.js"] }, {});
       expect(loaded).to.be.false;
     });
 
-    it("should load both npm scripts and task file", () => {
+    it("should load both npm scripts and task file", async () => {
       fs.writeFileSync(
         "package.json",
         JSON.stringify({
@@ -544,7 +546,7 @@ export default tasks;
       );
       fs.writeFileSync("xrun-tasks.js", "module.exports = { foo: 'bar' };");
       const searchResult = { found: true, xrunFile: Path.join(testDir, "xrun-tasks.js") };
-      loadTasks({}, searchResult);
+      await loadTasks({}, searchResult);
       expect(xrun._tasks._tasks["npm"].test.cmd).to.equal("mocha");
       expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
     });

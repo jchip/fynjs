@@ -66,16 +66,18 @@ describe("bin/xrun.js cli resolution", function () {
       );
     });
 
-    it("should say why when the task file uses top-level await", () => {
+    it("should run a task file that uses top-level await", () => {
+      // require(esm) refuses a top-level await graph outright; loading through import() is
+      // what makes this work at all
       Fs.writeFileSync(
         Path.join(tmpDir, "xrun-tasks.mjs"),
-        `await new Promise(r => setTimeout(r, 1));\nexport default () => {};\n`
+        `const greeting = await Promise.resolve("hi from a TLA task file");\n` +
+          `export default xrun => { xrun.load({ hello: () => console.log(greeting) }); };\n`
       );
 
       const res = runTask(tmpDir, "hello");
-      expect(res.status).to.equal(1);
-      expect(res.output).to.contain("top-level await");
-      expect(res.output).to.contain("Move the await inside a task");
+      expect(res.status).to.equal(0);
+      expect(res.output).to.contain("hi from a TLA task file");
     });
 
     it("should say why when the task file throws", () => {
@@ -103,6 +105,59 @@ describe("bin/xrun.js cli resolution", function () {
       const res = runTask(tmpDir, "hello");
       expect(res.status).to.equal(0);
       expect(res.output).to.contain("hi from task");
+    });
+  });
+
+  //
+  // Every task file format xrun advertises, driven through the real bin. Spawning matters here:
+  // node decides CommonJS vs ESM from the file extension and the nearest package.json, and a
+  // test runner's module graph does not reproduce that faithfully.
+  //
+  describe("task file formats", () => {
+    beforeEach(() => {
+      Fs.writeFileSync(
+        Path.join(tmpDir, "package.json"),
+        JSON.stringify({ name: "xrun-fmt-fixture", version: "1.0.0" })
+      );
+    });
+
+    const cjs = body => `module.exports = ${body};\n`;
+    const esm = body => `export default ${body};\n`;
+    const load = msg => `xrun => { xrun.load({ hello: () => console.log("${msg}") }); }`;
+
+    const formats = [
+      ["xrun-tasks.js", cjs(load("ran js")), "ran js"],
+      ["xrun-tasks.cjs", cjs(load("ran cjs")), "ran cjs"],
+      ["xrun-tasks.mjs", esm(load("ran mjs")), "ran mjs"],
+      ["xrun-tasks.ts", `const m: string = "ran ts";\n` + cjs(`(xrun: any) => { xrun.load({ hello: () => console.log(m) }); }`), "ran ts"],
+      ["xrun-tasks.mts", `const m: string = "ran mts";\n` + esm(`(xrun: any) => { xrun.load({ hello: () => console.log(m) }); }`), "ran mts"],
+      ["xrun-tasks.cts", `const m: string = "ran cts";\n` + cjs(`(xrun: any) => { xrun.load({ hello: () => console.log(m) }); }`), "ran cts"]
+    ];
+
+    formats.forEach(([name, body, expected]) => {
+      it(`should run tasks from ${name}`, () => {
+        Fs.writeFileSync(Path.join(tmpDir, name), body);
+        const res = runTask(tmpDir, "hello");
+        expect(res.status, res.output).to.equal(0);
+        expect(res.output).to.contain(expected);
+      });
+    });
+
+    // the format matrix crossed with the thing require could never do
+    [
+      ["xrun-tasks.mjs", "esm"],
+      ["xrun-tasks.mts", "mts"]
+    ].forEach(([name, label]) => {
+      it(`should run ${name} with top-level await`, () => {
+        Fs.writeFileSync(
+          Path.join(tmpDir, name),
+          `const m = await Promise.resolve("tla from ${label}");\n` +
+            `export default xrun => { xrun.load({ hello: () => console.log(m) }); };\n`
+        );
+        const res = runTask(tmpDir, "hello");
+        expect(res.status, res.output).to.equal(0);
+        expect(res.output).to.contain(`tla from ${label}`);
+      });
     });
   });
 

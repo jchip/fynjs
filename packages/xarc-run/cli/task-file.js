@@ -1,5 +1,4 @@
-import { createRequire } from "node:module";
-import { makeOptionalRequire } from "optional-require";
+import { pathToFileURL } from "node:url";
 import Path from "path";
 import env from "./env.js";
 import xsh from "xsh";
@@ -10,7 +9,6 @@ import { searchUpTaskFile } from "./search-up-task-file.js";
 import WrapProcess from "./wrap-process.js";
 import npmLoader from "./npm-loader.js";
 import requireAt from "require-at";
-const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
 import instance from "../lib/xrun-instance.js";
 import TsRunner from "./ts-runner.js";
 
@@ -68,43 +66,52 @@ function searchTaskFile(search, opts) {
 }
 
 /**
- * Load a task file with TypeScript support
+ * Load a task file.
+ *
+ * Loading goes through `import()` rather than `require`, which is what lets a task file use
+ * top-level await - node's `require(esm)` refuses that graph outright and always will. Every
+ * other format keeps working: `import()` of a CommonJS file yields a namespace with
+ * `module.exports` on `.default`, which processTasks already unwraps.
+ *
  * @param {string} name - Path to the task file
- * @returns {Object|Function|undefined} Loaded task module
+ * @returns {Promise<Object|Function|undefined>} Loaded task module, or undefined if it failed
  */
-function loadTaskFile(name) {
+async function loadTaskFile(name) {
   const ext = Path.extname(name);
-  if (ext === ".ts" || ext === ".tsx" || ext === ".mts") {
+  if (ext === ".ts" || ext === ".tsx" || ext === ".mts" || ext === ".cts") {
     TsRunner.startRunner();
   }
 
-  return optionalRequire(name, {
-    fail: e => {
-      const file = xsh.pathCwd.replace(name, ".");
-      const errMsg = ck`<red>Unable to load ${file}</>`;
+  try {
+    return await import(pathToFileURL(Path.resolve(name)).href);
+  } catch (e) {
+    const file = xsh.pathCwd.replace(name, ".");
+    const errMsg = ck`<red>Unable to load ${file}</>`;
 
-      //
-      // node's require(esm) refuses a graph containing top-level await, by design, so no
-      // amount of work on this side makes it loadable. The stack is pure noise here - say
-      // what is wrong and what to do instead.
-      //
-      if (e.code === "ERR_REQUIRE_ASYNC_MODULE") {
-        logger.error(
-          ck`${errMsg}: it uses <yellow>top-level await</>, which xrun cannot load.
-  Move the await inside a task, or inside the function the task file exports.`
-        );
-        return;
-      }
-
-      let msg2 = "";
-      /* istanbul ignore next */
-      if (e.code === "ERR_REQUIRE_ESM") {
-        msg2 = ` === This is an issue with ts-node/register, install and use tsx ===\n\n`;
-      }
-
-      logger.error(`${errMsg}: ${msg2}${xsh.pathCwd.replace(e.stack, ".", "g")}`);
+    //
+    // node strips TypeScript types natively, which covers ordinary task files. It cannot
+    // handle syntax that has to be transformed rather than erased - enums, namespaces,
+    // parameter properties - and says so with its own code. Name the limit rather than
+    // dumping a stack that does not explain it.
+    //
+    /* istanbul ignore next */
+    if (
+      e.code === "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX" ||
+      e.code === "ERR_UNKNOWN_FILE_EXTENSION" ||
+      e.code === "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING"
+    ) {
+      logger.error(
+        ck`${errMsg}: node cannot load this TypeScript on its own.
+  It strips types, but enums, namespaces and parameter properties need a real transform.
+  Rewrite them, or run node with <yellow>--experimental-transform-types</>.
+  ${e.message}`
+      );
+      return undefined;
     }
-  });
+
+    logger.error(`${errMsg}: ${xsh.pathCwd.replace(e.stack, ".", "g")}`);
+    return undefined;
+  }
 }
 
 /**
@@ -139,11 +146,13 @@ function processTasks(tasks, loadMsg, ns = "xrun") {
  * @param {SearchResult} searchResult - Result from searching for task files
  * @returns {boolean} Whether any tasks were loaded
  */
-function loadTasks(opts, searchResult) {
+async function loadTasks(opts, searchResult) {
   let loaded = false;
   npmLoader(instance.xrun, opts);
   if (opts.require) {
-    opts.require.forEach(xmod => {
+    // a for-of rather than forEach: each file has to finish loading before the next starts,
+    // so tasks land in the order the user listed their modules
+    for (const xmod of opts.require) {
       let file;
       try {
         file = requireAt(WrapProcess.cwd()).resolve(xmod);
@@ -151,18 +160,18 @@ function loadTasks(opts, searchResult) {
         logger.log(
           ck`<red>ERROR:</> <yellow>Unable to require module</> <cyan>'${xmod}'</> - <red>${err.message}</>`
         );
-        return;
+        continue;
       }
-      const tasks = loadTaskFile(file);
+      const tasks = await loadTaskFile(file);
       /* istanbul ignore else */
       if (tasks) {
         const loadMsg = ck`<green>${xmod}</>`;
         processTasks(tasks, loadMsg);
-        return (loaded = true);
+        loaded = true;
       }
-    });
+    }
   } else if (searchResult.xrunFile) {
-    const tasks = loadTaskFile(searchResult.xrunFile);
+    const tasks = await loadTaskFile(searchResult.xrunFile);
     /* istanbul ignore else */
     if (tasks) {
       processTasks(

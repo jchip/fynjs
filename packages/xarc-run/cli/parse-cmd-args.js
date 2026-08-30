@@ -57,7 +57,7 @@ function readPackageJson(dir) {
  * @param {number} start - Index to start parsing from
  * @returns {ParseResult} Parsed arguments and tasks
  */
-function parseArgs(argv, start) {
+async function parseArgs(argv, start) {
   const nc = new NixClap({
     allowUnknownCommand: true, // Allow task names as commands
     allowUnknownOption: true, // Allow task-specific options
@@ -122,7 +122,7 @@ function parseArgs(argv, start) {
     logger.log(ck`Applied <green>${pkgOptField}</> options from ${pkgName}`);
   }
 
-  const loaded = loadTasks(opts, searchResult);
+  const loaded = await loadTasks(opts, searchResult);
 
   // Extract tasks from commands
   const tasks = Object.keys(parsed.command.subCmdNodes);

@@ -317,7 +317,7 @@ function handleQuietFlag(jsonMeta, opts) {
  * @param {Function} done - Optional callback
  * @returns {*} Runner result or void
  */
-function xrunMain(argv, offset, xrunPath = "", done = null) {
+async function xrunMain(argv, offset, xrunPath = "", done = null) {
   let cmdName = "xrun";
   const cwd = WrapProcess.cwd();
 
@@ -334,7 +334,7 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
 
   // Find and load runner module
   const { runner, foundPath } = findRunnerModule(xrunPath);
-  const rawCmdArgs = parseCmdArgs.parseArgs(argv, offset, foundPath);
+  const rawCmdArgs = await parseCmdArgs.parseArgs(argv, offset, foundPath);
 
   // Create CliContext as the primary interface
   const cliContext = new CliContext(rawCmdArgs);

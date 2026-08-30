@@ -10,7 +10,7 @@
 - **Concurrent & Serial** execution of tasks
 - **JavaScript extensibility** with functions and promises
 - **Provider packages** for reusable task libraries
-- **TypeScript support** with automatic tsx or ts-node integration
+- **TypeScript support** - node strips types natively; tsx is picked up automatically for syntax it cannot strip
 - **Advanced CLI** with argument parsing and remaining args support
 - **Namespace organization** for better task management
 - and [more](#full-list-of-features)
@@ -460,21 +460,60 @@ run(concurrent("task1", "task2"), err => {
 
 > Promise version of `run` is `asyncRun`
 
-## TypeScript
+## Task file formats
 
-Name your task file `xrun-tasks.ts` if you want to use TypeScript.
+Your task file can be any of these, and `xrun` searches for them in this order:
 
-You need to install a TypeScript runtime to your `node_modules`. `@fynjs/run` supports both [tsx](https://www.npmjs.com/package/tsx) (recommended) and [ts-node](https://www.npmjs.com/package/ts-node):
+| extension | module type |
+| --- | --- |
+| `xrun-tasks.js` | follows the nearest `package.json` `type` |
+| `xrun-tasks.cjs` | CommonJS |
+| `xrun-tasks.mjs` | ES module |
+| `xrun-tasks.ts` | TypeScript, follows `type` |
+| `xrun-tasks.mts` | TypeScript ES module |
+| `xrun-tasks.cts` | TypeScript CommonJS |
 
-```bash
-# Recommended: tsx (faster, better ESM support)
-npm install -D tsx typescript
+A CommonJS task file exports with `module.exports`, an ES module with `export default`. Either can
+export the tasks object directly, or a function that receives the `xrun` instance:
 
-# Alternative: ts-node
-npm install -D ts-node typescript
+```js
+export default xrun => {
+  xrun.load({ hello: "echo hello" });
+};
 ```
 
-`xrun` automatically detects and loads the appropriate TypeScript runtime when it finds `xrun-tasks.ts`, `xrun-tasks.tsx`, or `xrun-tasks.mts` files. It tries `tsx` first, then falls back to `ts-node/register`.
+### Top-level await
+
+An ES module task file may use top-level await:
+
+```js
+const config = await loadConfigFromSomewhere();
+
+export default xrun => {
+  xrun.load({ build: `build --target ${config.target}` });
+};
+```
+
+Task files load through `import()`, which is what makes this possible - `require` refuses a module
+graph containing top-level await and always will.
+
+## TypeScript
+
+Name your task file `xrun-tasks.ts`, `.mts`, or `.cts`.
+
+**No TypeScript runtime is needed for ordinary task files.** Node strips type annotations itself,
+unflagged since 22.18, so a task file with types just works.
+
+Syntax that must be *transformed* rather than erased - enums, namespaces, parameter properties -
+is beyond what stripping does. For those, install [tsx](https://www.npmjs.com/package/tsx):
+
+```bash
+npm install -D tsx typescript
+```
+
+`xrun` loads it automatically when it finds a TypeScript task file. Without it, node reports
+`ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` and `xrun` tells you which limit you hit. Running node with
+`--experimental-transform-types` is the other way out.
 
 ## Command Line Usage
 

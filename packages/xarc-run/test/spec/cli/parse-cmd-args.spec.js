@@ -36,32 +36,32 @@ describe("parse-cmd-args", function() {
   // the custom exit handler. It's marked with /* istanbul ignore next */
 
   describe("task parsing", () => {
-    it("parses tasks after --", () => {
+    it("parses tasks after --", async () => {
       const args = ["node", "xrun", "task1", "task2"];
-      const result = parseArgs(args, 2);
+      const result = await parseArgs(args, 2);
       expect(result.tasks).to.deep.equal(["task1", "task2"]);
     });
 
-    it("handles task arguments", () => {
+    it("handles task arguments", async () => {
       const args = ["node", "xrun", "task1", "--task-opt=value", "task2"];
-      const result = parseArgs(args, 2);
+      const result = await parseArgs(args, 2);
       expect(result.tasks).to.deep.equal(["task1", "task2"]);
       expect(result.parsed.command.subCmdNodes.task1.opts.taskOpt).to.equal("value");
     });
   });
 
   describe("env option parsing", () => {
-    it("should handle when no --env option is provided", () => {
+    it("should handle when no --env option is provided", async () => {
       const args = ["node", "xrun", "task1"];
-      const result = parseArgs(args, 2);
+      const result = await parseArgs(args, 2);
       expect(result.opts.env).to.be.undefined;
     });
   });
 
   describe("task file handling", () => {
-    it("finds task file in specified directory", () => {
+    it("finds task file in specified directory", async () => {
       const args = ["node", "xrun", "task1"];
-      const result = parseArgs(args, 2);
+      const result = await parseArgs(args, 2);
       expect(result.searchResult.found).to.equal(true);
       expect(result.searchResult.xrunFile).to.match(/xrun-tasks\.js$/);
     });
