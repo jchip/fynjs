@@ -63,3 +63,89 @@ describe("hard-link-dir", function() {
     }
   });
 });
+
+//
+// FPM-52. esbuild's postinstall deliberately hardlinks the platform binary onto the launcher
+// path (install.js: linkSync(binPath, tempPath); renameSync(tempPath, toPath)). Harmless under
+// npm. But copyFile and clonefile OPEN AND TRUNCATE an existing destination instead of
+// replacing it, so once those two paths share an inode, the next replicate of the `esbuild`
+// package writes its own ~1KB JS launcher straight through the link and onto
+// @esbuild/<platform>/bin/esbuild. That launcher then resolves the platform binary path, finds
+// itself, and spawns itself - the observed fork bomb.
+//
+describe("hard-link-dir - never writes through an existing hardlink (FPM-52)", function() {
+  const withFixture = async (fn) => {
+    const dir = fs.mkdtempSync(Path.join(os.tmpdir(), "fpm52-"));
+    try {
+      const src = Path.join(dir, "store-content");
+      const target = Path.join(dir, "esbuild-bin");
+      const other = Path.join(dir, "platform-bin");
+
+      fs.writeFileSync(src, "js-launcher-from-tarball");
+      fs.writeFileSync(target, "native-binary");
+      // the postinstall's hardlink
+      fs.linkSync(target, other);
+
+      expect(fs.statSync(target).ino).to.equal(fs.statSync(other).ino);
+
+      await fn({ src, target, other });
+
+      return {
+        other: fs.readFileSync(other, "utf8"),
+        target: fs.readFileSync(target, "utf8"),
+        stillLinked: fs.statSync(target).ino === fs.statSync(other).ino
+      };
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("cloneFile must not corrupt the linked sibling", async () => {
+    const r = await withFixture(({ src, target }) => hardLinkDir.cloneFile(src, target));
+
+    expect(r.target).to.equal("js-launcher-from-tarball");
+    // the whole point: the other package's file is untouched
+    expect(r.other).to.equal("native-binary");
+    expect(r.stillLinked).to.equal(false);
+  });
+
+  it("copyFile must not corrupt the linked sibling", async () => {
+    const r = await withFixture(({ src, target }) => hardLinkDir.copyFile(src, target));
+
+    expect(r.target).to.equal("js-launcher-from-tarball");
+    expect(r.other).to.equal("native-binary");
+    expect(r.stillLinked).to.equal(false);
+  });
+
+  it("still writes correctly when the destination does not exist", async () => {
+    const dir = fs.mkdtempSync(Path.join(os.tmpdir(), "fpm52-new-"));
+    try {
+      const src = Path.join(dir, "src");
+      const dest = Path.join(dir, "sub-dest");
+      fs.writeFileSync(src, "content");
+
+      await hardLinkDir.cloneFile(src, dest);
+      expect(fs.readFileSync(dest, "utf8")).to.equal("content");
+
+      await hardLinkDir.copyFile(src, Path.join(dir, "dest2"));
+      expect(fs.readFileSync(Path.join(dir, "dest2"), "utf8")).to.equal("content");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("overwrites an unlinked existing destination as before", async () => {
+    const dir = fs.mkdtempSync(Path.join(os.tmpdir(), "fpm52-over-"));
+    try {
+      const src = Path.join(dir, "src");
+      const dest = Path.join(dir, "dest");
+      fs.writeFileSync(src, "new");
+      fs.writeFileSync(dest, "old");
+
+      await hardLinkDir.cloneFile(src, dest);
+      expect(fs.readFileSync(dest, "utf8")).to.equal("new");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

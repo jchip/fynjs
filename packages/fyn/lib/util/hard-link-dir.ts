@@ -52,13 +52,50 @@ async function linkFile(srcFp, destFp, srcStat) {
 }
 
 /**
- * Copy a file
+ * Remove dest, if it exists, before writing to it.
+ *
+ * `copyFile` and `clonefile` OPEN AND TRUNCATE an existing destination rather than replacing
+ * it. So if that path is hardlinked to another file, the write lands on the shared inode and
+ * silently rewrites the other file too.
+ *
+ * That is not hypothetical. esbuild's postinstall deliberately hardlinks the platform binary
+ * onto the launcher path:
+ *
+ * ```js
+ * fs.linkSync(binPath, tempPath);      // @esbuild/<platform>/bin/esbuild
+ * fs.renameSync(tempPath, toPath);     // -> esbuild/bin/esbuild
+ * ```
+ *
+ * Harmless under npm. But once those two share an inode, the next time fyn replicates the
+ * `esbuild` package it writes that package's own ~1KB JS launcher over the shared inode - and
+ * `@esbuild/<platform>/bin/esbuild` becomes the launcher. The launcher then resolves the
+ * platform binary path, finds itself, and spawns itself, recursively. See FPM-52.
+ *
+ * Unlinking first breaks the link instead of writing through it, so a package's install script
+ * can never make fyn corrupt a different package.
+ *
+ * @param {*} destFp - path about to be written
+ */
+async function unlinkDest(destFp) {
+  try {
+    await Fs.unlink(destFp);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      throw err;
+    }
+  }
+}
+
+/**
+ * Copy a file, replacing the destination rather than writing through it.
  *
  * @param {*} srcFp
  * @param {*} destFp
  * @returns
  */
 async function copyFile(srcFp, destFp) {
+  await unlinkDest(destFp);
+
   if (Fs.copyFile) {
     return Fs.copyFile(srcFp, destFp);
   } else {
@@ -71,11 +108,15 @@ async function copyFile(srcFp, destFp) {
  * Clone a file using copy-on-write if supported (macOS APFS, Linux btrfs/xfs).
  * Falls back to regular copy if CoW is not available.
  *
+ * Replaces the destination rather than writing through it - see {@link unlinkDest}.
+ *
  * @param {*} srcFp - source file path
  * @param {*} destFp - destination file path
  * @returns
  */
 async function cloneFile(srcFp, destFp) {
+  await unlinkDest(destFp);
+
   return fs.promises.copyFile(srcFp, destFp, fs.constants.COPYFILE_FICLONE);
 }
 
@@ -409,4 +450,13 @@ async function linkSym1(src, dest) {
   return await linkPackTree({ tree, src, dest, sym1: true });
 }
 
-export { link, linkFile, cloneFile, copyFile, linkSym1, generatePackTree, SYM_FILES };
+export {
+  link,
+  linkFile,
+  cloneFile,
+  copyFile,
+  unlinkDest,
+  linkSym1,
+  generatePackTree,
+  SYM_FILES
+};
