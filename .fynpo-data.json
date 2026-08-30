@@ -50,179 +50,7 @@
         ]
       }
     ],
-    "packages/visual-exec": [
-      {
-        "fromPkg": {
-          "name": "visual-exec",
-          "version": "0.2.0",
-          "path": "packages/visual-exec"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "visual-exec@0.2.0(pkg)"
-        ]
-      }
-    ],
-    "packages/xarc-run": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "2.3.0",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@2.3.0(pkg)"
-        ]
-      }
-    ],
-    "packages/filter-scan-dir": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "0.0.1",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@0.0.1(dev)"
-        ]
-      }
-    ],
-    "packages/aveazul": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "2.3.0",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@2.3.0(dev)"
-        ]
-      }
-    ],
-    "packages/fyn": [
-      {
-        "fromPkg": {
-          "name": "fyn",
-          "version": "2.1.6",
-          "path": "packages/fyn"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "fyn@2.1.6(pkg)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "visual-exec",
-          "version": "0.2.0",
-          "path": "packages/visual-exec"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "visual-exec@0.2.0(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "0.0.1",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@0.0.1(dev)"
-        ]
-      }
-    ],
-    "packages/fynpo": [
-      {
-        "fromPkg": {
-          "name": "fynpo",
-          "version": "2.1.6",
-          "path": "packages/fynpo"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "fynpo@2.1.6(pkg)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "visual-exec",
-          "version": "0.2.0",
-          "path": "packages/visual-exec"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "visual-exec@0.2.0(dep)"
-        ]
-      }
-    ],
     "packages/xflight": [
-      {
-        "fromPkg": {
-          "name": "xflight",
-          "version": "2.0.2",
-          "path": "packages/xflight"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "xflight@2.0.2(dev)"
-        ]
-      },
       {
         "fromPkg": {
           "name": "xflight",
@@ -273,22 +101,6 @@
       }
     ],
     "packages/fynpo-cli": [
-      {
-        "fromPkg": {
-          "name": "fynpo-cli",
-          "version": "1.0.3",
-          "path": "packages/fynpo-cli"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "fynpo-cli@1.0.3(dev)"
-        ]
-      },
       {
         "fromPkg": {
           "name": "fynpo-cli",
@@ -354,78 +166,24 @@
         ]
       }
     ],
-    "packages/cli-args": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "0.0.1",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@0.0.1(dev)"
-        ]
-      }
-    ],
     "_w/npm-packlist": [
       {
         "fromPkg": {
           "name": "npm-packlist",
-          "version": "10.0.3",
+          "version": "11.3.0",
           "path": "_w/npm-packlist"
         },
         "onPkg": {
           "name": "npm-packlist",
-          "version": "10.0.3",
+          "version": "11.3.0",
           "path": "_w/npm-packlist"
         },
         "depSection": "dep",
         "indirectSteps": [
-          "npm-packlist@10.0.3(dep)"
-        ]
-      }
-    ],
-    "packages/chalker": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "0.0.1",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@0.0.1(dev)"
-        ]
-      }
-    ],
-    "packages/xaa": [
-      {
-        "fromPkg": {
-          "name": "@fynjs/run",
-          "version": "0.0.1",
-          "path": "packages/xarc-run"
-        },
-        "onPkg": {
-          "name": "xsh",
-          "version": "0.4.6",
-          "path": "_w/xsh"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/run@0.0.1(dev)"
+          "npm-packlist@11.3.0(dep)"
         ]
       }
     ]
   },
-  "__timestamp": 1788111417763
+  "__timestamp": 1788114781805
 }

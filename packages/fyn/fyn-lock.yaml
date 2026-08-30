@@ -41,7 +41,7 @@ $pkg:
   visual-logger: ../visual-logger
   xaa: ../xaa
   xenv-config: ../xenv-config
-  xsh: ../../_w/xsh
+  xsh: ^0.4.6
   yamljs: ^0.3.0
  dev:
   '@babel/cli': ^7.16.0
@@ -1289,7 +1289,7 @@ $pkg:
   cpu:
    - x64
 '@esbuild/darwin-arm64':
- _latest: 0.27.2
+ _latest: 0.28.2
  _:
   0.27.2: 0.27.2
  0.27.2:
@@ -2496,7 +2496,7 @@ $pkg:
   cpu:
    - arm64
 '@rollup/rollup-darwin-arm64':
- _latest: 4.57.0
+ _latest: 4.63.1
  _:
   4.57.0: 4.57.0
  4.57.0:
@@ -7255,13 +7255,13 @@ xenv-config:
   $: local
   _: ../xenv-config
 xsh:
- _latest: 0.4.6-fynlocal_h
+ _latest: 0.4.6
  _:
-  ../../_w/xsh: 0.4.6-fynlocal_h
- 0.4.6-fynlocal_h:
+  '^0.4.5,^0.4.6': 0.4.6
+ 0.4.6:
   top: 1
-  $: local
-  _: ../../_w/xsh
+  $: sha512-CzY2CN5EoECp1gfULlGfnqFQ5MKh2fEM5zcgWM60PNSyCNn/7wGYXy9Zlgu7EDxhPi6Xb642wFlV+vj4qgDBGA==
+  _: 'https://registry.npmjs.org/xsh/-/xsh-0.4.6.tgz'
   dependencies:
    shcmd: ^0.8.4
 xstdout:
