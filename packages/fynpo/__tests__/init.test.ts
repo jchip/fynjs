@@ -147,3 +147,43 @@ describe("fynpo Init", () => {
   });
 });
 
+
+//
+// FPO-36. fynpo's one chalker call site made `bin/fynpo.js`'s documented "load from TypeScript
+// source" fallback dead under any TS loader that emits cjs: chalker is ESM-only and ends in a
+// top-level await, which cjs cannot represent, so tsx aborted with a TransformError before
+// fynpo printed anything. chalk 4 is CJS and already a dependency, so the fix was to drop
+// chalker rather than add a third copy of the lazy-import shim.
+//
+describe("fynpo runs from TypeScript source (FPO-36)", () => {
+  it("declares no dependency on chalker", () => {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8")
+    );
+
+    expect(pkg.dependencies?.chalker).toBeUndefined();
+    expect(pkg.devDependencies?.chalker).toBeUndefined();
+  });
+
+  it("has no chalker import left in src", () => {
+    const srcDir = path.join(__dirname, "..", "src");
+    const offenders: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          walk(full);
+        } else if (entry.name.endsWith(".ts")) {
+          const src = fs.readFileSync(full, "utf8");
+          if (/^\s*import .*from "chalker"/m.test(src)) {
+            offenders.push(path.relative(srcDir, full));
+          }
+        }
+      }
+    };
+    walk(srcDir);
+
+    expect(offenders, `chalker imported in: ${offenders.join(", ")}`).toEqual([]);
+  });
+});

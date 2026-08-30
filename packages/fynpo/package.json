@@ -79,7 +79,6 @@
     "aveazul": "^1.1.0",
     "boxen": "^5.1.2",
     "chalk": "^4.1.2",
-    "chalker": "^1.2.0",
     "cosmiconfig": "^7.0.0",
     "deep-object-diff": "^1.1.7",
     "env-paths": "^2.2.1",

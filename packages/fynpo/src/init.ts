@@ -5,7 +5,7 @@ import Path from "path";
 import { logger } from "./logger";
 import * as utils from "./utils";
 import _ from "lodash";
-import ck from "chalker";
+import chalk from "chalk";
 import { optionalRequire } from "optional-require";
 
 export class Init {
@@ -175,15 +175,15 @@ module.exports = ${obj}`;
       .then(() => {
         const commitHookMsg = this._options.commitlint
           ? `\nTo add commit hooks, please run:
-        <cyan>
-        npx husky add .husky/commit-msg 'npx --no-install fynpo commitlint --edit $1'</>
+${chalk.cyan(
+  `        npx husky add .husky/commit-msg 'npx --no-install fynpo commitlint --edit $1'`
+)}
         `
           : "";
 
-        console.log(ck`
+        console.log(`
 Successfully updated fynpo repo. Please run:
-<cyan>
-fyn</>
+${chalk.cyan("fyn")}
 ${commitHookMsg}
 `);
       });
