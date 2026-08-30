@@ -1,5 +1,14 @@
 import Path from "path";
 import chalk from "chalk";
+
+//
+// chalk 5 dropped `enabled`; turning color off is `level = 0`.
+//
+// Remember the level chalk auto-detected at startup so `--colors` restores exactly that,
+// rather than forcing a level onto a stream with no color support. That matches chalk 4's
+// `enabled`, which gated output but never raised the level.
+//
+const autoColorLevel = chalk.level;
 import FynCli from "./fyn-cli";
 import _ from "lodash";
 import CliLogger from "../lib/cli-logger";
@@ -114,7 +123,7 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
   const allOpts: Record<string, unknown> = Object.assign({}, rootOpts, cmdOpts, meta.opts);
   setLogLevel(allOpts.logLevel as string | undefined);
 
-  chalk.enabled = allOpts.colors as boolean;
+  chalk.level = allOpts.colors ? autoColorLevel : 0;
 
   let cwd = (allOpts.cwd as string) || process.cwd();
 
@@ -145,7 +154,7 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
   allOpts.cwd = cwd;
   meta.opts.cwd = cwd;
 
-  chalk.enabled = allOpts.colors as boolean;
+  chalk.level = allOpts.colors ? autoColorLevel : 0;
 
   const sourceValue = meta.source.saveLogs;
   if (

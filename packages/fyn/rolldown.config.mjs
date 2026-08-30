@@ -107,6 +107,10 @@ export default defineConfig({
       // makes node unable to determine the module format of an ESM bundle that also has
       // top-level await. 2.x is API compatible.
       "optional-require": fileURLToPath(import.meta.resolve("optional-require")),
+      // dedupe chalk to fyn's own copy. lib/ statically imports chalk in 10 places, and
+      // chalker/chalk imports it too - without this, chalker resolves the chalk 6 in its own
+      // node_modules and the bundle carries two chalks with independent color-support state.
+      chalk: fileURLToPath(import.meta.resolve("chalk")),
       // fyn imports lodash sub-paths, but other modules pull it in whole - override with the
       // minified copy when bundling, same as the webpack build did.
       lodash: require.resolve("lodash/lodash.min.js"),

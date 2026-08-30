@@ -5,7 +5,9 @@ const electrodeServer = require("electrode-server");
 const Fs = require("fs");
 const Yaml = require("js-yaml");
 const Path = require("path");
-const chalk = require("chalk");
+// chalk 6 is ESM-only; require() of it on node >=22.12 yields the namespace,
+// so the callable chalk is on `.default`
+const chalk = require("chalk").default;
 const Crypto = require("crypto");
 const { createRequire } = require("module");
 const _ = require("lodash");

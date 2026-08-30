@@ -7,7 +7,7 @@
  * - Dependency path info from PkgStatProvider
  */
 
-import chalk from "chalk";
+import chalk, { type ChalkInstance } from "chalk";
 import { SEMVER } from "../symbols";
 import type { AuditResult, Advisory } from "./audit-cache";
 import type { Vulnerability } from "./audit-report";
@@ -41,7 +41,7 @@ export interface FormatResult {
   exitCode: number;
 }
 
-const SEVERITY_COLORS: Record<SeverityLevel, chalk.Chalk> = {
+const SEVERITY_COLORS: Record<SeverityLevel, ChalkInstance> = {
   critical: chalk.red.bold,
   high: chalk.red,
   moderate: chalk.yellow,
