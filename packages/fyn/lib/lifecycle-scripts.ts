@@ -21,13 +21,24 @@ import logFormat from "./util/log-format";
 import { VisualExec } from "visual-exec";
 import fyntil from "./util/fyntil";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { setupNodeGypEnv } from "./util/setup-node-gyp";
 import * as xaa from "xaa";
 import npmConfigEnv from "./util/npm-config-env";
 import { AggregateError } from "@jchip/error";
 import type { PackageJson } from "./types";
 
-const optionalRequire = makeOptionalRequire(import.meta.url);
+//
+// Pass a real directory, never `import.meta.url`.
+//
+// optional-require's `_getRequire` turns a string argument into a path with
+// `new URL(x).pathname`. On POSIX that yields `/Users/...`, which resolves fine. On Windows it
+// yields `/C:/Users/...` - a leading slash before the drive letter - which `Path.resolve`
+// mangles; require-at then throws, and optional-require's `catch` retries with the raw
+// `file://` string, so the stat lands on `C:\Users\joel1\file:\C:\Users\...` and fyn dies on
+// startup before doing anything. `fileURLToPath` is what handles the drive-letter form.
+//
+const optionalRequire = makeOptionalRequire(Path.dirname(fileURLToPath(import.meta.url)));
 
 /** Fyn instance interface for lifecycle scripts */
 interface FynForLifecycle {
