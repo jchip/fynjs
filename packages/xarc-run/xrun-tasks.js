@@ -1,7 +1,12 @@
-import xrun from "./lib/index.js";
 
 import xsh from "xsh";
 
+//
+// The function form: xrun hands us the instance it is going to run. Importing the singleton
+// instead only works when the task file and the CLI resolve to the very same module copy,
+// which is not guaranteed once a test runner has its own module graph.
+//
+export default xrun => {
 const tasks = {
   xfoo1: cb => {
     setTimeout(() => {
@@ -154,12 +159,10 @@ const tasks = {
   }
 };
 
-xrun.load("1", tasks);
+  xrun.load("1", tasks);
 
-xrun.load({
-  hello: "echo hello world"
-});
-
-export default {
-  c1: "echo this is c1"
+  xrun.load({
+    hello: "echo hello world",
+    c1: "echo this is c1"
+  });
 };
