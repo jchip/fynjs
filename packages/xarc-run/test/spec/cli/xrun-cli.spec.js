@@ -76,7 +76,7 @@ describe("xrun cli", function() {  logger.quiet(true);
       }
     });
 
-    handleNoTasks(cliContext, process.cwd());
+    handleNoTasks(cliContext, process.cwd(), undefined, { quiet: false });
 
     const output = logOutput.join("\n");
     expect(output).to.include("*** No tasks found ***");

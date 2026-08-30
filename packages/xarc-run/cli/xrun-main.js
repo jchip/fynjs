@@ -21,7 +21,11 @@ const { CliContext } = require("../lib/cli-context");
  * @param {Object} opts - Options
  */
 function flushLogger(opts) {
-  logger.quiet(opts && opts.quiet);
+  // only opts carries a quiet preference - without one, leave the current setting alone
+  // rather than silently un-quieting the logger
+  if (opts) {
+    logger.quiet(opts.quiet);
+  }
   logger.resetBuffer(true, false);
 }
 
@@ -98,7 +102,14 @@ function findRunnerModule(xrunPath) {
  * @param {string} cwd - Current working directory
  * @param {Function} done - Optional callback
  */
-function handleNoTasks(cliContext, cwd, done) {
+function handleNoTasks(cliContext, cwd, done, opts) {
+  //
+  // Flush first, like handleTaskListing does. Without this the whole diagnostic below is
+  // written into the logger's buffer and then thrown away by the exit, so a missing, broken,
+  // or unloadable task file made xrun exit 1 with no output at all.
+  //
+  flushLogger(opts);
+
   const fromCwd = optionalRequire.resolve("@fynjs/run") || "not found - probably not installed";
   const fromMyDir = Path.dirname(require.resolve(".."));
   const searchResult = cliContext.getSearchResult();
@@ -316,7 +327,7 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
 
   // Handle no tasks case
   if (numTasks === 0) {
-    return handleNoTasks(cliContext, cwd, done);
+    return handleNoTasks(cliContext, cwd, done, opts);
   }
   // Handle task listing
   else if (jsonMeta.source.list !== "default") {

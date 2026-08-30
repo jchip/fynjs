@@ -511,6 +511,25 @@ export default tasks;
       expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
     });
 
+    it("should report a task file that throws, with its stack", () => {
+      const errors = [];
+      const origError = logger.error;
+      logger.error = (...args) => errors.push(args.join(" "));
+
+      try {
+        const file = Path.join(testDir, "boom-tasks.js");
+        fs.writeFileSync(file, `throw new Error("boom in task file");\n`);
+
+        expect(loadTaskFile(file)).to.be.undefined;
+
+        const output = stripAnsi(errors.join("\n"));
+        expect(output).to.include("Unable to load");
+        expect(output).to.include("boom in task file");
+      } finally {
+        logger.error = origError;
+      }
+    });
+
     it("should handle non-existent required module", () => {
       const loaded = loadTasks({ require: ["./non-existent.js"] }, {});
       expect(loaded).to.be.false;

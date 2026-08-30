@@ -23,6 +23,16 @@ const cleanEnv = () =>
 const runBin = cwd =>
   spawnSync(process.execPath, [binFile, "--version"], { cwd, encoding: "utf8", env: cleanEnv() });
 
+/** run a task through the bin and hand back everything it wrote */
+const runTask = (cwd, task) => {
+  const res = spawnSync(process.execPath, [binFile, task], {
+    cwd,
+    encoding: "utf8",
+    env: cleanEnv()
+  });
+  return { ...res, output: `${res.stdout}${res.stderr}` };
+};
+
 describe("bin/xrun.js cli resolution", function () {
   let tmpDir;
 
@@ -38,6 +48,64 @@ describe("bin/xrun.js cli resolution", function () {
 
   afterEach(() => {
     Fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  //
+  // These run through the bin because the failure they cover is the logger buffer being
+  // discarded on exit - only a real process shows whether the diagnostic actually surfaced.
+  // A vitest-hosted require also reports top-level await differently than node does.
+  //
+  describe("reporting an unusable task file", () => {
+    //
+    // searchUpTaskFile stops at the first package.json, so this keeps the walk from climbing
+    // out of the temp dir and finding this package's own task file. No scripts, so npm-loader
+    // contributes no tasks either.
+    //
+    beforeEach(() => {
+      Fs.writeFileSync(
+        Path.join(tmpDir, "package.json"),
+        JSON.stringify({ name: "xrun-bin-fixture", version: "1.0.0" })
+      );
+    });
+
+    it("should say why when the task file uses top-level await", () => {
+      Fs.writeFileSync(
+        Path.join(tmpDir, "xrun-tasks.mjs"),
+        `await new Promise(r => setTimeout(r, 1));\nexport default () => {};\n`
+      );
+
+      const res = runTask(tmpDir, "hello");
+      expect(res.status).to.equal(1);
+      expect(res.output).to.contain("top-level await");
+      expect(res.output).to.contain("Move the await inside a task");
+    });
+
+    it("should say why when the task file throws", () => {
+      Fs.writeFileSync(Path.join(tmpDir, "xrun-tasks.js"), `throw new Error("boom in task file");\n`);
+
+      const res = runTask(tmpDir, "hello");
+      expect(res.status).to.equal(1);
+      expect(res.output).to.contain("Unable to load");
+      expect(res.output).to.contain("boom in task file");
+    });
+
+    it("should say so when there is no task file at all", () => {
+      const res = runTask(tmpDir, "hello");
+      expect(res.status).to.equal(1);
+      expect(res.output).to.contain("No tasks found");
+      expect(res.output).to.contain(`You do not have a "xrun-tasks.js|ts" file`);
+    });
+
+    it("should still run a valid ESM task file", () => {
+      Fs.writeFileSync(
+        Path.join(tmpDir, "xrun-tasks.mjs"),
+        `export default (xrun) => { xrun.load({ hello: () => console.log("hi from task") }); };\n`
+      );
+
+      const res = runTask(tmpDir, "hello");
+      expect(res.status).to.equal(0);
+      expect(res.output).to.contain("hi from task");
+    });
   });
 
   it("should load its cli from a cwd with no @fynjs/run installed", () => {

@@ -80,7 +80,22 @@ function loadTaskFile(name) {
 
   return optionalRequire(name, {
     fail: e => {
-      const errMsg = ck`<red>Unable to load ${xsh.pathCwd.replace(name, ".")}</>`;
+      const file = xsh.pathCwd.replace(name, ".");
+      const errMsg = ck`<red>Unable to load ${file}</>`;
+
+      //
+      // node's require(esm) refuses a graph containing top-level await, by design, so no
+      // amount of work on this side makes it loadable. The stack is pure noise here - say
+      // what is wrong and what to do instead.
+      //
+      if (e.code === "ERR_REQUIRE_ASYNC_MODULE") {
+        logger.error(
+          ck`${errMsg}: it uses <yellow>top-level await</>, which xrun cannot load.
+  Move the await inside a task, or inside the function the task file exports.`
+        );
+        return;
+      }
+
       let msg2 = "";
       /* istanbul ignore next */
       if (e.code === "ERR_REQUIRE_ESM") {
