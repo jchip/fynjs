@@ -7,14 +7,16 @@ describe("xaa", () => {
       const a = Date.now();
       const x = await xaa.delay(20);
       expect(x).toBeUndefined();
-      expect(Date.now() - a).toBeGreaterThan(19);
+      // `Date.now()` truncates to whole ms, so a real 19.7ms wait reads as 19 - assert
+      // "it actually waited" without demanding a full 20 the clock cannot promise
+      expect(Date.now() - a).toBeGreaterThanOrEqual(19);
     });
 
     it("should wait and run async func", async () => {
       const a = Date.now();
       const x = await xaa.delay(20, async () => "hello");
       expect(x).toBe("hello");
-      expect(Date.now() - a).toBeGreaterThan(19);
+      expect(Date.now() - a).toBeGreaterThanOrEqual(19);
     });
 
     it("should wait and run sync func", async () => {
