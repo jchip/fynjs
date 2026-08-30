@@ -29,14 +29,11 @@ import { AggregateError } from "@jchip/error";
 import type { PackageJson } from "./types";
 
 //
-// Pass a real directory, never `import.meta.url`.
+// Pass a real directory rather than `import.meta.url`.
 //
-// optional-require's `_getRequire` turns a string argument into a path with
-// `new URL(x).pathname`. On POSIX that yields `/Users/...`, which resolves fine. On Windows it
-// yields `/C:/Users/...` - a leading slash before the drive letter - which `Path.resolve`
-// mangles; require-at then throws, and optional-require's `catch` retries with the raw
-// `file://` string, so the stat lands on `C:\Users\joel1\file:\C:\Users\...` and fyn dies on
-// startup before doing anything. `fileURLToPath` is what handles the drive-letter form.
+// optional-require handles a `file:` URL correctly as of 2.1.1, so this is no longer a
+// workaround - it just skips the URL conversion and the file-to-parent-directory fallback
+// that passing a module URL would rely on.
 //
 const optionalRequire = makeOptionalRequire(Path.dirname(fileURLToPath(import.meta.url)));
 

@@ -34,8 +34,8 @@ const banner = [
  * ERR_AMBIGUOUS_MODULE_SYNTAX at load. Swap the eval for a real createRequire, which is what
  * those packages actually want.
  *
- * The require-at stub and the optional-require dedupe below cover the two cases known to reach
- * this bundle today; this plugin keeps a new dependency doing the same trick from breaking it.
+ * The optional-require dedupe below covers the one case known to reach this bundle today; this
+ * plugin keeps a new dependency doing the same trick from breaking it.
  */
 const evalRequirePlugin = {
   name: "replace-eval-require",
@@ -102,11 +102,10 @@ export default defineConfig({
       "iconv-lite": Path.resolve("stubs/iconv-lite.js"),
       "./iconv-loader": Path.resolve("stubs/iconv-loader.js"),
       debug: Path.resolve("stubs/debug.js"),
-      // the real require-at uses eval("require"), which makes node unable to determine the
-      // module format of an ESM bundle that also has top-level await
-      "require-at": Path.resolve("stubs/require-at.js"),
-      // dedupe to the top-level optional-require 2.x: a nested 1.1.10 copy still has
-      // eval("require"), which breaks the ESM bundle the same way. 2.x is API compatible.
+      // dedupe to the top-level optional-require 2.1.1+, which ships no dependencies and no
+      // eval'd require. A nested 1.1.10 copy still pulls in require-at, whose eval'd require
+      // makes node unable to determine the module format of an ESM bundle that also has
+      // top-level await. 2.x is API compatible.
       "optional-require": fileURLToPath(import.meta.resolve("optional-require")),
       // fyn imports lodash sub-paths, but other modules pull it in whole - override with the
       // minified copy when bundling, same as the webpack build did.
