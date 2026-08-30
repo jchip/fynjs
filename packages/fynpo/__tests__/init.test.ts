@@ -35,6 +35,46 @@ describe("fynpo Init", () => {
     }
   });
 
+  //
+  // updateFynpoConfig writes fynpo.config.js through prettier. prettier 3's format() returns a
+  // promise, so this path had to become async - nothing covered it before, which is how it
+  // stayed on a pinned prettier 2 for so long.
+  //
+  describe("updateFynpoConfig", () => {
+    const fynpoJson = path.join(dir, "fynpo.json");
+
+    afterEach(() => {
+      if (fs.existsSync(fynpoJson)) shell.rm("-f", fynpoJson);
+    });
+
+    it("should write a prettier formatted fynpo.config.js", async () => {
+      fs.writeFileSync(fynpoJson, JSON.stringify({ packages: ["packages/*"] }));
+
+      const init = new Init({ cwd: dir, commitlint: true });
+      await init.updateFynpoConfig();
+
+      const out = fs.readFileSync(path.join(dir, "fynpo.config.js"), "utf8");
+
+      // a promise leaking through instead of the formatted string is the failure this guards
+      expect(out).to.not.contain("[object Promise]");
+      expect(out).to.contain('"use strict"');
+      expect(out).to.contain("module.exports =");
+      expect(out).to.contain("commitlint");
+      // prettier put it on more than one line and terminated the statement
+      expect(out.split("\n").length).to.be.greaterThan(3);
+      expect(out.trimEnd().endsWith(";")).to.equal(true);
+    });
+
+    it("should do nothing without the commitlint option", async () => {
+      fs.writeFileSync(fynpoJson, JSON.stringify({ packages: ["packages/*"] }));
+
+      const init = new Init({ cwd: dir });
+      await init.updateFynpoConfig();
+
+      expect(fs.existsSync(path.join(dir, "fynpo.config.js"))).to.equal(false);
+    });
+  });
+
   it("should initialize Init class", () => {
     const opts = { cwd: dir };
     const init = new Init(opts);

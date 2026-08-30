@@ -135,7 +135,7 @@
     "electrode-server": "^3.0.3",
     "node-fetch-npm": "^2.0.4",
     "patch-package": "^8.0.0",
-    "prettier": "^1.19.1",
+    "prettier": "^3.5.3",
     "rolldown": "^1.2.6",
     "tsx": "^4.21.0",
     "v8-compile-cache": "^2.3.0",

@@ -45,7 +45,7 @@
     "@fynjs/run": "^0.0.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/node": "^22.15.30",
-    "prettier": "^2.2.1",
+    "prettier": "^3.5.3",
     "publish-util": "^2.1.0",
     "source-map-support": "^0.5.19",
     "typedoc": "^0.28.14",

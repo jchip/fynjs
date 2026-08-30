@@ -94,7 +94,7 @@ export class Init {
     }
   };
 
-  updateFynpoConfig = () => {
+  updateFynpoConfig = async () => {
     const functions = [];
     const regExps = [];
 
@@ -138,15 +138,17 @@ module.exports = ${obj}`;
 
       const prettier = optionalRequire("prettier");
       if (prettier && prettier.format) {
-        output = prettier.format(
+        // prettier 3 returns a promise from format()
+        output = await prettier.format(
           `"use strict";\n
           module.exports = ${obj}`,
           { semi: true, parser: "flow" }
         );
       } else {
-        logger.info((prettier ? "prettier is not installed." :
-          "prettier is installed, but may be wrong version without the format function.") +
-          " Not formatting the fynpo.config.js file."
+        logger.info(
+          (prettier
+            ? "prettier is installed, but may be a version without the format function."
+            : "prettier is not installed.") + " Not formatting the fynpo.config.js file."
         );
       }
 

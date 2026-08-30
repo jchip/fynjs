@@ -93,7 +93,7 @@
     "minimatch": "^10.0.3",
     "npm-packlist": "^11.3.0",
     "optional-require": "^2.1.1",
-    "prettier": "2.4.1",
+    "prettier": "^3.5.3",
     "resolve-from": "^5.0.0",
     "resolve-global": "1.0.0",
     "semver": "^7.3.5",
