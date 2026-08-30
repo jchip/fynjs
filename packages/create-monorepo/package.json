@@ -10,6 +10,8 @@
   "private": true,
   "scripts": {
     "build": "tsc",
+    "test": "vitest run",
+    "ci:check": "vitest run",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "prepublishOnly": "xrun --serial build docs && publish-util-prepublishonly",
     "postpack": "publish-util-postpack",
@@ -34,7 +36,8 @@
     "@types/node": "^14.14.16",
     "publish-util": "^2.1.0",
     "typedoc": "^0.20.13",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
   },
   "dependencies": {
     "chalker": "^1.2.0",

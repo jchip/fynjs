@@ -1,6 +1,9 @@
 import { create } from "./create";
+// nix-clap 1.x is CJS and does `module.exports = NixClap` - there is no named `NixClap`
+// export to destructure, so doing so yields undefined and `new NixClap()` throws
+// "NixClap is not a constructor". See FPO-29.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { NixClap } = require("nix-clap");
+const NixClap = require("nix-clap");
 
 const nixClap = new NixClap({
   usage: "$0 [command] [options]",

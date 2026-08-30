@@ -1,9 +1,9 @@
 import Path from "path";
 import _ from "lodash";
-import ck from "chalker";
 
 const xrequire = eval("require"); // eslint-disable-line
 
+import { loadCk } from "./ck";
 import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils";
 import { prepareFynpoDir, checkDir } from "./prep-fynpo-dir";
 import { ParsedObj } from "./interfaces";
@@ -69,6 +69,8 @@ export async function createFynpo(targetDir, opts) {
         npx husky add .husky/commit-msg 'npx --no-install fynpo commitlint --edit $1'</>
         `
     : "";
+
+  const ck = await loadCk();
 
   console.log(ck`
 Successfully initialized fynpo monorepo in directory '${fynpoDir}'. To start development, please run:
