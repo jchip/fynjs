@@ -56,7 +56,6 @@
   "dependencies": {
     "ci-info": "^4.4.0",
     "is-installed-globally": "^1.0.0",
-    "mkdirp": "^1.0.4",
     "semver": "^7.8.5",
     "tslib": "^2.6.2"
   },
