@@ -21,7 +21,7 @@
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "shcmd": "^0.8.4"
+    "shelljs": "^0.10.0"
   },
   "devDependencies": {
     "bluebird": "^3.5.1",

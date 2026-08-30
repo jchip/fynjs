@@ -1,6 +1,6 @@
 "use strict";
 
-const shell = require("shcmd");
+const shell = require("shelljs");
 const util = require("./util");
 const assert = require("assert");
 

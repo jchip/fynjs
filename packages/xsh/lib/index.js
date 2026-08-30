@@ -9,7 +9,7 @@ const xsh = {
   mkCmd: require("./mkcmd"),
   pathCwd: require("./path-cwd"),
   pathCwdNm: require("./path-cwd-nm"),
-  $: require("shcmd")
+  $: require("shelljs")
 };
 
 Object.defineProperty(xsh, "Promise", {
