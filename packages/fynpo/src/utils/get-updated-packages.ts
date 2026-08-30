@@ -214,7 +214,12 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
       const pkg = packages[name][0];
 
       const args = ["diff", "--name-only", `${latestTag}...HEAD`];
-      const pathArg = slash(Path.relative(execOpts.cwd || process.cwd(), pkg.path));
+      // `pkg.path` is repo-relative, so it has to be resolved against the repo before being
+      // made relative to it - Path.relative would otherwise resolve it against process.cwd()
+      // and produce `packages/xaa/packages/xaa` for anyone running fynpo from inside a
+      // package, where git matches nothing and every package looks unchanged (FPO-47)
+      const base = execOpts.cwd || process.cwd();
+      const pathArg = slash(Path.relative(base, Path.resolve(base, pkg.path)));
       if (pathArg) {
         args.push("--", pathArg);
       }
