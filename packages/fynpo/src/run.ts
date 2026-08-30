@@ -21,6 +21,7 @@ import { TopoRunner } from "./topo-runner";
 import { PkgBuildCache } from "./caching";
 import * as xaa from "xaa";
 import { InstallDeps } from "./install-deps";
+import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps";
 
 type RunResult = { failed: boolean; exitCode: number } & Error;
 
@@ -389,6 +390,14 @@ path: ${pkg.path}`;
         logger.info(`No packages found with script ${this._script}`);
       }
       return;
+    }
+
+    // A workspace manifest edited without re-bootstrapping leaves consumers resolving against
+    // fyn's older snapshot, which surfaces as a child process hanging on an unresolvable require
+    // rather than as anything naming the package. Warn before running, not after - the run is
+    // what hangs (FJM-64). Warn only: failing here would block editing a manifest mid-session.
+    for (const line of formatStaleLocalDeps(findStaleLocalDeps(packagesToRun, this._cwd))) {
+      logger.warn(chalk.yellow(line));
     }
 
     const joinedCommand = [this._npmClient, "run", this._script].concat(this._args).join(" ");
