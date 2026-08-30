@@ -45,6 +45,43 @@ describe("real import.meta.resolve", () => {
     expect(report.brokenNested.threw.message).toMatch(/a-dep-that-is-not-installed/);
   });
 
+  it("should return the default for an absent absolute path", () => {
+    expect(report.pathMissingWithDefault.ok).toBe("FELL-BACK");
+  });
+
+  it("should return the default for an absent relative path", () => {
+    expect(report.relPathMissingWithDefault.ok).toBe("FELL-BACK");
+  });
+
+  it("should return the default for an absent file: URL", () => {
+    expect(report.fileUrlMissingWithDefault.ok).toBe("FELL-BACK");
+  });
+
+  it("should import a path that exists", () => {
+    expect(report.pathPresent.ok).toEqual({ kind: "local-good" });
+  });
+
+  it("should NOT fall back for a path that exists but whose own dep is missing", () => {
+    // the same discrimination the bare-specifier case gets: the file is there, so this is a
+    // real failure naming the NESTED specifier, not the optional dependency being absent
+    expect(report.pathBroken.threw.code).toBe("ERR_MODULE_NOT_FOUND");
+    expect(report.pathBroken.threw.message).toMatch(/no-such-dep-of-mine/);
+  });
+
+  it("should route a broken path through fail", () => {
+    expect(report.pathBrokenViaFail.ok).toEqual({ failCalled: "ERR_MODULE_NOT_FOUND" });
+  });
+
+  it("should not extension-probe a path the way CJS would", () => {
+    expect(report.pathNoExtensionProbing.ok).toBe("FELL-BACK");
+  });
+
+  it("should report absent paths through has and resolve", () => {
+    expect(report.hasMissingPath).toBe(false);
+    expect(report.hasPresentPath).toBe(true);
+    expect(report.resolveMissingPath).toBe(null);
+  });
+
   it("should NOT fall back when the dependency throws at module scope", () => {
     expect(report.throwsAtLoad.threw.message).toMatch(/boom at module scope/);
   });

@@ -3,6 +3,7 @@
  * Prints a JSON report the integration spec asserts on.
  */
 import { makeOptionalImport } from "../../../src/index.ts";
+import { fileURLToPath } from "node:url";
 
 const optionalImport = makeOptionalImport(import.meta);
 const out: Record<string, unknown> = {};
@@ -47,6 +48,45 @@ await record("notExportedDefault", async () =>
 await record("notExportedAsFail", async () =>
   await optionalImport("root-export-only/secret.js", { default: "FELL-BACK", notExported: "fail" })
 );
+
+// --- path / file: URL specifiers: resolve never fails for these, so absence has to be
+// --- detected by an explicit existence check (OPI-2)
+const absMissing = fileURLToPath(new URL("./no-such-file.mjs", import.meta.url));
+
+await record("pathMissingWithDefault", async () =>
+  await optionalImport(absMissing, { default: "FELL-BACK" })
+);
+
+await record("relPathMissingWithDefault", async () =>
+  await optionalImport("./no-such-relative.mjs", { default: "FELL-BACK" })
+);
+
+await record("fileUrlMissingWithDefault", async () =>
+  await optionalImport(new URL("./no-such-file.mjs", import.meta.url).href, { default: "FELL-BACK" })
+);
+
+await record("pathPresent", async () => {
+  const m = await optionalImport("./local-good.mjs", { default: "FELL-BACK" });
+  return { kind: m.kind };
+});
+
+// present at that path but its own dep is missing -> still a real failure
+await record("pathBroken", async () =>
+  await optionalImport("./local-broken.mjs", { default: "FELL-BACK" })
+);
+
+await record("pathBrokenViaFail", async () =>
+  await optionalImport("./local-broken.mjs", { fail: (e: any) => ({ failCalled: e.code }) })
+);
+
+// ESM has no extension probing, so "./local-good" is simply absent
+await record("pathNoExtensionProbing", async () =>
+  await optionalImport("./local-good", { default: "FELL-BACK" })
+);
+
+out.hasMissingPath = optionalImport.has(absMissing);
+out.hasPresentPath = optionalImport.has("./local-good.mjs");
+out.resolveMissingPath = optionalImport.resolve(absMissing, { default: null });
 
 out.hasPresent = optionalImport.has("present-esm");
 out.hasMissing = optionalImport.has("totally-not-installed");

@@ -144,6 +144,94 @@ describe("not found vs broken install", () => {
   });
 });
 
+describe("path and file: URL specifiers", () => {
+  const here = (p: string) => new URL(p, import.meta.url).href;
+
+  /** resolve like node does for a path: echo it back as a file URL, never checking the disk */
+  const pathMeta: ImportMetaLike = {
+    url: "file:///fake/caller.js",
+    resolve: (specifier: string) => new URL(specifier, import.meta.url).href
+  };
+
+  const missing = here("./no-such-file-here.js");
+  const present = "../fixtures/app/node_modules/present-esm/index.js";
+
+  it("should treat an absent path specifier as not found", async () => {
+    expect(await tryImport(pathMeta, missing, { default: "FELL-BACK" })).toBe("FELL-BACK");
+  });
+
+  it("should treat an absent file: URL specifier as not found", async () => {
+    expect(await tryImport(pathMeta, missing, { default: "FELL-BACK" })).toBe("FELL-BACK");
+    expect(missing.startsWith("file:")).toBe(true);
+  });
+
+  it("should pass a synthesized ERR_MODULE_NOT_FOUND to notFound", async () => {
+    let seen: NodeJS.ErrnoException | undefined;
+    await tryImport(pathMeta, missing, {
+      notFound: (err: Error) => {
+        seen = err;
+        return null;
+      }
+    });
+    expect(seen!.code).toBe("ERR_MODULE_NOT_FOUND");
+    expect(seen!.message).includes(missing);
+    expect(seen!.message).includes("file:///fake/caller.js");
+  });
+
+  it("should omit the caller location when the meta has no url", async () => {
+    const urlless: ImportMetaLike = {
+      resolve: (specifier: string) => new URL(specifier, import.meta.url).href
+    };
+    let seen: Error | undefined;
+    await tryImport(urlless, missing, {
+      notFound: (err: Error) => {
+        seen = err;
+        return null;
+      }
+    });
+    expect(seen!.message).includes(missing);
+    expect(seen!.message).to.not.include("imported from");
+  });
+
+  it("should still import a path that exists", async () => {
+    const m = await tryImport(pathMeta, present, { default: "FELL-BACK" });
+    expect(m.kind).toBe("esm");
+  });
+
+  it("should report an absent path through resolve and has", () => {
+    expect(tryResolve(pathMeta, missing, { default: null })).toBe(null);
+    const oi = makeOptionalImport(pathMeta);
+    expect(oi.has(missing)).toBe(false);
+    expect(oi.has(present)).toBe(true);
+  });
+
+  it("should leave bare specifiers to the resolver alone", async () => {
+    // a bare specifier that resolves is never disk-checked here - `broken-nested` resolves and
+    // then fails on import, which must stay a `fail`, not a `notFound`
+    await expect(
+      tryImport(presentMeta, "broken-nested", { default: "FELL-BACK" })
+    ).rejects.toThrow();
+  });
+
+  it("should not disk-check when the resolved url is not a file url", async () => {
+    const dataMeta: ImportMetaLike = {
+      url: "file:///fake/caller.js",
+      resolve: () => "data:text/javascript,export const k = 1"
+    };
+    const m = await tryImport(dataMeta, "./whatever.js", { default: "FELL-BACK" });
+    expect(m.k).toBe(1);
+  });
+
+  it("should fall back when the resolver returns an unusable file url", async () => {
+    const badMeta: ImportMetaLike = {
+      url: "file:///fake/caller.js",
+      resolve: () => "file://host/share/x.js"
+    };
+    // fileURLToPath throws on a file url with a host - the verdict is left to import()
+    await expect(tryImport(badMeta, "./whatever.js", {})).rejects.toThrow();
+  });
+});
+
 describe("options", () => {
   it("should call notFound instead of returning default", async () => {
     const notFound = vi.fn(() => "FROM-NOT-FOUND");

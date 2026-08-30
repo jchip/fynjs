@@ -74,6 +74,34 @@ return await import(url);          // any throw here is REAL — propagate it
 await optionalImport("broken-nested", { default: "FALLBACK" });
 ```
 
+### Path specifiers
+
+That premise — resolve fails when the thing is not there — holds for **bare** specifiers only.
+For a path or `file:` URL, Node's ESM resolver does no filesystem check, so resolve always
+succeeds and the missing-file signal would arrive from `import()`, where it is once again
+indistinguishable from a broken module.
+
+So path and `file:` URL specifiers get an explicit existence check after resolving, which
+restores the same split:
+
+```js
+// absent file → the fallback, just like a bare specifier that is not installed
+await optionalImport("./optional-config.js", { default: {} });
+await optionalImport("/etc/myapp/plugin.mjs", { default: null });
+
+// the file IS there but it throws, or its own import is missing → still a real error
+await optionalImport("./broken-plugin.js", { default: {} });  // throws
+```
+
+`.has()` and `.resolve()` agree with this: an absent path reports `false` / the fallback rather
+than a URL to a file that is not there.
+
+Only the literal resolved URL is checked. ESM has no directory resolution and no extension
+probing, so unlike `optionalRequire`, `"./foo"` does **not** fall back to `./foo.js` or
+`./foo/index.js` — Node would not find those either, so the specifier is simply absent. A path
+that *is* a directory counts as present and then fails on import with
+`ERR_UNSUPPORTED_DIR_IMPORT`, which is a real error worth seeing rather than a silent fallback.
+
 ## API
 
 ### `makeOptionalImport(meta, log?)`
@@ -122,10 +150,11 @@ named exports of a real ESM package.
 ## Caveats
 
 **`meta.resolve` does not stat the filesystem.** It performs resolution, not an existence
-check. `./does-not-exist.js` resolves to a URL without error, and so does a subpath of a package
-with no `exports` map. It fails when a bare package cannot be located, or when an `exports` map
-refuses a subpath — which is exactly the "is this dependency installed" signal, so use it with
-bare package specifiers.
+check — it fails when a bare package cannot be located, or when an `exports` map refuses a
+subpath. Path and `file:` URL specifiers are therefore existence-checked separately, as
+described under [Path specifiers](#path-specifiers). One gap remains either way: a subpath of
+an installed package with no `exports` map (`"some-pkg/nope.js"`) is a bare specifier, so it
+resolves without error and surfaces as a `fail` on import rather than a `notFound`.
 
 **Conditions differ from `optional-require`.** Resolution here runs under the `import`
 condition, so a package with divergent conditional exports may resolve to a different file than

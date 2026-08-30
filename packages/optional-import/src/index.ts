@@ -14,7 +14,16 @@
  * This module resolves first and imports second. `meta.resolve` only ever fails for the
  * specifier handed to it, never for something nested, which makes the distinction structural
  * instead of a guess based on error message text.
+ *
+ * That premise holds for *bare* specifiers only. For a path or `file:` URL, node's ESM resolver
+ * does no filesystem check, so resolve always succeeds and the missing-file signal would arrive
+ * from `import()` instead -- where it is indistinguishable from a broken module. Those
+ * specifiers therefore get an explicit existence check after resolving, which restores the same
+ * structural split: absent file is "not found", present-but-broken file still fails on import.
  */
+
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 /**
  * function to log in case the optional module was not found
@@ -149,6 +158,58 @@ function checkMeta(meta: ImportMetaLike | undefined): ImportMetaLike {
 }
 
 /**
+ * Is this a path or `file:` URL specifier rather than a bare package specifier?
+ *
+ * Only these need an existence check -- for a bare specifier, resolve itself already answers
+ * "is it installed?".
+ */
+function isPathSpecifier(specifier: string): boolean {
+  return (
+    specifier.startsWith("/") ||
+    specifier.startsWith("./") ||
+    specifier.startsWith("../") ||
+    specifier.startsWith(".\\") ||
+    specifier.startsWith("..\\") ||
+    specifier.startsWith("file:") ||
+    /^[a-zA-Z]:[\\/]/.test(specifier)
+  );
+}
+
+/**
+ * Did a path specifier resolve to something that is not actually there?
+ *
+ * @remarks Only the literal resolved URL is checked. ESM has no directory resolution and no
+ * extension probing, so `./foo` does not fall back to `./foo.js` or `./foo/index.js` the way
+ * `optionalRequire` would -- node would not find those either. A path that *is* a directory
+ * exists as far as this check goes and fails later on import with
+ * `ERR_UNSUPPORTED_DIR_IMPORT`, which is a real error worth surfacing rather than a silent
+ * fallback.
+ */
+function pathSpecifierMissing(specifier: string, url: string): boolean {
+  if (!isPathSpecifier(specifier) || !url.startsWith("file:")) {
+    return false;
+  }
+  try {
+    return !existsSync(fileURLToPath(url));
+  } catch {
+    // not a usable file URL - leave the verdict to `import()`
+    return false;
+  }
+}
+
+/**
+ * Build the error node itself would have raised, so `notFound` handlers see the same shape
+ * whether the specifier was bare or a path.
+ */
+function makeNotFoundError(specifier: string, from?: string): Error {
+  const err = new Error(
+    `Cannot find module '${specifier}'${from ? ` imported from ${from}` : ""}`
+  ) as NodeJS.ErrnoException;
+  err.code = ERR_MODULE_NOT_FOUND;
+  return err;
+}
+
+/**
  * was the resolve failure "this specifier is not installed"?
  */
 function isNotFound(err: Error, opts: OptionalImportOpts): boolean {
@@ -191,6 +252,30 @@ function handleResolveError(
 }
 
 /**
+ * Resolve a specifier and confirm a path specifier actually points at something.
+ *
+ * @returns the resolved url, or the error that makes this a "not found"
+ */
+function resolveExisting(
+  useMeta: ImportMetaLike,
+  specifier: string
+): { url: string; err?: undefined } | { url?: undefined; err: Error } {
+  let url: string;
+
+  try {
+    url = useMeta.resolve(specifier);
+  } catch (err) {
+    return { err: err as Error };
+  }
+
+  if (pathSpecifierMissing(specifier, url)) {
+    return { err: makeNotFoundError(specifier, useMeta.url) };
+  }
+
+  return { url };
+}
+
+/**
  * try to resolve an optional module, with optional handling in case it's not found
  *
  * @remarks This is synchronous. Resolving does not evaluate the module, so it can answer "is
@@ -214,11 +299,9 @@ export function tryResolve(
   const opts = normalizeOpts(optsOrMsg);
   const useMeta = checkMeta(opts.meta || meta);
 
-  try {
-    return useMeta.resolve(specifier);
-  } catch (err) {
-    return handleResolveError(err as Error, specifier, opts, log);
-  }
+  const { url, err } = resolveExisting(useMeta, specifier);
+
+  return err ? handleResolveError(err, specifier, opts, log) : url;
 }
 
 /**
@@ -247,12 +330,10 @@ export async function tryImport(
   const opts = normalizeOpts(optsOrMsg);
   const useMeta = checkMeta(opts.meta || meta);
 
-  let url: string;
+  const { url, err } = resolveExisting(useMeta, specifier);
 
-  try {
-    url = useMeta.resolve(specifier);
-  } catch (err) {
-    return handleResolveError(err as Error, specifier, opts, log);
+  if (err) {
+    return handleResolveError(err, specifier, opts, log);
   }
 
   try {
