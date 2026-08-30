@@ -1,7 +1,7 @@
 import Promise from "aveazul";
 import Path from "path";
 import Fs from "fs";
-import minimatch from "minimatch";
+import { minimatch } from "minimatch";
 import { logger } from "../logger";
 import { execSync } from "../child-process";
 import { selectivePublishSubject, parsePublishedPackageNames, expandSelection } from "../utils";

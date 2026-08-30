@@ -1,7 +1,7 @@
 /* copied from https://github.com/lerna/lerna/blob/main/core/child-process/index.js */
 
 import chalk from "chalk";
-import execa from "execa";
+import { execa, execaSync } from "execa";
 import logTransformer from "strong-log-transformer";
 import os from "os";
 import boxen from "boxen";
@@ -14,7 +14,7 @@ const children = new Set();
 let currentColor = 0;
 
 /**
- * @param {import("execa").ExecaError<string>} result
+ * @param {import("execa").ExecaError} result
  * @returns {number}
  */
 const getExitCode = (result) => {
@@ -28,15 +28,17 @@ const getExitCode = (result) => {
   }
 
   // https://nodejs.org/docs/latest-v6.x/api/errors.html#errors_error_code
-  if (typeof result.code === "string") {
-    return os.constants.errno[result.code];
+  // execa >= 9 keeps the spawn error (with its string code, e.g. ENOENT) on `cause`
+  const code = typeof result.code === "string" ? result.code : result.cause && result.cause.code;
+  if (typeof code === "string") {
+    return os.constants.errno[code];
   }
 
   return process.exitCode;
 };
 
 /**
- * @param {import("execa").ExecaChildProcess<string> & { pkg?: fynpo package }} spawned
+ * @param {import("execa").ResultPromise & { pkg?: fynpo package }} spawned
  */
 const wrapError = (spawned, runOpts) => {
   if (spawned.pkg) {
@@ -80,14 +82,18 @@ const wrapError = (spawned, runOpts) => {
  * @param {import("execa").Options} opts
  */
 const spawnProcess = (command, args, opts) => {
-  const child = execa(command, args, opts);
-  const drain = (exitCode, signal) => {
-    children.delete(child);
+  // execa >= 9 validates its options and throws on unknown ones, so fynpo-private
+  // annotations like `pkg` must not reach it
+  const { pkg, ...execaOpts } = opts;
+  const child = execa(command, args, execaOpts);
 
-    // don't run repeatedly if this is the error event
-    if (signal === undefined) {
-      child.removeListener("exit", drain);
-    }
+  //
+  // execa >= 9 subprocess exposes streams and the result promise but is no longer an
+  // EventEmitter (no .once/.on for "exit"/"error"), so observe termination through the
+  // promise instead. Handlers run once, so the old re-entry guard is unnecessary.
+  //
+  const drain = (exitCode) => {
+    children.delete(child);
 
     // propagate exit code, if any
     if (exitCode) {
@@ -95,11 +101,13 @@ const spawnProcess = (command, args, opts) => {
     }
   };
 
-  child.once("exit", drain);
-  child.once("error", drain);
+  child.then(
+    (result) => drain(getExitCode(result)),
+    (err) => drain(getExitCode(err))
+  );
 
-  if (opts.pkg) {
-    (child as any).pkg = opts.pkg;
+  if (pkg) {
+    (child as any).pkg = pkg;
   }
 
   children.add(child);
@@ -114,7 +122,7 @@ const spawnProcess = (command, args, opts) => {
  * @param {import("execa").SyncOptions} [opts]
  */
 export const execSync = (command, args, opts) => {
-  return execa.sync(command, args, opts).stdout;
+  return execaSync(command, args, opts).stdout;
 };
 
 /**

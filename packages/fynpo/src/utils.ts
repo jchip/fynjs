@@ -5,7 +5,7 @@ import { logger } from "./logger";
 import _ from "lodash";
 import { cosmiconfigSync } from "cosmiconfig";
 import shcmd from "shcmd";
-import _optionalRequire from "optional-require";
+import { makeOptionalRequire } from "optional-require";
 import {
   FynpoDepGraph,
   PackageInfo,
@@ -20,7 +20,7 @@ export const defaultTagTemplate = `fynpo-rel-{YYYY}{MM}{DD}-{COMMIT}`;
 
 const xrequire = eval("require");
 
-const optionalRequire = _optionalRequire(xrequire);
+const optionalRequire = makeOptionalRequire(xrequire);
 
 /**
  * Make a publish tag from template

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import minimatch from "minimatch";
+import { minimatch } from "minimatch";
 
 vi.mock("../src/logger", () => ({
   logger: {

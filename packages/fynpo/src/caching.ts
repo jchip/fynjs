@@ -3,7 +3,6 @@ import Path from "path";
 import _ from "lodash";
 import { logger } from "./logger";
 import { isCI } from "./is-ci";
-import mkdirp from "mkdirp";
 import npmPacklist from "npm-packlist";
 import { FynpoPackageInfo, PackageDepData } from "@fynpo/base";
 import envPaths from "env-paths";
@@ -346,7 +345,7 @@ export class PkgBuildCache {
     files: string[],
     nameMapping: Record<string, string>
   ) {
-    await mkdirp(targetDir);
+    await Fs.promises.mkdir(targetDir, { recursive: true });
     for (const file of files) {
       const srcFile = Path.join(srcDir, file);
       const targetFile = Path.join(targetDir, `${nameMapping[file]}${Path.extname(file)}`);
@@ -378,7 +377,7 @@ export class PkgBuildCache {
       const targetFile = Path.join(targetDir, file);
       const destDir = Path.dirname(targetFile);
       if (!destDirs[destDir]) {
-        await mkdirp(destDir);
+        await Fs.promises.mkdir(destDir, { recursive: true });
         // TODO: remove existing subdir
         // ?? How to ensure that old output files are cleared?
         // ??? if old output files with cache meta exist, then verify them?
@@ -419,7 +418,7 @@ export class PkgBuildCache {
    * Save the cache meta data to the monorepo's temporary location
    */
   async savePkgCacheMetaToRepo() {
-    await mkdirp(this.repoCacheMetaDir);
+    await Fs.promises.mkdir(this.repoCacheMetaDir, { recursive: true });
     const pkgCachingFile = Path.join(
       this.repoCacheMetaDir,
       this.pkgPathToRepoMetaFilename(this.pkgInfo.path)
@@ -526,7 +525,7 @@ export class PkgBuildCache {
    * @returns
    */
   async saveOutputMetaToCache() {
-    await mkdirp(this.filesCacheDir);
+    await Fs.promises.mkdir(this.filesCacheDir, { recursive: true });
     await Fs.promises.writeFile(this.metaFile, this.stringifyOutputMeta());
     return this.filesCacheDir;
   }
@@ -606,7 +605,7 @@ export class PkgBuildCache {
       return;
     }
     const { output } = this;
-    await mkdirp(this.filesCacheDir);
+    await Fs.promises.mkdir(this.filesCacheDir, { recursive: true });
     await xaa.map(
       output.files,
       async (file: string) => {

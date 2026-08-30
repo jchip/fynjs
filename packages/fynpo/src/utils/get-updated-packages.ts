@@ -1,7 +1,7 @@
 
 import { logger } from "../logger";
 import { execSync } from "../child-process";
-import minimatch from "minimatch";
+import { minimatch } from "minimatch";
 import Path from "path";
 import slash from "slash";
 import _ from "lodash";
