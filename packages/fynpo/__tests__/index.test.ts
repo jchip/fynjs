@@ -14,6 +14,8 @@ vi.mock("@fynjs/cli-args", () => {
 });
 
 import { cliOptions, fynpoMain, resolveRunExitCode } from "../src/index";
+import fsMod from "fs";
+import pathMod from "path";
 import { NixClap } from "@fynjs/cli-args";
 
 describe("fynpo CLI", () => {
@@ -135,5 +137,31 @@ describe("cliOptions (FPO-30 regression)", () => {
     for (const [name, opt] of Object.entries<any>(cliOptions)) {
       expect(opt.desc, `option ${name} has no desc`).toBeTruthy();
     }
+  });
+});
+
+// FPO-32: fynpo declared `main: "dist/index.js"` while the rolldown build emits only
+// dist/bundle.mjs. Nothing consulted it, so it went unnoticed. fynpo is CLI-only, so
+// `bin` is the entry point and there is no main to keep in sync.
+describe("package.json entry points (FPO-32)", () => {
+  const pkgDir = pathMod.join(__dirname, "..");
+  const pkg = JSON.parse(fsMod.readFileSync(pathMod.join(pkgDir, "package.json"), "utf8"));
+
+  it("declares no main, since this is a bin-only package", () => {
+    expect(pkg.main).toBeUndefined();
+  });
+
+  it("points every bin at a file that exists", () => {
+    const bins = Object.values<string>(pkg.bin || {});
+    expect(bins.length).toBeGreaterThan(0);
+
+    for (const bin of bins) {
+      expect(fsMod.existsSync(pathMod.join(pkgDir, bin)), `bin ${bin} does not exist`).toBe(true);
+    }
+  });
+
+  it("ships the files the bin needs", () => {
+    expect(pkg.files).toContain("bin");
+    expect(pkg.files).toContain("dist");
   });
 });
