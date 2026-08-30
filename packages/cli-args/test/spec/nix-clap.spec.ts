@@ -1061,6 +1061,80 @@ describe("nix-clap", () => {
     expect(invoked).to.deep.equal(["build"]);
   });
 
+  it("should not recurse into sub-commands when includeSubCommands is false", () => {
+    const nc = new NixClap({ ...noOutputExit, skipExec: true }).init({}, {
+      build: {
+        desc: "Build command",
+        exec: () => {},
+        subCommands: {
+          lib: { desc: "Build lib", exec: () => {} }
+        }
+      }
+    });
+
+    const parsed = nc.parse(getArgv("build lib"));
+
+    const shallow = parsed.command.getExecCommands([], false);
+    const deep = parsed.command.getExecCommands([], true);
+
+    expect(shallow).to.be.empty;
+    expect(deep.map(c => c.name)).to.deep.equal(["build", "lib"]);
+  });
+
+  it("should ignore removeDefaultHandlers for an event with no default handler", () => {
+    const nc = new NixClap({ ...noOutputExit }).init({}, {});
+
+    expect(() => nc.removeDefaultHandlers("no-such-event")).to.not.throw();
+    expect(nc.removeDefaultHandlers("no-such-event")).to.equal(nc);
+    // a real default handler is still removable afterwards
+    expect(nc.removeDefaultHandlers("no-action")).to.equal(nc);
+  });
+
+  it("should skip the help check when help is disabled", () => {
+    let executed = false;
+    const nc = new NixClap({ ...noOutputExit, help: false, skipExec: true })
+      .removeDefaultHandlers("no-action")
+      .init({}, {
+        build: {
+          desc: "Build command",
+          exec: () => {
+            executed = true;
+          }
+        }
+      });
+
+    // with `help: false` there is no help option, so _checkFailures skips the help
+    // branch entirely and parsing proceeds normally
+    const parsed = nc.parse(getArgv("build"));
+    expect(parsed.helpNode).to.be.undefined;
+    nc.runExec(parsed);
+    expect(executed).to.be.true;
+  });
+
+  it("should keep the original execCmd when runExecAsync runs the root twice", async () => {
+    let count = 0;
+    const nc = new NixClap({ ...noOutputExit, name: "test", skipExec: true })
+      .removeDefaultHandlers("no-action")
+      .init2({
+        args: "[input string]",
+        exec: () => {
+          count++;
+        }
+      });
+
+    const parsed = nc.parse(getArgv("hello"));
+
+    expect(await nc.runExecAsync(parsed)).to.equal(1);
+    const first = parsed.execCmd;
+    expect(first).to.be.ok;
+
+    // re-running the same parsed result executes root again but must not
+    // overwrite the execCmd recorded by the first run
+    expect(await nc.runExecAsync(parsed)).to.equal(1);
+    expect(count).to.equal(2);
+    expect(parsed.execCmd).to.equal(first);
+  });
+
   describe("unknownCommandFallback", () => {
     it("should treat unknown command as argument to fallback command", () => {
       const nc = new NixClap({ ...noOutputExit, unknownCommandFallback: "run" }).init({}, {
