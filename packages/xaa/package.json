@@ -19,6 +19,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "xrun [vitest, demo:cjs, demo:esm]",
+    "ci:check": "tsc --noEmit -p tsconfig.json && npm test",
     "vitest": "vitest run",
     "coverage": "vitest run --coverage",
     "format": "prettier --write src test demo vitest.config.ts",

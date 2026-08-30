@@ -19,6 +19,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
+    "ci:check": "tsc --noEmit -p tsconfig.json && npm test",
     "coverage": "vitest run --coverage",
     "prepublishOnly": "xrun build",
     "prepack": "publish-util-prepack",

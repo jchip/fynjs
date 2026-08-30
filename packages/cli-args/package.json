@@ -19,6 +19,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
+    "ci:check": "tsc --noEmit -p tsconfig.json && npm test",
     "test-debug": "vitest run --inspect-brk --no-file-parallelism",
     "coveralls": "vitest run --coverage && cat coverage/lcov.info | coveralls",
     "coverage": "vitest run --coverage",

@@ -17,6 +17,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "_clean": "rm -rf dist-*",
     "test": "vitest run",
+    "ci:check": "tsc --noEmit -p tsconfig.json && npm test",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
