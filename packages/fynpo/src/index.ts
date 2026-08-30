@@ -59,25 +59,60 @@ const detectInternalBug = (err: any): { isInternal: boolean; hint: string } => {
 };
 
 /**
- * Discovery is implicit when fynpo.json declares no `packages` patterns. Say so,
- * because the two discovery paths then disagree: the dep graph searches every
- * directory for a package.json, while readFynpoPackages falls back to
- * `packages/*` and finds nothing in a repo laid out any other way.
+ * What to say when discovery ran implicitly - the dep graph searched every directory for a
+ * package.json instead of scanning declared paths.
+ *
+ * Two different situations end up here and they need different wording (FPO-48). A config
+ * with no `packages` at all is one. The other is a config that DOES declare `packages` in
+ * the array form, which `resolvePackagesConfig` reads as an `include` filter and leaves
+ * auto-search on by design (FPO-17) - telling that user they declared nothing is false, and
+ * telling them to declare `["packages/*"]` sends them back to the shape they already have.
+ * Only the object form with `autoSearch: false` turns the search off.
+ *
+ * Pure so it can be tested without reading log output; {@link noticeImplicitDiscovery} logs it.
+ *
+ * @param autoSearched - whether the graph auto-searched instead of scanning declared paths
+ * @param found - how many packages discovery ended up with
+ * @param packages - the raw `packages` value from the fynpo config
+ * @returns the notice to log, or undefined when discovery was explicit
  */
-const noticeImplicitDiscovery = (autoSearched: boolean, found: number) => {
+export const implicitDiscoveryNotice = (
+  autoSearched: boolean,
+  found: number,
+  packages?: unknown
+): { level: "info" | "warn"; message: string } | undefined => {
   if (!autoSearched) {
-    return;
+    return undefined;
   }
-  if (found > 0) {
-    logger.info(
-      `No "packages" patterns in fynpo.json - searched every directory for package.json and found ${found}.`,
-      `Declare "packages" to make discovery explicit, e.g. "packages": ["packages/*"].`
-    );
-  } else {
-    logger.warn(
-      `No "packages" patterns in fynpo.json and no package.json found by searching.`,
-      `Declare "packages" in fynpo.json to say where your packages live.`
-    );
+
+  const declared = !_.isEmpty(packages);
+  const howToScan = `To scan only the paths you declare, use "packages": { "autoSearch": false, "include": ["packages/*"] }.`;
+  const filtersOnly = `"packages" in fynpo.json filters discovery but leaves auto-search on`;
+
+  if (found === 0) {
+    return {
+      level: "warn",
+      message: declared
+        ? `${filtersOnly}, and searching every directory found no package.json. ${howToScan}`
+        : `No "packages" config in fynpo.json and no package.json found by searching. ` +
+          `Declare "packages" in fynpo.json to say where your packages live.`,
+    };
+  }
+
+  return {
+    level: "info",
+    message: declared
+      ? `${filtersOnly} - searched every directory for package.json and found ${found}. ${howToScan}`
+      : `No "packages" config in fynpo.json - searched every directory for package.json ` +
+        `and found ${found}. ${howToScan}`,
+  };
+};
+
+const noticeImplicitDiscovery = (autoSearched: boolean, found: number, packages?: unknown) => {
+  const notice = implicitDiscoveryNotice(autoSearched, found, packages);
+
+  if (notice) {
+    logger[notice.level](notice.message);
   }
 };
 
@@ -145,7 +180,11 @@ const makeOpts = async (cmd, _parsed) => {
 const makeDepGraph = async (opts) => {
   const graph = new FynpoDepGraph(opts);
   await graph.resolve();
-  noticeImplicitDiscovery(graph.autoSearched, Object.keys(graph.packages.byName || {}).length);
+  noticeImplicitDiscovery(
+    graph.autoSearched,
+    Object.keys(graph.packages.byName || {}).length,
+    opts.packages
+  );
 
   //
   // `--scope` used to be honored only inside makePkgDeps, which only `prepare` reaches - so

@@ -13,7 +13,12 @@ vi.mock("@fynjs/cli-args", () => {
   };
 });
 
-import { cliOptions, fynpoMain, resolveRunExitCode } from "../src/index";
+import {
+  cliOptions,
+  fynpoMain,
+  implicitDiscoveryNotice,
+  resolveRunExitCode,
+} from "../src/index";
 import fsMod from "fs";
 import pathMod from "path";
 import { NixClap } from "@fynjs/cli-args";
@@ -163,5 +168,50 @@ describe("package.json entry points (FPO-32)", () => {
   it("ships the files the bin needs", () => {
     expect(pkg.files).toContain("bin");
     expect(pkg.files).toContain("dist");
+  });
+});
+
+describe("implicitDiscoveryNotice (FPO-48)", () => {
+  it("says nothing when discovery scanned declared paths", () => {
+    expect(implicitDiscoveryNotice(false, 30, { autoSearch: false })).toBeUndefined();
+  });
+
+  it("does not claim a config that declares packages declared none", () => {
+    const notice = implicitDiscoveryNotice(true, 32, ["packages/*", "_w/*"]);
+
+    expect(notice.level).toBe("info");
+    expect(notice.message).not.toContain(`No "packages"`);
+    expect(notice.message).toContain("filters discovery but leaves auto-search on");
+    expect(notice.message).toContain("found 32");
+  });
+
+  it("points at the shape that actually turns auto-search off", () => {
+    // the old advice was `"packages": ["packages/*"]` - the array form, which lands right
+    // back on auto-search, so anyone following it saw no change
+    for (const packages of [undefined, ["packages/*"]]) {
+      const { message } = implicitDiscoveryNotice(true, 5, packages);
+      expect(message).toContain(`"autoSearch": false`);
+    }
+  });
+
+  it("still reports a config with no packages key as declaring none", () => {
+    const notice = implicitDiscoveryNotice(true, 7, undefined);
+
+    expect(notice.level).toBe("info");
+    expect(notice.message).toContain(`No "packages" config in fynpo.json`);
+    expect(notice.message).toContain("found 7");
+  });
+
+  it("warns when the search turned up nothing at all", () => {
+    expect(implicitDiscoveryNotice(true, 0, undefined).level).toBe("warn");
+    expect(implicitDiscoveryNotice(true, 0, ["packages/*"]).level).toBe("warn");
+    expect(implicitDiscoveryNotice(true, 0, ["packages/*"]).message).toContain(
+      "found no package.json"
+    );
+  });
+
+  it("treats an empty packages value as declaring nothing", () => {
+    expect(implicitDiscoveryNotice(true, 3, []).message).toContain(`No "packages" config`);
+    expect(implicitDiscoveryNotice(true, 3, {}).message).toContain(`No "packages" config`);
   });
 });
