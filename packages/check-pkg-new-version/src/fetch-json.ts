@@ -1,20 +1,16 @@
-import * as gotModule from "got";
-
-// got@11 ships CJS with ESM-style declarations, so under NodeNext the default
-// import binds the namespace. Unwrap at runtime to stay correct either way.
-const got: any = (gotModule as any).default ?? gotModule;
+import got from "got";
 
 /**
  * fetch JSON from URL
  *
  * @param url url
- * @param options options
- * @returns JSON fetched
+ * @param options options - `{ headers }` passed to got
+ * @returns JSON fetched - `{}` on any failure (got throws HTTPError on non-2xx)
  */
 export async function internalFetchJSON(url: string, options: any): Promise<any> {
   try {
     const resp = await got(url, options);
-    return JSON.parse(resp.body);
+    return JSON.parse(resp.body as string);
   } catch {
     return {};
   }

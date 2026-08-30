@@ -45,8 +45,8 @@
   },
   "dependencies": {
     "check-pkg-new-version-engine": "^1.0.2",
-    "got": "^11.8.1",
-    "ini": "^2.0.0",
+    "got": "^15.0.0",
+    "ini": "^7.0.0",
     "semver": "^7.3.4",
     "tslib": "^2.6.2"
   },
