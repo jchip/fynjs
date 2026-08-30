@@ -13,11 +13,23 @@ npm install xsh --save-dev
 
 ## Usage
 
+xsh 1.x is an ES module written in TypeScript, requiring node >= 22.12.
+
+```js
+import xsh from "xsh";
+
+xsh.exec("echo hello");
+```
+
+CJS consumers can still `require` it (node >= 22.12 `require(esm)`):
+
 ```js
 const xsh = require("xsh");
 
 xsh.exec("echo hello");
 ```
+
+The shell commands under `xsh.$` come from [shelljs](https://www.npmjs.com/package/shelljs).
 
 ## API
 

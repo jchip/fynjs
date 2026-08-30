@@ -1,33 +1,31 @@
-"use strict";
-const xsh = require("../..");
-const chai = require("chai");
-const expect = chai.expect;
-const Path = require("path");
+import { describe, it, expect } from "vitest";
+import Path from "node:path";
+import xsh from "../../src/index.ts";
 
-describe("path-cwd", function() {
-  it("should leave path w/o cwd as is", function() {
+describe("path-cwd", function () {
+  it("should leave path w/o cwd as is", () => {
     expect(xsh.pathCwd.remove("/test/foo/blah")).to.equal("/test/foo/blah");
   });
 
-  it("remove cwd from path", function() {
+  it("remove cwd from path", () => {
     expect(xsh.pathCwd.remove(Path.resolve("foo", "bar"))).to.equal(Path.normalize("/foo/bar"));
   });
 
-  it("remove all cwd from path with g flag", function() {
+  it("remove all cwd from path with g flag", () => {
     const x = Path.resolve("foo", "bar");
     const e = Path.normalize("/foo/bar");
 
     expect(xsh.pathCwd.remove(`${x} ${x}`, "g")).to.equal(`${e} ${e}`);
   });
 
-  it("replace cwd from path", function() {
+  it("replace cwd from path", () => {
     expect(xsh.pathCwd.replace(Path.resolve("foo", "bar"))).to.equal(Path.normalize("CWD/foo/bar"));
     expect(xsh.pathCwd.replace(Path.resolve("foo", "bar"), "$")).to.equal(
       Path.normalize("$/foo/bar")
     );
   });
 
-  it("replace all cwd from path with g flag", function() {
+  it("replace all cwd from path with g flag", () => {
     const x = Path.resolve("foo", "bar");
     const e1 = Path.normalize("CWD/foo/bar");
     const e2 = Path.normalize("$/foo/bar");
@@ -36,7 +34,7 @@ describe("path-cwd", function() {
     expect(xsh.pathCwd.replace(`${x} ${x}`, "$", "g")).to.equal(`${e2} ${e2}`);
   });
 
-  it("remove should strip leading /", function() {
+  it("remove should strip leading /", () => {
     expect(xsh.pathCwd.remove(Path.resolve("foo"), "", true)).to.equal("foo");
   });
 });

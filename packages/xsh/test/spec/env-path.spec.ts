@@ -1,21 +1,20 @@
-"use strict";
-const xsh = require("../..");
-const chai = require("chai");
-const expect = chai.expect;
-const Path = require("path");
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Path from "node:path";
+import xsh from "../../src/index.ts";
 
-describe("envPath", function() {
-  let save;
+describe("envPath", function () {
+  let save: string | undefined;
   const pathKey = xsh.envPath.envKey;
-  before(() => {
+
+  beforeAll(() => {
     save = process.env[pathKey];
   });
 
-  after(() => {
+  afterAll(() => {
     process.env[pathKey] = save;
   });
 
-  it("should add to a custom env/path", function() {
+  it("should add to a custom env/path", () => {
     let path = xsh.envPath.add("foo", ["test", "blah"].join(Path.delimiter));
     expect(path).to.equal(["test", "blah", "foo"].join(Path.delimiter));
     const env = {};
@@ -23,24 +22,24 @@ describe("envPath", function() {
     expect(path).to.equal("foo");
     expect(env).to.deep.equal({ [pathKey]: "foo" });
     path = xsh.envPath.add("", env);
-    expect(env[pathKey]).to.equal("foo");
+    expect((env as any)[pathKey]).to.equal("foo");
   });
 
-  it("addToFront should add path to front", function() {
+  it("addToFront should add path to front", () => {
     xsh.envPath.addToFront("/test1");
-    expect(process.env[pathKey].indexOf("/test1")).to.equal(0);
+    expect(process.env[pathKey]!.indexOf("/test1")).to.equal(0);
     delete process.env[pathKey];
     xsh.envPath.addToFront("/test1");
     xsh.envPath.addToFront("/test1");
     expect(process.env[pathKey]).to.equal("/test1");
     xsh.envPath.addToFront("/test2");
-    expect(process.env[pathKey].indexOf("/test2")).to.equal(0);
+    expect(process.env[pathKey]!.indexOf("/test2")).to.equal(0);
     xsh.envPath.addToFront("/test1");
-    expect(process.env[pathKey].indexOf("/test1")).to.equal(0);
+    expect(process.env[pathKey]!.indexOf("/test1")).to.equal(0);
   });
 
-  it("addToFront should add path to front of a path", function() {
-    let PATH;
+  it("addToFront should add path to front of a path", () => {
+    let PATH: any;
     PATH = xsh.envPath.addToFront("/test1", PATH);
     expect(PATH.indexOf("/test1")).to.equal(0);
     PATH = xsh.envPath.addToFront("/test1", {});
@@ -52,7 +51,7 @@ describe("envPath", function() {
     expect(PATH.indexOf("/test1")).to.equal(0);
   });
 
-  it("addToFront should remove duplicates from anywhere in PATH", function() {
+  it("addToFront should remove duplicates from anywhere in PATH", () => {
     const p1 = "/path1";
     const p2 = "/path2";
     const p3 = "/path3";
@@ -88,7 +87,7 @@ describe("envPath", function() {
     expect(PATH).to.equal([p4, p1, p2, p3].join(Path.delimiter));
   });
 
-  it("addToFront should handle empty string and non-string inputs", function() {
+  it("addToFront should handle empty string and non-string inputs", () => {
     const p1 = "/path1";
     const p2 = "/path2";
 
@@ -104,7 +103,7 @@ describe("envPath", function() {
 
     // Test: non-string (number) should not modify PATH
     PATH = [p1, p2].join(Path.delimiter);
-    PATH = xsh.envPath.addToFront(123, PATH);
+    PATH = xsh.envPath.addToFront(123 as any, PATH);
     expect(PATH).to.equal([p1, p2].join(Path.delimiter));
 
     // Test: undefined should not modify PATH
@@ -113,21 +112,21 @@ describe("envPath", function() {
     expect(PATH).to.equal([p1, p2].join(Path.delimiter));
   });
 
-  it("addToEnd should add path to end", function() {
+  it("addToEnd should add path to end", () => {
     process.env[pathKey] = "";
     xsh.envPath.addToEnd("/test1");
-    expect(process.env[pathKey].indexOf("/test1")).to.equal(0);
+    expect(process.env[pathKey]!.indexOf("/test1")).to.equal(0);
     xsh.envPath.addToEnd("/test1");
     xsh.envPath.addToEnd("/test1");
     expect(process.env[pathKey]).to.equal("/test1");
     xsh.envPath.addToEnd("/test2");
-    expect(process.env[pathKey].indexOf("/test1")).to.equal(0);
+    expect(process.env[pathKey]!.indexOf("/test1")).to.equal(0);
     xsh.envPath.addToEnd("/test1");
     xsh.envPath.addToEnd();
-    expect(process.env[pathKey].indexOf("/test2")).to.equal(0);
+    expect(process.env[pathKey]!.indexOf("/test2")).to.equal(0);
   });
 
-  it("add should add path end if it's not exist", function() {
+  it("add should add path end if it's not exist", () => {
     const p1 = Path.normalize("/test1");
     const p2 = Path.normalize("/test2");
     const p3 = Path.normalize("/test3");
@@ -142,9 +141,9 @@ describe("envPath", function() {
     expect(process.env[pathKey]).to.equal(r2);
   });
 
-  it("findEnvKey should find correct path env key", function() {
+  it("findEnvKey should find correct path env key", () => {
     const defaultKey = xsh.envPath.findEnvKey(process.env);
-    expect(defaultKey.toLowerCase()).to.equal("path");
+    expect(defaultKey!.toLowerCase()).to.equal("path");
     expect(defaultKey).to.equal(xsh.envPath.envKey);
   });
 });
