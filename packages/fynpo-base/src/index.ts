@@ -4,7 +4,7 @@ import { filterScanDir } from "filter-scan-dir";
 import mm from "minimatch";
 import _ from "lodash";
 import { groupMM, MMGroups } from "./minimatch-group.js";
-import { resolvePackagesConfig, discoveryPatterns } from "./packages-config.js";
+import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";
 
 export * from "./fynpo-dep-graph.js";
@@ -198,12 +198,19 @@ export async function readFynpoPackages({
   Record<string, PackageInfo>
 > {
   const config = resolvePackagesConfig(packages);
-  const explicit = _.isEmpty(patterns) ? discoveryPatterns(config) : patterns;
+  const explicit = _.isEmpty(patterns) ? scanPatterns(config) : patterns;
   const gitignore = makeGitignoreMatcher(cwd);
 
   const excludeMms = config.exclude.map((p) => new mm.Minimatch(p));
   const isExcluded = (path: string) =>
     Boolean(path) && excludeMms.some((m) => m.match(path.split(Path.sep).join("/")));
+
+  // `include` filters what the scan found - it does not replace the scan (FPO-17)
+  const includeMms = (_.isEmpty(patterns) ? includeFilter(config) : []).map(
+    (p) => new mm.Minimatch(p)
+  );
+  const isIncluded = (path: string) =>
+    includeMms.length === 0 || includeMms.some((m) => m.match(path.split(Path.sep).join("/")));
 
   // null patterns means auto-search: scan from the root for every package.json
   const autoSearch = explicit === null;
@@ -251,7 +258,9 @@ export async function readFynpoPackages({
     );
   }
 
-  const allFiles = [].concat(...files).sort();
+  const allFiles = [].concat(...files)
+    .filter((f: string) => isIncluded(Path.dirname(f)))
+    .sort();
 
   const allPkgs = {};
 

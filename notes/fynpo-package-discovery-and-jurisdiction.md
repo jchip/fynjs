@@ -47,10 +47,10 @@ excludes. Gitignore enters in two narrower places, below.
 
 ```jsonc
 "packages": {
-  // Search the repo for package.json when no explicit `include` is given. Default: on.
+  // Walk the whole repo looking for package.json. Default: on. Stays on when include is set.
   "autoSearch": true | { "enable": true, "respectGitignore": false },
 
-  // Explicit discovery patterns. Wins over autoSearch when non-empty.
+  // Filters what the scan found. With autoSearch off, becomes the scan patterns instead.
   "include": ["packages/*", "_w/*"],
 
   // Applies to every package, auto-searched or explicitly matched.
@@ -63,31 +63,54 @@ excludes. Gitignore enters in two narrower places, below.
 }
 ```
 
+### `include` filters, it does not replace the scan
+
+This is the rule that makes everything else work. `autoSearch` is on by default and **stays
+on** when `include` is set. Auto-search decides *how the tree is walked*; `include` then
+filters what the walk found. Two separate stages:
+
+| | auto-search on (default) | auto-search off |
+|---|---|---|
+| **scan** | walk the whole repo for `package.json` | scan `include` patterns, or `packages/*` |
+| **filter** | keep only paths matching `include` (empty = keep all), then drop `exclude` | drop `exclude` |
+
+Aliasing `include` onto the old `patterns` option would break this — `patterns` scans by glob
+directly and never auto-searches, so the alias would silently turn auto-search off for every
+config that set `include`. There is deliberately no such alias any more; the raw `packages`
+config is carried through and resolved by the discovery code.
+
 ### Resolution rules
 
 | Config | Discovery | Publish |
 |---|---|---|
-| absent | auto-search | everything discovered |
-| `["packages/*"]` (array) | auto-search | only `path:packages/*` |
-| `{ include: ["libs/*"] }` | `libs/*` | everything discovered |
-| `{ autoSearch: false }` | `packages/*` | everything discovered |
-| `{ autoSearch: false, include: ["libs/*"] }` | `libs/*` | everything discovered |
+| absent | auto-search, everything | everything discovered |
+| `["packages/*"]` (array) | auto-search, filtered to `packages/*` | only `path:packages/*` |
+| `{ include: ["libs/*"] }` | auto-search, filtered to `libs/*` | everything discovered |
+| `{ autoSearch: false }` | scan `packages/*` | everything discovered |
+| `{ autoSearch: false, include: ["libs/*"] }` | scan `libs/*` | everything discovered |
 
 - `autoSearch` defaults **on**; `respectGitignore` defaults **off**.
-- Explicit `include` always beats auto-search — auto-search is the fallback for when nothing is
-  declared, not an addition to it.
 - With auto-search off and no `include`, `include` falls back to `["packages/*"]`.
 
 ### The array shape
 
-`packages` as an array is the historical shape and now means **`publishInclude`**, with
-auto-search on. It no longer narrows discovery.
+`packages` as an array is the historical shape and feeds **both** sets: `include` (raw, for
+discovery filtering) and `publishInclude` (for the publish allow list).
 
-Entries are coerced to `path:` refs. This is not cosmetic: array entries have always been path
-globs (`"packages/*"`), but `PackageRef` reads a bare string as a **name** ref. Passing them
-through unchanged produces refs that match nothing, and because a non-empty allow list fails
-closed, that would silently make every package in the repo unpublishable. This was caught by
-running the real config through the filter — every package came back vetoed.
+Feeding both is what makes it a no-op for existing repos. Had the array only meant
+`publishInclude`, auto-search would have run unfiltered and every repo whose array was
+narrowing discovery would have silently widened — this repo goes from 32 packages to 35,
+picking up `docusaurus` and two `testing/monorepo-test/packages/*` fixtures and pulling them
+into bootstrap. Verified: with the array feeding both, discovery is byte-identical to the old
+pattern scan at 32 packages, and no config needs to change.
+
+`publishInclude` entries are coerced to `path:` refs; `include` entries are left raw. That
+asymmetry is deliberate. Array entries have always been path globs (`"packages/*"`), and
+`include` is matched with minimatch so a glob is already correct — but `PackageRef` reads a
+bare string as a **name** ref. Passing them through unchanged produces refs that match nothing,
+and because a non-empty allow list fails closed, that would silently make every package in the
+repo unpublishable. This was caught by running the real config through the filter: every
+package, `packages/fyn` included, came back vetoed.
 
 ### The gitignore publish veto
 
@@ -114,11 +137,15 @@ over to `packages.publishInclude` / `packages.publishExclude` unchanged: the all
 checked first so config fails closed, the deny list is applied after and always wins, and refs
 support `name:`, `id:`, `path:`, `/regex/` and globs.
 
-## Migration is BLOCKED until fyn and fynpo are republished
+## The object form requires an upgraded fyn/fynpo
 
-**Do not switch `fynpo.json` to the object form yet.** The published `fyn` bundles its own
-older copy of `@fynpo/base`, which does `patterns = config.packages` and then `patterns.map(...)`.
-Handing it an object kills every fyn command in the repo:
+No migration is required — the array form is a no-op, so existing configs keep working
+unchanged. But **adopting the object form requires upgrading fyn and fynpo first.** This is
+accepted: a user who opts into the new shape is expected to upgrade.
+
+The published `fyn` bundles its own older copy of `@fynpo/base`, which does
+`patterns = config.packages` and then `patterns.map(...)`. Handing it an object kills every fyn
+command in the repo:
 
 ```
 $ fyn install
@@ -134,35 +161,30 @@ $ fyn install
 with an unhandled `process.exit` — a confusing symptom a long way from the cause.
 
 The ordering constraint is therefore: **publish fyn and fynpo carrying the new `@fynpo/base`
-first, then adopt the object form in repo configs.** Old tooling and new config are not
-compatible in either direction, and nothing can be done about the already-published copies.
+before adopting the object form in a repo config.** Old tooling and new config are not
+compatible, and nothing can be done about the already-published copies.
 
-### The migration to make, once unblocked
+This repo stays on the array form for now:
 
 ```jsonc
-// before
 "packages": ["packages/*", "_w/*"]
+```
 
-// after
+which needs no change — discovery is unchanged at 32 packages, and the array now also supplies
+the publish allow list. An optional later move to the object form would be:
+
+```jsonc
 "packages": {
   "include": ["packages/*", "_w/*"],
   "exclude": ["docusaurus", "testing/**"]
 }
 ```
 
-The `exclude` is load-bearing, and so is `include`. Since the array form no longer narrows
-discovery, leaving this repo on the array once the new code is live switches it to auto-search,
-which finds **35 packages instead of 32** — picking up `docusaurus` and the two
-`testing/monorepo-test/packages/*` fixtures and pulling them into bootstrap. The object form
-with `include` preserves the previous discovery set exactly.
+where `exclude` documents the two directories that must stay out if anyone ever drops
+`include` and lets auto-search run unfiltered.
 
-That broadening applies to **every** existing repo whose `packages` array was narrowing
-discovery, which is worth weighing against rule 1 (array ⇒ `publishInclude`, auto-search on).
-The alternative — array ⇒ both `include` and `publishInclude` — would make the array form a
-behavioral no-op for discovery and remove the migration entirely.
-
-Publish jurisdiction, once adopted, is: everything discovered, minus the gitignored `_w/*`
-clones. Verified directly against the real `fynpo.json`:
+Publish jurisdiction is now: everything discovered, minus the gitignored `_w/*` clones.
+Verified directly against the real `fynpo.json`:
 
 ```
 PUBLISHABLE  fyn          ->  packages/fyn
@@ -177,7 +199,7 @@ vetoed       npm-packlist ->  _w/npm-packlist
 
 | File | Role |
 |---|---|
-| `packages/fynpo-base/src/packages-config.ts` | `resolvePackagesConfig`, `discoveryPatterns` — normalizes both shapes |
+| `packages/fynpo-base/src/packages-config.ts` | `resolvePackagesConfig`, `scanPatterns`, `includeFilter` — normalizes both shapes |
 | `packages/fynpo-base/src/gitignore.ts` | `makeGitignoreMatcher` |
 | `packages/fynpo-base/src/fynpo-dep-graph.ts` | `readPackages` — the graph discovery path |
 | `packages/fynpo-base/src/index.ts` | `readFynpoPackages` — the `prepare` discovery path |

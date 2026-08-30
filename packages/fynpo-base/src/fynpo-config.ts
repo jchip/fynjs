@@ -3,7 +3,6 @@ import Path from "path";
 
 import { optionalRequire } from "optional-require";
 
-import { resolvePackagesConfig } from "./packages-config.js";
 
 type ConfigOptions = {
   cwd?: string;
@@ -119,16 +118,10 @@ export class FynpoConfigManager {
     } while (++count < 50 && dir !== prevDir);
 
     //
-    // `patterns` is discovery only. `packages` as an ARRAY is the historical shape and now
-    // means publishInclude, so it must NOT become discovery patterns - only the object form's
-    // `include` does. See FPO-17.
+    // No `patterns` alias any more - see the matching note in fynpo/src/utils.ts loadConfig.
+    // `patterns` bypasses auto-search, while `include` is meant to filter what auto-search
+    // found. The raw `packages` config is carried through and resolved downstream. FPO-17.
     //
-    if (this._config && this._config.hasOwnProperty("packages")) {
-      const { include } = resolvePackagesConfig(this._config.packages);
-      if (include.length > 0) {
-        this._config.patterns = include;
-      }
-    }
 
     this._topDir = dir;
   }

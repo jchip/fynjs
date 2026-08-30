@@ -90,11 +90,14 @@ const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
  */
 export function resolvePackagesConfig(packages?: unknown): PackagesConfig {
   if (Array.isArray(packages)) {
+    const list = toList(packages);
     return {
       autoSearch: { enable: true, respectGitignore: false },
-      include: [],
+      // both sets: the array narrows what fynpo manages AND what it may publish, which keeps
+      // the historical shape behavior-preserving
+      include: list,
       exclude: [],
-      publishInclude: toList(packages).map(asPathRef),
+      publishInclude: list.map(asPathRef),
       publishExclude: [],
     };
   }
@@ -118,18 +121,32 @@ export function resolvePackagesConfig(packages?: unknown): PackagesConfig {
 }
 
 /**
- * Decide the discovery patterns, or that auto-search should run.
+ * Decide how to scan for packages.
  *
- * Explicit `include` always wins - auto-search is the fallback for when nothing is declared,
- * not an addition to it.
+ * `include` does NOT turn auto-search off - auto-search is on by default and stays on, so it
+ * still decides *how the tree is walked*. `include` then filters what the walk found, via
+ * {@link includeFilter}. Only with auto-search off does `include` become the scan patterns
+ * themselves, falling back to `packages/*`.
  *
  * @param config - resolved packages config
- * @returns `null` to auto-search, otherwise the patterns to match
+ * @returns `null` to auto-search the whole repo, otherwise the patterns to scan
  */
-export function discoveryPatterns(config: PackagesConfig): string[] | null {
-  if (config.include.length > 0) {
-    return config.include;
+export function scanPatterns(config: PackagesConfig): string[] | null {
+  if (config.autoSearch.enable) {
+    return null;
   }
 
-  return config.autoSearch.enable ? null : [...DEFAULT_INCLUDE];
+  return config.include.length > 0 ? config.include : [...DEFAULT_INCLUDE];
+}
+
+/**
+ * The patterns a discovered package must match to be kept.
+ *
+ * Empty means keep everything the scan found.
+ *
+ * @param config - resolved packages config
+ * @returns patterns to match a package path against
+ */
+export function includeFilter(config: PackagesConfig): string[] {
+  return config.include;
 }

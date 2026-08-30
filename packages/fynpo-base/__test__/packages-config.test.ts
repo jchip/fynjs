@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { resolvePackagesConfig, discoveryPatterns } from "../src/packages-config";
+import { resolvePackagesConfig, scanPatterns, includeFilter } from "../src/packages-config";
 
 describe("resolvePackagesConfig", () => {
   it("defaults to auto-search on, respectGitignore off, nothing else set", () => {
@@ -13,13 +13,15 @@ describe("resolvePackagesConfig", () => {
     expect(c.publishExclude).toEqual([]);
   });
 
-  // FPO-17: the historical shape. It used to drive discovery; now it only narrows publish.
-  it("treats an array as publishInclude, with auto-search still on", () => {
+  // FPO-17: the historical shape. It now feeds BOTH sets, so an existing config keeps the
+  // package set it had while also gaining a publish allow list.
+  it("treats an array as both include and publishInclude, auto-search still on", () => {
     const c = resolvePackagesConfig(["packages/*", "_w/*"]);
 
-    // entries are coerced to path refs - see the dedicated describe below for why
+    // entries are coerced to path refs for publish - see the dedicated describe below for why
     expect(c.publishInclude).toEqual(["path:packages/*", "path:_w/*"]);
-    expect(c.include).toEqual([]);
+    // and kept raw for discovery filtering, so the array form preserves the old package set
+    expect(c.include).toEqual(["packages/*", "_w/*"]);
     expect(c.autoSearch).toEqual({ enable: true, respectGitignore: false });
   });
 
@@ -73,27 +75,38 @@ describe("resolvePackagesConfig", () => {
   });
 });
 
-describe("discoveryPatterns", () => {
-  it("returns null to signal auto-search when nothing is declared", () => {
-    expect(discoveryPatterns(resolvePackagesConfig(undefined))).toBeNull();
+describe("scanPatterns / includeFilter", () => {
+  it("auto-searches when nothing is declared", () => {
+    const c = resolvePackagesConfig(undefined);
+
+    expect(scanPatterns(c)).toBeNull();
+    expect(includeFilter(c)).toEqual([]);
   });
 
-  it("still auto-searches for the array shape - it does not narrow discovery", () => {
-    expect(discoveryPatterns(resolvePackagesConfig(["packages/*"]))).toBeNull();
+  // FPO-17: include does NOT switch auto-search off. The scan still walks the whole repo;
+  // include filters what it found. That is what makes the array form a no-op for discovery.
+  it("still auto-searches with an include, and filters on it", () => {
+    const c = resolvePackagesConfig({ include: ["libs/*"] });
+
+    expect(scanPatterns(c)).toBeNull();
+    expect(includeFilter(c)).toEqual(["libs/*"]);
   });
 
-  it("uses explicit include when given", () => {
-    expect(discoveryPatterns(resolvePackagesConfig({ include: ["libs/*"] }))).toEqual(["libs/*"]);
+  it("array form scans everything but filters to its own patterns", () => {
+    const c = resolvePackagesConfig(["packages/*", "_w/*"]);
+
+    expect(scanPatterns(c)).toBeNull();
+    expect(includeFilter(c)).toEqual(["packages/*", "_w/*"]);
   });
 
-  it("explicit include wins over auto-search", () => {
-    const c = resolvePackagesConfig({ autoSearch: true, include: ["libs/*"] });
+  it("uses include as the scan patterns when auto-search is off", () => {
+    const c = resolvePackagesConfig({ autoSearch: false, include: ["libs/*"] });
 
-    expect(discoveryPatterns(c)).toEqual(["libs/*"]);
+    expect(scanPatterns(c)).toEqual(["libs/*"]);
   });
 
-  it("falls back to packages/* with auto-search off", () => {
-    expect(discoveryPatterns(resolvePackagesConfig({ autoSearch: false }))).toEqual(["packages/*"]);
+  it("falls back to packages/* with auto-search off and no include", () => {
+    expect(scanPatterns(resolvePackagesConfig({ autoSearch: false }))).toEqual(["packages/*"]);
   });
 });
 

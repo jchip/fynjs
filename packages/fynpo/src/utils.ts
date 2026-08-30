@@ -254,16 +254,12 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
   }
 
   //
-  // `patterns` is discovery only. `packages` as an ARRAY is the historical shape and now means
-  // publishInclude, so it must NOT become discovery patterns - only the object form's
-  // `include` does. See FPO-17.
+  // No `patterns` alias any more. `patterns` bypasses auto-search and scans by glob directly,
+  // but `include` is meant to FILTER what auto-search found, not replace the search. Aliasing
+  // it would silently turn auto-search off for every config that sets `include` - including
+  // the historical array shape. The raw `packages` config is carried through instead, and
+  // resolved by readFynpoPackages / FynpoDepGraph. See FPO-17.
   //
-  if (fynpoRc.hasOwnProperty("packages")) {
-    const { include } = resolvePackagesConfig(fynpoRc.packages);
-    if (include.length > 0) {
-      fynpoRc.patterns = include;
-    }
-  }
 
   return { fynpoRc, dir, fileName };
 };

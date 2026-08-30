@@ -75,28 +75,23 @@ describe("fynpo utils", () => {
       }
     });
 
-    // FPO-17: `packages` as an array means publishInclude, not discovery patterns. Aliasing it
-    // to `patterns` is what made a path listed only to get it discovered also land in fynpo's
-    // release jurisdiction.
-    it("should NOT alias an array packages config to patterns", () => {
+    // FPO-17: `patterns` bypasses auto-search and scans by glob directly, but `include` is
+    // meant to filter what auto-search found. Aliasing include -> patterns would silently
+    // turn auto-search off for every config that sets it. The raw `packages` config is
+    // carried through instead and resolved by the discovery code.
+    it("should not alias any packages config to patterns", () => {
       makeConfigFile("fynpo.json", { packages: ["packages/*"] });
+      expect(utils.loadConfig(dir).fynpoRc.patterns).toBeUndefined();
 
-      const config: any = utils.loadConfig(dir);
-      expect(config.fynpoRc.patterns).toBeUndefined();
-    });
-
-    it("should alias patterns from the object form's include", () => {
       makeConfigFile("fynpo.json", { packages: { include: ["libs/*"] } });
-
-      const config: any = utils.loadConfig(dir);
-      expect(config.fynpoRc.patterns).toEqual(["libs/*"]);
+      expect(utils.loadConfig(dir).fynpoRc.patterns).toBeUndefined();
     });
 
-    it("should leave patterns unset when the object form has no include", () => {
-      makeConfigFile("fynpo.json", { packages: { autoSearch: true } });
+    it("should carry the raw packages config through for discovery to resolve", () => {
+      makeConfigFile("fynpo.json", { packages: { include: ["libs/*"], exclude: ["x/**"] } });
 
       const config: any = utils.loadConfig(dir);
-      expect(config.fynpoRc.patterns).toBeUndefined();
+      expect(config.fynpoRc.packages).toEqual({ include: ["libs/*"], exclude: ["x/**"] });
     });
   });
 

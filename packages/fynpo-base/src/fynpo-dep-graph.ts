@@ -9,7 +9,7 @@ import Semver from "semver";
 import { groupMM, MMGroups } from "./minimatch-group.js";
 import { posixify } from "./util.js";
 import isPathInside from "is-path-inside";
-import { resolvePackagesConfig, discoveryPatterns } from "./packages-config.js";
+import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";
 
 /**
@@ -507,7 +507,14 @@ export class FynpoDepGraph {
     // the constructor still win, for callers that already decided.
     //
     const pkgConfig = resolvePackagesConfig(this._options.packages);
-    const resolved = _.isEmpty(patterns) ? discoveryPatterns(pkgConfig) : patterns;
+    const resolved = _.isEmpty(patterns) ? scanPatterns(pkgConfig) : patterns;
+
+    // `include` filters what the scan found - it does not replace the scan (FPO-17)
+    const includeMms = (_.isEmpty(patterns) ? includeFilter(pkgConfig) : []).map(
+      (p) => new mm.Minimatch(p)
+    );
+    const isIncluded = (path: string) =>
+      includeMms.length === 0 || includeMms.some((m) => m.match(posixify(path)));
 
     const autoSearch: boolean = resolved === null;
     this.autoSearched = autoSearch;
@@ -580,7 +587,9 @@ export class FynpoDepGraph {
       files.push(scanned);
     }
 
-    const allFiles: string[] = [].concat(...files).sort();
+    const allFiles: string[] = [].concat(...files)
+      .filter((f: string) => isIncluded(Path.dirname(f)))
+      .sort();
 
     // Read each package.json and generate PackageInfo for it
     for (const pkgFile of allFiles) {
