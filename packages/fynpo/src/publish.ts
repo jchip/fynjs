@@ -6,7 +6,7 @@ import { logger } from "./logger";
 import * as utils from "./utils";
 import * as _ from "lodash";
 import fyn from "fyn/bin/index.js";
-import shcmd from "shcmd";
+import shell from "shelljs";
 import { FynpoDepGraph, FynpoPackageInfo } from "@fynpo/base";
 import { TopoRunner } from "./topo-runner";
 import {
@@ -145,18 +145,18 @@ export default class Publish {
   async runScript(pkg: FynpoPackageInfo, script: string) {
     if (_.get(pkg.pkgJson, ["scripts", script])) {
       const pkgFullDir = Path.join(this._fynpoRc.cwd, pkg.path);
-      shcmd.pushd(pkgFullDir);
+      shell.pushd(pkgFullDir);
       try {
         await fyn.run(["run", script, "--cwd", pkgFullDir], 0, false);
       } finally {
-        shcmd.popd();
+        shell.popd();
       }
     }
   }
 
   _cleanupFile(name: string) {
     try {
-      shcmd.rm(name);
+      shell.rm(name);
     } catch (_err) {
       //
     }
@@ -174,7 +174,7 @@ export default class Publish {
 
           const pkgFullDir = Path.join(this._fynpoRc.cwd, pkgInfo.path);
 
-          shcmd.pushd(pkgFullDir);
+          shell.pushd(pkgFullDir);
 
           try {
             await this.runScript(pkgInfo, "prepublishOnly");
@@ -183,7 +183,7 @@ export default class Publish {
             await this.runScript(pkgInfo, "publish");
             await this.runScript(pkgInfo, "postpublish");
           } finally {
-            shcmd.popd();
+            shell.popd();
           }
 
           const outName = pkgInfo.name.replace(/\//g, "-").replace(/@/g, "");

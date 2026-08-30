@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import Path from "node:path";
 import { fileURLToPath } from "node:url";
 import _ from "lodash";
-import shcmd from "shcmd";
+import shell from "shelljs";
 
 const dirname = Path.dirname(fileURLToPath(import.meta.url));
 
@@ -59,7 +59,7 @@ export async function copyTemplate(srcTmplDir, destDir, filesList) {
       const content = file.loader(fullSrc);
       Fs.writeFileSync(destFile(file.destName || name), content);
     } else {
-      shcmd.cp(fullSrc, destFile(file.destName || name));
+      shell.cp(fullSrc, destFile(file.destName || name));
     }
   }
 }

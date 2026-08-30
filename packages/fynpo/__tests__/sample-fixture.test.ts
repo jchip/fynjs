@@ -50,7 +50,7 @@ describe("makeSampleFixture", () => {
 // writes is racing every other file on one directory. Mutating suites must take a copy
 // via makeSampleFixture instead.
 describe("shared test/sample fixture is read-only (FPO-14)", () => {
-  const WRITE_CALLS = /\b(writeFileSync|writeFile|shcmd\.cp|copyFileSync|mkdirSync|rmSync|unlinkSync|rmdirSync)\b/;
+  const WRITE_CALLS = /\b(writeFileSync|writeFile|shell\.cp|copyFileSync|mkdirSync|rmSync|unlinkSync|rmdirSync)\b/;
 
   it("no test file both references test/sample and writes", () => {
     const offenders: string[] = [];

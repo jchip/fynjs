@@ -34,6 +34,7 @@
   "devDependencies": {
     "@fynjs/run": "^0.0.1",
     "@types/node": "^22.0.0",
+    "@types/shelljs": "^0.8.17",
     "publish-util": "^2.1.0",
     "typedoc": "^0.20.13",
     "typescript": "^5.8.3",
@@ -45,7 +46,7 @@
     "nix-clap": "^2.4.0",
     "opfs": "^1.1.1",
     "prompts": "^2.4.1",
-    "shcmd": "^0.8.4",
+    "shelljs": "^0.10.0",
     "tslib": "^2.1.0",
     "xsh": "^1.0.0"
   },

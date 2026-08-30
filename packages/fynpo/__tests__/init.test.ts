@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll, beforeEach, afterEach, vi } from "vites
 import { Init } from "../src/init";
 import path from "path";
 import fs from "fs";
-import shcmd from "shcmd";
+import shell from "shelljs";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo Init", () => {
@@ -31,7 +31,7 @@ describe("fynpo Init", () => {
     // Clean up created files
     const fynpoConfigJs = path.join(dir, "fynpo.config.js");
     if (fs.existsSync(fynpoConfigJs)) {
-      shcmd.rm("-f", fynpoConfigJs);
+      shell.rm("-f", fynpoConfigJs);
     }
   });
 

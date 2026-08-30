@@ -4,7 +4,7 @@ import Path from "path";
 import { logger } from "./logger";
 import _ from "lodash";
 import { cosmiconfigSync } from "cosmiconfig";
-import shcmd from "shcmd";
+import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
 import {
   FynpoDepGraph,
@@ -239,7 +239,7 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
       const srcTmplDir = Path.join(__dirname, "../templates");
       const src = Path.join(srcTmplDir, fileName);
       if (Fs.existsSync(src)) {
-        shcmd.cp(src, dest);
+        shell.cp(src, dest);
         fynpoRc = optionalRequire(src) || {};
       }
     } else {

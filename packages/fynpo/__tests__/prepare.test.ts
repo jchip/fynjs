@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Prepare } from "../src/prepare";
 import path from "path";
 import fs from "fs";
-import shcmd from "shcmd";
+import shell from "shelljs";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo prepare", () => {
@@ -31,7 +31,7 @@ describe("fynpo prepare", () => {
   });
 
   afterAll(() => {
-    shcmd.rm("-f", fynpoConfigFile);
+    shell.rm("-f", fynpoConfigFile);
     removeSampleFixture(dir);
   });
 
