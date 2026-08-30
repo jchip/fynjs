@@ -1,5 +1,5 @@
 import Path from "node:path";
-import { escBs } from "./esc-bs.ts";
+import { escapeRegExp } from "./esc-regex.ts";
 
 /**
  * Remove occurrences of CWD from `p`.
@@ -11,11 +11,11 @@ import { escBs } from "./esc-bs.ts";
 function remove(p: string, flags?: string, stripSlash?: boolean): string {
   const cwd = process.cwd();
   if (stripSlash) {
-    const regex = new RegExp(escBs(Path.join(cwd, Path.sep)), flags);
+    const regex = new RegExp(escapeRegExp(Path.join(cwd, Path.sep)), flags);
     p = p.replace(regex, "");
   }
   if (p.indexOf(cwd) >= 0) {
-    const regex = new RegExp(escBs(cwd), flags);
+    const regex = new RegExp(escapeRegExp(cwd), flags);
     return p.replace(regex, "");
   }
   return p;
@@ -32,7 +32,7 @@ function replace(p: string, str?: string | null | false, flags?: string): string
   if (typeof str !== "string") {
     str = "CWD";
   }
-  const regex = new RegExp(escBs(process.cwd()), flags);
+  const regex = new RegExp(escapeRegExp(process.cwd()), flags);
   return p.replace(regex, str);
 }
 

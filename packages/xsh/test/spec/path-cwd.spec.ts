@@ -37,4 +37,50 @@ describe("path-cwd", function () {
   it("remove should strip leading /", () => {
     expect(xsh.pathCwd.remove(Path.resolve("foo"), "", true)).to.equal("foo");
   });
+
+  describe("cwd with regex metacharacters", function () {
+    const withCwd = (cwd: string, fn: () => void) => {
+      const orig = process.cwd;
+      process.cwd = () => cwd;
+      try {
+        fn();
+      } finally {
+        process.cwd = orig;
+      }
+    };
+
+    it("removes a cwd containing parens", () => {
+      const cwd = Path.normalize("/tmp/my (project)");
+      withCwd(cwd, () => {
+        expect(xsh.pathCwd.remove(Path.join(cwd, "lib", "a.js"))).to.equal(
+          Path.normalize("/lib/a.js")
+        );
+      });
+    });
+
+    it("removes a cwd containing a plus", () => {
+      const cwd = Path.normalize("/tmp/a+b");
+      withCwd(cwd, () => {
+        expect(xsh.pathCwd.remove(Path.join(cwd, "x"))).to.equal(Path.normalize("/x"));
+      });
+    });
+
+    it("removes a cwd containing brackets", () => {
+      const cwd = Path.normalize("/tmp/a[1]");
+      withCwd(cwd, () => {
+        expect(xsh.pathCwd.remove(Path.join(cwd, "x"))).to.equal(Path.normalize("/x"));
+      });
+    });
+
+    it("does not let a dot in cwd match any character", () => {
+      const cwd = Path.normalize("/tmp/fyn.js");
+      withCwd(cwd, () => {
+        const other = Path.join(Path.normalize("/tmp/fynXjs"), "lib", "a.js");
+        expect(xsh.pathCwd.replace(other)).to.equal(other);
+        expect(xsh.pathCwd.replace(Path.join(cwd, "lib", "a.js"))).to.equal(
+          Path.normalize("CWD/lib/a.js")
+        );
+      });
+    });
+  });
 });

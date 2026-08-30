@@ -1,11 +1,11 @@
 import Path from "node:path";
 import { pathCwd } from "./path-cwd.ts";
-import { escBs } from "./esc-bs.ts";
+import { escapeRegExp } from "./esc-regex.ts";
 
-const normNm = escBs(Path.normalize("/node_modules/"));
+const normNm = escapeRegExp(Path.normalize("/node_modules/"));
 const normNmReplacer = Path.normalize("/~/");
 
-const makeNmRegex = () => escBs(Path.resolve("node_modules"));
+const makeNmRegex = () => escapeRegExp(Path.resolve("node_modules"));
 
 /**
  * Remove occurrences of CWD/node_modules from `p`.

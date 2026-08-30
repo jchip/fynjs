@@ -46,4 +46,17 @@ describe("path-cwd-nmdir", function () {
     expect(xsh.pathCwdNm.replace(`${x} ${x}`, false, "g")).to.equal(`${e1} ${e1}`);
     expect(xsh.pathCwdNm.replace(`${x} ${x}`, Path.normalize("$/~"), "g")).to.equal(`${e2} ${e2}`);
   });
+
+  it("removes cwd/node_modules when cwd has regex metacharacters", () => {
+    const orig = process.cwd;
+    const cwd = Path.normalize("/tmp/my (project)");
+    process.cwd = () => cwd;
+    try {
+      expect(xsh.pathCwdNm.remove(Path.join(cwd, "node_modules", "foo", "bar"))).to.equal(
+        Path.normalize("/foo/bar")
+      );
+    } finally {
+      process.cwd = orig;
+    }
+  });
 });
