@@ -12,7 +12,8 @@
     "build": "tsc",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "prepublishOnly": "xrun --serial build docs && publish-util-prepublishonly",
-    "postpack": "publish-util-postpack"
+    "postpack": "publish-util-postpack",
+    "prepack": "publish-util-prepack"
   },
   "bin": {
     "create-monorepo": "bin/create-monorepo.js",
@@ -27,6 +28,13 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jchip/fynjs.git"
+  },
+  "devDependencies": {
+    "@fynjs/run": "^0.0.1",
+    "@types/node": "^14.14.16",
+    "publish-util": "^2.1.0",
+    "typedoc": "^0.20.13",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "chalker": "^1.2.0",
