@@ -54,6 +54,8 @@ export interface ExecResult {
  * Returns the shelljs child process when a callback is given, else an
  * {@link ExecResult} thenable.
  */
+export function exec(...args: [...ExecArg[], ExecCallback]): ChildProcess;
+export function exec(...args: Array<ExecFragment | ExecOptions | boolean>): ExecResult;
 export function exec(...args: ExecArg[]): ExecResult | ChildProcess {
   const error = (cmd: string, code: number, output: ExecOutput): ExecError => {
     const err = new Error(`shell cmd '${cmd}' exit code ${code}`) as ExecError;
