@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
-import { Run, formatRunSummary } from "../src/run";
+import { Run, formatRunSummary, selectPackagesToRun } from "../src/run";
 import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
 
@@ -138,5 +138,94 @@ describe("Run._executed (FPO-34)", () => {
     const run = new Run({ cwd: sampleDir }, { script: "test" }, sampleGraph);
 
     expect(run._executed).toEqual([]);
+  });
+});
+
+describe("selectPackagesToRun (FPO-35)", () => {
+  // minimal PackageDepData shape: selection only reads pkgInfo refs and localDepsByPath
+  const pkg = (name: string, path: string, localDeps: string[] = [], version = "1.0.0") =>
+    ({
+      pkgInfo: { name, path, version },
+      localDepsByPath: Object.fromEntries(localDeps.map((p) => [p, {}])),
+    } as any);
+
+  const a = pkg("pkg-a", "packages/a");
+  const b = pkg("pkg-b", "packages/b", ["packages/a"]);
+  const c = pkg("pkg-c", "packages/c", ["packages/b"]);
+  const solo = pkg("pkg-solo", "packages/solo");
+  const all = [a, b, c, solo];
+
+  const names = (list: any[]) => list.map((d) => d.pkgInfo.name).sort();
+
+  it("returns everything when nothing is selected", () => {
+    expect(names(selectPackagesToRun(all, {}))).toEqual(["pkg-a", "pkg-b", "pkg-c", "pkg-solo"]);
+    expect(names(selectPackagesToRun(all, { only: [], ignore: [] }))).toEqual([
+      "pkg-a",
+      "pkg-b",
+      "pkg-c",
+      "pkg-solo",
+    ]);
+  });
+
+  it("narrows to the selected package", () => {
+    expect(names(selectPackagesToRun(all, { only: ["pkg-solo"] }))).toEqual(["pkg-solo"]);
+  });
+
+  // TopoRunner's `only` check is guarded by !nesting, so a selected package's local deps
+  // still run - they have to be built first. The selection must match that.
+  it("pulls in local dependencies of a selected package", () => {
+    expect(names(selectPackagesToRun(all, { only: ["pkg-b"] }))).toEqual(["pkg-a", "pkg-b"]);
+  });
+
+  it("pulls in local dependencies transitively", () => {
+    expect(names(selectPackagesToRun(all, { only: ["pkg-c"] }))).toEqual([
+      "pkg-a",
+      "pkg-b",
+      "pkg-c",
+    ]);
+  });
+
+  it("does not pull in dependents, only dependencies", () => {
+    // selecting a leaf must not drag in what depends on it
+    expect(names(selectPackagesToRun(all, { only: ["pkg-a"] }))).toEqual(["pkg-a"]);
+  });
+
+  it("drops ignored packages", () => {
+    expect(names(selectPackagesToRun(all, { ignore: ["pkg-a"] }))).toEqual([
+      "pkg-b",
+      "pkg-c",
+      "pkg-solo",
+    ]);
+  });
+
+  it("applies ignore even to a dependency pulled in by only", () => {
+    expect(names(selectPackagesToRun(all, { only: ["pkg-b"], ignore: ["pkg-a"] }))).toEqual([
+      "pkg-b",
+    ]);
+  });
+
+  it("matches by path and by name@version id, not just name", () => {
+    expect(names(selectPackagesToRun(all, { only: ["packages/solo"] }))).toEqual(["pkg-solo"]);
+    expect(names(selectPackagesToRun(all, { only: ["pkg-solo@1.0.0"] }))).toEqual(["pkg-solo"]);
+  });
+
+  it("returns nothing when only matches no candidate", () => {
+    expect(selectPackagesToRun(all, { only: ["no-such-pkg"] })).toEqual([]);
+  });
+
+  it("tolerates a self-referential dep without recursing forever", () => {
+    const loop = pkg("pkg-loop", "packages/loop", ["packages/loop"]);
+    expect(names(selectPackagesToRun([loop], { only: ["pkg-loop"] }))).toEqual(["pkg-loop"]);
+  });
+
+  it("tolerates a dependency cycle", () => {
+    const x = pkg("pkg-x", "packages/x", ["packages/y"]);
+    const y = pkg("pkg-y", "packages/y", ["packages/x"]);
+    expect(names(selectPackagesToRun([x, y], { only: ["pkg-x"] }))).toEqual(["pkg-x", "pkg-y"]);
+  });
+
+  it("preserves the candidates' order", () => {
+    const picked = selectPackagesToRun(all, { only: ["pkg-c"] });
+    expect(picked.map((d: any) => d.pkgInfo.name)).toEqual(["pkg-a", "pkg-b", "pkg-c"]);
   });
 });

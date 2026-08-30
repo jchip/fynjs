@@ -9,7 +9,13 @@ import _ from "lodash";
 import { npmRunScriptStreaming, npmRunScript } from "./npm-run-script";
 import boxen from "boxen";
 import chalk from "chalk";
-import { FynpoDepGraph, FynpoTopoPackages, PackageDepData, FynpoPackageInfo } from "@fynpo/base";
+import {
+  FynpoDepGraph,
+  FynpoTopoPackages,
+  PackageDepData,
+  FynpoPackageInfo,
+  pkgInfoId,
+} from "@fynpo/base";
 import { ItemQueue } from "item-queue";
 import { TopoRunner } from "./topo-runner";
 import { PkgBuildCache } from "./caching";
@@ -47,6 +53,61 @@ export const formatRunSummary = (
 ${names}
 `;
 };
+
+/**
+ * Narrow the candidate packages to what `--only` / `--ignore` actually select.
+ *
+ * `--sort`, `--no-sort` and `--parallel` choose ordering and concurrency; they must never
+ * change WHICH packages run. They used to: the selection lived solely in `TopoRunner.run()`,
+ * so the topo path filtered and the parallel and lexical paths ran everything. See FPO-35.
+ *
+ * Mirrors TopoRunner's rules exactly:
+ *
+ * - `ignore` drops a package at any depth.
+ * - `only` is applied at the top level only. A selected package's local dependencies come
+ *   along, transitively, because they have to be built first - that is TopoRunner's `!nesting`
+ *   guard. So `--only fynpo` runs fyn too, since fynpo depends on it locally.
+ * - a package matches by name, path, or `name@version` id.
+ *
+ * @param candidates - packages that have the script
+ * @param opts - run options carrying `only` and `ignore`
+ * @returns the packages to run, in the candidates' original order
+ */
+export function selectPackagesToRun(
+  candidates: PackageDepData[],
+  opts: { only?: string[]; ignore?: string[] } = {}
+): PackageDepData[] {
+  const refsOf = (d: PackageDepData) => {
+    const p = d.pkgInfo;
+    return [p.name, p.path, pkgInfoId(p)];
+  };
+
+  const ignore = [].concat(opts.ignore || []).filter(Boolean);
+  const only = [].concat(opts.only || []).filter(Boolean);
+
+  const kept = candidates.filter((d) => !refsOf(d).some((r) => ignore.includes(r)));
+
+  if (only.length === 0) {
+    return kept;
+  }
+
+  const byPath = new Map(kept.map((d) => [d.pkgInfo.path, d]));
+  const selected = new Set<string>();
+
+  const addWithLocalDeps = (d: PackageDepData) => {
+    if (!d || selected.has(d.pkgInfo.path)) {
+      return;
+    }
+    selected.add(d.pkgInfo.path);
+    for (const path of Object.keys(d.localDepsByPath || {})) {
+      addWithLocalDeps(byPath.get(path));
+    }
+  };
+
+  kept.filter((d) => refsOf(d).some((r) => only.includes(r))).forEach(addWithLocalDeps);
+
+  return kept.filter((d) => selected.has(d.pkgInfo.path));
+}
 
 export class Run {
   _cwd;
@@ -304,25 +365,36 @@ path: ${pkg.path}`;
       process.exit(1);
     }
 
-    const packagesToRun = this.topo.sorted.filter((depData: PackageDepData) => {
+    const withScript = this.topo.sorted.filter((depData: PackageDepData) => {
       const pkgInfo = depData.pkgInfo;
       const scriptToRun = _.get(pkgInfo, ["pkgJson", "scripts", this._script]);
       return scriptToRun;
     });
 
+    // apply --only/--ignore here rather than leaving it to TopoRunner, so all three
+    // dispatch paths below run the same set of packages (FPO-35)
+    const packagesToRun = selectPackagesToRun(withScript, this._options);
+
     const count = packagesToRun.length;
 
     if (!count) {
-      logger.info(`No packages found with script ${this._script}`);
+      if (withScript.length > 0) {
+        // the script exists somewhere, the selection just excluded all of it - say which,
+        // rather than implying the script is missing
+        logger.info(
+          `No packages left to run script ${this._script} after --only/--ignore`,
+          `${withScript.length} had the script.`
+        );
+      } else {
+        logger.info(`No packages found with script ${this._script}`);
+      }
       return;
     }
 
     const joinedCommand = [this._npmClient, "run", this._script].concat(this._args).join(" ");
     const pkgMsg = count === 1 ? "package" : "packages";
 
-    // `count` is how many packages HAVE the script - --only/--ignore/--scope are applied
-    // later, so say "candidate" rather than implying this is what will run (FPO-34)
-    logger.info(`Executing command ${joinedCommand} in ${count} candidate ${pkgMsg}`);
+    logger.info(`Executing command ${joinedCommand} in ${count} ${pkgMsg}`);
 
     const timer = utils.timer();
 
