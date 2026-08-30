@@ -69,9 +69,12 @@ describe("fyn-global", function () {
 
     await fynGlobal.linkBins("g1", { foo: target }, true);
 
+    // absoluteTarget is required for the global bin dir: it is reached through the
+    // `global/bin` -> `v<N>/bin` symlink, where a Windows .cmd's `%~dp0\..` resolves one level
+    // short of the version dir. See PkgBinLinkerBase._useAbsoluteTarget.
     expect(calls).to.deep.include({
       type: "construct",
-      options: { binDir: path.join(globalDir, "v20", "bin") }
+      options: { binDir: path.join(globalDir, "v20", "bin"), absoluteTarget: true }
     });
     expect(calls).to.deep.include({
       type: "link",

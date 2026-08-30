@@ -68,6 +68,13 @@ export interface PkgBinLinkerOptions {
   outputDir?: string;
   /** use this dir directly as the bin dir (e.g. global bin dir) */
   binDir?: string;
+  /**
+   * Bake an absolute path into the generated wrapper instead of one relative to the bin dir.
+   *
+   * Only honored on Windows, and only meant for the global bin dir - see
+   * `_useAbsoluteTarget` for why.
+   */
+  absoluteTarget?: boolean;
   fyn?: FynForBinLinker;
 }
 
@@ -80,11 +87,43 @@ class PkgBinLinkerBase {
   protected _binDir: string;
   protected _fyn: FynForBinLinker;
   protected _linked: Record<string, LinkedBin>;
+  protected _absoluteTarget: boolean;
 
   constructor(options: PkgBinLinkerOptions) {
     this._binDir = options.binDir || Path.join(options.outputDir as string, ".bin");
     this._fyn = options.fyn as FynForBinLinker;
     this._linked = {};
+    this._absoluteTarget = Boolean(options.absoluteTarget);
+  }
+
+  /**
+   * Whether generated wrappers should carry an absolute target.
+   *
+   * Off in the base class, so POSIX keeps the relative targets it has always written - a
+   * relative symlink is what makes a `node_modules` tree portable, and POSIX does not need
+   * absolute paths anyway: the OS resolves a symlink against its *real* containing directory,
+   * so `../packages/...` stays correct even when the bin dir is reached through the
+   * `global/bin` -> `v<N>/bin` directory symlink.
+   *
+   * Windows overrides this, because a `.cmd` wrapper is a regular file and `%~dp0` expands to
+   * the path used to *invoke* it. Reached through that same directory symlink, `%~dp0\..`
+   * lands on `.fyn\global` instead of `.fyn\global\v<N>`, and the wrapper looks for
+   * `.fyn\global\packages\...` which does not exist.
+   *
+   * @returns true when {@link linkBinPath} should write an absolute target
+   */
+  protected get _useAbsoluteTarget(): boolean {
+    return false;
+  }
+
+  /**
+   * The target to bake into a wrapper for a real filesystem path.
+   *
+   * @param target - absolute path of the file the wrapper should run
+   * @returns the target as it should appear in the wrapper
+   */
+  protected _linkTargetFor(target: string): string {
+    return this._useAbsoluteTarget ? target : Path.relative(this._binDir, target);
   }
 
   async hasBinLink(sym: string): Promise<boolean> {
@@ -93,8 +132,7 @@ class PkgBinLinkerBase {
 
   async matchesBinPath(sym: string, target: string): Promise<boolean> {
     const symlink = Path.join(this._binDir, sym);
-    const relTarget = Path.relative(this._binDir, target);
-    return this._isBinLinkTarget(symlink, relTarget);
+    return this._isBinLinkTarget(symlink, this._linkTargetFor(target));
   }
 
   async linkBinPath(
@@ -102,7 +140,7 @@ class PkgBinLinkerBase {
     sym: string,
     options: { overwrite?: boolean } = {}
   ): Promise<string> {
-    const relTarget = Path.relative(this._binDir, target);
+    const relTarget = this._linkTargetFor(target);
     const symlink = Path.join(this._binDir, sym);
 
     await this._mkBinDir();

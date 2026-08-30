@@ -34,6 +34,30 @@ const CMD_BATCH = `@IF EXIST "%~dp0\\node.exe" (
 )
 `;
 
+//
+// Same wrappers for an absolute target: `%~dp0\` must not be prefixed, or the path becomes
+// `C:\...\bin\C:\...`. Used for the global bin dir - see `_useAbsoluteTarget` below.
+//
+const CYGWIN_LINK_ABS = `#!/bin/sh
+if [ -x "$(dirname "$0")/node" ]; then
+  "$(dirname "$0")/node"  "{{TARGET}}" "$@"
+  ret=$?
+else
+  node  "{{TARGET}}" "$@"
+  ret=$?
+fi
+exit $ret
+`;
+
+const CMD_BATCH_ABS = `@IF EXIST "%~dp0\\node.exe" (
+  "%~dp0\\node.exe"  "{{TARGET}}" %*
+) ELSE (
+  @SETLOCAL
+  @SET PATHEXT=%PATHEXT:;.JS;=;%
+  node  "{{TARGET}}" %*
+)
+`;
+
 class PkgBinLinkerWin32 extends PkgBinLinkerBase {
   constructor(options: PkgBinLinkerOptions) {
     super(options);
@@ -62,9 +86,23 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
     return false;
   }
 
+  //
+  // A `.cmd` is a regular file, so `%~dp0` expands to the directory used to *invoke* it, not the
+  // real one. fyn's global bin dir is normally reached through the `global/bin` -> `v<N>/bin`
+  // directory symlink, and from there `%~dp0\..\packages\...` resolves to
+  // `.fyn\global\packages\...` - one level short of `.fyn\global\v<N>\packages\...`, so every
+  // global bin fails with "Cannot find module". POSIX does not have this problem: its bin link
+  // is a symlink, and the OS resolves a relative symlink against the real containing dir.
+  //
+  protected get _useAbsoluteTarget(): boolean {
+    return this._absoluteTarget;
+  }
+
   protected async _generateBinLink(relTarget: string, symlink: string): Promise<void> {
-    await this._saveCmd(symlink, CYGWIN_LINK, relTarget);
-    await this._saveCmd(symlink + ".cmd", CMD_BATCH, relTarget);
+    const absolute = Path.isAbsolute(relTarget);
+
+    await this._saveCmd(symlink, absolute ? CYGWIN_LINK_ABS : CYGWIN_LINK, relTarget);
+    await this._saveCmd(symlink + ".cmd", absolute ? CMD_BATCH_ABS : CMD_BATCH, relTarget);
   }
 
   protected async _rmBinLink(symlink: string): Promise<void> {
@@ -72,12 +110,21 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
     await this._unlinkFile(symlink + ".cmd");
   }
 
-  // Extract the {{TARGET}} path baked into a generated .cmd wrapper (the path
-  // after `%~dp0\`, ignoring the node.exe reference).
+  // Extract the {{TARGET}} path baked into a generated .cmd wrapper. Both shapes quote their
+  // target; the only other quoted value is the node.exe probe. The relative shape prefixes
+  // `%~dp0\`, the absolute one does not.
   protected async _readBinLinkTarget(symlink: string): Promise<string | undefined> {
     const content = (await Fs.readFile(symlink + ".cmd")).toString();
-    const matches = [...content.matchAll(/%~dp0[\\/]+([^"\r\n]+)/g)].map(m => m[1]);
-    return matches.find(m => m !== "node.exe");
+
+    for (const [, quoted] of content.matchAll(/"([^"\r\n]+)"/g)) {
+      const value = quoted.replace(/^%~dp0[\\/]+/, "");
+      if (value.toLowerCase().endsWith("node.exe")) {
+        continue;
+      }
+      return value;
+    }
+
+    return undefined;
   }
 
   //
@@ -91,7 +138,8 @@ class PkgBinLinkerWin32 extends PkgBinLinkerBase {
 
     try {
       const target = await this._readBinLinkTarget(symlink);
-      if (target && (await Fs.exists(Path.join(this._binDir, target)))) {
+      const full = target && (Path.isAbsolute(target) ? target : Path.join(this._binDir, target));
+      if (full && (await Fs.exists(full))) {
         return false;
       }
     } catch {
