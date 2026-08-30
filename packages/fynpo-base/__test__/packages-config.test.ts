@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-import { resolvePackagesConfig, scanPatterns, includeFilter } from "../src/packages-config";
+import {
+  resolvePackagesConfig,
+  scanPatterns,
+  includeFilter,
+  outOfScopePackages,
+  packageScope,
+} from "../src/packages-config";
 
 describe("resolvePackagesConfig", () => {
   it("defaults to auto-search on, respectGitignore off, nothing else set", () => {
@@ -130,5 +136,62 @@ describe("resolvePackagesConfig - legacy array entries are path refs", () => {
     const c = resolvePackagesConfig({ publishInclude: ["fyn"] });
 
     expect(c.publishInclude).toEqual(["fyn"]);
+  });
+});
+
+// FPO-37: --scope was applied only inside makePkgDeps, which only `prepare` reaches - so
+// bootstrap/local/run silently ignored the option they advertise. Both selection paths now
+// share this one rule.
+describe("outOfScopePackages", () => {
+  const names = ["@fynjs/create-monorepo", "@fynjs/run", "@fynpo/base", "fyn", "fynpo"];
+
+  it("returns nothing when no scope is requested", () => {
+    expect(outOfScopePackages(undefined, names)).toEqual([]);
+    expect(outOfScopePackages([], names)).toEqual([]);
+    expect(outOfScopePackages("", names)).toEqual([]);
+  });
+
+  it("excludes everything outside the requested scope", () => {
+    expect(outOfScopePackages(["@fynjs"], names)).toEqual(["@fynpo/base", "fyn", "fynpo"]);
+  });
+
+  it("always excludes unscoped packages once a scope is given", () => {
+    expect(outOfScopePackages(["@fynpo"], names)).toContain("fyn");
+    expect(outOfScopePackages(["@fynpo"], names)).toContain("fynpo");
+  });
+
+  it("accepts a scope written without the leading @", () => {
+    expect(outOfScopePackages(["fynjs"], names)).toEqual(outOfScopePackages(["@fynjs"], names));
+  });
+
+  it("accepts a bare string as well as an array", () => {
+    expect(outOfScopePackages("@fynjs", names)).toEqual(outOfScopePackages(["@fynjs"], names));
+  });
+
+  it("supports several scopes at once", () => {
+    expect(outOfScopePackages(["@fynjs", "@fynpo"], names)).toEqual(["fyn", "fynpo"]);
+  });
+
+  it("excludes everything when the scope matches nothing", () => {
+    expect(outOfScopePackages(["@nope"], names)).toEqual(names);
+  });
+});
+
+describe("packageScope", () => {
+  it("reads the scope from a scoped name", () => {
+    expect(packageScope("@fynjs/create-monorepo")).toEqual("@fynjs");
+  });
+
+  it("returns undefined for an unscoped name", () => {
+    expect(packageScope("fyn")).toBeUndefined();
+  });
+
+  it("returns undefined for an @ name with no slash", () => {
+    expect(packageScope("@weird")).toBeUndefined();
+  });
+
+  it("tolerates empty input", () => {
+    expect(packageScope("")).toBeUndefined();
+    expect(packageScope(undefined as any)).toBeUndefined();
   });
 });

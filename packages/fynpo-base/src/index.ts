@@ -4,7 +4,12 @@ import { filterScanDir } from "filter-scan-dir";
 import mm from "minimatch";
 import _ from "lodash";
 import { groupMM, MMGroups } from "./minimatch-group.js";
-import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
+import {
+  resolvePackagesConfig,
+  scanPatterns,
+  includeFilter,
+  outOfScopePackages,
+} from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";
 
 export * from "./fynpo-dep-graph.js";
@@ -337,14 +342,11 @@ export function makePkgDeps(packages, opts) {
   }
 
   // If options.scope is defined, then ignore packages not in it
-  if (opts.scope && opts.scope.length > 0) {
-    Object.keys(packages).forEach((p) => {
-      const scope = p[0] === "@" ? p.slice(0, p.indexOf("/")) : undefined;
-      if ((!scope || !opts.scope.includes(scope)) && !ignores[p]) {
-        ignores.push(p);
-      }
-    });
-  }
+  outOfScopePackages(opts.scope, Object.keys(packages)).forEach((p) => {
+    if (!ignores[p]) {
+      ignores.push(p);
+    }
+  });
 
   if (opts.only && opts.only.length > 0) {
     opts.only.forEach((x) => {

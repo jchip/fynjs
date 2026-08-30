@@ -11,7 +11,12 @@ import { Init } from "./init";
 import { Updated } from "./updated";
 import { Commitlint } from "./commitlint";
 import { Version } from "./version";
-import { makePkgDeps, readFynpoPackages, FynpoDepGraph } from "@fynpo/base";
+import {
+  makePkgDeps,
+  readFynpoPackages,
+  FynpoDepGraph,
+  outOfScopePackages,
+} from "@fynpo/base";
 import { logger } from "./logger";
 import * as utils from "./utils";
 import Fs from "fs";
@@ -141,6 +146,18 @@ const makeDepGraph = async (opts) => {
   const graph = new FynpoDepGraph(opts);
   await graph.resolve();
   noticeImplicitDiscovery(graph.autoSearched, Object.keys(graph.packages.byName || {}).length);
+
+  //
+  // `--scope` used to be honored only inside makePkgDeps, which only `prepare` reaches - so
+  // bootstrap, local and run silently ignored the option they advertise. Express it as extra
+  // `ignore` entries here instead: everything downstream already honors `ignore`, both
+  // TopoRunner and run.ts's selectPackagesToRun, so all three commands and all three run
+  // dispatch paths pick it up from one place. See FPO-37.
+  //
+  const outOfScope = outOfScopePackages(opts.scope, Object.keys(graph.packages.byName || {}));
+  if (outOfScope.length > 0) {
+    opts.ignore = [].concat(opts.ignore || [], outOfScope);
+  }
   const fynpoData = await readFynpoData(opts.cwd);
   if (!_.isEmpty(fynpoData.indirects)) {
     const noFynLocal = opts.noFynLocal || [];

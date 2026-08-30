@@ -121,6 +121,45 @@ export function resolvePackagesConfig(packages?: unknown): PackagesConfig {
 }
 
 /**
+ * The npm scope of a package name, or undefined when it is unscoped.
+ *
+ * @param name - package name
+ * @returns the scope including its `@`, e.g. `@fynjs`
+ */
+export function packageScope(name: string): string | undefined {
+  return name && name[0] === "@" && name.indexOf("/") > 0
+    ? name.slice(0, name.indexOf("/"))
+    : undefined;
+}
+
+/**
+ * Package names that fall OUTSIDE the given scopes, i.e. the ones `--scope` should exclude.
+ *
+ * An unscoped package is never in any scope, so it is always excluded once `--scope` is given.
+ * Scopes may be written with or without the leading `@`.
+ *
+ * Shared by both selection paths so they cannot disagree: `makePkgDeps` (used by prepare) and
+ * the dep-graph path (used by bootstrap, local and run). `--scope` used to be applied only in
+ * the former, so the three commands that actually advertise it silently ignored it. See FPO-37.
+ *
+ * @param scopes - the requested scopes
+ * @param names - all known package names
+ * @returns names to exclude; empty when no scope was requested
+ */
+export function outOfScopePackages(scopes: unknown, names: string[]): string[] {
+  const wanted = toList(scopes).map((s) => (s[0] === "@" ? s : `@${s}`));
+
+  if (wanted.length === 0) {
+    return [];
+  }
+
+  return names.filter((name) => {
+    const scope = packageScope(name);
+    return !scope || !wanted.includes(scope);
+  });
+}
+
+/**
  * Decide how to scan for packages.
  *
  * `include` does NOT turn auto-search off - auto-search is on by default and stays on, so it
