@@ -17,6 +17,71 @@ import type { IncomingMessage } from "http";
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
 
+/**
+ * The file a global bin wrapper should hand to node.
+ *
+ * This is the same target a normal dependency install uses: `PkgBinLinkerBase.linkBin` does
+ * `Path.join(pkgDir, file)` where `file` comes from the package's own `bin` field. A global
+ * install is a dependency install into a private dir, so its bins must resolve the same way.
+ *
+ * Pointing at `node_modules/.bin/<name>` instead - what this used to do - happens to work on
+ * POSIX and is broken on Windows, because that path is not the same kind of artifact on the
+ * two platforms:
+ *
+ * - **POSIX** - `PkgBinLinkerUnix` makes it a symlink to the package's JS entry, so the extra
+ *   hop lands on real JavaScript anyway.
+ * - **Windows** - `PkgBinLinkerWin32` writes a `#!/bin/sh` cygwin script there (the executable
+ *   counterpart is the sibling `.cmd`). The generated global wrapper runs
+ *   `node "%~dp0\<target>"`, so it feeds node a shell script and dies parsing
+ *   `basedir=$(dirname ...)` as JavaScript - globally installed bins install cleanly and then
+ *   refuse to run.
+ *
+ * @param pkgDir - the global package dir (`<packagesDir>/<gId>`)
+ * @param packageName - installed package name
+ * @param declaredBinFile - path from the package's own `bin` field, relative to the package dir
+ * @returns absolute path the wrapper should execute
+ */
+export function globalBinTargetPath(
+  pkgDir: string,
+  packageName: string,
+  declaredBinFile: string
+): string {
+  return Path.join(pkgDir, "node_modules", packageName, declaredBinFile);
+}
+
+/**
+ * Normalize a package.json `bin` field to a `{ binName: relativeFile }` map.
+ *
+ * Mirrors `PkgBinLinkerBase.linkBin`, including how it names things: the string form is named
+ * after the package with its scope dropped (`Path.basename(name)`), and object keys have their
+ * scope dropped too (`_.last(sym.split("/"))`). Without that, a scoped package's string bin
+ * would be named `@scope/name`, which never matches a real command.
+ *
+ * @param declaredBins - raw `bin` value from package.json
+ * @param packageName - used as the bin name for the string form
+ * @returns map of bin name to the file declared for it
+ */
+export function normalizeDeclaredBins(
+  declaredBins: unknown,
+  packageName: string
+): Record<string, string> {
+  const dropScope = (name: string) => name.split("/").pop() as string;
+
+  if (typeof declaredBins === "string") {
+    return { [dropScope(packageName)]: declaredBins };
+  }
+
+  if (declaredBins && typeof declaredBins === "object") {
+    const out: Record<string, string> = {};
+    for (const [sym, file] of Object.entries(declaredBins as Record<string, string>)) {
+      out[dropScope(sym)] = file;
+    }
+    return out;
+  }
+
+  return {};
+}
+
 /** Options for FynGlobal constructor */
 interface FynGlobalOptions {
   /** Root directory for global packages (default: ~/.fyn/global) */
@@ -219,7 +284,10 @@ class FynGlobal {
 
   _getBinLinker(): InstanceType<typeof PkgBinLinker> {
     if (!this._binLinker) {
-      this._binLinker = new PkgBinLinker({ binDir: this.globalBinDir });
+      // absoluteTarget: the global bin dir is reached through the `global/bin` -> `v<N>/bin`
+      // symlink, where a Windows `.cmd`'s `%~dp0\..` resolves one level short. Ignored on POSIX,
+      // whose symlinks resolve against their real directory. See PkgBinLinkerBase.
+      this._binLinker = new PkgBinLinker({ binDir: this.globalBinDir, absoluteTarget: true });
     }
 
     return this._binLinker;
@@ -601,27 +669,25 @@ class FynGlobal {
    */
   async discoverBins(pkgDir: string, packageName: string): Promise<BinMap> {
     const bins: BinMap = {};
-    const binDir = Path.join(pkgDir, "node_modules", ".bin");
 
     // Read the installed package's package.json to get declared bins
     const pkgJsonPath = Path.join(pkgDir, "node_modules", packageName, "package.json");
     try {
       const pkgJson = JSON.parse(await Fs.readFile(pkgJsonPath));
-      const declaredBins = pkgJson.bin || {};
+      const declared = normalizeDeclaredBins(pkgJson.bin, packageName);
 
-      // bin can be a string (single bin with package name) or object
-      let binNames;
-      if (typeof declaredBins === "string") {
-        binNames = [packageName];
-      } else {
-        binNames = Object.keys(declaredBins);
-      }
-
-      // Map to actual paths in .bin directory
-      for (const binName of binNames) {
-        const binPath = Path.join(binDir, binName);
+      for (const [binName, declaredFile] of Object.entries(declared)) {
+        const binPath = globalBinTargetPath(pkgDir, packageName, declaredFile);
         if (await Fs.exists(binPath)) {
           bins[binName] = binPath;
+          continue;
+        }
+
+        // the declared file is missing (or Windows resolution found nothing) - fall back to the
+        // .bin entry so a package that only ships a generated wrapper still gets linked
+        const viaBinDir = Path.join(pkgDir, "node_modules", ".bin", binName);
+        if (await Fs.exists(viaBinDir)) {
+          bins[binName] = viaBinDir;
         }
       }
     } catch (err) {
@@ -917,15 +983,30 @@ class FynGlobal {
     if (!versionInfo) return;
 
     const binLinker = this._getBinLinker();
-    const bins = this._getVersionBinTargets(versionInfo);
+    const pkgDir = Path.join(this.packagesDir, dir);
 
-    for (const [binName, binPath] of Object.entries(bins)) {
-      try {
-        if (await binLinker.matchesBinPath(binName, binPath)) {
-          await binLinker.removeBinLink(binName);
+    //
+    // Match against two candidate targets per bin: the one this version links today, and the
+    // legacy `.bin/<name>` path. On Windows the resolved target changed (see
+    // globalBinTargetPath), so a link created before that fix points at the legacy path - it
+    // still has to be recognized here, or removing/relinking a version would leave the old
+    // global bin orphaned and pointing into a version that is no longer current.
+    //
+    const resolved = await this.discoverBins(pkgDir, packageName);
+    const legacy = this._getVersionBinTargets(versionInfo);
+
+    for (const binName of new Set([...Object.keys(resolved), ...Object.keys(legacy)])) {
+      const candidates = [resolved[binName], legacy[binName]].filter(Boolean);
+
+      for (const binPath of candidates) {
+        try {
+          if (await binLinker.matchesBinPath(binName, binPath)) {
+            await binLinker.removeBinLink(binName);
+            break;
+          }
+        } catch (err) {
+          // Ignore errors
         }
-      } catch (err) {
-        // Ignore errors
       }
     }
   }
