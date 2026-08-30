@@ -15,17 +15,15 @@ import { logger } from "../src/logger";
 import path from "path";
 import fs from "fs";
 import shcmd from "shcmd";
+import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo utils", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  // loadConfig writes while it loads, so this file gets its own copy of the sample
+  // instead of racing the other test files on the shared one - FPO-14
+  const dir = makeSampleFixture("utils");
 
   afterAll(() => {
-    try {
-      fs.unlinkSync(path.join(dir, "fynpo.json"));
-    } catch {}
-    try {
-      fs.unlinkSync(path.join(dir, "fynpo.config.js"));
-    } catch {}
+    removeSampleFixture(dir);
   });
 
   const makeConfigFile = (fileName, data) => {

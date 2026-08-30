@@ -3,9 +3,11 @@ import { Prepare } from "../src/prepare";
 import path from "path";
 import fs from "fs";
 import shcmd from "shcmd";
+import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo prepare", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  // this suite writes fynpo.json into cwd, so use a private copy of the sample - FPO-14
+  const dir = makeSampleFixture("prepare");
   const data = {
     packages: {
       pkg1: {
@@ -30,6 +32,7 @@ describe("fynpo prepare", () => {
 
   afterAll(() => {
     shcmd.rm("-f", fynpoConfigFile);
+    removeSampleFixture(dir);
   });
 
   it("should initialize prepare class", () => {

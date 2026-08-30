@@ -1,12 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { Init } from "../src/init";
 import path from "path";
 import fs from "fs";
 import shcmd from "shcmd";
+import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo Init", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  // Init writes config files into cwd, so use a private copy of the sample - FPO-14
+  const dir = makeSampleFixture("init");
   const packageJsonPath = path.join(dir, "package.json");
+
+  afterAll(() => {
+    removeSampleFixture(dir);
+  });
 
   beforeEach(() => {
     // Ensure package.json exists
