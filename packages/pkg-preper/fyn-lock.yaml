@@ -4,13 +4,12 @@ $fyn:
 $pkg:
  dep:
   cacache: ^21.0.0
-  npm-packlist: ^11.3.0
+  npm-packlist: ../../_w/npm-packlist
   opfs: ^1.1.1
   tar: ^7.5.22
-  tslib: ^2.6.2
  dev:
   '@types/cacache': ^20.0.1
-  '@types/node': ^22.0.0
+  '@types/node': ^22.15.30
   '@vitest/coverage-v8': ^3.2.2
   prettier: ^3.5.3
   publish-util: ../publish-util
@@ -527,9 +526,9 @@ $pkg:
   $: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==
   _: 'https://registry.npmjs.org/@types/estree/-/estree-1.0.8.tgz'
 '@types/node':
- _latest: 25.0.3
+ _latest: 26.4.0
  _:
-  '*,^22.0.0': 22.19.3
+  '*,^22.15.30': 22.19.3
  22.19.3:
   top: 1
   $: sha512-1N9SBnWYOJTrNZCdh/yJE+t910Y128BoyY+zBLWhL3r0TYzlTmFdXrPwHL9DyFZmlEXNQQolTZh3KHV31QDhyA==
@@ -973,12 +972,12 @@ html-escaper:
   $: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==
   _: 'https://registry.npmjs.org/html-escaper/-/html-escaper-2.0.2.tgz'
 ignore-walk:
- _latest: 9.0.0
+ _latest: 9.0.0-fynlocal_h
  _:
-  ^9.0.0: 9.0.0
- 9.0.0:
-  $: sha512-tCBEZV2z2FNpIDl2vrhiWzIHzs4qOAuIDEO85eS02vZ3L1U3P56qpPL8GuGGAijDktAEaq2swMkO/Fmbo7YmfQ==
-  _: 'https://registry.npmjs.org/ignore-walk/-/ignore-walk-9.0.0.tgz'
+  ../ignore-walk: 9.0.0-fynlocal_h
+ 9.0.0-fynlocal_h:
+  $: local
+  _: ../../_w/ignore-walk
   dependencies:
    minimatch: ^10.0.3
 is-fullwidth-code-point:
@@ -1194,13 +1193,13 @@ nanoid:
   $: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==
   _: 'https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz'
 npm-packlist:
- _latest: 11.3.0
+ _latest: 11.3.0-fynlocal_h
  _:
-  ^11.3.0: 11.3.0
- 11.3.0:
+  ../../_w/npm-packlist: 11.3.0-fynlocal_h
+ 11.3.0-fynlocal_h:
   top: 1
-  $: sha512-cS1yVkyriZgQAbiK8PtwhZHEtsFOsKHsCg5Ww2ONckAvXIspgqd6o4WirOzvkupU24iMRZ4xtO4kb2iK2rbnag==
-  _: 'https://registry.npmjs.org/npm-packlist/-/npm-packlist-11.3.0.tgz'
+  $: local
+  _: ../../_w/npm-packlist
   dependencies:
    glob: ^13.0.6
    ignore-walk: ^9.0.0
@@ -1335,7 +1334,6 @@ publish-util:
   dependencies:
    find-up: ^8.0.0
    lodash: ^4.17.21
-   tslib: ^2.6.2
 resolve-pkg-maps:
  _latest: 1.0.0
  _:
@@ -1583,14 +1581,6 @@ tinyspy:
  4.0.4:
   $: sha512-azl+t0z7pw/z958Gy9svOTuzqIk6xq+NSheJzn5MMWtWTFywIacg2wUlzKFGtt3cthx0r2SxMK0yzJOR0IES7Q==
   _: 'https://registry.npmjs.org/tinyspy/-/tinyspy-4.0.4.tgz'
-tslib:
- _latest: 2.8.1
- _:
-  ^2.6.2: 2.8.1
- 2.8.1:
-  top: 1
-  $: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
-  _: 'https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz'
 tsx:
  _latest: 4.21.0
  _:

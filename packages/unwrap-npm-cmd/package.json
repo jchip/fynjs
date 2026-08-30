@@ -47,7 +47,6 @@
     "directory": "packages/unwrap-npm-cmd"
   },
   "dependencies": {
-    "tslib": "^2.6.2",
     "which": "^7.0.0"
   },
   "devDependencies": {

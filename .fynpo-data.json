@@ -269,7 +269,43 @@
           "visual-exec@0.2.0(pkg)"
         ]
       }
+    ],
+    "packages/xaa": [
+      {
+        "fromPkg": {
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "packages/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/run@0.0.1(dev)"
+        ]
+      }
+    ],
+    "packages/cli-args": [
+      {
+        "fromPkg": {
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "0.4.6",
+          "path": "packages/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/run@0.0.1(dev)"
+        ]
+      }
     ]
   },
-  "__timestamp": 1788116678468
+  "__timestamp": 1788119290186
 }

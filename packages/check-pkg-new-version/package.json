@@ -47,8 +47,7 @@
     "check-pkg-new-version-engine": "^1.0.2",
     "got": "^15.0.0",
     "ini": "^7.0.0",
-    "semver": "^7.3.4",
-    "tslib": "^2.6.2"
+    "semver": "^7.3.4"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",

@@ -70,7 +70,5 @@
     "trailingComma": "none",
     "arrowParens": "avoid"
   },
-  "dependencies": {
-    "tslib": "^2.6.2"
-  }
+  "dependencies": {}
 }

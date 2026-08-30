@@ -51,7 +51,7 @@
     "@types/node": "^22.15.30",
     "@types/shelljs": "^0.8.17",
     "@vitest/coverage-v8": "4.1.5",
-    "bluebird": "^3.5.1",
+    "aveazul": "^1.1.0",
     "publish-util": "^2.1.0",
     "typescript": "^5.8.3",
     "vitest": "4.1.5"

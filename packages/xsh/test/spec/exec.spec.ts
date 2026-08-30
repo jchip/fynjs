@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import BluebirdPromise from "bluebird";
+import AveAzul from "aveazul";
 import xsh from "../../src/index.ts";
 import type { ExecError, ExecOutput, ExecResult } from "../../src/index.ts";
 
@@ -164,8 +164,8 @@ describe("exec", function () {
       });
   });
 
-  it("should have its returned value be treated as a promise by bluebird", () => {
-    return BluebirdPromise.resolve("hello")
+  it("should have its returned value be treated as a promise by aveazul", () => {
+    return AveAzul.resolve("hello")
       .then(() => xsh.exec("echo blah") as ExecResult)
       .then((r: any) => {
         expect(r.stdout.trim()).to.equal("blah");

@@ -38,7 +38,9 @@ The shell commands under `xsh.$` come from [shelljs](https://www.npmjs.com/packa
 You can set a custom `Promise` with:
 
 ```js
-xsh.Promise = require("bluebird");
+import AveAzul from "aveazul";
+
+xsh.Promise = AveAzul;
 ```
 
 Or set to the native `Promise` with:

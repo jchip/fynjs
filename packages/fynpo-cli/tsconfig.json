@@ -6,7 +6,7 @@
     ],
     "module": "NodeNext",
     "esModuleInterop": true,
-    "importHelpers": true,
+    "importHelpers": false,
     "target": "ES2022",
     "preserveConstEnums": true,
     "sourceMap": true,

@@ -43,9 +43,7 @@
   ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
-  "dependencies": {
-    "tslib": "^2.6.2"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^3.2.2",

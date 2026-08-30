@@ -42,12 +42,11 @@
     "cacache": "^21.0.0",
     "npm-packlist": "^11.3.0",
     "opfs": "^1.1.1",
-    "tar": "^7.5.22",
-    "tslib": "^2.6.2"
+    "tar": "^7.5.22"
   },
   "devDependencies": {
     "@types/cacache": "^20.0.1",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^3.2.2",
     "prettier": "^3.5.3",
     "publish-util": "^2.1.0",
