@@ -167,8 +167,21 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
     const pkgNames = publishableNames;
     pkgNames.forEach((name) => {
       changed.pkgs.push(name);
-      changed.verLocks[name] = pkgNames;
     });
+    // A repo wide lock group belongs to `lockAll` only. Building one for `!latestTag` or
+    // `--force-publish *` as well made every package inherit the repo wide MAXIMUM bump
+    // type, so a single [maj] commit anywhere majored the entire monorepo (FPO-44). Those
+    // two conditions only mean "assume everything changed" - each package still earns its
+    // own bump, with the configured locks applied below like the tagged path does.
+    if (opts.lockAll) {
+      pkgNames.forEach((name) => {
+        changed.verLocks[name] = pkgNames;
+      });
+    } else {
+      pkgNames.forEach((name) => {
+        addVersionLocks(name, changed, opts, canPublish);
+      });
+    }
   } else {
     logger.info(`Detecting changed packages since the release tag: ${latestTag}`);
 
