@@ -39,17 +39,15 @@
   },
   "license": "Artistic-2.0",
   "dependencies": {
-    "cacache": "^20.0.1",
-    "mississippi": "^3.0.0",
-    "npm-packlist": "^10.0.3",
-    "opfs": "^1.0.6",
-    "tar": "^4.4.6",
+    "cacache": "^21.0.0",
+    "npm-packlist": "^11.3.0",
+    "opfs": "^1.1.1",
+    "tar": "^7.5.22",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "@types/cacache": "^17.0.0",
+    "@types/cacache": "^20.0.1",
     "@types/node": "^22.0.0",
-    "@types/tar": "^6.1.0",
     "@vitest/coverage-v8": "^3.2.2",
     "prettier": "^3.5.3",
     "publish-util": "^2.1.0",

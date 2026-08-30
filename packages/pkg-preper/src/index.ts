@@ -19,8 +19,7 @@
 import * as cacache from "cacache";
 import * as Path from "path";
 import { PassThrough } from "stream";
-// @ts-ignore - mississippi has no types
-import * as mississippi from "mississippi";
+import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import packlist from "npm-packlist";
 import * as Fs from "opfs";
@@ -49,25 +48,9 @@ interface PkgPreperOptions {
 
 const readPkgJson = (dir: string): Promise<PackageJson> => {
   return Fs.readFile(Path.join(dir, "package.json")).then((data: Buffer) =>
-    JSON.parse(data.toString().trim())
+    JSON.parse(data.toString().trim()),
   );
 };
-
-const promisify = <T extends (...args: any[]) => any>(
-  fn: T,
-  context?: any
-): ((...args: Parameters<T>) => Promise<any>) => {
-  return (...args: Parameters<T>) => {
-    return new Promise((resolve, reject) => {
-      fn.call(context, ...args, (err: Error | null, result: any) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  };
-};
-
-const pipe = promisify(mississippi.pipe, mississippi);
 
 class PkgPreper {
   private _tmpDir: string;
@@ -83,7 +66,7 @@ class PkgPreper {
       return cacache.tmp.withTmp(this._tmpDir, { tmpPrefix: "packing" }, (tmp: string) => {
         const tmpTarget = Path.join(tmp, Path.basename(target));
 
-        const tarOpt: any = {
+        const tarOpt: tar.TarOptionsWithAliasesFile = {
           file: tmpTarget,
           cwd: dir,
           prefix: "package/",
@@ -94,14 +77,24 @@ class PkgPreper {
           gzip: true,
         };
 
-        return Promise.resolve(packlist({ path: dir }))
+        // npm-packlist 10+ expects an @npmcli/arborist tree node.  Provide a
+        // minimal stand-in with the fields the walker actually reads (path,
+        // package, isProjectRoot, edgesOut) to avoid pulling in arborist.
+        const treeStub: any = {
+          path: dir,
+          package: pkg,
+          isProjectRoot: true,
+          edgesOut: new Map(),
+        };
+
+        return Promise.resolve(packlist(treeStub))
           .then((files) => {
             // NOTE: node-tar does some Magic Stuff depending on prefixes for files
             //       specifically with @ signs, so we just neutralize that one
             //       and any such future "features" by prepending `./`
             return tar.create(
               tarOpt,
-              files.map((f) => `./${f}`)
+              files.map((f) => `./${f}`),
             );
           })
           .then(() => Fs.rename(tmpTarget, target))
@@ -122,23 +115,19 @@ class PkgPreper {
         if (pkg.scripts && pkg.scripts.prepare) {
           return this._installDependencies(
             dir,
-            `preparing gitdep package ${pkg.name} from ${manifest._resolved}`
+            `preparing gitdep package ${pkg.name} from ${manifest._resolved}`,
           );
         }
         return Promise.resolve();
       })
       .then(() => stream.emit("prepared"))
       .then(() => {
-        return cacache.tmp.withTmp(
-          this._tmpDir,
-          { tmpPrefix: "pacote-packing" },
-          (tmp: string) => {
-            const tmpTar = Path.join(tmp, "package.tgz");
-            return this.packDirectory(manifest, dir, tmpTar).then(() => {
-              return pipe(Fs.createReadStream(tmpTar), stream);
-            });
-          }
-        );
+        return cacache.tmp.withTmp(this._tmpDir, { tmpPrefix: "pacote-packing" }, (tmp: string) => {
+          const tmpTar = Path.join(tmp, "package.tgz");
+          return this.packDirectory(manifest, dir, tmpTar).then(() => {
+            return pipeline(Fs.createReadStream(tmpTar), stream);
+          });
+        });
       })
       .catch((err) => {
         stream.emit("error", err);

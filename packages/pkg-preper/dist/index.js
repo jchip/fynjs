@@ -18,27 +18,13 @@
 import * as cacache from "cacache";
 import * as Path from "path";
 import { PassThrough } from "stream";
-// @ts-ignore - mississippi has no types
-import * as mississippi from "mississippi";
+import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import packlist from "npm-packlist";
 import * as Fs from "opfs";
 const readPkgJson = (dir) => {
     return Fs.readFile(Path.join(dir, "package.json")).then((data) => JSON.parse(data.toString().trim()));
 };
-const promisify = (fn, context) => {
-    return (...args) => {
-        return new Promise((resolve, reject) => {
-            fn.call(context, ...args, (err, result) => {
-                if (err)
-                    reject(err);
-                else
-                    resolve(result);
-            });
-        });
-    };
-};
-const pipe = promisify(mississippi.pipe, mississippi);
 class PkgPreper {
     constructor({ tmpDir, installDependencies }) {
         this._tmpDir = tmpDir;
@@ -58,7 +44,16 @@ class PkgPreper {
                     mtime: new Date("1985-10-26T08:15:00.000Z"),
                     gzip: true,
                 };
-                return Promise.resolve(packlist({ path: dir }))
+                // npm-packlist 10+ expects an @npmcli/arborist tree node.  Provide a
+                // minimal stand-in with the fields the walker actually reads (path,
+                // package, isProjectRoot, edgesOut) to avoid pulling in arborist.
+                const treeStub = {
+                    path: dir,
+                    package: pkg,
+                    isProjectRoot: true,
+                    edgesOut: new Map(),
+                };
+                return Promise.resolve(packlist(treeStub))
                     .then((files) => {
                     // NOTE: node-tar does some Magic Stuff depending on prefixes for files
                     //       specifically with @ signs, so we just neutralize that one
@@ -88,7 +83,7 @@ class PkgPreper {
             return cacache.tmp.withTmp(this._tmpDir, { tmpPrefix: "pacote-packing" }, (tmp) => {
                 const tmpTar = Path.join(tmp, "package.tgz");
                 return this.packDirectory(manifest, dir, tmpTar).then(() => {
-                    return pipe(Fs.createReadStream(tmpTar), stream);
+                    return pipeline(Fs.createReadStream(tmpTar), stream);
                 });
             });
         })
