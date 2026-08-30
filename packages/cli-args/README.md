@@ -1807,6 +1807,10 @@ Return: The number of commands with `exec` was invoked.
 
 **Note:** Default command execution is controlled by the `skipExecDefault` config option. If `skipExecDefault` is `true`, the default command will not be inserted during parsing, and therefore won't be executed.
 
+**Note:** Calling this again on the same `parsed` result runs every `exec` handler again - there is no
+"already executed" tracking. Only `parsed.execCmd` is protected: it records the first command that ran
+and is never overwritten by a later run.
+
 ### `runExecAsync(parsed)`
 
 Async version of [runExec](#runexecparsed)
@@ -1814,6 +1818,25 @@ Async version of [runExec](#runexecparsed)
 Return: A promise that resolves with the number of commands with `exec` invoked.
 
 - `parsed` - The parse result object.
+
+**Warning:** If your `exec` handlers are async, use [`parseAsync`](#parseasyncargv-start-parsed) rather than
+reaching for this after a plain `parse`. Since `parse` already calls `runExec` unless `skipExec` is set,
+following it with `runExecAsync(parsed)` to await the handlers executes **everything a second time**,
+sub-commands included, with no warning.
+
+```js
+// wrong - every exec handler runs twice
+const parsed = nc.parse(argv);
+await nc.runExecAsync(parsed);
+
+// right
+const parsed = await nc.parseAsync(argv);
+
+// also right - opt out of the implicit run, then drive it yourself
+const nc = new NixClap({ skipExec: true }).init(...);
+const parsed = nc.parse(argv);
+await nc.runExecAsync(parsed);
+```
 
 ## TypeScript Support
 
