@@ -326,6 +326,73 @@ const execLinting = (cmd, _parsed) => {
 
 const myPkg = xrequire(Path.join(__dirname, "../package.json"));
 
+//
+// Top-level CLI options, shared across sub-commands via each entry's `allowCmd`.
+// Exported so tests can assert on the table itself - a duplicate key here collapses
+// silently at runtime and only shows up as a bundler warning (FPO-30).
+//
+export const cliOptions = {
+  cwd: {
+    args: "<path string>",
+    desc: "set fynpo's working directory",
+  },
+  ignore: {
+    alias: "i",
+    args: "<vals string..>",
+    desc: "list of packages to ignore",
+    allowCmd: ["bootstrap", "local", "run"],
+  },
+  scope: {
+    alias: "s",
+    args: "<vals string..>",
+    desc: "include only packages with names matching the given scopes",
+    allowCmd: ["bootstrap", "local", "run"],
+  },
+  deps: {
+    alias: "d",
+    args: "[val number]",
+    argDefault: "10",
+    desc: "level of deps to include even if they were ignored",
+    allowCmd: ["bootstrap", "local", "run"],
+  },
+  commit: {
+    args: "[flag boolean]",
+    argDefault: "true",
+    desc: "commit the changes to changelog and package.json (use --no-commit to disable)",
+    allowCmd: ["changelog", "version", "prepare"],
+  },
+  "force-publish": {
+    alias: "fp",
+    args: "<vals string..>",
+    desc: "force publish packages",
+    allowCmd: ["updated", "changelog", "version"],
+  },
+  //
+  // One option, two readers, same shape (a list of package names):
+  //   - bootstrap/local/run filter the topo set by it (topo-runner.ts)
+  //   - updated/changelog/version/prepare treat it as the selective-release
+  //     selection, expanded across version lock groups (utils.expandSelection)
+  // These were once two entries under the same key, so the second silently shadowed
+  // the first and cost bootstrap/local/run the option entirely. See FPO-30.
+  //
+  only: {
+    alias: "o",
+    args: "<vals string..>",
+    desc: "limit to these packages (for a release, version lock groups expand)",
+    allowCmd: ["bootstrap", "local", "run", "updated", "changelog", "version", "prepare"],
+  },
+  "ignore-changes": {
+    alias: "ic",
+    args: "<vals string..>",
+    desc: "ignore patterns",
+    allowCmd: ["updated", "changelog", "version"],
+  },
+  "save-log": {
+    alias: "sl",
+    desc: "save logs to fynpo-debug.log",
+  },
+};
+
 export const fynpoMain = () => {
   const nixClap = new NixClap({
     name: myPkg.name,
@@ -334,64 +401,6 @@ export const fynpoMain = () => {
   });
   nixClap.version(myPkg.version);
 
-  const options = {
-    cwd: {
-      args: "<path string>",
-      desc: "set fynpo's working directory",
-    },
-    ignore: {
-      alias: "i",
-      args: "<vals string..>",
-      desc: "list of packages to ignore",
-      allowCmd: ["bootstrap", "local", "run"],
-    },
-    only: {
-      alias: "o",
-      args: "<vals string..>",
-      desc: "list of packages to handle only",
-      allowCmd: ["bootstrap", "local", "run"],
-    },
-    scope: {
-      alias: "s",
-      args: "<vals string..>",
-      desc: "include only packages with names matching the given scopes",
-      allowCmd: ["bootstrap", "local", "run"],
-    },
-    deps: {
-      alias: "d",
-      args: "[val number]",
-      argDefault: "10",
-      desc: "level of deps to include even if they were ignored",
-      allowCmd: ["bootstrap", "local", "run"],
-    },
-    commit: {
-      args: "[flag boolean]",
-      argDefault: "true",
-      desc: "commit the changes to changelog and package.json (use --no-commit to disable)",
-      allowCmd: ["changelog", "version", "prepare"],
-    },
-    "force-publish": {
-      alias: "fp",
-      args: "<vals string..>",
-      desc: "force publish packages",
-      allowCmd: ["updated", "changelog", "version"],
-    },
-    only: {
-      args: "<vals string..>",
-      desc: "release only these packages (selective release - version lock groups expand)",
-      allowCmd: ["updated", "changelog", "version", "prepare"],
-    },
-    "ignore-changes": {
-      alias: "ic",
-      args: "<vals string..>",
-      desc: "ignore patterns",
-      allowCmd: ["updated", "changelog", "version"],
-    },
-    "save-log": {
-      alias: "sl",
-      desc: "save logs to fynpo-debug.log",
-    },
-  };
 
   const subCommands = {
     bootstrap: {
@@ -555,7 +564,7 @@ export const fynpoMain = () => {
   };
 
   nixClap.init2({
-    options,
+    options: cliOptions,
     subCommands
   });
 

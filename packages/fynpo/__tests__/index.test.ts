@@ -13,7 +13,7 @@ vi.mock("@fynjs/cli-args", () => {
   };
 });
 
-import { fynpoMain, resolveRunExitCode } from "../src/index";
+import { cliOptions, fynpoMain, resolveRunExitCode } from "../src/index";
 import { NixClap } from "@fynjs/cli-args";
 
 describe("fynpo CLI", () => {
@@ -89,3 +89,51 @@ describe("resolveRunExitCode", () => {
   });
 });
 
+
+describe("cliOptions (FPO-30 regression)", () => {
+  it("has a single `only` covering both the filter and the release senses", () => {
+    // `only` was once declared twice in this table. A duplicate key collapses silently
+    // in a JS object literal, so the release entry shadowed the filter entry and
+    // bootstrap/local/run lost the option along with its `-o` alias.
+    expect(cliOptions.only).toBeDefined();
+    expect(cliOptions.only.alias).toEqual("o");
+    expect(cliOptions.only.args).toEqual("<vals string..>");
+    expect(cliOptions.only.allowCmd).toEqual([
+      "bootstrap",
+      "local",
+      "run",
+      "updated",
+      "changelog",
+      "version",
+      "prepare",
+    ]);
+  });
+
+  it("keeps `only` usable by every command that reads options.only", () => {
+    // topo-runner.ts filters on opts.only for these
+    for (const cmd of ["bootstrap", "local", "run"]) {
+      expect(cliOptions.only.allowCmd).toContain(cmd);
+    }
+    // prepare/version/update-changelog treat it as the selective-release selection
+    for (const cmd of ["updated", "changelog", "version", "prepare"]) {
+      expect(cliOptions.only.allowCmd).toContain(cmd);
+    }
+  });
+
+  it("assigns each alias to exactly one option", () => {
+    const seen = new Map<string, string>();
+    for (const [name, opt] of Object.entries<any>(cliOptions)) {
+      if (!opt.alias) {
+        continue;
+      }
+      expect(seen.has(opt.alias), `alias -${opt.alias} used by both ${seen.get(opt.alias)} and ${name}`).toBe(false);
+      seen.set(opt.alias, name);
+    }
+  });
+
+  it("declares a non-empty desc for every option", () => {
+    for (const [name, opt] of Object.entries<any>(cliOptions)) {
+      expect(opt.desc, `option ${name} has no desc`).toBeTruthy();
+    }
+  });
+});
