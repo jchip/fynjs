@@ -1,6 +1,4 @@
-"use strict";
-
-const { mkCmd } = require("xsh");
+import { mkCmd } from "xsh";
 
 class XTaskSpec {
   constructor(spec) {
@@ -62,4 +60,4 @@ class XTaskSpec {
   }
 }
 
-module.exports = XTaskSpec;
+export default XTaskSpec;

@@ -1,6 +1,4 @@
-"use strict";
-
-const XQItem = require("./xqitem");
+import XQItem from "./xqitem.js";
 
 class XQTree {
   constructor() {
@@ -40,4 +38,4 @@ class XQTree {
   }
 }
 
-module.exports = XQTree;
+export default XQTree;

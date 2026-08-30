@@ -1,8 +1,6 @@
-"use strict";
-
-const logger = require("../../lib/logger");
-const xstdout = require("xstdout");
-const expect = require("chai").expect;
+import logger from "../../lib/logger.js";
+import xstdout from "xstdout";
+import { expect as expect } from "chai";
 
 describe("logger", function() {
   beforeEach(() => {

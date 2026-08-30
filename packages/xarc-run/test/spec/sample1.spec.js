@@ -1,10 +1,8 @@
-"use strict";
-
-const XRun = require("../../lib/xrun");
-const sample1 = require("../fixtures/sample1");
-const expect = require("chai").expect;
-const { asyncVerify, expectError } = require("run-verify");
-const xstdout = require("xstdout");
+import XRun from "../../lib/xrun.js";
+import sample1 from "../fixtures/sample1.js";
+import { expect as expect } from "chai";
+import { asyncVerify, expectError } from "run-verify";
+import xstdout from "xstdout";
 
 describe("sample1", function() {
   it("should run sample1:foo2 tasks", () => {

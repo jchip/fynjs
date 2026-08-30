@@ -1,7 +1,6 @@
-"use strict";
-const xrun = require(".");
+import xrun from "./lib/index.js";
 
-const xsh = require("xsh");
+import xsh from "xsh";
 
 const tasks = {
   xfoo1: cb => {
@@ -161,6 +160,6 @@ xrun.load({
   hello: "echo hello world"
 });
 
-module.exports = {
+export default {
   c1: "echo this is c1"
 };

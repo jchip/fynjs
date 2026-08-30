@@ -1,13 +1,11 @@
-"use strict";
+import { expect as expect } from "chai";
+import Fs from "fs";
+import Path from "path";
+import { spawnSync } from "child_process";
 
-const expect = require("chai").expect;
-const Fs = require("fs");
-const Path = require("path");
-const { spawnSync } = require("child_process");
-
-const pkgDir = Path.join(__dirname, "../../..");
+const pkgDir = Path.join(import.meta.dirname, "../../..");
 const binFile = Path.join(pkgDir, "bin/xrun.js");
-const version = require("../../../package.json").version;
+import { version as version } from "../../../package.json" with { type: "json" };
 
 //
 // Other specs in this fork set XRUN_* vars on process.env, and the child would inherit them and

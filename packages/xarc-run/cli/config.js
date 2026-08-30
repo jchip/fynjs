@@ -1,8 +1,6 @@
-"use strict";
+import myPkg from "../package.json" with { type: "json" };
 
-const myPkg = require("../package.json");
-
-module.exports = {
+export default {
   taskFile: "xrun-tasks.js",
   taskFileExt: ["js", "cjs", "ts", "mts", "mjs"],
   search: ["xrun-tasks", "xrun", "xclap.", "clapfile.", "clap.", "gulpfile."],

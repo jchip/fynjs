@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * @typedef {Object} SearchResult
  * @property {boolean} found - Whether a task file was found
@@ -23,20 +21,20 @@
  * @property {SearchResult} searchResult - Result of searching for task files
  */
 
-const Path = require("path");
-const cliOptions = require("./cli-options");
-const { NixClap } = require("nix-clap");
-const xsh = require("xsh");
-const usage = require("./usage");
-const logger = require("../lib/logger");
-const myPkg = require("../package.json");
-const ck = require("./ck");
-const config = require("./config");
-const env = require("./env");
-const fs = require("fs");
-const { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks } = require("./task-file");
-const { loadProviderPackages } = require("./provider-packages");
-const WrapProcess = require("./wrap-process");
+import Path from "path";
+import cliOptions from "./cli-options.js";
+import { NixClap } from "nix-clap";
+import xsh from "xsh";
+import usage from "./usage.js";
+import logger from "../lib/logger.js";
+import myPkg from "../package.json" with { type: "json" };
+import ck from "./ck.js";
+import config from "./config.js";
+import env from "./env.js";
+import fs from "fs";
+import { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks } from "./task-file.js";
+import { loadProviderPackages } from "./provider-packages.js";
+import WrapProcess from "./wrap-process.js";
 
 /**
  * Read and parse package.json from a directory
@@ -81,7 +79,7 @@ function parseArgs(argv, start) {
   const parsed = nc.parse(argv, start);
   const opts = parsed.command.opts;
 
-  const myDir = xsh.pathCwd.replace(Path.dirname(__dirname), ".");
+  const myDir = xsh.pathCwd.replace(Path.dirname(import.meta.dirname), ".");
 
   /* istanbul ignore next */
   if (env.get(env.xrunVersion) !== myPkg.version || env.get(env.xrunBinDir) !== myDir) {
@@ -142,7 +140,14 @@ function parseArgs(argv, start) {
   };
 }
 
-module.exports = {
+export {
+  parseArgs,
+  updateCwd,
+  searchTaskFile,
+  loadTaskFile,
+  processTasks
+};
+export default {
   parseArgs,
   updateCwd,
   searchTaskFile,

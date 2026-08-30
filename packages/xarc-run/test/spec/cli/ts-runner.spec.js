@@ -1,9 +1,7 @@
-"use strict";
-
-const { expect } = require("chai");
-const TsRunner = require("../../../cli/ts-runner");
-const env = require("../../../cli/env");
-const logger = require("../../../lib/logger");
+import { expect } from "chai";
+import TsRunner from "../../../cli/ts-runner.js";
+import env from "../../../cli/env.js";
+import logger from "../../../lib/logger.js";
 
 describe("ts-runner", function() {
   let originalEnv;

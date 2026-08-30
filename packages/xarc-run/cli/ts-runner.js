@@ -1,10 +1,15 @@
-"use strict";
+import { createRequire } from "node:module";
+import { makeOptionalRequire } from "optional-require";
 
-const optionalRequire = require("optional-require")(require);
-const env = require("./env");
-const logger = require("../lib/logger");
-const path = require("path");
-const WrapProcess = require("./wrap-process");
+//
+// A require hook is the point here - TsRunner installs tsx / ts-node into require - so this
+// deliberately stays on require rather than moving to optional-import.
+//
+const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
+import env from "./env.js";
+import logger from "../lib/logger.js";
+import path from "path";
+import WrapProcess from "./wrap-process.js";
 
 const TsRunner = {
   "runner-tsx": "tsx",
@@ -43,4 +48,4 @@ const TsRunner = {
   }
 };
 
-module.exports = TsRunner;
+export default TsRunner;

@@ -1,11 +1,9 @@
-"use strict";
-
-const chalk = require("../chalk");
-const logger = require("../logger");
-const stringify = require("../stringify");
-const assert = require("assert");
-const defaults = require("../defaults");
-const xsh = require("xsh");
+import chalk from "../chalk.js";
+import logger from "../logger.js";
+import stringify from "../stringify.js";
+import assert from "assert";
+import defaults from "../defaults.js";
+import xsh from "xsh";
 
 class XReporterConsole {
   constructor(xrun) {
@@ -132,4 +130,4 @@ class XReporterConsole {
   }
 }
 
-module.exports = XReporterConsole;
+export default XReporterConsole;

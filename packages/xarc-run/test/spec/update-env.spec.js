@@ -1,7 +1,5 @@
-"use strict";
-
-const updateEnv = require("../../lib/util/update-env");
-const expect = require("chai").expect;
+import updateEnv from "../../lib/util/update-env.js";
+import { expect as expect } from "chai";
 
 describe("update env", function() {
   it("should handle falsy value", () => {

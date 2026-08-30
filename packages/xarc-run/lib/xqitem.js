@@ -1,7 +1,5 @@
-"use strict";
-
-const genXqId = require("./gen-xqid");
-const assert = require("assert");
+import genXqId from "./gen-xqid.js";
+import assert from "assert";
 
 class XQItem {
   constructor(options) {
@@ -69,4 +67,4 @@ class XQItem {
   }
 }
 
-module.exports = XQItem;
+export default XQItem;

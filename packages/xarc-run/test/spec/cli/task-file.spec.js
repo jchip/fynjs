@@ -1,22 +1,20 @@
-"use strict";
-
-const { expect } = require("chai");
-const Path = require("path");
-const fs = require("fs");
-const os = require("os");
-const {
+import { expect } from "chai";
+import Path from "path";
+import fs from "fs";
+import os from "os";
+import {
   updateCwd,
   searchTaskFile,
   loadTaskFile,
   processTasks,
   loadTasks
-} = require("../../../cli/task-file");
-const env = require("../../../cli/env");
-const xrunInstance = require("../../../lib/xrun-instance");
-const logger = require("../../../lib/logger");
-const stripAnsi = require("strip-ansi");
-const WrapProcess = require("../../../cli/wrap-process");
-const xstdout = require("xstdout");
+} from "../../../cli/task-file.js";
+import env from "../../../cli/env.js";
+import xrunInstance from "../../../lib/xrun-instance.js";
+import logger from "../../../lib/logger.js";
+import stripAnsi from "strip-ansi";
+import WrapProcess from "../../../cli/wrap-process.js";
+import xstdout from "xstdout";
 
 logger.quiet(true);
 
@@ -191,7 +189,7 @@ describe("task-file", function() {
 
     it("should not update cwd when task file is found but opts.updateCwd is false", () => {
       // Save the original project root directory where xrun-tasks.js exists
-      const projectRoot = Path.resolve(__dirname, "../../..");
+      const projectRoot = Path.resolve(import.meta.dirname, "../../..");
 
       // Create a test directory under test/
       const testSubDir = Path.join(projectRoot, "test/test-no-update-cwd");

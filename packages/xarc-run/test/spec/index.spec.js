@@ -1,7 +1,5 @@
-"use strict";
-
-const xrun = require("../..");
-const expect = require("chai").expect;
+import xrun from "../../lib/index.js";
+import { expect as expect } from "chai";
 
 describe("index", function() {
   it("should export a default instance", () => {

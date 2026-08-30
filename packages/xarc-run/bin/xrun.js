@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-"use strict";
+import Path from "path";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 
-const Path = require("path");
+const require = createRequire(import.meta.url);
 
 /**
  * Find the directory holding the CLI code to run.
@@ -18,7 +20,7 @@ const Path = require("path");
  * @returns absolute path to the cli directory
  */
 function resolveCliDir() {
-  for (const paths of [[process.cwd()], [__dirname]]) {
+  for (const paths of [[process.cwd()], [import.meta.dirname]]) {
     try {
       return Path.dirname(require.resolve("@fynjs/run/cli/xrun", { paths }));
     } catch (err) {
@@ -27,7 +29,7 @@ function resolveCliDir() {
   }
 
   // not installed under either - running from this package's own checkout
-  return Path.join(__dirname, "..", "cli");
+  return Path.join(import.meta.dirname, "..", "cli");
 }
 
 //
@@ -35,12 +37,6 @@ function resolveCliDir() {
 //
 const cliDir = resolveCliDir();
 
-const xrun = require(Path.join(cliDir, "xrun"));
-const ck = require(Path.join(cliDir, "ck"));
+const { default: xrun } = await import(pathToFileURL(Path.join(cliDir, "xrun.js")).href);
 
-//
-// chalker is ESM-only with top-level await, so it can only be loaded asynchronously. Load it
-// here, before the CLI runs, so the synchronous `ck` log call sites throughout cli/ get colors.
-// ck.load() never rejects - colors are optional.
-//
-ck.load().then(() => xrun());
+await xrun();

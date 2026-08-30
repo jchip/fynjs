@@ -1,6 +1,4 @@
-"use strict";
-
-const xrun = require("..");
+import xrun from "../lib/index.js";
 
 xrun.load({
   foo2: {

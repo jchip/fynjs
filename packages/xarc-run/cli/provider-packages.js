@@ -1,10 +1,8 @@
-"use strict";
-
-const { makeOptionalRequire } = require("optional-require");
-const { processTasks } = require("./task-file");
-const WrapProcess = require("./wrap-process");
-const myPkg = require("../package.json");
-const path = require("path");
+import { makeOptionalRequire } from "optional-require";
+import { processTasks } from "./task-file.js";
+import WrapProcess from "./wrap-process.js";
+import myPkg from "../package.json" with { type: "json" };
+import path from "path";
 
 /**
  * Search for provider packages in the node_modules directory.
@@ -70,6 +68,6 @@ function loadProviderPackages(userPkg, saveCwd, opts) {
   });
 }
 
-module.exports = {
+export {
   loadProviderPackages
 };

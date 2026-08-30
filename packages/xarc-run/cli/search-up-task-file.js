@@ -1,9 +1,6 @@
-"use strict";
-
-
-const Path = require("path");
-const Fs = require("fs");
-const config = require("./config");
+import Path from "path";
+import Fs from "fs";
+import config from "./config.js";
 
 /*
  * Look for xrun file at xrunDir
@@ -92,4 +89,4 @@ function findTaskFile(xrunDir) {
   };
 }
 
-module.exports = { searchUpTaskFile, findTaskFile };
+export { searchUpTaskFile, findTaskFile };

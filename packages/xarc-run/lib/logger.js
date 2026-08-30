@@ -1,6 +1,4 @@
-"use strict";
-
-const chalk = require("./chalk");
+import chalk from "./chalk.js";
 const MSEC_IN_SECOND = 1000;
 const MSEC_IN_MINUTE = 60 * MSEC_IN_SECOND;
 
@@ -104,4 +102,4 @@ class Logger {
 const logger = new Logger();
 logger.pad2 = pad2;
 
-module.exports = logger;
+export default logger;

@@ -1,5 +1,4 @@
-"use strict";
-const xrun = require("../../");
+import xrun from "../../lib/index.js";
 
 const tasks = {
   xfoo1: cb => {
@@ -122,4 +121,4 @@ const tasks = {
   "~prefix-tilda-hidden": "this should be hidden"
 };
 
-module.exports = tasks;
+export default tasks;

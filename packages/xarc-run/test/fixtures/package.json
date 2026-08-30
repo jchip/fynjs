@@ -1,0 +1,6 @@
+{
+  "name": "xarc-run-spec-fixtures",
+  "private": true,
+  "type": "module",
+  "comment": "These are spec helpers imported by the ESM specs, not CJS task files under test. They must load through the same module graph as the specs - a `require` here would pull a second copy of lib/defaults.js and its Symbols would not match."
+}

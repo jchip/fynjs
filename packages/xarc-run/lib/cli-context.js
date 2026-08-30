@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * CliContext encapsulates all CLI-related information from command line parsing
  * This provides a clean interface for accessing command arguments, options, and metadata
@@ -144,4 +142,4 @@ class CliContext {
   }
 }
 
-module.exports = { CliContext };
+export { CliContext };

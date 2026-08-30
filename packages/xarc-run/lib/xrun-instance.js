@@ -1,8 +1,6 @@
-"use strict";
-
-const XRun = require("./xrun");
-const XReporterConsole = require("../lib/reporters/console");
-const XTaskSpec = require("./xtask-spec");
+import XRun from "./xrun.js";
+import XReporterConsole from "../lib/reporters/console.js";
+import XTaskSpec from "./xtask-spec.js";
 
 function createXrunInstance() {
   const xrun = new XRun({});
@@ -31,4 +29,5 @@ const container = {
   }
 };
 
-module.exports = container;
+export { createXrunInstance };
+export default container;

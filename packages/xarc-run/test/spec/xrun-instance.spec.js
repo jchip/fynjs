@@ -1,8 +1,6 @@
-"use strict";
-
-const { expect } = require("chai");
-const instance = require("../../lib/xrun-instance");
-const XRun = require("../../lib/xrun");
+import { expect } from "chai";
+import instance from "../../lib/xrun-instance.js";
+import XRun from "../../lib/xrun.js";
 
 describe("xrun-instance", function() {
   let originalInstance;

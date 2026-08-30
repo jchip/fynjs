@@ -1,9 +1,7 @@
-"use strict";
-
-const { expect } = require("chai");
-const Path = require("path");
-const { loadProviderPackages } = require("../../../cli/provider-packages");
-const instance = require("../../../lib/xrun-instance");
+import { expect } from "chai";
+import Path from "path";
+import { loadProviderPackages } from "../../../cli/provider-packages.js";
+import instance from "../../../lib/xrun-instance.js";
 
 describe("provider-packages", function() {
   let originalCwd;
@@ -27,7 +25,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -54,7 +52,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       process.chdir(testDir);
       const opts = {};
 
@@ -85,7 +83,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -107,7 +105,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/pkg-2");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/pkg-2");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -128,7 +126,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -147,7 +145,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/pkg-2");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/pkg-2");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -164,7 +162,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -181,7 +179,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       // Should not throw error
@@ -201,7 +199,7 @@ describe("provider-packages", function() {
       };
 
       // Use a directory where provider-1 has package.json but missing tasks.js
-      const testDir = Path.join(__dirname, "../../provider-fixtures/pkg-2");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/pkg-2");
       const opts = { cwd: testDir };
 
       // Should not throw error
@@ -220,7 +218,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       // saveCwd equals opts.cwd - should still load tasks
@@ -246,7 +244,7 @@ describe("provider-packages", function() {
         }
       };
 
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);
@@ -283,7 +281,7 @@ describe("provider-packages", function() {
       };
 
       // Use proj-1 for provider-1 and provider-no-tasks, pkg-2 has not-a-provider
-      const testDir = Path.join(__dirname, "../../provider-fixtures/proj-1");
+      const testDir = Path.join(import.meta.dirname, "../../provider-fixtures/proj-1");
       const opts = { cwd: testDir };
 
       loadProviderPackages(userPkg, originalCwd, opts);

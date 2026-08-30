@@ -1,6 +1,4 @@
-"use strict";
-
-module.exports = function(env, target, override = true) {
+export default function(env, target, override = true) {
   target = target || process.env;
   if (env) {
     Object.keys(env).forEach(k => {

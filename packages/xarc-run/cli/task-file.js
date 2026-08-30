@@ -1,18 +1,18 @@
-"use strict";
-
-const Path = require("path");
-const env = require("./env");
-const xsh = require("xsh");
-const logger = require("../lib/logger");
-const config = require("./config");
-const ck = require("./ck");
-const { searchUpTaskFile } = require("./search-up-task-file");
-const WrapProcess = require("./wrap-process");
-const npmLoader = require("./npm-loader");
-const requireAt = require("require-at");
-const optionalRequire = require("optional-require")(require);
-const instance = require("../lib/xrun-instance");
-const TsRunner = require("./ts-runner");
+import { createRequire } from "node:module";
+import { makeOptionalRequire } from "optional-require";
+import Path from "path";
+import env from "./env.js";
+import xsh from "xsh";
+import logger from "../lib/logger.js";
+import config from "./config.js";
+import ck from "./ck.js";
+import { searchUpTaskFile } from "./search-up-task-file.js";
+import WrapProcess from "./wrap-process.js";
+import npmLoader from "./npm-loader.js";
+import requireAt from "require-at";
+const optionalRequire = makeOptionalRequire(createRequire(import.meta.url));
+import instance from "../lib/xrun-instance.js";
+import TsRunner from "./ts-runner.js";
 
 /**
  * Update the current working directory
@@ -180,4 +180,4 @@ function loadTasks(opts, searchResult) {
   return loaded;
 }
 
-module.exports = { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks };
+export { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks };

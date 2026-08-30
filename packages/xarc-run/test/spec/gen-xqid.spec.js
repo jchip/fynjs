@@ -1,7 +1,5 @@
-"use strict";
-
-const genXqId = require("../../lib/gen-xqid");
-const expect = require("chai").expect;
+import genXqId from "../../lib/gen-xqid.js";
+import { expect as expect } from "chai";
 
 describe("gen-xqid", function() {
   it("should gen ID with tag", () => {

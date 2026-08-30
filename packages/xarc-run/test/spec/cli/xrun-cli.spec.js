@@ -1,16 +1,16 @@
-"use strict";
-
-const expect = require("chai").expect;
-const xrun = require("../../../cli/xrun");
-const logger = require("../../../lib/logger");
-const WrapProcess = require("../../../cli/wrap-process");
-const xrunInstance = require("../../../lib/xrun-instance");
-const stripAnsi = require("strip-ansi");
-const env = require("../../../cli/env");
-const xsh = require("xsh");
+import { expect as expect } from "chai";
+import xrun from "../../../cli/xrun.js";
+import logger from "../../../lib/logger.js";
+import WrapProcess from "../../../cli/wrap-process.js";
+import xrunInstance from "../../../lib/xrun-instance.js";
+import stripAnsi from "strip-ansi";
+import env from "../../../cli/env.js";
+import xsh from "xsh";
 const envPath = xsh.envPath;
-const path = require("path");
-const { INTERNALS } = require("../../../lib/defaults");
+import path from "path";
+import { INTERNALS } from "../../../lib/defaults.js";
+import xrunMainModule from "../../../cli/xrun-main.js";
+
 const {
   [INTERNALS]: {
     setupNodeModulesBin,
@@ -22,9 +22,9 @@ const {
     handleQuietFlag,
     processEnvOptions
   }
-} = require("../../../cli/xrun-main");
-const fs = require("fs");
-const { CliContext } = require("../../../lib/cli-context");
+} = xrunMainModule;
+import fs from "fs";
+import { CliContext } from "../../../lib/cli-context.js";
 
 describe("xrun cli", function() {  logger.quiet(true);
 
@@ -149,7 +149,7 @@ describe("xrun cli", function() {  logger.quiet(true);
     const origXrunId = env.get(env.xrunId);
 
     // Use a path that definitely doesn't exist
-    const nonExistentPath = path.join(__dirname, "non-existent-dir");
+    const nonExistentPath = path.join(import.meta.dirname, "non-existent-dir");
     setupNodeModulesBin({ nmbin: true, cwd: nonExistentPath });
 
     // Verify no messages were logged
@@ -169,7 +169,7 @@ describe("xrun cli", function() {  logger.quiet(true);
     const origXrunId = env.get(env.xrunId);
 
     // Create a temporary node_modules/.bin directory
-    const tempDir = path.join(__dirname, "temp-test-dir");
+    const tempDir = path.join(import.meta.dirname, "temp-test-dir");
     const nmBinDir = path.join(tempDir, "node_modules", ".bin");
     fs.mkdirSync(nmBinDir, { recursive: true });
 
@@ -204,7 +204,7 @@ describe("xrun cli", function() {  logger.quiet(true);
     const origXrunId = env.get(env.xrunId);
 
     // Create a temporary node_modules/.bin directory
-    const tempDir = path.join(__dirname, "temp-test-dir");
+    const tempDir = path.join(import.meta.dirname, "temp-test-dir");
     const nmBinDir = path.join(tempDir, "node_modules", ".bin");
     fs.mkdirSync(nmBinDir, { recursive: true });
 
@@ -238,7 +238,7 @@ describe("xrun cli", function() {  logger.quiet(true);
     const origXrunId = env.get(env.xrunId);
 
     // Create a temporary node_modules/.bin directory
-    const tempDir = path.join(__dirname, "temp-test-dir");
+    const tempDir = path.join(import.meta.dirname, "temp-test-dir");
     const nmBinDir = path.join(tempDir, "node_modules", ".bin");
     fs.mkdirSync(nmBinDir, { recursive: true });
 
@@ -417,9 +417,9 @@ describe("xrun cli", function() {  logger.quiet(true);
     return new Promise(resolve => {
       xrunInstance.reset();
       const origCwd = process.cwd();
-      const modPath = require.resolve("../../..");
-      delete require.cache[modPath];
-      const emptyCwd = path.resolve(__dirname, "../../../test/pkg-fixtures/empty");
+      // xrunInstance.reset() above is the actual reset; the CJS require.cache delete that used
+      // to sit here had no ESM equivalent and nothing depended on it
+      const emptyCwd = path.resolve(import.meta.dirname, "../../../test/pkg-fixtures/empty");
       process.chdir(emptyCwd);
       xrun(["node", "xrun", "--quiet", "--list"], 2, "", err => {
         process.chdir(origCwd);

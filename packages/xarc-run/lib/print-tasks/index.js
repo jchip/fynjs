@@ -1,10 +1,8 @@
-"use strict";
-
-const stringify = require("../stringify");
-const chalk = require("../chalk");
-const assert = require("assert");
-const Path = require("path");
-const xsh = require("xsh");
+import stringify from "../stringify.js";
+import chalk from "../chalk.js";
+import assert from "assert";
+import Path from "path";
+import xsh from "xsh";
 
 const replaceCwd = p => xsh.pathCwdNm.replace(p, null, "g");
 
@@ -104,4 +102,4 @@ function printTasks(xtasks) {
   });
 }
 
-module.exports = printTasks;
+export default printTasks;

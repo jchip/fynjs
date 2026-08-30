@@ -1,6 +1,4 @@
-"use strict";
-
-module.exports = data => {
+export default data => {
   try {
     return JSON.stringify(data, (key, value) => {
       if (typeof value === "function") {

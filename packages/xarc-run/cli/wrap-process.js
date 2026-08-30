@@ -1,5 +1,3 @@
-"use strict";
-
 /** @type {WrapProcess} */
 const WrapProcess = {
   _process: process,
@@ -26,4 +24,4 @@ const WrapProcess = {
   }
 };
 
-module.exports = WrapProcess;
+export default WrapProcess;

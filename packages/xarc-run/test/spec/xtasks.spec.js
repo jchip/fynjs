@@ -1,8 +1,6 @@
-"use strict";
-
-const XTasks = require("../../lib/xtasks");
-const expect = require("chai").expect;
-const sample1 = require("../fixtures/sample1");
+import XTasks from "../../lib/xtasks.js";
+import { expect as expect } from "chai";
+import sample1 from "../fixtures/sample1.js";
 
 describe("xtasks", function() {
   it("should take no params in constructor", () => {

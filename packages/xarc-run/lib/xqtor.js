@@ -1,14 +1,19 @@
-"use strict";
+import { createRequire } from "node:module";
+import assert from "assert";
+import defaults from "./defaults.js";
+import Insync from "insync";
+import XQItem from "./xqitem.js";
+import { exec as exec } from "xsh";
+import parseArray from "./util/parse-array.js";
+import childProc from "child_process";
+import updateEnv from "./util/update-env.js";
+import { NixClap } from "nix-clap";
 
-const assert = require("assert");
-const defaults = require("./defaults");
-const Insync = require("insync");
-const XQItem = require("./xqitem");
-const exec = require("xsh").exec;
-const parseArray = require("./util/parse-array");
-const childProc = require("child_process");
-const updateEnv = require("./util/update-env");
-const { NixClap } = require("nix-clap");
+//
+// Kept lazy rather than a static import: a static import is hoisted to module load, which is
+// exactly what the call site below avoids so fynpo bootstrap can build unwrap-npm-cmd first.
+//
+const lazyRequire = createRequire(import.meta.url);
 
 const STAGE_FINALLY = "finally";
 
@@ -480,7 +485,7 @@ because value type ${vtype} is unknown and no value.item`)
 
     // Lazy require unwrap-npm-cmd to avoid requiring it at module load time
     // This ensures it's built by fynpo bootstrap before it's required
-    const { unwrapNpmCmd } = require("unwrap-npm-cmd");
+    const { unwrapNpmCmd } = lazyRequire("unwrap-npm-cmd");
     const cmd2 = unwrapNpmCmd(cmd, { path: env.PATH });
 
     if (tty || spawn) {
@@ -800,4 +805,4 @@ because value type ${vtype} is unknown and no value.item`)
   }
 }
 
-module.exports = XQtor;
+export default XQtor;

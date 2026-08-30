@@ -1,11 +1,10 @@
-"use strict";
-
-const print1 = require("../fixtures/print1");
-const xstdout = require("xstdout");
-const Fs = require("fs");
-const Path = require("path");
-const instance = require("../../lib/xrun-instance");
-const expect = require("chai").expect;
+import print1 from "../fixtures/print1.js";
+import chalk from "../../lib/chalk.js";
+import xstdout from "xstdout";
+import Fs from "fs";
+import Path from "path";
+import instance from "../../lib/xrun-instance.js";
+import { expect as expect } from "chai";
 
 describe("print tasks", function() {
   beforeEach(() => {
@@ -13,7 +12,6 @@ describe("print tasks", function() {
   });
 
   it("should print tasks", () => {
-    const chalk = require("../../lib/chalk");
     // Force chalk to use colors in test environment
     const originalLevel = chalk.level;
     chalk.level = 3; // Force colors (3 = Truecolor, 16m colors)

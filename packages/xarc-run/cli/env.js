@@ -1,7 +1,5 @@
-"use strict";
-
-const assert = require("assert");
-const WrapProcess = require("./wrap-process");
+import assert from "assert";
+import WrapProcess from "./wrap-process.js";
 
 const lib = {
   container: WrapProcess.env,
@@ -32,4 +30,4 @@ const lib = {
   }
 };
 
-module.exports = lib;
+export default lib;

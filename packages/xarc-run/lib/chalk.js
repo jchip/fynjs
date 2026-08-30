@@ -1,13 +1,11 @@
-"use strict";
+//
+// chalk is ESM-only. This package is ESM too, so importing it is unremarkable - this module
+// stays only because a dozen call sites already point at it, and it is the one place to change
+// if the color library is ever swapped.
+//
+// Bound explicitly rather than `export { default } from "chalk"`: a bare re-export can reach
+// consumers as a module namespace, and call sites assign to `chalk.level`.
+//
+import chalk from "chalk";
 
-//
-// chalk 6 is ESM-only and this package is CJS.
-//
-// node >= 22.12 (this package's engines floor) can `require()` an ESM module as long as it has
-// no top-level await, which chalk does not have. What comes back is the module *namespace*, so
-// the callable chalk sits on `.default` rather than being the export itself.
-//
-// Centralized here so that interop detail is stated once instead of at each call site, where
-// a bare `.default` reads like a mistake and invites someone to "fix" it.
-//
-module.exports = require("chalk").default;
+export default chalk;

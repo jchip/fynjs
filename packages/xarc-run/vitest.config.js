@@ -5,12 +5,10 @@ export default defineConfig({
     // Shared configuration for all projects
     globals: true,
     environment: "node",
-    setupFiles: ["./test/setup-vitest.js"],
+    setupFiles: ["./test/setup-vitest.mjs"],
     pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true
-      }
+    forks: {
+      singleFork: true
     },
     sequence: {
       concurrent: false

@@ -1,7 +1,5 @@
-"use strict";
-
-const NSOrder = require("../../lib/ns-order");
-const expect = require("chai").expect;
+import NSOrder from "../../lib/ns-order.js";
+import { expect as expect } from "chai";
 
 describe("ns-order", function() {
   it("should order namespaces according to overrides specs", () => {

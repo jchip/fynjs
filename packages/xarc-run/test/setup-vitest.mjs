@@ -1,5 +1,5 @@
 // Global setup for vitest tests
-const logger = require("../lib/logger");
+import logger from "../lib/logger.js";
 
 // Disable buffering for tests so console output can be intercepted
 logger.buffering(false);

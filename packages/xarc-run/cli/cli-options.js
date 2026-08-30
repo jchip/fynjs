@@ -1,11 +1,9 @@
-"use strict";
+import assert from "assert";
+import chalk from "../lib/chalk.js";
+import myPkg from "../package.json" with { type: "json" };
+import config from "./config.js";
 
-const assert = require("assert");
-const chalk = require("../lib/chalk");
-const myPkg = require("../package.json");
-const config = require("./config");
-
-module.exports = {
+export default {
   cwd: {
     alias: "w",
     desc: `Set ${myPkg.name}'s ${chalk.magenta("CWD")}`,

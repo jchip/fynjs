@@ -1,21 +1,19 @@
-"use strict";
-
-const assert = require("assert");
-const defaults = require("./defaults");
-const chalk = require("./chalk");
-const XQtor = require("./xqtor");
-const XTasks = require("./xtasks");
-const XQTree = require("./xqtree");
-const logger = require("./logger");
-const EventEmitter = require("events");
-const printTasks = require("./print-tasks");
-const jaroWinkler = require("jaro-winkler");
-const XTaskSpec = require("./xtask-spec");
-const xsh = require("xsh");
-const updateEnv = require("./util/update-env");
-const myPkg = require("../package.json");
-const { CliContext } = require("./cli-context");
-const { exec } = require("child_process");
+import assert from "assert";
+import defaults from "./defaults.js";
+import chalk from "./chalk.js";
+import XQtor from "./xqtor.js";
+import XTasks from "./xtasks.js";
+import XQTree from "./xqtree.js";
+import logger from "./logger.js";
+import EventEmitter from "events";
+import printTasks from "./print-tasks/index.js";
+import jaroWinkler from "jaro-winkler";
+import XTaskSpec from "./xtask-spec.js";
+import xsh from "xsh";
+import updateEnv from "./util/update-env.js";
+import myPkg from "../package.json" with { type: "json" };
+import { CliContext } from "./cli-context.js";
+import { exec } from "child_process";
 
 // full - full stop, interrupting all pending async tasks
 // soft - allow pending async tasks to complete, but no more new tasks
@@ -343,4 +341,4 @@ class XRun extends EventEmitter {
   }
 }
 
-module.exports = XRun;
+export default XRun;

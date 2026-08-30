@@ -1,10 +1,8 @@
-"use strict";
-
-const XReporterConsole = require("../../../lib/reporters/console");
-const XRun = require("../../../lib/xrun");
-const XQItem = require("../../../lib/xqitem");
-const expect = require("chai").expect;
-const chalk = require("../../../lib/chalk");
+import XReporterConsole from "../../../lib/reporters/console.js";
+import XRun from "../../../lib/xrun.js";
+import XQItem from "../../../lib/xqitem.js";
+import { expect as expect } from "chai";
+import chalk from "../../../lib/chalk.js";
 
 describe("XReporterConsole", function() {
   const saveLevel = chalk.level;

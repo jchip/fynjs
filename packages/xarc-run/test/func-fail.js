@@ -1,6 +1,4 @@
-"use strict";
-
-const xrun = require("..");
+import xrun from "../lib/index.js";
 
 // sample to test a function task that fails
 

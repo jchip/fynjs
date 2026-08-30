@@ -1,11 +1,9 @@
-"use strict";
-
 // testing the finally hook
 
-const XRun = require("../../lib/xrun");
-const expect = require("chai").expect;
-const xstdout = require("xstdout");
-const { asyncVerify, expectError } = require("run-verify");
+import XRun from "../../lib/xrun.js";
+import { expect as expect } from "chai";
+import xstdout from "xstdout";
+import { asyncVerify, expectError } from "run-verify";
 
 describe("xrun finally", function() {  let logs = [];
   const tasks = {

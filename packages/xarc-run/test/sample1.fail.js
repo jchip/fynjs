@@ -1,7 +1,5 @@
-"use strict";
-
-const xrun = require("..");
-const sample1 = require("./fixtures/sample1");
+import xrun from "../lib/index.js";
+import sample1 from "./fixtures/sample1.js";
 
 xrun.load(sample1);
 xrun.run("foo2ba");

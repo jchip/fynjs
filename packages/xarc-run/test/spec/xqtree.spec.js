@@ -1,7 +1,5 @@
-"use strict";
-
-const XQTree = require("../../lib/xqtree");
-const expect = require("chai").expect;
+import XQTree from "../../lib/xqtree.js";
+import { expect as expect } from "chai";
 
 describe("xqtree", function() {
   it("should create an item and add it to parent", () => {

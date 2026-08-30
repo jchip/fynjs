@@ -1,7 +1,5 @@
-"use strict";
-
-const XTaskSpec = require("../../lib/xtask-spec");
-const expect = require("chai").expect;
+import XTaskSpec from "../../lib/xtask-spec.js";
+import { expect as expect } from "chai";
 
 describe("xtask-spec", function() {
   it("should creeate exec command", () => {

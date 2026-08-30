@@ -1,7 +1,5 @@
-"use strict";
-
-const xrun = require("..");
-const print1 = require("./fixtures/print1");
+import xrun from "../lib/index.js";
+import print1 from "./fixtures/print1.js";
 
 xrun.load(print1);
 xrun.load("ns1", print1);

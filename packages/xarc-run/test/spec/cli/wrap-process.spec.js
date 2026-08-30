@@ -1,7 +1,5 @@
-"use strict";
-
-const expect = require("chai").expect;
-const WrapProcess = require("../../../cli/wrap-process");
+import { expect as expect } from "chai";
+import WrapProcess from "../../../cli/wrap-process.js";
 
 describe("wrap-process", function() {
   let originalProcess;

@@ -1,13 +1,11 @@
-"use strict";
+import logger from "../lib/logger.js";
+import chalk from "../lib/chalk.js";
+import readPkgUp from "read-pkg-up";
+import myPkg from "../package.json" with { type: "json" };
+import config from "./config.js";
+import env from "./env.js";
 
-const logger = require("../lib/logger");
-const chalk = require("../lib/chalk");
-const readPkgUp = require("read-pkg-up");
-const myPkg = require("../package.json");
-const config = require("./config");
-const env = require("./env");
-
-module.exports = (xrun, options) => {
+export default (xrun, options) => {
   const readPkg = readPkgUp.sync();
 
   if (!readPkg) {

@@ -1,12 +1,10 @@
-"use strict";
-
-const { expect } = require("chai");
-const Path = require("path");
-const fs = require("fs");
-const os = require("os");
-const npmLoader = require("../../../cli/npm-loader");
-const env = require("../../../cli/env");
-const { createXrunInstance } = require("../../../lib/xrun-instance");
+import { expect } from "chai";
+import Path from "path";
+import fs from "fs";
+import os from "os";
+import npmLoader from "../../../cli/npm-loader.js";
+import env from "../../../cli/env.js";
+import { createXrunInstance } from "../../../lib/xrun-instance.js";
 
 describe("npm-loader", function() {
   let testDir;

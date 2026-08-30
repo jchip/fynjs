@@ -1,7 +1,5 @@
-"use strict";
-
-const { expect } = require("chai");
-const { CliContext } = require("../../lib/cli-context");
+import { expect } from "chai";
+import { CliContext } from "../../lib/cli-context.js";
 
 describe("CliContext", function() {
   describe("constructor", function() {

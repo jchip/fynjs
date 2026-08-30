@@ -1,1 +1,3 @@
-require("../cli/xrun")();
+import xrunCli from "../cli/xrun.js";
+
+xrunCli();

@@ -1,14 +1,12 @@
-"use strict";
-
-const { expect } = require("chai");
-const Path = require("path");
-const fs = require("fs");
-const os = require("os");
-const { parseArgs } = require("../../../cli/parse-cmd-args");
-const env = require("../../../cli/env");
-const logger = require("../../../lib/logger");
-const WrapProcess = require("../../../cli/wrap-process");
-const { updateCwd, searchTaskFile } = require("../../../cli/task-file");
+import { expect } from "chai";
+import Path from "path";
+import fs from "fs";
+import os from "os";
+import { parseArgs } from "../../../cli/parse-cmd-args.js";
+import env from "../../../cli/env.js";
+import logger from "../../../lib/logger.js";
+import WrapProcess from "../../../cli/wrap-process.js";
+import { updateCwd, searchTaskFile } from "../../../cli/task-file.js";
 
 // Suppress logging during tests
 logger.quiet(true);

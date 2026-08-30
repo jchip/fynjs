@@ -1,26 +1,25 @@
-"use strict";
-
-const gxrun = require("../..");
-const XRun = require("../../lib/xrun");
-const xrun = require("../../lib");
-const expect = require("chai").expect;
-const xstdout = require("xstdout");
-const chalk = require("../../lib/chalk");
-const assert = require("assert");
-const stripAnsi = require("strip-ansi");
-const Munchy = require("munchy");
-const { PassThrough } = require("stream");
-const {
+import gxrun from "../../lib/index.js";
+import XRun from "../../lib/xrun.js";
+import childProc from "child_process";
+import xrun from "../../lib/index.js";
+import { expect as expect } from "chai";
+import xstdout from "xstdout";
+import chalk from "../../lib/chalk.js";
+import assert from "assert";
+import stripAnsi from "strip-ansi";
+import Munchy from "munchy";
+import { PassThrough } from "stream";
+import {
   asyncVerify,
   runFinally,
   runTimeout,
   expectError,
   expectErrorToBe,
   runDefer
-} = require("run-verify");
-const xsh = require("xsh");
-const xaa = require("xaa");
-const { CliContext } = require("../../lib/cli-context");
+} from "run-verify";
+import xsh from "xsh";
+import * as xaa from "xaa";
+import { CliContext } from "../../lib/cli-context.js";
 
 describe("xrun", function() {
   it("should lookup and exe a task as a function once", () => {
@@ -1735,7 +1734,6 @@ describe("xrun", function() {
   });
 
   it("should handle promise rejection with SIGTERM child process", () => {
-    const childProc = require("child_process");
     const xrun = new XRun({
       foo: () => {
         // Create a child process that will be terminated

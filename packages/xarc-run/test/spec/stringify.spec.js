@@ -1,8 +1,6 @@
-"use strict";
-
-const stringify = require("../../lib/stringify");
-const expect = require("chai").expect;
-const xrun = require("../..");
+import stringify from "../../lib/stringify.js";
+import { expect as expect } from "chai";
+import xrun from "../../lib/index.js";
 
 describe("stringify", function() {
   it("should stringify an array", () => {

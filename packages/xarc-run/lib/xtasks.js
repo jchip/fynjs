@@ -1,8 +1,6 @@
-"use strict";
-
-const assert = require("assert");
-const defaults = require("./defaults");
-const NSOrder = require("./ns-order");
+import assert from "assert";
+import defaults from "./defaults.js";
+import NSOrder from "./ns-order.js";
 
 class XTasks {
   constructor(namespace, tasks) {
@@ -136,4 +134,4 @@ class XTasks {
   }
 }
 
-module.exports = XTasks;
+export default XTasks;

@@ -1,12 +1,10 @@
-"use strict";
-
-const xrun = require("../../..");
-const sample1 = require("../../fixtures/sample1");
-const expect = require("chai").expect;
-const xstdout = require("xstdout");
-const chalk = require("../../../lib/chalk");
-const logger = require("../../../lib/logger");
-const { expectError, runTimeout, asyncVerify, runFinally } = require("run-verify");
+import xrun from "../../../lib/index.js";
+import sample1 from "../../fixtures/sample1.js";
+import { expect as expect } from "chai";
+import xstdout from "xstdout";
+import chalk from "../../../lib/chalk.js";
+import logger from "../../../lib/logger.js";
+import { expectError, runTimeout, asyncVerify, runFinally } from "run-verify";
 
 describe("sample1 console report", function() {  let saveLevel = chalk.level;
   beforeAll(() => {

@@ -1,7 +1,5 @@
-"use strict";
-
-const { expect } = require("chai");
-const env = require("../../../cli/env");
+import { expect } from "chai";
+import env from "../../../cli/env.js";
 
 describe("env", function() {
   // Store original env.container

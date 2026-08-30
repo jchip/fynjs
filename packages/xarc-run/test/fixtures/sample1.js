@@ -1,6 +1,5 @@
-"use strict";
 
-const xrun = require("../..");
+import xrun from "../../lib/index.js";
 
 const { exec, env, serial, concurrent } = xrun;
 
@@ -115,4 +114,4 @@ const tasks = {
   }
 };
 
-module.exports = tasks;
+export default tasks;

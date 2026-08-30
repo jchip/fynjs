@@ -1,7 +1,5 @@
-"use strict";
-
-const each = require("lodash.foreach");
-const assert = require("assert");
+import each from "lodash.foreach";
+import assert from "assert";
 
 class NSOrder {
   constructor() {
@@ -75,4 +73,4 @@ class NSOrder {
   }
 }
 
-module.exports = NSOrder;
+export default NSOrder;

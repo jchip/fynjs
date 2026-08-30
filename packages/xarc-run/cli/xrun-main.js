@@ -1,20 +1,22 @@
-"use strict";
+import ownInstance from "../lib/xrun-instance.js";
+import Path from "path";
+import parseCmdArgs from "./parse-cmd-args.js";
+import chalk from "../lib/chalk.js";
+import logger from "../lib/logger.js";
+import usage from "./usage.js";
+import { envPath as envPath } from "xsh";
+import Fs from "fs";
+import xsh from "xsh";
+import cliOptions from "./cli-options.js";
+import parseArray from "../lib/util/parse-array.js";
+import { makeOptionalRequire } from "optional-require";
+import { createRequire } from "node:module";
 
-const Path = require("path");
-const parseCmdArgs = require("./parse-cmd-args");
-const chalk = require("../lib/chalk");
-const logger = require("../lib/logger");
-const usage = require("./usage");
-const envPath = require("xsh").envPath;
-const Fs = require("fs");
-const xsh = require("xsh");
-const cliOptions = require("./cli-options");
-const parseArray = require("../lib/util/parse-array");
-const { makeOptionalRequire } = require("optional-require");
+const require = createRequire(import.meta.url);
 const optionalRequire = makeOptionalRequire(require);
-const env = require("./env");
-const WrapProcess = require("./wrap-process");
-const { CliContext } = require("../lib/cli-context");
+import env from "./env.js";
+import WrapProcess from "./wrap-process.js";
+import { CliContext } from "../lib/cli-context.js";
 
 /**
  * Flush logger based on options
@@ -86,14 +88,33 @@ function handleCliOptions(argv, offset, done) {
  */
 function findRunnerModule(xrunPath) {
   let runner;
+
+  //
+  // The runner may resolve to this package's own ESM entry, in which case require(esm) hands
+  // back the module namespace rather than the instance - the runner sits on `.default`. A copy
+  // that is still CJS has no `.default` and is used as-is.
+  //
+  const loadRunner = p => {
+    const mod = optionalRequire(p);
+    return mod && (mod.default || mod);
+  };
+
   const foundReq = [
     xrunPath, // first look for it in path passed from cli
-    "@fynjs/run", // let node.js resolve by package name
-    ".." // finally load from definitive known location
-  ].find(p => p && (runner = optionalRequire(p)));
+    "@fynjs/run" // let node.js resolve by package name
+  ].find(p => p && (runner = loadRunner(p)));
 
-  const foundPath = foundReq && Path.dirname(require.resolve(foundReq));
-  return { runner, foundPath };
+  if (runner) {
+    return { runner, foundPath: Path.dirname(require.resolve(foundReq)) };
+  }
+
+  //
+  // Definitive known location. This used to be `optionalRequire("..")`, but resolving our own
+  // package at runtime can load a second copy of it - a distinct xrun instance, with distinct
+  // Symbols - which is exactly what the two earlier entries are for. A static import is the
+  // same module by construction.
+  //
+  return { runner: ownInstance.xrun, foundPath: Path.dirname(import.meta.dirname) };
 }
 
 /**
@@ -128,7 +149,7 @@ You do not have a "xrun-tasks.js|ts" file, so the only tasks may come from your
   logger.error(`${chalk.red("*** No tasks found ***")}
 ${info}
 For reference, some paths used to search for tasks:
-    - my current __dirname: '${__dirname}'
+    - my current import.meta.dirname: '${import.meta.dirname}'
     - dir used to search for tasks:
         '${cwd}'
 
@@ -373,8 +394,10 @@ function xrunMain(argv, offset, xrunPath = "", done = null) {
   return runner.run(processedTasks.length === 1 ? processedTasks[0] : processedTasks, done);
 }
 
-const { INTERNALS } = require("../lib/defaults");
-module.exports = {
+import { INTERNALS } from "../lib/defaults.js";
+export { xrunMain };
+
+export default {
   xrunMain,
   [INTERNALS]: {
     flushLogger,

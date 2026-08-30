@@ -1,6 +1,4 @@
-"use strict";
-
-module.exports = tag => {
+export default tag => {
   return (
     (tag ? `${tag}_` : "") +
     Math.random()
