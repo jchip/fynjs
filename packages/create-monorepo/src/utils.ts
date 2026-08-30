@@ -1,7 +1,11 @@
 import Fs from "opfs";
-import Path from "path";
+import { mkdirSync } from "node:fs";
+import Path from "node:path";
+import { fileURLToPath } from "node:url";
 import _ from "lodash";
 import shcmd from "shcmd";
+
+const dirname = Path.dirname(fileURLToPath(import.meta.url));
 
 export const sortObjKeys = (obj) => {
   return _(obj).toPairs().sortBy(0).fromPairs().value();
@@ -21,7 +25,7 @@ export const sortPackageDeps = (pkg) => {
   });
 };
 
-export const myPkg = JSON.parse(Fs.readFileSync(Path.join(__dirname, "../package.json"), "utf-8"));
+export const myPkg = JSON.parse(Fs.readFileSync(Path.join(dirname, "../package.json"), "utf-8"));
 
 export function getCommitLintSetting() {
   return {
@@ -47,7 +51,7 @@ export async function copyTemplate(srcTmplDir, destDir, filesList) {
     }
 
     if (file.dir) {
-      Fs.$.mkdirpSync(destFile(file.destName || name));
+      mkdirSync(destFile(file.destName || name), { recursive: true });
     } else if (file.processor) {
       const content = Fs.readFileSync(fullSrc, "utf-8");
       Fs.writeFileSync(destFile(file.destName || name), file.processor(content));

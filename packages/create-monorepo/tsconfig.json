@@ -2,12 +2,12 @@
   "compilerOptions": {
     "outDir": "dist",
     "lib": [
-      "es2018"
+      "es2022"
     ],
-    "module": "CommonJS",
+    "module": "NodeNext",
     "esModuleInterop": true,
     "importHelpers": true,
-    "target": "ES2018",
+    "target": "ES2022",
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
@@ -18,7 +18,8 @@
     "noImplicitReturns": true,
     "alwaysStrict": true,
     "strictFunctionTypes": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src"

@@ -1,37 +1,44 @@
-import { create } from "./create";
-// nix-clap 1.x is CJS and does `module.exports = NixClap` - there is no named `NixClap`
-// export to destructure, so doing so yields undefined and `new NixClap()` throws
-// "NixClap is not a constructor". See FPO-29.
-const NixClap = require("nix-clap");
+import { create } from "./create.js";
+// nix-clap 2.x is dual ESM/CJS and exports a named `NixClap` - unlike 1.x, whose CJS
+// `module.exports = NixClap` had no named export to destructure (see FPO-29).
+import { NixClap } from "nix-clap";
 
-const nixClap = new NixClap({
-  usage: "$0 [command] [options]",
-}).init(
-  {
-    commitlint: {
-      type: "boolean",
-      default: true,
-      desc: "no-commitlint to skip commitlint configuration",
-    },
-  },
-  {
-    fynpo: {
-      exec: create,
-      args: "[dir]",
-      desc: "Create a new fynpo monorepo",
-    },
-  }
-);
+const nixClap = new NixClap()
+  .usage("$0 [command] [options]")
+  .init(
+    {},
+    {
+      fynpo: {
+        exec: create,
+        args: "[dir]",
+        desc: "Create a new fynpo monorepo",
+        // every invocation is routed through the fynpo command (see start below), so its
+        // options live on the command - that also puts them in `create-monorepo --help`
+        options: {
+          commitlint: {
+            args: "[ boolean]",
+            argDefault: "true",
+            desc: "no-commitlint to skip commitlint configuration",
+          },
+        },
+      },
+    }
+  );
 
-function start() {
+async function start() {
   if (process.argv.length > 2) {
     // if command is not recognize, then default to fynpo and use it as dir arg
     if (!["fynpo"].includes(process.argv[2])) {
-      const argv = [].concat(process.argv.slice(0, 2), "fynpo", process.argv.slice(2));
-      return nixClap.parse(argv, 2);
+      const argv = ([] as string[]).concat(
+        process.argv.slice(0, 2),
+        "fynpo",
+        process.argv.slice(2)
+      );
+      // parseAsync so the async exec handler runs to completion before we return
+      return nixClap.parseAsync(argv, 2);
     }
   }
-  return nixClap.parse();
+  return nixClap.parseAsync();
 }
 
-start();
+await start();

@@ -22,9 +22,9 @@ describe("package.json entry points (FPO-32)", () => {
     }
   });
 
-  it("resolves the directory require() that the bin actually uses", () => {
-    // bin/create-monorepo.js does `require("../dist")`, which resolves via dist/index.js
-    // regardless of `main` - that is why dropping `main` is safe here
+  it("resolves the entry import that the bin actually uses", () => {
+    // bin/create-monorepo.js does `import "../dist/index.js"` - an explicit path, since ESM
+    // has no directory resolution - regardless of `main`, which is why dropping `main` is safe
     expect(Fs.existsSync(Path.join(pkgDir, "dist", "index.js"))).toBe(true);
   });
 });

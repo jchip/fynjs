@@ -1,15 +1,26 @@
-import Path from "path";
+import Path from "node:path";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import _ from "lodash";
+import type { CommandExecFunc } from "nix-clap";
 
-const xrequire = eval("require");
+// nix-clap 2.x does not export its CommandNode class type directly - derive the exec
+// handler's command parameter type from the exported exec function signature
+type ExecCommand = Parameters<CommandExecFunc>[0];
 
-import { loadCk } from "./ck";
-import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils";
-import { prepareFynpoDir, checkDir } from "./prep-fynpo-dir";
-import { ParsedObj } from "./interfaces";
-import { isGitInitialized, initializeGitRepo } from "./initialize-git";
+// the package.json template is a CJS factory module (templates/_package.cjs) - this package is
+// ESM, so reach it through a real require from node:module
+const cjsRequire = createRequire(import.meta.url);
 
-export async function createFynpo(targetDir, opts) {
+import { loadCk } from "./ck.js";
+import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils.js";
+import { prepareFynpoDir, checkDir } from "./prep-fynpo-dir.js";
+import { ParsedOpts } from "./interfaces.js";
+import { isGitInitialized, initializeGitRepo } from "./initialize-git.js";
+
+const dirname = Path.dirname(fileURLToPath(import.meta.url));
+
+export async function createFynpo(targetDir: string, opts: ParsedOpts) {
   const fynpoDir = await prepareFynpoDir(targetDir);
   const dirOk = await checkDir(fynpoDir);
 
@@ -26,7 +37,7 @@ export async function createFynpo(targetDir, opts) {
   }
 
   const commitlint = opts && opts.commitlint;
-  const srcDir = Path.join(__dirname, "../templates");
+  const srcDir = Path.join(dirname, "../templates");
   const configFile = commitlint ? "fynpo.config.js" : "fynpo.json";
   const fynpoRc = {
     changeLogMarkers: ["## Packages", "## Commits"],
@@ -42,10 +53,10 @@ export async function createFynpo(targetDir, opts) {
       loader: !commitlint ? () => `${JSON.stringify(fynpoRc, null, 2)}\n` : undefined,
     },
     "README.md": {},
-    "_package.js": {
+    "_package.cjs": {
       loader: (filename) => {
         let pkg;
-        const makePkg = xrequire(filename);
+        const makePkg = cjsRequire(filename);
         if (commitlint) {
           const lint = getCommitLintSetting();
           pkg = makePkg(lint, _.merge);
@@ -80,7 +91,10 @@ ${commitHookMsg}
 `);
 }
 
-export async function create(parsed: ParsedObj): Promise<void> {
-  const dir = parsed.args?.dir || ".";
-  return await createFynpo(dir, parsed.opts);
+export async function create(cmd: ExecCommand): Promise<void> {
+  // nix-clap 2.x exec handlers receive the parsed command node; jsonMeta carries the
+  // command's args plus options inherited from the root command
+  const meta = cmd.jsonMeta;
+  const dir = (meta.args?.dir as string) || ".";
+  return await createFynpo(dir, meta.opts as ParsedOpts);
 }
