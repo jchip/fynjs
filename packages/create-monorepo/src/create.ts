@@ -1,7 +1,7 @@
 import Path from "path";
 import _ from "lodash";
 
-const xrequire = eval("require"); // eslint-disable-line
+const xrequire = eval("require");
 
 import { loadCk } from "./ck";
 import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils";

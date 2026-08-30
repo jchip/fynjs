@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 
 import Promise from "./aveazul";
 import LifecycleScripts from "../lifecycle-scripts";

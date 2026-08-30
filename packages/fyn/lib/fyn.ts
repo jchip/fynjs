@@ -220,7 +220,6 @@ const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
 const { posixify } = fynTil;
 
-/* eslint-disable no-magic-numbers, max-statements, no-empty, complexity, no-eval */
 
 class Fyn {
   // Class properties with type annotations

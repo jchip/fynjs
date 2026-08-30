@@ -1,4 +1,3 @@
-/* eslint-disable max-statements, complexity, no-magic-numbers */
 
 import { isCI } from "ci-info";
 import { CheckNewVersionOptions, NpmConfig, PkgInfo } from "./types.js";

@@ -463,7 +463,6 @@ export class NixClap extends EventEmitter {
     // Add help option if configured
     if (this._helpOpt) {
       options = { ...options };
-      // eslint-disable-next-line dot-notation
       options["help"] = this._helpOpt;
       // Also add help option to all subcommands recursively
       this._addHelpToSubCommands(commands);

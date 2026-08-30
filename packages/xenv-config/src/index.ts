@@ -1,4 +1,3 @@
-/* eslint-disable prefer-spread */
 
 import assert from "node:assert";
 
@@ -44,7 +43,6 @@ export type XenvConfigEnv = Record<string, unknown>;
 export type XenvConfigUserConfig = Record<string, unknown>;
 
 /** A merge function compatible with `Object.assign`'s signature (eg. lodash's `merge`). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type XenvConfigMergeFn = (target: any, ...sources: any[]) => any;
 
 /** Options controlling how `xenvConfig` resolves values. */

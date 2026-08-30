@@ -1,4 +1,3 @@
-/* eslint-disable max-statements */
 
 /**
  * Before linking a local dep, go into its dir and run fyn install
@@ -284,7 +283,7 @@ class LocalPkgBuilder {
       "checkCtime",
       checkPkg.checkCtime,
       "stats",
-      JSON.stringify(checkPkg.stats, null, 2), // eslint-disable-line
+      JSON.stringify(checkPkg.stats, null, 2),
       this._fyn._installConfig
     );
 

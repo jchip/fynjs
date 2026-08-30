@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers */
 
 import { CheckResult, PkgInfo } from "./types.js";
 import assert from "assert";

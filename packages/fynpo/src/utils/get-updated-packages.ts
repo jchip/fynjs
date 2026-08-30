@@ -1,4 +1,3 @@
-/* eslint-disable complexity, consistent-return, max-depth */
 
 import { logger } from "../logger";
 import { execSync } from "../child-process";

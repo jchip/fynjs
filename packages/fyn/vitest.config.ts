@@ -33,7 +33,6 @@ export default defineConfig({
         "**/xout/**",
         "**/xrun*.js",
         "**/xrun*.ts",
-        "**/.eslint*.*",
         "**/yarn/**"
       ],
       checkCoverage: true,

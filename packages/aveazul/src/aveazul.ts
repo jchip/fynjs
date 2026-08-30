@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as xaa from "xaa";
 import { promisify, PromisifyOptions } from "./promisify.js";
 import { promisifyAll, PromisifyAllOptions } from "./promisify-all.js";

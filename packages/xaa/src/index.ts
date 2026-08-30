@@ -3,7 +3,6 @@
  * @module index
  */
 
-/* eslint-disable max-statements, @typescript-eslint/ban-types, max-params, complexity */
 
 import assert from "assert";
 

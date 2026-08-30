@@ -35,7 +35,6 @@ export function getCommitLintSetting() {
   };
 }
 
-// eslint-disable-next-line
 export async function copyTemplate(srcTmplDir, destDir, filesList) {
   const destFile = (name) => Path.join(destDir, name);
 

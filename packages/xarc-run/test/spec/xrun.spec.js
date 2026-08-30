@@ -2,7 +2,7 @@
 
 const gxrun = require("../..");
 const XRun = require("../../lib/xrun");
-const xrun = require("../../lib"); // eslint-disable-line no-unused-vars
+const xrun = require("../../lib");
 const expect = require("chai").expect;
 const xstdout = require("xstdout");
 const chalk = require("chalk");

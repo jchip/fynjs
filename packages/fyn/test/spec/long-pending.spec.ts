@@ -1,4 +1,3 @@
-/* eslint-disable prefer-spread, max-len */
 
 import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import { vi } from "vitest";

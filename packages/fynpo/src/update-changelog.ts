@@ -10,7 +10,6 @@
  *
  */
 
-/* eslint-disable complexity, consistent-return, max-depth */
 
 import Fs from "fs";
 import xsh from "xsh";

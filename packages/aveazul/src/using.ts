@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Disposer } from "./disposer.js";
 import { isPromise } from "./util.js";
 import { AggregateError } from "@jchip/error";

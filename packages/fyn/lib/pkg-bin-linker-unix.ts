@@ -1,4 +1,3 @@
-/* eslint-disable global-require */
 
 import Fs from "./util/file-ops";
 import logger from "./logger";

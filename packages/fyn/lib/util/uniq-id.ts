@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers,prefer-template */
 
 /**
  * Generate a simple and fairly unique id

@@ -1,4 +1,3 @@
-/* eslint-disable */
 
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import Fs from "fs";

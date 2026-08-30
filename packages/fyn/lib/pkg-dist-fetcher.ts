@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers */
 
 import _ from "lodash";
 import Fs from "./util/file-ops";

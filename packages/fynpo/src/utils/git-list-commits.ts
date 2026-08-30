@@ -6,7 +6,7 @@ import { logger } from "../logger";
 import { execSync } from "../child-process";
 import { selectivePublishSubject, parsePublishedPackageNames, expandSelection } from "../utils";
 
-const xrequire = eval("require"); // eslint-disable-line
+const xrequire = eval("require");
 
 export const isAnythingCommitted = (opts) => {
   const anyCommits = execSync("git", ["rev-list", "--count", "--all", "--max-count=1"], opts);
@@ -157,7 +157,6 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
     if (parts[0] === "packages" || parts[0] === "samples") {
       const dir = Path.resolve(opts.cwd || process.cwd(), "packages", parts[1]);
       if (Fs.existsSync(dir)) {
-        /* eslint-disable @typescript-eslint/no-var-requires */
         const Pkg = xrequire(Path.join(dir, "package.json"));
         return { name: Pkg.name, dirName: parts[1] };
       }

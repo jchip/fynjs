@@ -1,4 +1,3 @@
-/* eslint-disable max-nested-callbacks, no-param-reassign */
 
 import assert from "assert";
 import xsh from "xsh";
@@ -197,7 +196,6 @@ class PkgOptResolver {
     return { allowed: isScriptAllowed(policy, "preinstall"), policy };
   }
 
-  /* eslint-disable max-statements */
   optCheck(data: OptDepData): Promise<void> {
     const name = data.item.name;
     const version = data.item.resolved;

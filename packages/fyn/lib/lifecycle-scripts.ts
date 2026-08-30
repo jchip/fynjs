@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, max-statements, no-eval, camelcase, no-param-reassign */
 
 //
 // execute npm scripts

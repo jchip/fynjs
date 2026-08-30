@@ -18,7 +18,7 @@ import { startMetaMemoizer } from "./meta-memoizer";
 
 export const defaultTagTemplate = `fynpo-rel-{YYYY}{MM}{DD}-{COMMIT}`;
 
-const xrequire = eval("require"); // eslint-disable-line
+const xrequire = eval("require");
 
 const optionalRequire = _optionalRequire(xrequire);
 
@@ -152,7 +152,6 @@ export function parsePublishedPackageNames(body: string): string[] {
     .map((x) => x.substring(2, x.lastIndexOf("@")));
 }
 
-/* eslint-disable complexity */
 
 export const locateGlobalNodeModules = async () => {
   //
@@ -190,7 +189,6 @@ export const locateGlobalFyn = async (globalNmDir = null) => {
 
   try {
     const dir = Path.join(globalNmDir, "fyn");
-    /* eslint-disable @typescript-eslint/no-var-requires */
     const pkgJson = xrequire(Path.join(dir, "package.json"));
     return {
       dir,
@@ -518,7 +516,6 @@ export async function checkGlobalFynVersion() {
   warnGlobalFynVersion = true;
   getFynExecutable();
 
-  /* eslint-disable @typescript-eslint/no-var-requires */
   const fynPkgJson = xrequire("fyn/package.json");
 
   const globalFynInfo = await locateGlobalFyn();

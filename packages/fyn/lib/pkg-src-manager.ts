@@ -6,7 +6,6 @@
 // - npm registry
 //
 
-/* eslint-disable no-magic-numbers, prefer-template, max-statements, no-param-reassign, no-sequences */
 
 import Promise from "aveazul";
 import cacache from "cacache";
@@ -515,7 +514,6 @@ class PkgSrcManager {
     return configFromFynpo || config;
   }
 
-  /* eslint-disable max-statements */
   fetchLocalItem(item: FetchItem): false | Promise<LocalMeta> {
     const localPath = item.semverPath;
 

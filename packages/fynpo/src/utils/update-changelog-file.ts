@@ -1,4 +1,3 @@
-/* eslint-disable complexity, consistent-return, max-depth */
 
 import Path from "path";
 import Fs from "fs";
@@ -6,7 +5,7 @@ import semver from "semver";
 import _ from "lodash";
 import { makePublishFilter } from "../utils";
 
-const xrequire = eval("require"); // eslint-disable-line
+const xrequire = eval("require");
 
 const getTaggedVersion = (pkg, fynpoRc) => {
   const newVer = pkg.newVersion;
@@ -81,7 +80,6 @@ export const updateChangelog = (collated) => {
     // belt and braces - getUpdatedPackages already filtered these out, but this
     // is what writes the `[Publish]` commit body that publish parses back
     if (!canPublish(p)) return;
-    /* eslint-disable no-useless-concat */
     output.push(`-   \`${p}@${newVer}\` ` + "`" + `(${pkg.version} => ${newVer})` + "`\n");
     versions[p] = newVer;
     tags.push(`${p}@${newVer}`);

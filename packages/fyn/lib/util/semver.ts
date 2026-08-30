@@ -10,7 +10,6 @@ import os from "os";
 // - Assume versions are properly formed
 //
 
-/* eslint-disable max-statements, no-magic-numbers, complexity */
 
 export interface SemverAnalysis {
   $: string;

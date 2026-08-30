@@ -1,4 +1,3 @@
-/* eslint-disable quote-props */
 
 import { NixClap } from "../../src";
 import { expect, describe, it } from "vitest";

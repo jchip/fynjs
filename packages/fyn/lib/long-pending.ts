@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, max-statements, no-param-reassign */
 
 import chalk from "chalk";
 import logFormat from "./util/log-format";

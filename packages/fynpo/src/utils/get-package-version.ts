@@ -1,4 +1,3 @@
-/* eslint-disable complexity, consistent-return, max-depth */
 
 import _ from "lodash";
 import * as utils from "../utils";

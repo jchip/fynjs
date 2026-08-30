@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, max-depth */
 
 import Path from "path";
 import crypto from "crypto";
@@ -443,7 +442,6 @@ class PkgDepLocker {
   }
 
   _isDepResolvable(depName: string, spec: string): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const depLock = this._lockData[depName] as any;
     // dep not locked here (resolved elsewhere / fresh) - nothing to validate against
     if (!depLock) return true;

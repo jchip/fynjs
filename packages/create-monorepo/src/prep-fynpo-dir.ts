@@ -1,4 +1,3 @@
-/* eslint-disable no-console, no-process-exit */
 
 import Fs from "opfs";
 import Path from "path";

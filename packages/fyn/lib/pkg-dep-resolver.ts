@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, max-params, max-statements, complexity, no-param-reassign */
 
 import _ from "lodash";
 import Fs from "./util/file-ops";
@@ -906,7 +905,6 @@ class PkgDepResolver {
     return Boolean(this._fyn.deepResolve || !pkgDepInfo._hasNonOpt);
   }
 
-  /* eslint-disable max-statements, complexity */
 
   async addPackageResolution(
     item: DepItem,

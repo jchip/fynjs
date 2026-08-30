@@ -1,4 +1,3 @@
-/* eslint-disable global-require, prefer-template */
 
 import Fs from "./util/file-ops";
 import Path from "path";

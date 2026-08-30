@@ -73,7 +73,7 @@ function setupNodeGypFromNpm(env) {
         : _getNpm7NodeGyp({ version: npmPkg.version, npmDir, xrequire });
 
     if (envFile && envPath) {
-      env.npm_config_node_gyp = envFile; // eslint-disable-line
+      env.npm_config_node_gyp = envFile;
       xsh.envPath.addToFront(envPath, env);
 
       logger.debug(

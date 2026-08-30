@@ -1,5 +1,3 @@
-/* eslint-disable no-process-exit, max-params */
-/* eslint-disable no-magic-numbers,max-statements,prefer-template */
 
 import Fs from "./file-ops";
 import _ from "lodash";
@@ -12,7 +10,6 @@ import { PACKAGE_RAW_INFO } from "../symbols";
 import { PACKAGE_FYN_JSON } from "../constants";
 import { FynpoConfigManager, FynpoDepGraph } from "@fynpo/base";
 
-/* eslint-disable no-magic-numbers, max-statements, no-empty, complexity, no-eval */
 
 import { isWin32, retry } from "./base-util";
 

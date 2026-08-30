@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers */
 
 import { describe, it, expect } from "vitest";
 import { internalCheckIsNewer } from "../../src/check-is-newer.ts";

@@ -1,4 +1,3 @@
-/* eslint-disable max-params */
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";

@@ -1,4 +1,3 @@
-/* eslint-disable complexity */
 
 /**
  * Scenario testing framework for fyn
@@ -163,7 +162,7 @@ const debug = false;
       const testOptions = timeout ? { timeout } : {};
       const testCase = (stepAction.skip ? it.skip : it)(`${step}${stepTitle}`, testOptions, () => {
         if (debug && step === options.debugStep) {
-          debugger; // eslint-disable-line
+          debugger;
         }
         return Promise.try(() => stepAction.before(cwd, scenarioDir))
           .then(() => {

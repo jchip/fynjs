@@ -1,4 +1,3 @@
-/* eslint-disable max-statements, complexity, comma-dangle, max-params, max-depth */
 
 import Fs, { Dirent, Stats } from "fs";
 import Path from "path";

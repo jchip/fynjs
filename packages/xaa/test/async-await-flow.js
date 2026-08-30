@@ -1,4 +1,3 @@
-/* eslint-disable */
 
 const level1 = [];
 const level2 = [];

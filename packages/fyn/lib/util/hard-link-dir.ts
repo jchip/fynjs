@@ -1,4 +1,3 @@
-/* eslint-disable max-params, max-statements, complexity */
 
 /*
  * clone another directory by:

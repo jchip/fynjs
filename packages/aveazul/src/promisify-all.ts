@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { promisify, PromisifyOptions } from "./promisify.js";
 import { isIdentifier, isClass, isPromisified, getObjectDataKeys } from "./util.js";
 

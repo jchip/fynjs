@@ -1,5 +1,4 @@
 /* reuses some of the awesome work from https://github.com/conventional-changelog/commitlint */
-/* eslint-disable consistent-return, no-shadow, @typescript-eslint/no-var-requires */
 
 import stdin from "get-stdin";
 import * as utils from "./utils";
@@ -13,7 +12,7 @@ import executeRule from "@commitlint/execute-rule";
 import lint from "@commitlint/lint";
 import read from "@commitlint/read";
 
-const xrequire = eval("require"); // eslint-disable-line
+const xrequire = eval("require");
 
 export interface LoadOptions {
   cwd?: string;

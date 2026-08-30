@@ -2,7 +2,6 @@
 import * as semverUtil from "./semver";
 import { DEP_ITEM, SEMVER } from "../symbols";
 
-/* eslint-disable complexity */
 
 //
 // Security hardening: a package's npm lifecycle scripts (preinstall, install,

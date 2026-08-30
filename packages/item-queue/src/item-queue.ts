@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, max-statements, complexity */
 
 import EventEmitter from "events";
 import assert from "assert";

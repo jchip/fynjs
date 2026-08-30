@@ -1,4 +1,3 @@
-/* eslint-disable max-statements, no-magic-numbers */
 
 import { describe, it, beforeEach, afterEach } from "vitest";
 import Fs from "fs";

@@ -9,7 +9,6 @@
  */
 const thisAssignmentPattern = /this\s*\.\s*\S+\s*=/;
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export function isClass(fn: unknown): fn is Function {
   try {
     if (typeof fn === "function") {

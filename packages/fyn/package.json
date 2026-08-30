@@ -183,7 +183,6 @@
       "xout",
       "xrun*.js",
       "xrun*.ts",
-      "**/.eslint*.*",
       "yarn"
     ],
     "extends": [],

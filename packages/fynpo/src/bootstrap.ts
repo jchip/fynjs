@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, consistent-return, complexity */
 
 import Fs from "fs";
 import Path from "path";
@@ -363,7 +362,7 @@ export class Bootstrap {
   }
 
   async exec({
-    build = true, // eslint-disable-line
+    build = true,
     fynOpts = [],
     concurrency = 6,
     skip = [],

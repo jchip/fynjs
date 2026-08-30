@@ -4,7 +4,6 @@ import Fs from "./util/file-ops";
 import fynTil from "./util/fyntil";
 import { getUrlType } from "./util/lifecycle-script-policy";
 
-/* eslint-disable complexity, max-statements, no-magic-numbers, jsdoc/require-jsdoc */
 
 const DEFAULT_ROOT_DIR = "_fyn";
 const MANIFEST_FILE = ".fyn-local-exports.json";

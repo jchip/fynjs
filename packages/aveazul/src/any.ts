@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { toArray, isPromise } from "./util.js";
 import { AggregateError } from "@jchip/error";
 import type { AveAzulClass } from "./aveazul.js";

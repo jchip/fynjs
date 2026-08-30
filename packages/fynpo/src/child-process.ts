@@ -1,6 +1,5 @@
 /* copied from https://github.com/lerna/lerna/blob/main/core/child-process/index.js */
 
-/* eslint-disable max-params */
 import chalk from "chalk";
 import execa from "execa";
 import logTransformer from "strong-log-transformer";

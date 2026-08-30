@@ -1,4 +1,3 @@
-/* eslint-disable prefer-spread */
 
 import { describe, it } from "vitest";
 

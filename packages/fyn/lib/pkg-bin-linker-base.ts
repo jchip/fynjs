@@ -1,4 +1,3 @@
-/* eslint-disable global-require, max-statements, no-param-reassign */
 
 import Fs from "./util/file-ops";
 import Path from "path";

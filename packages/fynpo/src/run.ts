@@ -1,5 +1,4 @@
 /* reuses some of the awesome work from https://github.com/lerna/lerna/blob/main/commands/run/index.js */
-/* eslint-disable consistent-return, complexity */
 
 import Path from "path";
 import Fs from "fs";

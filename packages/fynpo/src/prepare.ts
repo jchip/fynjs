@@ -1,4 +1,3 @@
-/* eslint-disable max-statements, no-magic-numbers, consistent-return */
 
 import Fs from "fs";
 import Path from "path";

@@ -3,7 +3,6 @@
 // before it's run.
 //
 
-/* eslint-disable complexity, max-params */
 
 import Promise from "aveazul";
 import _ from "lodash";

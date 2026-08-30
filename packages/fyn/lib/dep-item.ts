@@ -5,7 +5,6 @@ import _ from "lodash";
 import type { SemverAnalysis, ShrinkwrapData, ShrinkwrapDependency, NestedResolution, ResolutionData, PackageMeta } from "./types";
 import type { DepData, DepItemRef } from "./dep-data";
 
-/* eslint-disable no-magic-numbers, no-constant-condition, complexity */
 
 /**
  * Dependency Item

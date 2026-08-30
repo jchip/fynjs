@@ -1,8 +1,6 @@
-/* eslint-disable complexity, max-statements, no-magic-numbers, prefer-template, prefer-spread */
 
 import assert from "node:assert";
 import { makeOptionalImport } from "optional-import";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import colorConvert from "color-convert";
 
 //
@@ -37,7 +35,6 @@ import colorConvert from "color-convert";
 // ie: <#FF0000.bg#0000FF.orange.keyword()>
 //
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyColors = any;
 
 export type ChalkerFn = {

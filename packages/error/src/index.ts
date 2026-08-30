@@ -1,6 +1,5 @@
 import Path from "path";
 
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 
 const defaultPathFilter = [
   new RegExp(`/node_modules.*/(pirates/|isomorphic-loader/lib/extend-require)`),
@@ -87,7 +86,6 @@ export function aggregateStack(stack: string, errors: any[]): string {
  * @param error aggregate error
  * @returns aggregate stack
  */
-/* eslint-disable-next-line no-use-before-define */
 export function aggregateErrorStack(error: AggregateError): string {
   return aggregateStack(error.__stack || error.message || String(error), error.errors);
 }

@@ -1,4 +1,3 @@
-/* eslint-disable max-params, no-param-reassign */
 
 import _ from "lodash";
 import * as xaa from "xaa";

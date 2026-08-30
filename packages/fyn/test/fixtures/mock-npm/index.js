@@ -1,6 +1,5 @@
 "use strict";
 
-/* eslint-disable prefer-template */
 
 const electrodeServer = require("electrode-server");
 const Fs = require("fs");

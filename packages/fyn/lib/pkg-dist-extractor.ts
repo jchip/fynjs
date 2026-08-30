@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers, max-statements */
 
 import Tar from "tar";
 import logger from "./logger";

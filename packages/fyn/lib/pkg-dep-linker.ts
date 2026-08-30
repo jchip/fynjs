@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers,max-statements,prefer-template */
 
 import Crypto from "crypto";
 import Path from "path";
