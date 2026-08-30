@@ -78,7 +78,7 @@ export function exec(...args: ExecArg[]): ExecResult | ChildProcess {
     } else if (tof === "function") {
       assert(i + 1 === len, "xsh.exec: callback must be the last argument");
       cb = arg;
-    } else if (arg.constructor.name === "Boolean" || arg.constructor.name === "Object") {
+    } else if (tof === "boolean" || (tof === "object" && arg !== null)) {
       assert(
         i === 0 || len - i === 1 || len - i === 2,
         "xsh.exec: options must be the first, last, or second to last argument"
@@ -89,9 +89,14 @@ export function exec(...args: ExecArg[]): ExecResult | ChildProcess {
     }
   }
 
-  if (!options) {
+  //
+  // Dispatch on `typeof`, not `constructor.name`: the latter threw a TypeError on `null` and on
+  // `Object.create(null)` options, and rejected class-instance options that structurally satisfy
+  // ExecOptions - so the declared type accepted arguments the runtime did not.
+  //
+  if (options === undefined) {
     options = { silent: false };
-  } else if (options.constructor.name === "Boolean") {
+  } else if (typeof options === "boolean") {
     options = { silent: options };
   }
 

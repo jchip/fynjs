@@ -118,6 +118,29 @@ describe("exec", function () {
     );
   });
 
+  it("should reject null as a command fragment", () => {
+    expect(() => (xsh.exec as any)("echo hi", null)).to.throw(
+      "command fragment must be an array or string"
+    );
+  });
+
+  it("should accept options with a null prototype", async () => {
+    const opts = Object.create(null);
+    opts.silent = true;
+    const { err, output } = await execCb(opts, "echo hello, world");
+    expect(err).to.be.not.ok;
+    expect(output.stdout.trim()).to.equal("hello, world");
+  });
+
+  it("should accept a class instance as options", async () => {
+    class Options {
+      silent = true;
+    }
+    const { err, output } = await execCb(new Options(), "echo hello, world");
+    expect(err).to.be.not.ok;
+    expect(output.stdout.trim()).to.equal("hello, world");
+  });
+
   it("should fail if options is not last or 2nd to last argument", () => {
     expect(() => (xsh.exec as any)("test", ["a"], true, "b", () => true)).to.throw(
       "options must be the first, last, or second to last argument"
