@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { Prepare } from "../src/prepare";
+import { Prepare, prepareOutcome } from "../src/prepare";
 import path from "path";
 import fs from "fs";
 import shell from "shelljs";
@@ -150,5 +150,53 @@ describe("fynpo prepare", () => {
     prepare.readChangelog();
     expect(prepare._tags).toStrictEqual(["pkg1@3.0.1", "pkg2@2.0.0"]);
     expect(prepare._versions).toStrictEqual({ pkg1: "3.0.1", pkg2: "2.0.0" });
+  });
+});
+
+describe("prepareOutcome (FPO-49)", () => {
+  it("does not claim a commit that was skipped", () => {
+    // --no-commit and a dirty tree both land here, right after commitAndTagUpdates warned
+    const outcome = prepareOutcome(3, 5, false, 0);
+
+    expect(outcome.level).toBe("warning");
+    expect(outcome.message).not.toContain("committed and");
+    expect(outcome.message).toContain("not committed");
+    expect(outcome.message).toContain("3 package versions");
+    expect(outcome.message).toContain("5 files");
+  });
+
+  it("does not claim updates when nothing was written", () => {
+    // the changelog named versions the packages already had, so no file was staged
+    const outcome = prepareOutcome(0, 0, false, 0);
+
+    expect(outcome.level).toBe("warning");
+    expect(outcome.message).toContain("Nothing to update");
+    expect(outcome.message).not.toContain("Updated");
+  });
+
+  it("reports a real commit", () => {
+    const outcome = prepareOutcome(2, 4, true, 0);
+
+    expect(outcome.level).toBe("success");
+    expect(outcome.message).toBe("Updated 2 package versions across 4 files and committed");
+  });
+
+  it("mentions tags only when tags were created", () => {
+    expect(prepareOutcome(2, 2, true, 2).message).toContain("2 tags created");
+    expect(prepareOutcome(2, 2, true, 0).message).not.toContain("tag");
+  });
+
+  it("counts one of something without an s", () => {
+    expect(prepareOutcome(1, 1, true, 1).message).toBe(
+      "Updated 1 package version across 1 file, committed and 1 tag created"
+    );
+  });
+
+  it("still reports files staged for a dependency-range rewrite alone", () => {
+    // a dependent not being released still gets its range pointed at what was
+    const outcome = prepareOutcome(0, 3, true, 0);
+
+    expect(outcome.level).toBe("success");
+    expect(outcome.message).toContain("0 package versions across 3 files");
   });
 });

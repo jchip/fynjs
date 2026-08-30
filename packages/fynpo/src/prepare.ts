@@ -21,6 +21,49 @@ import {
 } from "./release-output";
 // prepare packages for publish
 
+/**
+ * What to report at the end of a prepare run.
+ *
+ * The old line was an unconditional "Package versions updated and committed" - printed under
+ * `--no-commit` two lines after warning that committing was skipped, and printed when the
+ * changelog only named versions the packages already had, so nothing was written at all
+ * (FPO-49). Say what happened instead.
+ *
+ * Pure so it can be tested directly; {@link Prepare.exec} picks the printer from `level`.
+ *
+ * @param versionCount - how many packages had their own version bumped
+ * @param fileCount - how many package.json files were staged, including dependency-range-only ones
+ * @param committed - whether a commit was actually made
+ * @param tagged - how many tags were created
+ * @returns the message and whether it is a success or a warning
+ */
+export const prepareOutcome = (
+  versionCount: number,
+  fileCount: number,
+  committed: boolean,
+  tagged: number
+): { level: "success" | "warning"; message: string } => {
+  const count = (n: number, what: string) => `${n} ${what}${n === 1 ? "" : "s"}`;
+
+  if (fileCount === 0) {
+    return {
+      level: "warning",
+      message: "Nothing to update - every package already has the version CHANGELOG.md asks for",
+    };
+  }
+
+  const updated = `Updated ${count(versionCount, "package version")} across ${count(fileCount, "file")}`;
+
+  if (!committed) {
+    return { level: "warning", message: `${updated} - not committed` };
+  }
+
+  return {
+    level: "success",
+    message: tagged > 0 ? `${updated}, committed and ${count(tagged, "tag")} created` : `${updated} and committed`,
+  };
+};
+
 export class Prepare {
   name;
   _cwd;
@@ -175,39 +218,48 @@ that's not latest but none set in fynpo config`
     pkgJson.version = newV;
   }
 
-  commitAndTagUpdates = (packages) => {
+  /**
+   * Commit the updated package.json files, and tag if asked to.
+   *
+   * @param packages - paths of the files to stage
+   * @returns what actually happened, so the caller can say so rather than assume (FPO-49)
+   */
+  // no explicit Promise<> annotation: `Promise` here is aveazul's, and TypeScript requires the
+  // global one as an async return type. Inference gives the right shape anyway.
+  commitAndTagUpdates = async (packages) => {
+    const didNothing = { committed: false, tagged: 0 };
+
     if (!this._options.commit) {
       logger.warn("commit option disabled, skip committing updates.");
-      return;
+      return didNothing;
     }
 
     if (!this._gitClean) {
       logger.warn("Your git branch is not clean, skip committing updates.");
-      return;
+      return didNothing;
     }
 
-    return this._sh(`git add ${packages.map((x) => `"${x}"`).join(" ")}`)
-      .then((output) => {
-        logger.info("git add", output);
-        return this._sh(
-          `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
-            ` -m " - ${this._tags.join("\n - ")}"`
-        );
-      })
-      .then((output) => {
-        logger.info("git commit", output);
+    const addOutput = await this._sh(`git add ${packages.map((x) => `"${x}"`).join(" ")}`);
+    logger.info("git add", addOutput);
 
-        if (this._options.tag !== true) {
-          return false;
-        }
+    const commitOutput = await this._sh(
+      `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
+        ` -m " - ${this._tags.join("\n - ")}"`
+    );
+    logger.info("git commit", commitOutput);
 
-        return Promise.each(this._tags, (tag) => {
-          logger.info("tagging", tag);
-          return this._sh(`git tag ${tag}`).then((tagOut) => {
-            logger.info("tag", tag, "output", tagOut);
-          });
-        });
+    if (this._options.tag !== true) {
+      return { committed: true, tagged: 0 };
+    }
+
+    await Promise.each(this._tags, (tag) => {
+      logger.info("tagging", tag);
+      return this._sh(`git tag ${tag}`).then((tagOut) => {
+        logger.info("tag", tag, "output", tagOut);
       });
+    });
+
+    return { committed: true, tagged: this._tags.length };
   };
 
   async exec() {
@@ -295,12 +347,19 @@ that's not latest but none set in fynpo config`
       Fs.writeFileSync(pkg.pkgFile, `${JSON.stringify(pkg.pkgJson, null, 2)}\n`);
     });
 
-    await this.commitAndTagUpdates(packages);
+    const { committed, tagged } = await this.commitAndTagUpdates(packages);
 
-    printSuccess("Package versions updated and committed");
+    const outcome = prepareOutcome(updatedPackages.length, packages.length, committed, tagged);
+    if (outcome.level === "success") {
+      printSuccess(outcome.message);
+    } else {
+      printWarning(outcome.message);
+    }
+
     printNextSteps([
       `Review git status: ${printCommand("git status")}`,
-      `Review package changes: ${printCommand("git diff HEAD~1 --stat")}`,
+      // nothing was committed, so HEAD~1 is somebody else's commit
+      `Review package changes: ${printCommand(committed ? "git diff HEAD~1 --stat" : "git diff --stat")}`,
       `Publish packages: ${printCommand("fynpo publish")}`,
     ]);
   }
