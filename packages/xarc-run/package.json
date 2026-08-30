@@ -87,7 +87,7 @@
     "require-at": "^1.0.6",
     "string-array": "^1.0.1",
     "unwrap-npm-cmd": "^1.1.2",
-    "xsh": "^0.4.5"
+    "xsh": "^1.0.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.3",

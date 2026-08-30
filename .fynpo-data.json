@@ -183,7 +183,57 @@
           "npm-packlist@11.3.0(dep)"
         ]
       }
+    ],
+    "packages/fyn": [
+      {
+        "fromPkg": {
+          "name": "fyn",
+          "version": "2.1.6",
+          "path": "packages/fyn"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "1.0.0",
+          "path": "packages/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "fyn@2.1.6(pkg)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "visual-exec",
+          "version": "0.2.0",
+          "path": "packages/visual-exec"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "1.0.0",
+          "path": "packages/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "visual-exec@0.2.0(dep)"
+        ]
+      },
+      {
+        "fromPkg": {
+          "name": "@fynjs/run",
+          "version": "0.0.1",
+          "path": "packages/xarc-run"
+        },
+        "onPkg": {
+          "name": "xsh",
+          "version": "1.0.0",
+          "path": "packages/xsh"
+        },
+        "depSection": "dep",
+        "indirectSteps": [
+          "@fynjs/run@0.0.1(dev)"
+        ]
+      }
     ]
   },
-  "__timestamp": 1788114781805
+  "__timestamp": 1788116313185
 }

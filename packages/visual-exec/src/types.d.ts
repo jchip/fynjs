@@ -34,21 +34,3 @@ declare module "visual-logger" {
   export default VisualLogger;
 }
 
-declare module "xsh" {
-  interface ExecOptions {
-    silent?: boolean;
-    cwd?: string;
-    env?: NodeJS.ProcessEnv;
-    maxBuffer?: number;
-  }
-
-  interface ExecResult {
-    stdout: NodeJS.ReadableStream;
-    stderr: NodeJS.ReadableStream;
-    promise: Promise<{ stdout: string; stderr: string }>;
-  }
-
-  export function exec(options: ExecOptions, command: string): ExecResult;
-  export let Promise: PromiseConstructor;
-}
-
