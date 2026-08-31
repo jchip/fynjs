@@ -63,6 +63,10 @@ export class InstallDeps {
       if (err && !err.command) {
         err.command = await this.getInstallCommand();
       }
+      // the install runs with --sl, so the whole output is already on disk - say where.
+      // What VisualExec shows is only the tail.
+      logger.error(`Failed to install dependencies for ${pkgInfo.name}`);
+      logger.error(`Check debug log for details: ${Path.join(pkgDir, "fyn-debug.log")}`);
       throw err;
     }
   }
