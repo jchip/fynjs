@@ -93,16 +93,18 @@ describe("Inflight", () => {
   it("should handle last check time", async () => {
     const ifl = new Inflight<string>();
     const added = Date.now();
-    ifl.add("test", Promise.resolve("hello"));
+    //
+    // `add` is given the same stamp the assertions are built from. Letting it call `Date.now()`
+    // itself leaves a one millisecond race - CI hit it: "expected 49 to be greater than or
+    // equal to 50". Measuring against an explicit `now` also avoids a real sleep, which is not
+    // guaranteed to last its full duration by this clock ("expected 9 to be greater than or
+    // equal to 10" on node 26).
+    //
+    ifl.add("test", Promise.resolve("hello"), added);
 
-    //
-    // Measured against an explicit `now` rather than a real sleep. `setTimeout(10)` is not
-    // guaranteed to be >= 10ms by the Date.now() clock - it can fire a millisecond early, and
-    // CI saw exactly that: "expected 9 to be greater than or equal to 10" on node 26.
-    //
     const later = added + 50;
-    expect(ifl.lastCheckTime("test", later)).toBeGreaterThanOrEqual(50);
-    expect(ifl.elapseCheckTime("test", later)).toBeGreaterThanOrEqual(50);
+    expect(ifl.lastCheckTime("test", later)).toBe(50);
+    expect(ifl.elapseCheckTime("test", later)).toBe(50);
 
     // the real-clock path still gets covered, just without a brittle lower bound
     await new Promise((res) => setTimeout(res, 10));
