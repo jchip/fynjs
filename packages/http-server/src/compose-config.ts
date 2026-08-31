@@ -1,3 +1,4 @@
+import { providerTypes, store, util } from "@fynjs/confippet";
 import defaultConfig from "./config/default.js";
 import developmentConfig from "./config/development.js";
 import productionConfig from "./config/production.js";
@@ -8,9 +9,10 @@ import testConfig from "./config/test.js";
 /**
  * The internal per-deployment config overlays, keyed by NODE_ENV.
  *
- * electrode-server read these off disk with electrode-confippet. Static imports
- * give the same composition without the extra dependency, and keep the files in
- * the bundle for consumers that don't ship `dist/config` as loose files.
+ * electrode-server read these off disk with electrode-confippet's file
+ * providers. They are static imports here so a bundler keeps them, and nothing
+ * has to ship `dist/config` as loose files - the composition itself still runs
+ * through confippet, with each overlay supplied as a handler provider.
  */
 const DEPLOYMENT_CONFIGS: Record<string, Record<string, any>> = {
   development: developmentConfig,
@@ -20,38 +22,22 @@ const DEPLOYMENT_CONFIGS: Record<string, Record<string, any>> = {
   test: testConfig
 };
 
-const isPlainObject = (x: any): boolean =>
-  Boolean(x) && typeof x === "object" && !Array.isArray(x);
+/** provider order: internal defaults first, deployment overlay over them */
+const ORDER_DEFAULT = 100;
+const ORDER_DEPLOYMENT = 140;
+/** decors sit between the internal config and the caller's own */
+const ORDER_DECOR = 500;
+/** appConfig is last, ahead only of confippet's own `NODE_CONFIG` provider */
+const ORDER_APP = 900;
 
-/**
- * Copy containers, share everything else.
- *
- * The source of a merge is often a long-lived object - the module-level default
- * config, or the caller's own - so a merge must never hand out a live reference
- * into it, or a later merge would write through and corrupt it. Functions and
- * class instances are shared deliberately: a plugin's `register` has to stay the
- * same function.
- */
-const cloneValue = (value: any): any => {
-  if (Array.isArray(value)) {
-    return value.map(cloneValue);
-  }
-  if (isPlainObject(value)) {
-    const copy: Record<string, any> = {};
-    for (const key of Object.keys(value)) {
-      copy[key] = cloneValue(value[key]);
-    }
-    return copy;
-  }
-  return value;
-};
+const isPlainObject = (x: any): boolean => Boolean(x) && typeof x === "object" && !Array.isArray(x);
 
 /**
  * Deep merge `src` into `target`, in place.
  *
- * Plain objects merge key by key; everything else - arrays, functions, class
- * instances, primitives - replaces wholesale. This matches how confippet's
- * `util.merge` behaves for the shapes a server config actually holds.
+ * confippet's merge, with a guard: a source that isn't a plain object is not a
+ * config partial, and lodash would spread a string or an array into numbered
+ * keys rather than ignore it.
  *
  * @param target - object to merge into
  * @param src - object to merge from
@@ -62,19 +48,7 @@ export function merge<T extends Record<string, any>>(target: T, src: any): T {
     return target;
   }
 
-  for (const key of Object.keys(src)) {
-    const value = src[key];
-    if (value === undefined) {
-      continue;
-    }
-    if (isPlainObject(value) && isPlainObject(target[key])) {
-      merge(target[key], value);
-    } else {
-      (target as Record<string, any>)[key] = cloneValue(value);
-    }
-  }
-
-  return target;
+  return util.merge(target, src);
 }
 
 /**
@@ -88,31 +62,75 @@ export const getDeployment = (): string | undefined => process.env["NODE_ENV"];
 
 /**
  * Compose the server config: internal defaults, then the deployment overlay,
- * then each decor in order, then the caller's own config.
+ * then each decor in order, then the caller's own config, then confippet's
+ * `NODE_CONFIG` / `CONFIPPET*` environment provider.
+ *
+ * Every layer is a confippet handler provider, so all of confippet's
+ * composition semantics apply: arrays replace, a `+`-prefixed key unions
+ * instead, and `{{...}}` templates in the result are resolved afterwards
+ * against the config itself, the process environment and `deployment`.
  *
  * @param appConfig - the caller's config, applied last so it always wins
  * @param decors - extra config objects applied between the internal defaults and appConfig
  * @param deployment - which overlay to apply, defaults to NODE_ENV
- * @returns the composed config
+ * @returns the composed config, as a confippet store - a plain config object
+ *   with a hidden `$(path)` reader and `_$` operations
  */
 export function composeConfig(
   appConfig: any = {},
   decors: any[] = [],
   deployment: string | undefined = getDeployment()
 ): Record<string, any> {
-  const config: Record<string, any> = {};
+  const providers: Record<string, any> = {
+    httpServerDefault: {
+      type: providerTypes.required,
+      order: ORDER_DEFAULT,
+      handler: () => defaultConfig
+    },
+    httpServerDeployment: {
+      type: providerTypes.optional,
+      order: ORDER_DEPLOYMENT,
+      handler: () => (deployment && DEPLOYMENT_CONFIGS[deployment]) || {}
+    },
+    appConfig: {
+      type: providerTypes.required,
+      order: ORDER_APP,
+      handler: () => appConfig
+    }
+  };
 
-  merge(config, defaultConfig);
+  const decorKeys = decors.map((decor, ix) => {
+    const key = `decor${ix}`;
+    providers[key] = {
+      type: providerTypes.required,
+      order: ORDER_DECOR + ix,
+      handler: () => decor
+    };
+    return key;
+  });
 
-  if (deployment && DEPLOYMENT_CONFIGS[deployment]) {
-    merge(config, DEPLOYMENT_CONFIGS[deployment]);
-  }
+  const config = store();
 
-  for (const decor of decors) {
-    merge(config, decor);
-  }
+  config._$.compose({
+    //
+    // no file provider is in the list, so nothing is read from disk and the
+    // directory is never consulted - it only has to be a path confippet can
+    // resolve
+    //
+    dir: ".",
+    providers,
+    providerList: [
+      "httpServerDefault",
+      "httpServerDeployment",
+      ...decorKeys,
+      "appConfig",
+      // confippet's own: NODE_CONFIG and any CONFIPPET* env var, as JSON
+      "confippetEnv"
+    ],
+    context: { deployment: deployment || "" }
+  });
 
-  merge(config, appConfig);
+  config._$.process({ context: { deployment: deployment || "" } });
 
   // `listener` is a hook, not config - it is consumed before composition
   delete config.listener;

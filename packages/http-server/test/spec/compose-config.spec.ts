@@ -119,3 +119,69 @@ describe("composeConfig", () => {
     expect(appConfig).toEqual({ connection: { port: 1234 } });
   });
 });
+
+describe("composeConfig through confippet", () => {
+  const CONFIPPET_ENV = ["NODE_CONFIG", "CONFIPPET_TEST"];
+  const originalEnv = CONFIPPET_ENV.map(k => [k, process.env[k]] as const);
+
+  afterEach(() => {
+    for (const [key, value] of originalEnv) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
+  it("unions arrays across layers under a `+` prefixed key", () => {
+    const config = composeConfig({ "+list": ["app"] }, [{ "+list": ["decor"] }], "");
+    expect(config["+list"]).toEqual(["decor", "app"]);
+  });
+
+  it("still replaces arrays under a plain key", () => {
+    const config = composeConfig({ list: ["app"] }, [{ list: ["decor", "extra"] }], "");
+    expect(config.list).toEqual(["app"]);
+  });
+
+  it("merges NODE_CONFIG over everything, including appConfig", () => {
+    process.env.NODE_CONFIG = JSON.stringify({
+      electrode: { source: "node-config" }
+    });
+    const config = composeConfig({ electrode: { source: "app" } }, [], "");
+    expect(config.electrode.source).toBe("node-config");
+  });
+
+  it("merges any CONFIPPET prefixed env var", () => {
+    process.env.CONFIPPET_TEST = JSON.stringify({ connection: { port: 4567 } });
+    expect(composeConfig({}, [], "").connection.port).toBe(4567);
+  });
+
+  it("resolves templates against the config and the deployment", () => {
+    const config = composeConfig(
+      {
+        listen: "{{config.connection.address}}:{{config.connection.port}}",
+        deployedTo: "{{deployment}}",
+        literal: "{{-not a reference}}",
+        unresolved: "{{no.such.thing}}"
+      },
+      [],
+      "production"
+    );
+    expect(config.listen).toBe("0.0.0.0:3000");
+    expect(config.deployedTo).toBe("production");
+    expect(config.literal).toBe("not a reference");
+    expect(config.unresolved).toBe("");
+  });
+
+  it("reads values by path off the composed store", () => {
+    const config = composeConfig({}, [], "development");
+    expect(config.$("electrode.source")).toBe("development");
+    expect(config.$("connection.address")).toBe("0.0.0.0");
+  });
+
+  it("keeps the store's own members off the config's keys", () => {
+    const config = composeConfig({}, [], "");
+    expect(Object.keys(config)).toEqual(["server", "connection", "plugins", "electrode"]);
+  });
+});

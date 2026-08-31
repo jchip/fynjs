@@ -50,9 +50,29 @@ compatibility.
 | `deferStart`  | `true` to skip listening, so you can add routes then call `start()`   |
 | `listener`    | `emitter => …` hook to register lifecycle event handlers              |
 
-Config is composed as: internal defaults, then the `NODE_ENV` overlay
-(`development`, `production`, `qa`, `staging`, `test`), then each `decors` entry
-in order, then your `appConfig` — which always wins.
+### Composition
+
+Config is composed with [@fynjs/confippet]: internal defaults, then the
+`NODE_ENV` overlay (`development`, `production`, `qa`, `staging`, `test`), then
+each `decors` entry in order, then your `appConfig`, then confippet's own
+environment provider. Each layer is a confippet handler provider — the internal
+config files are static imports, so nothing is read from disk and a bundler
+keeps them.
+
+That means all of confippet's semantics apply:
+
+- objects merge key by key; arrays replace, unless the key starts with `+`, in
+  which case the layers' arrays are unioned under that same `+` key
+- `NODE_CONFIG`, and any `CONFIPPET*` environment variable, is parsed as JSON
+  and merged last — over your `appConfig`
+- `{{…}}` templates in the result are resolved afterwards, against the config
+  itself (`{{config.connection.port}}`), the environment (`{{env.HOST}}`,
+  `{{getEnv:AWS_REGION:upperCase}}`), `{{readFile:/run/secrets/token}}` and
+  `{{deployment}}`. A reference nothing resolves becomes `""`; `{{-…}}` keeps
+  the rest literal.
+
+The composed config is a confippet store, so it also carries a non-enumerable
+`$(path)` reader — `server.app.config.$("connection.port")`.
 
 ### deferStart
 
@@ -118,21 +138,22 @@ A handler may call `next()`, `next(err)`, or return a promise.
 Startup failures are annotated with a code, printed to stderr with a suggested
 resolution, and rejected with `err.moreInfo` set:
 
-| code             | meaning                                        |
-| ---------------- | ---------------------------------------------- |
-| `XEVENT_FAILED`  | a lifecycle event handler errored              |
+| code             | meaning                                         |
+| ---------------- | ----------------------------------------------- |
+| `XEVENT_FAILED`  | a lifecycle event handler errored               |
 | `XEVENT_TIMEOUT` | a handler never completed within `eventTimeout` |
-| `XPLUGIN_FAILED` | a plugin failed to register                    |
-| `EADDRINUSE`     | the port is already taken                      |
+| `XPLUGIN_FAILED` | a plugin failed to register                     |
+| `EADDRINUSE`     | the port is already taken                       |
 
 ## Differences from @xarc/fastify-server
 
 Behavioral differences, all deliberate:
 
-- **Dependencies.** `async-eventemitter` (unmaintained, pulls `async@2`),
-  `electrode-confippet`, `require-at` and `lodash` are replaced by a small
-  internal async emitter, a config composer, `node:module`'s `createRequire`, and
-  plain JS. What remains is `fastify`, `fastify-plugin`, `xaa` and `chalk`.
+- **Dependencies.** `async-eventemitter` (unmaintained, pulls `async@2`) and
+  `require-at` are replaced by a small internal async emitter and
+  `node:module`'s `createRequire`; `electrode-confippet` is replaced by
+  [@fynjs/confippet], which is the same composer on current dependencies. What
+  remains is `fastify`, `fastify-plugin`, `xaa`, `chalk` and `@fynjs/confippet`.
 - **A `config-composed` handler failure** goes through the same `startFailed`
   reporting as every later event, rather than escaping bare.
 - **A plugin whose register throws synchronously** is reported as
@@ -144,5 +165,6 @@ Behavioral differences, all deliberate:
   promisified form does not settle against current avvio.
 
 [Fastify]: https://fastify.dev
+[@fynjs/confippet]: ../confippet
 [electrode-server]: https://github.com/electrode-io/electrode-server
 [@xarc/fastify-server]: https://github.com/electrode-io/fastify-server
