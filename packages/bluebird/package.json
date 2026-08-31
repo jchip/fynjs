@@ -23,6 +23,6 @@
     "url": ""
   },
   "dependencies": {
-    "aveazul": "^2.0.0"
+    "aveazul": "^2.0.1"
   }
 }
