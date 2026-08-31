@@ -25,6 +25,9 @@
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",

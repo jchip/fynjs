@@ -1,5 +1,4 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url]
-[![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
+[![NPM version][npm-image]][npm-url]
 
 # xenv-config
 
@@ -134,11 +133,5 @@ The order of source to check are:
 3.  The default value from spec if it's declared
 4.  Nothing
 
-[travis-image]: https://travis-ci.org/jchip/xenv-config.svg?branch=master
-[travis-url]: https://travis-ci.org/jchip/xenv-config
 [npm-image]: https://badge.fury.io/js/xenv-config.svg
 [npm-url]: https://npmjs.org/package/xenv-config
-[daviddm-image]: https://david-dm.org/jchip/xenv-config/status.svg
-[daviddm-url]: https://david-dm.org/jchip/xenv-config
-[daviddm-dev-image]: https://david-dm.org/jchip/xenv-config/dev-status.svg
-[daviddm-dev-url]: https://david-dm.org/jchip/xenv-config?type=dev

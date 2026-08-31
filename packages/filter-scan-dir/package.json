@@ -58,9 +58,9 @@
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/jchip/filter-scan-dir/issues"
+    "url": "https://github.com/jchip/fynjs/issues"
   },
-  "homepage": "https://github.com/jchip/filter-scan-dir",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir",
   "dependencies": {},
   "devDependencies": {
     "@fynjs/run": "^0.0.1",

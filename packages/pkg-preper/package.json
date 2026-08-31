@@ -28,11 +28,20 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": [],
+  "keywords": [
+    "npm",
+    "package",
+    "pack",
+    "tarball",
+    "prepare"
+  ],
   "files": [
     "dist"
   ],
   "author": "Joel Chen <joel123@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",

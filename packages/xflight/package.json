@@ -25,6 +25,10 @@
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xflight",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jchip/fynjs.git",

@@ -1,18 +1,16 @@
 [![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-[![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
-[![coverage][coverage-image]][coverage-url]
 
-# NixClap
+# @fynjs/cli-args
 
 Simple, lightweight, flexible, and comprehensive Un\*x Command Line Argument Parsing for Node.js.
 
 ## Features
 
-- **Lightweight** - Minimal dependencies (`tslib`)
+- **Lightweight** - Zero runtime dependencies
 - **Comprehensive** - Full Un\*x-style parsing with options, commands, sub-commands, and variadic arguments
 - **Root Command Support** - Define root command behavior directly in init2()
 - **Type-Safe** - Written in TypeScript with full type definitions
-- **Modern** - Dual ESM/CJS support, async/await support, Node.js 20+
+- **Modern** - ESM only, async/await support, Node.js 22+
 - **Flexible** - JSON-based configuration with support for custom type coercions
 - **Event-Driven** - Extensible event system for customizing behavior
 - **Informative** - Detailed parse results showing argument sources (`cli`, `default`, `user`)
@@ -23,13 +21,13 @@ Simple, lightweight, flexible, and comprehensive Un\*x Command Line Argument Par
 ## Quick Start
 
 ```bash
-npm install nix-clap
+npm install @fynjs/cli-args
 ```
 
 ### Simple CLI with commands
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap()
   .version("1.0.0")
@@ -58,7 +56,7 @@ $ my-cli --version    # Shows version
 ### CLI with options
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 const parsed = new NixClap()
   .init2({
@@ -84,7 +82,7 @@ $ my-cli -n Bob          # "Hello Bob!"
 ### CLI with command arguments
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap()
   .init2({
@@ -110,7 +108,7 @@ $ my-cli copy file.txt backup.txt
 ### Root command with arguments
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap({ name: "process" })
   .init2({
@@ -138,7 +136,7 @@ $ process file1.txt file2.txt         # "Processing: file1.txt, file2.txt"
 ### With Commands and Options
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap()
   .version("1.0.0")
@@ -384,7 +382,7 @@ new NixClap().init2({
 **Complete Example:**
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap({ name: "file-processor" })
   .version("1.0.0")
@@ -793,7 +791,7 @@ $ prog compile file1.js -# some-command-name more-args -. actual-command
 ## Installation
 
 ```bash
-npm install nix-clap
+npm install @fynjs/cli-args
 ```
 
 **Requirements:**
@@ -1486,7 +1484,7 @@ init2({
 **Example:**
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 // Using init()
 const nc = new NixClap().init(
@@ -1527,7 +1525,7 @@ Return: The `NixClap` instance itself.
 **Basic Example:**
 
 ```js
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 // Root command with arguments
 const nc = new NixClap({ name: "process" }).init2({
@@ -1853,7 +1851,7 @@ NixClap is written in TypeScript and provides full type definitions out of the b
 ### Basic TypeScript Usage
 
 ```typescript
-import { NixClap, CommandSpec, OptionSpec, ParseResult } from "nix-clap";
+import { NixClap, CommandSpec, OptionSpec, ParseResult } from "@fynjs/cli-args";
 
 const options: Record<string, OptionSpec> = {
   verbose: {
@@ -1881,7 +1879,7 @@ const parsed: ParseResult = nc.parse();
 ### Using init2() with TypeScript
 
 ```typescript
-import { NixClap, CommandSpec } from "nix-clap";
+import { NixClap, CommandSpec } from "@fynjs/cli-args";
 
 // Define root command spec with full type safety
 const rootSpec: CommandSpec = {
@@ -1908,7 +1906,7 @@ const nc = new NixClap().init2(rootSpec);
 ### Type-Safe Command Specs
 
 ```typescript
-import { NixClap, CommandSpec, OptionSpec } from "nix-clap";
+import { NixClap, CommandSpec, OptionSpec } from "@fynjs/cli-args";
 
 // Define options with full types
 const options: Record<string, OptionSpec> = {
@@ -2054,14 +2052,8 @@ Other popular CLI parsers you might consider:
 [argparse]: https://github.com/nodeca/argparse
 [yargs]: https://github.com/yargs/yargs
 [commander]: https://github.com/tj/commander.js
-[build-image]: https://github.com/jchip/nix-clap/actions/workflows/node.js.yml/badge.svg
-[build-url]: https://github.com/jchip/nix-clap/actions/workflows/node.js.yml
-[npm-image]: https://badge.fury.io/js/nix-clap.svg
-[npm-url]: https://npmjs.org/package/nix-clap
-[daviddm-image]: https://david-dm.org/jchip/nix-clap/status.svg
-[daviddm-url]: https://david-dm.org/jchip/nix-clap
-[daviddm-dev-image]: https://david-dm.org/jchip/nix-clap/dev-status.svg
-[daviddm-dev-url]: https://david-dm.org/jchip/nix-clap?type=dev
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[npm-image]: https://badge.fury.io/js/%40fynjs%2Fcli-args.svg
+[npm-url]: https://npmjs.org/package/@fynjs/cli-args
 [webpack]: https://webpack.js.org/
-[coverage-image]: https://coveralls.io/repos/github/jchip/nix-clap/badge.svg?branch=master
-[coverage-url]: https://coveralls.io/github/jchip/nix-clap?branch=master

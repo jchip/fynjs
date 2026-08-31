@@ -1,10 +1,7 @@
 # @jchip/error <sup>[![Version Badge][npm-version-svg]][package-url]</sup> <!-- omit in toc -->
 
-[![dependency status][deps-svg]][deps-url]
-[![dev dependency status][dev-deps-svg]][dev-deps-url]
 [![License][license-image]][license-url]
 [![build][build-image]][build-url]
-[![coverage][coverage-image]][coverage-url]
 
 [![Downloads][downloads-image]][downloads-url]
 
@@ -152,16 +149,10 @@ AggregateError: require failed
 [aggregateerror]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError
 [license-image]: https://img.shields.io/npm/l/@jchip/error.svg
 [license-url]: LICENSE
-[build-image]: https://github.com/jchip/error/actions/workflows/node.js.yml/badge.svg
-[build-url]: https://github.com/jchip/error/actions/workflows/node.js.yml
-[coverage-image]: https://coveralls.io/repos/github/jchip/error/badge.svg?branch=main
-[coverage-url]: https://coveralls.io/github/jchip/error?branch=main
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
 [downloads-image]: https://img.shields.io/npm/dm/@jchip/error.svg
 [downloads-url]: https://npm-stat.com/charts.html?package=%40jchip%2Ferror
-[deps-svg]: https://david-dm.org/jchip/error.svg
-[deps-url]: https://david-dm.org/jchip/error
-[dev-deps-svg]: https://david-dm.org/jchip/error/dev-status.svg
-[dev-deps-url]: https://david-dm.org/jchip/error#info=devDependencies
 [npm-badge-png]: https://nodei.co/npm/@jchip/error.png?downloads=true&stars=true
 [package-url]: https://npmjs.com/package/@jchip/error
 [npm-version-svg]: https://versionbadg.es/jchip/error.svg

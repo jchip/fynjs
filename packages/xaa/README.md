@@ -2,7 +2,7 @@
 
 async/await and Promise helpers.
 
-github: <https://github.com/jchip/xaa>
+github: <https://github.com/jchip/fynjs/tree/main/packages/xaa>
 
 ## Install and Usage
 

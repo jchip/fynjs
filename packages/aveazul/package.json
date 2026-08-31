@@ -13,7 +13,7 @@
     },
     "./package.json": "./package.json"
   },
-  "homepage": "https://github.com/jchip/aveazul",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/aveazul",
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
@@ -72,6 +72,9 @@
     "aveazul",
     "aveazul.js"
   ],
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",

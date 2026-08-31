@@ -2,7 +2,7 @@
   "name": "@jchip/error",
   "version": "1.0.3",
   "description": "utilities and polyfill for node.js errors",
-  "homepage": "https://jchip.github.io/error",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/error",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",
@@ -55,6 +55,9 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.com/"
+  },
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
   },
   "repository": {
     "type": "git",

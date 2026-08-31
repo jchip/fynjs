@@ -24,6 +24,10 @@
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/string-array",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",

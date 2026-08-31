@@ -1,5 +1,4 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url]
-[![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
+[![NPM version][npm-image]][npm-url]
 
 # String Array
 
@@ -85,12 +84,6 @@ const r2 = stringArray.parse("test[1,2,3]");
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-[travis-image]: https://travis-ci.org/jchip/string-array.svg?branch=master
-[travis-url]: https://travis-ci.org/jchip/string-array
 [npm-image]: https://badge.fury.io/js/string-array.svg
 [npm-url]: https://npmjs.org/package/string-array
-[daviddm-image]: https://david-dm.org/jchip/string-array/status.svg
-[daviddm-url]: https://david-dm.org/jchip/string-array
-[daviddm-dev-image]: https://david-dm.org/jchip/string-array/dev-status.svg
-[daviddm-dev-url]: https://david-dm.org/jchip/string-array?type=dev
 [npm scripts]: https://docs.npmjs.com/misc/scripts

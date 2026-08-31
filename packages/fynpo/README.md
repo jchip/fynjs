@@ -2,7 +2,6 @@
 
 [![License][license-image]][license-url]
 [![build][build-image]][build-url]
-[![coverage][coverage-image]][coverage-url]
 
 [![Downloads][downloads-image]][downloads-url]
 
@@ -81,17 +80,11 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 
 <!-- CI and coverage badges -->
 
-[build-image]: https://github.com/jchip/fynpo/actions/workflows/ci.yml/badge.svg
-[build-url]: https://github.com/jchip/fynpo/actions/workflows/ci.yml
-[coverage-image]: https://coveralls.io/repos/github/electrode-io/fynpo/badge.svg?branch=main
-[coverage-url]: https://coveralls.io/github/electrode-io/fynpo?branch=main
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
 
 <!-- david-dm badges -->
 
-[deps-svg]: https://david-dm.org/electrode-io/fynpo.svg?path=packages%2Ffynpo
-[deps-url]: https://david-dm.org/electrode-io/fynpo?path=packages%2Ffynpo
-[dev-deps-svg]: https://david-dm.org/electrode-io/fynpo/dev-status.svg?path=packages%2Ffynpo&type=dev
-[dev-deps-url]: https://david-dm.org/electrode-io/fynpo?path=packages%2Ffynpo&type=dev
 
 <!-- npm badges -->
 

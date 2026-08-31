@@ -30,7 +30,10 @@
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
-  "homepage": "https://jchip.github.io/xaa/",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xaa",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",

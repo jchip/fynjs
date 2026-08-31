@@ -1,5 +1,4 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url]
-[![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
+[![NPM version][npm-image]][npm-url]
 
 # chalker
 
@@ -169,11 +168,5 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [ansi-colors]: https://www.npmjs.com/package/ansi-colors
 [chalk]: https://www.npmjs.com/package/chalk
 [chalk advanced colors]: https://github.com/chalk/chalk#256-and-truecolor-color-support
-[travis-image]: https://travis-ci.org/jchip/chalker.svg?branch=master
-[travis-url]: https://travis-ci.org/jchip/chalker
 [npm-image]: https://badge.fury.io/js/chalker.svg
 [npm-url]: https://npmjs.org/package/chalker
-[daviddm-image]: https://david-dm.org/jchip/chalker/status.svg
-[daviddm-url]: https://david-dm.org/jchip/chalker
-[daviddm-dev-image]: https://david-dm.org/jchip/chalker/dev-status.svg
-[daviddm-dev-url]: https://david-dm.org/jchip/chalker?type=dev

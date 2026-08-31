@@ -1,6 +1,4 @@
 [![NPM version][npm-image]][npm-url] [![Build Status][ci-shield]][ci-url]
-[![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
-[![coverage][coverage-image]][coverage-url]
 
 # @fynjs/run
 
@@ -709,21 +707,14 @@ See [reference](./REFERENCE.md) for more detailed information on features such a
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-[ci-shield]: https://travis-ci.org/electrode-io/xarc-run.svg?branch=master
-[ci-url]: https://travis-ci.org/electrode-io/xarc-run
-[npm-image]: https://badge.fury.io/js/%40xarc%2Frun.svg
+[ci-shield]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[npm-image]: https://badge.fury.io/js/%40fynjs%2Frun.svg
 [npm-url]: https://npmjs.org/package/@fynjs/run
-[daviddm-image]: https://david-dm.org/electrode-io/xarc-run/status.svg
-[daviddm-url]: https://david-dm.org/electrode-io/xarc-run
-[daviddm-dev-image]: https://david-dm.org/electrode-io/xarc-run/dev-status.svg
-[daviddm-dev-url]: https://david-dm.org/electrode-io/xarc-run?type=dev
 [npm scripts]: https://docs.npmjs.com/misc/scripts
-[@fynjs/run-cli]: https://github.com/electrode-io/xarc-run-cli
 [bash]: https://www.gnu.org/software/bash/
 [zsh]: http://www.zsh.org/
 [load tasks into namespace]: REFERENCE.md#loading-task
 [auto complete with namespace]: REFERENCE.md#auto-complete-with-namespace
 [npm]: https://www.npmjs.com/package/npm
 [node.js stream]: https://nodejs.org/api/stream.html
-[coverage-image]: https://coveralls.io/repos/github/electrode-io/xarc-run/badge.svg?branch=master
-[coverage-url]: https://coveralls.io/github/electrode-io/xarc-run?branch=master

@@ -3,7 +3,6 @@
 [![NPM version][npm-image]][npm-url]
 [![Apache 2.0 License][apache-2.0-blue-image]][apache-2.0-url]
 [![Build Status][build-image]][build-url]
-[![Coverage Status][coveralls-image]][coveralls-url]
 
 **fyn** is the package manager for [fynpo], a zero setup monorepo manager for node.js.
 
@@ -265,16 +264,10 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [ini]: https://www.npmjs.com/package/ini
 [node_preserve_symlinks]: https://nodejs.org/docs/latest-v8.x/api/cli.html#cli_node_preserve_symlinks_1
 [require-at]: https://www.npmjs.com/package/require-at
-[travis-image]: https://travis-ci.org/electrode-io/fyn.svg?branch=master
-[travis-url]: https://travis-ci.org/electrode-io/fyn
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
 [npm-image]: https://badge.fury.io/js/fyn.svg
 [npm-url]: https://npmjs.org/package/fyn
-[coveralls-image]: https://coveralls.io/repos/github/electrode-io/fyn/badge.svg?branch=master
-[coveralls-url]: https://coveralls.io/github/electrode-io/fyn?branch=master
-[daviddm-image]: https://david-dm.org/electrode-io/fyn/status.svg
-[daviddm-url]: https://david-dm.org/electrode-io/fyn
-[daviddm-dev-image]: https://david-dm.org/electrode-io/fyn/dev-status.svg
-[daviddm-dev-url]: https://david-dm.org/electrode-io/fyn?type=dev
 [apache-2.0-blue-image]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [apache-2.0-url]: https://www.apache.org/licenses/LICENSE-2.0
 [npm scripts]: https://docs.npmjs.com/misc/scripts
@@ -290,6 +283,3 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [npm link]: https://docs.npmjs.com/cli/link.html
 [@npmcli/run-script]: https://www.npmjs.com/package/@npmcli/run-script
 [npmlog]: https://www.npmjs.com/package/npmlog
-[build-image]: https://github.com/jchip/fynpo/actions/workflows/ci.yml/badge.svg
-[build-url]: https://github.com/jchip/fynpo/actions/workflows/ci.yml
-[fynpo]: https://github.com/jchip/fynpo

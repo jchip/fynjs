@@ -39,6 +39,10 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/check-pkg-new-version-engine",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",

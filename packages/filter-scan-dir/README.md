@@ -2,7 +2,6 @@
 
 [![License][license-image]][license-url]
 [![build][build-image]][build-url]
-[![coverage][coverage-image]][coverage-url]
 
 [![Downloads][downloads-image]][downloads-url]
 
@@ -41,18 +40,12 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 
 [npm-version-svg]: https://badge.fury.io/js/filter-scan-dir.svg
 [package-url]: https://npmjs.com/package/filter-scan-dir
-[deps-svg]: https://david-dm.org/filter-scan-dir.svg
-[deps-url]: https://david-dm.org/filter-scan-dir
-[dev-deps-svg]: https://david-dm.org/filter-scan-dir/dev-status.svg
-[dev-deps-url]: https://david-dm.org/filter-scan-dir#info=devDependencies
 [license-image]: https://img.shields.io/npm/l/filter-scan-dir.svg
 [license-url]: LICENSE
-[build-image]: https://github.com/jchip/filter-scan-dir/actions/workflows/node.js.yml/badge.svg
-[build-url]: https://github.com/jchip/filter-scan-dir/actions/workflows/node.js.yml
-[coverage-image]: https://coveralls.io/repos/github/jchip/filter-scan-dir/badge.svg?branch=main
-[coverage-url]: https://coveralls.io/github/jchip/filter-scan-dir?branch=main
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
 [downloads-image]: https://img.shields.io/npm/dm/filter-scan-dir.svg
 [downloads-url]: https://npm-stat.com/charts.html?package=filter-scan-dir
 [npm-badge-png]: https://nodei.co/npm/filter-scan-dir.png?downloads=true&stars=true
 [api docs]: https://jchip.github.io/filter-scan-dir/modules.html#filterScanDir
-[github]: https://github.com/jchip/filter-scan-dir
+[github]: https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir
