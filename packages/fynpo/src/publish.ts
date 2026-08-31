@@ -143,14 +143,34 @@ export default class Publish {
     });
   }
 
+  /**
+   * Run one of a package's publish lifecycle scripts.
+   *
+   * `FYNPO_PUBLISH` tells the script it is running under `fynpo publish` rather than someone
+   * typing `npm publish` in the package directory. A package that guards against being
+   * published by hand can accept it as a sanctioned publisher instead of failing the release -
+   * publish-util's check.js does exactly that. Without it, such a guard stops the whole run at
+   * whichever package holds it (FPO-55).
+   *
+   * It is set around the call rather than passed down because fyn.run executes in this process;
+   * the scripts it spawns inherit process.env. The previous value is restored so nothing leaks
+   * into the npm publish phase.
+   */
   async runScript(pkg: FynpoPackageInfo, script: string) {
     if (_.get(pkg.pkgJson, ["scripts", script])) {
       const pkgFullDir = Path.join(this._fynpoRc.cwd, pkg.path);
+      const savedEnv = process.env.FYNPO_PUBLISH;
+      process.env.FYNPO_PUBLISH = "1";
       shell.pushd(pkgFullDir);
       try {
         await fyn.run(["run", script, "--cwd", pkgFullDir], 0, false);
       } finally {
         shell.popd();
+        if (savedEnv === undefined) {
+          delete process.env.FYNPO_PUBLISH;
+        } else {
+          process.env.FYNPO_PUBLISH = savedEnv;
+        }
       }
     }
   }
