@@ -19,6 +19,38 @@ import { DEP_ITEM, SEMVER } from "./symbols";
 import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
 
 const { readPkgJson } = fyntil;
+
+/** `optFailed` value meaning the package's os/cpu did not match the machine that checked it */
+export const OPT_FAILED_PLATFORM = 3;
+
+/**
+ * Decide what a lockfile's `optFailed` record means for the machine running *this* install.
+ *
+ * `optFailed` is written by whichever machine generated the lock, so it is only portable to the
+ * extent the failure was. `OPT_FAILED_PLATFORM` records an os/cpu mismatch *there*, which says
+ * nothing about here: a lock generated on darwin marks `@esbuild/linux-x64` failed, and honoring
+ * that on linux leaves esbuild with no binary and fails its postinstall (FPM-67). The lock saves
+ * `os`/`cpu` next to the flag, so the question can simply be re-asked for this platform.
+ *
+ * Values 1 (opt check failed) and 2 (install failed) are not platform specific and still stand.
+ *
+ * @param optFailed the lockfile's `optFailed` value
+ * @param metaJson locked version metadata, carrying the `os`/`cpu` saved with it
+ * @returns `platform-mismatch` to skip quietly, `honor` to skip with a warning, `recheck` to
+ *          ignore the record and run the real check
+ */
+export function evalLockedOptFailure(
+  optFailed: number | undefined,
+  metaJson: { os?: string[]; cpu?: string[] } | undefined
+): "platform-mismatch" | "honor" | "recheck" {
+  if (metaJson && fyntil.checkPkgOsCpu(metaJson) !== true) {
+    // this platform genuinely cannot use it, whatever the lock says
+    return "platform-mismatch";
+  }
+
+  // os/cpu satisfy this platform, so a recorded platform failure came from a different one
+  return optFailed === OPT_FAILED_PLATFORM ? "recheck" : "honor";
+}
 xsh.Promise = Promise;
 
 /** Optional dependency item */
@@ -226,7 +258,6 @@ class PkgOptResolver {
       // Check using os/cpu from lockfile metadata (saved when platform check originally failed)
       const metaJson = data.meta.versions[version];
       if (metaJson) {
-        const OPT_FAILED_PLATFORM = 3;
         if (metaJson.optFailed === OPT_FAILED_PLATFORM) {
           // Platform mismatch recorded in lockfile
           return;
@@ -276,28 +307,31 @@ class PkgOptResolver {
       return processCheckResult(inflight);
     }
 
-    if (!this._fyn.refreshOptionals && _.get(data, ["meta", "versions", version, "optFailed"])) {
-      // Check if this is a platform mismatch before logging warning
-      const metaJson = data.meta.versions[version];
-      if (metaJson) {
-        const platformCheck = fyntil.checkPkgOsCpu(metaJson);
-        if (platformCheck !== true) {
-          // Platform/arch mismatch - skip warning, already logged as verbose
-          const rx = {
-            passed: false,
-            err: new Error("optional dep fail by flag optFailed in lockfile - platform mismatch")
-          };
-          addChecked(rx);
-          return processCheckResult(Promise.resolve(rx));
-        }
+    const lockedOptFailed = _.get(data, ["meta", "versions", version, "optFailed"]);
+    if (!this._fyn.refreshOptionals && lockedOptFailed) {
+      // a lockfile optFailed is only as portable as the failure it recorded - see
+      // evalLockedOptFailure. "recheck" falls through to the real check below.
+      const verdict = evalLockedOptFailure(lockedOptFailed, data.meta.versions[version]);
+
+      if (verdict === "platform-mismatch") {
+        // Platform/arch mismatch - skip warning, already logged as verbose
+        const rx = {
+          passed: false,
+          err: new Error("optional dep fail by flag optFailed in lockfile - platform mismatch")
+        };
+        addChecked(rx);
+        return processCheckResult(Promise.resolve(rx));
       }
-      logFail("by flag optFailed in lockfile");
-      const rx = {
-        passed: false,
-        err: new Error("optional dep fail by flag optFailed in lockfile")
-      };
-      addChecked(rx);
-      return processCheckResult(Promise.resolve(rx));
+
+      if (verdict === "honor") {
+        logFail("by flag optFailed in lockfile");
+        const rx = {
+          passed: false,
+          err: new Error("optional dep fail by flag optFailed in lockfile")
+        };
+        addChecked(rx);
+        return processCheckResult(Promise.resolve(rx));
+      }
     }
 
     const checkPkg = (
