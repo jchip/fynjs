@@ -20,7 +20,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
-    "ci:check": "xrun --serial build test",
+    "ci:check": "tsc --noEmit -p tsconfig.json && vitest run",
     "prepublishOnly": "xrun build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
