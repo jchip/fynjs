@@ -11,9 +11,15 @@ import PkgDepLinker from "../../lib/pkg-dep-linker";
 import xsh from "xsh";
 import logger from "../../lib/logger";
 
+// vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
+// the same millisecond shared this directory and deleted each other's fixtures (ENOTEMPTY on
+// cleanup, ENOENT on read). pid + a random suffix makes it unique per worker.
+const tmpName = () =>
+  `.tmp_${Date.now()}_${process.pid.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
 describe("pkg-dist-fetcher", function() {
   logger._logLevel = 999;
-  const fynDir = Path.join(__dirname, `../.tmp_${Date.now()}`);
+  const fynDir = Path.join(__dirname, `../${tmpName()}`);
 
   let server;
   beforeAll(() => {

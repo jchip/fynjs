@@ -10,6 +10,12 @@ import _ from "lodash";
 import logger from "../../lib/logger";
 import chalk from "chalk";
 
+// vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
+// the same millisecond shared this directory and deleted each other's fixtures (ENOTEMPTY on
+// cleanup, ENOENT on read). pid + a random suffix makes it unique per worker.
+const tmpName = () =>
+  `.tmp_${Date.now()}_${process.pid.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
 describe("pkg-dep-resolver", function() {
   logger.setItemType(false);
   chalk.enabled = false;
@@ -28,7 +34,7 @@ describe("pkg-dep-resolver", function() {
   beforeEach(() => {
     // to debug test, set log level to 0
     logger._logLevel = 999;
-    fynDir = Path.join(__dirname, "..", `.tmp_${Date.now()}`);
+    fynDir = Path.join(__dirname, "..", tmpName());
   });
 
   afterEach(() => {

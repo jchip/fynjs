@@ -14,6 +14,12 @@ import mockNpm from "../fixtures/mock-npm";
 import { getBucketPath, refreshCacheEntry } from "../../lib/cacache-util";
 import { MARK_URL_SPEC } from "../../lib/constants";
 
+// vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
+// the same millisecond shared this directory and deleted each other's fixtures (ENOTEMPTY on
+// cleanup, ENOENT on read). pid + a random suffix makes it unique per worker.
+const tmpName = () =>
+  `.tmp_${Date.now()}_${process.pid.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
 describe("pkg-src-manager", function() {
   let fynCacheDir;
 
@@ -27,7 +33,7 @@ describe("pkg-src-manager", function() {
   });
 
   beforeEach(() => {
-    fynCacheDir = Path.join(__dirname, `../.tmp_${Date.now()}`);
+    fynCacheDir = Path.join(__dirname, `../${tmpName()}`);
   });
 
   afterEach(() => {
