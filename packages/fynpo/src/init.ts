@@ -170,6 +170,7 @@ module.exports = ${obj}`;
           logger.info("Initializing Git repository");
           return this._sh("git init");
         }
+        return undefined;
       })
       .then(this.updatePackageJson)
       .then(this.updateFynpoConfig)

@@ -7,7 +7,7 @@
     "build": "rm -rf dist && rolldown -c rolldown.config.mjs",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "test": "vitest run",
-    "ci:check": "vitest run",
+    "ci:check": "tsc --noEmit -p tsconfig.json && vitest run",
     "prepublishOnly": "xrun --serial [build, test]",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack",

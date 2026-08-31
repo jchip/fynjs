@@ -8,6 +8,7 @@ import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
 import {
   FynpoDepGraph,
+  PackageBasicInfo,
   PackageInfo,
   PackageRef,
   resolvePackagesConfig,
@@ -427,7 +428,9 @@ export function makeForeignRepoDetector(cwd: string): (pkgPath: string) => strin
 export function makePublishFilter(
   fynpoRc: any,
   cwd: string = process.cwd()
-): (pkgInfo: PackageInfo) => boolean {
+  // PackageBasicInfo, not PackageInfo: this only ever reads name / id / path, and demanding
+  // the full shape made every FynpoPackageInfo caller a type error (FPO-41)
+): (pkgInfo: PackageBasicInfo) => boolean {
   const config = resolvePackagesConfig(_.get(fynpoRc, "packages"));
   const toRefs = (list: string[]) => list.map((ref: string) => new PackageRef(ref));
 
@@ -435,7 +438,7 @@ export function makePublishFilter(
   const exclude = toRefs(config.publishExclude);
   const gitignore = makeGitignoreMatcher(cwd);
 
-  return (pkgInfo: PackageInfo): boolean => {
+  return (pkgInfo: PackageBasicInfo): boolean => {
     if (!pkgInfo) {
       return false;
     }

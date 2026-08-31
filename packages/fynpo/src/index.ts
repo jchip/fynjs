@@ -345,8 +345,11 @@ const execVersion = async (cmd, _parsed) => {
  * @param procExitCode process.exitCode as (optionally) set by Run.exec()
  * @returns the exit code to pass to process.exit
  */
-export const resolveRunExitCode = (thrownCode: number, procExitCode?: number): number =>
-  thrownCode || procExitCode || 0;
+export const resolveRunExitCode = (
+  thrownCode: number,
+  // node types `process.exitCode` as number | string | undefined
+  procExitCode?: number | string
+): number => thrownCode || Number(procExitCode) || 0;
 
 const execRunScript = async (cmd, _parsed) => {
   const opts = await makeOpts(cmd, _parsed);

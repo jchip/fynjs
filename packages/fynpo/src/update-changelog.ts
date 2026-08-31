@@ -137,7 +137,7 @@ export default class Changelog {
     return [].concat(this._options.only || []).filter(Boolean).length > 0;
   }
 
-  commitAndTagUpdates = ({ packages, tags }) => {
+  commitAndTagUpdates = async ({ packages, tags }) => {
     if (!this._options.commit) {
       logger.warn("commit option disabled, skip committing updates.");
       return;
@@ -148,28 +148,27 @@ export default class Changelog {
       return;
     }
 
-    return this._sh(`git add ${this._changeLogFile} ${packages.map((x) => `"${x}"`).join(" ")}`)
-      .then((output) => {
-        logger.info("git add", output);
-        return this._sh(
-          `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
-            ` -m " - ${tags.join("\n - ")}"`
-        );
-      })
-      .then((output) => {
-        logger.info("git commit", output);
+    const addOutput = await this._sh(
+      `git add ${this._changeLogFile} ${packages.map((x) => `"${x}"`).join(" ")}`
+    );
+    logger.info("git add", addOutput);
 
-        if (this._options.tag !== true) {
-          return false;
-        }
+    const commitOutput = await this._sh(
+      `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
+        ` -m " - ${tags.join("\n - ")}"`
+    );
+    logger.info("git commit", commitOutput);
 
-        return Promise.each(tags, (tag) => {
-          logger.info("tagging", tag);
-          return this._sh(`git tag ${tag}`).then((tagOut) => {
-            logger.info("tag", tag, "output", tagOut);
-          });
-        });
+    if (this._options.tag !== true) {
+      return;
+    }
+
+    await Promise.each(tags, (tag) => {
+      logger.info("tagging", tag);
+      return this._sh(`git tag ${tag}`).then((tagOut) => {
+        logger.info("tag", tag, "output", tagOut);
       });
+    });
   };
 
   preparePackages = (output) => {
@@ -217,7 +216,7 @@ export default class Changelog {
 
     await this.checkGitClean();
 
-    return getNewCommits(opts, changed)
+    await getNewCommits(opts, changed)
       .then(collateCommitsPackages)
       .then(determinePackageVersions)
       .then(updateChangelog)

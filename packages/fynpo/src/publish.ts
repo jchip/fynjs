@@ -1,7 +1,8 @@
 import xsh from "xsh";
 import Path from "path";
 import Fs from "fs";
-import Promise from "aveazul";
+// imported under its own name: shadowing `Promise` makes async return types invalid (FPO-41)
+import AveAzul from "aveazul";
 import { logger } from "./logger";
 import * as utils from "./utils";
 import * as _ from "lodash";
@@ -99,7 +100,7 @@ export default class Publish {
   }
 
   async getPackagesToPublish() {
-    const [changedFiles, commitMsg] = await Promise.all([
+    const [changedFiles, commitMsg] = await AveAzul.all([
       // this will output file paths with / as separator, even on windows
       // note: it may actually depend on git configuration
       this._sh(`git diff-tree --no-commit-id --name-only -r HEAD`),

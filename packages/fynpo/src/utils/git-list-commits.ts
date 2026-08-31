@@ -173,7 +173,8 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
 
   return Promise.map(
     commitIds,
-    (id) => {
+    // typed because `commits` is indexed by it below, and aveazul's map infers unknown
+    (id: string) => {
       const args = ["diff-tree", "--no-commit-id", "--name-only", "--root", "-r", `${id}`];
       const stdout = execSync("git", args, execOpts);
       let files = stdout.split("\n").filter((x) => x.trim().length > 0);
