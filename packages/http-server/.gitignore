@@ -1,0 +1,11 @@
+node_modules
+coverage
+*.log
+.tmp
+.vscode
+dist
+dist-*
+lib
+*.tsbuildinfo
+fyn-lock.yaml
+.fyn-audit.json
