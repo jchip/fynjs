@@ -52,7 +52,20 @@ describe("fynpo-cli launcher (FJM-85)", () => {
       Fs.readFileSync(Path.join(REPO_ROOT, "packages", "fynpo", "package.json"), "utf8")
     );
 
-    expect(stdout.trim()).toEqual(fynpoPkg.version);
+    //
+    // The version is the last line, not the whole of stdout. fynpo 2.1.6 - which is what the
+    // launcher resolves from the root install - writes "CI env detected" to stdout before the
+    // answer whenever CI is set, so an exact match passed locally and failed in CI. That
+    // diagnostic now goes to stderr (FJM-124), but this test has to hold for the installed
+    // copy too, and asserting "the version is what it reported" is the point either way.
+    //
+    const lines = stdout
+      .trim()
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    expect(lines[lines.length - 1]).toEqual(fynpoPkg.version);
   });
 
   it("dispatches a real command through to fynpo", async () => {
