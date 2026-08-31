@@ -5,6 +5,8 @@ import { defineConfig } from "rolldown";
 
 const require = createRequire(import.meta.url);
 
+const pkgJson = require("./package.json");
+
 /**
  * ESM output is required, not a preference: chalker uses top-level await (via optional-import to
  * reach ESM-only chalk), and no CJS output format can represent module-scope await. The old
@@ -88,6 +90,23 @@ const evalRequirePlugin = {
 
 const stub = name => Path.resolve(`stubs/${name}`);
 
+//
+// What stays external and what the published package.json declares are the same list by
+// definition: anything left external is imported at runtime, so it has to be a dependency of
+// the shipped package. Maintained separately, the two drifted both ways (FPO-50) - `keep` was
+// missing `resolve-from`, which the bundle does import and which only resolved because npm
+// hoists it, while `external` carried parent-module, callsites, global-dirs and ini, which the
+// bundle never imports; those belong to import-fresh and resolve-global, whose own package.json
+// declares them. `publishUtil.keep` is the single source of truth now.
+//
+const externals = [
+  ...pkgJson.publishUtil.keep[0].dependencies,
+  // subpaths are not covered by the bare package name
+  "fyn/package.json",
+  // ESM has no directory-index resolution, so this must name the file explicitly
+  "fyn/bin/index.js",
+];
+
 export default defineConfig({
   input: Path.resolve("src/index.ts"),
   platform: "node",
@@ -96,19 +115,7 @@ export default defineConfig({
   // import-fresh and resolve-global manipulate require and cannot be bundled; they stay in
   // dependencies via publishUtil. fyn is resolved at runtime from the install.
   //
-  external: [
-    "fyn",
-    "fyn/package.json",
-    // ESM has no directory-index resolution, so this must name the file explicitly
-    "fyn/bin/index.js",
-    "resolve-global",
-    "global-dirs",
-    "callsites",
-    "resolve-from",
-    "import-fresh",
-    "parent-module",
-    "ini"
-  ],
+  external: externals,
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
     symlinks: true,

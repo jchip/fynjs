@@ -62,6 +62,7 @@
         "dependencies": [
           "fyn",
           "import-fresh",
+          "resolve-from",
           "resolve-global"
         ]
       }
