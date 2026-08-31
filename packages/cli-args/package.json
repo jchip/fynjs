@@ -23,7 +23,7 @@
     "test-debug": "vitest run --inspect-brk --no-file-parallelism",
     "coveralls": "vitest run --coverage && cat coverage/lcov.info | coveralls",
     "coverage": "vitest run --coverage",
-    "prepublishOnly": "npm run build && npm run docs && npm run coverage",
+    "prepublishOnly": "npm run build && npm run coverage",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
