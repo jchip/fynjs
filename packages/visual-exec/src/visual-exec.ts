@@ -505,8 +505,33 @@ export class VisualExec {
 
     const cleanup = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      this._outputStream?.end?.();
+
+      const stream = this._outputStream;
       this._outputStream = undefined;
+
+      // Only streams we opened are ours to close - a caller-supplied one stays open.
+      if (!stream?.end) {
+        return undefined;
+      }
+
+      // Already gone - a stream that errored destroys itself, and `close` will not fire a
+      // second time, so waiting on it here would hang execute() forever.
+      if (stream.destroyed || (stream as { closed?: boolean }).closed) {
+        return undefined;
+      }
+
+      //
+      // `end()` starts the flush, it does not finish it, and `createWriteStream` opens the
+      // file asynchronously too. Resolving execute() without waiting meant a caller that
+      // awaited it could read a file that was still empty, or not yet created at all - the
+      // outputFile test failed with ENOENT under CI load while passing on a quiet machine.
+      //
+      return new Promise<void>((resolve) => {
+        stream.once("close", () => resolve());
+        // a stream that errors still has to let execute() settle
+        stream.once("error", () => resolve());
+        stream.end();
+      });
     };
 
     if (this._signal) {
