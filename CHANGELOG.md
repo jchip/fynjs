@@ -1,3 +1,102 @@
+# 8/31/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/cli-args@1.0.1` `(1.0.0 => 1.0.1)`
+-   `@fynjs/run@1.0.1` `(1.0.0 => 1.0.1)`
+-   `aveazul@2.0.1` `(2.0.0 => 2.0.1)`
+-   `fyn@3.0.1` `(3.0.0 => 3.0.1)`
+-   `fynpo@3.0.1` `(3.0.0 => 3.0.1)`
+-   `fynpo-cli@3.0.1` `(3.0.0 => 3.0.1)`
+-   `item-queue@2.0.1` `(2.0.0 => 2.0.1)`
+-   `optional-import@1.0.2` `(1.0.1 => 1.0.2)`
+-   `pkg-preper@0.2.1` `(0.2.0 => 0.2.1)`
+-   `xflight@3.0.1` `(3.0.0 => 3.0.1)`
+
+### Fynpo Updated
+
+-   `@fynpo/base@2.0.1` `(2.0.0 => 2.0.1)`
+-   `chalker@2.0.1` `(2.0.0 => 2.0.1)`
+-   `filter-scan-dir@2.0.1` `(2.0.0 => 2.0.1)`
+-   `visual-exec@1.0.1` `(1.0.0 => 1.0.1)`
+-   `xsh@1.0.1` `(1.0.0 => 1.0.1)`
+
+## Commits
+
+-   `packages/cli-args`
+
+    -   FJM-137: cli-args default command pre-scan skips option values [commit](https://github.com/jchip/fynjs/commit/efb3fe975380ff7d4743ab4532d3d7aceca939ef)
+
+-   `packages/confippet`
+
+    -   FCP-1: @fynjs/confippet recreates electrode-confippet on current dependencies [commit](https://github.com/jchip/fynjs/commit/d6f88f49fb8fbbb803c0f961277d44459d239046)
+
+-   `packages/http-server`
+
+    -   FHS-2: @fynjs/http-server composes config through @fynjs/confippet [commit](https://github.com/jchip/fynjs/commit/6fcb7f88207b152944d62438685f1cf2059d345d)
+    -   FHS-1: @fynjs/http-server serves tests on fastify, with electrode-servers surface [commit](https://github.com/jchip/fynjs/commit/d7f2fda980bdcfc0f20f6e60187395261dcc73ff)
+
+-   `packages/xarc-run`
+
+    -   FJM-139: xarc-run runs every stdout-intercepting spec with vitest console interception off [commit](https://github.com/jchip/fynjs/commit/5f525b3e299b773d5e28b2c18e4638b21b642e39)
+
+-   `packages/aveazul`
+
+    -   FJM-138: refresh lock files so audits resolve the patched dependency versions [commit](https://github.com/jchip/fynjs/commit/44fde9753e634569fc5e801de63674d6b9897d56)
+    -   FJM-135: CI runs fynpo from the top-level install, root devDeps on fyn/fynpo v3 [commit](https://github.com/jchip/fynjs/commit/8cd6dfdb56c843a61c4481ed1a63329c28538156)
+
+-   `packages/bluebird`
+
+    -   FJM-135: CI runs fynpo from the top-level install, root devDeps on fyn/fynpo v3 [commit](https://github.com/jchip/fynjs/commit/8cd6dfdb56c843a61c4481ed1a63329c28538156)
+
+-   `packages/fyn`
+
+    -   FPM-70: fyn tests move to js-yaml 5, replacing the 3.x safeLoad API [commit](https://github.com/jchip/fynjs/commit/54e2df5d0964282d5998ba4b7bb04bd874687447)
+    -   FPM-69: fyn audit --omit skips paths and advisories that only reach omitted dep types [commit](https://github.com/jchip/fynjs/commit/a1fe0923d1d59ab28eaa1c8441e4189ae21f78c7)
+    -   FPM-68: mock npm registry runs on node:http, dropping the EOL hapi 18 tree [commit](https://github.com/jchip/fynjs/commit/4dc5c59e094a4a63f3ada99988569f942693fa4c)
+    -   FJM-138: refresh lock files so audits resolve the patched dependency versions [commit](https://github.com/jchip/fynjs/commit/44fde9753e634569fc5e801de63674d6b9897d56)
+    -   FJM-135: CI runs fynpo from the top-level install, root devDeps on fyn/fynpo v3 [commit](https://github.com/jchip/fynjs/commit/8cd6dfdb56c843a61c4481ed1a63329c28538156)
+
+-   `packages/fynpo`
+
+    -   FJM-140: fynpo-cli joins fyn and fynpos version lock group [commit](https://github.com/jchip/fynjs/commit/08d837171f0c786bd3b6e35df5b0355a936faa5d)
+    -   FPO-56: publish exits non-zero on real failures, and an already-published version keeps the tag [commit](https://github.com/jchip/fynjs/commit/685c4c3afa00e0db5d5f2cc1e83b9d47e5c344e5)
+
+-   `packages/fynpo-cli`
+
+    -   FJM-141: fynpo-cli 3.0.0 aligns with fyn and fynpo in the lock group [commit](https://github.com/jchip/fynjs/commit/6c6e38f51e755fdc18cad2349feddbba309149f9)
+    -   FJM-136: launcher test asserts against the fynpo it resolves, not the workspace source [commit](https://github.com/jchip/fynjs/commit/19719c48cce2f144d1965b95cb37e70b492e02ac)
+
+-   `packages/item-queue`
+
+    -   FJM-138: refresh lock files so audits resolve the patched dependency versions [commit](https://github.com/jchip/fynjs/commit/44fde9753e634569fc5e801de63674d6b9897d56)
+    -   FJM-135: CI runs fynpo from the top-level install, root devDeps on fyn/fynpo v3 [commit](https://github.com/jchip/fynjs/commit/8cd6dfdb56c843a61c4481ed1a63329c28538156)
+
+-   `packages/optional-import`
+
+    -   OPI-3: windows drive paths import as file: URLs instead of a c: scheme [commit](https://github.com/jchip/fynjs/commit/c102269f78f3671eea2d47619b67c4ab49e35f02)
+
+-   `packages/pkg-preper`
+
+    -   FJM-138: refresh lock files so audits resolve the patched dependency versions [commit](https://github.com/jchip/fynjs/commit/44fde9753e634569fc5e801de63674d6b9897d56)
+    -   FJM-135: CI runs fynpo from the top-level install, root devDeps on fyn/fynpo v3 [commit](https://github.com/jchip/fynjs/commit/8cd6dfdb56c843a61c4481ed1a63329c28538156)
+
+-   `packages/xflight`
+
+    -   FJM-142: xflight check-time test stamps add() with the time it asserts against [commit](https://github.com/jchip/fynjs/commit/c4393e4719e2ce8f45f4e96cae9a52448b65f020)
+
+-   `.github`
+
+    -   FJM-135: CI runs fyn bootstrap, and the root script spells out fynpo bootstrap [commit](https://github.com/jchip/fynjs/commit/9b3330d36dfa87f0133ddc6f5498de24591beff1)
+    -   FJM-135: CI runs fynpo from the top-level install, root devDeps on fyn/fynpo v3 [commit](https://github.com/jchip/fynjs/commit/8cd6dfdb56c843a61c4481ed1a63329c28538156)
+    -   FJM-135: CI installs fyn@v3 and bootstraps with fynpo@v3 [commit](https://github.com/jchip/fynjs/commit/c0b049646b9a6d8b8fed6052ce006d3f635bc12b)
+
+-   `MISC`
+
+    -   docs: root README describes fynjs, not fynpo [commit](https://github.com/jchip/fynjs/commit/6fd7f76037785e563a5153a58a63e73564bc1e8c)
+
 # 8/30/2026
 
 ## Packages
