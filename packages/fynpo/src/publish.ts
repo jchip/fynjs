@@ -21,6 +21,23 @@ import {
   printCommand,
 } from "./release-output";
 
+/** a packed tarball waiting to be published, and what it holds */
+type TgzToPublish = { file: string; name: string; version: string };
+
+/**
+ * Outcome of the npm publish phase.
+ *
+ * `alreadyPublished` is kept apart from `failures` on purpose: the registry already having the
+ * exact version being published is the desired end state, not a failure, and must not cost the
+ * release its git tag (FPO-56).
+ */
+export type PublishOutcome = {
+  /** publish failures that are real - the tag is skipped and the command exits non-zero */
+  failures: Error[];
+  /** `name@version` of packages the registry already had at that exact version */
+  alreadyPublished: string[];
+};
+
 /**
  * `fynpo publish` command executor class
  *
@@ -35,7 +52,7 @@ export default class Publish {
   _tagTmpl: string;
   _selective: boolean;
   _graph: FynpoDepGraph;
-  _tgzFiles: string[];
+  _tgzFiles: TgzToPublish[];
 
   constructor(opts, graph: FynpoDepGraph) {
     this._cwd = opts.cwd;
@@ -210,35 +227,53 @@ export default class Publish {
           const outName = pkgInfo.name.replace(/\//g, "-").replace(/@/g, "");
           const tgzName = `${outName}-${pkgInfo.version}.tgz`;
           logger.info(`Prepared ${tgzName} for publishing`);
-          this._tgzFiles.push(Path.join(pkgFullDir, tgzName));
+          this._tgzFiles.push({
+            file: Path.join(pkgFullDir, tgzName),
+            name: pkgInfo.name,
+            version: pkgInfo.version,
+          });
         }
       },
     });
 
-    const errors: Error[] = [];
+    const failures: Error[] = [];
+    const alreadyPublished: string[] = [];
+    const tgzPaths = this._tgzFiles.map((x) => x.file);
 
     if (!this._dryRun) {
-      logger.info(`Publishing these tgz files with npm`, this._tgzFiles);
-      for (const tgzFile of this._tgzFiles) {
+      logger.info(`Publishing these tgz files with npm`, tgzPaths);
+      for (const tgz of this._tgzFiles) {
         const tag = this._distTag ? ` --tag ${this._distTag}` : "";
-        const cmd = `npm publish${tag} ${tgzFile}`;
-        logger.info(`===== publishing ${tgzFile} with command '${cmd}'`);
-        const sh = this._sh(cmd, Path.dirname(tgzFile));
+        const cmd = `npm publish${tag} ${tgz.file}`;
+        logger.info(`===== publishing ${tgz.file} with command '${cmd}'`);
+        const sh = this._sh(cmd, Path.dirname(tgz.file));
         try {
           await sh.promise;
-          logger.info(`===== Successfully published ${tgzFile} =====`);
-          this._cleanupFile(tgzFile);
+          logger.info(`===== Successfully published ${tgz.file} =====`);
+          this._cleanupFile(tgz.file);
         } catch (err) {
+          // classify before dropping output - that is where npm says why it refused
+          const output = [_.get(err, "output.stdout", ""), _.get(err, "output.stderr", "")].join(
+            "\n"
+          );
           delete err.output;
-          logger.error(`==== failed to publish '${tgzFile}' ====`, err);
-          errors.push(err);
+          if (utils.isAlreadyPublishedError(output, tgz.version)) {
+            logger.info(
+              `===== ${tgz.name}@${tgz.version} is already published at that version =====`
+            );
+            alreadyPublished.push(`${tgz.name}@${tgz.version}`);
+            this._cleanupFile(tgz.file);
+          } else {
+            logger.error(`==== failed to publish '${tgz.file}' ====`, err);
+            failures.push(err);
+          }
         }
       }
     } else {
-      logger.info(`Dry-run true, not doing actual npm publish, tgz files:`, this._tgzFiles);
+      logger.info(`Dry-run true, not doing actual npm publish, tgz files:`, tgzPaths);
     }
 
-    return errors;
+    return { failures, alreadyPublished };
   }
 
   async addReleaseTag(): Promise<{ tag: string; pushed: boolean; remote: string } | undefined> {
@@ -332,10 +367,20 @@ export default class Publish {
       );
 
       printSection("Publishing");
-      const errors = await this.publishPackages();
+      const { failures, alreadyPublished } = await this.publishPackages();
 
-      if (errors.length > 0) {
+      if (alreadyPublished.length > 0) {
+        printWarning(
+          `Registry already had these at the version being published: ${alreadyPublished.join(
+            ", "
+          )}`
+        );
+      }
+
+      if (failures.length > 0) {
         printError(`Some packages failed to publish - skipping git release tag`);
+        // a release script reading the exit code has to see this as the failure it is (FPO-56)
+        process.exit(1);
       } else {
         const tagInfo = await this.addReleaseTag();
         printSuccess("All packages published successfully");

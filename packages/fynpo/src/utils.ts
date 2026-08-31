@@ -196,6 +196,45 @@ export function resolveTagRemote(gitStatus: string, gitRemotes: string): string 
   return remotes.length === 1 ? remotes[0] : "";
 }
 
+/**
+ * Did an `npm publish` fail only because the registry already has that exact version?
+ *
+ * A release that resumes after an interrupted one re-publishes packages the earlier run already
+ * shipped, and npm answers those with EPUBLISHCONFLICT. The desired end state already holds, so
+ * that is no reason to skip the release tag - before FPO-56 one such conflict cost the tag for a
+ * release whose 25 packages were all correctly on npm.
+ *
+ * Only the conflict is benign. EPUBLISHCONFLICT is a 403, but so is having no publish rights to
+ * the scope, so the conflict itself has to be named in the output rather than the status code -
+ * and when npm reports which version it conflicted with, that has to be the version being
+ * published.
+ *
+ * @param output combined stdout/stderr of the failed `npm publish`
+ * @param version the version that was being published
+ * @returns true when the registry already has this version
+ */
+export function isAlreadyPublishedError(output: string, version: string): boolean {
+  const text = output || "";
+
+  if (
+    !/EPUBLISHCONFLICT/.test(text) &&
+    !/cannot publish over the previously published/i.test(text)
+  ) {
+    return false;
+  }
+
+  // `You cannot publish over the previously published versions: 2.0.0.` - the trailing period
+  // ends the sentence, it is not part of the version
+  const reported = text.match(/previously published versions?:\s*([^\s,]+)/i);
+  if (reported) {
+    return reported[1].replace(/\.+$/, "") === version;
+  }
+
+  // npm named the conflict but not the version. Each publish command uploads exactly one
+  // tarball, so the conflict can only be about that tarball's version.
+  return true;
+}
+
 export const locateGlobalNodeModules = async () => {
   //
   const nodeBinDir = Path.dirname(process.argv[0]);
