@@ -1,6 +1,6 @@
 {
   "name": "publish-util",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/publish-util",
   "description": "Some util to clean up package.json for npm publish",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "string-array",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Parse string into array of string elements",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -49,7 +49,7 @@
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
-    "publish-util": "^2.1.0",
+    "publish-util": "^3.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vitest": "^4.1.11"

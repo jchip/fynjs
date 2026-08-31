@@ -1,6 +1,6 @@
 {
   "name": "check-pkg-new-version",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Help npm CLI packages to check newer version",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -49,7 +49,7 @@
     "directory": "packages/check-pkg-new-version"
   },
   "dependencies": {
-    "check-pkg-new-version-engine": "^1.0.2",
+    "check-pkg-new-version-engine": "^2.0.0",
     "got": "^15.0.0",
     "ini": "^7.0.0",
     "semver": "^7.3.4"
@@ -58,7 +58,7 @@
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
-    "publish-util": "^2.1.0",
+    "publish-util": "^3.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vitest": "^4.1.11"
