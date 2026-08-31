@@ -23,7 +23,7 @@
 
 import Path from "path";
 import cliOptions from "./cli-options.js";
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 import xsh from "xsh";
 import usage from "./usage.js";
 import logger from "../lib/logger.js";
@@ -75,7 +75,7 @@ async function parseArgs(argv, start) {
       {} // no xrun commands
     );
 
-  // Parse all arguments at once - nix-clap v2 will handle command/option separation
+  // Parse all arguments at once - @fynjs/cli-args handles command/option separation
   const parsed = nc.parse(argv, start);
   const opts = parsed.command.opts;
 

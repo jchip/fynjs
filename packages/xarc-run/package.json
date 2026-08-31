@@ -82,7 +82,7 @@
     "insync": "^2.1.1",
     "jaro-winkler": "^0.2.8",
     "lodash.foreach": "^4.5.0",
-    "nix-clap": "^2.4.0",
+    "@fynjs/cli-args": "^0.0.1",
     "optional-require": "^2.1.0",
     "read-pkg-up": "^7.0.1",
     "require-at": "^1.0.6",

@@ -91,7 +91,7 @@ class CliContext {
 
   /**
    * Get arguments that came after "--" in the CLI
-   * These are stored in parsed._ by nix-clap
+   * These are stored in parsed._ by @fynjs/cli-args
    * @returns {Array} Arguments after "--"
    */
   getRemainingArgs() {

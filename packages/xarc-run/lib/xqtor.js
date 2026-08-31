@@ -7,7 +7,7 @@ import { exec as exec } from "xsh";
 import parseArray from "./util/parse-array.js";
 import childProc from "child_process";
 import updateEnv from "./util/update-env.js";
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 //
 // Kept lazy rather than a static import: a static import is hoisted to module load, which is

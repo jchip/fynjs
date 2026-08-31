@@ -138,7 +138,7 @@ const tasks = {
     )
   },
   ".arg-opts": {
-    desc: "test nix-clap parsing args",
+    desc: "test @fynjs/cli-args parsing args",
     argOpts: {
       foo: { require: true, type: "string", alias: "f" }
     },
