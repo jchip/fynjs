@@ -100,6 +100,51 @@ describe("updatePackageVersions", () => {
     expect(readJson(pkgBFile()).dependencies["pkg-a"]).toBe("^1.0.0");
   });
 
+  it("rewrites a private package's ranges on bumped packages without bumping it", async () => {
+    // private packages are absent from `versions` (nothing publishes them), but their ranges
+    // still have to track the workspace or the next install can't resolve them - FPO-52
+    const pkgPFile = path.join(cwd, "packages/pkg-p/package.json");
+    writeJson(pkgPFile, {
+      name: "pkg-p",
+      version: "0.1.0",
+      private: true,
+      dependencies: { "pkg-a": "^1.0.0" },
+      devDependencies: { "pkg-b": "~1.0.0" },
+    });
+
+    const collated = await makeCollated();
+    const result: any = await updatePackageVersions({
+      versions: { "pkg-a": "2.0.0", "pkg-b": "1.1.0" },
+      tags: [],
+      collated,
+    });
+
+    const pkgP = readJson(pkgPFile);
+    expect(pkgP.dependencies["pkg-a"]).toBe("^2.0.0");
+    expect(pkgP.devDependencies["pkg-b"]).toBe("~1.1.0");
+    // not published, so nothing about the package itself moves
+    expect(pkgP.version).toBe("0.1.0");
+    expect(pkgP.publishConfig).toBeUndefined();
+    // and the file is staged so the release commit carries it
+    expect(result.packages).toEqual(
+      expect.arrayContaining([path.join("packages", "pkg-p", "package.json")])
+    );
+  });
+
+  it("leaves a private package alone when it depends on nothing that bumped", async () => {
+    const pkgPFile = path.join(cwd, "packages/pkg-p/package.json");
+    writeJson(pkgPFile, { name: "pkg-p", version: "0.1.0", private: true });
+
+    const collated = await makeCollated();
+    const result: any = await updatePackageVersions({
+      versions: { "pkg-a": "2.0.0" },
+      tags: [],
+      collated,
+    });
+
+    expect(result.packages).not.toContain(path.join("packages", "pkg-p", "package.json"));
+  });
+
   it("returns undefined when there are no versions", async () => {
     const collated = await makeCollated();
     const result = await updatePackageVersions({ versions: {}, tags: [], collated });

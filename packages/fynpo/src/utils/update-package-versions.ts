@@ -134,6 +134,33 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
     packages.push(Path.join(pkg.path, "package.json"));
   });
 
+  //
+  // Private packages never show up in `versions` - they don't publish, so the changelog has
+  // no entry for them. Their dependencies on packages that DID bump still have to be
+  // rewritten: a private package left on `chalker: ^1.3.1` after chalker releases 2.0.0 has
+  // nothing in the workspace satisfying it, and the next install fails to resolve it.
+  // Nothing about the package itself changes - no version, no publishConfig.
+  //
+  _.each(_.get(graph, "packages.byName", {}), (infos: any) => {
+    const pkg = _.first(infos as any[]);
+    if (!pkg || pkg.private !== true) {
+      return;
+    }
+
+    const before = JSON.stringify(pkg.pkgJson);
+    _.each(versions, (ver, name2) => {
+      updateDep(pkg.pkgJson, name2, ver);
+    });
+
+    if (JSON.stringify(pkg.pkgJson) === before) {
+      return;
+    }
+
+    logger.info("updated workspace dep ranges in private package", pkg.name);
+    updated.push(pkg);
+    packages.push(Path.join(pkg.path, "package.json"));
+  });
+
   // all updated, write to disk
   updated.forEach((pkg) => {
     Fs.writeFileSync(
