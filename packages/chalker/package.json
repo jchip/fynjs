@@ -35,10 +35,10 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "test": "xrun --serial test:unit test:demo",
+    "test": "npm run test:unit && npm run test:demo",
     "ci:check": "tsc --noEmit -p tsconfig.json && npm test",
     "test:unit": "vitest run",
-    "test:demo": "xrun --serial test:demo:legacy-cjs test:demo:ansi-colors-cjs test:demo:cjs-dynamic-import test:demo:esm-default test:demo:esm-namespace test:demo:esm-create-require test:demo:esm-named-export-probe",
+    "test:demo": "npm run test:demo:legacy-cjs && npm run test:demo:ansi-colors-cjs && npm run test:demo:cjs-dynamic-import && npm run test:demo:esm-default && npm run test:demo:esm-namespace && npm run test:demo:esm-create-require && npm run test:demo:esm-named-export-probe",
     "test:demo:legacy-cjs": "cd demo/legacy-cjs && fyn install && fyn test",
     "test:demo:ansi-colors-cjs": "cd demo/ansi-colors-cjs && fyn install && fyn test",
     "test:demo:cjs-dynamic-import": "cd demo/cjs-dynamic-import && fyn install && fyn test",
@@ -47,7 +47,7 @@
     "test:demo:esm-create-require": "cd demo/esm-create-require && fyn install && fyn test",
     "test:demo:esm-named-export-probe": "cd demo/esm-named-export-probe && fyn install && fyn test",
     "coverage": "vitest run --coverage",
-    "prepublishOnly": "xrun build",
+    "prepublishOnly": "npm run build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
@@ -83,7 +83,6 @@
     }
   },
   "devDependencies": {
-    "@fynjs/run": "^0.0.1",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "ansi-colors": "^4.1.3",

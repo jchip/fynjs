@@ -21,7 +21,7 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "ci:check": "tsc --noEmit -p tsconfig.json && vitest run",
-    "prepublishOnly": "xrun build",
+    "prepublishOnly": "npm run build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
@@ -47,7 +47,6 @@
     "shelljs": "^0.10.0"
   },
   "devDependencies": {
-    "@fynjs/run": "^0.0.1",
     "@types/node": "^22.15.30",
     "@types/shelljs": "^0.8.17",
     "@vitest/coverage-v8": "^4.1.11",

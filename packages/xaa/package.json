@@ -18,14 +18,14 @@
   "sideEffects": false,
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "test": "xrun [vitest, demo:cjs, demo:esm]",
+    "test": "npm run vitest && npm run demo:cjs && npm run demo:esm",
     "ci:check": "tsc --noEmit -p tsconfig.json && npm test",
     "vitest": "vitest run",
     "coverage": "vitest run --coverage",
     "format": "prettier --write src test demo vitest.config.ts",
     "demo:cjs": "cd demo/sample-1-cjs && fyn install && node demo.cjs",
     "demo:esm": "cd demo/sample-1-esm && fyn install && node demo.js",
-    "prepublishOnly": "xrun -s '[coverage, [build, docs]]'",
+    "prepublishOnly": "npm run coverage && npm run build && npm run docs",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src) --out docs src",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
@@ -55,7 +55,6 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@fynjs/run": "^0.0.1",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
