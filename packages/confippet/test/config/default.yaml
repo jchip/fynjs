@@ -1,0 +1,4 @@
+---
+yaml: "yaml"
+js: "yaml"
++uArray: [ "a", "b", "c", "x" ]
