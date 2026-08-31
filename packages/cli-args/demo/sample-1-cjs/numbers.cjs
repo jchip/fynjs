@@ -1,6 +1,10 @@
 "use strict";
 
-const { NixClap } = require("nix-clap");
+//
+// @fynjs/cli-args is ESM only, so a CommonJS consumer cannot require() it -
+// that throws ERR_REQUIRE_ESM. Reach it through a dynamic import instead,
+// which loads ESM and CJS alike.
+//
 
 /*
  * Example to implement a cli program that has these commands:
@@ -36,83 +40,89 @@ const sort = cmd => {
   console.log("sort:", sorted);
 };
 
-new NixClap({
-  allowUnknownCommand: true
-})
-  .version("1.0.0")
-  .usage("$0 <command> Num [Num ..]")
-  .init(
-    // No top level options
-    {},
-    // Commands
-    {
-      // command sum
-      sum: {
-        alias: "s",
-        usage: "$0 $1 num [num ..]",
-        desc: "Output sum of numbers",
-        // takes a variadic list of numbers into an array
-        args: "<_ number..>",
-        exec: sum
-      },
-      // command sort
-      sort: {
-        desc: "Output sorted numbers",
-        alias: "sr",
-        usage: () => "$0 $1 <num> [num ..]",
-        // takes a variadic list of numbers into an array
-        args: "<_ number..>",
-        exec: sort,
-        // options for command sort
-        options: {
-          // sort in reverse order
-          reverse: {
-            alias: "r",
-            desc: "Sort in descending order"
-          }
-        }
-      },
-      // command times
-      times: {
-        desc: "Show product of numbers",
-        alias: ["t", "product", "p"],
-        usage: "$0 $1 <num> [num ..]",
-        args: "<_ number..>",
-        exec: cmd => {
-          const json = cmd.jsonMeta;
-          console.log(
-            "product:",
-            json.args._.reduce((p, v) => p * v, 1)
-          );
-        }
-      },
-      // command divide
-      divide: {
-        desc: "Show result of dividend/divisor",
-        alias: ["d", "div"],
-        usage: "$0 $1 <dividend> <divisor>",
-        args: "<dividend> <divisor>",
-        exec: cmd => {
-          const json = cmd.jsonMeta;
-          let dividend;
-          let divisor;
-          if (json.opts.switch) {
-            dividend = json.args.divisor;
-            divisor = json.args.dividend;
-          } else {
-            dividend = json.args.dividend;
-            divisor = json.args.divisor;
-          }
-          console.log(json.argList);
-          console.log(`quotient of ${dividend}/${divisor}:`, dividend / divisor);
+async function main() {
+  const { NixClap } = await import("@fynjs/cli-args");
+
+  new NixClap({
+    allowUnknownCommand: true
+  })
+    .version("1.0.0")
+    .usage("$0 <command> Num [Num ..]")
+    .init(
+      // No top level options
+      {},
+      // Commands
+      {
+        // command sum
+        sum: {
+          alias: "s",
+          usage: "$0 $1 num [num ..]",
+          desc: "Output sum of numbers",
+          // takes a variadic list of numbers into an array
+          args: "<_ number..>",
+          exec: sum
         },
-        options: {
-          switch: {
-            alias: "s",
-            desc: "Switch dividend and divisor"
+        // command sort
+        sort: {
+          desc: "Output sorted numbers",
+          alias: "sr",
+          usage: () => "$0 $1 <num> [num ..]",
+          // takes a variadic list of numbers into an array
+          args: "<_ number..>",
+          exec: sort,
+          // options for command sort
+          options: {
+            // sort in reverse order
+            reverse: {
+              alias: "r",
+              desc: "Sort in descending order"
+            }
+          }
+        },
+        // command times
+        times: {
+          desc: "Show product of numbers",
+          alias: ["t", "product", "p"],
+          usage: "$0 $1 <num> [num ..]",
+          args: "<_ number..>",
+          exec: cmd => {
+            const json = cmd.jsonMeta;
+            console.log(
+              "product:",
+              json.args._.reduce((p, v) => p * v, 1)
+            );
+          }
+        },
+        // command divide
+        divide: {
+          desc: "Show result of dividend/divisor",
+          alias: ["d", "div"],
+          usage: "$0 $1 <dividend> <divisor>",
+          args: "<dividend> <divisor>",
+          exec: cmd => {
+            const json = cmd.jsonMeta;
+            let dividend;
+            let divisor;
+            if (json.opts.switch) {
+              dividend = json.args.divisor;
+              divisor = json.args.dividend;
+            } else {
+              dividend = json.args.dividend;
+              divisor = json.args.divisor;
+            }
+            console.log(json.argList);
+            console.log(`quotient of ${dividend}/${divisor}:`, dividend / divisor);
+          },
+          options: {
+            switch: {
+              alias: "s",
+              desc: "Switch dividend and divisor"
+            }
           }
         }
       }
-    }
-  )
-  .parse();
+    )
+    .parse();
+}
+
+main();

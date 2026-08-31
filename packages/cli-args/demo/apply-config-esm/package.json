@@ -7,7 +7,7 @@
     "dev": "tsx apply-config.ts"
   },
   "dependencies": {
-    "nix-clap": "../.."
+    "@fynjs/cli-args": "../.."
   },
   "devDependencies": {
     "tsx": "^4.19.4"

@@ -1,12 +1,12 @@
 # Demo Projects
 
-This directory contains independent demo projects that test nix-clap as a dependency. Each demo is a separate npm package with its own `package.json` and can be installed and run independently.
+This directory contains independent demo projects that test @fynjs/cli-args as a dependency. Each demo is a separate npm package with its own `package.json` and can be installed and run independently.
 
 ## Demo Projects
 
 ### sample-1-cjs
 
-A CommonJS demo project that uses nix-clap to implement a numbers calculator CLI.
+A CommonJS demo project that uses @fynjs/cli-args to implement a numbers calculator CLI.
 
 **Features:**
 
@@ -54,13 +54,13 @@ npm run test      # runs TypeScript version with tsx
 npm run test-js   # runs compiled JavaScript version
 ```
 
-## Testing nix-clap as a Dependency
+## Testing @fynjs/cli-args as a Dependency
 
-These demo projects are designed to test nix-clap in real-world scenarios:
+These demo projects are designed to test @fynjs/cli-args in real-world scenarios:
 
 1. **Independent packages**: Each demo has its own `package.json` and `node_modules`
-2. **Dependency testing**: They use nix-clap as a regular npm dependency (not a local workspace)
-3. **Build verification**: Ensures nix-clap works correctly when installed via npm
+2. **Dependency testing**: They use @fynjs/cli-args as a regular npm dependency (not a local workspace)
+3. **Build verification**: Ensures @fynjs/cli-args works correctly when installed via npm
 4. **Format compatibility**: Tests both CommonJS and ES Module consumption
 
 ## Installation
@@ -71,7 +71,7 @@ Use `fyn` (the project's package manager) to install dependencies:
 fyn install
 ```
 
-This ensures the local nix-clap package is properly linked as a dependency for testing.
+This ensures the local @fynjs/cli-args package is properly linked as a dependency for testing.
 
 ## Commands
 
@@ -86,7 +86,7 @@ Both demos implement the same CLI commands:
 
 These demos serve as:
 
-- Integration tests for nix-clap functionality
-- Examples of how to consume nix-clap in different module formats
+- Integration tests for @fynjs/cli-args functionality
+- Examples of how to consume @fynjs/cli-args in different module formats
 - Verification that the package works correctly when installed as a dependency
 - Reference implementations for users

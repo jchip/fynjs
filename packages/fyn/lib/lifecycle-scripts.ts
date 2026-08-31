@@ -276,7 +276,6 @@ class LifecycleScripts {
                 trimmed.startsWith("at ") && 
                 !trimmed.includes("/fyn/lib/") &&
                 !trimmed.includes("/fyn/cli/") &&
-                !trimmed.includes("/nix-clap/") &&
                 !trimmed.includes("/cli-args/") &&
                 !trimmed.includes("/xsh/") &&
                 !trimmed.includes("node:internal") &&

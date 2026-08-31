@@ -1,7 +1,7 @@
 import { create } from "./create.js";
-// nix-clap 2.x is dual ESM/CJS and exports a named `NixClap` - unlike 1.x, whose CJS
+// @fynjs/cli-args 2.x exports a named `NixClap` - unlike nix-clap 1.x, whose CJS
 // `module.exports = NixClap` had no named export to destructure (see FPO-29).
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 const nixClap = new NixClap()
   .usage("$0 [command] [options]")

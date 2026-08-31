@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// Mock nix-clap module
+// Mock the @fynjs/cli-args module
 vi.mock("@fynjs/cli-args", () => {
   const mockNixClap = vi.fn().mockImplementation(function(config) {
     this.version = vi.fn();

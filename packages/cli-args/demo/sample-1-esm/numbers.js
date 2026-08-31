@@ -1,6 +1,6 @@
 "use strict";
 
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 /*
  * Example to implement a cli program that has these commands:

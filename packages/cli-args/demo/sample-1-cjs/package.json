@@ -21,10 +21,10 @@
   },
   "fyn": {
     "dependencies": {
-      "nix-clap": "../.."
+      "@fynjs/cli-args": "../.."
     }
   },
   "dependencies": {
-    "nix-clap": "^2.0.0"
+    "@fynjs/cli-args": "^0.0.1"
   }
 }

@@ -799,9 +799,9 @@ class FynCli {
       fyntil.exit(1);
     }
 
-    // Get script arguments from nix-clap - nix-clap v2 handles -- separator automatically
+    // Get script arguments from @fynjs/cli-args - it handles the -- separator automatically
     // Arguments after -- are stored in parsed._ (the parsed result's _ property)
-    // nix-clap now passes parsed as the second parameter to exec handlers
+    // @fynjs/cli-args passes parsed as the second parameter to exec handlers
     // npm run behavior: ALL arguments (both before and after --) are passed to the script
     // So we combine argv.args.args (args before --) with parsed._ (args after --)
     const argsBeforeDashDash = argv.args?.args || argv.args?._ || argv._ || [];

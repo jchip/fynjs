@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { NixClap } from "nix-clap";
+import { NixClap } from "@fynjs/cli-args";
 
 /**
  * Demo of NixClap's applyConfig feature

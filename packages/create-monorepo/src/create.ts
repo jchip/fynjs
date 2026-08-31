@@ -2,9 +2,9 @@ import Path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import _ from "lodash";
-import type { CommandExecFunc } from "nix-clap";
+import type { CommandExecFunc } from "@fynjs/cli-args";
 
-// nix-clap 2.x does not export its CommandNode class type directly - derive the exec
+// @fynjs/cli-args does not export its CommandNode class type directly - derive the exec
 // handler's command parameter type from the exported exec function signature
 type ExecCommand = Parameters<CommandExecFunc>[0];
 
@@ -92,7 +92,7 @@ ${commitHookMsg}
 }
 
 export async function create(cmd: ExecCommand): Promise<void> {
-  // nix-clap 2.x exec handlers receive the parsed command node; jsonMeta carries the
+  // @fynjs/cli-args exec handlers receive the parsed command node; jsonMeta carries the
   // command's args plus options inherited from the root command
   const meta = cmd.jsonMeta;
   const dir = (meta.args?.dir as string) || ".";

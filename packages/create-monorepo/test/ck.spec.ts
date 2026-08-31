@@ -86,7 +86,7 @@ describe("bin entry (FPO-29 regression)", () => {
     expect(stdout.trim()).toEqual("LOADED");
   });
 
-  // nix-clap 1.x does `module.exports = NixClap`, so destructuring a named `NixClap` gave
+  // nix-clap 1.x (the pre-rename package) does `module.exports = NixClap`, so destructuring a named `NixClap` gave
   // undefined and the bin died with "NixClap is not a constructor".
   it("runs the bin end to end and prints usage", async () => {
     const { stdout } = await execFileAsync(

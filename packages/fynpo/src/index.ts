@@ -155,7 +155,7 @@ const readFynpoData = async (cwd) => {
 };
 
 const makeOpts = async (cmd, _parsed) => {
-  // In nix-clap v2, merge root command opts with subcommand opts
+  // In @fynjs/cli-args, merge root command opts with subcommand opts
   const rootOpts = cmd.rootCmd?.jsonMeta?.opts || {};
   const cmdOpts = cmd.jsonMeta?.opts || {};
   const allOpts = { ...rootOpts, ...cmdOpts };
@@ -226,7 +226,7 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
   const fynpoDataStart = await readFynpoData(bootstrap.cwd);
   let statusCode = 0;
 
-  // In nix-clap v2, use cmd.jsonMeta for merged options and args
+  // In @fynjs/cli-args, use cmd.jsonMeta for merged options and args
   const meta = cmd.jsonMeta;
 
   if (!firstRunTime) {
@@ -356,7 +356,7 @@ const execRunScript = async (cmd, _parsed) => {
   const graph = await makeDepGraph(opts);
   let exitCode = 0;
   try {
-    // In nix-clap v2, use cmd.jsonMeta.args for named arguments
+    // In @fynjs/cli-args, use cmd.jsonMeta.args for named arguments
     const scriptArgs = cmd.jsonMeta?.args || {};
     return await new Run(opts, scriptArgs, graph).exec();
   } catch (err) {
@@ -372,14 +372,14 @@ const execRunScript = async (cmd, _parsed) => {
 };
 
 const execInit = (cmd, _parsed) => {
-  // In nix-clap v2, use cmd.jsonMeta.opts for merged options
+  // In @fynjs/cli-args, use cmd.jsonMeta.opts for merged options
   const opts = Object.assign({ cwd: process.cwd() }, cmd.jsonMeta?.opts || {});
 
   return new Init(opts).exec();
 };
 
 const execLinting = (cmd, _parsed) => {
-  // In nix-clap v2, use cmd.jsonMeta.opts for merged options
+  // In @fynjs/cli-args, use cmd.jsonMeta.opts for merged options
   const opts = Object.assign({ cwd: process.cwd() }, cmd.jsonMeta?.opts || {});
 
   return new Commitlint(opts).exec();
