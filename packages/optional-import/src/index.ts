@@ -175,6 +175,32 @@ function isPathSpecifier(specifier: string): boolean {
   );
 }
 
+/** `C:\dir\mod.js` or `c:/dir/mod.js` - a drive-letter absolute path */
+const WINDOWS_ABS_PATH = /^[a-zA-Z]:[\\/]/;
+
+/**
+ * Turn a drive-letter path into a `file:` URL.
+ *
+ * A drive letter parses as a URL scheme, so node resolves `C:\dir\mod.js` to a `c:` URL - no
+ * error - and the loader then refuses to load it with `ERR_UNSUPPORTED_ESM_URL_SCHEME`. The
+ * existence check below is skipped too, since the resolved url is not a `file:` one, so the
+ * specifier can neither be imported nor be reported as missing.
+ *
+ * `pathToFileURL` is deliberately not used: on POSIX it would resolve `C:\dir\mod.js` against
+ * the cwd, so the same specifier would mean different things depending on where the code runs.
+ * The failure is URL-level rather than OS-level, so the conversion has to be too.
+ */
+function windowsPathToFileUrl(path: string): string {
+  const escaped = path
+    .replace(/\\/g, "/")
+    // a URL cannot carry these literally; everything else `URL` normalizes for us
+    .replace(/%/g, "%25")
+    .replace(/#/g, "%23")
+    .replace(/\?/g, "%3F");
+
+  return new URL(`file:///${escaped}`).href;
+}
+
 /**
  * Did a path specifier resolve to something that is not actually there?
  *
@@ -263,7 +289,9 @@ function resolveExisting(
   let url: string;
 
   try {
-    url = useMeta.resolve(specifier);
+    url = useMeta.resolve(
+      WINDOWS_ABS_PATH.test(specifier) ? windowsPathToFileUrl(specifier) : specifier
+    );
   } catch (err) {
     return { err: err as Error };
   }

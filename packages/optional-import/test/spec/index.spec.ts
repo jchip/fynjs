@@ -222,6 +222,45 @@ describe("path and file: URL specifiers", () => {
     expect(m.k).toBe(1);
   });
 
+  //
+  // OPI-3. A drive letter parses as a URL scheme, so node's resolve hands back a `c:` url
+  // without error and the loader then throws ERR_UNSUPPORTED_ESM_URL_SCHEME - which is not
+  // ERR_MODULE_NOT_FOUND, so it escaped to the caller instead of falling back. It broke every
+  // `fyn install` on windows, through @fynpo/base's search for fynpo.config.js.
+  //
+  it("should hand the resolver a file: url for a windows drive path", async () => {
+    let seen: string | undefined;
+    const captureMeta: ImportMetaLike = {
+      url: "file:///fake/caller.js",
+      resolve: (specifier: string) => {
+        seen = specifier;
+        return "data:text/javascript,export const k = 1";
+      }
+    };
+
+    const m = await tryImport(captureMeta, "C:\\dir\\mod.js", {});
+
+    expect(seen).toBe("file:///C:/dir/mod.js");
+    expect(m.k).toBe(1);
+  });
+
+  it("should treat an absent windows drive path as not found", async () => {
+    expect(await tryImport(pathMeta, "C:\\no\\such.js", { default: "FELL-BACK" })).toBe(
+      "FELL-BACK"
+    );
+  });
+
+  it("should keep the original specifier in the not found error", async () => {
+    let seen: Error | undefined;
+    await tryImport(pathMeta, "C:\\no\\such.js", {
+      notFound: (err: Error) => {
+        seen = err;
+        return null;
+      }
+    });
+    expect(seen!.message).includes("C:\\no\\such.js");
+  });
+
   it("should fall back when the resolver returns an unusable file url", async () => {
     const badMeta: ImportMetaLike = {
       url: "file:///fake/caller.js",
