@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "skipLibCheck": true,
     "outDir": "lib",
     "lib": ["es2018", "dom"],
     "module": "ESNext",
