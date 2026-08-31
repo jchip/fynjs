@@ -21,6 +21,15 @@ import {
 } from "./audit-cache";
 import type { DepData, PkgVersion } from "../dep-data";
 
+/**
+ * `--omit` values, and the `src` marker each one excludes.
+ */
+const OMIT_SRC: Record<string, string> = {
+  dev: "dev",
+  optional: "opt",
+  peer: "per"
+};
+
 /** Options for AuditReport constructor */
 export interface AuditReportOptions {
   fyn: {
@@ -53,6 +62,7 @@ class AuditReport {
   private _depData: DepData;
   private _noCache: boolean;
   private _omit: string[];
+  private _omittedSrc: Set<string>;
   private _cacheDir: string;
 
   constructor(options: AuditReportOptions) {
@@ -60,7 +70,27 @@ class AuditReport {
     this._depData = options.depData;
     this._noCache = options.noCache || false;
     this._omit = options.omit || [];
+    this._omittedSrc = new Set(this._omit.map(o => OMIT_SRC[o]).filter(Boolean));
     this._cacheDir = options.fyn.fynDir;
+  }
+
+  /**
+   * Is every dependency type that led to this package one the caller omitted?
+   *
+   * `src` accumulates the top level section of each request, joined with `;` (dep-item.ts), so
+   * a package pulled in as both a dependency and a devDependency reads `dep;dev` and has to
+   * stay - only one whose sources are *all* omitted drops out.
+   */
+  isOmitted(pkgInfo: { src?: string }): boolean {
+    if (this._omittedSrc.size === 0) {
+      return false;
+    }
+
+    const sources = String(pkgInfo.src || "")
+      .split(";")
+      .filter(Boolean);
+
+    return sources.length > 0 && sources.every(src => this._omittedSrc.has(src));
   }
 
   /**
@@ -70,9 +100,6 @@ class AuditReport {
   buildBulkPayload(): BulkPayload {
     const payload: BulkPayload = {};
     const pkgs = this._depData.pkgs;
-    const omitDev = this._omit.includes("dev");
-    const omitOptional = this._omit.includes("optional");
-    const omitPeer = this._omit.includes("peer");
 
     Object.keys(pkgs).forEach(name => {
       const kpkg = pkgs[name];
@@ -80,9 +107,7 @@ class AuditReport {
         const pkgInfo = kpkg.versions[version];
 
         // Skip based on omit options
-        if (omitDev && pkgInfo.src === "dev") return;
-        if (omitOptional && pkgInfo.src === "opt") return;
-        if (omitPeer && pkgInfo.src === "per") return;
+        if (this.isOmitted(pkgInfo)) return;
 
         // Skip local packages (file: or link: dependencies)
         if (pkgInfo.local || pkgInfo.localType) return;
@@ -234,6 +259,9 @@ class AuditReport {
 
         // Check each installed version of this package
         Object.keys(kpkg.versions).forEach(version => {
+          // an advisory reached only through omitted dependency types is not this build's problem
+          if (this.isOmitted(kpkg.versions[version])) return;
+
           if (semver.satisfies(version, vulnVersions)) {
             vulnerabilities.push({
               name: pkgName,

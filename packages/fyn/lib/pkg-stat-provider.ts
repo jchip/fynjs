@@ -13,6 +13,24 @@ import { SEMVER } from "./types";
 
 const PACKAGE_JSON = "~package.json";
 
+/** the `res` sections a resolved package records its own dependencies under */
+const RES_SECTIONS = ["dep", "dev", "opt", "per"];
+
+/** package.json sections, paired with the `res` section each one resolves into */
+const APP_SECTIONS: [string, string][] = [
+  ["dependencies", "dep"],
+  ["devDependencies", "dev"],
+  ["optionalDependencies", "opt"],
+  ["peerDependencies", "per"]
+];
+
+/** `--omit` values, and the section each one excludes */
+const OMIT_SECTION: Record<string, string> = {
+  dev: "dev",
+  optional: "opt",
+  peer: "per"
+};
+
 /**
  * Result from getPackageStat for a specific package version.
  */
@@ -49,13 +67,68 @@ class PkgStatProvider {
   private _dependentsCache: Record<string, any[]>;
   private _allPaths: string[][];
   private _circularDeps: string[][];
+  private _omit: Set<string>;
 
-  constructor({ fyn }) {
+  constructor({ fyn, omit = [] }: { fyn: any; omit?: string[] }) {
     this._fyn = fyn;
     this._fynRes = null;
     this._dependentsCache = {};
     this._allPaths = [];
     this._circularDeps = [];
+    this._omit = new Set(omit.map(o => OMIT_SECTION[o]).filter(Boolean));
+  }
+
+  /**
+   * Split a package id into its name and the version (or semver range) after it.
+   *
+   * The `@` of a scoped name does not count - only a later one separates the version.
+   */
+  private _splitPkgId(pkgId: string): { name: string; version: string } {
+    const ix = pkgId.indexOf("@", 1);
+    const sx = ix > 0 ? ix : pkgId.length;
+    return { name: pkgId.substr(0, sx), version: pkgId.substr(sx + 1) };
+  }
+
+  /** the sections of the app's own package.json that declare `name` */
+  private _appSections(name: string): string[] {
+    return APP_SECTIONS.filter(([field]) => _.get(this._fyn, ["_pkg", field, name])).map(
+      ([, section]) => section
+    );
+  }
+
+  /** the sections of `parentId`'s resolved deps that declare `childName` */
+  private _edgeSections(parentId: string, childName: string): string[] {
+    const { name, version } = this._splitPkgId(parentId);
+    const vpkg = _.get(this._fyn, ["_data", "pkgs", name, "versions", version]);
+    return RES_SECTIONS.filter(section => _.get(vpkg, ["res", section, childName]));
+  }
+
+  /**
+   * Does every leg of this path run through a dependency type the caller omitted?
+   *
+   * A leg no section declares is left alone: dropping a path that cannot be classified would
+   * hide a real one, and the point of `--omit` is to remove noise, not evidence.
+   */
+  private _isPathOmitted(path: string[]): boolean {
+    if (this._omit.size === 0) {
+      return false;
+    }
+
+    const omitted = (sections: string[]) =>
+      sections.length > 0 && sections.every(section => this._omit.has(section));
+
+    // the first leg is the app's own dependency, declared in its package.json
+    if (omitted(this._appSections(this._splitPkgId(path[0]).name))) {
+      return true;
+    }
+
+    for (let ix = 0; ix < path.length - 1; ix++) {
+      if (omitted(this._edgeSections(path[ix], this._splitPkgId(path[ix + 1]).name))) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -68,10 +141,7 @@ class PkgStatProvider {
     const pkgs = this._fyn._data?.pkgs;
     if (!pkgs) return [];
 
-    const ix = pkgId.indexOf("@", 1);
-    const sx = ix > 0 ? ix : pkgId.length;
-    const name = pkgId.substr(0, sx);
-    const semver = pkgId.substr(sx + 1);
+    const { name, version: semver } = this._splitPkgId(pkgId);
 
     const pkg = pkgs[name];
     if (!pkg) return [];
@@ -291,8 +361,10 @@ class PkgStatProvider {
     const depIds = dependents.map(d => this._getPkgId(d));
     await this._findDepPaths(depIds, [pkgId], name);
 
-    // Get paths for this specific package
-    const paths = this._allPaths.filter(p => p[0] === pkgId || p.includes(pkgId));
+    // Get paths for this specific package, minus any that only reach it through an omitted type
+    const paths = this._allPaths
+      .filter(p => p[0] === pkgId || p.includes(pkgId))
+      .filter(p => !this._isPathOmitted(p));
 
     return {
       name,

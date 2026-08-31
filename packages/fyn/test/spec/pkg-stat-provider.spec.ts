@@ -282,6 +282,91 @@ describe("pkg-stat-provider", () => {
       expect(stat).to.have.property("allPaths").that.is.an("array");
       expect(stat).to.have.property("significantPaths").that.is.an("array");
     });
+
+    //
+    // FPM-69. `fyn audit --omit dev` narrowed the scanned set but still printed dev-only
+    // paths beside the production ones, so a reader could not tell which paths justified the
+    // finding. The repro: minimatch reached through both a devDependency and a dependency.
+    //
+    describe("with omitted dependency types", () => {
+      const repro = () =>
+        createMockFyn(
+          {
+            minimatch: { "3.1.2": { name: "minimatch", version: "3.1.2", res: {} } },
+            glob: {
+              "7.2.3": {
+                name: "glob",
+                version: "7.2.3",
+                res: { dep: { minimatch: { semver: "^3.1.1", resolved: "3.1.2" } } }
+              }
+            },
+            yamljs: {
+              "0.3.0": {
+                name: "yamljs",
+                version: "0.3.0",
+                res: { dep: { glob: { semver: "^7.0.0", resolved: "7.2.3" } } }
+              }
+            },
+            "@babel/cli": {
+              "7.28.6": {
+                name: "@babel/cli",
+                version: "7.28.6",
+                res: { dep: { glob: { semver: "^7.0.0", resolved: "7.2.3" } } }
+              }
+            }
+          },
+          {
+            // the app's own resolutions - `makeAppFynRes` flattens dep and dev together, which
+            // is exactly why the section has to be read back off the app's package.json
+            dep: { yamljs: { resolved: "0.3.0" } },
+            dev: { "@babel/cli": { resolved: "7.28.6" } }
+          },
+          {
+            dependencies: { yamljs: "^0.3.0" },
+            devDependencies: { "@babel/cli": "^7.0.0" }
+          }
+        );
+
+      it("should keep every path when nothing is omitted", async () => {
+        const provider = new PkgStatProvider({ fyn: repro() });
+        const stat = await provider.getPackageStat("minimatch", "3.1.2");
+
+        const roots = stat.significantPaths.map(p => p[0]);
+        expect(roots).to.have.members(["yamljs@0.3.0", "@babel/cli@7.28.6"]);
+      });
+
+      it("should drop a path rooted in an omitted section of the app", async () => {
+        const provider = new PkgStatProvider({ fyn: repro(), omit: ["dev"] });
+        const stat = await provider.getPackageStat("minimatch", "3.1.2");
+
+        const roots = stat.significantPaths.map(p => p[0]);
+        expect(roots).to.deep.equal(["yamljs@0.3.0"]);
+        expect(stat.allPaths.map(p => p[0])).to.deep.equal(["yamljs@0.3.0"]);
+      });
+
+      it("should drop a path through an omitted edge between two packages", async () => {
+        const fyn = repro();
+        // yamljs now reaches glob optionally, so --omit optional leaves nothing behind it
+        fyn._data.pkgs.yamljs.versions["0.3.0"].res = {
+          opt: { glob: { semver: "^7.0.0", resolved: "7.2.3" } }
+        };
+
+        const provider = new PkgStatProvider({ fyn, omit: ["dev", "optional"] });
+        const stat = await provider.getPackageStat("minimatch", "3.1.2");
+
+        expect(stat.significantPaths).to.have.lengthOf(0);
+      });
+
+      it("should keep a path whose legs no section declares", async () => {
+        const fyn = repro();
+        fyn._pkg = {};
+
+        const provider = new PkgStatProvider({ fyn, omit: ["dev"] });
+        const stat = await provider.getPackageStat("minimatch", "3.1.2");
+
+        expect(stat.significantPaths).to.have.lengthOf(2);
+      });
+    });
   });
 
   describe("getPackageStats()", () => {

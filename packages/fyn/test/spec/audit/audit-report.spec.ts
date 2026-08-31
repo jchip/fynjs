@@ -144,6 +144,43 @@ describe("audit-report", () => {
 
       expect(payload.lodash).to.have.lengthOf(1);
     });
+
+    //
+    // FPM-69. `src` accumulates every top level section that asked for the package, joined
+    // with `;`, so an exact `=== "dev"` test kept a dev-only package whose sources happened to
+    // read `dev;dev`-style combinations, and there was nothing to keep a `dep;dev` package in.
+    //
+    it("should keep a package that is also a production dependency", () => {
+      const depData = createMockDepData({
+        minimatch: {
+          "3.1.2": { name: "minimatch", version: "3.1.2", src: "dep;dev" }
+        }
+      });
+
+      const report = new AuditReport({
+        fyn: createMockFyn(),
+        depData,
+        omit: ["dev"]
+      });
+
+      expect(report.buildBulkPayload()).to.have.property("minimatch");
+    });
+
+    it("should omit a package whose every source is omitted", () => {
+      const depData = createMockDepData({
+        "dev-only": {
+          "1.0.0": { name: "dev-only", version: "1.0.0", src: "dev;per" }
+        }
+      });
+
+      const report = new AuditReport({
+        fyn: createMockFyn(),
+        depData,
+        omit: ["dev", "peer"]
+      });
+
+      expect(report.buildBulkPayload()).to.not.have.property("dev-only");
+    });
   });
 
   describe("getAuditRegistryUrl()", () => {
@@ -216,6 +253,50 @@ describe("audit-report", () => {
       expect(vulns[0].name).to.equal("lodash");
       expect(vulns[0].version).to.equal("4.17.15");
       expect(vulns[0].advisory.severity).to.equal("high");
+    });
+
+    it("should not report a vulnerability reached only through an omitted type", () => {
+      const depData = createMockDepData({
+        lodash: {
+          "4.17.15": { name: "lodash", version: "4.17.15", src: "dev", requests: [] }
+        }
+      });
+
+      const auditResult = {
+        advisories: {
+          lodash: [{ id: 1234, severity: "high", vulnerable_versions: "<4.17.21" }]
+        }
+      };
+
+      const report = new AuditReport({
+        fyn: createMockFyn(),
+        depData,
+        omit: ["dev"]
+      });
+
+      expect(report.matchVulnerabilities(auditResult)).to.have.lengthOf(0);
+    });
+
+    it("should still report it when production also depends on it", () => {
+      const depData = createMockDepData({
+        lodash: {
+          "4.17.15": { name: "lodash", version: "4.17.15", src: "dep;dev", requests: [] }
+        }
+      });
+
+      const auditResult = {
+        advisories: {
+          lodash: [{ id: 1234, severity: "high", vulnerable_versions: "<4.17.21" }]
+        }
+      };
+
+      const report = new AuditReport({
+        fyn: createMockFyn(),
+        depData,
+        omit: ["dev"]
+      });
+
+      expect(report.matchVulnerabilities(auditResult)).to.have.lengthOf(1);
     });
 
     it("should not match packages outside vulnerable range", () => {

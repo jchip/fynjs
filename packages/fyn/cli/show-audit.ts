@@ -94,7 +94,7 @@ class ShowAudit {
       // Step 4: Create stat provider for dependency path info (skip for summary/json)
       let statProvider = null;
       if (!this._opts.summary && !this._opts.json) {
-        statProvider = new PkgStatProvider({ fyn: this._fyn });
+        statProvider = new PkgStatProvider({ fyn: this._fyn, omit: this._opts.omit || [] });
       }
 
       // Step 5: Format and display
