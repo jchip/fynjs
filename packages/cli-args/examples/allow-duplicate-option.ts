@@ -12,7 +12,7 @@
  *   nvx tsx examples/allow-duplicate-option.ts --verbose=2 build --verbose=debug
  */
 
-import { NixClap } from "../src/nix-clap.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap({
   name: "prog",

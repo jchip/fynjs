@@ -19,7 +19,7 @@
  *   nvx tsx examples/options-only-with-exec.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap({ name: "server-config" })
   .version("1.0.0")

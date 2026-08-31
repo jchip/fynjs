@@ -7,7 +7,7 @@
  *   npx tsx examples/unknown-multi-cmds.ts task1 task2 task3
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap({
   allowUnknownCommand: true,

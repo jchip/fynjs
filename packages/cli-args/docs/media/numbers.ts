@@ -1,6 +1,6 @@
 "use strict";
 
-import { NixClap, CommandExecFunc } from "../src/index.ts";
+import { NixClap, CommandExecFunc } from "@fynjs/cli-args";
 
 /*
  * Example to implement a cli program that has these commands:

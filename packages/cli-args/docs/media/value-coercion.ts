@@ -10,7 +10,7 @@
  *   npx tsx examples/value-coercion.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const commands = {
   process: {

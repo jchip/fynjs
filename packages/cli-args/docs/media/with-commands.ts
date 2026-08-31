@@ -10,7 +10,7 @@
  *   npx tsx examples/with-commands.ts --help
  */
 
-import { CommandSpec, NixClap } from "../src/index.ts";
+import { CommandSpec, NixClap } from "@fynjs/cli-args";
 
 const options = {
   verbose: {

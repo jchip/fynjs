@@ -10,7 +10,7 @@
  *   npx tsx examples/simple-cli.ts --version
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap()
   .version("1.0.0")

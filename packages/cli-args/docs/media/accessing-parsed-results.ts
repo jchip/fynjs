@@ -9,7 +9,7 @@
  *   npx tsx examples/accessing-parsed-results.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const options = {
   verbose: {

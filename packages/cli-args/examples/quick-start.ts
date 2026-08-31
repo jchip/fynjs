@@ -9,7 +9,7 @@
  *   npx tsx examples/quick-start.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap()
   .version("1.0.0")

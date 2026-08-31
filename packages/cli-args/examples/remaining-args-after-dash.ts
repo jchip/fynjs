@@ -7,8 +7,7 @@
  * 2. d e f --blah as remaining args after -- (accessible via parsed._)
  */
 
-import { NixClap, ParseResult } from "../src/index.ts";
-import { CommandNode } from "../src/command-node.ts";
+import { NixClap, ParseResult, CommandNode } from "@fynjs/cli-args";
 
 const nc = new NixClap({ name: "prog" }).init({}, {
   cmd: {

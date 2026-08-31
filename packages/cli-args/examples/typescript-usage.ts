@@ -9,7 +9,7 @@
  *   npx tsx examples/typescript-usage.ts --help
  */
 
-import { NixClap, CommandSpec, ParseResult } from "../src/index.ts";
+import { NixClap, CommandSpec, ParseResult } from "@fynjs/cli-args";
 
 // Define the root command spec with full type safety
 const rootCommandSpec: CommandSpec = {

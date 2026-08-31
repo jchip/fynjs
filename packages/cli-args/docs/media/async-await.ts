@@ -9,7 +9,7 @@
  *   npx tsx examples/async-await.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 // Simulate an async operation
 function someAsyncOperation(): Promise<void> {

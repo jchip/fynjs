@@ -17,7 +17,7 @@
  *   npx tsx examples/use-as-inplace-module.ts
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 /**
  * Result from executing a CLI command in-process

@@ -10,7 +10,7 @@
  *   npx tsx examples/simple-root-command.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap({ name: "process" })
   .init2({

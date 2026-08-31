@@ -1,6 +1,6 @@
 "use strict";
 
-import { NixClap, CommandExecFunc } from "../src/index.ts";
+import { NixClap, CommandExecFunc } from "@fynjs/cli-args";
 
 const nc = new NixClap({
   allowUnknownCommand: true,

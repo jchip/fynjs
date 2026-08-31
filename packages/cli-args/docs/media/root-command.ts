@@ -1,6 +1,6 @@
 "use strict";
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 /*
  * Example demonstrating root command usage with arguments using init2().

@@ -13,7 +13,7 @@
  *   npx tsx examples/min-start.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const parsed = new NixClap({ allowUnknownOption: true }).init2().parse();
 

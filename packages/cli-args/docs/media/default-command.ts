@@ -10,7 +10,7 @@
  *   npx tsx examples/default-command.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 // Make 'build' the default command
 const nc = new NixClap({ defaultCommand: "build" })

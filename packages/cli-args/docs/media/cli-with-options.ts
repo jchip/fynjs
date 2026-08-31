@@ -9,7 +9,7 @@
  *   npx tsx examples/cli-with-options.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap().init2({
   options: {

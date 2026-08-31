@@ -9,7 +9,7 @@
  *   npx tsx examples/cli-command-args.ts --help
  */
 
-import { NixClap } from "../src/index.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 new NixClap()
   .init2({

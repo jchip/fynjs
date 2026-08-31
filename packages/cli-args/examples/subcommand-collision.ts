@@ -21,7 +21,7 @@
  *   npx tsx examples/subcommand-collision.ts global install       # Error: requires subcommand
  */
 
-import { NixClap } from "../src/nix-clap.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap({
   name: "prog",

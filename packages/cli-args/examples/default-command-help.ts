@@ -17,7 +17,7 @@
  *   npx tsx examples/default-command-help.ts run script   # Runs the run command
  */
 
-import { NixClap } from "../src/nix-clap.ts";
+import { NixClap } from "@fynjs/cli-args";
 
 const nc = new NixClap({
   name: "prog",
