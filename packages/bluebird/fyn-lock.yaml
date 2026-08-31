@@ -5,27 +5,27 @@ $pkg:
  dep:
   aveazul: ../aveazul
 '@jchip/error':
- _latest: 1.0.3-fynlocal_h
+ _latest: 2.0.0-fynlocal_h
  _:
-  ../error: 1.0.3-fynlocal_h
- 1.0.3-fynlocal_h:
+  ../error: 2.0.0-fynlocal_h
+ 2.0.0-fynlocal_h:
   $: local
   _: ../error
 aveazul:
- _latest: 1.1.0-fynlocal_h
+ _latest: 2.0.0-fynlocal_h
  _:
-  ../aveazul: 1.1.0-fynlocal_h
- 1.1.0-fynlocal_h:
+  ../aveazul: 2.0.0-fynlocal_h
+ 2.0.0-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
   dependencies:
-   '@jchip/error': ^1.0.3
-   xaa: ^2.0.0
+   '@jchip/error': ^2.0.0
+   xaa: ^3.0.0
 xaa:
- _latest: 2.0.0-fynlocal_h
+ _latest: 3.0.0-fynlocal_h
  _:
-  ../xaa: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../xaa: 3.0.0-fynlocal_h
+ 3.0.0-fynlocal_h:
   $: local
   _: ../xaa

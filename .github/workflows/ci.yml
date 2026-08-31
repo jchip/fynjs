@@ -25,5 +25,5 @@ jobs:
           git clone --depth 1 https://github.com/jchip/ignore-walk.git _w/ignore-walk
       - run: npm i -g fyn@v3
       - run: fyn install --no-fynlocal
-      - run: npx fynpo@v3 bootstrap
+      - run: ./node_modules/.bin/fynpo bootstrap
       - run: fyn ci:check
