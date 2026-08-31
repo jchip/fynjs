@@ -39,7 +39,8 @@ describe("Inflight", () => {
     expect(ifl.time("test", now)).toBe(5);
 
     ifl.add("foo", Promise.resolve("bar"));
-    await new Promise((res) => setTimeout(res, 10));
+    // wait longer than the bound: setTimeout(10) can read as 9 on the Date.now() clock
+    await new Promise((res) => setTimeout(res, 25));
     expect(ifl.elapseTime("foo")).toBeGreaterThanOrEqual(10);
   });
 
@@ -91,11 +92,21 @@ describe("Inflight", () => {
 
   it("should handle last check time", async () => {
     const ifl = new Inflight<string>();
+    const added = Date.now();
     ifl.add("test", Promise.resolve("hello"));
 
+    //
+    // Measured against an explicit `now` rather than a real sleep. `setTimeout(10)` is not
+    // guaranteed to be >= 10ms by the Date.now() clock - it can fire a millisecond early, and
+    // CI saw exactly that: "expected 9 to be greater than or equal to 10" on node 26.
+    //
+    const later = added + 50;
+    expect(ifl.lastCheckTime("test", later)).toBeGreaterThanOrEqual(50);
+    expect(ifl.elapseCheckTime("test", later)).toBeGreaterThanOrEqual(50);
+
+    // the real-clock path still gets covered, just without a brittle lower bound
     await new Promise((res) => setTimeout(res, 10));
-    expect(ifl.lastCheckTime("test")).toBeGreaterThanOrEqual(10);
-    expect(ifl.elapseCheckTime("test")).toBeGreaterThanOrEqual(10);
+    expect(ifl.elapseCheckTime("test")).toBeGreaterThan(0);
 
     expect(ifl.lastCheckTime("nonexistent")).toBe(-1);
 
@@ -112,7 +123,8 @@ describe("Inflight", () => {
     ifl.add("a", Promise.resolve("1"));
     ifl.add("b", Promise.resolve("2"));
 
-    await new Promise((res) => setTimeout(res, 10));
+    // same margin as above - the assertion is "time elapsed", not "the timer is exact"
+    await new Promise((res) => setTimeout(res, 25));
     expect(ifl.elapseCheckTime("a")).toBeGreaterThanOrEqual(10);
     expect(ifl.elapseCheckTime("b")).toBeGreaterThanOrEqual(10);
 
