@@ -290,7 +290,7 @@ xrun provides sophisticated command line integration with argument parsing, cont
 
 #### **Command Parsing**
 
-Built on `nix-clap` for advanced argument parsing with subcommand support:
+Built on `@fynjs/cli-args` for advanced argument parsing with subcommand support:
 
 ```javascript
 // Parsed command structure
@@ -483,7 +483,7 @@ load({
 ### Dependencies
 
 - **insync**: Async control flow management (concurrent/serial execution)
-- **nix-clap**: Advanced CLI argument parsing with subcommand support
+- **@fynjs/cli-args**: Advanced CLI argument parsing with subcommand support
 - **xsh**: Enhanced shell execution with cross-platform compatibility
 - **unwrap-npm-cmd**: npm command processing and normalization
 - **chalk/chalker**: Terminal output formatting and colors
