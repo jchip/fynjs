@@ -283,4 +283,45 @@ describe("fynpo utils", () => {
       expect(parsed?.subject).toBe("Test");
     });
   });
+
+  describe("makeVersionLockMap", () => {
+    const graphOf = (...names: string[]) =>
+      ({
+        packages: {
+          byId: names.reduce((byId, name) => {
+            byId[`${name}@1.0.0`] = { name, path: `packages/${name}`, version: "1.0.0" };
+            return byId;
+          }, {})
+        }
+      }) as any;
+
+    it("should map every member of a lock group to the whole group", () => {
+      const map = utils.makeVersionLockMap(
+        [["fyn", "fynpo", "fynpo-cli"]],
+        graphOf("fyn", "fynpo", "fynpo-cli", "xaa")
+      );
+
+      expect(Object.keys(map).sort()).toEqual(["fyn", "fynpo", "fynpo-cli"]);
+      for (const name of ["fyn", "fynpo", "fynpo-cli"]) {
+        expect([...map[name]].sort()).toEqual(["fyn", "fynpo", "fynpo-cli"]);
+      }
+      expect(map.xaa).toBeUndefined();
+    });
+
+    //
+    // fyn, fynpo and fynpo-cli are one release unit. The group has locked fyn+fynpo since the
+    // old fynpo repo, but fynpo-cli was never in it, so the 3.0.0 release took fyn and fynpo
+    // to 3.0.0 and left fynpo-cli behind at 2.0.0 - which is what made the FJM-136 launcher
+    // test disagree with itself. Pin the membership so it can't be dropped silently again.
+    //
+    it("should lock fyn, fynpo and fynpo-cli together in this monorepo", () => {
+      const fynpoRc = JSON.parse(
+        fs.readFileSync(path.join(__dirname, "..", "..", "..", "fynpo.json"), "utf8")
+      );
+
+      const groups = (fynpoRc.versionLocks || []).map((group: string[]) => [...group].sort());
+
+      expect(groups).toContainEqual(["fyn", "fynpo", "fynpo-cli"]);
+    });
+  });
 });
