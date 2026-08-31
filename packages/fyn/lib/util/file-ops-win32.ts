@@ -18,27 +18,27 @@ const FS_RETRY_WAIT = 100;
 
 const _retry = (func: () => Promise<unknown>) => retry(func, FS_RETRY_ERRORS, FS_RETRIES, FS_RETRY_WAIT);
 
-export function wrapWin32Opfs(opfs: any) {
+export function wrapWin32Fs(fileOps: any) {
   if (isWin32) {
     return {
-      ...opfs,
+      ...fileOps,
       $: {
-        ...opfs.$,
-        mkdirp: (...args: unknown[]) => _retry(() => opfs.$.mkdirp(...args)),
-        acquireLock: (...args: unknown[]) => _retry(() => opfs.$.acquireLock(...args)),
-        releaseLock: (...args: unknown[]) => _retry(() => opfs.$.releaseLock(...args))
+        ...fileOps.$,
+        mkdirp: (...args: unknown[]) => _retry(() => fileOps.$.mkdirp(...args)),
+        acquireLock: (...args: unknown[]) => _retry(() => fileOps.$.acquireLock(...args)),
+        releaseLock: (...args: unknown[]) => _retry(() => fileOps.$.releaseLock(...args))
       },
-      stat: (...args: unknown[]) => _retry(() => opfs.stat(...args)),
-      readFile: (...args: unknown[]) => _retry(() => opfs.readFile(...args)),
-      writeFile: (...args: unknown[]) => _retry(() => opfs.writeFile(...args)),
-      rename: (...args: unknown[]) => _retry(() => opfs.rename(...args)),
-      rmdir: (...args: unknown[]) => _retry(() => opfs.rmdir(...args)),
-      unlink: (...args: unknown[]) => _retry(() => opfs.unlink(...args)),
-      readdir: (...args: unknown[]) => _retry(() => opfs.readdir(...args))
+      stat: (...args: unknown[]) => _retry(() => fileOps.stat(...args)),
+      readFile: (...args: unknown[]) => _retry(() => fileOps.readFile(...args)),
+      writeFile: (...args: unknown[]) => _retry(() => fileOps.writeFile(...args)),
+      rename: (...args: unknown[]) => _retry(() => fileOps.rename(...args)),
+      rmdir: (...args: unknown[]) => _retry(() => fileOps.rmdir(...args)),
+      unlink: (...args: unknown[]) => _retry(() => fileOps.unlink(...args)),
+      readdir: (...args: unknown[]) => _retry(() => fileOps.readdir(...args))
     };
   } else {
-    return opfs;
+    return fileOps;
   }
 }
 
-export default wrapWin32Opfs;
+export default wrapWin32Fs;

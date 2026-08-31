@@ -1,5 +1,5 @@
 
-import Fs from "opfs";
+import Fs from "node:fs/promises";
 import Path from "path";
 import prompts from "prompts";
 

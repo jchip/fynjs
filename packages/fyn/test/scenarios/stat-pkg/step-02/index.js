@@ -2,7 +2,7 @@
  * Test retrieving pkg dist during resolving to load npm-shrinkwrap.json
  */
 
-const Fs = require("opfs");
+const Fs = require("fs/promises");
 const Path = require("path");
 const assert = require("assert");
 

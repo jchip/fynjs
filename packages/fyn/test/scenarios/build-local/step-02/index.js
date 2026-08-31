@@ -1,6 +1,6 @@
 "use strict";
 
-const Fs = require("opfs");
+const Fs = require("fs/promises");
 const Path = require("path");
 const xaa = require("xaa");
 const assert = require("assert");

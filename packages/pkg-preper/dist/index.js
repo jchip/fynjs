@@ -21,9 +21,10 @@ import { PassThrough } from "stream";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import packlist from "npm-packlist";
-import * as Fs from "opfs";
+import * as Fs from "node:fs";
+import * as FsPromises from "node:fs/promises";
 const readPkgJson = (dir) => {
-    return Fs.readFile(Path.join(dir, "package.json")).then((data) => JSON.parse(data.toString().trim()));
+    return FsPromises.readFile(Path.join(dir, "package.json")).then((data) => JSON.parse(data.toString().trim()));
 };
 class PkgPreper {
     constructor({ tmpDir, installDependencies }) {
@@ -60,7 +61,7 @@ class PkgPreper {
                     //       and any such future "features" by prepending `./`
                     return tar.create(tarOpt, files.map((f) => `./${f}`));
                 })
-                    .then(() => Fs.rename(tmpTarget, target))
+                    .then(() => FsPromises.rename(tmpTarget, target))
                     .then(() => undefined);
             });
         });

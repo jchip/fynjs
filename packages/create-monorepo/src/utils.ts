@@ -1,5 +1,4 @@
-import Fs from "opfs";
-import { mkdirSync } from "node:fs";
+import Fs, { mkdirSync } from "node:fs";
 import Path from "node:path";
 import { fileURLToPath } from "node:url";
 import _ from "lodash";

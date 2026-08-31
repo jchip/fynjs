@@ -22,7 +22,8 @@ import { PassThrough } from "stream";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import packlist from "npm-packlist";
-import * as Fs from "opfs";
+import * as Fs from "node:fs";
+import * as FsPromises from "node:fs/promises";
 
 interface PackageJson {
   name?: string;
@@ -47,7 +48,7 @@ interface PkgPreperOptions {
 }
 
 const readPkgJson = (dir: string): Promise<PackageJson> => {
-  return Fs.readFile(Path.join(dir, "package.json")).then((data: Buffer) =>
+  return FsPromises.readFile(Path.join(dir, "package.json")).then((data: Buffer) =>
     JSON.parse(data.toString().trim()),
   );
 };
@@ -97,7 +98,7 @@ class PkgPreper {
               files.map((f) => `./${f}`),
             );
           })
-          .then(() => Fs.rename(tmpTarget, target))
+          .then(() => FsPromises.rename(tmpTarget, target))
           .then(() => undefined);
       });
     });

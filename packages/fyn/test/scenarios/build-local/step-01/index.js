@@ -1,7 +1,7 @@
 "use strict";
 
 const Path = require("path");
-const Fs = require("opfs");
+const Fs = require("fs/promises");
 const nodeFs = require("fs");
 
 module.exports = {

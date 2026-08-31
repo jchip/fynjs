@@ -74,9 +74,6 @@
   "publishUtil": {
     "remove": [
       "dependencies"
-    ],
-    "keep": [
-      "opfs"
     ]
   },
   "contributors": [
@@ -106,7 +103,6 @@
     "@fynjs/cli-args": "^0.0.1",
     "npm-packlist": "^11.3.0",
     "npm-registry-fetch": "^20.0.1",
-    "opfs": "^1.1.1",
     "optional-require": "^2.1.1",
     "pacote": "^22.0.0",
     "pkg-preper": "^0.1.8",
@@ -185,9 +181,6 @@
   },
   "engines": {
     "node": ">=22.12.0"
-  },
-  "opfs": {
-    "bluebird": true
   },
   "prettier": {
     "printWidth": 100

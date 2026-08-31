@@ -42,7 +42,6 @@
   "dependencies": {
     "cacache": "^21.0.0",
     "npm-packlist": "^11.3.0",
-    "opfs": "^1.1.1",
     "tar": "^7.5.22"
   },
   "devDependencies": {

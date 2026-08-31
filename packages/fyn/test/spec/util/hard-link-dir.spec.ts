@@ -5,7 +5,7 @@ import fs from "fs";
 import os from "os";
 import ci from "ci-info";
 import * as hardLinkDir from "../../../lib/util/hard-link-dir";
-import Fs from "opfs";
+import Fs from "../../../lib/util/file-ops";
 
 describe("hard-link-dir", function() {
   it("should hard link a package directory", () => {
