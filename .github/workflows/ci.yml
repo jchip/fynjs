@@ -23,7 +23,7 @@ jobs:
           mkdir -p _w
           git clone --depth 1 https://github.com/jchip/npm-packlist.git _w/npm-packlist
           git clone --depth 1 https://github.com/jchip/ignore-walk.git _w/ignore-walk
-      - run: npm i -g fyn@v2
+      - run: npm i -g fyn@v3
       - run: fyn install --no-fynlocal
-      - run: npx fynpo bootstrap
+      - run: npx fynpo@v3 bootstrap
       - run: fyn ci:check
