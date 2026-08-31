@@ -2,6 +2,7 @@ import { ClapNode } from "./clap-node.js";
 import { NixClap } from "./nix-clap.js";
 import { ClapNodeGenerator } from "./node-generator.js";
 import { CommandNode } from "./command-node.js";
+import { CommandBase } from "./command-base.js";
 import { _NEXT, _PREV } from "./symbols.js";
 
 
@@ -155,6 +156,66 @@ export class Parser {
    * - Any errors encountered during parsing are caught and stored in the relevant command node's errors array.
    * - After processing all arguments, it completes any remaining builders in the stack.
    */
+  /**
+   * How many following argv entries this option token consumes as its value.
+   *
+   * Mirrors the tokenizer in ClapNodeGenerator.consumeOpt so the pre-scan agrees with the real
+   * parse: `--no-x` and `--x=v` carry their value inline and consume nothing, a single-dash
+   * cluster like `-abc` is boolean flags with only the last character able to take arguments,
+   * and anything unrecognized consumes nothing so the real parse can report it as unknown.
+   *
+   * Options are looked up on the root command and on the configured default command, since a
+   * CLI may declare them on either.
+   *
+   * @param arg - a raw argv entry already known to start with '-'
+   * @returns count of subsequent argv entries taken as this option's value
+   */
+  private _optionValueCount(arg: string): number {
+    if (arg.startsWith("--no-")) {
+      return 0;
+    }
+
+    const dashes = arg.startsWith("--") ? 2 : 1;
+    let name = arg.substring(dashes);
+
+    if (name.indexOf("=") > 0) {
+      return 0;
+    }
+
+    if (dashes === 1 && name.length > 1) {
+      // leading characters are boolean flags; only the last one may take arguments
+      name = name[name.length - 1];
+    }
+
+    // parse() already dereferences _rootCommand unconditionally before this runs, so it is
+    // present by the time any option token is scanned - no guard needed for the optional type.
+    const rootCmd = this._nc._rootCommand as CommandBase;
+
+    const candidates: CommandBase[] = [rootCmd];
+    const defaultCommand = rootCmd.ncConfig?.defaultCommand;
+    if (defaultCommand !== undefined) {
+      const matched = rootCmd.matchSubCommand(defaultCommand);
+      if (matched?.cmd) {
+        candidates.push(matched.cmd);
+      }
+    }
+
+    for (const cmd of candidates) {
+      const matched = cmd.options?.match({
+        name,
+        value: undefined,
+        verbatim: name,
+        dashes,
+        arg
+      } as any);
+      if (matched && matched.option) {
+        return matched.option.expectArgs || 0;
+      }
+    }
+
+    return 0;
+  }
+
   parse(
     argv: string[],
     start: number,
@@ -177,6 +238,12 @@ export class Parser {
     // Preprocess: check if there are any non-option arguments
     // If all arguments are options (start with '-'), we may need to insert default command
     // If there are non-option arguments, we don't need to insert default command
+    //
+    // An option's own value is not a command argument. `--name foo` puts `foo` in argv as its
+    // own entry, so a scan that only looks at the leading dash would read it as a command and
+    // suppress the default command - which broke every `defaultCommand` CLI invoked with a
+    // separated option value, while `--name=foo` worked by accident (FJM-137). Consult the
+    // option specs and skip the values they consume.
     let hasNonOptionArgs = false;
     let hasHelpOrVersion = false;
     for (let i = start; i < argv.length; i++) {
@@ -190,6 +257,7 @@ export class Parser {
         hasNonOptionArgs = true;
         break;
       }
+      i += this._optionValueCount(arg);
       // Check for --help, -h, -?, --version, -v, -V
       // These should show root command help/version, not default command's
       if (

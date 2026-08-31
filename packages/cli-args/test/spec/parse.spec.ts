@@ -431,4 +431,75 @@ describe("parser", () => {
     expect(cmd1.optNodes["cmd1-boo"].argv).toEqual(["--1b"]);
     expect(cmd1.optNodes["dev"].argv).toEqual(["--dev", "x", "y", "z"]);
   });
+
+  //
+  // FJM-137: the pre-scan that decides whether to insert the default command walked raw argv and
+  // treated anything without a leading dash as a command argument -- including an option'"'"'s own
+  // value. `--name foo` therefore suppressed the default command while `--name=foo` worked,
+  // which broke every defaultCommand CLI that took a separated value.
+  //
+  describe("defaultCommand with option values", () => {
+    function makeCli() {
+      return new NixClap({ defaultCommand: "create" }).init(
+        {
+          name: { args: "<name string>" },
+          tags: { args: "<t1 string> <t2 string>" },
+          flag: {},
+          verbose: { alias: "b" }
+        },
+        { create: { exec: () => {} } }
+      );
+    }
+
+    // Options here are declared on the root, so their values land on the root node; the default
+    // command node is what the pre-scan decides to insert. Assert on both.
+    function parseArgs(argv: string[]) {
+      const parsed = makeCli().parse(argv, 0);
+      return {
+        execCmd: parsed.execCmd?.name,
+        opts: parsed.command.jsonMeta.opts,
+        errors: parsed.command.errors.map(e => e.message)
+      };
+    }
+
+    it("inserts the default command when an option takes a separated value", () => {
+      const r = parseArgs(["--name", "foo"]);
+      expect(r.execCmd).toEqual("create");
+      expect(r.opts).toEqual({ name: "foo" });
+      expect(r.errors).toEqual([]);
+    });
+
+    it("still inserts it for the attached-value form", () => {
+      const r = parseArgs(["--name=foo"]);
+      expect(r.execCmd).toEqual("create");
+      expect(r.opts).toEqual({ name: "foo" });
+    });
+
+    it("still inserts it for a valueless boolean option", () => {
+      const r = parseArgs(["--flag"]);
+      expect(r.execCmd).toEqual("create");
+      expect(r.opts).toEqual({ flag: true });
+    });
+
+    it("skips every value of a multi-argument option", () => {
+      const r = parseArgs(["--tags", "a", "b"]);
+      expect(r.execCmd).toEqual("create");
+      // the args map carries positional keys alongside the named ones
+      expect(r.opts.tags).toMatchObject({ t1: "a", t2: "b" });
+      expect(r.errors).toEqual([]);
+    });
+
+    // -V / -v / -h / -? stay reserved for the built-in version and help handling, so this uses
+    // an ordinary alias to prove alias lookup finds the option that carries the value.
+    it("resolves an alias to the option that carries the value", () => {
+      const r = parseArgs(["--name", "foo", "-b"]);
+      expect(r.execCmd).toEqual("create");
+      expect(r.opts).toEqual({ name: "foo", verbose: true, b: true });
+    });
+
+    it("does not insert it when a real command argument follows the option value", () => {
+      const parsed = makeCli().parse(["--name", "foo", "extra"], 0);
+      expect(Object.keys(parsed.command.subCmdNodes)).not.toContain("create");
+    });
+  });
 });
