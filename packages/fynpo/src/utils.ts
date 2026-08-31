@@ -153,6 +153,48 @@ export function parsePublishedPackageNames(body: string): string[] {
     .map((x) => x.substring(2, x.lastIndexOf("@")));
 }
 
+/**
+ * Resolve which remote a release tag should be pushed to.
+ *
+ * A tag points at a commit, not a branch, so a branch with no upstream is a perfectly normal
+ * place to release from - it must not fail the push, and it must never throw. The upstream is
+ * consulted first only because it names the remote the user is already working against; after
+ * that `origin` and then a lone configured remote are the only unambiguous answers.
+ *
+ * With several remotes and nothing pointing at one of them, guessing would push a release tag
+ * somewhere the user did not ask for, so this gives up instead and the caller leaves the tag
+ * local.
+ *
+ * @param gitStatus stdout of `git status -b --porcelain=v2`
+ * @param gitRemotes stdout of `git remote`
+ * @returns the remote name, or `""` when none can be determined
+ */
+export function resolveTagRemote(gitStatus: string, gitRemotes: string): string {
+  const upstream = (gitStatus || "")
+    .split("\n")
+    .map((x) => x.trim())
+    .find((x) => x.startsWith("# branch.upstream "));
+
+  if (upstream) {
+    // `# branch.upstream <remote>/<branch>` - a branch name may contain `/`, a remote may not,
+    // so the remote is everything up to the first `/`
+    const remote = upstream.split(/\s+/)[2];
+    if (remote) {
+      return remote.split("/")[0];
+    }
+  }
+
+  const remotes = (gitRemotes || "")
+    .split("\n")
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0);
+
+  if (remotes.includes("origin")) {
+    return "origin";
+  }
+
+  return remotes.length === 1 ? remotes[0] : "";
+}
 
 export const locateGlobalNodeModules = async () => {
   //

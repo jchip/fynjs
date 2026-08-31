@@ -221,7 +221,7 @@ export default class Publish {
     return errors;
   }
 
-  async addReleaseTag(): Promise<{ tag: string; pushed: boolean } | undefined> {
+  async addReleaseTag(): Promise<{ tag: string; pushed: boolean; remote: string } | undefined> {
     printSection("Creating Release Tag");
 
     let newTag: string;
@@ -246,23 +246,31 @@ export default class Publish {
       });
 
       await this._sh(`${dryRun}git tag -a ${newTag} -m "Release Tag"`);
-      const gitStatus = await this._sh(`git status -b --porcelain=v2`);
-      const upstream = gitStatus.stdout.split("\n").find((x) => x.includes(`branch.upstream`));
-      const [gitRemote, gitBranch] = upstream.split(" ")[2].split("/");
 
-      if (!gitRemote || !gitBranch) {
-        printWarning("Unable to determine git remote - tag created locally only");
-        return { tag: newTag, pushed: false };
-      }
+      // a release tag belongs to a commit, not a branch, so releasing from a branch with no
+      // upstream is normal and must not fail here - resolveTagRemote falls back to origin and
+      // returns "" rather than throwing when it cannot pick one.
+      const [gitStatus, gitRemotes] = await AveAzul.all([
+        this._sh(`git status -b --porcelain=v2`, this._cwd, true),
+        this._sh(`git remote`, this._cwd, true),
+      ]);
+      const gitRemote = utils.resolveTagRemote(gitStatus.stdout, gitRemotes.stdout);
 
       if (!this._push) {
         printSuccess(`Release tag ${newTag} created (not pushed)`);
-        return { tag: newTag, pushed: false };
+        return { tag: newTag, pushed: false, remote: gitRemote };
+      }
+
+      if (!gitRemote) {
+        printWarning(
+          `Unable to determine a git remote - release tag ${newTag} created locally only`
+        );
+        return { tag: newTag, pushed: false, remote: "" };
       }
 
       await this._sh(`${dryRun}git push ${gitRemote} ${newTag}`, this._cwd, false);
       printSuccess(`Release tag ${newTag} created and pushed to ${gitRemote}`);
-      return { tag: newTag, pushed: true };
+      return { tag: newTag, pushed: true, remote: gitRemote };
     } catch (err) {
       this._logError(`Failed to create release tag ${newTag}`, err);
       process.exit(1);
@@ -313,7 +321,9 @@ export default class Publish {
         printSuccess("All packages published successfully");
         if (tagInfo && !tagInfo.pushed) {
           printNextSteps([
-            `Push the release tag: ${printCommand(`git push origin ${tagInfo.tag}`)}`,
+            `Push the release tag: ${printCommand(
+              `git push ${tagInfo.remote || "origin"} ${tagInfo.tag}`
+            )}`,
           ]);
         }
       }
