@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { execFile } from "child_process";
 import Fs from "fs";
+import { createRequire } from "module";
 import Os from "os";
 import Path from "path";
 import { promisify } from "util";
@@ -48,8 +49,17 @@ describe("fynpo-cli launcher (FJM-85)", () => {
       cwd: REPO_ROOT
     });
 
+    //
+    // Resolve fynpo exactly as the launcher does, from the repo root - NOT from
+    // packages/fynpo. The launcher's contract is to run whichever fynpo is *installed* for the
+    // monorepo you are standing in, which after a release is the previously published version
+    // while the workspace source has already been bumped ahead of it. Reading the workspace
+    // package.json here only agreed by coincidence, and broke the moment fynpo went to 3.0.0
+    // (FJM-136).
+    //
+    const rootRequire = createRequire(Path.join(REPO_ROOT, "_"));
     const fynpoPkg = JSON.parse(
-      Fs.readFileSync(Path.join(REPO_ROOT, "packages", "fynpo", "package.json"), "utf8")
+      Fs.readFileSync(rootRequire.resolve("fynpo/package.json"), "utf8")
     );
 
     //
