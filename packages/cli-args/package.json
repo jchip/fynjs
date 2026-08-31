@@ -23,7 +23,7 @@
     "test-debug": "vitest run --inspect-brk --no-file-parallelism",
     "coveralls": "vitest run --coverage && cat coverage/lcov.info | coveralls",
     "coverage": "vitest run --coverage",
-    "prepublishOnly": "xrun --serial [[build, docs], coverage]",
+    "prepublishOnly": "npm run build && npm run docs && npm run coverage",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
@@ -71,7 +71,6 @@
   "license": "Apache-2.0",
   "dependencies": {},
   "devDependencies": {
-    "@fynjs/run": "^0.0.1",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
