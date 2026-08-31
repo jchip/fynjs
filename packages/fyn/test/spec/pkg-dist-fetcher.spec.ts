@@ -1,7 +1,7 @@
 
 import { describe, it, beforeAll, afterAll } from "vitest";
 import Fs from "fs";
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
 import Path from "path";
 import Fyn from "../../lib/fyn";
 import mockNpm from "../fixtures/mock-npm";

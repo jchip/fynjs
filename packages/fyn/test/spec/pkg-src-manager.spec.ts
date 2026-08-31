@@ -2,7 +2,7 @@
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import Fs from "fs";
 import Http from "http";
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
 import Path from "path";
 import _ from "lodash";
 import xsh from "xsh";

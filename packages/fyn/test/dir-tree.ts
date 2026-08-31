@@ -1,6 +1,6 @@
 import Path from "path";
 import Fs from "fs";
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
 import { fileURLToPath } from "url";
 
 function readJson(file: string) {

@@ -17,7 +17,7 @@ import { expect as chaiExpect } from "chai";
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
 import Promise from "aveazul";
 import { make as dirTree } from "../dir-tree";
 import fynRun from "../../cli/fyn";
@@ -122,8 +122,8 @@ const debug = false;
       const expectLockFile = Path.join(stepDir, "lock.yaml");
       if (Fs.existsSync(expectLockFile)) {
         const actualLockFile = Path.join(_cwd, "fyn-lock.yaml");
-        const expectLock = Yaml.safeLoad(Fs.readFileSync(expectLockFile).toString());
-        const actualLock = Yaml.safeLoad(Fs.readFileSync(actualLockFile).toString());
+        const expectLock = Yaml.load(Fs.readFileSync(expectLockFile).toString());
+        const actualLock = Yaml.load(Fs.readFileSync(actualLockFile).toString());
         chaiExpect(cleanLock(actualLock), "lock file should match").to.deep.equal(
           cleanLock(expectLock)
         );
@@ -284,7 +284,7 @@ const debug = false;
             if (process.env.UPDATE_NM_TREE) {
               Fs.writeFileSync(nmTreeFile, Yaml.dump(nmTree, { indent: 2 }));
             } else {
-              const expectNmTree = Yaml.safeLoad(Fs.readFileSync(nmTreeFile).toString());
+              const expectNmTree = Yaml.load(Fs.readFileSync(nmTreeFile).toString());
               chaiExpect(nmTree).to.deep.equal(expectNmTree);
             }
             verifyLock(cwd, stepDir);

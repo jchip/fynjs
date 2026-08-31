@@ -9,7 +9,7 @@ const DepData = require("../lib/dep-data");
 // load data
 
 const dataStr = Fs.readFileSync("fyn-data.yaml").toString();
-const data = new DepData(Yaml.safeLoad(dataStr));
+const data = new DepData(Yaml.load(dataStr));
 
 const PkgDepLinker = require("../lib/pkg-dep-linker");
 

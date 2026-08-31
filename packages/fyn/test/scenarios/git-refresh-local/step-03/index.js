@@ -53,7 +53,7 @@ module.exports = {
     // Verify that the cache was refreshed (even though there were no new commits)
     // The cache refresh should have happened due to staleness (24h fallback)
     const lockFile = path.join(cwd, "fyn-lock.yaml");
-    const lockData = Yaml.safeLoad(fs.readFileSync(lockFile, "utf8"));
+    const lockData = Yaml.load(fs.readFileSync(lockFile, "utf8"));
     
     if (!lockData["test-from-gh"]) {
       throw new Error("test-from-gh not found in lockfile after refresh");

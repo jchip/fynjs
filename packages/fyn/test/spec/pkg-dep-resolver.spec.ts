@@ -1,6 +1,6 @@
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import Fs from "fs";
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
 import Path from "path";
 import Fyn from "../../lib/fyn";
 import PkgSrcManager from "../../lib/pkg-src-manager";
@@ -108,7 +108,7 @@ describe("pkg-dep-resolver", function() {
   };
 
   const checkResolvedData = (fyn, file) => {
-    const expected = Yaml.safeLoad(Fs.readFileSync(file).toString());
+    const expected = Yaml.load(Fs.readFileSync(file).toString());
     expect(sortRequests(fyn._data)).to.deep.equal(sortRequests(expected));
   };
 
@@ -135,7 +135,7 @@ describe("pkg-dep-resolver", function() {
     return fyn.resolveDependencies().then(() => {
       cleanData(fyn._data.pkgs);
       cleanData(fyn._data.badPkgs);
-      // Fs.writeFileSync(Path.resolve(outFname), Yaml.safeDump(fyn._data));
+      // Fs.writeFileSync(Path.resolve(outFname), Yaml.dump(fyn._data));
       checkResolvedData(fyn, Path.join(__dirname, expectOutput));
     });
   };

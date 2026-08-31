@@ -60,7 +60,7 @@ const createTgz = () => {
     .each(m => {
       const f = Path.join(__dirname, "metas", m);
       const ymlStr = Fs.readFileSync(f).toString();
-      const meta = Yml.safeLoad(ymlStr);
+      const meta = Yml.load(ymlStr);
 
       return Promise.resolve(Object.keys(meta.versions)).each(v => {
         Fs.rmSync(tmpDir, { recursive: true, force: true });

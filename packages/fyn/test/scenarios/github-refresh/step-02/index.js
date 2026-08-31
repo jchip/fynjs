@@ -9,7 +9,7 @@ module.exports = {
   before(cwd, scenarioDir) {
     // Read git semver from lockfile
     const lockFile = path.join(cwd, "fyn-lock.yaml");
-    const lockData = Yaml.safeLoad(fs.readFileSync(lockFile, "utf8"));
+    const lockData = Yaml.load(fs.readFileSync(lockFile, "utf8"));
     const gitSemver = Object.keys(lockData["test-from-gh"]._)[0]; // e.g., "jchip/test-from-gh"
     
     // Extract repo URL from git semver (use SSH format for push)

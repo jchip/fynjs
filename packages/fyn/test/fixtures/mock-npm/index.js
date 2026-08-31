@@ -60,7 +60,7 @@ function readMeta(pkgName) {
 
   if (!meta) {
     const metaData = Fs.readFileSync(Path.join(__dirname, "metas", `${pkgName}.yml`));
-    meta = Yaml.safeLoad(metaData);
+    meta = Yaml.load(metaData);
     metaCache[pkgName] = meta;
   }
   updateDist(meta);
