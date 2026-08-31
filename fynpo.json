@@ -9,7 +9,7 @@
   "command": {
     "publish": {
       "tags": {
-        "v2": {
+        "v3": {
           "enabled": true,
           "packages": {
             "fynpo": true,

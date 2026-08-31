@@ -35,7 +35,7 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.com/",
-    "tag": "v2"
+    "tag": "v3"
   },
   "files": [
     "bin",
@@ -103,7 +103,7 @@
     "lockfile": "^1.0.4",
     "lodash": "^4.17.21",
     "minimatch": "^10.2.6",
-    "@fynjs/cli-args": "^1.0.0",
+    "@fynjs/cli-args": "^0.0.1",
     "npm-packlist": "^11.3.0",
     "npm-registry-fetch": "^20.0.1",
     "opfs": "^1.1.1",

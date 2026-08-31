@@ -46,7 +46,7 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.com/",
-    "tag": "v2"
+    "tag": "v3"
   },
   "publishUtil": {
     "fynIgnore": true,
@@ -74,7 +74,7 @@
     "@commitlint/lint": "^18.6.1",
     "@commitlint/read": "^18.6.1",
     "@commitlint/resolve-extends": "^18.6.1",
-    "@fynjs/cli-args": "^1.0.0",
+    "@fynjs/cli-args": "^0.0.1",
     "@fynpo/base": "^1.1.23",
     "@jchip/error": "^1.0.3",
     "aveazul": "^1.1.0",
