@@ -1,7 +1,6 @@
 "use strict";
 
-
-const electrodeServer = require("electrode-server");
+const Http = require("http");
 const Fs = require("fs");
 const Yaml = require("js-yaml");
 const Path = require("path");
@@ -69,73 +68,129 @@ function readMeta(pkgName) {
   return meta;
 }
 
+function sendJson(res, code, obj, headers) {
+  const body = Buffer.from(JSON.stringify(obj));
+  res.writeHead(code, {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": body.length,
+    ...headers
+  });
+  res.end(body);
+}
+
+function sendText(res, code, text) {
+  const body = Buffer.from(text);
+  res.writeHead(code, {
+    "content-type": "text/html; charset=utf-8",
+    "content-length": body.length
+  });
+  res.end(body);
+}
+
+function notFound(res) {
+  sendJson(res, 404, { statusCode: 404, error: "Not Found", message: "Not Found" });
+}
+
 function mockNpm({ port = DEFAULT_PORT, logLevel = "info" }) {
   metaCache = {};
   const logger = new CliLogger();
-  logger._logLevel = CliLogger.Levels.info;
-  return electrodeServer({
-    connections: {
-      default: {
-        port: Number.isFinite(port) ? port : 0
-      }
-    },
-    electrode: {
-      logLevel
+  logger._logLevel = CliLogger.Levels[logLevel] || CliLogger.Levels.info;
+
+  const packagesDir = Path.join(__dirname, TGZ_DIR_NAME);
+
+  // GET /{pkgName} - package meta
+  const getMeta = (req, res, pkgName) => {
+    logger.debug(
+      chalk.blue("mock npm: ") + new Date().toLocaleString() + ":",
+      "retrieving meta",
+      pkgName
+    );
+    let meta;
+    try {
+      meta = readMeta(pkgName);
+    } catch (err) {
+      // Package not found in mock registry - return 404
+      logger.debug(`mock npm: package ${pkgName} not found`);
+      return sendJson(res, 404, {
+        error: "not_found",
+        reason: `Package '${pkgName}' not found`
+      });
     }
-  }).then(server => {
-    PORT = server.info.port;
-    PORT_STR = `:${PORT}`;
-    server.route({
-      method: "GET",
-      path: "/{pkgName}",
-      handler: (request, h) => {
-        const pkgName = request.params.pkgName;
-        logger.debug(
-          chalk.blue("mock npm: ") + new Date().toLocaleString() + ":",
-          "retrieving meta",
-          pkgName
-        );
-        try {
-          const meta = readMeta(pkgName);
-          const pkgMeta = _.omit(meta, "etag");
-          let etag = request.headers["if-none-match"];
-          etag = etag && etag.split(`"`)[1];
-          if (etag && pkgName !== "always-change") {
-            return h
-              .response()
-              .code(304)
-              .header("ETag", etag);
-          }
-          return h.response(pkgMeta).header("ETag", `"${meta.etag}_${Date.now()}"`);
-        } catch (err) {
-          // Package not found in mock registry - return 404
-          logger.debug(`mock npm: package ${pkgName} not found`);
-          return h.response({ error: "not_found", reason: `Package '${pkgName}' not found` }).code(404);
-        }
-      }
+
+    let etag = req.headers["if-none-match"];
+    etag = etag && etag.split(`"`)[1];
+    if (etag && pkgName !== "always-change") {
+      res.writeHead(304, { ETag: etag });
+      return res.end();
+    }
+
+    return sendJson(res, 200, _.omit(meta, "etag"), {
+      ETag: `"${meta.etag}_${Date.now()}"`
+    });
+  };
+
+  // GET /{pkgName}/-/{tgzFile} - package tarball
+  const getTgz = (req, res, pkgName, tgzFile) => {
+    if (pkgName.indexOf("-bad-") >= 0) {
+      logger.error("mock-npm server: ERROR: trying to fetch tgz of", pkgName);
+      return sendText(res, 500, "fetch bad tgz not allowed");
+    }
+    logger.debug(new Date().toLocaleString() + ":", "fetching", pkgName, tgzFile);
+    let pkg;
+    try {
+      pkg = Fs.readFileSync(Path.join(packagesDir, tgzFile));
+    } catch (err) {
+      return notFound(res);
+    }
+    res.writeHead(200, {
+      "content-type": "application/x-gzip",
+      "content-disposition": "inline",
+      "content-length": pkg.length
+    });
+    return res.end(pkg);
+  };
+
+  const server = Http.createServer((req, res) => {
+    if (req.method !== "GET") return notFound(res);
+
+    const pathname = new URL(req.url, "http://localhost").pathname;
+    const parts = pathname.split("/").filter(x => x);
+
+    if (parts.length === 1) {
+      return getMeta(req, res, decodeURIComponent(parts[0]));
+    }
+
+    if (parts.length === 3 && parts[1] === "-") {
+      return getTgz(req, res, decodeURIComponent(parts[0]), decodeURIComponent(parts[2]));
+    }
+
+    return notFound(res);
+  });
+
+  // keep-alive sockets would hold close() open, so track them for stop()
+  const sockets = new Set();
+  server.on("connection", socket => {
+    sockets.add(socket);
+    socket.on("close", () => sockets.delete(socket));
+  });
+
+  server.info = { port: undefined };
+  server.stop = () =>
+    new Promise(resolve => {
+      server.close(resolve);
+      for (const socket of sockets) socket.destroy();
+      sockets.clear();
     });
 
-    const packagesDir = Path.join(__dirname, TGZ_DIR_NAME);
-    server.route({
-      method: "GET",
-      path: "/{pkgName}/-/{tgzFile}",
-      handler: (request, h) => {
-        const pkgName = request.params.pkgName;
-        const tgzFile = request.params.tgzFile;
-        if (pkgName.indexOf("-bad-") >= 0) {
-          logger.error("mock-npm server: ERROR: trying to fetch tgz of", pkgName);
-          return h.response("fetch bad tgz not allowed").code(500);
-        }
-        logger.debug(new Date().toLocaleString() + ":", "fetching", pkgName, tgzFile);
-        const pkg = Fs.readFileSync(Path.join(packagesDir, tgzFile));
-        return h
-          .response(pkg)
-          .header("Content-Disposition", "inline")
-          .header("Content-type", "application/x-gzip");
-      }
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(Number.isFinite(port) ? port : 0, () => {
+      server.removeListener("error", reject);
+      PORT = server.address().port;
+      PORT_STR = `:${PORT}`;
+      server.info.port = PORT;
+      resolve(server);
     });
-
-    return server;
   });
 }
 
