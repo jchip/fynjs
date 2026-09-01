@@ -8,6 +8,12 @@
  * install runs. Edit a workspace manifest without re-bootstrapping and consumers keep resolving
  * against the old one.
  *
+ * The same goes for the package's *files*: fyn installs a local package as a physical copy
+ * (hardlinked when it can), so rebuilding a workspace package's `dist` leaves every consumer
+ * holding the previous build. A bundler that resolves the dep through `node_modules` then
+ * bundles the old code, which is how fynpo@3.0.3 shipped without a fix that its own
+ * `@fynpo/base` dependency had already published (FPO-59).
+ *
  * That failure is silent and lands far from its cause: a consumer requires an entry point that
  * no longer exists, the child process dies on module resolution, and the parent just waits until
  * it times out. Nothing in the output names the stale package. This module exists to turn that
@@ -52,6 +58,8 @@ export type StaleLocalDep = {
   consumers: string[];
   /** union of the resolution fields that differ, across those consumers */
   fields: string[];
+  /** installed files whose content no longer matches the source, across those consumers */
+  files: string[];
 };
 
 /**
@@ -91,6 +99,98 @@ export function diffResolutionFields(
   );
 }
 
+/**
+ * Files fyn rewrites when it installs a package, so a difference in them is normalization
+ * rather than staleness.
+ *
+ * - `package.json` gets `_id`/`_from`/`dist` stamped in and `scripts` trimmed;
+ *   {@link diffResolutionFields} is what compares that file, on the fields that matter.
+ * - source maps get their `sources` rewritten to point back at the workspace source dir
+ *   (`../src/index.ts` becomes `../../../../../xaa/src/index.ts`), so every installed
+ *   `.map` differs from the one the build produced. Measured on this monorepo, not excluding
+ *   them reported xaa and pkg-foo as stale in 6 consumers that were perfectly current.
+ */
+const isRewrittenByInstall = (rel: string) => rel === "package.json" || rel.endsWith(".map");
+
+/** relative paths of the files in a dir, skipping dot entries and nested installs */
+const walkFiles = (dir: string, base = "", out: string[] = []): string[] => {
+  let entries: Fs.Dirent[];
+  try {
+    entries = Fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+
+  for (const entry of entries) {
+    if (entry.name.startsWith(".") || entry.name === "node_modules") {
+      continue;
+    }
+    const rel = base ? `${base}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      walkFiles(Path.join(dir, entry.name), rel, out);
+    } else if (entry.isFile()) {
+      out.push(rel);
+    }
+  }
+
+  return out;
+};
+
+/**
+ * Whether two files hold the same bytes.
+ *
+ * Size first, then mtime: a hardlinked copy shares the inode with its source, so both match and
+ * nothing is read. Only a copy that fyn had to make physically (cross device, or a rebuild that
+ * replaced the source inode) reaches the byte compare - and equal bytes there is the common
+ * case, since a rebuild usually reproduces the same output.
+ */
+const sameFile = (a: string, b: string): boolean => {
+  try {
+    const statA = Fs.statSync(a);
+    const statB = Fs.statSync(b);
+    if (statA.size !== statB.size) {
+      return false;
+    }
+    if (statA.mtimeMs === statB.mtimeMs) {
+      return true;
+    }
+    return Fs.readFileSync(a).equals(Fs.readFileSync(b));
+  } catch {
+    // one of them vanished mid-check - a diagnostic must not throw on a racing install
+    return false;
+  }
+};
+
+/**
+ * Compare the files of an installed copy against the workspace source they came from.
+ *
+ * Only files the copy actually holds are compared. A workspace package carries sources, tests
+ * and config that are never installed, and reporting those would flag every package with an
+ * uncommitted test edit.
+ *
+ * @param srcDir - absolute path of the workspace package dir
+ * @param copyDir - absolute path of the installed copy
+ * @param limit - stop after this many differing files, to keep the message short
+ * @returns relative paths of files that differ, capped at `limit`
+ */
+export function diffInstalledFiles(srcDir: string, copyDir: string, limit = 3): string[] {
+  const diffs: string[] = [];
+
+  for (const rel of walkFiles(copyDir)) {
+    if (isRewrittenByInstall(rel)) {
+      continue;
+    }
+    if (!sameFile(Path.join(srcDir, rel), Path.join(copyDir, rel))) {
+      diffs.push(rel);
+      if (diffs.length >= limit) {
+        break;
+      }
+    }
+  }
+
+  return diffs;
+}
+
 const readJson = (file: string): Record<string, any> | undefined => {
   try {
     return JSON.parse(Fs.readFileSync(file, "utf8"));
@@ -113,7 +213,7 @@ const readJson = (file: string): Record<string, any> | undefined => {
  * @returns stale packages, sorted by name
  */
 export function findStaleLocalDeps(packages: PackageDepData[], cwd: string): StaleLocalDep[] {
-  const byName = new Map<string, { consumers: string[]; fields: Set<string> }>();
+  const byName = new Map<string, { consumers: string[]; fields: Set<string>; files: Set<string> }>();
 
   for (const depData of packages) {
     const consumerPath = depData?.pkgInfo?.path;
@@ -123,9 +223,9 @@ export function findStaleLocalDeps(packages: PackageDepData[], cwd: string): Sta
 
     for (const ref of Object.values(depData.localDepsByPath || {})) {
       const srcFullPath = Path.join(cwd, ref.path);
-      const installedFile = Path.join(cwd, consumerPath, "node_modules", ref.name, "package.json");
+      const installedDir = Path.join(cwd, consumerPath, "node_modules", ref.name);
 
-      const installed = readJson(installedFile);
+      const installed = readJson(Path.join(installedDir, "package.json"));
       // not installed under this consumer - an indirect local dep can be hoisted elsewhere, and
       // that is not staleness
       if (!installed || !isLocalLink(installed, srcFullPath)) {
@@ -138,22 +238,29 @@ export function findStaleLocalDeps(packages: PackageDepData[], cwd: string): Sta
       }
 
       const fields = diffResolutionFields(src, installed);
-      if (!fields.length) {
+      const files = diffInstalledFiles(srcFullPath, installedDir);
+      if (!fields.length && !files.length) {
         continue;
       }
 
-      const entry = byName.get(ref.name) || { consumers: [], fields: new Set<string>() };
+      const entry = byName.get(ref.name) || {
+        consumers: [],
+        fields: new Set<string>(),
+        files: new Set<string>(),
+      };
       entry.consumers.push(consumerPath);
       fields.forEach((f) => entry.fields.add(f));
+      files.forEach((f) => entry.files.add(f));
       byName.set(ref.name, entry);
     }
   }
 
   return [...byName.entries()]
-    .map(([name, { consumers, fields }]) => ({
+    .map(([name, { consumers, fields, files }]) => ({
       name,
       consumers: consumers.sort(),
       fields: RESOLUTION_FIELDS.filter((f) => fields.has(f)) as string[],
+      files: [...files].sort(),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -177,8 +284,9 @@ export function formatStaleLocalDeps(stale: StaleLocalDep[]): string[] {
     } installed - run 'fynpo bootstrap' to refresh`,
   ];
 
-  for (const { name, consumers, fields } of stale) {
-    lines.push(`  - ${name} (${fields.join(", ")}) stale in: ${consumers.join(", ")}`);
+  for (const { name, consumers, fields, files } of stale) {
+    const changed = fields.concat(files);
+    lines.push(`  - ${name} (${changed.join(", ")}) stale in: ${consumers.join(", ")}`);
   }
 
   return lines;

@@ -8,6 +8,7 @@ import {
   diffResolutionFields,
   findStaleLocalDeps,
   formatStaleLocalDeps,
+  diffInstalledFiles,
 } from "../src/utils/check-stale-local-deps";
 
 describe("isLocalLink", () => {
@@ -114,6 +115,78 @@ describe("diffResolutionFields", () => {
   });
 });
 
+describe("diffInstalledFiles", () => {
+  let dir: string;
+  let srcDir: string;
+  let copyDir: string;
+
+  const write = (base: string, rel: string, content: string) => {
+    const file = Path.join(base, rel);
+    Fs.mkdirSync(Path.dirname(file), { recursive: true });
+    Fs.writeFileSync(file, content);
+  };
+
+  beforeAll(() => {
+    dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), "fynpo-files-"));
+    srcDir = Path.join(dir, "src-pkg");
+    copyDir = Path.join(dir, "copy-pkg");
+  });
+
+  afterAll(() => {
+    Fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("reports nothing when the copy holds the same bytes", () => {
+    write(srcDir, "dist/a.js", "same");
+    write(copyDir, "dist/a.js", "same");
+
+    expect(diffInstalledFiles(srcDir, copyDir)).toEqual([]);
+  });
+
+  it("reports a file whose content moved on at the source", () => {
+    write(srcDir, "dist/b.js", "new build");
+    write(copyDir, "dist/b.js", "old build");
+
+    expect(diffInstalledFiles(srcDir, copyDir)).toEqual(["dist/b.js"]);
+  });
+
+  it("reports a file the source no longer has", () => {
+    write(copyDir, "dist/gone.js", "left behind");
+
+    expect(diffInstalledFiles(srcDir, copyDir)).toContain("dist/gone.js");
+  });
+
+  //
+  // fyn rewrites the installed package.json (stamping _id/_from, trimming scripts), so it always
+  // differs. diffResolutionFields is what compares that file, on the fields that matter.
+  //
+  it("ignores package.json", () => {
+    write(srcDir, "package.json", JSON.stringify({ name: "p" }));
+    write(copyDir, "package.json", JSON.stringify({ name: "p", _id: "p@1.0.0-fynlocal_h" }));
+
+    expect(diffInstalledFiles(srcDir, copyDir)).not.toContain("package.json");
+  });
+
+  it("does not descend into a nested node_modules or dot dir", () => {
+    write(copyDir, "node_modules/dep/index.js", "nested");
+    write(copyDir, ".cache/x.js", "hidden");
+
+    const diffs = diffInstalledFiles(srcDir, copyDir, 20);
+    expect(diffs.some((d) => d.startsWith("node_modules/"))).toBe(false);
+    expect(diffs.some((d) => d.startsWith(".cache/"))).toBe(false);
+  });
+
+  it("stops at the limit so the message stays short", () => {
+    const many = Path.join(dir, "many-copy");
+    for (let i = 0; i < 6; i++) {
+      write(many, `dist/f${i}.js`, "only in the copy");
+    }
+
+    expect(diffInstalledFiles(Path.join(dir, "many-src"), many)).toHaveLength(3);
+    expect(diffInstalledFiles(Path.join(dir, "many-src"), many, 5)).toHaveLength(5);
+  });
+});
+
 describe("findStaleLocalDeps", () => {
   let cwd: string;
 
@@ -192,6 +265,24 @@ describe("findStaleLocalDeps", () => {
 
     // dep-d: declared local dep that was never installed under this consumer
     writeSrc("packages/dep-d", { name: "dep-d", version: "1.0.0", main: "./index.js" });
+
+    //
+    // dep-e: the FPO-59 shape - the manifest is identical, only the built output moved on.
+    // Nothing in a manifest diff can see this, and it is what a bundler reads.
+    //
+    writeSrc("packages/dep-e", { name: "dep-e", version: "1.0.0", main: "./dist/index.js" });
+    Fs.mkdirSync(Path.join(cwd, "packages/dep-e/dist"), { recursive: true });
+    Fs.writeFileSync(Path.join(cwd, "packages/dep-e/dist/index.js"), "export const fixed = true;");
+    writeInstalled("packages/app", "dep-e", "packages/dep-e", {
+      name: "dep-e",
+      version: "1.0.0",
+      main: "./dist/index.js",
+    });
+    Fs.mkdirSync(Path.join(cwd, "packages/app/node_modules/dep-e/dist"), { recursive: true });
+    Fs.writeFileSync(
+      Path.join(cwd, "packages/app/node_modules/dep-e/dist/index.js"),
+      "export const fixed = false;"
+    );
   });
 
   afterAll(() => {
@@ -239,6 +330,21 @@ describe("findStaleLocalDeps", () => {
     expect(findStaleLocalDeps(onlyFresh as any, cwd)).toEqual([]);
   });
 
+  //
+  // FPO-59: fynpo@3.0.3 was bundled from a copy of @fynpo/base whose manifest matched perfectly
+  // and whose dist was one build behind, and the release reported nothing.
+  //
+  it("finds a copy whose build output is behind, with an identical manifest", () => {
+    const stale = findStaleLocalDeps(
+      [depData("app", "packages/app", [{ name: "dep-e", path: "packages/dep-e" }])] as any,
+      cwd
+    );
+
+    expect(stale.map((s) => s.name)).toEqual(["dep-e"]);
+    expect(stale[0].fields).toEqual([]);
+    expect(stale[0].files).toEqual(["dist/index.js"]);
+  });
+
   it("tolerates an empty package list", () => {
     expect(findStaleLocalDeps([], cwd)).toEqual([]);
   });
@@ -255,7 +361,7 @@ describe("formatStaleLocalDeps", () => {
 
   it("names the package, the fields and the consumers, and gives the remedy", () => {
     const lines = formatStaleLocalDeps([
-      { name: "string-array", consumers: ["packages/xarc-run"], fields: ["main", "exports"] },
+      { name: "string-array", consumers: ["packages/xarc-run"], fields: ["main", "exports"], files: [] },
     ]);
 
     expect(lines).toHaveLength(2);
@@ -266,10 +372,20 @@ describe("formatStaleLocalDeps", () => {
     expect(lines[1]).toContain("packages/xarc-run");
   });
 
+  it("names the changed files alongside the fields", () => {
+    const lines = formatStaleLocalDeps([
+      { name: "@fynpo/base", consumers: ["packages/fynpo"], fields: [], files: ["dist/fynpo-dep-graph.js"] },
+    ]);
+
+    expect(lines[1]).toContain("@fynpo/base");
+    expect(lines[1]).toContain("dist/fynpo-dep-graph.js");
+    expect(lines[1]).toContain("packages/fynpo");
+  });
+
   it("pluralizes for more than one stale package", () => {
     const lines = formatStaleLocalDeps([
-      { name: "a", consumers: ["packages/x"], fields: ["main"] },
-      { name: "b", consumers: ["packages/y"], fields: ["main"] },
+      { name: "a", consumers: ["packages/x"], fields: ["main"], files: [] },
+      { name: "b", consumers: ["packages/y"], fields: ["main"], files: [] },
     ]);
 
     expect(lines[0]).toContain("2 local packages changed");

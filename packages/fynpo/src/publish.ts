@@ -10,6 +10,7 @@ import fyn from "fyn/bin/index.js";
 import shell from "shelljs";
 import { FynpoDepGraph, FynpoPackageInfo } from "@fynpo/base";
 import { TopoRunner } from "./topo-runner";
+import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps";
 import {
   printHeader,
   printSection,
@@ -192,6 +193,48 @@ export default class Publish {
     }
   }
 
+  /**
+   * Refuse to publish while any package being published holds a stale copy of a local dep.
+   *
+   * fyn installs a local package as a physical copy, so rebuilding a workspace package's `dist`
+   * leaves consumers holding the previous build until the next bootstrap. The pack phase runs
+   * every package's `prepublishOnly` in topo order, so the *source* dist is always current -
+   * but a bundler resolving the dep through `node_modules` reads the copy, not the source.
+   * That is how fynpo@3.0.3 shipped without the dep graph fix that `@fynpo/base@2.0.2` published
+   * in the same release (FPO-59). Nothing failed; the bundle was just built from old code.
+   *
+   * This is a hard stop rather than the warning `fynpo run` prints: a release is the one moment
+   * where the artifact outlives the mistake.
+   */
+  checkStaleLocalDeps() {
+    if (process.env.FYNPO_ALLOW_STALE_LOCAL_DEPS) {
+      return;
+    }
+
+    const toPublishPaths = this._packagesToPublish.map((x) => x.path);
+    const depDatas = this._graph
+      .getTopoSortPackages()
+      .sorted.filter((depData) => toPublishPaths.includes(depData?.pkgInfo?.path));
+
+    const stale = findStaleLocalDeps(depDatas, this._cwd);
+    if (!stale.length) {
+      return;
+    }
+
+    printError(
+      [
+        "Stale local dependency copies - publishing now would bundle outdated code",
+        ...formatStaleLocalDeps(stale).slice(1),
+        "",
+        "Run 'fynpo bootstrap' to refresh them, then re-run publish.",
+        "If bootstrap cannot run because prepare already pointed ranges at unpublished versions,",
+        "reset the [Publish] commit, bootstrap, then re-run changelog and prepare.",
+        "Set FYNPO_ALLOW_STALE_LOCAL_DEPS=1 to publish anyway.",
+      ].join("\n")
+    );
+    process.exit(1);
+  }
+
   _cleanupFile(name: string) {
     try {
       shell.rm(name);
@@ -350,6 +393,8 @@ export default class Publish {
 
     printSection("Packages to Publish");
     printList(pkgList);
+
+    this.checkStaleLocalDeps();
 
     try {
       const fynpoPkgJson = JSON.parse(

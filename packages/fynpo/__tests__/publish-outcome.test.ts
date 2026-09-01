@@ -135,7 +135,7 @@ describe("publishPackages outcome", () => {
   const b = pkg("b", "2.0.0");
 
   const makePublish = () => {
-    const graph = { packages: { byId: {} }, getTopoSortPackages: () => [] } as any;
+    const graph = { packages: { byId: {} }, getTopoSortPackages: () => ({ sorted: [], noCircSorted: [], circulars: [] }) } as any;
     const publish = new Publish({ cwd: "/repo", dryRun: false, push: false }, graph);
     publish._packagesToPublish = [a, b] as any;
     return publish;
@@ -206,7 +206,7 @@ describe("publishPackages outcome", () => {
   });
 
   it("publishes nothing on a dry run", async () => {
-    const graph = { packages: { byId: {} }, getTopoSortPackages: () => [] } as any;
+    const graph = { packages: { byId: {} }, getTopoSortPackages: () => ({ sorted: [], noCircSorted: [], circulars: [] }) } as any;
     const publish = new Publish({ cwd: "/repo", dryRun: true, push: false }, graph);
     publish._packagesToPublish = [a, b] as any;
 
@@ -227,7 +227,7 @@ describe("publish exit code and release tag", () => {
   const runExec = async () => {
     const graph = {
       packages: { byId: { "a@1.0.0": a, "b@2.0.0": b } },
-      getTopoSortPackages: () => [],
+      getTopoSortPackages: () => ({ sorted: [], noCircSorted: [], circulars: [] }),
     } as any;
     const publish = new Publish({ cwd, dryRun: false, push: false }, graph);
     await publish.exec();
