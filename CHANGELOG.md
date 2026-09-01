@@ -2,6 +2,25 @@
 
 ## Packages
 
+-   `fyn@3.0.4` `(3.0.3 => 3.0.4)`
+-   `fynpo@3.0.4` `(3.0.3 => 3.0.4)`
+-   `fynpo-cli@3.0.4` `(3.0.3 => 3.0.4)`
+
+## Commits
+
+-   `packages/fyn`
+
+    -   Update fyn and fynpo devDeps to 3.0.3 [commit](https://github.com/jchip/fynjs/commit/293edf0c5f62e87166c6c0c432dadd174e2d2d0e)
+
+-   `packages/fynpo`
+
+    -   FPO-59: block only on outdated build files and skip publish-util removed fields [commit](https://github.com/jchip/fynjs/commit/48cef63a27c6292853e7796d00f264fbcca86fd5)
+    -   FPO-59: publish refuses to ship a bundle built from a stale local dep copy [commit](https://github.com/jchip/fynjs/commit/b8185048401bffbb256589ab7a36cc09aff673ec)
+
+# 9/1/2026
+
+## Packages
+
 -   `@fynpo/base@2.0.2` `(2.0.1 => 2.0.2)`
 -   `fyn@3.0.3` `(3.0.2 => 3.0.3)`
 -   `fynpo@3.0.3` `(3.0.2 => 3.0.3)`
