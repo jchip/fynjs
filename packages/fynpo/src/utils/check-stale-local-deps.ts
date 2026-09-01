@@ -146,41 +146,63 @@ const walkFiles = (dir: string, base = "", out: string[] = []): string[] => {
 };
 
 /**
- * Whether the installed file is still the one the workspace holds.
+ * Whether two files hold the same bytes.
  *
- * Three signals, in order of what each can actually prove:
+ * There is no shortcut for this. Size is a cheap disqualifier, not a proof, and mtime says
+ * nothing about content in either direction - two files written a tick apart share one, and a
+ * copy made with `copyFile` gets a new one while holding identical bytes. To know that two
+ * files are identical you read both and compare them.
  *
- * 1. **inode identity** proves current. fyn hardlinks a local install where it can, so a fresh
- *    copy and its source are one file on disk under two names - nothing to read.
- * 2. **a differing mtime** proves not-current. The links only break when something rewrote the
- *    source (`rm -rf dist && tsc` makes new inodes), and that write stamps a new mtime. Deciding
- *    it here costs a stat instead of reading a multi-megabyte bundle.
- * 3. only when inodes differ but mtimes agree do size and bytes settle it. An equal mtime alone
- *    is NOT proof of equality - two independent writes share one when they land inside a single
- *    filesystem timestamp tick, which is how CI caught a same-size pair being passed as current.
- *
- * Caveat worth knowing: fyn's fallback when it cannot hardlink is `copyFile`/`clonefile`, and
- * neither carries the source mtime over. Where that fallback runs - a node_modules on another
- * device, or Windows without link privileges - every installed file reads as not-current here.
- * That direction is the safe one (it asks for a bootstrap that is never wrong to run) but it is
- * why this must not be the only gate: {@link diffResolutionFields} stays a warning, and only a
- * file difference in a package actually being published stops a release.
+ * @param a - one file
+ * @param b - the other
+ * @param sizeA - already-stat'd size of `a`
+ * @param sizeB - already-stat'd size of `b`
  */
-const sameFile = (a: string, b: string): boolean => {
+const hasSameContent = (a: string, b: string, sizeA: number, sizeB: number): boolean => {
+  if (sizeA !== sizeB) {
+    return false;
+  }
+  return Fs.readFileSync(a).equals(Fs.readFileSync(b));
+};
+
+/**
+ * Whether an installed file is still the current install of its workspace source.
+ *
+ * This is install identity, not byte identity - {@link hasSameContent} is what answers the
+ * latter, and this calls it when it has to. The distinction matters because the three signals
+ * available answer different questions:
+ *
+ * 1. **same inode** - the install is a hardlink, so it is not a copy of the source, it IS the
+ *    source. fyn links wherever it can, which is every one of the 1402 installed files in this
+ *    monorepo. Nothing to compare.
+ * 2. **differing mtime** - the link was broken by something rewriting the source (`rm -rf dist
+ *    && tsc` makes new inodes), and that write stamped a new mtime. The copy therefore predates
+ *    the current source and a bootstrap is owed, whatever the bytes turn out to be.
+ * 3. **same mtime, different inode** - proves nothing on its own, so read and compare.
+ *
+ * Where fyn cannot hardlink it falls back to `copyFile`/`clonefile`, and neither carries the
+ * source mtime over - so on a node_modules on another device, or Windows without link
+ * privileges, every file reads as not-current here. That direction is the safe one (it asks for
+ * a bootstrap, which is never wrong to run), and it is why this is not the only gate:
+ * {@link diffResolutionFields} stays a warning, and only a file difference in a package actually
+ * being published stops a release.
+ *
+ * @param srcFile - the file in the workspace package
+ * @param copyFile - the corresponding file in the installed copy
+ */
+const isCurrentInstall = (srcFile: string, copyFile: string): boolean => {
   try {
-    const statA = Fs.statSync(a);
-    const statB = Fs.statSync(b);
-    // same inode on the same device: one file with two names
-    if (statA.ino === statB.ino && statA.dev === statB.dev) {
+    const srcStat = Fs.statSync(srcFile);
+    const copyStat = Fs.statSync(copyFile);
+
+    if (srcStat.ino === copyStat.ino && srcStat.dev === copyStat.dev) {
       return true;
     }
-    if (statA.mtimeMs !== statB.mtimeMs) {
+    if (srcStat.mtimeMs !== copyStat.mtimeMs) {
       return false;
     }
-    if (statA.size !== statB.size) {
-      return false;
-    }
-    return Fs.readFileSync(a).equals(Fs.readFileSync(b));
+
+    return hasSameContent(srcFile, copyFile, srcStat.size, copyStat.size);
   } catch {
     // one of them vanished mid-check - a diagnostic must not throw on a racing install
     return false;
@@ -196,8 +218,8 @@ const sameFile = (a: string, b: string): boolean => {
  *
  * @param srcDir - absolute path of the workspace package dir
  * @param copyDir - absolute path of the installed copy
- * @param limit - stop after this many differing files, to keep the message short
- * @returns relative paths of files that differ, capped at `limit`
+ * @param limit - stop after this many files, to keep the message short
+ * @returns relative paths of files that are not the current install, capped at `limit`
  */
 export function diffInstalledFiles(srcDir: string, copyDir: string, limit = 3): string[] {
   const diffs: string[] = [];
@@ -206,7 +228,7 @@ export function diffInstalledFiles(srcDir: string, copyDir: string, limit = 3): 
     if (isRewrittenByInstall(rel)) {
       continue;
     }
-    if (!sameFile(Path.join(srcDir, rel), Path.join(copyDir, rel))) {
+    if (!isCurrentInstall(Path.join(srcDir, rel), Path.join(copyDir, rel))) {
       diffs.push(rel);
       if (diffs.length >= limit) {
         break;
