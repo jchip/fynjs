@@ -78,6 +78,20 @@ describe("diffResolutionFields", () => {
     expect(diffResolutionFields(src, installed)).toEqual([]);
   });
 
+  //
+  // fyn declares publishUtil.remove: ["dependencies"] because it bundles everything, so its
+  // installed copy never carries dependencies. That is normalization, not drift.
+  //
+  it("ignores a field the source asks publish-util to remove", () => {
+    const src = { dependencies: { a: "^1" }, publishUtil: { remove: ["dependencies"] } };
+    expect(diffResolutionFields(src, { name: "fyn" })).toEqual([]);
+  });
+
+  it("still compares a removed field the installed copy does carry", () => {
+    const src = { dependencies: { a: "^2" }, publishUtil: { remove: ["dependencies"] } };
+    expect(diffResolutionFields(src, { dependencies: { a: "^1" } })).toEqual(["dependencies"]);
+  });
+
   // the original FJM-64 failure: entry point moved from dist-cjs/ to dist/
   it("catches a changed entry point", () => {
     expect(

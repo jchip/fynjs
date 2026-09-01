@@ -217,14 +217,24 @@ export default class Publish {
       .sorted.filter((depData) => toPublishPaths.includes(depData?.pkgInfo?.path));
 
     const stale = findStaleLocalDeps(depDatas, this._cwd);
-    if (!stale.length) {
+    // Only an outdated *file* stops the release. A manifest-only difference is not reliably
+    // staleness - fyn writes a reduced manifest for an installed copy - and blocking a release
+    // on it would trade a silent bad publish for a stuck good one. Those still get warned about.
+    const outdatedBuilds = stale.filter((s) => s.files.length > 0);
+    const manifestOnly = stale.filter((s) => s.files.length === 0);
+
+    if (manifestOnly.length) {
+      formatStaleLocalDeps(manifestOnly).forEach((line) => printWarning(line));
+    }
+
+    if (!outdatedBuilds.length) {
       return;
     }
 
     printError(
       [
         "Stale local dependency copies - publishing now would bundle outdated code",
-        ...formatStaleLocalDeps(stale).slice(1),
+        ...formatStaleLocalDeps(outdatedBuilds).slice(1),
         "",
         "Run 'fynpo bootstrap' to refresh them, then re-run publish.",
         "If bootstrap cannot run because prepare already pointed ranges at unpublished versions,",

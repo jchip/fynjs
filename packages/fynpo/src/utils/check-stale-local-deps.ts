@@ -94,9 +94,18 @@ export function diffResolutionFields(
   src: Record<string, any>,
   installed: Record<string, any>
 ): string[] {
-  return RESOLUTION_FIELDS.filter(
-    (field) => JSON.stringify(src[field]) !== JSON.stringify(installed[field])
-  );
+  // publish-util drops these fields from what ships, and fyn applies the same list when it
+  // installs a local copy - fyn itself declares `publishUtil.remove: ["dependencies"]` because
+  // it bundles everything, so its installed copy has no `dependencies` and never will. Reading
+  // that as staleness reported fyn as stale in packages/fynpo after every bootstrap.
+  const removed: string[] = [].concat(src?.publishUtil?.remove || []);
+
+  return RESOLUTION_FIELDS.filter((field) => {
+    if (removed.includes(field) && installed[field] === undefined) {
+      return false;
+    }
+    return JSON.stringify(src[field]) !== JSON.stringify(installed[field]);
+  });
 }
 
 /**

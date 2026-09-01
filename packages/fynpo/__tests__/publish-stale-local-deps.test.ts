@@ -5,12 +5,13 @@ vi.mock("../src/logger", () => ({
 }));
 
 const printError = vi.fn();
+const printWarning = vi.fn();
 vi.mock("../src/release-output", () => ({
   printHeader: vi.fn(),
   printSection: vi.fn(),
   printList: vi.fn(),
   printSuccess: vi.fn(),
-  printWarning: vi.fn(),
+  printWarning: (...args: any[]) => printWarning(...args),
   printError: (...args: any[]) => printError(...args),
   printNextSteps: vi.fn(),
   printCommand: (x: string) => x,
@@ -67,6 +68,22 @@ describe("publish stale local dep preflight", () => {
       "dist/index.js": "export const fixed = false;",
     });
 
+    // a copy whose manifest drifted but whose files are current - a warning, not a blocker
+    writePkg("packages/manifest-drift", {
+      "package.json": manifest("manifest-drift"),
+      "dist/index.js": "export const same = true;",
+    });
+    writePkg("packages/manifest-consumer/node_modules/manifest-drift", {
+      "package.json": JSON.stringify({
+        name: "manifest-drift",
+        version: "0.9.0",
+        main: "./dist/index.js",
+        dist: { fullPath: Path.join(cwd, "packages/manifest-drift") },
+        _id: "manifest-drift@0.9.0-fynlocal_h",
+      }),
+      "dist/index.js": "export const same = true;",
+    });
+
     // and one whose copy is current
     writePkg("packages/fresh", {
       "package.json": manifest("fresh"),
@@ -86,6 +103,7 @@ describe("publish stale local dep preflight", () => {
 
   beforeEach(() => {
     printError.mockClear();
+    printWarning.mockClear();
     delete process.env.FYNPO_ALLOW_STALE_LOCAL_DEPS;
     exit = vi.spyOn(process, "exit").mockImplementation(((code: number) => {
       throw new Error(`process.exit(${code})`);
@@ -138,6 +156,23 @@ describe("publish stale local dep preflight", () => {
 
     expect(() => publish.checkStaleLocalDeps()).not.toThrow();
     expect(printError).not.toHaveBeenCalled();
+  });
+
+  //
+  // A manifest difference is not reliably staleness - fyn writes a reduced manifest for an
+  // installed copy - so it must not be what stops a release.
+  //
+  it("warns but does not stop for a manifest-only difference", () => {
+    const publish = makePublish(
+      "packages/manifest-consumer",
+      "manifest-drift",
+      "packages/manifest-drift"
+    );
+
+    expect(() => publish.checkStaleLocalDeps()).not.toThrow();
+    expect(printError).not.toHaveBeenCalled();
+    expect(printWarning).toHaveBeenCalled();
+    expect(printWarning.mock.calls.flat().join(" ")).toContain("manifest-drift");
   });
 
   it("only checks the packages being published", () => {
