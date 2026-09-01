@@ -151,6 +151,32 @@ describe("visual-logger over-clearing", () => {
     visLog.shutdown();
   });
 
+  // FJM-147: a logger whose owner never calls setItemType() used to keep animating into a
+  // pipe. Those bytes get captured by the parent process and corrupt its terminal on replay.
+  it("should not emit cursor control when the output is not a TTY", async () => {
+    const visual = { write: [] as string[], clear: 0 };
+    const visLog = new VisualLogger({
+      color: false,
+      output: {
+        isTTY: () => undefined, // node leaves isTTY undefined on a pipe
+        write: () => true,
+        visual: {
+          write: (x: string) => visual.write.push(x),
+          clear: () => visual.clear++
+        }
+      } as OutputInterface
+    });
+
+    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+    visLog.updateItem("fetch", "fetching packages...");
+    visLog.info("a log line");
+    await delay(RENDERED);
+
+    expect(visual.write).toEqual([]);
+    expect(visual.clear).toBe(0);
+    visLog.shutdown();
+  });
+
   it("should not draw a frame scheduled before the items were cleared", async () => {
     const visual = { write: [] as string[], clear: 0 };
     const visLog = new VisualLogger({

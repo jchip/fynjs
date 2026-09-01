@@ -455,6 +455,18 @@ export class VisualLogger {
         return this;
     }
     _shouldLogItem() {
-        return this._itemType === LogItemTypes.normal && this._logLevel <= VisualLogger.Levels.info;
+        //
+        // The TTY check belongs in the predicate, not only in setItemType's one-time downgrade:
+        // a logger whose owner never calls setItemType would otherwise keep _itemType at normal
+        // and animate cursor moves and eraseLine into a pipe. Those bytes get captured by
+        // whoever spawned the process and can corrupt their terminal when replayed.
+        //
+        // an output without isTTY (a bare { write }) keeps the old behaviour - only a stream
+        // that reports non-TTY, the way setItemType already tests it, turns the display off
+        const { isTTY } = this._output;
+        const tty = typeof isTTY === "function" ? Boolean(isTTY.call(this._output)) : true;
+        return (this._itemType === LogItemTypes.normal &&
+            this._logLevel <= VisualLogger.Levels.info &&
+            tty);
     }
 }
