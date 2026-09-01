@@ -2,6 +2,26 @@
 
 ## Packages
 
+-   `fyn@3.0.5` `(3.0.4 => 3.0.5)`
+-   `fynpo@3.0.5` `(3.0.4 => 3.0.5)`
+-   `fynpo-cli@3.0.5` `(3.0.4 => 3.0.5)`
+
+## Commits
+
+-   `packages/fynpo`
+
+    -   FPO-59: separate byte comparison from the install-identity decision [commit](https://github.com/jchip/fynjs/commit/22cdf432b2f40939bc81c478d0d8022f6b60899f)
+    -   FPO-59: treat a differing mtime as not-current instead of proving equality [commit](https://github.com/jchip/fynjs/commit/f8d747f613cfbea347df0903515c57c4ad7670e6)
+    -   FPO-59: compare installed files by inode and bytes, never by mtime [commit](https://github.com/jchip/fynjs/commit/e277111d3aca3a4527bff02a6f340b1b20588214)
+
+-   `MISC`
+
+    -   Update fyn and fynpo devDeps to 3.0.4 [commit](https://github.com/jchip/fynjs/commit/c00ec99650859de1c9b06ab8c6495d59771abfb2)
+
+# 9/1/2026
+
+## Packages
+
 -   `fyn@3.0.4` `(3.0.3 => 3.0.4)`
 -   `fynpo@3.0.4` `(3.0.3 => 3.0.4)`
 -   `fynpo-cli@3.0.4` `(3.0.3 => 3.0.4)`
