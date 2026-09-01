@@ -12,10 +12,10 @@ $pkg:
   $: local
   _: ../error
 aveazul:
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../aveazul: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../aveazul: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul

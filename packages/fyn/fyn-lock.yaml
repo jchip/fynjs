@@ -1548,48 +1548,48 @@ $pkg:
   cpu:
    - x64
 '@fynjs/cli-args':
- _latest: 1.0.0-fynlocal_h
+ _latest: 1.0.1-fynlocal_h
  _:
-  ../cli-args: 1.0.0-fynlocal_h
- 1.0.0-fynlocal_h:
+  ../cli-args: 1.0.1-fynlocal_h
+ 1.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../cli-args
 '@fynjs/run':
- _latest: 1.0.0-fynlocal_h
+ _latest: 1.0.1-fynlocal_h
  _:
-  ../xarc-run: 1.0.0-fynlocal_h
- 1.0.0-fynlocal_h:
+  ../xarc-run: 1.0.1-fynlocal_h
+ 1.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../xarc-run
   dependencies:
    chalk: ^6.0.0
-   chalker: ^2.0.0
+   chalker: ^2.0.1
    insync: ^2.1.1
    jaro-winkler: ^0.2.8
    lodash.foreach: ^4.5.0
-   '@fynjs/cli-args': ^1.0.0
+   '@fynjs/cli-args': ^1.0.1
    optional-require: ^2.1.0
    read-pkg-up: ^7.0.1
    require-at: ^1.0.6
    string-array: ^2.0.0
    unwrap-npm-cmd: ^2.0.0
-   xsh: ^1.0.0
+   xsh: ^1.0.1
 '@fynpo/base':
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../fynpo-base: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../fynpo-base: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../fynpo-base
   dependencies:
-   filter-scan-dir: ^2.0.0
+   filter-scan-dir: ^2.0.1
    ignore: ^7.0.6
    lodash: ^4.17.21
    minimatch: ^10.0.3
-   optional-import: ^1.0.1
+   optional-import: ^1.0.2
    semver: ^7.7.2
 '@gar/promise-retry':
  _latest: 1.0.3
@@ -2740,10 +2740,10 @@ ast-v8-to-istanbul:
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
 aveazul:
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../aveazul: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../aveazul: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
@@ -2950,16 +2950,16 @@ chalk:
    ansi-styles: ^4.1.0
    supports-color: ^7.1.0
 chalker:
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../chalker: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../chalker: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../chalker
   dependencies:
    color-convert: ^2.0.1
-   optional-import: ^1.0.1
+   optional-import: ^1.0.2
   peerDependencies:
    ansi-colors: '>=4'
    chalk: '>=4'
@@ -3359,10 +3359,10 @@ fill-range:
   dependencies:
    to-regex-range: ^5.0.1
 filter-scan-dir:
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../filter-scan-dir: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../filter-scan-dir: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../filter-scan-dir
@@ -3900,10 +3900,10 @@ istanbul-reports:
    html-escaper: ^2.0.0
    istanbul-lib-report: ^3.0.0
 item-queue:
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../item-queue: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../item-queue: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../item-queue
@@ -4552,10 +4552,10 @@ open:
    is-docker: ^2.0.0
    is-wsl: ^2.1.1
 optional-import:
- _latest: 1.0.1-fynlocal_h
+ _latest: 1.0.2-fynlocal_h
  _:
-  ../optional-import: 1.0.1-fynlocal_h
- 1.0.1-fynlocal_h:
+  ../optional-import: 1.0.2-fynlocal_h
+ 1.0.2-fynlocal_h:
   $: local
   _: ../optional-import
 optional-require:
@@ -4753,10 +4753,10 @@ pify:
   $: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==
   _: 'https://registry.npmjs.org/pify/-/pify-4.0.1.tgz'
 pkg-preper:
- _latest: 0.2.0-fynlocal_h
+ _latest: 0.2.1-fynlocal_h
  _:
-  ../pkg-preper: 0.2.0-fynlocal_h
- 0.2.0-fynlocal_h:
+  ../pkg-preper: 0.2.1-fynlocal_h
+ 0.2.1-fynlocal_h:
   top: 1
   $: local
   _: ../pkg-preper
@@ -5566,10 +5566,10 @@ validate-npm-package-name:
   $: sha512-SCv6OOV6Xj2/3cXy3dGmADluJTNcL3o7hZAglNPTe+WYuEuvxgJzxPrSDLZhF+CwyQOubqgecjMmTJGMVLWjYQ==
   _: 'https://registry.npmjs.org/validate-npm-package-name/-/validate-npm-package-name-8.0.0.tgz'
 visual-exec:
- _latest: 1.0.0-fynlocal_h
+ _latest: 1.0.2-fynlocal_h
  _:
-  ../visual-exec: 1.0.0-fynlocal_h
- 1.0.0-fynlocal_h:
+  ../visual-exec: 1.0.2-fynlocal_h
+ 1.0.2-fynlocal_h:
   top: 1
   $: local
   _: ../visual-exec
@@ -5578,13 +5578,13 @@ visual-exec:
    ci-info: ^4.4.0
    has-ansi: ^6.0.2
    strip-ansi: ^7.2.0
-   visual-logger: ^2.0.0
-   xsh: ^1.0.0
+   visual-logger: ^2.0.1
+   xsh: ^1.0.1
 visual-logger:
- _latest: 2.0.0-fynlocal_h
+ _latest: 2.0.1-fynlocal_h
  _:
-  ../visual-logger: 2.0.0-fynlocal_h
- 2.0.0-fynlocal_h:
+  ../visual-logger: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../visual-logger
@@ -5752,10 +5752,10 @@ xenv-config:
   $: local
   _: ../xenv-config
 xsh:
- _latest: 1.0.0-fynlocal_h
+ _latest: 1.0.1-fynlocal_h
  _:
-  ../xsh: 1.0.0-fynlocal_h
- 1.0.0-fynlocal_h:
+  ../xsh: 1.0.1-fynlocal_h
+ 1.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../xsh
