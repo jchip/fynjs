@@ -159,20 +159,33 @@ export const determinePackageVersions = (collated) => {
     }
   } while (count > 0);
 
-  // check for version locking of indirect bump packages
-  const indirectLockBumps = indirectBumps.filter((pkgName) => {
+  //
+  // Check for version locking of indirect bump packages. Collect the lock members that are
+  // pulled in, not the package that carried the lock - this was a filter() returning `true`
+  // from inside the inner loop, so it collected `pkgName` and the member it had just called
+  // findUpdateType on was never released, while pkgName landed on indirectBumps twice.
+  //
+  // The members belong on indirectBumps only. realPackages is for packages with commits of
+  // their own; adding a locked-in member there would also list it as a direct bump.
+  //
+  const indirectLockBumps = [];
+  for (const pkgName of indirectBumps) {
     const verLocks = opts.versionLockMap[pkgName];
-    if (verLocks) {
-      logger.info("version locks:", pkgName, verLocks);
-      for (const lockPkgName of _.without(verLocks, pkgName)) {
-        if (!indirectBumps.includes(lockPkgName)) {
-          findUpdateType(lockPkgName, collated, collated.packages[pkgName].updateType);
-          return true;
-        }
+    if (!verLocks) {
+      continue;
+    }
+    logger.info("version locks:", pkgName, verLocks);
+    for (const lockPkgName of _.without(verLocks, pkgName)) {
+      if (
+        !indirectBumps.includes(lockPkgName) &&
+        !indirectLockBumps.includes(lockPkgName) &&
+        !collated.realPackages.includes(lockPkgName)
+      ) {
+        findUpdateType(lockPkgName, collated, collated.packages[pkgName].updateType);
+        indirectLockBumps.push(lockPkgName);
       }
     }
-    return false;
-  });
+  }
 
   indirectBumps.push(...indirectLockBumps);
 
