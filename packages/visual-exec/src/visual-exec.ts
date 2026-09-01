@@ -201,6 +201,37 @@ export const parsers = {
   keyValue: keyValueParser
 };
 
+//
+// Child output is captured from a pipe and shown inside a progress line. It can carry the
+// child's own terminal control sequences - a nested fyn renders its own visual logger and
+// emits eraseLine/cursorUp runs. Those are zero-width to string-width, so the parent's line
+// accounting stays correct while the terminal still *executes* them, walking the cursor up
+// and erasing committed output above the progress display.
+//
+// Keep SGR (colour) sequences, drop everything that can move the cursor, erase, or scroll.
+//
+const ANSI_SEQUENCE =
+  // eslint-disable-next-line no-control-regex
+  /\u001B(?:\[[0-?]*[ -/]*[@-~]|\][\s\S]*?(?:\u0007|\u001B\\)|[@-Z\\-_0-9=><c])/g;
+// eslint-disable-next-line no-control-regex
+const SGR_SEQUENCE = /^\u001B\[[0-?]*[ -/]*m$/;
+// C0 controls that move the cursor or clear the screen. \n is kept (lines are split on it),
+// \t is handled separately, and \u001B is left alone - the only ones left are inside kept SGR.
+// eslint-disable-next-line no-control-regex
+const UNSAFE_CONTROL = /[\u0000-\u0008\u000B-\u001A\u001C-\u001F\u007F]/g;
+
+/**
+ * Strip terminal control sequences from text that will be rendered inside a progress line,
+ * keeping colours. Never use this for output written to a file or handed to a callback -
+ * those should get the child's bytes untouched.
+ */
+export function sanitizeForDisplay(text: string): string {
+  return text
+    .replace(ANSI_SEQUENCE, seq => (SGR_SEQUENCE.test(seq) ? seq : ""))
+    .replace(/\t/g, " ")
+    .replace(UNSAFE_CONTROL, "");
+}
+
 export class VisualExec {
   private _title: string;
   private _logLabel: string;
@@ -344,7 +375,9 @@ export class VisualExec {
   }
 
   private _updateDigest(item: DigestItem, buf: string): void {
-    const newBuf = item.buf + buf;
+    // sanitize at the boundary so every downstream use - lines, item.buf, the item message -
+    // is already inert. Raw output still reaches onOutput/outputFile via _createDataHandler.
+    const newBuf = item.buf + sanitizeForDisplay(buf);
 
     const lines = newBuf
       .split("\n")
