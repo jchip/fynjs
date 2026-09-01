@@ -150,18 +150,36 @@ describe("diffInstalledFiles", () => {
     Fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it("reports nothing when the copy holds the same bytes", () => {
+  it("reports nothing when the copy holds the same bytes at the same mtime", () => {
     write(srcDir, "dist/a.js", "same");
     write(copyDir, "dist/a.js", "same");
+    const when = new Date(1700000000000);
+    Fs.utimesSync(Path.join(srcDir, "dist/a.js"), when, when);
+    Fs.utimesSync(Path.join(copyDir, "dist/a.js"), when, when);
 
     expect(diffInstalledFiles(srcDir, copyDir)).toEqual([]);
+  });
+
+  //
+  // The links only break when something rewrote the source, and that write stamps a new mtime -
+  // so a differing mtime is taken as not-current without reading the file. The one place this
+  // over-reports is fyn's copyFile fallback, which does not carry the source mtime over.
+  //
+  it("reports a copy whose mtime no longer matches, without reading it", () => {
+    write(srcDir, "dist/touched.js", "identical");
+    write(copyDir, "dist/touched.js", "identical");
+    Fs.utimesSync(Path.join(srcDir, "dist/touched.js"), new Date(1700000000000), new Date(1700000000000));
+    Fs.utimesSync(Path.join(copyDir, "dist/touched.js"), new Date(1600000000000), new Date(1600000000000));
+
+    expect(diffInstalledFiles(srcDir, copyDir, 20)).toContain("dist/touched.js");
   });
 
   it("reports a file whose content moved on at the source", () => {
     write(srcDir, "dist/b.js", "new build");
     write(copyDir, "dist/b.js", "old build");
 
-    expect(diffInstalledFiles(srcDir, copyDir)).toEqual(["dist/b.js"]);
+    // the fixture dirs accumulate across the cases in this block, so assert on membership
+    expect(diffInstalledFiles(srcDir, copyDir, 20)).toContain("dist/b.js");
   });
 
   //

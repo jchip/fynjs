@@ -146,17 +146,25 @@ const walkFiles = (dir: string, base = "", out: string[] = []): string[] => {
 };
 
 /**
- * Whether two files hold the same bytes.
+ * Whether the installed file is still the one the workspace holds.
  *
- * The fast path is inode identity, not mtime: fyn hardlinks a local install where it can, so the
- * copy and its source are literally the same file on disk and nothing needs reading. Only a copy
- * fyn had to make physically - or one whose source was replaced by a rebuild - reaches the byte
- * compare, and equal bytes there is the common case since a rebuild usually reproduces its
- * output.
+ * Three signals, in order of what each can actually prove:
  *
- * mtime is deliberately not a shortcut. Two independently written files can share an mtime when
- * the filesystem's timestamp granularity is coarser than the gap between the writes, and treating
- * that as identical would silently pass a stale copy - CI caught exactly that on a same-size pair.
+ * 1. **inode identity** proves current. fyn hardlinks a local install where it can, so a fresh
+ *    copy and its source are one file on disk under two names - nothing to read.
+ * 2. **a differing mtime** proves not-current. The links only break when something rewrote the
+ *    source (`rm -rf dist && tsc` makes new inodes), and that write stamps a new mtime. Deciding
+ *    it here costs a stat instead of reading a multi-megabyte bundle.
+ * 3. only when inodes differ but mtimes agree do size and bytes settle it. An equal mtime alone
+ *    is NOT proof of equality - two independent writes share one when they land inside a single
+ *    filesystem timestamp tick, which is how CI caught a same-size pair being passed as current.
+ *
+ * Caveat worth knowing: fyn's fallback when it cannot hardlink is `copyFile`/`clonefile`, and
+ * neither carries the source mtime over. Where that fallback runs - a node_modules on another
+ * device, or Windows without link privileges - every installed file reads as not-current here.
+ * That direction is the safe one (it asks for a bootstrap that is never wrong to run) but it is
+ * why this must not be the only gate: {@link diffResolutionFields} stays a warning, and only a
+ * file difference in a package actually being published stops a release.
  */
 const sameFile = (a: string, b: string): boolean => {
   try {
@@ -165,6 +173,9 @@ const sameFile = (a: string, b: string): boolean => {
     // same inode on the same device: one file with two names
     if (statA.ino === statB.ino && statA.dev === statB.dev) {
       return true;
+    }
+    if (statA.mtimeMs !== statB.mtimeMs) {
+      return false;
     }
     if (statA.size !== statB.size) {
       return false;

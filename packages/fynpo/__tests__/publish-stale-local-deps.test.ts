@@ -93,7 +93,21 @@ describe("publish stale local dep preflight", () => {
       "package.json": installedManifest("fresh", "packages/fresh"),
       "dist/index.js": "export const same = true;",
     });
+
+    stampMtimes(cwd, new Date(1700000000000));
   });
+
+  /** a fresh install shares its source's mtime (it is the same file) - fixtures must too */
+  const stampMtimes = (dir: string, when: Date) => {
+    for (const entry of Fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = Path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stampMtimes(full, when);
+      } else if (entry.isFile()) {
+        Fs.utimesSync(full, when, when);
+      }
+    }
+  };
 
   afterAll(() => {
     Fs.rmSync(cwd, { recursive: true, force: true });
