@@ -148,20 +148,26 @@ const walkFiles = (dir: string, base = "", out: string[] = []): string[] => {
 /**
  * Whether two files hold the same bytes.
  *
- * Size first, then mtime: a hardlinked copy shares the inode with its source, so both match and
- * nothing is read. Only a copy that fyn had to make physically (cross device, or a rebuild that
- * replaced the source inode) reaches the byte compare - and equal bytes there is the common
- * case, since a rebuild usually reproduces the same output.
+ * The fast path is inode identity, not mtime: fyn hardlinks a local install where it can, so the
+ * copy and its source are literally the same file on disk and nothing needs reading. Only a copy
+ * fyn had to make physically - or one whose source was replaced by a rebuild - reaches the byte
+ * compare, and equal bytes there is the common case since a rebuild usually reproduces its
+ * output.
+ *
+ * mtime is deliberately not a shortcut. Two independently written files can share an mtime when
+ * the filesystem's timestamp granularity is coarser than the gap between the writes, and treating
+ * that as identical would silently pass a stale copy - CI caught exactly that on a same-size pair.
  */
 const sameFile = (a: string, b: string): boolean => {
   try {
     const statA = Fs.statSync(a);
     const statB = Fs.statSync(b);
+    // same inode on the same device: one file with two names
+    if (statA.ino === statB.ino && statA.dev === statB.dev) {
+      return true;
+    }
     if (statA.size !== statB.size) {
       return false;
-    }
-    if (statA.mtimeMs === statB.mtimeMs) {
-      return true;
     }
     return Fs.readFileSync(a).equals(Fs.readFileSync(b));
   } catch {

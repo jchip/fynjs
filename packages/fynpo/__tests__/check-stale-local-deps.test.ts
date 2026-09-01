@@ -164,6 +164,32 @@ describe("diffInstalledFiles", () => {
     expect(diffInstalledFiles(srcDir, copyDir)).toEqual(["dist/b.js"]);
   });
 
+  //
+  // The CI failure that made this stop using mtime as a shortcut: "new build" and "old build"
+  // are the same length, and the two writes landed inside one filesystem timestamp tick, so a
+  // size+mtime match declared a stale copy current. Forced here so it fails on any filesystem.
+  //
+  it("reports differing content even when size and mtime match", () => {
+    write(srcDir, "dist/tick.js", "new build");
+    write(copyDir, "dist/tick.js", "old build");
+    const when = new Date(1700000000000);
+    Fs.utimesSync(Path.join(srcDir, "dist/tick.js"), when, when);
+    Fs.utimesSync(Path.join(copyDir, "dist/tick.js"), when, when);
+
+    expect(diffInstalledFiles(srcDir, copyDir, 20)).toContain("dist/tick.js");
+  });
+
+  //
+  // fyn hardlinks a local install where it can: same inode, so it is the same file and current
+  // by definition - even with the mtime of the source's last rebuild.
+  //
+  it("treats a hardlinked copy as current", () => {
+    write(srcDir, "dist/linked.js", "shared bytes");
+    Fs.linkSync(Path.join(srcDir, "dist/linked.js"), Path.join(copyDir, "dist/linked.js"));
+
+    expect(diffInstalledFiles(srcDir, copyDir, 20)).not.toContain("dist/linked.js");
+  });
+
   it("reports a file the source no longer has", () => {
     write(copyDir, "dist/gone.js", "left behind");
 
