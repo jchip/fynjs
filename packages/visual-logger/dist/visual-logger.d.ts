@@ -62,6 +62,7 @@ export declare class VisualLogger {
     private _renderInterval;
     private _spinTimers;
     private _renderTimer;
+    private _rendered;
     private _colorPrefix;
     private _defaultPrefix;
     private _chalkLevel;
@@ -104,6 +105,7 @@ export declare class VisualLogger {
     private _stopSpinTimer;
     private _startItemSpinner;
     private _stopItemSpinner;
+    private _cancelRender;
     private _renderOutput;
     private _renderLine;
     private _renderLineMsg;

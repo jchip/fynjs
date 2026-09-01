@@ -46,6 +46,7 @@ export class VisualLogger {
         this._renderInterval = Math.floor(1000.0 / options.renderFps + 0.5);
         this._spinTimers = {};
         this._renderTimer = null;
+        this._rendered = false;
         this._colorPrefix = {};
         this._defaultPrefix = "";
         this._chalkLevel = 0;
@@ -220,8 +221,20 @@ export class VisualLogger {
         return this;
     }
     clearItems() {
-        if (this._shouldLogItem() && this._lines.length > 0) {
-            this._output.visual.clear();
+        if (this._shouldLogItem()) {
+            //
+            // A render scheduled earlier must not land after the frame is gone. It would redraw
+            // lines the caller believes are cleared, and leave the visual output tracking a line
+            // count for a region it no longer owns - the next clear then erases that many lines
+            // from wherever the cursor ended up, eating log lines above the items.
+            //
+            this._cancelRender();
+            // _rendered, not _lines.length: the visual output can still own lines drawn before
+            // the last item was removed, and owns none until the first frame goes out.
+            if (this._rendered) {
+                this._output.visual.clear();
+                this._rendered = false;
+            }
         }
         else {
             this._checkSimpleDots();
@@ -232,7 +245,11 @@ export class VisualLogger {
         this._getItemKeys().forEach((k) => {
             this._stopItemSpinner(this._itemOptions[k]);
         });
-        this._output.visual.clear();
+        this._cancelRender();
+        if (this._rendered) {
+            this._output.visual.clear();
+            this._rendered = false;
+        }
         this._resetSimpleDots();
         if (showItems)
             this._output.write(`${this._lines.join("\n")}\n`);
@@ -252,9 +269,7 @@ export class VisualLogger {
     }
     shutdown(showItems) {
         this.freezeItems(showItems);
-        if (this._renderTimer) {
-            clearTimeout(this._renderTimer);
-        }
+        this._cancelRender();
     }
     _checkSimpleDots() {
         if (this._itemType === LogItemTypes.simple && this._dots >= this._maxDots) {
@@ -345,11 +360,22 @@ export class VisualLogger {
         this._stopSpinTimer(options);
         return this;
     }
+    _cancelRender() {
+        if (this._renderTimer) {
+            clearTimeout(this._renderTimer);
+            this._renderTimer = null;
+        }
+    }
     _renderOutput() {
         if (!this._renderTimer && this._shouldLogItem() && this._lines.length > 0) {
             this._renderTimer = setTimeout(() => {
                 this._renderTimer = null;
+                // conditions can change between scheduling and firing - freezing the items or
+                // removing the last one leaves nothing to draw
+                if (!this._shouldLogItem() || this._lines.length === 0)
+                    return;
                 this._output.visual.write(this._lines.join("\n"));
+                this._rendered = true;
             }, this._renderInterval);
             this._renderTimer.unref();
         }
