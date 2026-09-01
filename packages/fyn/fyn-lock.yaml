@@ -1577,10 +1577,10 @@ $pkg:
    unwrap-npm-cmd: ^2.0.0
    xsh: ^1.0.1
 '@fynpo/base':
- _latest: 2.0.1-fynlocal_h
+ _latest: 2.0.2-fynlocal_h
  _:
-  ../fynpo-base: 2.0.1-fynlocal_h
- 2.0.1-fynlocal_h:
+  ../fynpo-base: 2.0.2-fynlocal_h
+ 2.0.2-fynlocal_h:
   top: 1
   $: local
   _: ../fynpo-base
