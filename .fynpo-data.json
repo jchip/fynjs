@@ -166,24 +166,6 @@
         ]
       }
     ],
-    "_w/npm-packlist": [
-      {
-        "fromPkg": {
-          "name": "npm-packlist",
-          "version": "11.3.0",
-          "path": "_w/npm-packlist"
-        },
-        "onPkg": {
-          "name": "npm-packlist",
-          "version": "11.3.0",
-          "path": "_w/npm-packlist"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "npm-packlist@11.3.0(dep)"
-        ]
-      }
-    ],
     "packages/fyn": [
       {
         "fromPkg": {

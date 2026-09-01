@@ -175,6 +175,41 @@ describe("fynpo dep graph", () => {
     expect(topoSorted1).toEqual(topoSorted2);
   });
 
+  it("should reject a self dependency", async () => {
+    const graph = new FynpoDepGraph({
+      patterns: undefined,
+      cwd: path.join(__dirname, "sample"),
+    });
+    await graph.resolve();
+    const topoSorted1 = JSON.stringify(graph.getTopoSortPackages());
+    // the sample monorepo has its own circular packages - pick one that's not
+    const circulars1 = graph.getTopoSortPackagePaths().circulars;
+    const pkgPath = Object.keys(graph.packages.byPath).find((p) => !circulars1.includes(p));
+    const pkgId = Object.keys(graph.packages.byId).find(
+      (id) => graph.packages.byId[id].path === pkgPath
+    );
+    const pkgInfo = graph.packages.byPath[pkgPath];
+
+    expect(graph.addDep(pkgInfo, pkgInfo, "dep")).toEqual(false);
+    graph.addDepByPath(pkgPath, pkgPath, "dep");
+    graph.addDepById(pkgId, pkgId, "dep");
+    // replay a stale self relation like one persisted in .fynpo-data.json
+    graph.addDepRelations([
+      {
+        fromPkg: { name: pkgInfo.name, version: pkgInfo.version, path: pkgPath },
+        onPkg: { name: pkgInfo.name, version: pkgInfo.version, path: pkgPath },
+        depSection: "dep",
+        indirectSteps: [`${pkgInfo.name}@${pkgInfo.version}(dep)`],
+      },
+    ]);
+
+    expect(graph.depMapByPath[pkgPath].localDepsByPath[pkgPath]).toEqual(undefined);
+    expect(graph.depMapByPath[pkgPath].pathOfCirculars).toEqual(undefined);
+    // the self dep must not turn the package into a circular one
+    expect(graph.getTopoSortPackagePaths().circulars).toEqual(circulars1);
+    expect(JSON.stringify(graph.getTopoSortPackages())).toEqual(topoSorted1);
+  });
+
   it("should skip local deps with noFynLocal option", async () => {
     // First verify cir1 and cir2 have circular dependency without noFynLocal
     const graph1 = new FynpoDepGraph({

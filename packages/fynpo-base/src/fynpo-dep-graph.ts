@@ -898,6 +898,13 @@ export class FynpoDepGraph {
     depSection: DEP_SECTIONS,
     indirectSteps?: string[]
   ) {
+    if (pkgInfo.path === depPkg.path) {
+      // a package can't depend on itself.  this can happen when a local package
+      // indirectly depends on itself through its own deps, and the relation was
+      // recorded into fynpo data.  keeping it would flag a bogus circular dep.
+      return false;
+    }
+
     const dataPkg = this.depMapByPath[pkgInfo.path];
     const dataDep = this.depMapByPath[depPkg.path];
 
