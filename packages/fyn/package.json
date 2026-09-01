@@ -1,6 +1,6 @@
 {
   "name": "fyn",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "fyn is the NPM for fynpo -- a zero setup monorepo tool",
   "main": "./bin/fyn.js",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fyn",
@@ -85,7 +85,7 @@
     "Divya Karippath"
   ],
   "dependencies": {
-    "@fynpo/base": "^2.0.1",
+    "@fynpo/base": "^2.0.2",
     "@jchip/error": "^2.0.0",
     "@npmcli/arborist": "^10.0.2",
     "@npmcli/run-script": "^11.0.0",
