@@ -98,6 +98,59 @@ describe("visual-logger over-clearing", () => {
     visLog.shutdown();
   });
 
+  // FJM-145: setItemType() used to swap _itemType without tearing the frame down, which
+  // stranded it on screen and left log-update owning lines it later erased from the wrong
+  // place - the same over-clear, reached by turning the item display off and back on.
+  it("should clear the frame when the item display is turned off", async () => {
+    const { term, visLog } = setup();
+
+    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+    visLog.updateItem("fetch", "fetching packages...");
+    visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
+    visLog.updateItem("load", "loading packages...");
+    await delay(RENDERED);
+    expect(term.screen()).toEqual([
+      "\u2801 fetch: fetching packages...",
+      "\u2801 load: loading packages..."
+    ]);
+
+    visLog.setItemType(false);
+    await delay(RENDERED);
+    expect(term.screen()).toEqual([]);
+
+    visLog.info("KEEP-A");
+    visLog.info("KEEP-B");
+    visLog.info("KEEP-C");
+
+    visLog.setItemType("normal");
+    visLog.updateItem("fetch", "fetching more...");
+    await delay(RENDERED);
+
+    expect(term.screen()).toEqual([
+      "> KEEP-A",
+      "> KEEP-B",
+      "> KEEP-C",
+      "\u2801 fetch: fetching more...",
+      "\u2801 load: loading packages..."
+    ]);
+    visLog.shutdown();
+  });
+
+  it("should stop and restart item spinners as the display is toggled", async () => {
+    const { visLog } = setup();
+
+    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+    const opts = (visLog as any)._itemOptions.fetch;
+    expect(opts._spinning).toBeTruthy();
+
+    visLog.setItemType(false);
+    expect(opts._spinning).toBeFalsy();
+
+    visLog.setItemType("normal");
+    expect(opts._spinning).toBeTruthy();
+    visLog.shutdown();
+  });
+
   it("should not draw a frame scheduled before the items were cleared", async () => {
     const visual = { write: [] as string[], clear: 0 };
     const visLog = new VisualLogger({

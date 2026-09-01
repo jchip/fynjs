@@ -186,14 +186,42 @@ export class VisualLogger {
   }
 
   setItemType(flag?: string | false): this {
+    let itemType: number;
+
     if (!flag) {
-      this._itemType = LogItemTypes.none;
+      itemType = LogItemTypes.none;
     } else {
-      this._itemType = LogItemTypes[flag as LogItemType] || LogItemTypes.none;
+      itemType = LogItemTypes[flag as LogItemType] || LogItemTypes.none;
     }
 
-    if (this._itemType === LogItemTypes.normal && !this._output.isTTY()) {
-      this._itemType = LogItemTypes.simple;
+    if (itemType === LogItemTypes.normal && !this._output.isTTY()) {
+      itemType = LogItemTypes.simple;
+    }
+
+    //
+    // Resolve the new type before switching to it, so leaving and entering the visual
+    // display can be handled the way freezeItems/unfreezeItems handle them. Without this
+    // the rendered frame is stranded on screen - clearItems() is gated on _shouldLogItem()
+    // and so can no longer remove it - and the visual output keeps owning lines it will
+    // erase from the wrong place once the display is turned back on.
+    //
+    if (itemType !== this._itemType) {
+      const wasVisual = this._shouldLogItem();
+
+      if (wasVisual) {
+        this.clearItems();
+        this._getItemKeys().forEach((k) => {
+          this._stopItemSpinner(this._itemOptions[k as string]);
+        });
+      }
+
+      this._itemType = itemType;
+
+      if (!wasVisual && this._shouldLogItem()) {
+        this._getItemKeys().forEach((k) => {
+          this._startItemSpinner(this._itemOptions[k as string]);
+        });
+      }
     }
 
     if (this._itemType === LogItemTypes.simple) {
