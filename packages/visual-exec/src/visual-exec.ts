@@ -202,34 +202,87 @@ export const parsers = {
 };
 
 //
-// Child output is captured from a pipe and shown inside a progress line. It can carry the
-// child's own terminal control sequences - a nested fyn renders its own visual logger and
-// emits eraseLine/cursorUp runs. Those are zero-width to string-width, so the parent's line
+// Child output is captured from a pipe and rendered back into this process's terminal. It
+// can carry the child's own control sequences - a nested fyn renders its own visual logger
+// and emits eraseLine/cursorUp runs. Those are zero-width to string-width, so line
 // accounting stays correct while the terminal still *executes* them, walking the cursor up
-// and erasing committed output above the progress display.
+// and erasing committed output.
 //
-// Keep SGR (colour) sequences, drop everything that can move the cursor, erase, or scroll.
+// Keep SGR (colour); drop anything that can move the cursor, erase, scroll, switch charset,
+// set the window title, or write the clipboard.
 //
-const ANSI_SEQUENCE =
-  // eslint-disable-next-line no-control-regex
-  /\u001B(?:\[[0-?]*[ -/]*[@-~]|\][\s\S]*?(?:\u0007|\u001B\\)|[@-Z\\-_0-9=><c])/g;
-// eslint-disable-next-line no-control-regex
-const SGR_SEQUENCE = /^\u001B\[[0-?]*[ -/]*m$/;
-// C0 controls that move the cursor or clear the screen. \n is kept (lines are split on it),
-// \t is handled separately, and \u001B is left alone - the only ones left are inside kept SGR.
+// The escape grammar, in the order the alternation must test it:
+//   CSI                ESC [ params intermediates final
+//   OSC/DCS/PM/APC/SOS ESC ] P ^ _ X ... terminated by BEL or ST (or truncated at end)
+//   nF                 ESC intermediates(0x20-0x2F)+ final    e.g. ESC(0, ESC#8, ESC%G
+//   Fp/Fe/Fs           ESC single(0x30-0x7E)                  e.g. ESC7, ESCc, ESC M
+//
+const ESCAPE_SEQUENCE = new RegExp(
+  "\u001B(?:" +
+    "\\[[0-?]*[ -/]*[@-~]" +
+    "|[\\]P^_X][\\s\\S]*?(?:\\u0007|\u001B\\\\|$)" +
+    "|[ -/]+[0-~]" +
+    "|[0-~]" +
+    ")",
+  "g"
+);
+const SGR_SEQUENCE = new RegExp("^\u001B\\[[0-?]*[ -/]*m$");
+const HAS_SGR = new RegExp("\u001B\\[[0-?]*[ -/]*m");
+const SGR_RESET = "\u001B[0m";
+// 8-bit C1 controls: escapes without the ESC byte. 0x9B is an 8-bit CSI and 0x9D/0x90 are
+// 8-bit OSC/DCS, so consume their payload too - dropping only the introducer would leave the
+// parameters behind as inert but visible junk. Anything left is stripped bare.
+const C1_SEQUENCE = /[\u009B][0-?]*[ -/]*[@-~]|[\u009D\u0090\u009E\u009F][\s\S]*?(?:\u0007|\u009C|$)/g;
+const C1_CONTROL = /[\u0080-\u009F]/g;
+// C0 controls that move the cursor or clear the screen. \n and \t are left to the profile,
+// and \u001B is left alone - the only ones remaining are inside kept SGR sequences.
 // eslint-disable-next-line no-control-regex
 const UNSAFE_CONTROL = /[\u0000-\u0008\u000B-\u001A\u001C-\u001F\u007F]/g;
 
+export interface SanitizeOptions {
+  /** "space" collapses tabs (single-line contexts), "keep" preserves them (dumps) */
+  tabs?: "space" | "keep";
+  /** what to do with a lone \r - "drop", or "newline" to keep progress redraws readable */
+  cr?: "drop" | "newline";
+  /** append an SGR reset when the text emitted colour, so it cannot bleed into later output */
+  resetAtEnd?: boolean;
+}
+
 /**
- * Strip terminal control sequences from text that will be rendered inside a progress line,
- * keeping colours. Never use this for output written to a file or handed to a callback -
- * those should get the child's bytes untouched.
+ * Strip terminal control sequences from child output, keeping colour. Never use this for
+ * output written to a file or handed to a callback - those should get the bytes untouched.
  */
-export function sanitizeForDisplay(text: string): string {
-  return text
-    .replace(ANSI_SEQUENCE, seq => (SGR_SEQUENCE.test(seq) ? seq : ""))
-    .replace(/\t/g, " ")
+export function sanitizeText(text: string, options: SanitizeOptions = {}): string {
+  const { tabs = "space", cr = "drop", resetAtEnd = false } = options;
+
+  let out = text.replace(ESCAPE_SEQUENCE, seq => (SGR_SEQUENCE.test(seq) ? seq : ""));
+
+  // must run before UNSAFE_CONTROL, which would otherwise swallow the \r
+  if (cr === "newline") {
+    out = out.replace(/\r\n?/g, "\n");
+  }
+
+  out = out
+    .replace(/\t/g, tabs === "keep" ? "\t" : " ")
+    .replace(C1_SEQUENCE, "")
+    .replace(C1_CONTROL, "")
     .replace(UNSAFE_CONTROL, "");
+
+  return resetAtEnd && HAS_SGR.test(out) ? out + SGR_RESET : out;
+}
+
+/** Profile for text squeezed into a single progress line. */
+export function sanitizeForDisplay(text: string): string {
+  return sanitizeText(text, { tabs: "space", cr: "drop" });
+}
+
+/**
+ * Profile for a multi-line transcript written into scrollback: tabs are real formatting,
+ * carriage returns become line breaks so progress redraws stay readable, and a trailing
+ * reset stops an unterminated child colour bleeding into later output.
+ */
+export function sanitizeForOutput(text: string): string {
+  return sanitizeText(text, { tabs: "keep", cr: "newline", resetAtEnd: true });
 }
 
 export class VisualExec {
@@ -636,7 +689,12 @@ export class VisualExec {
       return;
     }
 
-    const colorize = (t: string) => t.replace(/ERR!/g, chalk.red("ERR!"));
+    //
+    // The child's bytes end up on this terminal and in the saved log data, so scrub the
+    // control sequences out first - an error report that erases the lines above it is worse
+    // than useless. sanitizeForOutput runs before colorize, which only adds SGR.
+    //
+    const colorize = (t: string) => sanitizeForOutput(t).replace(/ERR!/g, chalk.red("ERR!"));
 
     const logs: string[] = [chalk.green(">>>"), `Start of output from ${this._outputLabel} ===`];
 
