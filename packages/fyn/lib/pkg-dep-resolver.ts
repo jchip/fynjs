@@ -810,6 +810,12 @@ class PkgDepResolver {
           if (fynpoPkg) {
             const steps = revSteps.reverse();
             locals.forEach(x => {
+              // a local package can indirectly depend on itself, ie: its dep resolves
+              // back to its own copy in the monorepo.  don't record that as a relation
+              // or fynpo would see a bogus circular dep when it replays fynpo data.
+              if (fynpoPkg.path === x.path) {
+                return;
+              }
               const sec = getDepSection(depSec);
               if (fynpo.graph.addDep(fynpoPkg, x, sec, steps)) {
                 fynpo.indirects.push({
