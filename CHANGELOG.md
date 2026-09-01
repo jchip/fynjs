@@ -2,6 +2,34 @@
 
 ## Packages
 
+-   `fyn@3.0.2` `(3.0.1 => 3.0.2)`
+-   `fynpo@3.0.2` `(3.0.1 => 3.0.2)`
+-   `fynpo-cli@3.0.2` `(3.0.1 => 3.0.2)`
+-   `visual-exec@1.0.2` `(1.0.1 => 1.0.2)`
+-   `visual-logger@2.0.1` `(2.0.0 => 2.0.1)`
+
+## Commits
+
+-   `packages/fynpo`
+
+    -   FPO-57: fynpo releases every version-lock member on an indirect bump [commit](https://github.com/jchip/fynjs/commit/11b0f19d8c18eccbe35ad438b80c241ace843eca)
+
+-   `packages/visual-exec`
+
+    -   VEX-10: visual-exec covers nF/C1 escapes and sanitizes logFinalOutput [commit](https://github.com/jchip/fynjs/commit/280df9ad128763e389aa13cfd14b91f5abd0189f)
+    -   VEX-9: visual-exec strips terminal control codes from child output shown in progress lines [commit](https://github.com/jchip/fynjs/commit/945046af29dc0951422eaf8667b4c66deb61832b)
+
+-   `packages/visual-logger`
+
+    -   FJM-147: visual-logger does not render item animation to a non-TTY output [commit](https://github.com/jchip/fynjs/commit/db1fa934c5b395df3afff08037b4de114a7c4014)
+    -   FJM-145: visual-logger tears down the frame when the item display is toggled [commit](https://github.com/jchip/fynjs/commit/db82bbdc54e577843d2cd7d312a2d9d23c473614)
+    -   FJM-144: visual-logger cancels a pending render before clearing items [commit](https://github.com/jchip/fynjs/commit/9d7f608489aab12e9f83a16d87ade15ce259c4ce)
+    -   FJM-143: visual-logger spin-reset test finds the addItem render by content [commit](https://github.com/jchip/fynjs/commit/48f891cfd6658df418e651b1c351552196c37da1)
+
+# 8/31/2026
+
+## Packages
+
 ### Directly Updated
 
 -   `@fynjs/cli-args@1.0.1` `(1.0.0 => 1.0.1)`
