@@ -5,8 +5,8 @@ $pkg:
  dep:
   vite-node: ^5.3.0
  dev:
-  fyn: ^3.0.3
-  fynpo: ^3.0.3
+  fyn: ^3.0.4
+  fynpo: ^3.0.4
   tsx: ^4.21.0
 '@esbuild/aix-ppc64':
  _latest: 0.28.2
@@ -714,21 +714,21 @@ fsevents:
 fyn:
  _latest: 1.1.46
  _:
-  ^3.0.3: 3.0.3
- 3.0.3:
+  ^3.0.4: 3.0.4
+ 3.0.4:
   top: 1
-  $: sha512-AsNWTwZMujxtMyKruid1E47C+rDLF1zt8nNi8rs5Lfeega2ipn+6u7uUHhCkxedeDenogMF1qn5VsvNJclUhSQ==
-  _: 'https://registry.npmjs.org/fyn/-/fyn-3.0.3.tgz'
+  $: sha512-B/qlcB+VieFJ+8uwpY8BA6dtC9h2qjB7knT9uPC2toYYVsJc+VeHD9KMg7riTJhc9icxyQRdMAHiMM+12rY4aA==
+  _: 'https://registry.npmjs.org/fyn/-/fyn-3.0.4.tgz'
 fynpo:
  _latest: 1.1.49
  _:
-  ^3.0.3: 3.0.3
- 3.0.3:
+  ^3.0.4: 3.0.4
+ 3.0.4:
   top: 1
-  $: sha512-Wo1h+Qlg7kNpVO6hBHBoWnviErGKFGSSXZqLNxWLw88nLNrOikawHxBswPwdbpwaMBMq9+4ZQ7QhKoFUqy4zTA==
-  _: 'https://registry.npmjs.org/fynpo/-/fynpo-3.0.3.tgz'
+  $: sha512-40RL1GDQV1eTls1oh6+2GCVuMPOtdV4Qkx1sex9XeGrC3JtkJLQ6cAdPv/8UkikCAIPwGBQoDDmEFHuu8D6AcQ==
+  _: 'https://registry.npmjs.org/fynpo/-/fynpo-3.0.4.tgz'
   dependencies:
-   fyn: ^3.0.3
+   fyn: ^3.0.4
    import-fresh: 3.3.0
    resolve-from: ^5.0.0
    resolve-global: 1.0.0
