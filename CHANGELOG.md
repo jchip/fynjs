@@ -1,3 +1,27 @@
+# 9/1/2026
+
+## Packages
+
+-   `@fynpo/base@2.0.2` `(2.0.1 => 2.0.2)`
+-   `fyn@3.0.3` `(3.0.2 => 3.0.3)`
+-   `fynpo@3.0.3` `(3.0.2 => 3.0.3)`
+-   `fynpo-cli@3.0.3` `(3.0.2 => 3.0.3)`
+
+## Commits
+
+-   `packages/fynpo-base`
+
+    -   FPO-58: dep graph rejects self dependency in addDep [commit](https://github.com/jchip/fynjs/commit/9b6a2b03a8cb8a57411d5a9dc2c8f40ef4af379f)
+
+-   `packages/bluebird`
+
+    -   Update fyn and fynpo devDeps to 3.0.2 [commit](https://github.com/jchip/fynjs/commit/9c0a6d01267159e4fc7cfcee969dba2bb82325e8)
+
+-   `packages/fyn`
+
+    -   FPM-73: dont record dep relation from a fynpo package to itself [commit](https://github.com/jchip/fynjs/commit/3ff1b970b2641e586ec527aa0c9eb14c6f23c58b)
+    -   Update fyn and fynpo devDeps to 3.0.2 [commit](https://github.com/jchip/fynjs/commit/9c0a6d01267159e4fc7cfcee969dba2bb82325e8)
+
 # 8/31/2026
 
 ## Packages
