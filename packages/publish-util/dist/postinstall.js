@@ -1,5 +1,4 @@
-import * as Fs from "fs/promises";
-import { getInfo } from "./utils.js";
+import { getInfo, writePkgFile } from "./utils.js";
 import _ from "lodash";
 async function postInstall() {
     // can't use process.cwd() because that's this package's installed dir
@@ -25,10 +24,13 @@ async function postInstall() {
         console.log(`publish-util postinstall - setting CWD to env INIT_CWD: ${cwd}`);
         addScript("prepack");
         addScript("postpack");
-        await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+        // writePkgFile is a no-op when the scripts are already there, which is the usual
+        // case - this used to rewrite the manifest byte for byte on every install.
+        await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
     }
-    catch (_a) {
-        // ignore errors
+    catch (err) {
+        // never fail an install over this, but do not hide it either
+        console.error(`publish-util postinstall: failed updating ${pkgFile}`, err);
     }
 }
 postInstall();

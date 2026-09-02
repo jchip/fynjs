@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { getInfo } from "./utils.js";
+import { getInfo, writePkgFile } from "./utils.js";
 import * as assert from "assert";
 import * as Fs from "fs/promises";
 import * as Path from "path";
@@ -104,7 +104,7 @@ export async function npmPublish({
         if (!silent) {
           console.log("Restoring", pkgFile);
         }
-        await Fs.writeFile(pkgFile, pkgData);
+        await writePkgFile(pkgFile, pkgData);
       }
     } catch {
       // ignore errors
@@ -139,7 +139,7 @@ export async function npmPublish({
     }
 
     if (changedPkg) {
-      await Fs.writeFile(pkgFile, JSON.stringify(pkg, null, 2));
+      await writePkgFile(pkgFile, JSON.stringify(pkg, null, 2));
     }
 
     if (scripts.prepublishOnly) {

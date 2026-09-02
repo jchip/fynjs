@@ -1,6 +1,5 @@
 import * as Path from "path";
-import * as Fs from "fs/promises";
-import { getInfo, extractFromObj, removeFromObj, keepStandardFields, renameFromObj, } from "./utils.js";
+import { getInfo, extractFromObj, removeFromObj, keepStandardFields, renameFromObj, writePkgFile, } from "./utils.js";
 import _ from "lodash";
 export function prePackObj(pkg, config = {}) {
     renameFromObj(pkg, config.rename);
@@ -40,9 +39,9 @@ export async function prePack() {
         if (!config.silent) {
             console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
         }
-        await Fs.writeFile(saveFile, pkgData);
+        await writePkgFile(saveFile, pkgData);
         prePackObj(pkg, config);
-        await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+        await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
     }
     catch (err) {
         console.error(`${myName} failed`, err);

@@ -1,11 +1,11 @@
 import * as Path from "path";
-import * as Fs from "fs/promises";
 import {
   getInfo,
   extractFromObj,
   removeFromObj,
   keepStandardFields,
   renameFromObj,
+  writePkgFile,
   ExtractSpec,
   RemoveSpec,
   RenameSpec,
@@ -78,11 +78,11 @@ export async function prePack(): Promise<void> {
       console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
     }
 
-    await Fs.writeFile(saveFile, pkgData);
+    await writePkgFile(saveFile, pkgData);
 
     prePackObj(pkg, config);
 
-    await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
   } catch (err) {
     console.error(`${myName} failed`, err);
     process.exit(1);

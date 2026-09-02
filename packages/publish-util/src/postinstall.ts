@@ -1,5 +1,4 @@
-import * as Fs from "fs/promises";
-import { getInfo } from "./utils.js";
+import { getInfo, writePkgFile } from "./utils.js";
 import _ from "lodash";
 
 async function postInstall(): Promise<void> {
@@ -35,9 +34,12 @@ async function postInstall(): Promise<void> {
     );
     addScript("prepack");
     addScript("postpack");
-    await Fs.writeFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
-  } catch {
-    // ignore errors
+    // writePkgFile is a no-op when the scripts are already there, which is the usual
+    // case - this used to rewrite the manifest byte for byte on every install.
+    await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+  } catch (err) {
+    // never fail an install over this, but do not hide it either
+    console.error(`publish-util postinstall: failed updating ${pkgFile}`, err);
   }
 }
 
