@@ -855,8 +855,16 @@ class Fyn {
     if (options.pkgFile) {
       let pkgFile: string;
 
+      //
+      // An explicitly given cwd is an instruction, not a hint, so don't search up from it.
+      // Searching up would silently retarget the whole install at an ancestor package and
+      // hand that ancestor's directory to lifecycle scripts as INIT_CWD, which is how a
+      // package's postinstall came to rewrite an unrelated package's manifest.  See FPM-74.
+      //
+      const cwdIsExplicit = Boolean(this._cliSource.cwd) && this._cliSource.cwd !== "default";
+
       // Search upward for package.json
-      if (options.pkgFile === "package.json") {
+      if (options.pkgFile === "package.json" && !cwdIsExplicit) {
         let foundDir: string | null = null;
 
         // pathUpEach stops when callback returns true, but doesn't include that path
@@ -891,6 +899,11 @@ class Fyn {
       } catch (err) {
         logger.error("failed to read package.json file", pkgFile);
         logger.error((err as Error).message);
+        if (cwdIsExplicit) {
+          logger.error(
+            `cwd was set explicitly by ${this._cliSource.cwd}, so fyn did not search parent directories for a package.json`
+          );
+        }
         fynTil.exit(err);
       }
       const pkgFyn = await this.loadPkgFyn();
