@@ -1566,8 +1566,19 @@ class FynGlobal {
   /**
    * Show PATH setup instructions
    */
-  showPathSetup(): void {
-    const binPath = Path.join(this.globalRoot, "current", "bin");
+  async showPathSetup(): Promise<void> {
+    //
+    // `<globalRoot>/bin` is the symlink ensureBinSymlink() keeps pointed at the current
+    // runtime's bin directory, so a PATH entry using it survives a node version switch.
+    // Fall back to the version specific directory when that symlink isn't there, since
+    // Windows without developer mode can't always create one.
+    //
+    // What this must never print is `<globalRoot>/current/bin`: only `fyn global use`
+    // creates `current`, so the instructions named a directory that usually does not
+    // exist and the shims stayed unreachable.  See FPM-72.
+    //
+    const stableBin = Path.join(this.globalRoot, "bin");
+    const binPath = (await Fs.exists(stableBin)) ? stableBin : this.globalBinDir;
     const isWindows = process.platform === "win32";
 
     console.log("\nTo use globally installed packages, add the bin directory to your PATH:\n");

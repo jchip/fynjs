@@ -685,8 +685,48 @@ describe("fyn-global methods", function() {
   });
 
   describe("showPathSetup", () => {
-    it("runs without throwing", () => {
-      makeGlobal().showPathSetup();
+    const captureOutput = async (g) => {
+      const lines: string[] = [];
+      const saveLog = console.log;
+      console.log = (...args) => lines.push(args.join(" "));
+      try {
+        await g.showPathSetup();
+      } finally {
+        console.log = saveLog;
+      }
+      return lines.join("\n");
+    };
+
+    it("runs without throwing", async () => {
+      await makeGlobal().showPathSetup();
+    });
+
+    //
+    // FPM-72: it used to print <globalRoot>/current/bin, which only `fyn global use`
+    // creates - so following the instructions put a non-existent directory on PATH.
+    //
+    it("points at the maintained bin symlink, not a directory nothing creates", async () => {
+      const g = makeGlobal();
+      fs.mkdirSync(path.join(versionDir, "bin"), { recursive: true });
+      await g.ensureBinSymlink();
+
+      const output = await captureOutput(g);
+
+      expect(output).to.contain(path.join(globalDir, "bin"));
+      expect(output).to.not.contain(path.join(globalDir, "current"));
+      // and every path it suggests must actually exist
+      const suggested = path.join(globalDir, "bin");
+      expect(fs.existsSync(suggested), `${suggested} should exist`).to.equal(true);
+    });
+
+    it("falls back to the version bin dir when the symlink is not there", async () => {
+      const g = makeGlobal();
+      fs.mkdirSync(path.join(versionDir, "bin"), { recursive: true });
+
+      const output = await captureOutput(g);
+
+      expect(output).to.contain(path.join(versionDir, "bin"));
+      expect(output).to.not.contain(path.join(globalDir, "current"));
     });
   });
 });

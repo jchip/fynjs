@@ -791,7 +791,7 @@ const commands: Record<string, CommandSpec> = {
         },
         async exec(cmd: CommandNode) {
           const fynGlobal = await makeFynGlobal(cmd);
-          fynGlobal.showPathSetup();
+          await fynGlobal.showPathSetup();
         }
       }
     }
