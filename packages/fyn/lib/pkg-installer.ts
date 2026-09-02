@@ -194,15 +194,30 @@ class PkgInstaller {
         const pkgJson = depInfo.json!;
         logger.debug("linked dependencies for", pkgJson.name, pkgJson.version);
       }
+      const hardLocalPkgJson =
+        depInfo.local === "hard"
+          ? Path.join(
+              this._fyn.getInstalledPkgDir(depInfo.name, depInfo.version, depInfo),
+              "package.json"
+            )
+          : undefined;
+
       if (depInfo.str!.trim() === outputStr.trim()) {
+        // Nothing to write - but an installed manifest must not be left as an alias of the
+        // local source manifest.  hardLinkDir linked the two, and the unlink below only
+        // happens on the path that writes, so skipping the write used to leave them
+        // sharing an inode: an in place write to the installed copy by anything at all
+        // then lands on the tracked source file.  See FPM-76.
+        if (hardLocalPkgJson) {
+          await this._detachPkgJsonLink(hardLocalPkgJson);
+        }
         continue;
       }
       let pkgJsonFp: string;
-      if (depInfo.local === "hard") {
+      if (hardLocalPkgJson) {
         // do not override hard linked package.json, instead remove it and
         // write a new physical file.
-        const vdir = this._fyn.getInstalledPkgDir(depInfo.name, depInfo.version, depInfo);
-        pkgJsonFp = Path.join(vdir, "package.json");
+        pkgJsonFp = hardLocalPkgJson;
         await xaa.try(() => Fs.unlink(pkgJsonFp));
       } else {
         pkgJsonFp = Path.join(depInfo.dir!, "package.json");
@@ -223,6 +238,31 @@ class PkgInstaller {
         }
       }
     }
+  }
+
+  /**
+   * Give an installed package.json its own inode if it is still hardlinked to the local
+   * package it was replicated from.
+   *
+   * Same content, new physical file: unlink the directory entry and write the bytes back.
+   * Cheap - it only touches manifests that actually still share an inode.
+   *
+   * @param pkgJsonFp - installed package.json to detach
+   */
+  async _detachPkgJsonLink(pkgJsonFp: string): Promise<void> {
+    const stat = await xaa.try(() => Fs.stat(pkgJsonFp));
+    if (!stat || stat.nlink < 2) {
+      return;
+    }
+
+    const data = await xaa.try(() => Fs.readFile(pkgJsonFp));
+    if (data === undefined) {
+      return;
+    }
+
+    logger.debug("detaching hardlinked package.json from its local source", pkgJsonFp);
+    await xaa.try(() => Fs.unlink(pkgJsonFp));
+    await Fs.writeFile(pkgJsonFp, data);
   }
 
   _isDepSrcOptionalOnly(depInfo: DepInfo): boolean {
