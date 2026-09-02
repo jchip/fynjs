@@ -1,7 +1,7 @@
 /**
  * TypeScript Usage Example
  *
- * Demonstrates type-safe usage of NixClap with TypeScript using init2().
+ * Demonstrates type-safe usage of @fynjs/cli-args with TypeScript using init2().
  *
  * Usage:
  *   npx tsx examples/typescript-usage.ts input.txt file2.txt

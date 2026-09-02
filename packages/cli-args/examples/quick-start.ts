@@ -1,7 +1,7 @@
 /**
  * Quick Start Example
  *
- * Demonstrates basic usage of NixClap with a simple command and option.
+ * Demonstrates basic usage of @fynjs/cli-args with a simple command and option.
  *
  * Usage:
  *   npx tsx examples/quick-start.ts build

@@ -3,7 +3,7 @@
 import { NixClap } from "@fynjs/cli-args";
 
 /**
- * Demo of NixClap's applyConfig feature
+ * Demo of the applyConfig feature in @fynjs/cli-args
  *
  * This example shows how to apply configuration from external sources
  * (like config files, environment variables, or package.json) after CLI parsing.

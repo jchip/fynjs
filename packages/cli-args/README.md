@@ -197,7 +197,7 @@ await nc.parseAsync(); // Use parseAsync for async exec handlers
 
 ### Accessing Parsed Results
 
-NixClap provides multiple ways to access parsed data:
+`@fynjs/cli-args` provides multiple ways to access parsed data:
 
 ```js
 const parsed = nc.parse();
@@ -221,7 +221,7 @@ if (parsed.errorNodes && parsed.errorNodes.length > 0) {
 
 **Understanding `opts` vs `optsFull`**
 
-NixClap provides two ways to access option values:
+`@fynjs/cli-args` provides two ways to access option values:
 
 **`opts` - Simplified Direct Values (Recommended)**
 
@@ -309,7 +309,7 @@ const output = meta.opts.output; // "file.txt"
 
 ## Understanding init() vs init2()
 
-NixClap provides two initialization methods. **`init2()` is the recommended primary API**, while `init()` is a convenience wrapper for simple cases.
+`@fynjs/cli-args` provides two initialization methods. **`init2()` is the recommended primary API**, while `init()` is a convenience wrapper for simple cases.
 
 ### Use `init2()` (Recommended)
 
@@ -440,7 +440,7 @@ $ file-processor --help
 
 ### Root Command Execution Decision Tree
 
-When you configure a root command with `exec` and `args`, NixClap determines whether to execute it based on this logic:
+When you configure a root command with `exec` and `args`, `@fynjs/cli-args` determines whether to execute it based on this logic:
 
 ```
 Preprocess CLI arguments
@@ -539,7 +539,7 @@ See [examples](./examples) folder for more working samples:
 
 # Parsing Capabilities
 
-NixClap implements comprehensive Un\*x-style CLI parsing with several unique design principles:
+`@fynjs/cli-args` implements comprehensive Un\*x-style CLI parsing with several unique design principles:
 
 **Core Philosophy:**
 
@@ -555,7 +555,7 @@ NixClap implements comprehensive Un\*x-style CLI parsing with several unique des
 
 **Unique Aspects:**
 
-1. **Command-Centric Parsing & Execution**: Unlike option-centric parsers, NixClap treats commands as the organizing principle
+1. **Command-Centric Parsing & Execution**: Unlike option-centric parsers, `@fynjs/cli-args` treats commands as the organizing principle
    - Options belong to commands (not the other way around)
    - Parse results are structured as a command tree with nested contexts
    - Each command has its own `jsonMeta` containing its args, options, and state
@@ -581,7 +581,7 @@ NixClap implements comprehensive Un\*x-style CLI parsing with several unique des
    - Use `-#`, `-`, or `---` to enter greedy mode
    - Everything after becomes an argument until terminator
 
-6. **Execution Model**: NixClap separates parsing from execution
+6. **Execution Model**: `@fynjs/cli-args` separates parsing from execution
    - Parse once, access results multiple times via command tree
    - Control when/if commands execute (via `skipExec`)
    - Async execution support with proper ordering and command context
@@ -700,7 +700,7 @@ Example: `prog calc add 1 2 3 4 -. mult 4 5 6 7`
 
 ### Sub-Command Option Shadowing
 
-By default, sub-commands cannot define options with the same name as their parent command. To enable this feature, set `allowDuplicateOption: true` in the NixClap configuration. When enabled, the sub-command's option will shadow (override) the parent's option when parsing at that command level.
+By default, sub-commands cannot define options with the same name as their parent command. To enable this feature, set `allowDuplicateOption: true` in the `NixClap` configuration. When enabled, the sub-command's option will shadow (override) the parent's option when parsing at that command level.
 
 **Example:**
 
@@ -888,7 +888,7 @@ Where:
 | `subCommands`        | Nested sub-commands under this command. Follows the same spec as commands.                                                         |
 | `allowUnknownOption` | If `true`, allows unknown options for this command.                                                                                |
 
-> **Note:** Set a default command via the `defaultCommand` config option in the NixClap constructor, not in the command spec.
+> **Note:** Set a default command via the `defaultCommand` config option in the `NixClap` constructor, not in the command spec.
 
 ### Rules for Command `args`
 
@@ -1072,7 +1072,7 @@ If any command with [`exec` handlers](#command-exec-handler) were specified, the
 
 ### Error Handling
 
-NixClap provides comprehensive error tracking during parsing. Errors are collected in `parsed.errorNodes`:
+`@fynjs/cli-args` provides comprehensive error tracking during parsing. Errors are collected in `parsed.errorNodes`:
 
 **Checking for Errors:**
 
@@ -1302,7 +1302,7 @@ nc.on("unknown-command", ctx => {
 
 ### Default Event Handlers
 
-NixClap has default handlers for these events:
+`@fynjs/cli-args` has default handlers for these events:
 
 - `help` - Output help and emit `exit`
 - `version` - If `version` has been set, then output version and emit `exit`.
@@ -1509,7 +1509,7 @@ const nc = new NixClap().init2({
 
 ### `init2(rootCommandSpec)` - Primary API (Recommended)
 
-Initialize your CLI by defining the root command directly. **This is the recommended primary API for setting up NixClap.**
+Initialize your CLI by defining the root command directly. **This is the recommended primary API for setting up `NixClap`.**
 
 **Parameters:**
 
@@ -1749,7 +1749,7 @@ Show help message and then emit `exit`.
 
 ### `removeDefaultHandlers()`
 
-Remove NixClap's default handlers for the list of [event names](#events).
+Remove `NixClap`'s default handlers for the list of [event names](#events).
 
 If you've replaced the handler through specifying `handlers` in `config` for the constructor, then this will not remove your handler.
 
@@ -1768,7 +1768,7 @@ nc.removeDefaultHandlers("parse-fail", "unknown-option", "unknown-command");
 
 Apply configuration from external sources (e.g., config files) to a parsed command.
 
-**Note:** This method is called **on a CommandNode instance**, not on the NixClap instance.
+**Note:** This method is called **on a CommandNode instance**, not on the `NixClap` instance.
 
 **Parameters:**
 
@@ -1846,7 +1846,7 @@ await nc.runExecAsync(parsed);
 
 ## TypeScript Support
 
-NixClap is written in TypeScript and provides full type definitions out of the box.
+`@fynjs/cli-args` is written in TypeScript and provides full type definitions out of the box.
 
 ### Basic TypeScript Usage
 
@@ -2038,7 +2038,7 @@ Other popular CLI parsers you might consider:
 - [clap] - Declarative configuration
 - [clap.js] - TypeScript-first
 
-**Why NixClap?**
+**Why `@fynjs/cli-args`?**
 
 - Smaller and faster than yargs/commander
 - More Unix-like parsing semantics

@@ -1,6 +1,6 @@
-# NixClap applyConfig ESM Demo
+# `@fynjs/cli-args` applyConfig ESM Demo
 
-This demo showcases the `applyConfig` feature of NixClap, which allows you to apply configuration from external sources (like config files, environment variables, or package.json) after CLI parsing.
+This demo showcases the `applyConfig` feature of `@fynjs/cli-args`, which allows you to apply configuration from external sources (like config files, environment variables, or package.json) after CLI parsing.
 
 ## Configuration Hierarchy
 
@@ -69,7 +69,7 @@ Output source: user
 
 ## How it Works
 
-1. **CLI Parsing**: NixClap parses the command-line arguments first
+1. **CLI Parsing**: `@fynjs/cli-args` parses the command-line arguments first
 2. **Config Application**: User config is applied using `applyConfig()`
 3. **Precedence**: CLI arguments override user config, which overrides defaults
 4. **Source Tracking**: Each option tracks its source for debugging

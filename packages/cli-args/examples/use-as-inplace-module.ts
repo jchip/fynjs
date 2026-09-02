@@ -1,7 +1,7 @@
 /**
- * Using NixClap as an In-Process Module
+ * Using @fynjs/cli-args as an In-Process Module
  *
- * This example demonstrates how to use NixClap as a library/module instead of
+ * This example demonstrates how to use @fynjs/cli-args as a library/module instead of
  * a terminal application. Useful for:
  * - Daemon processes that handle CLI commands via HTTP/IPC
  * - Testing CLI parsers without process.exit()

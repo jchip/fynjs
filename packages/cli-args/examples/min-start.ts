@@ -1,7 +1,7 @@
 /**
  * Minimal Start Example
  *
- * Demonstrates the absolute minimum code needed to use NixClap.
+ * Demonstrates the absolute minimum code needed to use @fynjs/cli-args.
  * Parses any CLI options and shows how to access them.
  *
  * Note that options must use flag=value form, because for unknown
