@@ -132,6 +132,32 @@ describe("lifecycle-scripts", function() {
     return promise;
   });
 
+  //
+  // FPM-77: npm and bun both hand a lifecycle script the absolute path of the manifest it
+  // is running for.  Pack time scripts need it to tell which package they are packing -
+  // INIT_CWD can't answer that, it is the directory the user invoked the command from.
+  //
+  it("should set npm_package_json to the package's own manifest", () => {
+    const dir = Path.join(__dirname, "../fixtures/lifecycle-scripts/f3");
+    const env = new LifecycleScripts(dir).makeEnv();
+
+    expect(env.npm_package_json).toBe(Path.join(dir, "package.json"));
+  });
+
+  it("should pass npm_package_json to the spawned script", () => {
+    const dir = Path.join(__dirname, "../fixtures/lifecycle-scripts/f3");
+    const intercept = xstdout.intercept(true);
+
+    return new LifecycleScripts(dir)
+      .execute("test-pkg-json", true)
+      .then(() => {
+        intercept.restore();
+        const output = extractOutput(intercept);
+        expect(output.stdout).includes(Path.join(dir, "package.json"));
+      })
+      .catch(err => failRestore(err, intercept));
+  });
+
   it("should not execute a script not in package.json", () => {
     const promise = new LifecycleScripts({
       dir: Path.join(__dirname, "../fixtures/lifecycle-scripts/f2")

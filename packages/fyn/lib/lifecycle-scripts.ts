@@ -122,6 +122,10 @@ class LifecycleScripts {
 
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
     env.npm_execpath = fynCli;
+    // npm (and bun) give a lifecycle script the absolute path of the manifest it is running
+    // for.  Pack time scripts rely on it to tell which package they are packing - INIT_CWD
+    // can't answer that, it's the invocation directory.  See FPM-77.
+    env.npm_package_json = Path.join(this._pkgDir, "package.json");
     // INIT_CWD should be the directory where fyn was invoked (matches npm behavior).
     // PWD is set to the package directory in _execute().
     // Use initCwd which preserves original invocation directory (important for global installs

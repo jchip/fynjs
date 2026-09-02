@@ -30,8 +30,9 @@ function initEnv(fromEnv, production) {
 
 /**
  * Create npm_package_* and npm_config_* environment variables
- * Matches npm 11's minimal approach - only adds npm_package_name, npm_package_version, npm_package_json
- * and minimal npm_config_* variables
+ * Matches npm 11's minimal approach - only adds npm_package_name and npm_package_version
+ * (npm_package_json is added by the caller, which knows the manifest path) and minimal
+ * npm_config_* variables
  *
  * @param {Object} data - Package.json or config object
  * @param {Object} opts - Options object
@@ -91,7 +92,9 @@ function makeNpmEnv(data, opts, prefix, env) {
   }
 
   // Add only minimal npm_package_* variables (matching npm 11 behavior)
-  // npm 11 only sets: npm_package_name, npm_package_version, npm_package_json
+  // npm 11 only sets: npm_package_name, npm_package_version, npm_package_json.
+  // npm_package_json is the manifest's path, which isn't available here - only the parsed
+  // data is - so LifecycleScripts.makeEnv sets it from the package dir it already knows.
   if (data.name) {
     env.npm_package_name = String(data.name);
   }

@@ -6,6 +6,7 @@
   },
   "scripts": {
     "test": "echo $npm_package_config_test_c1",
-    "test1": "echo foo-bar"
+    "test1": "echo foo-bar",
+    "test-pkg-json": "echo $npm_package_json"
   }
 }
