@@ -2,7 +2,7 @@
 
 // example showing uses with visual-logger
 
-const Promise = require("bluebird");
+const Promise = require("aveazul");
 const VisualLogger = require("visual-logger");
 const logger = new VisualLogger();
 const chalk = require("chalk");

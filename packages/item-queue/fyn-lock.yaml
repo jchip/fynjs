@@ -5,6 +5,7 @@ $pkg:
  dev:
   '@types/node': ^22.15.30
   '@vitest/coverage-v8': ^4.1.11
+  aveazul: ../aveazul
   prettier: ^3.5.3
   publish-util: ../publish-util
   tsx: ^4.19.4
@@ -361,6 +362,13 @@ $pkg:
    - win32
   cpu:
    - x64
+'@jchip/error':
+ _latest: 2.0.0-fynlocal_h
+ _:
+  ../error: 2.0.0-fynlocal_h
+ 2.0.0-fynlocal_h:
+  $: local
+  _: ../error
 '@jridgewell/resolve-uri':
  _latest: 3.1.2
  _:
@@ -736,6 +744,17 @@ ast-v8-to-istanbul:
    '@jridgewell/trace-mapping': ^0.3.31
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
+aveazul:
+ _latest: 2.0.1-fynlocal_h
+ _:
+  ../aveazul: 2.0.1-fynlocal_h
+ 2.0.1-fynlocal_h:
+  top: 1
+  $: local
+  _: ../aveazul
+  dependencies:
+   '@jchip/error': ^2.0.0
+   xaa: ^3.0.0
 chai:
  _latest: 6.2.2
  _:
@@ -1388,6 +1407,13 @@ why-is-node-running:
   dependencies:
    siginfo: ^2.0.0
    stackback: 0.0.2
+xaa:
+ _latest: 3.0.0-fynlocal_h
+ _:
+  ../xaa: 3.0.0-fynlocal_h
+ 3.0.0-fynlocal_h:
+  $: local
+  _: ../xaa
 yocto-queue:
  _latest: 1.2.2
  _:

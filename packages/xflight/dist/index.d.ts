@@ -41,8 +41,8 @@ export declare class Inflight<T = unknown> {
      * Uses native Promise by default. Pass a custom Promise implementation if needed:
      *
      * ```ts
-     * import Bluebird from "bluebird";
-     * const inflight = new Inflight(Bluebird);
+     * import AveAzul from "aveazul";
+     * const inflight = new Inflight(AveAzul);
      * ```
      *
      * @param PromiseImpl - Optional custom Promise implementation to use.

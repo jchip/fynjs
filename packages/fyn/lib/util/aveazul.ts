@@ -1,2 +1,2 @@
-import Bluebird from "aveazul";
-export default Bluebird;
+import AveAzul from "aveazul";
+export default AveAzul;
