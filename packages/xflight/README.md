@@ -25,11 +25,12 @@ This package requires **Node.js >= 22.12**.
 ## Usage
 
 ```js
-const Xflight = require("xflight");
-const xfl = new Xflight();
+import Inflight from "xflight";
+
+const inflight = new Inflight();
 
 function fetchData(url) {
-  return xfl.promise(url, () => fetch(url));
+  return inflight.promise(url, () => fetch(url));
 }
 
 // Multiple calls with the same URL will share the same promise if still pending
@@ -60,13 +61,15 @@ const inflight = new Inflight();
 
 ## API
 
-### `new Xflight([PromiseImpl])`
-- `PromiseImpl` (optional): Custom Promise implementation (e.g., Bluebird, Aveazul, or native Promise).
+### `new Inflight([PromiseImpl])`
+- `PromiseImpl` (optional): Custom Promise implementation, e.g. [AveAzul](https://www.npmjs.com/package/aveazul). Defaults to the native `Promise`.
 
-**Note:** By default, the constructor will try to use Bluebird or Aveazul as the Promise implementation if they are available. If you want to always use the native Promise and skip these checks, pass the global Promise as the argument:
+**Note:** The constructor does not look for a Promise library. With no argument it uses `globalThis.Promise`; pass an implementation to use a different one:
 
 ```ts
-const inflight = new Inflight(Promise);
+import AveAzul from "aveazul";
+
+const inflight = new Inflight(AveAzul);
 ```
 
 ### Methods
@@ -106,7 +109,7 @@ To run tests:
 npm test
 ```
 
-Test coverage is enforced at 100% using `nyc`.
+Coverage runs with `npm run coverage` (vitest + v8) and is at 100%.
 
 
 ## Examples
