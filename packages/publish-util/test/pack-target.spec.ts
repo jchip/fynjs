@@ -82,6 +82,25 @@ describe("getPackInfo", () => {
     expect(info.pkgFile).toBe(Path.join(other, "package.json"));
   });
 
+  it("does not second guess an explicit override with the runner's env", async () => {
+    // the override exists for when detection is wrong, so the name check must not undo it
+    process.env.npm_package_name = "the-package";
+    process.env.PUBLISH_UTIL_PKG_DIR = other;
+
+    const info = await getPackInfo(dir);
+
+    expect(info.pkgFile).toBe(Path.join(other, "package.json"));
+    expect(info.pkg.name).toBe("another-package");
+  });
+
+  it("names where it looked when nothing is found", async () => {
+    const empty = Path.join(Path.dirname(dir), "empty");
+    Fs.mkdirSync(empty, { recursive: true });
+    process.env.PUBLISH_UTIL_PKG_DIR = empty;
+
+    await expect(getPackInfo(dir)).rejects.toThrow(new RegExp(`looked in ${empty}`));
+  });
+
   it("falls back to searching up when cwd has no package.json", async () => {
     const deep = Path.join(dir, "src", "nested");
     Fs.mkdirSync(deep, { recursive: true });

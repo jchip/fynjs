@@ -52,10 +52,13 @@ export async function getPackInfo(cwd = process.cwd()) {
     const override = process.env.PUBLISH_UTIL_PKG_DIR;
     const fromEnv = process.env.npm_package_json;
     let pkgFile;
+    let lookedIn = cwd;
     if (override) {
-        pkgFile = Path.join(Path.resolve(override), "package.json");
+        lookedIn = Path.resolve(override);
+        pkgFile = Path.join(lookedIn, "package.json");
     }
     else if (fromEnv && (await exists(fromEnv))) {
+        lookedIn = "env npm_package_json";
         pkgFile = Path.resolve(fromEnv);
     }
     else {
@@ -63,9 +66,15 @@ export async function getPackInfo(cwd = process.cwd()) {
         pkgFile = (await exists(atCwd)) ? atCwd : await findUp("package.json", { cwd });
     }
     if (!pkgFile || !(await exists(pkgFile))) {
-        throw new Error(`publish-util: no package.json found for this package (looked from ${cwd})`);
+        throw new Error(`publish-util: no package.json found for this package (looked in ${lookedIn})`);
     }
     const info = await loadInfo(pkgFile);
+    if (override) {
+        // an explicit override is an instruction, not a hint - it exists precisely for the
+        // case where detection is wrong, so it must not be second guessed by the env below
+        console.log(`publish-util: using ${pkgFile} from PUBLISH_UTIL_PKG_DIR`);
+        return info;
+    }
     const expectName = process.env.npm_package_name;
     if (expectName && info.pkg.name !== expectName) {
         throw new Error(`publish-util: refusing to touch ${pkgFile} - it is '${info.pkg.name}' but the package manager says this script belongs to '${expectName}'.` +
