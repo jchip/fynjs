@@ -9,12 +9,15 @@ import FynCentral from "../../lib/fyn-central";
 // never be a hardlink back into it: fyn rewrites an installed package.json in place to
 // stamp in _id and _from, and a package's own install scripts can rewrite anything else.
 // Either would land on the store copy and corrupt it for unrelated projects (the FPM-52
-// shape).  replicate() copies or CoW-clones, both of which are independent files.
+// shape).  replicate() copies or clones, and both produce an independent file.
 //
-// Note the invariant is "never link", not "copy rather than clone" - cloneFile is
-// copy-on-write, so it is equally safe.  A test asserting copy-vs-clone passes even when
-// the distinction is removed; this one fails when replicate is changed to hardlink, which
-// is the plausible regression (someone saving disk space).  See FPM-80.
+// The invariant is "never link", not "copy rather than clone".  cloneFile asks for a
+// reflink via COPYFILE_FICLONE and takes whatever it gets: a real reflink on Linux
+// btrfs/XFS, a plain copy everywhere else - on macOS libuv does not implement reflinks at
+// all, and COPYFILE_FICLONE_FORCE fails there with ENOSYS.  Either outcome is independent
+// of the source, so copy-vs-clone is not the safety property; a test asserting it passes
+// even with the distinction removed.  This one fails when replicate is changed to
+// hardlink, which is the plausible regression (someone saving disk space).  See FPM-80.
 //
 describe("fyn-central replicate", () => {
   let root: string;
