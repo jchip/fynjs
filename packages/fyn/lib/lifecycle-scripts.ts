@@ -118,8 +118,6 @@ class LifecycleScripts {
     }
     xsh.envPath.addToFront(Path.join(this._pkgDir, "node_modules/.bin"), env);
 
-    // env.npm_lifecycle_event = stage;  // TODO
-
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
     env.npm_execpath = fynCli;
     // npm (and bun) give a lifecycle script the absolute path of the manifest it is running
@@ -185,7 +183,9 @@ class LifecycleScripts {
       this._pkgDir.replace(this._fyn.cwd || "", ".")
     );
 
-    const env = this.makeEnv({ PWD: this._pkgDir });
+    // npm and bun both tell the script which stage is running; scripts branch on it
+    // (a prepublishOnly guard, a shared script used by several stages).  See FPM-77.
+    const env = this.makeEnv({ PWD: this._pkgDir, npm_lifecycle_event: name });
 
     logger.verbose(
       `running npm script '${scriptName}' of ${dimPkgName}: ${script} - at dir ${pkgDir}`

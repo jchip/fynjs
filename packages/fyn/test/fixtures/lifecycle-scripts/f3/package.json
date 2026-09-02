@@ -7,6 +7,7 @@
   "scripts": {
     "test": "echo $npm_package_config_test_c1",
     "test1": "echo foo-bar",
-    "test-pkg-json": "echo $npm_package_json"
+    "test-pkg-json": "echo $npm_package_json",
+    "test-lifecycle": "echo $npm_lifecycle_event"
   }
 }

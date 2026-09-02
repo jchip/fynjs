@@ -158,6 +158,20 @@ describe("lifecycle-scripts", function() {
       .catch(err => failRestore(err, intercept));
   });
 
+  it("should tell the spawned script which lifecycle stage is running", () => {
+    const dir = Path.join(__dirname, "../fixtures/lifecycle-scripts/f3");
+    const intercept = xstdout.intercept(true);
+
+    return new LifecycleScripts(dir)
+      .execute("test-lifecycle", true)
+      .then(() => {
+        intercept.restore();
+        const output = extractOutput(intercept);
+        expect(output.stdout).includes("test-lifecycle");
+      })
+      .catch(err => failRestore(err, intercept));
+  });
+
   it("should not execute a script not in package.json", () => {
     const promise = new LifecycleScripts({
       dir: Path.join(__dirname, "../fixtures/lifecycle-scripts/f2")
