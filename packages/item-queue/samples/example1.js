@@ -1,13 +1,14 @@
-"use strict";
-
 // example showing uses with visual-logger
+//
+// item-queue is "type": "module", so this file is ESM - run it with `node samples/example1.js`
 
-const Promise = require("aveazul");
-const VisualLogger = require("visual-logger");
+import AveAzul from "aveazul";
+import VisualLogger from "visual-logger";
+import chalk from "chalk";
+
+import { ItemQueue } from "item-queue"; // or "../dist/index.js"
+
 const logger = new VisualLogger();
-const chalk = require("chalk");
-
-const ItemQueue = require(".."); // or require("item-queue")
 
 const CONCURRENCY = 3;
 const TOTAL_ITEMS = 10;
@@ -41,7 +42,7 @@ const itemQ = new ItemQueue({
       logger.updateItem(name, `${count}`);
 
       if (Date.now() - start < item) {
-        return Promise.delay(100).then(update);
+        return AveAzul.delay(100).then(update);
       } else {
         logger.info(`Item ${item} done - count reached ${count}.`);
         logger.removeItem(name);
