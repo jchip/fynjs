@@ -19,6 +19,15 @@ export async function getInfo(cwd: string = process.env.INIT_CWD || process.cwd(
   if (!pkgFile) {
     throw new Error(`No package.json found starting from directory: ${cwd}`);
   }
+  return loadInfo(pkgFile);
+}
+
+/**
+ * Load the info for a known package.json path.
+ *
+ * @param pkgFile - absolute path to the manifest
+ */
+export async function loadInfo(pkgFile: string): Promise<PackageInfo> {
   const pkgDir = Path.dirname(pkgFile);
   const pkgData = await Fs.readFile(pkgFile);
   const pkg = JSON.parse(pkgData.toString()) as Record<string, unknown>;
@@ -29,6 +38,88 @@ export async function getInfo(cwd: string = process.env.INIT_CWD || process.cwd(
   const saveFile = Path.join(tmpDir, saveName);
 
   return { pkgDir, pkg, pkgData, tmpDir, saveName, saveFile, pkgFile };
+}
+
+/**
+ * Sidecar recording which manifest prepack modified, so postpack restores that exact file
+ * rather than resolving one independently and possibly disagreeing.
+ */
+export interface SaveMeta {
+  pkgFile: string;
+  name?: string;
+  version?: string;
+  pid: number;
+  ts: string;
+}
+
+export const metaFileOf = (saveFile: string): string => `${saveFile}.meta.json`;
+
+/**
+ * Find the package.json that a **pack time** script (prepack/postpack) is operating on.
+ *
+ * `INIT_CWD` must never be used here.  It is the directory the user invoked the command
+ * from, not the package being packed, and it is inherited: nine packages in one monorepo
+ * each ran prepack against the same unrelated manifest because of it (FPM-75).
+ *
+ * Order of trust:
+ *
+ * 1. `PUBLISH_UTIL_PKG_DIR` - explicit escape hatch for an exotic runner.
+ * 2. `npm_package_json` - npm, bun and fyn all set it to the manifest the script is
+ *    running for.  Verified against npm 11.19.0 and bun 1.3.3.
+ * 3. `<cwd>/package.json` - every packer runs lifecycle scripts from the package root
+ *    ("Scripts are always run from the root of the package folder, regardless of what the
+ *    current working directory is when npm is invoked").  This covers a runner that sets
+ *    no npm_* env at all.
+ *
+ * Whatever is found is then cross checked against `npm_package_name` when the runner set
+ * it, because npm_package_json is an inherited env var and can go stale exactly the way
+ * INIT_CWD did.  A mismatch is a hard error - refusing is always better than rewriting
+ * some other package's manifest.
+ */
+export async function getPackInfo(cwd: string = process.cwd()): Promise<PackageInfo> {
+  const override = process.env.PUBLISH_UTIL_PKG_DIR;
+  const fromEnv = process.env.npm_package_json;
+
+  let pkgFile: string | undefined;
+
+  if (override) {
+    pkgFile = Path.join(Path.resolve(override), "package.json");
+  } else if (fromEnv && (await exists(fromEnv))) {
+    pkgFile = Path.resolve(fromEnv);
+  } else {
+    const atCwd = Path.join(cwd, "package.json");
+    pkgFile = (await exists(atCwd)) ? atCwd : await findUp("package.json", { cwd });
+  }
+
+  if (!pkgFile || !(await exists(pkgFile))) {
+    throw new Error(`publish-util: no package.json found for this package (looked from ${cwd})`);
+  }
+
+  const info = await loadInfo(pkgFile);
+
+  const expectName = process.env.npm_package_name;
+  if (expectName && info.pkg.name !== expectName) {
+    throw new Error(
+      `publish-util: refusing to touch ${pkgFile} - it is '${info.pkg.name}' but the package manager says this script belongs to '${expectName}'.` +
+        ` Set PUBLISH_UTIL_PKG_DIR if this package's directory cannot be detected.`
+    );
+  }
+
+  const expectVersion = process.env.npm_package_version;
+  if (expectVersion && info.pkg.version !== expectVersion) {
+    console.warn(
+      `publish-util: ${pkgFile} is version ${info.pkg.version} but the package manager says ${expectVersion}`
+    );
+  }
+
+  return info;
+}
+
+async function exists(file: string): Promise<boolean> {
+  return Fs.access(file).then(
+    () => true,
+    () => false
+  );
 }
 
 /**

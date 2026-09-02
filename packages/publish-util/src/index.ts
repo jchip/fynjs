@@ -5,6 +5,10 @@ export { npmPublish } from "./npm-publish.js";
 export type { NpmPublishOptions } from "./npm-publish.js";
 export {
   getInfo,
+  getPackInfo,
+  loadInfo,
+  writePkgFile,
+  metaFileOf,
   extractFromObj,
   removeFromObj,
   renameFromObj,
@@ -12,6 +16,7 @@ export {
 } from "./utils.js";
 export type {
   PackageInfo,
+  SaveMeta,
   ExtractSpec,
   RemoveSpec,
   RenameSpec,

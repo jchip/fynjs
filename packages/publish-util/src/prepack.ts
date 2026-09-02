@@ -1,6 +1,7 @@
 import * as Path from "path";
 import {
-  getInfo,
+  getPackInfo,
+  metaFileOf,
   extractFromObj,
   removeFromObj,
   keepStandardFields,
@@ -68,7 +69,7 @@ export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig =
 }
 
 export async function prePack(): Promise<void> {
-  const { pkg, pkgData, saveFile, pkgFile } = await getInfo();
+  const { pkg, pkgData, saveFile, pkgFile } = await getPackInfo();
 
   const myName = Path.basename(process.argv[1]) || "publish-util-prepack";
 
@@ -79,6 +80,23 @@ export async function prePack(): Promise<void> {
     }
 
     await writePkgFile(saveFile, pkgData);
+    // record which manifest was modified so postpack restores that exact file instead of
+    // resolving one on its own and possibly disagreeing.  Written after the save file, so
+    // meta present always implies the backup is there too.
+    await writePkgFile(
+      metaFileOf(saveFile),
+      `${JSON.stringify(
+        {
+          pkgFile,
+          name: pkg.name,
+          version: pkg.version,
+          pid: process.pid,
+          ts: new Date().toISOString()
+        },
+        null,
+        2
+      )}\n`
+    );
 
     prePackObj(pkg, config);
 

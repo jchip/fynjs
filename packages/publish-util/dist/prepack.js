@@ -1,5 +1,5 @@
 import * as Path from "path";
-import { getInfo, extractFromObj, removeFromObj, keepStandardFields, renameFromObj, writePkgFile, } from "./utils.js";
+import { getPackInfo, metaFileOf, extractFromObj, removeFromObj, keepStandardFields, renameFromObj, writePkgFile, } from "./utils.js";
 import _ from "lodash";
 export function prePackObj(pkg, config = {}) {
     renameFromObj(pkg, config.rename);
@@ -32,7 +32,7 @@ export function prePackObj(pkg, config = {}) {
     }
 }
 export async function prePack() {
-    const { pkg, pkgData, saveFile, pkgFile } = await getInfo();
+    const { pkg, pkgData, saveFile, pkgFile } = await getPackInfo();
     const myName = Path.basename(process.argv[1]) || "publish-util-prepack";
     try {
         const config = (pkg.publishUtil || {});
@@ -40,6 +40,16 @@ export async function prePack() {
             console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
         }
         await writePkgFile(saveFile, pkgData);
+        // record which manifest was modified so postpack restores that exact file instead of
+        // resolving one on its own and possibly disagreeing.  Written after the save file, so
+        // meta present always implies the backup is there too.
+        await writePkgFile(metaFileOf(saveFile), `${JSON.stringify({
+            pkgFile,
+            name: pkg.name,
+            version: pkg.version,
+            pid: process.pid,
+            ts: new Date().toISOString()
+        }, null, 2)}\n`);
         prePackObj(pkg, config);
         await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
     }

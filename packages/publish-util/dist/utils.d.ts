@@ -9,6 +9,47 @@ export interface PackageInfo {
 }
 export declare function getInfo(cwd?: string): Promise<PackageInfo>;
 /**
+ * Load the info for a known package.json path.
+ *
+ * @param pkgFile - absolute path to the manifest
+ */
+export declare function loadInfo(pkgFile: string): Promise<PackageInfo>;
+/**
+ * Sidecar recording which manifest prepack modified, so postpack restores that exact file
+ * rather than resolving one independently and possibly disagreeing.
+ */
+export interface SaveMeta {
+    pkgFile: string;
+    name?: string;
+    version?: string;
+    pid: number;
+    ts: string;
+}
+export declare const metaFileOf: (saveFile: string) => string;
+/**
+ * Find the package.json that a **pack time** script (prepack/postpack) is operating on.
+ *
+ * `INIT_CWD` must never be used here.  It is the directory the user invoked the command
+ * from, not the package being packed, and it is inherited: nine packages in one monorepo
+ * each ran prepack against the same unrelated manifest because of it (FPM-75).
+ *
+ * Order of trust:
+ *
+ * 1. `PUBLISH_UTIL_PKG_DIR` - explicit escape hatch for an exotic runner.
+ * 2. `npm_package_json` - npm, bun and fyn all set it to the manifest the script is
+ *    running for.  Verified against npm 11.19.0 and bun 1.3.3.
+ * 3. `<cwd>/package.json` - every packer runs lifecycle scripts from the package root
+ *    ("Scripts are always run from the root of the package folder, regardless of what the
+ *    current working directory is when npm is invoked").  This covers a runner that sets
+ *    no npm_* env at all.
+ *
+ * Whatever is found is then cross checked against `npm_package_name` when the runner set
+ * it, because npm_package_json is an inherited env var and can go stale exactly the way
+ * INIT_CWD did.  A mismatch is a hard error - refusing is always better than rewriting
+ * some other package's manifest.
+ */
+export declare function getPackInfo(cwd?: string): Promise<PackageInfo>;
+/**
  * Update a package.json (or the prepack save file) in place, without ever leaving it
  * at zero length.
  *
