@@ -183,9 +183,14 @@ class LifecycleScripts {
       this._pkgDir.replace(this._fyn.cwd || "", ".")
     );
 
-    // npm and bun both tell the script which stage is running; scripts branch on it
-    // (a prepublishOnly guard, a shared script used by several stages).  See FPM-77.
-    const env = this.makeEnv({ PWD: this._pkgDir, npm_lifecycle_event: name });
+    // npm and bun both tell the script which stage is running and what it was defined as;
+    // scripts branch on the stage (a prepublishOnly guard, a shared script used by several
+    // stages) and wrappers echo the body.  See FPM-77, FPM-78.
+    const env = this.makeEnv({
+      PWD: this._pkgDir,
+      npm_lifecycle_event: name,
+      npm_lifecycle_script: scriptCommand
+    });
 
     logger.verbose(
       `running npm script '${scriptName}' of ${dimPkgName}: ${script} - at dir ${pkgDir}`
