@@ -1,5 +1,5 @@
 
-import xsh from "xsh";
+import { execShell } from "./utils/exec-shell.js";
 import fs from "fs-extra";
 import Path from "path";
 import { logger } from "./logger";
@@ -29,14 +29,7 @@ export class Init {
   }
 
   _sh(command, cwd = this._cwd, silent = true) {
-    return xsh.exec(
-      {
-        silent,
-        cwd,
-        env: Object.assign({}, process.env, { PWD: cwd }),
-      },
-      command
-    );
+    return execShell(command, cwd, silent);
   }
 
   isGitInitialized = () => {

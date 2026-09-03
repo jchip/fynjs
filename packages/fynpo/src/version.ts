@@ -13,6 +13,7 @@
 
 import Fs from "fs";
 import xsh from "xsh";
+import { execShell } from "./utils/exec-shell.js";
 import Path from "path";
 import Promise from "aveazul";
 xsh.Promise = Promise;
@@ -74,14 +75,7 @@ export class Version {
   }
 
   _sh(command) {
-    return xsh.exec(
-      {
-        silent: true,
-        cwd: this._cwd,
-        env: Object.assign({}, process.env, { PWD: this._cwd }),
-      },
-      command
-    );
+    return execShell(command, this._cwd);
   }
 
   checkGitClean = () => {

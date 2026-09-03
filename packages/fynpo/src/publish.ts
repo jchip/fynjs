@@ -1,4 +1,4 @@
-import xsh from "xsh";
+import { execShell } from "./utils/exec-shell.js";
 import Path from "path";
 import Fs from "fs";
 // imported under its own name: shadowing `Promise` makes async return types invalid (FPO-41)
@@ -77,14 +77,7 @@ export default class Publish {
 
   _sh(command: string, cwd = this._cwd, silent = false) {
     logger.info(`Executing shell command '${command}' in ${cwd}`);
-    return xsh.exec(
-      {
-        silent,
-        cwd,
-        env: Object.assign({}, process.env, { PWD: cwd }),
-      },
-      command
-    );
+    return execShell(command, cwd, silent);
   }
 
   _logError(msg: string, err: Error, showOutput = false) {

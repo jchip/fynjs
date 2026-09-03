@@ -2,7 +2,7 @@
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
-import xsh from "xsh";
+import { execShell } from "./utils/exec-shell.js";
 import { logger } from "./logger";
 import { readChangelogVersions } from "./read-changelog-versions";
 import Promise from "aveazul";
@@ -144,14 +144,7 @@ export class Prepare {
   };
 
   _sh(command) {
-    return xsh.exec(
-      {
-        silent: true,
-        cwd: this._cwd,
-        env: Object.assign({}, process.env, { PWD: this._cwd }),
-      },
-      command
-    );
+    return execShell(command, this._cwd);
   }
 
   _checkNupdateTag(pkg, newV) {

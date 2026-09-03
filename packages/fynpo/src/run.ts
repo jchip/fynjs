@@ -2,7 +2,7 @@
 
 import Path from "path";
 import Fs from "fs";
-import xsh from "xsh";
+import { execShell } from "./utils/exec-shell.js";
 import { logger } from "./logger";
 import * as utils from "./utils";
 import _ from "lodash";
@@ -138,14 +138,7 @@ export class Run {
   }
 
   _sh(command, cwd = this._cwd, silent = true) {
-    return xsh.exec(
-      {
-        silent,
-        cwd,
-        env: Object.assign({}, process.env, { PWD: cwd }),
-      },
-      command
-    );
+    return execShell(command, cwd, silent);
   }
 
   getOpts(pkg) {
