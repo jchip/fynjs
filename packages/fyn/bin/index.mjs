@@ -3,28 +3,18 @@
 // top-level await to optionally load ESM-only chalk, and no CJS output format can represent
 // module-scope await.
 //
-// The bundle is reached through a URL built at runtime, not a literal specifier, and that is
-// load-bearing rather than stylistic. fynpo imports this module and bundles itself with
-// rolldown; a literal `import("../dist/fyn.mjs")` is statically analyzable, so rolldown inlines
-// the whole fyn bundle into fynpo's - and fyn's module scope then resolves paths against
-// fynpo's directory and dies on `Cannot find module './bin/fyn.mjs'`. A computed URL keeps fyn
-// a runtime dependency of its consumers, which is what it should be.
+// The specifier is a literal so a consumer bundling this module - fynpo does - can inline
+// fyn's dist rather than carrying a runtime dependency on it. That only works because fyn no
+// longer resolves its own paths at module scope; see findFynCli in lib/lifecycle-scripts.ts.
 //
-// Loading is deferred to the first call for the same reason it always was: this is the whole
-// CLI, and a consumer holding a reference to `run` should not pay to evaluate it.
+// Loading is still deferred to the first call: standalone, this is a 3.7MB CLI, and a consumer
+// holding a reference to `run` should not pay to evaluate it.
 //
-import { fileURLToPath, pathToFileURL } from "node:url";
-import Path from "node:path";
-
-const bundleUrl = pathToFileURL(
-  Path.join(Path.dirname(fileURLToPath(import.meta.url)), "..", "dist", "fyn.mjs")
-).href;
-
 let bundle;
 
 const load = async () => {
   if (!bundle) {
-    bundle = await import(bundleUrl);
+    bundle = await import("../dist/fyn.mjs");
   }
   return bundle;
 };

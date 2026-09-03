@@ -63,14 +63,60 @@ const readPkgJson = (dir: string): Promise<Partial<PackageJson>> => {
   });
 };
 
-// When released, all code are bundled into dist/fyn.js
-// When running from original source, this is under lib/lifecycle-scripts.js
-// It's important to maintain same level so "../package.json" works.
-const fynInstalledDir = Path.dirname(optionalRequire.resolve("../package.json"));
-// the "_" is a dummy filename: createRequire wants the path of the file doing the requiring,
-// and resolves relative specifiers against its dirname. Passing the bare directory would
-// resolve one level too high. (require-at did the same with "._require-at_".)
-const fynCli = createRequire(Path.join(fynInstalledDir, "_")).resolve("./bin/fyn.mjs");
+//
+// Locate fyn's own CLI, for `npm_execpath`.
+//
+// When released, all code is bundled into dist/fyn.mjs; running from source this file is under
+// lib/, one level below package.json either way, so "../package.json" finds fyn.
+//
+// Except when this bundle is embedded in someone else's: fynpo inlines fyn's dist into its own,
+// and then "../package.json" is fynpo's and ./bin/fyn.mjs does not exist there. So try fyn's own
+// layout first and fall back to resolving fyn as a dependency, taking whichever actually has the
+// CLI. Lazy and memoized - a module-scope resolve that throws makes the whole bundle unloadable.
+//
+let fynCliPath: string | undefined;
+
+export const findFynCli = (): string => {
+  if (fynCliPath) {
+    return fynCliPath;
+  }
+
+  const candidates: string[] = [];
+
+  // the "_" is a dummy filename: createRequire wants the path of the file doing the requiring,
+  // and resolves relative specifiers against its dirname. Passing the bare directory would
+  // resolve one level too high. (require-at did the same with "._require-at_".)
+  const resolveFrom = (dir: string, spec: string): string | undefined => {
+    try {
+      return createRequire(Path.join(dir, "_")).resolve(spec);
+    } catch {
+      return undefined;
+    }
+  };
+
+  const ownDir = optionalRequire.resolve("../package.json");
+  if (ownDir) {
+    candidates.push(Path.dirname(ownDir));
+  }
+
+  const asDep = resolveFrom(Path.dirname(fileURLToPath(import.meta.url)), "fyn/package.json");
+  if (asDep) {
+    candidates.push(Path.dirname(asDep));
+  }
+
+  for (const dir of candidates) {
+    const cli = resolveFrom(dir, "./bin/fyn.mjs");
+    if (cli) {
+      fynCliPath = cli;
+      return cli;
+    }
+  }
+
+  // nothing found - name the expected location rather than returning undefined, so a failure
+  // downstream says where fyn looked
+  fynCliPath = Path.join(candidates[0] || process.cwd(), "bin", "fyn.mjs");
+  return fynCliPath;
+};
 
 /*
  * ref: https://github.com/npm/npm/blob/75b462c19ea16ef0d7f943f94ff4d255695a5c0d/lib/utils/lifecycle.js
@@ -119,7 +165,7 @@ class LifecycleScripts {
     xsh.envPath.addToFront(Path.join(this._pkgDir, "node_modules/.bin"), env);
 
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
-    env.npm_execpath = fynCli;
+    env.npm_execpath = findFynCli();
     // npm (and bun) give a lifecycle script the absolute path of the manifest it is running
     // for.  Pack time scripts rely on it to tell which package they are packing - INIT_CWD
     // can't answer that, it's the invocation directory.  See FPM-77.

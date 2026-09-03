@@ -24,9 +24,9 @@ import fetch from "node-fetch-npm";
 import myPkg from "./mypkg";
 import { cleanErrorStack } from "@jchip/error";
 import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
+import { findFynCli } from "../lib/lifecycle-scripts";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
-import { fileURLToPath } from "url";
 import type { FynPackageJson, PackageJson } from "../lib/types";
 import {
   FETCH_META,
@@ -799,7 +799,10 @@ class FynCli {
 
     // Set additional npm environment variables to match lifecycle-scripts.js
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
-    env.npm_execpath = fileURLToPath(new URL("../bin/fyn.mjs", import.meta.url));
+    // not `new URL("../bin/fyn.mjs", import.meta.url)`: when fyn's bundle is embedded in
+    // another package's - fynpo inlines it - that is the host's directory, and the path it
+    // produces does not exist. findFynCli checks.
+    env.npm_execpath = findFynCli();
     env.INIT_CWD = this.fyn.cwd;
 
     // Only pass args to the main script, not pre/post scripts
