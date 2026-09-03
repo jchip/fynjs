@@ -13,8 +13,13 @@ const require = createRequire(import.meta.url);
 // fynpo runs against its local fyn dependency. The local @fynjs/run fixed that with an async
 // chalker loader, but this build stays off the task runner regardless.
 //
-// These three steps are plain commands with no task-runner semantics, so depending on a task
-// runner to sequence them only bought a failure mode. xrun-tasks.ts is still there for dev tasks.
+// These steps are plain commands with no task-runner semantics, so depending on a task runner to
+// sequence them only bought a failure mode. xrun-tasks.ts is still there for dev tasks.
+//
+// There used to be a `compile-yarn` babel step here, transpiling yarn's flow-typed lockfile
+// parser to CJS in yarn/lib. The sources are TypeScript now, so rolldown compiles them with the
+// rest of fyn and there is nothing to pre-build - which also means tests no longer depend on a
+// build artifact that .gitignore hides.
 //
 
 const bin = name => Path.resolve("node_modules/.bin", name);
@@ -25,8 +30,6 @@ const run = (label, cmd, args) => {
 };
 
 run("create-tgz", process.execPath, ["test/fixtures/mock-npm/create-tgz"]);
-
-run("compile-yarn", bin("babel"), ["yarn/src", "--out-dir", "yarn/lib"]);
 
 run("bundle", bin("rolldown"), ["-c", "rolldown.config.mjs"]);
 

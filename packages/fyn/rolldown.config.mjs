@@ -121,10 +121,10 @@ export default defineConfig({
   // `output.target` with "Invalid key: Expected never but received target" and carries on with
   // its default of `esnext`, so the target the config claimed was never actually applied.
   //
-  // node22 is the monorepo baseline (package.json engines: node >=22.12.0). The old webpack
-  // build transpiled down to node18, below what fyn actually supports.
+  // node22.12 is exactly the engines floor (package.json engines: node >=22.12.0). The old
+  // webpack build transpiled down to node18, below what fyn actually supports.
   transform: {
-    target: "node22"
+    target: "node22.12"
   },
   output: {
     file: "dist/fyn.mjs",

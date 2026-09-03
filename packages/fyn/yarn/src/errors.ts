@@ -1,12 +1,10 @@
-/* @flow */
-
 export class MessageError extends Error {
   constructor(msg: string, code?: string) {
     super(msg);
     this.code = code;
   }
 
-  code: ?string;
+  code?: string;
 }
 
 export class ProcessSpawnError extends MessageError {
@@ -15,14 +13,14 @@ export class ProcessSpawnError extends MessageError {
     this.process = process;
   }
 
-  process: ?string;
+  process?: string;
 }
 
 export class SecurityError extends MessageError {}
 
 export class ProcessTermError extends MessageError {
-  EXIT_CODE: ?number;
-  EXIT_SIGNAL: ?string;
+  EXIT_CODE?: number;
+  EXIT_SIGNAL?: string;
 }
 
 export class ResponseError extends Error {

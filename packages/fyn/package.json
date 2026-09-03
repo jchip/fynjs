@@ -11,9 +11,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "debug-test": "node --inspect-brk node_modules/.bin/vitest --extension ts,js,tsx,jsx,cjs,mjs test/spec",
-    "compile-yarn": "babel yarn/src --out-dir yarn/lib",
     "build": "node build.mjs",
-    "analyze": "ANALYZE_BUNDLE=1 xrun compile-yarn bundle",
+    "analyze": "ANALYZE_BUNDLE=1 xrun bundle",
     "coverage": "vitest run --coverage",
     "ci:check": "vitest run --coverage",
     "coveralls": "cat coverage/lcov.info | coveralls",
@@ -123,10 +122,6 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.16.0",
-    "@babel/core": "^7.16.0",
-    "@babel/preset-env": "^7.2.0",
-    "@babel/preset-flow": "^7.16.0",
     "@fynjs/run": "^1.0.1",
     "@vitest/coverage-v8": "^4.1.11",
     "@vitest/ui": "^4.1.11",

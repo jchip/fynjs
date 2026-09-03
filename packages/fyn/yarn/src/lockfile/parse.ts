@@ -1,13 +1,12 @@
-/* @flow */
 /* eslint quotes: 0 */
 
 import util from "util";
 import invariant from "invariant";
 import stripBOM from "strip-bom";
 
-import { LOCKFILE_VERSION } from "../constants.js";
-import { MessageError } from "../errors.js";
-import map from "../util/map.js";
+import { LOCKFILE_VERSION } from "../constants";
+import { MessageError } from "../errors";
+import map from "../util/map";
 
 import Yaml from "yamljs";
 
@@ -15,7 +14,7 @@ type Token = {
   line: number,
   col: number,
   type: string,
-  value: boolean | number | string | void
+  value: boolean | number | string | undefined
 };
 
 export type ParseResultType = "merge" | "success" | "conflict";
@@ -47,7 +46,7 @@ function isValidPropValueToken(token): boolean {
   return VALID_PROP_VALUE_TOKENS.indexOf(token.type) >= 0;
 }
 
-function* tokenise(input: string): Iterator<Token> {
+function* tokenise(input: string): Generator<Token> {
   let lastNewline = false;
   let line = 1;
   let col = 0;
@@ -173,7 +172,7 @@ class Parser {
 
   fileLoc: string;
   token: Token;
-  tokens: Iterator<Token>;
+  tokens: Generator<Token>;
   comments: Array<string>;
 
   onComment(token: Token) {
