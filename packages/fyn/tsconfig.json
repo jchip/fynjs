@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    // fyn is bundled by rolldown (`node build.mjs`), so tsc's only job here is checking.
+    "noEmit": true,
+
+    // Match how rolldown actually resolves this code: extensionless relative imports, and
+    // `import.meta` in the modules that use it. Verified to produce zero TS2307.
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+
+    // TypeScript 7 turns `strict` on by default; the rest of the monorepo has always run
+    // without it. Pinned off explicitly so fyn matches its siblings rather than silently
+    // inheriting a different bar - it is the difference between 242 and 584 errors here.
+    // Turning it on is worthwhile, but it is its own piece of work.
+    "strict": false,
+
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "importHelpers": false,
+    "forceConsistentCasingInFileNames": true,
+    "alwaysStrict": true,
+    "types": ["node"]
+  },
+  // `yarn/` is a vendored copy of yarn 1's lockfile parser, reached from lib/fyn.ts. tsc
+  // follows the import regardless of this list, so its 13 errors are part of the baseline;
+  // they are not fyn's code to fix.
+  "include": ["lib"]
+}
