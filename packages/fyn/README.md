@@ -149,29 +149,49 @@ Packages pulled from other sources — `github:`, git URLs (`git+https`, `git+ss
 and `fyn` prints a warning showing how to allow them.
 
 To allow specific scripts for such a package, add a `fyn.allowScripts` map to your
-`package.json`. Each key is `name@<spec-or-version>` and the value is the list of
-allowed script names:
+`package.json`. Each key is a package name and each value says which versions and
+which scripts are approved:
 
 ```json
 {
   "fyn": {
     "allowScripts": {
-      "foo@github:user/foo#v1": ["install", "postinstall"],
-      "bar@2.3.0": ["preinstall"]
+      "sharp": { "semver": "^0.34.4", "scripts": ["install"] },
+      "esbuild": { "semver": "^0.28.2 || ^0.29.0" },
+      "canvas": { "scripts": ["install"] },
+      "lodash": {},
+      "malware": false
     }
   }
 }
 ```
 
-- The key matches the original dependency spec (e.g. `foo@github:user/foo#v1`), the
-  resolved version (e.g. `bar@2.3.0`), or the bare package name (e.g. `bar`).
-- Script names are matched case-insensitively.
-- Use `["*"]` (or `true`) as the value to allow all lifecycle scripts for that package.
-- A version or range as the value — `"5.0.1"`, `"^5.0.0"` — allows all lifecycle scripts,
-  but only for a matching resolved version. This is npm's form.
-- `false` **denies** a package outright. A denial wins over everything: another key that
-  matches the same package, `allowTopLevelScripts`, an `approve --all`, and an approval in a
-  wider scope. Removing the `false` is the only way to undo it.
+- **`semver`** — approved only for versions matching this range. Omit it to approve
+  every version. A union works: `"^0.28.2 || ^0.29.0"`.
+- **`scripts`** — approved only for these lifecycle scripts. Omit it to approve all
+  of them. Script names are matched case-insensitively.
+- So `esbuild` above is "those two release lines, any script", `canvas` is "any
+  version, `install` only", and `lodash` is "any version, any script".
+- **`false`** denies a package outright. A denial wins over everything: any other
+  entry matching the same package, `allowTopLevelScripts`, an `approve --all`, and
+  an approval in a wider scope. Removing the `false` is the only way to undo it.
+
+This is the form `fyn install-scripts approve` writes. Several older and shorter
+forms are still read, so a hand-written or npm-written allowlist keeps working:
+
+| entry | means |
+|---|---|
+| `"sharp": true` / `"sharp": "*"` | any version, any script |
+| `"sharp": ["install"]` / `"sharp": "install"` | any version, those scripts |
+| `"sharp": "0.34.4"` / `"sharp": "^0.34.0"` | matching versions, any script — npm's form |
+| `"sharp@^0.34.0": ["install"]` | the range in the key, those scripts |
+| `"foo@github:user/foo#v1": ["install"]` | matched against the requested spec |
+
+A range in the key is matched against the **resolved version**, so `sharp@^0.34.0`
+covers `0.34.4`. A key whose spec is not a semver range — a `github:`/git/URL spec —
+is matched literally against what the dependency asked for, since there is no
+version to range over. When a key and its value both carry a version constraint,
+both have to be satisfied.
 
 #### Trusting direct dependencies (`fyn.allowTopLevelScripts`)
 
@@ -280,10 +300,13 @@ fyn install-scripts prune              # drop entries for packages no longer ins
 `ls` reads what the last install recorded, so run `fyn install` (optionally with
 `--allow-scripts-pending`) first.
 
-`approve` pins to the version it reviewed — `"sharp@0.34.4": ["install"]` — so a later release
-comes back for review, and it approves only the scripts the package actually has.
-`--no-allow-scripts-pin` writes a bare name instead. In a fynpo repo it writes to the root
-`fynpo.json`; `--local` writes to the package's own `package.json`.
+`approve` scopes what it writes to the release line it reviewed —
+`"sharp": { "semver": "^0.34.4", "scripts": ["install"] }` — and to the scripts the package
+actually has, so a jump past that range, or a release that later adds a `preinstall`, comes
+back for review. Approving a second version widens that one entry's `semver` into a union
+rather than adding a near-duplicate. `--no-allow-scripts-pin` omits `semver`, approving every
+version. In a fynpo repo it writes to the root `fynpo.json`; `--local` writes to the package's
+own `package.json`.
 
 Approving does not run anything retroactively — run `fyn install` afterwards.
 

@@ -157,6 +157,9 @@ Keep `fyn.allowScripts` and accept npm's value forms alongside fyn's:
 | `"5.0.1"` | all scripts, only this version | npm |
 | `false` | explicit denial, wins over everything | **new**, from npm |
 
+> As built, this grew a fifth form — `{ semver, scripts }`, each field optional — which is what
+> `approve` writes. See *What shipped* for why. Every form in this table is still read.
+
 `false` is the one genuinely missing primitive. `normalizeAllowEntry` currently treats any
 non-`true` non-string as absent, so a `false` is silently ignored rather than denying — and
 "denial survives a blanket approve" is the property that makes an `--all` workflow safe at all.
@@ -360,11 +363,34 @@ Three decisions the build had to make that the design left implicit:
   package.json is being installed. The four script-policy keys are excluded from that generic
   merge entirely, because they have their own rules: allowlists union across scopes with a
   denial final, and the mode may only be tightened by a package.
-- **`approve` writes fyn's narrow form, not npm's blanket one.** npm's `"pkg": "1.2.3"` approves
-  every script of that version; fyn writes `"pkg@1.2.3": ["postinstall"]`, approving the same
-  version but only the scripts the package actually has, so a later release that adds a
-  `preinstall` comes back for review. `--no-allow-scripts-pin` drops the version from the key.
-  Both npm forms are still *accepted* on the way in.
+- **The entry shape is an object, keyed by bare package name.** An approval carries two
+  independent constraints, and putting them both in the key (`pkg@^1.2.3`) makes the key do two
+  jobs: it has to be re-parsed to find the package name — around the `@` of a scope — and
+  widening a range means deleting one key and adding another. So fyn writes
+
+  ```json
+  { "sharp": { "semver": "^0.34.4", "scripts": ["install"] } }
+  ```
+
+  with **either field optional**: no `semver` approves every version, no `scripts` approves
+  every install script. One package is one entry, and approving a second version widens that
+  entry's `semver` into `"^0.34.4 || ^1.0.0"` rather than adding a near-duplicate.
+
+  The cost is that a single entry cannot say "these scripts for that range, those for this one";
+  when two approvals differ, both the range and the script list are unioned. That is a real
+  loosening, and it is the price of one entry per package.
+
+  Everything else is still *read* — `true`, `"install"`, `["install"]`, npm's `"1.2.3"`, and a
+  range or spec in the key. A key's range is matched against the resolved version, so
+  `sharp@^0.34.0` covers `0.34.4`; a key spec that is not a semver range (`github:user/repo#v1`)
+  is matched literally against the requested spec, since there is no version to range over. That
+  range matching is new — key lookup used to be exact — and it is what makes the hand-written
+  forms behave the way anyone would expect.
+
+- **Approvals are scoped to a release line, not pinned to one version.** `approve` writes
+  `^<reviewed version>`, so patches within the line do not churn the allowlist, and a jump past
+  it comes back for review. `--no-allow-scripts-pin` omits `semver` entirely. An exact pin is
+  still expressible by hand — `{ "semver": "0.34.4" }` — it is just not what `approve` writes.
 - **`--allow-scripts-pending` answers the review question without switching to it.** The
   installer evaluates each package a second time under `"review"` and records what would need
   approval, while the install still runs under the mode in effect. That is stage 2 of the

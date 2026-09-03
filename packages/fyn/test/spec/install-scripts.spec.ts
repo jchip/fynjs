@@ -45,27 +45,52 @@ describe("install-scripts", function () {
   });
 
   describe("approveEntries", function () {
-    it("writes a version-pinned key with only the blocked scripts", () => {
+    it("writes one entry per package, scoped to the reviewed release line", () => {
       const { allowScripts, approved } = approveEntries({}, [mkRecord()]);
-      expect(allowScripts).to.deep.equal({ "sharp@0.34.4": ["install"] });
-      expect(approved).to.deep.equal(["sharp@0.34.4"]);
+      expect(allowScripts).to.deep.equal({
+        sharp: { semver: "^0.34.4", scripts: ["install"] }
+      });
+      expect(approved).to.deep.equal(["sharp"]);
     });
 
-    it("writes a bare name when pinning is off", () => {
+    it("covers every version when pinning is off", () => {
       const { allowScripts } = approveEntries({}, [mkRecord()], { pin: false });
-      expect(allowScripts).to.deep.equal({ sharp: ["install"] });
+      expect(allowScripts).to.deep.equal({ sharp: { scripts: ["install"] } });
     });
 
     it("does not undo an existing denial", () => {
       const { allowScripts, approved, skipped } = approveEntries({ sharp: false }, [mkRecord()]);
       expect(allowScripts).to.deep.equal({ sharp: false });
       expect(approved).to.deep.equal([]);
-      expect(skipped).to.deep.equal(["sharp@0.34.4"]);
+      expect(skipped).to.deep.equal(["sharp"]);
     });
 
-    it("unions with scripts already approved for the same key", () => {
-      const { allowScripts } = approveEntries({ "sharp@0.34.4": ["postinstall"] }, [mkRecord()]);
-      expect(allowScripts["sharp@0.34.4"]).to.deep.equal(["postinstall", "install"]);
+    it("does not undo a denial written under a ranged key", () => {
+      const { approved, skipped } = approveEntries({ "sharp@^0.34.0": false }, [mkRecord()]);
+      expect(approved).to.deep.equal([]);
+      expect(skipped).to.deep.equal(["sharp"]);
+    });
+
+    it("widens the semver of an entry it already wrote", () => {
+      const first = approveEntries({}, [mkRecord()]).allowScripts;
+      const { allowScripts } = approveEntries(first, [mkRecord({ version: "1.0.0" })]);
+      expect(allowScripts.sharp).to.deep.equal({
+        semver: "^0.34.4 || ^1.0.0",
+        scripts: ["install"]
+      });
+    });
+
+    it("unions with scripts already approved for the same package", () => {
+      const { allowScripts } = approveEntries(
+        { sharp: { semver: "^0.34.4", scripts: ["postinstall"] } },
+        [mkRecord()]
+      );
+      expect(allowScripts.sharp.scripts).to.deep.equal(["install", "postinstall"]);
+    });
+
+    it("merges into an entry written in npm's form", () => {
+      const { allowScripts } = approveEntries({ sharp: "0.33.0" }, [mkRecord()]);
+      expect(allowScripts.sharp).to.deep.equal({ semver: "0.33.0 || ^0.34.4" });
     });
 
     it("leaves the input map alone", () => {
@@ -167,10 +192,12 @@ describe("install-scripts", function () {
       const fyn = mkFyn({ _fynpo: { dir }, blockedScripts: [mkRecord()] });
       const cmd = new InstallScripts({ fyn });
 
-      expect(await cmd.approve(["sharp"])).to.deep.equal(["sharp@0.34.4"]);
+      expect(await cmd.approve(["sharp"])).to.deep.equal(["sharp"]);
 
       const written = JSON.parse(Fs.readFileSync(Path.join(dir, "fynpo.json"), "utf8"));
-      expect(written.fyn.options.allowScripts).to.deep.equal({ "sharp@0.34.4": ["install"] });
+      expect(written.fyn.options.allowScripts).to.deep.equal({
+        sharp: { semver: "^0.34.4", scripts: ["install"] }
+      });
       // the rest of the config is untouched
       expect(written.fyn.options.layout).to.equal("detail");
       expect(written.packages).to.deep.equal(["packages/*"]);
@@ -185,7 +212,9 @@ describe("install-scripts", function () {
       await new InstallScripts({ fyn }).approve(["sharp"], { local: true });
 
       const written = JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8"));
-      expect(written.fyn.allowScripts).to.deep.equal({ "sharp@0.34.4": ["install"] });
+      expect(written.fyn.allowScripts).to.deep.equal({
+        sharp: { semver: "^0.34.4", scripts: ["install"] }
+      });
       expect(written.name).to.equal("app");
     });
 
@@ -196,7 +225,7 @@ describe("install-scripts", function () {
         pendingScripts: [mkRecord({ name: "canvas", version: "5.0.1" })]
       });
       const approved = await new InstallScripts({ fyn }).approve([], { all: true });
-      expect(approved.sort()).to.deep.equal(["canvas@5.0.1", "sharp@0.34.4"]);
+      expect(approved.sort()).to.deep.equal(["canvas", "sharp"]);
     });
 
     it("deny writes false and approve then leaves it alone", async () => {
@@ -220,25 +249,30 @@ describe("install-scripts", function () {
         Path.join(dir, "package.json"),
         JSON.stringify({
           name: "app",
-          fyn: { allowScripts: { "sharp@0.34.4": ["install"], "gone@1.0.0": true } }
+          fyn: {
+            allowScripts: {
+              sharp: { semver: "^0.34.4", scripts: ["install"] },
+              "gone@1.0.0": true
+            }
+          }
         })
       );
       const fyn = mkFyn({ loadFvVersions: async () => ({ sharp: ["0.34.4"] }) });
       expect(await new InstallScripts({ fyn }).prune()).to.deep.equal(["gone@1.0.0"]);
       expect(
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ "sharp@0.34.4": ["install"] });
+      ).to.deep.equal({ sharp: { semver: "^0.34.4", scripts: ["install"] } });
     });
 
     it("prune refuses when nothing is installed, rather than clearing the list", async () => {
       Fs.writeFileSync(
         Path.join(dir, "package.json"),
-        JSON.stringify({ name: "app", fyn: { allowScripts: { "sharp@0.34.4": ["install"] } } })
+        JSON.stringify({ name: "app", fyn: { allowScripts: { sharp: { semver: "^0.34.4" } } } })
       );
       expect(await new InstallScripts({ fyn: mkFyn() }).prune()).to.deep.equal([]);
       expect(
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ "sharp@0.34.4": ["install"] });
+      ).to.deep.equal({ sharp: { semver: "^0.34.4" } });
     });
 
     it("ls lists what the last install blocked and what is pending", async () => {

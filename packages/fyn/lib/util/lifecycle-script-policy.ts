@@ -49,6 +49,38 @@ export const SCRIPT_POLICY_MODES = ["source", "review", "off"];
 export const DEFAULT_SCRIPT_POLICY = "source";
 
 /**
+ * Split a range union into its parts. Accepts npm's `||` and the single `|` a
+ * hand-written config may use.
+ *
+ * @param {string} range a semver range, possibly a union
+ * @returns {string[]} the parts, trimmed
+ */
+export function splitRange(range) {
+  return String(range)
+    .split(/\s*\|\|?\s*/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Read an allowScripts key's spec as a semver range.
+ *
+ * A key's spec is a range (`^1.2.3`, `1.2.3`, `^1.2.3 || ^2.0.0`) or it is not
+ * a range at all - a git/URL spec such as `github:user/repo#v1`, which matches
+ * the requested spec literally instead.
+ *
+ * @param {string} spec the part of the key after the package name
+ * @returns {(string|undefined)} the range in `||` form, or undefined
+ */
+export function asRange(spec) {
+  if (!spec) {
+    return undefined;
+  }
+  const normalized = splitRange(spec).join(" || ");
+  return Semver.validRange(normalized) ? normalized : undefined;
+}
+
+/**
  * Normalize a `fyn.scriptPolicy` value.
  *
  * @param {*} mode the configured value
@@ -278,9 +310,17 @@ function classifyStringEntry(value) {
 }
 
 /**
- * Fold a single allowScripts entry value into an accumulator. Accepts an array
- * of script names, a single script name, a version pin, the wildcard
- * `true`/`"*"` to allow all scripts, or `false` to deny outright.
+ * Fold a single allowScripts entry value into an accumulator.
+ *
+ * Every form is accepted, though fyn only ever writes the object one:
+ *
+ * | value | meaning |
+ * |---|---|
+ * | `{ semver, scripts }` | fyn's form - either field absent means "all" |
+ * | `true` / `"*"` | all install scripts |
+ * | `["install"]` / `"install"` | only those scripts |
+ * | `"1.2.3"` / `"^1.2.3"` | npm's form - all scripts, only matching versions |
+ * | `false` | denied outright |
  *
  * @param {(string[]|string|boolean)} value the allowScripts entry value
  * @param {{allowAll:boolean, scripts:Set<string>, denied:boolean}} acc
@@ -300,6 +340,23 @@ function normalizeAllowEntry(value, acc, ctx = {}) {
   if (value === true || value === "*") {
     acc.allowAll = true;
     return acc;
+  }
+
+  // the form fyn writes: { semver, scripts }, each optional. An absent `semver`
+  // covers every version, an absent `scripts` covers every install script.
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const range = asRange(value.semver);
+
+    if (value.semver && !(range && ctx.version && semverUtil.satisfies(ctx.version, range))) {
+      return acc;
+    }
+
+    if (value.scripts === undefined) {
+      acc.allowAll = true;
+      return acc;
+    }
+
+    return normalizeAllowEntry(value.scripts, acc, ctx);
   }
 
   let list = [];
@@ -329,26 +386,85 @@ function normalizeAllowEntry(value, acc, ctx = {}) {
   return acc;
 }
 
+// Index of an allowScripts map by package name, so matching does not rescan
+// every entry for every resolved package. Keyed on the map itself, which the
+// `Fyn.allowScripts` getter caches.
+const allowIndexCache = new WeakMap();
+
 /**
- * Fold any matching `fyn.allowScripts` entries (by spec, resolved-version, or
- * bare-name key) into the accumulator.
+ * Group an allowScripts map by package name, parsing each key once.
  *
- * @param {string[]} keys candidate keys from {@link makeAllowKeys}
+ * @param {object} allowScripts the map
+ * @returns {Map<string, object[]>} entries by package name
+ */
+export function indexAllowScripts(allowScripts) {
+  if (!allowScripts) {
+    return new Map();
+  }
+
+  const cached = allowIndexCache.get(allowScripts);
+  if (cached) {
+    return cached;
+  }
+
+  const index = new Map();
+
+  for (const key of Object.keys(allowScripts)) {
+    // `@scope/name@spec` - the separator is the `@` after the scope
+    const at = key.indexOf("@", key.startsWith("@") ? 1 : 0);
+    const name = at < 0 ? key : key.slice(0, at);
+    const spec = at < 0 ? undefined : key.slice(at + 1);
+
+    const entries = index.get(name) || [];
+    entries.push({ key, spec, range: asRange(spec), value: allowScripts[key] });
+    index.set(name, entries);
+  }
+
+  allowIndexCache.set(allowScripts, index);
+  return index;
+}
+
+/**
+ * Fold every `fyn.allowScripts` entry that matches this package into the
+ * accumulator.
+ *
+ * A key matches when it is the bare package name (every version), when its
+ * spec is a semver range the resolved version satisfies (`sharp@^0.34.0`,
+ * `sharp@^0.34.0 || ^0.35.0`), or - for a git/URL dependency, where there is no
+ * version to range over - when its spec is literally the requested spec.
+ *
+ * @param {object} depInfo resolved package data
  * @param {object} allowScripts the project's `fyn.allowScripts` map
  * @param {{allowAll:boolean, scripts:Set<string>, denied:boolean}} acc
  *   accumulator to fold into
  * @param {object} [ctx] matching context passed to {@link normalizeAllowEntry}
  * @returns {(string|undefined)} the first matched key, if any
  */
-function foldAllowScripts(keys, allowScripts, acc, ctx) {
+function foldAllowScripts(depInfo, allowScripts, acc, ctx) {
+  const entries = indexAllowScripts(allowScripts).get(depInfo.name);
+
+  if (!entries) {
+    return undefined;
+  }
+
+  const depItem = depInfo[DEP_ITEM];
+  const requestedSpec = (depItem && depItem.semver) || depInfo[SEMVER];
   let matchedKey;
-  for (const key of keys) {
-    const value = allowScripts && allowScripts[key];
-    if (value !== undefined) {
-      if (!matchedKey) matchedKey = key;
-      normalizeAllowEntry(value, acc, ctx);
+
+  for (const entry of entries) {
+    const matched =
+      entry.spec === undefined ||
+      entry.spec === requestedSpec ||
+      (entry.range !== undefined &&
+        Boolean(depInfo.version) &&
+        semverUtil.satisfies(depInfo.version, entry.range));
+
+    if (matched) {
+      if (!matchedKey) matchedKey = entry.key;
+      normalizeAllowEntry(entry.value, acc, ctx);
     }
   }
+
   return matchedKey;
 }
 
@@ -399,7 +515,7 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
   }
 
   const acc = { allowAll: false, scripts: new Set(), denied: false };
-  const matchedKey = foldAllowScripts(keys, allowScripts, acc, { version: depInfo.version });
+  const matchedKey = foldAllowScripts(depInfo, allowScripts, acc, { version: depInfo.version });
   const key = matchedKey || keys[0];
 
   if (acc.denied) {

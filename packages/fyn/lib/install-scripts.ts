@@ -7,6 +7,7 @@ import logger from "./logger";
 import {
   dedupeBlockedRecords,
   allowScriptsKey,
+  mergeAllowEntry,
   blockedReasonText
 } from "./util/script-policy-report";
 
@@ -42,10 +43,13 @@ export function parseAllowKey(key) {
  * decision someone made, and an approve - `--all` included - must not quietly
  * undo it.
  *
+ * One package is one entry, keyed by its bare name, so approving a second
+ * version widens the entry's `semver` instead of adding a near-duplicate key.
+ *
  * @param {object} allowScripts the current map
  * @param {object[]} records packages to approve, as blocked-scripts records
  * @param {object} [options] options
- * @param {boolean} [options.pin] pin each approval to the resolved version
+ * @param {boolean} [options.pin] scope each approval to the reviewed version
  * @returns {{allowScripts:object, approved:string[], skipped:string[]}} result
  */
 export function approveEntries(allowScripts, records, { pin = true } = {}) {
@@ -54,15 +58,20 @@ export function approveEntries(allowScripts, records, { pin = true } = {}) {
   const skipped = [];
 
   for (const record of records) {
-    const key = allowScriptsKey(record, pin);
+    const key = allowScriptsKey(record);
 
-    if (updated[key] === false || allowScripts[record.name] === false) {
+    // a denial may have been written under a ranged key by hand; it still wins
+    // when the policy is evaluated, so approve must not look like it worked
+    const denied = Object.keys(updated).some(
+      k => updated[k] === false && parseAllowKey(k).name === record.name
+    );
+
+    if (denied) {
       skipped.push(key);
       continue;
     }
 
-    const existing = Array.isArray(updated[key]) ? updated[key] : [];
-    updated[key] = [...new Set([...existing, ...record.scripts])];
+    updated[key] = mergeAllowEntry(updated[key], record, pin);
     approved.push(key);
   }
 

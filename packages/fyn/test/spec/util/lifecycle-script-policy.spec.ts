@@ -444,4 +444,80 @@ describe("lifecycle-script-policy", function() {
       expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
     });
   });
+
+  describe("key and value forms", function () {
+    /**
+     * @param {object} allowScripts the allowlist
+     * @param {object} [dep] depInfo overrides
+     * @returns {object} the policy for sharp@0.34.4 under review mode
+     */
+    const review = (allowScripts, dep = {}) =>
+      evaluateScriptPolicy(
+        mkDep({ name: "sharp", version: "0.34.4", spec: "^0.34.0", ...dep }),
+        allowScripts,
+        { mode: "review" }
+      );
+
+    it("matches a bare-name key against every version", () => {
+      expect(isScriptAllowed(review({ sharp: ["install"] }), "install")).to.equal(true);
+    });
+
+    it("matches a range in the key against the resolved version", () => {
+      expect(isScriptAllowed(review({ "sharp@^0.34.0": ["install"] }), "install")).to.equal(true);
+      expect(isScriptAllowed(review({ "sharp@^0.33.0": ["install"] }), "install")).to.equal(false);
+    });
+
+    it("matches a range union in the key, with either pipe form", () => {
+      const both = { "sharp@^0.33.0 || ^0.34.0": ["install"] };
+      const single = { "sharp@^0.33.0 | ^0.34.0": ["install"] };
+      expect(isScriptAllowed(review(both), "install")).to.equal(true);
+      expect(isScriptAllowed(review(single), "install")).to.equal(true);
+    });
+
+    it("still matches a git spec literally, where there is no version to range over", () => {
+      const dep = mkDep({
+        name: "foo",
+        version: "1.0.0",
+        spec: "github:user/foo#v1",
+        urlType: "github"
+      });
+      const policy = evaluateScriptPolicy(dep, { "foo@github:user/foo#v1": ["install"] });
+      expect(isScriptAllowed(policy, "install")).to.equal(true);
+    });
+
+    it("reads the object form, with both fields optional", () => {
+      expect(
+        isScriptAllowed(review({ sharp: { semver: "^0.34.0", scripts: ["install"] } }), "install")
+      ).to.equal(true);
+      // wrong version
+      expect(
+        isScriptAllowed(review({ sharp: { semver: "^0.33.0", scripts: ["install"] } }), "install")
+      ).to.equal(false);
+      // wrong script
+      expect(
+        isScriptAllowed(review({ sharp: { semver: "^0.34.0", scripts: ["install"] } }), "postinstall")
+      ).to.equal(false);
+      // no semver - every version; no scripts - every script
+      expect(isScriptAllowed(review({ sharp: { scripts: ["install"] } }), "install")).to.equal(true);
+      expect(isScriptAllowed(review({ sharp: { semver: "^0.34.0" } }), "postinstall")).to.equal(true);
+      expect(isScriptAllowed(review({ sharp: {} }), "postinstall")).to.equal(true);
+    });
+
+    it("applies both constraints when the key and the value each carry one", () => {
+      const allow = { "sharp@^0.34.0": { semver: "^0.34.4", scripts: ["install"] } };
+      expect(isScriptAllowed(review(allow), "install")).to.equal(true);
+      expect(isScriptAllowed(review(allow, { version: "0.34.1" }), "install")).to.equal(false);
+    });
+
+    it("keeps reading npm's value form", () => {
+      expect(isScriptAllowed(review({ sharp: "0.34.4" }), "postinstall")).to.equal(true);
+      expect(isScriptAllowed(review({ sharp: "0.33.0" }), "postinstall")).to.equal(false);
+    });
+
+    it("lets a denial under any matching key win", () => {
+      expect(
+        isScriptAllowed(review({ "sharp@^0.34.0": false, sharp: { scripts: ["install"] } }), "install")
+      ).to.equal(false);
+    });
+  });
 });

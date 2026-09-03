@@ -1,5 +1,7 @@
 // @ts-nocheck
 import chalk from "chalk";
+import { LIFECYCLE_SCRIPTS, splitRange, asRange } from "./lifecycle-script-policy";
+import * as semverUtil from "./semver";
 
 //
 // Reporting for packages whose install scripts the lifecycle-script policy
@@ -35,20 +37,174 @@ export function makeBlockedRecord(depInfo, policy, blocked) {
 }
 
 /**
- * The allowScripts key to suggest for a record.
+ * The allowScripts key to write for a record: always the bare package name.
  *
- * Pinning to the reviewed version is the default, as it is in npm: a later
- * release is code nobody has read yet, so it should come back for review.
+ * The constraints live in the value, so one package is one entry however many
+ * versions and scripts it accumulates - see {@link makeAllowEntry}.
  *
  * @param {object} record a blocked-scripts record
- * @param {boolean} [pin] whether to pin the approval to the resolved version
  * @returns {string} the allowScripts key
  */
-export function allowScriptsKey(record, pin = true) {
-  if (!pin) {
-    return record.name;
+export function allowScriptsKey(record) {
+  return record.name;
+}
+
+/**
+ * The allowScripts value fyn writes: `{ semver, scripts }`, with either field
+ * omitted when it would not narrow anything.
+ *
+ * Pinned (the default) `semver` is a caret range of the reviewed version, so
+ * the approval follows that release line and a jump past it comes back for
+ * review. Unpinned there is no `semver`, which covers every version. `scripts`
+ * is omitted when every install script is approved.
+ *
+ * @param {object} record a blocked-scripts record
+ * @param {boolean} [pin] whether to scope the approval to the reviewed version
+ * @returns {object} the allowScripts value
+ */
+export function makeAllowEntry(record, pin = true) {
+  const entry = {};
+
+  if (pin && record.version) {
+    entry.semver = caretRange(record.version);
   }
-  return record.version ? `${record.name}@${record.version}` : record.key || record.name;
+
+  const scripts = normalizeScriptsValue(record.scripts);
+  if (scripts.length > 0 && scripts[0] !== "*") {
+    entry.scripts = scripts;
+  }
+
+  return entry;
+}
+
+/**
+ * Fold a record into an entry a previous approval already wrote.
+ *
+ * One key per package means a second version widens `semver` rather than adding
+ * a near-duplicate key. When the two approvals cover different scripts the
+ * union is taken - with a single entry there is nowhere to record "these
+ * scripts for that range, those for this one".
+ *
+ * @param {*} existing the value already in the map, any accepted form
+ * @param {object} record a blocked-scripts record
+ * @param {boolean} [pin] whether to scope the approval to the reviewed version
+ * @returns {object} the merged entry
+ */
+export function mergeAllowEntry(existing, record, pin = true) {
+  const added = makeAllowEntry(record, pin);
+
+  if (existing === undefined) {
+    return added;
+  }
+
+  const prior = toAllowEntry(existing);
+  const entry = {};
+
+  // an existing entry with no semver already covers every version
+  if (prior.semver !== undefined && added.semver !== undefined) {
+    entry.semver = addVersionToRange(prior.semver, record.version);
+  }
+
+  if (prior.scripts !== undefined && added.scripts !== undefined) {
+    const scripts = normalizeScriptsValue([...prior.scripts, ...added.scripts]);
+    if (scripts[0] !== "*") {
+      entry.scripts = scripts;
+    }
+  }
+
+  return entry;
+}
+
+/**
+ * Read any accepted allowScripts value as the object form, so a map written by
+ * hand - or by npm - can be merged into.
+ *
+ * @param {*} value an allowScripts value
+ * @returns {object} the value as `{ semver?, scripts? }`
+ */
+export function toAllowEntry(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+
+  if (value === true || value === "*" || value === undefined) {
+    return {};
+  }
+
+  const list = Array.isArray(value) ? value : [value];
+  const strings = list.filter(item => typeof item === "string");
+
+  // npm's `"pkg": "1.2.3"` - a version constraint, all scripts
+  if (strings.length === 1 && !LIFECYCLE_SCRIPTS.includes(strings[0].toLowerCase())) {
+    const range = asRange(strings[0]);
+    if (range) {
+      return { semver: range };
+    }
+  }
+
+  const scripts = normalizeScriptsValue(strings);
+  return scripts[0] === "*" ? {} : { scripts };
+}
+
+/**
+ * The range an approval of one reviewed version covers.
+ *
+ * @param {string} version the resolved version
+ * @returns {string} a caret range, or the version itself when it is not semver
+ */
+export function caretRange(version) {
+  const clean = semverUtil.unlocalify(String(version));
+  return asRange(`^${clean}`) ? `^${clean}` : clean;
+}
+
+/**
+ * Widen a range so it also covers a version, leaving it alone when it already
+ * does. This is how a second approval of the same package becomes
+ * `pkg@^1.2.3 || ^2.0.0` instead of a second key.
+ *
+ * @param {string} range the existing range
+ * @param {string} version the version to cover
+ * @returns {string} the range
+ */
+export function addVersionToRange(range, version) {
+  const parts = splitRange(range);
+  const added = caretRange(version);
+
+  if (parts.includes(added) || parts.some(part => semverUtil.satisfies(version, part))) {
+    return parts.join(" || ");
+  }
+
+  return [...parts, added].join(" || ");
+}
+
+/**
+ * Normalize a list of script names into the value fyn writes: `["*"]` when it
+ * covers every install script, otherwise the names in lifecycle order.
+ *
+ * @param {(string[]|string|boolean)} scripts script names, or a wildcard
+ * @returns {string[]} the value to write
+ */
+export function normalizeScriptsValue(scripts) {
+  const list = Array.isArray(scripts) ? scripts : scripts === undefined ? [] : [scripts];
+  const names = new Set(list.map(name => String(name).toLowerCase()));
+
+  if (names.has("*") || names.has("true") || LIFECYCLE_SCRIPTS.every(name => names.has(name))) {
+    return ["*"];
+  }
+
+  const known = LIFECYCLE_SCRIPTS.filter(name => names.has(name));
+  const extra = [...names].filter(name => !LIFECYCLE_SCRIPTS.includes(name));
+
+  return [...known, ...extra];
+}
+
+/**
+ * @param {string[]} a a normalized scripts value
+ * @param {string[]} b a normalized scripts value
+ * @returns {boolean} whether they grant the same scripts
+ */
+export function sameScriptsValue(a, b) {
+  return a.length === b.length && a.every((name, i) => name === b[i]);
 }
 
 /**
@@ -65,12 +221,14 @@ export function allowScriptsKey(record, pin = true) {
  * @returns {object} an allowScripts map
  */
 export function buildAllowScriptsPatch(records, { pin = true } = {}) {
-  return records.reduce((patch, record) => {
-    const key = allowScriptsKey(record, pin);
-    const scripts = new Set([...(patch[key] || []), ...record.scripts]);
-    patch[key] = [...scripts];
-    return patch;
-  }, {});
+  const patch = {};
+
+  for (const record of records) {
+    const key = allowScriptsKey(record);
+    patch[key] = mergeAllowEntry(patch[key], record, pin);
+  }
+
+  return patch;
 }
 
 /**
