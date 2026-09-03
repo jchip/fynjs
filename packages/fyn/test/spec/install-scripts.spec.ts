@@ -195,6 +195,7 @@ describe("install-scripts", function () {
      */
     const mkFyn = (over: any = {}) => ({
       cwd: dir,
+      getOutputDir: () => Path.join(dir, "node_modules"),
       allowScriptsPin: true,
       allowScripts: {},
       denyScripts: {},
@@ -403,6 +404,66 @@ describe("install-scripts", function () {
       // and it names the way out
       expect(caught?.message).to.include("--script-policy=source");
       expect(caught?.message).to.include("fyn install-scripts approve");
+    });
+  
+    it("prune keeps approvals for packages hoisted into node_modules", async () => {
+      // FPM-89: the installed set used to be `.f/_` alone, which under the
+      // hoisted layout holds only the versions that needed isolating - so every
+      // hoisted package looked uninstalled and lost its approval
+      const nm = Path.join(dir, "node_modules");
+      Fs.mkdirSync(Path.join(nm, "hoisted"), { recursive: true });
+      Fs.mkdirSync(Path.join(nm, "@scope", "scoped"), { recursive: true });
+      Fs.mkdirSync(Path.join(nm, ".f", "_", "isolated"), { recursive: true });
+
+      Fs.writeFileSync(
+        Path.join(dir, "package.json"),
+        JSON.stringify({
+          name: "app",
+          fyn: {
+            allowScripts: {
+              hoisted: {},
+              "@scope/scoped": {},
+              isolated: {},
+              gone: {}
+            }
+          }
+        })
+      );
+
+      const fyn = mkFyn({ loadFvVersions: async () => ({ isolated: ["1.0.0"] }) });
+      expect(await new InstallScripts({ fyn }).prune()).to.deep.equal(["gone"]);
+
+      const written = JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8"));
+      expect(Object.keys(written.fyn.allowScripts).sort()).to.deep.equal([
+        "@scope/scoped",
+        "hoisted",
+        "isolated"
+      ]);
+    });
+
+    it("installedPackageNames unions the store with the hoisted tree", async () => {
+      const nm = Path.join(dir, "node_modules");
+      Fs.mkdirSync(Path.join(nm, "hoisted"), { recursive: true });
+      Fs.mkdirSync(Path.join(nm, "@scope", "scoped"), { recursive: true });
+      Fs.mkdirSync(Path.join(nm, ".bin"), { recursive: true });
+
+      const fyn = mkFyn({ loadFvVersions: async () => ({ isolated: ["1.0.0"] }) });
+      const names = await new InstallScripts({ fyn }).installedPackageNames();
+
+      expect([...names].sort()).to.deep.equal(["@scope/scoped", "hoisted", "isolated"]);
+      // dot dirs are bookkeeping, not packages
+      expect(names.has(".bin")).to.equal(false);
+    });
+
+    it("prune still refuses when nothing is installed at all", async () => {
+      Fs.writeFileSync(
+        Path.join(dir, "package.json"),
+        JSON.stringify({ name: "app", fyn: { allowScripts: { sharp: {} } } })
+      );
+      expect(await new InstallScripts({ fyn: mkFyn() }).prune()).to.deep.equal([]);
+      expect(
+        JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
+      ).to.deep.equal({ sharp: {} });
     });
   });
 });

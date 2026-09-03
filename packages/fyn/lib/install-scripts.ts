@@ -458,8 +458,49 @@ export class InstallScripts {
    * @param {boolean} [options.local] write to this package's package.json
    * @returns {Promise<string[]>} the keys removed
    */
+  /**
+   * Every package this project actually has installed.
+   *
+   * Not `loadFvVersions()` alone, which reads `<node_modules>/.f/_` - the store
+   * for versions that had to be isolated. Under the default hoisted layout that
+   * is a small slice of the tree, and pruning against it deleted the approvals
+   * of every package sitting in `node_modules` proper.
+   *
+   * @returns {Promise<Set<string>>} installed package names, scoped names included
+   */
+  async installedPackageNames() {
+    const names = new Set(Object.keys(await this._fyn.loadFvVersions()));
+    const outputDir = this._fyn.getOutputDir();
+
+    const readDir = async dir => {
+      try {
+        return await Fs.readdir(dir);
+      } catch {
+        return [];
+      }
+    };
+
+    for (const entry of await readDir(outputDir)) {
+      if (entry.startsWith(".")) {
+        continue;
+      }
+
+      if (entry.startsWith("@")) {
+        for (const scoped of await readDir(Path.join(outputDir, entry))) {
+          if (!scoped.startsWith(".")) {
+            names.add(`${entry}/${scoped}`);
+          }
+        }
+      } else {
+        names.add(entry);
+      }
+    }
+
+    return names;
+  }
+
   async prune({ local = false } = {}) {
-    const installed = Object.keys(await this._fyn.loadFvVersions());
+    const installed = [...(await this.installedPackageNames())];
 
     if (installed.length === 0) {
       logger.error(

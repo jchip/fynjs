@@ -250,8 +250,9 @@ recorded in a wider scope. Removing the entry is the only way to undo it.
 - A denied package is **skipped, not queued for review**. The install reports it in the
   end-of-install summary and carries on — it is never offered to the approval prompt, because
   approving it could not take effect.
-- `install-scripts prune` never touches it. It drops stale *approvals*; a denial for a package
-  you no longer install is still the answer if it ever comes back.
+- `install-scripts prune` never touches it. It drops stale *approvals* — measured against what
+  is actually installed, hoisted packages included — and a denial for a package you no longer
+  install is still the answer if it ever comes back.
 - The older `"allowScripts": { "malware": false }` form is still read and denies the whole
   package; `denyScripts` is the form that can also scope by version and script.
 
