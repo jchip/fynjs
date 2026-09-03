@@ -73,14 +73,15 @@ export class Prepare {
   name;
   _cwd;
   _fynpoRc;
+  _graph;
+  _packages;
   _markers;
-  _data;
   _versions;
   _tags;
   _options;
   _gitClean;
 
-  constructor(opts, data) {
+  constructor(opts, graph) {
     this.name = "prepare";
     this._cwd = opts.cwd;
 
@@ -90,7 +91,16 @@ export class Prepare {
     this._fynpoRc = fynpoRc || {};
 
     this._markers = this._fynpoRc.changeLogMarkers || ["## Packages", "## Commits"];
-    this._data = data;
+    this._graph = graph;
+    //
+    // prepare matches CHANGELOG.md entries against package names, so it wants one package
+    // per name. `byName` holds an array per name, since a monorepo may carry the same name
+    // at several paths; take the first, which is what `graph.getPackageByName` does and what
+    // the changelog/version path has always done (FJM-25).
+    //
+    this._packages = _.mapValues(_.get(graph, "packages.byName", {}), (infos: any) =>
+      _.first(infos as any[])
+    );
     this._versions = {};
     this._tags = [];
 
@@ -159,7 +169,7 @@ export class Prepare {
     if (_.isEmpty(this._versions)) {
       // versions are matched against the discovered package names, so no packages
       // means no matches - blaming the changelog then sends people to the wrong file
-      if (_.isEmpty(this._data.packages)) {
+      if (_.isEmpty(this._packages)) {
         logger.error(
           `No packages were discovered, so nothing could be matched against CHANGELOG.md.`,
           `Declare where your packages live in fynpo.json, e.g. "packages": ["*"].`
@@ -173,15 +183,15 @@ export class Prepare {
     const packages = [];
     const updatedPackages: string[] = [];
 
-    _.each(this._data.packages, (pkg, name) => {
+    _.each(this._packages, (pkg, name) => {
       if (!this._versions.hasOwnProperty(name)) return;
 
       const newV = this._versions[name];
       if (newV === pkg.version) return;
 
-      // readFynpoPackages doesn't copy `private` onto the package info, so
-      // `pkg.private` was always undefined and this check never fired - read it
-      // from the package.json it does carry
+      // FynpoPackageInfo carries `private`, unlike the readFynpoPackages shape this used
+      // to get - where it was always undefined and this check never fired. package.json is
+      // still consulted as the authority.
       if (pkg.private === true || pkg.pkgJson?.private === true) {
         printWarning(`Skipping private package: ${pkg.name}`);
         return;
@@ -215,7 +225,7 @@ export class Prepare {
     // `updatedPackages`, so they stay out of the commit body - and publish.ts requires BOTH
     // the changed path and the name in that body, so they are not published.
     //
-    _.each(this._data.packages, (pkg, name) => {
+    _.each(this._packages, (pkg, name) => {
       if (this._versions.hasOwnProperty(name)) {
         return; // released above, its own deps were already rewritten
       }
@@ -232,9 +242,13 @@ export class Prepare {
 
     await this.checkGitClean();
 
-    // all updated, write to disk
-    _.each(this._data.packages, (pkg) => {
-      Fs.writeFileSync(pkg.pkgFile, `${JSON.stringify(pkg.pkgJson, null, 2)}\n`);
+    // all updated, write to disk. FynpoPackageInfo carries no `pkgFile`, so compose it from
+    // `path` the same way utils/update-package-versions.ts does (FJM-25).
+    _.each(this._packages, (pkg) => {
+      Fs.writeFileSync(
+        Path.join(this._cwd, pkg.path, "package.json"),
+        `${JSON.stringify(pkg.pkgJson, null, 2)}\n`
+      );
     });
 
     const { committed, tagged } = await this.commitAndTagUpdates(packages);
@@ -255,7 +269,7 @@ export class Prepare {
   }
 
   readChangelog() {
-    const fromCl = readChangelogVersions(this._cwd, this._data.packages, this._markers);
+    const fromCl = readChangelogVersions(this._cwd, this._packages, this._markers);
     this._versions = fromCl.versions;
     this._tags = fromCl.tags;
     if (this._tags.length) {

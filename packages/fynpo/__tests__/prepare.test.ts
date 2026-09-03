@@ -8,17 +8,25 @@ import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture
 describe("fynpo prepare", () => {
   // this suite writes fynpo.json into cwd, so use a private copy of the sample - FPO-14
   const dir = makeSampleFixture("prepare");
-  const data = {
+  // Prepare now takes a FynpoDepGraph, so this is `packages.byName` shaped: one array of
+  // FynpoPackageInfo per name (FJM-25).
+  const graph = {
     packages: {
-      pkg1: {
-        name: "pkg1",
-        version: "1.0.0",
-        path: path.join(dir, "packages/pkg1/package.json"),
-      },
-      pkg2: {
-        name: "pkg2",
-        version: "1.0.0",
-        path: path.join(dir, "packages/pkg2/package.json"),
+      byName: {
+        pkg1: [
+          {
+            name: "pkg1",
+            version: "1.0.0",
+            path: path.join(dir, "packages/pkg1/package.json"),
+          },
+        ],
+        pkg2: [
+          {
+            name: "pkg2",
+            version: "1.0.0",
+            path: path.join(dir, "packages/pkg2/package.json"),
+          },
+        ],
       },
     },
   };
@@ -27,7 +35,7 @@ describe("fynpo prepare", () => {
   let prepare;
   beforeAll(() => {
     fs.writeFileSync(fynpoConfigFile, "{}\n");
-    prepare = new Prepare({ cwd: dir, tag: true }, data);
+    prepare = new Prepare({ cwd: dir, tag: true }, graph);
   });
 
   afterAll(() => {
@@ -36,8 +44,15 @@ describe("fynpo prepare", () => {
   });
 
   it("should initialize prepare class", () => {
-    expect(prepare._data).toStrictEqual(data);
+    expect(prepare._graph).toStrictEqual(graph);
     expect(prepare._cwd).toStrictEqual(dir);
+  });
+
+  it("flattens graph.packages.byName into one package per name", () => {
+    // exec() matches changelog entries against names, so it needs a name-keyed view
+    expect(Object.keys(prepare._packages)).toEqual(["pkg1", "pkg2"]);
+    expect(prepare._packages.pkg1.version).toBe("1.0.0");
+    expect(prepare._packages.pkg2.name).toBe("pkg2");
   });
 
   it("should update dependencies", () => {

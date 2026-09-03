@@ -12,8 +12,6 @@ import { Updated } from "./updated";
 import { Commitlint } from "./commitlint";
 import { Version } from "./version";
 import {
-  makePkgDeps,
-  readFynpoPackages,
   FynpoDepGraph,
   outOfScopePackages,
 } from "@fynpo/base";
@@ -24,7 +22,6 @@ import _ from "lodash";
 
 const xrequire = eval("require");
 
-const globalCmnds = ["bootstrap", "local", "run"];
 
 /**
  * Detect if an error is likely an internal fynpo bug vs a user/package issue
@@ -114,35 +111,6 @@ const noticeImplicitDiscovery = (autoSearched: boolean, found: number, packages?
   if (notice) {
     logger[notice.level](notice.message);
   }
-};
-
-const readPackages = async (opts: any, cmdName: string = "") => {
-  const packages = await readFynpoPackages(_.pick(opts, ["patterns", "cwd", "packages"]));
-
-  if (_.isEmpty(packages)) {
-    // this path does NOT auto-search - it defaults to `packages/*`, so an empty
-    // result usually means the repo keeps its packages somewhere else
-    logger.warn(
-      `No packages found under ${JSON.stringify(opts.patterns || ["packages/*"])}.`,
-      `If your packages live elsewhere, declare them in fynpo.json, e.g. "packages": ["*"].`
-    );
-  }
-
-  const result = await makePkgDeps(packages, opts);
-  if (!_.isEmpty(result.warnings)) {
-    result.warnings.forEach((w) => logger.warn(w));
-  }
-
-  if (result.focusPkgPath) {
-    if (globalCmnds.includes(cmdName)) {
-      logger.error(
-        `${cmdName} command is only supported at mono-repo root level but CWD is '${result.focusPkgPath}`
-      );
-      process.exit(1);
-    }
-  }
-
-  return result;
 };
 
 const readFynpoData = async (cwd) => {
@@ -301,7 +269,7 @@ const execPrepare = async (cmd, _parsed) => {
   // prepare only applies at top level, so switch CWD there
   process.chdir(opts.cwd);
 
-  return new Prepare(opts, await readPackages(opts)).exec();
+  return new Prepare(opts, await makeDepGraph(opts)).exec();
 };
 
 const execChangelog = async (cmd, _parsed) => {
