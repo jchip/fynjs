@@ -112,8 +112,8 @@ interface FynpoData {
   indirects: unknown[];
 }
 
-/** Fyn instance interface for dependency resolver */
-interface FynInstance {
+/** Fyn instance interface for the dependency resolver */
+interface FynForDepResolver {
   concurrency: number;
   production: boolean;
   deepResolve?: boolean;
@@ -203,7 +203,7 @@ interface YarnLockData {
 
 /** Constructor options for PkgDepResolver */
 interface PkgDepResolverOptions {
-  fyn: FynInstance;
+  fyn: FynForDepResolver;
   data: DepData;
   optResolver: PkgOptResolver;
   shrinkwrap?: Record<string, unknown>;
@@ -251,7 +251,7 @@ const failMetaMsg = name =>
 
 class PkgDepResolver {
   private _options: PkgDepResolverOptions;
-  private _fyn: FynInstance;
+  private _fyn: FynForDepResolver;
   private _pkgSrcMgr: PkgSrcManager;
   private _data: DepData;
   private _promiseQ: PromiseQueue;

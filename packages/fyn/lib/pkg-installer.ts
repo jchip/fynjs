@@ -5,7 +5,7 @@ import chalk from "chalk";
 import Fs from "./util/file-ops";
 import PkgDepLinker, { type FynForDepLinker } from "./pkg-dep-linker";
 import PkgBinLinker, { type FynForBinLinker } from "./pkg-bin-linker";
-import PkgDepLocker, { type FynForDepLocker } from "./pkg-dep-locker";
+import PkgDepLocker from "./pkg-dep-locker";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
@@ -39,7 +39,8 @@ import {
   type DepInfo,
   type InstallPkgJson,
   type ResolutionData,
-  type KnownPackage
+  type KnownPackage,
+  type FynForDepLocker
 } from "./types";
 import type { DepData } from "./dep-data";
 import type FynCentral from "./fyn-central";
@@ -97,11 +98,9 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   setBlockedScripts(blocked: BlockedScriptRecord[], pending?: BlockedScriptRecord[]): void;
   isNormalLayout: boolean;
   getOutputDir(): string;
-  getInstalledPkgDir(name: string, version: string, pkg?: unknown): string;
   getFvDir(x?: string): string;
   loadFvVersions(): Promise<FvVersions>;
   setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
-  createSubNodeModulesDir(dir: string): Promise<string>;
 }
 
 /** A package whose install scripts the lifecycle-script policy blocked */

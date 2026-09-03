@@ -115,3 +115,6 @@ export type {
   LockPkgDepItemsSerialized,
   LockFileData
 } from "./lock-file";
+
+// Structural views of the Fyn class shared by more than one collaborator
+export type { FynPkgDirs, FynForDepLocker, FynForLifecycle } from "./fyn-views";

@@ -45,7 +45,7 @@ import type { Inflight as InflightType, ItemQueue } from "item-queue";
 interface PkgSrcManagerOptions {
   registry?: string;
   fynCacheDir?: string;
-  fyn: FynInstance;
+  fyn: FynForSrcManager;
   email?: string;
   "always-auth"?: boolean;
   username?: string;
@@ -53,8 +53,8 @@ interface PkgSrcManagerOptions {
   [key: string]: unknown;
 }
 
-/** Fyn instance interface - subset of Fyn class used by PkgSrcManager */
-interface FynInstance {
+/** Fyn instance interface for the package source manager */
+interface FynForSrcManager {
   concurrency: number;
   cwd?: string;
   _fynCacheDir: string;
@@ -349,7 +349,7 @@ class PkgSrcManager {
   private _meta: Record<string, Packument>;
   private _cacheDir: string;
   private _inflights: { meta: InflightType<Promise<Packument>> };
-  private _fyn: FynInstance;
+  private _fyn: FynForSrcManager;
   private _localMeta: Record<string, { byPath: Record<string, LocalMeta>; byVersion: Record<string, LocalMeta> }>;
   private _netQ: ItemQueue<MetaQueueItem>;
   private _pacoteOpts: PacoteOptions;
@@ -1437,7 +1437,7 @@ export default PkgSrcManager;
 export { META_CACHE_STALE_TIME, isPinnedGitCommit };
 export type {
   PkgSrcManagerOptions,
-  FynInstance,
+  FynForSrcManager,
   FetchItem,
   PkgDist,
   PkgInfo,

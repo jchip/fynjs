@@ -6,7 +6,13 @@ import _ from "lodash";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
-import type { DepInfo, ResolutionData, ResolutionEntry, PkgVersionInfo } from "./types";
+import type {
+  DepInfo,
+  ResolutionData,
+  ResolutionEntry,
+  PkgVersionInfo,
+  FynPkgDirs
+} from "./types";
 
 /**
  * Package info for linking
@@ -37,12 +43,10 @@ interface PkgData {
 }
 
 /** Fyn instance interface for dep linker */
-export interface FynForDepLinker {
+export interface FynForDepLinker extends FynPkgDirs {
   _data: {
     getPkgsData(): Record<string, { versions: Record<string, PkgVersionInfo> }>;
   };
-  getInstalledPkgDir(name: string, version: string, info?: unknown): string;
-  createSubNodeModulesDir(pkgDir: string): Promise<string>;
   addLocalPkgWithNestedDep(depInfo: DepInfo): void;
   cwd: string;
 }

@@ -9,6 +9,7 @@ import { simpleCompare as simpleSemverCompare } from "./util/semver";
 import Semver from "semver";
 import Yaml from "yamljs";
 import sortObjKeys from "./util/sort-obj-keys";
+import type { FynForDepLocker } from "./types";
 import {
   LOCK_RSEMVERS,
   RSEMVERS,
@@ -95,15 +96,6 @@ interface VersionPkgData extends PkgVersion {
     integrity?: string;
     fullPath?: string;
   };
-}
-
-/** Fyn instance interface for dep locker */
-export interface FynForDepLocker {
-  _pkgSrcMgr?: {
-    getRegistryUrl(name: string): string;
-  };
-  _options?: { ignoreLockUrl?: boolean };
-  _shownMissingFiles: Set<string>;
 }
 
 class PkgDepLocker {

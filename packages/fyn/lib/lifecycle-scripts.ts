@@ -26,7 +26,7 @@ import { setupNodeGypEnv } from "./util/setup-node-gyp";
 import * as xaa from "xaa";
 import npmConfigEnv from "./util/npm-config-env";
 import { AggregateError } from "@jchip/error";
-import type { PackageJson } from "./types";
+import type { PackageJson, FynForLifecycle } from "./types";
 
 //
 // Pass a real directory rather than `import.meta.url`.
@@ -36,15 +36,6 @@ import type { PackageJson } from "./types";
 // that passing a module URL would rely on.
 //
 const optionalRequire = makeOptionalRequire(Path.dirname(fileURLToPath(import.meta.url)));
-
-/** Fyn instance interface for lifecycle scripts */
-interface FynForLifecycle {
-  allrc?: Record<string, unknown>;
-  isFynpo?: boolean;
-  _fynpo?: { dir: string };
-  initCwd?: string;
-  cwd?: string;
-}
 
 /** Options for LifecycleScripts constructor */
 interface LifecycleScriptsOptions {
