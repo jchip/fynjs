@@ -6,23 +6,146 @@ function assert(condition: unknown, message: string): asserts condition {
 /** Timestamp in milliseconds since epoch */
 export type Timestamp = number;
 
+/** Anything usable as a Map key here. Numbers and symbols are supported for callers like
+ * item-queue, which keys inflight work by an incrementing id (FJM-26). */
+export type RecordKey = string | number | symbol;
+
 /** Factory function that creates a promise */
 export type PromiseFactory<T> = () => Promise<T>;
 
 /** Internal record for tracking an inflight operation */
-export interface InflightItem<T> {
+export interface InflightItem<V> {
     /** When the operation started */
     readonly start: Timestamp;
     /** Last check time for elapsed time tracking */
     lastXTime: Timestamp;
-    /** The tracked promise */
-    readonly value: Promise<T>;
+    /** The tracked value */
+    readonly value: V;
+}
+
+/**
+ * Keyed store of in-progress work, with start-time and last-check-time tracking.
+ *
+ * This is the generic core: it stores any value type `V` under any {@link RecordKey} and
+ * knows nothing about promises. {@link Inflight} builds promise deduplication on top of it.
+ *
+ * `item-queue` uses this directly - it tracks `{ item, promise }` records keyed by an
+ * incrementing number, which is neither a promise nor a string, so it needs the core rather
+ * than {@link Inflight} (FJM-26).
+ *
+ * @template V The type of the tracked value.
+ */
+export class InflightStore<V = unknown> {
+    /** Map of inflight items by key */
+    protected readonly _inflights = new Map<RecordKey, InflightItem<V>>();
+
+    /**
+     * Track a value under a key.
+     *
+     * @throws If key already exists.
+     */
+    add(key: RecordKey, value: V, now?: Timestamp): V {
+        assert(!this._inflights.has(key), `xflight: item ${String(key)} already exist`);
+        const timestamp = now ?? Date.now();
+        this._inflights.set(key, { start: timestamp, lastXTime: timestamp, value });
+        return value;
+    }
+
+    /** Get the tracked value for a key, or undefined. */
+    get(key: RecordKey): V | undefined {
+        return this._inflights.get(key)?.value;
+    }
+
+    /**
+     * Remove the inflight item for a key.
+     *
+     * @throws If key does not exist.
+     */
+    remove(key: RecordKey): void {
+        assert(this._inflights.has(key), `xflight: removing non-existing item ${String(key)}`);
+        this._inflights.delete(key);
+    }
+
+    /**
+     * Iterate the tracked items as `[key, record]` pairs.
+     *
+     * Prefer this over reaching for the internal map - it is what lets a caller sweep every
+     * in-progress entry, which is what item-queue's overdue-work watcher does.
+     */
+    entries(): IterableIterator<[RecordKey, InflightItem<V>]> {
+        return this._inflights.entries();
+    }
+
+    /** Whether there are no inflight items. */
+    get isEmpty(): boolean {
+        return this._inflights.size === 0;
+    }
+
+    /** The number of inflight items. */
+    get count(): number {
+        return this._inflights.size;
+    }
+
+    /** Get the start time (ms since epoch) for a key, or undefined. */
+    getStartTime(key: RecordKey): Timestamp | undefined {
+        return this._inflights.get(key)?.start;
+    }
+
+    /** Elapsed ms since the start for a key, or -1 if not found. */
+    time(key: RecordKey, now?: Timestamp): number {
+        const item = this._inflights.get(key);
+        return item ? (now ?? Date.now()) - item.start : -1;
+    }
+
+    /** Alias for {@link time}. */
+    elapseTime(key: RecordKey, now?: Timestamp): number {
+        return this.time(key, now);
+    }
+
+    /** Get the last check time (ms since epoch) for a key, or undefined. */
+    getCheckTime(key: RecordKey): Timestamp | undefined {
+        return this._inflights.get(key)?.lastXTime;
+    }
+
+    /** Elapsed ms since the last check for a key, or -1 if not found. */
+    lastCheckTime(key: RecordKey, now?: Timestamp): number {
+        const item = this._inflights.get(key);
+        return item ? (now ?? Date.now()) - item.lastXTime : -1;
+    }
+
+    /** Alias for {@link lastCheckTime}. */
+    elapseCheckTime(key: RecordKey, now?: Timestamp): number {
+        return this.lastCheckTime(key, now);
+    }
+
+    /**
+     * Reset the last check time for a key, or for all inflight items if no key is given.
+     *
+     * @returns This instance for chaining.
+     */
+    resetCheckTime(key?: RecordKey, now?: Timestamp): this {
+        const timestamp = now ?? Date.now();
+        if (key !== undefined) {
+            const item = this._inflights.get(key);
+            if (item) {
+                item.lastXTime = timestamp;
+            }
+        } else {
+            for (const item of this._inflights.values()) {
+                item.lastXTime = timestamp;
+            }
+        }
+        return this;
+    }
 }
 
 /**
  * Inflight manages deduplication of asynchronous operations by key.
  * It ensures only one promise per key is active at a time, returning the same promise for concurrent requests.
  * Useful for avoiding duplicate network or resource-intensive calls.
+ *
+ * Adds promise semantics to {@link InflightStore}; the keyed storage and time tracking are
+ * inherited, so there is one implementation of them (FJM-26).
  *
  * @template T The type of the resolved value of the managed promises.
  *
@@ -38,9 +161,7 @@ export interface InflightItem<T> {
  * // Only one fetch was made, a === b
  * ```
  */
-export class Inflight<T = unknown> {
-    /** Map of inflight items by key */
-    private readonly _inflights = new Map<string, InflightItem<T>>();
+export class Inflight<T = unknown> extends InflightStore<Promise<T>> {
     /** The Promise implementation used by this instance */
     public readonly Promise: PromiseConstructor;
 
@@ -57,6 +178,7 @@ export class Inflight<T = unknown> {
      * @param PromiseImpl - Optional custom Promise implementation to use.
      */
     constructor(PromiseImpl?: PromiseConstructor) {
+        super();
         this.Promise = PromiseImpl ?? globalThis.Promise;
     }
 
@@ -64,15 +186,11 @@ export class Inflight<T = unknown> {
      * Get or create a promise for a given key.
      * If a promise for the key is already inflight, returns it.
      * Otherwise, calls the provided factory to create a new promise, tracks it, and returns it.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @param factory - Function that returns a promise.
-     * @returns The inflight promise for the key.
      */
-    promise(key: string, factory: PromiseFactory<T>): Promise<T> {
-        const existing = this._inflights.get(key);
+    promise(key: RecordKey, factory: PromiseFactory<T>): Promise<T> {
+        const existing = this.get(key);
         if (existing) {
-            return existing.value;
+            return existing;
         }
 
         // Safe cleanup - don't throw if already removed manually
@@ -84,144 +202,13 @@ export class Inflight<T = unknown> {
             const p = factory();
             assert(
                 p && typeof p.then === "function",
-                `xflight: promiseFactory for key ${key} didn't return a promise`
+                `xflight: promiseFactory for key ${String(key)} didn't return a promise`
             );
             this.add(key, p).then(cleanup, cleanup);
             return p;
         } catch (err) {
             return this.Promise.reject(err);
         }
-    }
-
-    /**
-     * Manually add an inflight item for a key.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @param value - The promise to track.
-     * @param now - Optional timestamp for when the operation started (defaults to now).
-     * @returns The promise that was added.
-     * @throws If key already exists.
-     */
-    add(key: string, value: Promise<T>, now?: Timestamp): Promise<T> {
-        assert(!this._inflights.has(key), `xflight: item ${key} already exist`);
-        const timestamp = now ?? Date.now();
-        this._inflights.set(key, { start: timestamp, lastXTime: timestamp, value });
-        return value;
-    }
-
-    /**
-     * Get the inflight promise for a key, if any.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @returns The inflight promise for the key, or undefined if none exists.
-     */
-    get(key: string): Promise<T> | undefined {
-        return this._inflights.get(key)?.value;
-    }
-
-    /**
-     * Remove the inflight item for a key.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @throws If key does not exist.
-     */
-    remove(key: string): void {
-        assert(this._inflights.has(key), `xflight: removing non-existing item ${key}`);
-        this._inflights.delete(key);
-    }
-
-    /**
-     * Whether there are no inflight items.
-     */
-    get isEmpty(): boolean {
-        return this._inflights.size === 0;
-    }
-
-    /**
-     * The number of inflight items.
-     */
-    get count(): number {
-        return this._inflights.size;
-    }
-
-    /**
-     * Get the start time (ms since epoch) for a key.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @returns The start time, or undefined if not found.
-     */
-    getStartTime(key: string): Timestamp | undefined {
-        return this._inflights.get(key)?.start;
-    }
-
-    /**
-     * Get the elapsed time (ms) since the start for a key.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @param now - Optional current timestamp (defaults to Date.now()).
-     * @returns The elapsed time in ms, or -1 if not found.
-     */
-    time(key: string, now?: Timestamp): number {
-        const item = this._inflights.get(key);
-        return item ? (now ?? Date.now()) - item.start : -1;
-    }
-
-    /**
-     * Alias for {@link time}.
-     */
-    elapseTime(key: string, now?: Timestamp): number {
-        return this.time(key, now);
-    }
-
-    /**
-     * Get the last check time (ms since epoch) for a key.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @returns The last check time, or undefined if not found.
-     */
-    getCheckTime(key: string): Timestamp | undefined {
-        return this._inflights.get(key)?.lastXTime;
-    }
-
-    /**
-     * Get the elapsed time (ms) since the last check for a key.
-     *
-     * @param key - Unique identifier for the inflight operation.
-     * @param now - Optional current timestamp (defaults to Date.now()).
-     * @returns The elapsed time in ms, or -1 if not found.
-     */
-    lastCheckTime(key: string, now?: Timestamp): number {
-        const item = this._inflights.get(key);
-        return item ? (now ?? Date.now()) - item.lastXTime : -1;
-    }
-
-    /**
-     * Alias for {@link lastCheckTime}.
-     */
-    elapseCheckTime(key: string, now?: Timestamp): number {
-        return this.lastCheckTime(key, now);
-    }
-
-    /**
-     * Reset the last check time for a key, or for all inflight items if no key is provided.
-     *
-     * @param key - Optional unique identifier. If omitted, resets all.
-     * @param now - Optional timestamp to set as the new last check time (defaults to Date.now()).
-     * @returns This instance for chaining.
-     */
-    resetCheckTime(key?: string, now?: Timestamp): this {
-        const timestamp = now ?? Date.now();
-        if (key) {
-            const item = this._inflights.get(key);
-            if (item) {
-                item.lastXTime = timestamp;
-            }
-        } else {
-            for (const item of this._inflights.values()) {
-                item.lastXTime = timestamp;
-            }
-        }
-        return this;
     }
 }
 
