@@ -4,7 +4,12 @@ Design for bringing fyn to npm 12 parity on install-time lifecycle scripts, plus
 npm does not do: a monorepo-wide allowlist, and an explicit exemption for workspace-local
 packages.
 
-Tracked as FPM-82. Blocked on FPM-81.
+Tracked as FPM-82. Blocked on FPM-81, which is now fixed.
+
+**Status: implemented** through stage 2 of *Migration* below — FPM-81, FPM-83, FPM-84, FPM-85,
+FPM-86. Every mode is built and the CLI is complete; the default is still `"source"`, so no
+existing install changes behavior. Stage 3 (making `"review"` the default) remains an owner
+decision. *Open questions* below records how each was answered in the build.
 
 ## Why now
 
@@ -312,18 +317,58 @@ Suggested staging, for the decision rather than as a settled plan:
    to approve. Still no behavior change.
 3. `"review"` becomes the default in a major, with `--script-policy=source` as the escape hatch.
 
-## Open questions
+## Open questions, as answered
 
-- Does a `"1.2.3"` value mean exact version or a range? npm's docs read as exact, but its
-  approve flow writes a range-free pin, so a `^` in an allowlist is untested territory. fyn's
-  existing keys match a spec *string*, not a semver range — worth deciding before adopting the
-  value form.
-- Should `fyn.allowTopLevelScripts` survive `"review"` mode? It exists because direct deps of
-  the root are more trusted than transitive ones. Under a review model, "I typed this name" is
-  not the same as "I read this code" — it may need to be `"source"`-only.
-- Does the allowlist belong in the lockfile too? `fyn-lock.yaml` already records resolution;
-  recording *what was approved at what version* would let `--frozen-lockfile` fail closed on an
-  unreviewed change. Larger change, separate design.
+**Does a `"1.2.3"` value mean exact version or a range?** Range, via `semverUtil.satisfies`, so
+`"5.0.1"` and `"^5.0.0"` both work and the exact form behaves as npm documents. The ambiguity
+this raised — a string value could be a script name or a version — is resolved by classifying
+the string: one of `preinstall`/`install`/`postinstall` is a script name, anything
+`Semver.validRange` accepts is a version constraint, and anything else falls back to a script
+name so existing configs keep working. `"*"` means all scripts either way, so the two readings
+agree there.
+
+**Should `fyn.allowTopLevelScripts` survive `"review"` mode?** It does, unchanged. The argument
+for making it `"source"`-only stands — "I typed this name" is not "I read this code" — but it is
+opt-in, off by default, and sits below an explicit `false`, which wins over it. Narrowing an
+existing opt-in is its own behavior change; it belongs with the stage 3 default flip, where it
+should probably go.
+
+**Does the allowlist belong in the lockfile too?** Still open, still a separate design. What
+shipped instead is the install config (`.fyn.json`): each install records what it blocked and,
+with `--allow-scripts-pending`, what `"review"` would have blocked, so `install-scripts ls` can
+list it without re-resolving. That is a cache of the last install, not a fail-closed gate —
+`--frozen-lockfile` refusing an unreviewed change still needs the lockfile.
+
+## What shipped
+
+| design | where | ticket |
+|---|---|---|
+| D1 allowlist in `package.json` | unchanged | — |
+| D2 entry schema, `false` denial, npm version pins | `lib/util/lifecycle-script-policy.ts` | FPM-83 |
+| D3 `scriptPolicy` modes | same, plus the `Fyn.scriptPolicy` getter | FPM-83 |
+| D4 fynpo-wide allowlist, scope precedence | `lib/fyn.ts` getters, `mergeAllowScripts` | FPM-84 |
+| D5 local packages exempt | `isLocalSource`, `reviewLocalPackages` | FPM-83 |
+| D6 CLI and reporting | `lib/install-scripts.ts`, `lib/util/script-policy-report.ts`, `cli/main.ts` | FPM-85, FPM-86 |
+| D7 integration points | `lib/pkg-installer.ts`, `lib/pkg-opt-resolver.ts` | FPM-84 |
+| blocker: fynpo options channel | `Fyn.mergeFynpoOptions` | FPM-81 |
+
+Three decisions the build had to make that the design left implicit:
+
+- **The fynpo merge is key-by-key, not `_.merge`.** An option the user set on the command line
+  (`_cliSource[key] !== "default"`) is skipped, and `cwd`/`initCwd` are never taken from a
+  monorepo config — a repo-wide setting that relocated the install would change which
+  package.json is being installed. The four script-policy keys are excluded from that generic
+  merge entirely, because they have their own rules: allowlists union across scopes with a
+  denial final, and the mode may only be tightened by a package.
+- **`approve` writes fyn's narrow form, not npm's blanket one.** npm's `"pkg": "1.2.3"` approves
+  every script of that version; fyn writes `"pkg@1.2.3": ["postinstall"]`, approving the same
+  version but only the scripts the package actually has, so a later release that adds a
+  `preinstall` comes back for review. `--no-allow-scripts-pin` drops the version from the key.
+  Both npm forms are still *accepted* on the way in.
+- **`--allow-scripts-pending` answers the review question without switching to it.** The
+  installer evaluates each package a second time under `"review"` and records what would need
+  approval, while the install still runs under the mode in effect. That is stage 2 of the
+  migration made concrete: a project can see the cost of `"review"` before paying it.
 
 ## Sources
 

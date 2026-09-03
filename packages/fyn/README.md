@@ -140,7 +140,9 @@ TypeScript paths, or equivalent tool settings to use it.
 As a security hardening measure, `fyn` does **not** run a package's npm lifecycle
 scripts (`preinstall`, `install`, `postinstall`) during install unless the package
 came from a configured registry (the primary `registry` or a `@scope:registry`) or
-is a local `file:`/`link:`/symlink dependency.
+is a local `file:`/`link:`/symlink dependency. That is the default policy; see
+[`fyn.scriptPolicy`](#choosing-a-trust-model-fynscriptpolicy) for the stricter
+npm 12-style model, where a registry package needs approval too.
 
 Packages pulled from other sources — `github:`, git URLs (`git+https`, `git+ssh`,
 …), and `http(s)` tarball URLs — have their lifecycle scripts **skipped by default**,
@@ -161,10 +163,15 @@ allowed script names:
 }
 ```
 
-- The key matches **either** the original dependency spec (e.g. `foo@github:user/foo#v1`)
-  **or** the resolved version (e.g. `bar@2.3.0`).
+- The key matches the original dependency spec (e.g. `foo@github:user/foo#v1`), the
+  resolved version (e.g. `bar@2.3.0`), or the bare package name (e.g. `bar`).
 - Script names are matched case-insensitively.
 - Use `["*"]` (or `true`) as the value to allow all lifecycle scripts for that package.
+- A version or range as the value — `"5.0.1"`, `"^5.0.0"` — allows all lifecycle scripts,
+  but only for a matching resolved version. This is npm's form.
+- `false` **denies** a package outright. A denial wins over everything: another key that
+  matches the same package, `allowTopLevelScripts`, an `approve --all`, and an approval in a
+  wider scope. Removing the `false` is the only way to undo it.
 
 #### Trusting direct dependencies (`fyn.allowTopLevelScripts`)
 
@@ -195,6 +202,90 @@ any non-registry package that is declared **directly** in your top-level
 > ⚠️ A direct `github:`/git dependency on a branch or tag still runs whatever code
 > has been pushed there. Declaring it in your `package.json` is an explicit trust
 > decision — pin to a commit/tarball you've reviewed when that matters.
+
+#### Choosing a trust model (`fyn.scriptPolicy`)
+
+The rule above — a registry package is trusted, a git/URL package is not — is one of three
+policies. `fyn.scriptPolicy` selects which:
+
+| mode | registry packages | git/URL packages | workspace-local packages |
+|---|---|---|---|
+| `"source"` *(default)* | run their scripts | need an allowlist entry | run their scripts |
+| `"review"` | need an allowlist entry | need an allowlist entry | run their scripts |
+| `"off"` | nothing runs | nothing runs | nothing runs |
+
+`"source"` trusts *provenance*: where a package came from. `"review"` trusts *review*: whether
+someone approved this exact code — npm 12's model, and the one that covers a compromised
+release of an ordinary dependency. `"off"` is npm's `ignore-scripts`, and like npm's it wins
+over the allowlist rather than being overridden by it.
+
+```json
+{
+  "fyn": {
+    "scriptPolicy": "review",
+    "allowScripts": { "sharp@0.34.4": ["install"] }
+  }
+}
+```
+
+Or for one run: `fyn install --script-policy=review`.
+
+Workspace-local packages — `file:`/`link:` deps and fynpo siblings — are exempt in **every**
+mode, including `"review"`: an allowlist is a review gate on code you did not write, and
+monorepo source is reviewed by the pull request that changed it. Set
+`fyn.reviewLocalPackages: true` if you want them reviewed like anything else. A local path
+declared *by* a git package is not workspace-local and stays blocked.
+
+Switching to `"review"` stops every package with a native build step from running its install
+scripts until it is approved. To see that cost before paying it:
+
+```
+fyn install --allow-scripts-pending
+```
+
+which installs exactly as before but also reports which packages `"review"` would ask you to
+approve.
+
+#### One allowlist for a fynpo monorepo
+
+In a fynpo repo the allowlist belongs at the root, in `fynpo.json` under `fyn.options` — one
+approval per dependency, reviewed once, rather than a copy in each of twenty packages:
+
+```json
+{
+  "fyn": {
+    "options": {
+      "scriptPolicy": "review",
+      "allowScripts": { "sharp": true, "esbuild@0.28.2": ["postinstall"] }
+    }
+  },
+  "packages": ["packages/*"]
+}
+```
+
+Scopes combine as: **fynpo config → package.json → CLI**. Approvals accumulate across them; a
+package may add its own but a `false` at any scope is final. For `scriptPolicy` a package may
+only *tighten* what the repo asked for (`"review"` → `"off"`, never back to `"source"`); a CLI
+flag is a one-off and overrides outright.
+
+#### Reviewing with `fyn install-scripts`
+
+```
+fyn install-scripts ls                 # what is awaiting review (--json for data)
+fyn install-scripts approve <pkg>...   # allow those packages (--all for everything pending)
+fyn install-scripts deny <pkg>...      # write an explicit false
+fyn install-scripts prune              # drop entries for packages no longer installed
+```
+
+`ls` reads what the last install recorded, so run `fyn install` (optionally with
+`--allow-scripts-pending`) first.
+
+`approve` pins to the version it reviewed — `"sharp@0.34.4": ["install"]` — so a later release
+comes back for review, and it approves only the scripts the package actually has.
+`--no-allow-scripts-pin` writes a bare name instead. In a fynpo repo it writes to the root
+`fynpo.json`; `--local` writes to the package's own `package.json`.
+
+Approving does not run anything retroactively — run `fyn install` afterwards.
 
 ### Registry-only transitive dependencies (`fyn.enforceRegistryDeps`)
 

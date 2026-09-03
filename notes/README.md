@@ -16,7 +16,7 @@ own `README.md`. Stale documents move to `notes/archive/`.
 | [dot-f-dir-update.md](dot-f-dir-update.md) | The `.f` store directory layout |
 | [release-modernization-review.md](release-modernization-review.md) | Review of the release pipeline |
 | [stale-local-manifest-detection.md](stale-local-manifest-detection.md) | Why an installed `package.json` goes stale by design, and how `fynpo run` warns instead of hanging (FJM-64) |
-| [fyn-install-script-allowlist.md](fyn-install-script-allowlist.md) | Install-script allowlist design — npm 12 parity, the fynpo-wide allowlist, and why workspace-local packages are exempt (FPM-82) |
+| [fyn-install-script-allowlist.md](fyn-install-script-allowlist.md) | Install-script allowlist — design and what shipped: npm 12 parity, the fynpo-wide allowlist, and why workspace-local packages are exempt (FPM-82) |
 
 ## Conventions
 
