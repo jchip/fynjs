@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as fs from "fs";
 import * as path from "path";
 import { getDefaultLogger } from "./get-default-logger.js";
-import VisualLogger from "visual-logger";
+import VisualLogger, { type ItemOptions } from "visual-logger";
 import hasAnsi from "has-ansi";
 import stripAnsi from "strip-ansi";
 
@@ -55,7 +55,7 @@ export interface VisualExecOptions {
   /** Visual logger instance to use */
   visualLogger?: VisualLogger;
   /** Spinner style to use */
-  spinner?: any;
+  spinner?: ItemOptions["spinner"];
   /** Title displayed during execution */
   displayTitle?: string;
   /** Label used in log messages */
@@ -293,7 +293,7 @@ export class VisualExec {
   private _cwd: string;
   private _logger: VisualLogger;
   private _outputLevel: string;
-  private _spinner: any;
+  private _spinner: ItemOptions["spinner"];
   private _maxBuffer: number;
   private _forceStderr: boolean;
   private _checkStdoutError: boolean | RegExp;
