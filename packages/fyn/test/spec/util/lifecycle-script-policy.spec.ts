@@ -4,10 +4,13 @@ import { SEMVER, DEP_ITEM } from "../../../lib/symbols";
 import {
   getUrlType,
   isTrustedScriptSource,
+  isLocalSource,
   isTopLevelDep,
   makeAllowKeys,
   evaluateScriptPolicy,
-  isScriptAllowed
+  isScriptAllowed,
+  normalizeScriptPolicy,
+  strictestScriptPolicy
 } from "../../../lib/util/lifecycle-script-policy";
 
 /**
@@ -111,14 +114,14 @@ describe("lifecycle-script-policy", function() {
   });
 
   describe("makeAllowKeys", function() {
-    it("includes both the spec and the resolved version keys", () => {
+    it("includes the spec, the resolved version, and the bare name keys", () => {
       const dep = mkDep({ name: "foo", version: "2.3.0", spec: "github:user/foo#v1" });
-      expect(makeAllowKeys(dep)).to.deep.equal(["foo@github:user/foo#v1", "foo@2.3.0"]);
+      expect(makeAllowKeys(dep)).to.deep.equal(["foo@github:user/foo#v1", "foo@2.3.0", "foo"]);
     });
 
     it("does not duplicate when spec equals version", () => {
       const dep = mkDep({ name: "foo", version: "1.0.0", spec: "1.0.0" });
-      expect(makeAllowKeys(dep)).to.deep.equal(["foo@1.0.0"]);
+      expect(makeAllowKeys(dep)).to.deep.equal(["foo@1.0.0", "foo"]);
     });
   });
 
@@ -290,6 +293,155 @@ describe("lifecycle-script-policy", function() {
       const policy = evaluateScriptPolicy(dep, {}, { allowTopLevel: true });
       expect(policy.trusted).to.equal(true);
       expect(policy.topLevel).to.equal(true);
+    });
+  });
+
+  describe("scriptPolicy modes", function() {
+    it("defaults to source and rejects an unknown mode", () => {
+      expect(normalizeScriptPolicy(undefined)).to.equal("source");
+      expect(normalizeScriptPolicy("")).to.equal("source");
+      expect(normalizeScriptPolicy("REVIEW")).to.equal("review");
+      expect(() => normalizeScriptPolicy("strict")).to.throw(/not valid/);
+    });
+
+    it("picks the strictest of the modes given", () => {
+      expect(strictestScriptPolicy("source", "review")).to.equal("review");
+      expect(strictestScriptPolicy("review", "off")).to.equal("off");
+      expect(strictestScriptPolicy(undefined, undefined)).to.equal("source");
+      expect(strictestScriptPolicy("off", undefined, "source")).to.equal("off");
+    });
+
+    it('"off" blocks everything and does not consult the allowlist', () => {
+      const dep = mkDep({ name: "foo", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, { foo: true }, { mode: "off" });
+      expect(policy.denied).to.equal(true);
+      expect(policy.reason).to.equal("off");
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it('"review" blocks a registry package that has no allowlist entry', () => {
+      const dep = mkDep({ name: "foo", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "review" });
+      expect(policy.trusted).to.equal(false);
+      expect(policy.reason).to.equal("review");
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it('"review" runs a registry package that is allowlisted', () => {
+      const dep = mkDep({ name: "foo", version: "1.2.3", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, { foo: true }, { mode: "review" });
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
+    });
+
+    it('"source" still runs a registry package with no entry', () => {
+      const dep = mkDep({ name: "foo", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source" });
+      expect(policy.trusted).to.equal(true);
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
+    });
+  });
+
+  describe("explicit denial (false)", function() {
+    it("denies a registry package in source mode", () => {
+      const dep = mkDep({ name: "malware", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, { malware: false });
+      expect(policy.denied).to.equal(true);
+      expect(policy.reason).to.equal("denied");
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it("wins over a wildcard entry on another matching key", () => {
+      const dep = mkDep({ name: "malware", version: "1.0.0", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, { malware: false, "malware@1.0.0": true });
+      expect(isScriptAllowed(policy, "install")).to.equal(false);
+    });
+
+    it("wins over allowTopLevelScripts", () => {
+      const dep = mkDep({ name: "malware", spec: "github:x/malware", urlType: "github", top: true });
+      const policy = evaluateScriptPolicy(dep, { malware: false }, { allowTopLevel: true });
+      expect(isScriptAllowed(policy, "preinstall")).to.equal(false);
+    });
+  });
+
+  describe("npm value forms", function() {
+    it("allows all scripts for a matching version pin", () => {
+      const dep = mkDep({ name: "canvas", version: "5.0.1", spec: "^5.0.0" });
+      const policy = evaluateScriptPolicy(dep, { canvas: "5.0.1" }, { mode: "review" });
+      expect(isScriptAllowed(policy, "install")).to.equal(true);
+    });
+
+    it("does not allow a version the pin does not match", () => {
+      const dep = mkDep({ name: "canvas", version: "5.1.0", spec: "^5.0.0" });
+      const policy = evaluateScriptPolicy(dep, { canvas: "5.0.1" }, { mode: "review" });
+      expect(isScriptAllowed(policy, "install")).to.equal(false);
+    });
+
+    it("still reads a lifecycle script name as a script name", () => {
+      const dep = mkDep({ name: "esbuild", version: "0.28.2", spec: "^0.28.0" });
+      const policy = evaluateScriptPolicy(dep, { esbuild: "postinstall" }, { mode: "review" });
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
+      expect(isScriptAllowed(policy, "preinstall")).to.equal(false);
+    });
+
+    it("matches a bare-name key", () => {
+      const dep = mkDep({ name: "sharp", version: "0.34.0", spec: "^0.34.0" });
+      const policy = evaluateScriptPolicy(dep, { sharp: ["install"] }, { mode: "review" });
+      expect(isScriptAllowed(policy, "install")).to.equal(true);
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+  });
+
+  describe("workspace-local exemption", function() {
+    /**
+     * @param {object} [extra] extra depInfo fields
+     * @returns {object} a fake local (fynpo sibling) depInfo
+     */
+    const mkLocal = (extra = {}) => {
+      const dep = mkDep({ name: "sib", version: "1.0.0", spec: "../sib" });
+      dep[DEP_ITEM].localType = "sym";
+      dep.local = "sym";
+      return Object.assign(dep, extra);
+    };
+
+    it("detects a local source", () => {
+      expect(isLocalSource(mkLocal())).to.equal(true);
+      expect(isLocalSource(mkDep({ spec: "^1.0.0" }))).to.equal(false);
+    });
+
+    it("runs local package scripts in review mode", () => {
+      const policy = evaluateScriptPolicy(mkLocal(), {}, { mode: "review" });
+      expect(policy.trusted).to.equal(true);
+      expect(policy.reason).to.equal("local");
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
+    });
+
+    it("blocks local package scripts when reviewLocalPackages is on", () => {
+      const policy = evaluateScriptPolicy(mkLocal(), {}, {
+        mode: "review",
+        reviewLocalPackages: true
+      });
+      expect(policy.trusted).to.equal(false);
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it("still blocks a local path declared by a git package", () => {
+      const dep = mkDep({ name: "nested", version: "1.0.0", spec: "../nested" });
+      dep[DEP_ITEM].localType = "sym";
+      dep[DEP_ITEM].parent = { urlType: "github", semver: "github:user/evil" };
+      dep.local = "sym";
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "review" });
+      expect(policy.urlType).to.equal("github");
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it("a denial still applies to a local package", () => {
+      const policy = evaluateScriptPolicy(mkLocal(), { sib: false }, { mode: "source" });
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it('"off" blocks local packages too', () => {
+      const policy = evaluateScriptPolicy(mkLocal(), {}, { mode: "off" });
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
     });
   });
 });

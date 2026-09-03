@@ -1,19 +1,35 @@
 // @ts-nocheck
+import Semver from "semver";
 import * as semverUtil from "./semver";
 import { DEP_ITEM, SEMVER } from "../symbols";
 
 
 //
 // Security hardening: a package's npm lifecycle scripts (preinstall, install,
-// postinstall) are only executed during install when the package came from a
-// configured registry, is a trusted local file:/link:/symlink dependency, or
-// is explicitly whitelisted in the project's package.json `fyn.allowScripts`.
+// postinstall) are only executed during install when the policy in effect
+// allows it.
+//
+// There are two trust models, selected by `fyn.scriptPolicy`:
+//
+//   "source" (default) - trust is provenance. A package from a configured
+//     registry, or a trusted local file:/link:/symlink dependency, runs its
+//     scripts; a github/git/url tarball needs an explicit allowlist entry.
+//
+//   "review" - trust is review (npm 12 parity). Nothing runs its install
+//     scripts without an allowlist entry, registry packages included, because
+//     a compromised release of an ordinary dependency is the actual attack.
+//     Workspace-local packages stay exempt: they are reviewed by the PR that
+//     changed them.
+//
+//   "off" - nothing runs, and the allowlist is not consulted. This is npm's
+//     `ignore-scripts`, and like npm's it wins over the allowlist rather than
+//     the other way around.
 //
 // A package's source is determined from its dependency spec's urlType:
-//   - registry semver (e.g. ^1.2.3)         -> no urlType             -> trusted
-//   - local path under root/registry/local  -> localType, no urlType  -> trusted
+//   - registry semver (e.g. ^1.2.3)         -> no urlType             -> trusted in "source"
+//   - local path under root/registry/local  -> localType, no urlType  -> trusted in every mode
 //   - local path under git/URL ancestor     -> ancestor urlType       -> UNTRUSTED
-//   - npm: alias (resolves from a registry)  -> urlType "npm"          -> trusted
+//   - npm: alias (resolves from a registry)  -> urlType "npm"          -> trusted in "source"
 //   - github:/git/git+*/http(s) tarball      -> urlType set            -> UNTRUSTED
 //
 // Anything carrying a urlType that isn't a known registry alias is treated as
@@ -22,6 +38,118 @@ import { DEP_ITEM, SEMVER } from "../symbols";
 
 // urlTypes that still resolve from a configured registry and are trusted.
 export const TRUSTED_URL_TYPES = new Set(["npm"]);
+
+/** The install-time lifecycle scripts this policy gates. */
+export const LIFECYCLE_SCRIPTS = ["preinstall", "install", "postinstall"];
+
+/** Valid `fyn.scriptPolicy` modes, loosest to strictest. */
+export const SCRIPT_POLICY_MODES = ["source", "review", "off"];
+
+/** Today's behavior, and the default until the owner decides otherwise. */
+export const DEFAULT_SCRIPT_POLICY = "source";
+
+/**
+ * Normalize a `fyn.scriptPolicy` value.
+ *
+ * @param {*} mode the configured value
+ * @param {string} [dflt] mode to use when unset
+ * @returns {string} one of {@link SCRIPT_POLICY_MODES}
+ * @throws {Error} when the value is set but not a known mode
+ */
+export function normalizeScriptPolicy(mode, dflt = DEFAULT_SCRIPT_POLICY) {
+  if (mode === undefined || mode === null || mode === "") {
+    return dflt;
+  }
+
+  const normalized = String(mode).toLowerCase();
+  if (!SCRIPT_POLICY_MODES.includes(normalized)) {
+    throw new Error(
+      `fyn scriptPolicy "${mode}" is not valid - expected one of ${SCRIPT_POLICY_MODES.join(", ")}`
+    );
+  }
+
+  return normalized;
+}
+
+/**
+ * Pick the stricter of two policy modes. Used to merge a package's setting with
+ * the monorepo's: a package may tighten what the repo asked for, never loosen
+ * it.
+ *
+ * @param {...string} modes modes to compare, unset values ignored
+ * @returns {string} the strictest mode given, or the default when none are
+ */
+export function strictestScriptPolicy(...modes) {
+  return modes.reduce((strictest, mode) => {
+    if (mode === undefined) {
+      return strictest;
+    }
+    return SCRIPT_POLICY_MODES.indexOf(mode) > SCRIPT_POLICY_MODES.indexOf(strictest)
+      ? mode
+      : strictest;
+  }, DEFAULT_SCRIPT_POLICY);
+}
+
+/**
+ * Normalize a configured allowScripts value into a map.
+ *
+ * A map is used as-is. A list of package names - the `--allow-scripts=a,b` CLI
+ * form - becomes a blanket approval for each name, matching npm's flag.
+ *
+ * @param {(object|string[]|string)} value the configured value
+ * @returns {object} an allowScripts map
+ */
+export function normalizeAllowScriptsConfig(value) {
+  if (!value) {
+    return {};
+  }
+
+  const list = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : undefined;
+
+  if (list === undefined) {
+    return value;
+  }
+
+  return list.reduce((map, name) => {
+    const key = String(name).trim();
+    if (key) {
+      map[key] = true;
+    }
+    return map;
+  }, {});
+}
+
+/**
+ * Merge allowScripts maps from loosest to tightest scope - fynpo config, then
+ * package.json, then CLI.
+ *
+ * Approvals accumulate, but a `false` at any level is final: a package cannot
+ * approve what the monorepo denied. Cross-key denials (a bare-name `false`
+ * against a version-pinned approval) are resolved at evaluation time, where
+ * every matching key is folded together.
+ *
+ * @param {...object} maps allowScripts maps, loosest scope first
+ * @returns {object} the merged map
+ */
+export function mergeAllowScripts(...maps) {
+  const merged = {};
+
+  for (const map of maps) {
+    const normalized = normalizeAllowScriptsConfig(map);
+    for (const key of Object.keys(normalized)) {
+      if (merged[key] === false) {
+        continue;
+      }
+      merged[key] = normalized[key];
+    }
+  }
+
+  return merged;
+}
 
 /**
  * Derive the effective source urlType for a dependency item.
@@ -74,6 +202,34 @@ export function getUrlType(depInfo) {
 }
 
 /**
+ * Whether a resolved package came from the workspace itself - a file:/link:
+ * dependency or a fynpo sibling - rather than from a registry or a URL.
+ *
+ * Under `"review"` these are exempt: an allowlist is a review gate on code you
+ * did not write, and monorepo source is reviewed by the PR that changed it.
+ *
+ * @param {object} depInfo resolved package data
+ * @returns {boolean} true if the package is a workspace-local dependency
+ */
+export function isLocalSource(depInfo) {
+  if (!depInfo) {
+    return false;
+  }
+
+  if (depInfo.local) {
+    return true;
+  }
+
+  const depItem = depInfo[DEP_ITEM];
+  if (depItem && depItem.localType) {
+    return true;
+  }
+
+  const spec = (depItem && depItem.semver) || depInfo[SEMVER];
+  return Boolean(spec && semverUtil.analyze(spec).localType);
+}
+
+/**
  * @param {object} depInfo resolved package data
  * @returns {boolean} true if the package source is trusted to run lifecycle
  *   scripts without being explicitly whitelisted.
@@ -86,7 +242,8 @@ export function isTrustedScriptSource(depInfo) {
 /**
  * Build the candidate whitelist keys for a package. Matching accepts BOTH the
  * original requested spec and the resolved version, e.g. `foo@github:user/repo`
- * and `foo@2.3.0`.
+ * and `foo@2.3.0`, plus the bare package name - npm's key form, where the
+ * version it approved lives on the value side.
  *
  * @param {object} depInfo resolved package data
  * @returns {string[]} candidate keys, spec form first
@@ -101,19 +258,45 @@ export function makeAllowKeys(depInfo) {
   if (depInfo.version && depInfo.version !== spec) {
     keys.push(`${depInfo.name}@${depInfo.version}`);
   }
+  keys.push(depInfo.name);
   return keys;
 }
 
 /**
+ * Classify a string allowScripts value. A lifecycle script name allows just
+ * that script (fyn's form); anything that parses as a semver range is npm's
+ * version pin, allowing all scripts for the matching version only.
+ *
+ * @param {string} value the string value
+ * @returns {string} "script" or "version"
+ */
+function classifyStringEntry(value) {
+  if (LIFECYCLE_SCRIPTS.includes(value.toLowerCase())) {
+    return "script";
+  }
+  return Semver.validRange(value) ? "version" : "script";
+}
+
+/**
  * Fold a single allowScripts entry value into an accumulator. Accepts an array
- * of script names, a single script name, or the wildcard `true`/`"*"` to allow
- * all scripts for the package. Script names are normalized to lowercase.
+ * of script names, a single script name, a version pin, the wildcard
+ * `true`/`"*"` to allow all scripts, or `false` to deny outright.
  *
  * @param {(string[]|string|boolean)} value the allowScripts entry value
- * @param {{allowAll:boolean, scripts:Set<string>}} acc accumulator to fold into
- * @returns {{allowAll:boolean, scripts:Set<string>}} the accumulator
+ * @param {{allowAll:boolean, scripts:Set<string>, denied:boolean}} acc
+ *   accumulator to fold into
+ * @param {object} [ctx] matching context
+ * @param {string} [ctx.version] the package's resolved version, for version pins
+ * @returns {{allowAll:boolean, scripts:Set<string>, denied:boolean}} the accumulator
  */
-function normalizeAllowEntry(value, acc) {
+function normalizeAllowEntry(value, acc, ctx = {}) {
+  // an explicit denial is final - it must not be reversible by a wildcard
+  // elsewhere, which is what makes a blanket "approve all" workflow safe.
+  if (value === false) {
+    acc.denied = true;
+    return acc;
+  }
+
   if (value === true || value === "*") {
     acc.allowAll = true;
     return acc;
@@ -127,10 +310,19 @@ function normalizeAllowEntry(value, acc) {
   }
 
   for (const s of list) {
-    if (s === true || s === "*") {
+    if (s === false) {
+      acc.denied = true;
+    } else if (s === true || s === "*") {
       acc.allowAll = true;
     } else if (typeof s === "string") {
-      acc.scripts.add(s.toLowerCase());
+      if (classifyStringEntry(s) === "version") {
+        // npm's form: "canvas": "5.0.1" - all scripts, only that version
+        if (ctx.version && semverUtil.satisfies(ctx.version, s)) {
+          acc.allowAll = true;
+        }
+      } else {
+        acc.scripts.add(s.toLowerCase());
+      }
     }
   }
 
@@ -138,21 +330,23 @@ function normalizeAllowEntry(value, acc) {
 }
 
 /**
- * Fold any matching `fyn.allowScripts` entries (by spec or resolved-version key)
- * into the accumulator.
+ * Fold any matching `fyn.allowScripts` entries (by spec, resolved-version, or
+ * bare-name key) into the accumulator.
  *
  * @param {string[]} keys candidate keys from {@link makeAllowKeys}
  * @param {object} allowScripts the project's `fyn.allowScripts` map
- * @param {{allowAll:boolean, scripts:Set<string>}} acc accumulator to fold into
+ * @param {{allowAll:boolean, scripts:Set<string>, denied:boolean}} acc
+ *   accumulator to fold into
+ * @param {object} [ctx] matching context passed to {@link normalizeAllowEntry}
  * @returns {(string|undefined)} the first matched key, if any
  */
-function foldAllowScripts(keys, allowScripts, acc) {
+function foldAllowScripts(keys, allowScripts, acc, ctx) {
   let matchedKey;
   for (const key of keys) {
     const value = allowScripts && allowScripts[key];
     if (value !== undefined) {
       if (!matchedKey) matchedKey = key;
-      normalizeAllowEntry(value, acc);
+      normalizeAllowEntry(value, acc, ctx);
     }
   }
   return matchedKey;
@@ -174,44 +368,88 @@ export function isTopLevelDep(depInfo) {
  * Evaluate the lifecycle-script policy for a resolved package.
  *
  * @param {object} depInfo resolved package data
- * @param {object} allowScripts the project's package.json `fyn.allowScripts` map
+ * @param {object} allowScripts the effective `fyn.allowScripts` map
  * @param {object} [options] additional policy options
  * @param {(boolean|string|string[])} [options.allowTopLevel] the project's
- *   `fyn.allowTopLevelScripts` config. When truthy, non-registry packages that
- *   are declared directly in the top-level package.json are allowed to run the
- *   given lifecycle scripts (`true`/`"*"` = all, or a list of script names).
- * @returns {{trusted:boolean, urlType:(string|undefined), allowAll:boolean,
+ *   `fyn.allowTopLevelScripts` config. When truthy, packages that are declared
+ *   directly in the top-level package.json are allowed to run the given
+ *   lifecycle scripts (`true`/`"*"` = all, or a list of script names).
+ * @param {string} [options.mode] the `fyn.scriptPolicy` mode in effect
+ * @param {boolean} [options.reviewLocalPackages] when true, workspace-local
+ *   packages lose their exemption and need an allowlist entry like any other
+ * @returns {{trusted:boolean, denied:boolean, urlType:(string|undefined),
+ *   local:boolean, mode:string, reason:string, allowAll:boolean,
  *   allowed:Set<string>, key:(string|undefined), topLevel:boolean}} the
  *   resolved script policy
  */
 export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
+  const { allowTopLevel, reviewLocalPackages = false } = options;
+  const mode = normalizeScriptPolicy(options.mode);
   const urlType = getUrlType(depInfo);
   const keys = makeAllowKeys(depInfo);
   const topLevel = isTopLevelDep(depInfo);
+  const local = isLocalSource(depInfo);
 
-  if (!urlType || TRUSTED_URL_TYPES.has(urlType)) {
-    return { trusted: true, urlType, allowAll: true, allowed: new Set(), key: keys[0], topLevel };
+  const base = { urlType, local, mode, topLevel, key: keys[0] };
+  const nothing = { trusted: false, allowAll: false, allowed: new Set() };
+
+  // "off" is npm's ignore-scripts: the allowlist is not consulted at all.
+  if (mode === "off") {
+    return { ...base, ...nothing, denied: true, reason: "off" };
   }
 
-  const acc = { allowAll: false, scripts: new Set() };
-  const matchedKey = foldAllowScripts(keys, allowScripts, acc);
+  const acc = { allowAll: false, scripts: new Set(), denied: false };
+  const matchedKey = foldAllowScripts(keys, allowScripts, acc, { version: depInfo.version });
+  const key = matchedKey || keys[0];
+
+  if (acc.denied) {
+    return { ...base, ...nothing, key, denied: true, reason: "denied" };
+  }
+
+  // workspace-local packages are exempt in every mode, including "review":
+  // they are reviewed by the PR that changed them. `urlType` being set means
+  // the local path was declared by a git/URL package, which is not that.
+  if (local && !urlType && !reviewLocalPackages) {
+    return {
+      ...base,
+      key,
+      trusted: true,
+      denied: false,
+      allowAll: true,
+      allowed: new Set(),
+      reason: "local"
+    };
+  }
+
+  // "source": provenance is the trust boundary, so a registry package runs.
+  if (mode === "source" && (!urlType || TRUSTED_URL_TYPES.has(urlType))) {
+    return {
+      ...base,
+      key,
+      trusted: true,
+      denied: false,
+      allowAll: true,
+      allowed: new Set(),
+      reason: "registry"
+    };
+  }
 
   // opt-in: trust lifecycle scripts of packages declared directly in the
   // top-level package.json (fyn.allowTopLevelScripts). Unioned with any
   // per-package fyn.allowScripts entry above.
-  const { allowTopLevel } = options;
   if (topLevel && allowTopLevel !== undefined && allowTopLevel !== false) {
-    normalizeAllowEntry(allowTopLevel, acc);
+    normalizeAllowEntry(allowTopLevel, acc, { version: depInfo.version });
   }
 
   return {
+    ...base,
     trusted: false,
-    urlType,
+    denied: acc.denied,
     allowAll: acc.allowAll,
     allowed: acc.scripts,
     // key to suggest when warning - prefer a matched key, else the spec form
-    key: matchedKey || keys[0],
-    topLevel
+    key,
+    reason: mode === "review" ? "review" : "untrusted-source"
   };
 }
 
@@ -221,6 +459,9 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
  * @returns {boolean} whether the script is allowed to run
  */
 export function isScriptAllowed(policy, scriptName) {
+  if (policy.denied) {
+    return false;
+  }
   if (policy.trusted || policy.allowAll) {
     return true;
   }
