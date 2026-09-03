@@ -308,7 +308,13 @@ describe("xaa", () => {
         { concurrency: 3 }
       );
       expect(x).toEqual([3, 6, 9, 12, 15, 18, 21, 24, 27]);
-      expect(Date.now() - a).toBeLessThan(280);
+      //
+      // This bound only has to catch concurrency failing outright: serial execution costs
+      // (120+50) + (85+50) + 7*50 = 655ms, while concurrency 3 costs ~239ms. The old 280ms
+      // left 17% headroom and flaked on CI, which runs suites 6-way concurrent (FJM-157).
+      // `doneOrder` below is the precise assertion - that order only holds at concurrency 3.
+      //
+      expect(Date.now() - a).toBeLessThan(450);
       expect(doneOrder).toEqual([1, 3, 4, 5, 6, 2, 8, 9, 7]);
     });
 
