@@ -2,7 +2,7 @@
   "name": "fyn",
   "version": "3.0.5",
   "description": "fyn is the NPM for fynpo -- a zero setup monorepo tool",
-  "main": "./bin/fyn.js",
+  "main": "./bin/index.mjs",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fyn",
   "license": "Apache-2.0",
   "scripts": {
@@ -26,9 +26,9 @@
     "hello": "echo hello"
   },
   "bin": {
-    "0-npx-please-run-this-for-fyn": "./bin/fyn.js",
-    "fyn": "./bin/fyn.js",
-    "fun": "./bin/fun.js"
+    "0-npx-please-run-this-for-fyn": "./bin/fyn.mjs",
+    "fyn": "./bin/fyn.mjs",
+    "fun": "./bin/fun.mjs"
   },
   "author": "Walmart GTP.js Team and Contributors",
   "publishConfig": {

@@ -147,14 +147,21 @@ export default defineConfig({
       "util/types": stub("util-types.js")
     }
   },
+  // Syntax lowering target. This belongs on `transform`, not `output` - rolldown rejects
+  // `output.target` with "Invalid key: Expected never but received target" and carries on with
+  // its default of `esnext`, so the target the config claimed was never applied.
+  //
+  // node22.12 is exactly the engines floor (package.json engines: node >=22.12.0). The old
+  // webpack build ran everything through babel targeting node 8, which is long dead and only
+  // added output size.
+  transform: {
+    target: "node22.12"
+  },
   output: {
     file: "dist/bundle.mjs",
     format: "esm",
     banner,
     minify: false,
-    inlineDynamicImports: true,
-    // the monorepo baseline (package.json engines: node >=22.12.0). The webpack build ran
-    // everything through babel targeting node 8, which is long dead and only added output size.
-    target: "node22"
+    inlineDynamicImports: true
   }
 });

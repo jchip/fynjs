@@ -6,7 +6,7 @@ import AveAzul from "aveazul";
 import { logger } from "./logger";
 import * as utils from "./utils";
 import * as _ from "lodash";
-import fyn from "fyn/bin/index.js";
+import fyn from "fyn/bin/index.mjs";
 import shell from "shelljs";
 import { FynpoDepGraph, FynpoPackageInfo } from "@fynpo/base";
 import { TopoRunner } from "./topo-runner";

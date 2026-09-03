@@ -710,7 +710,7 @@ class PkgSrcManager {
 
   pkgPreperInstallDep(dir: string, displayTitle: string): Promise<void> {
     const node = process.env.NODE || process.execPath;
-    const fyn = Path.join(__dirname, "../bin/fyn.js");
+    const fyn = Path.join(__dirname, "../bin/fyn.mjs");
     return new VisualExec({
       displayTitle,
       cwd: dir,

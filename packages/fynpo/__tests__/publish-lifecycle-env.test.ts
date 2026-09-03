@@ -5,7 +5,7 @@ vi.mock("../src/logger", () => ({
 }));
 
 const fynRun = vi.fn();
-vi.mock("fyn/bin/index.js", () => ({ default: { run: (...args: any[]) => fynRun(...args) } }));
+vi.mock("fyn/bin/index.mjs", () => ({ default: { run: (...args: any[]) => fynRun(...args) } }));
 
 vi.mock("shelljs", () => ({
   default: { pushd: vi.fn(), popd: vi.fn(), rm: vi.fn() },

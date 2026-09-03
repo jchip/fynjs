@@ -37,7 +37,7 @@ class LocalPkgBuilder {
     if (await Fs.exists(cliFynJs)) {
       this._fynJs = cliFynJs;
     } else {
-      this._fynJs = Path.join(__dirname, "../bin/fyn.js");
+      this._fynJs = Path.join(__dirname, "../bin/fyn.mjs");
     }
 
     const { localsByDepth } = this._options;

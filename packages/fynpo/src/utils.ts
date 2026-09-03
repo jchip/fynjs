@@ -578,7 +578,10 @@ export function getFynExecutable() {
   if (fynExecutable) {
     return fynExecutable;
   }
-  fynExecutable = xrequire.resolve("fyn");
+  // resolve the CLI entry by name, not through fyn's `main`. `main` is the programmatic entry
+  // (bin/index.mjs), which exports run/fun and does nothing when executed as a script - a
+  // bootstrap that "succeeds" in 0.03s with nothing installed is what that looks like.
+  fynExecutable = xrequire.resolve("fyn/bin/fyn.mjs");
 
   const nodeDir = process.argv[0].replace(os.homedir(), "~");
   const fynDir = `.${Path.sep}${Path.relative(process.cwd(), fynExecutable)}`;

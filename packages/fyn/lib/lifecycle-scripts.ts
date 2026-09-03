@@ -70,7 +70,7 @@ const fynInstalledDir = Path.dirname(optionalRequire.resolve("../package.json"))
 // the "_" is a dummy filename: createRequire wants the path of the file doing the requiring,
 // and resolves relative specifiers against its dirname. Passing the bare directory would
 // resolve one level too high. (require-at did the same with "._require-at_".)
-const fynCli = createRequire(Path.join(fynInstalledDir, "_")).resolve("./bin/fyn.js");
+const fynCli = createRequire(Path.join(fynInstalledDir, "_")).resolve("./bin/fyn.mjs");
 
 /*
  * ref: https://github.com/npm/npm/blob/75b462c19ea16ef0d7f943f94ff4d255695a5c0d/lib/utils/lifecycle.js
