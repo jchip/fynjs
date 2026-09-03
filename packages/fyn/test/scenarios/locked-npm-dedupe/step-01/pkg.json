@@ -13,5 +13,12 @@
   "optionalDependencies": {
     "mod-e": "^1.0.0",
     "mod-err": "^4.5.1"
+  },
+  "fyn": {
+    "allowScripts": {
+      "mod-c": {},
+      "mod-e": {},
+      "mod-err": {}
+    }
   }
 }

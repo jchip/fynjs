@@ -11,5 +11,13 @@
   },
   "devDependencies": {
     "mod-d": "^4.2.1"
+  },
+  "fyn": {
+    "allowScripts": {
+      "mod-a": {},
+      "mod-c": {},
+      "mod-d": {},
+      "mod-e": {}
+    }
   }
 }

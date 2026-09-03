@@ -16,6 +16,7 @@ import {
   resolveLocalExportsConfig
 } from "./local-exports";
 import { INSTALL_PACKAGE } from "./log-items";
+import { InstallScripts } from "./install-scripts";
 import { runNpmScript } from "./util/run-npm-script";
 import {
   evaluateScriptPolicy,
@@ -92,6 +93,7 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   allowScriptsPin: boolean;
   allowScriptsPending: boolean;
   scriptPolicyOptions: Record<string, unknown>;
+  resetAllowScripts(): void;
   setBlockedScripts(blocked: BlockedScriptRecord[], pending?: BlockedScriptRecord[]): void;
   isNormalLayout: boolean;
   getOutputDir(): string;
@@ -142,6 +144,8 @@ class PkgInstaller {
   public blockedScripts: BlockedScriptRecord[] = [];
   /** packages that would need approval under "review" - only with --allow-scripts-pending */
   public pendingScripts: BlockedScriptRecord[] = [];
+  /** the blocked packages themselves, so an approval at the prompt can queue their scripts */
+  private _blockedDeps: { depInfo: DepInfo; candidates: string[] }[] = [];
 
   constructor(options: PkgInstallerOptions) {
     this._fyn = options.fyn;
@@ -163,6 +167,7 @@ class PkgInstaller {
     this.toLink = [];
     this.blockedScripts = [];
     this.pendingScripts = [];
+    this._blockedDeps = [];
     this._data.cleanLinked();
     this._fyn._depResolver.resolvePkgPeerDep(this._fyn._pkg, "your app", this._data);
     // go through each package and insert
@@ -176,6 +181,8 @@ class PkgInstaller {
     }
 
     // /*deprecated*/ await this._depLinker.linkAppFynRes(this._data.res, fynRes._fynFo, this._fyn.getOutputDir());
+
+    await this._reviewBlockedScripts();
 
     return this._doInstall().finally(() => {
       this.preInstall = undefined;
@@ -678,44 +685,129 @@ class PkgInstaller {
       this._fyn.allowScripts,
       this._fyn.scriptPolicyOptions
     );
-    const blockedScripts = [];
-    const isAllowed = scriptName => {
-      if (isScriptAllowed(scriptPolicy, scriptName)) {
-        return true;
-      }
-      blockedScripts.push(scriptName);
-      return false;
-    };
-
     const hasPI = json.hasPI || Boolean(scripts.preinstall);
     const piExed = Boolean(depInfo.preinstall);
+
+    // the scripts this package would run if the policy let it
+    const candidates = [];
 
     if (!piExed && hasPI) {
       if (depInfo.preInstalled) {
         json._fyn.preinstall = true;
-      } else if (isAllowed("preinstall")) {
-        logger.debug("adding preinstall step for", depInfo.dir);
-        this.preInstall!.push(depInfo);
+      } else {
+        candidates.push("preinstall");
+      }
+    }
+
+    for (const name of ["install", "postinstall"]) {
+      if (Boolean(scripts[name]) && !json._fyn[name]) {
+        candidates.push(name);
       }
     }
 
     this.toLink!.push(depInfo);
 
-    const install = ["install", "postinstall"].filter(x => {
-      return Boolean(scripts[x]) && !json._fyn[x] && isAllowed(x);
-    });
-
-    if (install.length > 0) {
-      logger.debug("adding install step for", depInfo.dir, install);
-      depInfo.install = install;
-      this.postInstall!.push(depInfo);
-    }
+    const blockedScripts = candidates.filter(name => !isScriptAllowed(scriptPolicy, name));
+    this._queueScripts(
+      depInfo,
+      candidates.filter(name => isScriptAllowed(scriptPolicy, name))
+    );
 
     if (blockedScripts.length > 0) {
       this._recordBlockedScripts(depInfo, scriptPolicy, blockedScripts);
+      // kept out of the persisted record, which is JSON - this is only so an
+      // approval given at the prompt can queue the scripts it just allowed
+      this._blockedDeps.push({ depInfo, candidates });
     }
 
     this._recordPendingReview(depInfo, { hasPI, ...scripts });
+  }
+
+  /**
+   * Queue a package's allowed install scripts.
+   *
+   * Idempotent per package, because the review prompt re-queues after an
+   * approval and a package may already have had some of its scripts allowed.
+   *
+   * @param {object} depInfo resolved package data
+   * @param {string[]} names the lifecycle scripts to run
+   * @returns {void}
+   */
+  _queueScripts(depInfo, names) {
+    if (names.includes("preinstall") && !this.preInstall!.includes(depInfo)) {
+      logger.debug("adding preinstall step for", depInfo.dir);
+      this.preInstall!.push(depInfo);
+    }
+
+    const install = ["install", "postinstall"].filter(name => names.includes(name));
+
+    if (install.length > 0) {
+      logger.debug("adding install step for", depInfo.dir, install);
+      depInfo.install = _.union(depInfo.install || [], install);
+      if (!this.postInstall!.includes(depInfo)) {
+        this.postInstall!.push(depInfo);
+      }
+    }
+  }
+
+  /**
+   * Stop before running anything when packages want to run install scripts
+   * nobody has approved. On a terminal this asks and re-queues whatever the
+   * person approves; anywhere else it throws.
+   *
+   * Only under `"review"`: `"source"` is the documented opt-out and keeps
+   * warning-and-continuing, and under `"off"` nothing running is the point.
+   *
+   * @returns {Promise<void>} nothing
+   */
+  async _reviewBlockedScripts() {
+    if (this._fyn.scriptPolicy !== "review" || this._blockedDeps.length === 0) {
+      return;
+    }
+
+    const approved = await new InstallScripts({ fyn: this._fyn }).review(this.blockedScripts);
+
+    if (approved.length === 0) {
+      return;
+    }
+
+    this._fyn.resetAllowScripts();
+    this._requeueApproved();
+  }
+
+  /**
+   * Re-evaluate the packages that were blocked, after the allowlist on disk
+   * changed, and queue whatever is now allowed.
+   *
+   * @returns {void}
+   */
+  _requeueApproved() {
+    const blockedDeps = this._blockedDeps;
+    const stillBlocked = [];
+
+    this._blockedDeps = [];
+    this.blockedScripts = [];
+
+    for (const { depInfo, candidates } of blockedDeps) {
+      const policy = evaluateScriptPolicy(
+        depInfo,
+        this._fyn.allowScripts,
+        this._fyn.scriptPolicyOptions
+      );
+      const blocked = candidates.filter(name => !isScriptAllowed(policy, name));
+
+      this._queueScripts(
+        depInfo,
+        candidates.filter(name => isScriptAllowed(policy, name))
+      );
+
+      if (blocked.length > 0) {
+        this._recordBlockedScripts(depInfo, policy, blocked);
+        stillBlocked.push({ depInfo, candidates });
+      }
+    }
+
+    this._blockedDeps = stillBlocked;
   }
 
   /**

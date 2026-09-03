@@ -10,6 +10,7 @@ import {
   pruneEntries,
   selectRecords,
   resolveTarget,
+  canPrompt,
   InstallScripts
 } from "../../lib/install-scripts";
 
@@ -291,6 +292,26 @@ describe("install-scripts", function () {
         caught = err;
       });
       expect(caught?.message).to.match(/needs a fynpo\.json/);
+    });
+  
+    it("approves nothing when there was nothing blocked", async () => {
+      expect(await new InstallScripts({ fyn: mkFyn() }).review([])).to.deep.equal([]);
+    });
+
+    it("fails rather than skipping scripts when there is nobody to ask", async () => {
+      // vitest is not a terminal, so this is the CI / piped / hook path
+      expect(canPrompt()).to.equal(false);
+
+      let caught: Error | undefined;
+      await new InstallScripts({ fyn: mkFyn() }).review([mkRecord()]).catch((err: Error) => {
+        caught = err;
+      });
+
+      expect(caught?.message).to.match(/need approval to run their install scripts/);
+      expect(caught?.message).to.include("sharp@0.34.4");
+      // and it names the way out
+      expect(caught?.message).to.include("--script-policy=source");
+      expect(caught?.message).to.include("fyn install-scripts approve");
     });
   });
 });

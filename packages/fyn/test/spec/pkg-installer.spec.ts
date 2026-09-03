@@ -224,6 +224,7 @@ describe("pkg-installer", function () {
       const installer: any = Object.create(PkgInstaller.prototype);
       installer.blockedScripts = [];
       installer.pendingScripts = [];
+      installer._blockedDeps = [];
       installer.preInstall = [];
       installer.postInstall = [];
       installer.toLink = [];
@@ -292,6 +293,65 @@ describe("pkg-installer", function () {
       const installer = await gatherOne({ allowScripts: { sharp: false } });
       expect(installer.postInstall).to.deep.equal([]);
       expect(installer.blockedScripts[0].reason).to.equal("denied");
+    });
+  
+    it("keeps the blocked packages so an approval can queue them", async () => {
+      const installer = await gatherOne({
+        scriptPolicy: "review",
+        scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      expect(installer._blockedDeps).to.have.length(1);
+      expect(installer._blockedDeps[0].candidates).to.deep.equal(["postinstall"]);
+    });
+
+    it("queues the scripts an approval allowed, without re-gathering", async () => {
+      const installer = await gatherOne({
+        scriptPolicy: "review",
+        scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      expect(installer.postInstall).to.deep.equal([]);
+
+      // what the review prompt does: write the approval, then requeue
+      installer._fyn.allowScripts = { sharp: {} };
+      installer._requeueApproved();
+
+      expect(installer.postInstall).to.have.length(1);
+      expect(installer.postInstall[0].install).to.deep.equal(["postinstall"]);
+      expect(installer.blockedScripts).to.deep.equal([]);
+      expect(installer._blockedDeps).to.deep.equal([]);
+    });
+
+    it("keeps a package blocked when the approval did not cover it", async () => {
+      const installer = await gatherOne({
+        scriptPolicy: "review",
+        scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+      });
+
+      installer._fyn.allowScripts = { sharp: { scripts: ["preinstall"] } };
+      installer._requeueApproved();
+
+      expect(installer.postInstall).to.deep.equal([]);
+      expect(installer.blockedScripts).to.have.length(1);
+      expect(installer._blockedDeps).to.have.length(1);
+    });
+
+    it("does not queue a package twice when only some scripts were approved", async () => {
+      const installer = await gatherOne(
+        {
+          scriptPolicy: "review",
+          allowScripts: { sharp: { scripts: ["install"] } },
+          scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+        },
+        { json: { scripts: { install: "node a.js", postinstall: "node b.js" } } }
+      );
+      expect(installer.postInstall).to.have.length(1);
+      expect(installer.postInstall[0].install).to.deep.equal(["install"]);
+
+      installer._fyn.allowScripts = { sharp: {} };
+      installer._requeueApproved();
+
+      expect(installer.postInstall).to.have.length(1);
+      expect(installer.postInstall[0].install).to.deep.equal(["install", "postinstall"]);
     });
   });
 });

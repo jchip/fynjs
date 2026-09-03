@@ -10,6 +10,7 @@ import {
   evaluateScriptPolicy,
   isScriptAllowed,
   normalizeScriptPolicy,
+  normalizeScriptPolicyIfSet,
   strictestScriptPolicy
 } from "../../../lib/util/lifecycle-script-policy";
 
@@ -126,9 +127,9 @@ describe("lifecycle-script-policy", function() {
   });
 
   describe("evaluateScriptPolicy / isScriptAllowed", function() {
-    it("allows all scripts for trusted (registry) packages", () => {
+    it('allows all scripts for trusted (registry) packages under "source"', () => {
       const dep = mkDep({ spec: "^1.0.0" });
-      const policy = evaluateScriptPolicy(dep, {});
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source" });
       expect(policy.trusted).to.equal(true);
       expect(isScriptAllowed(policy, "preinstall")).to.equal(true);
       expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
@@ -208,9 +209,9 @@ describe("lifecycle-script-policy", function() {
       expect(policy.key).to.equal("foo@github:user/foo");
     });
 
-    it("ignores a whitelist for trusted packages (stays trusted)", () => {
+    it('ignores a whitelist for trusted packages under "source" (stays trusted)', () => {
       const dep = mkDep({ name: "foo", version: "1.0.0", spec: "^1.0.0" });
-      const policy = evaluateScriptPolicy(dep, { "foo@^1.0.0": [] });
+      const policy = evaluateScriptPolicy(dep, { "foo@^1.0.0": [] }, { mode: "source" });
       expect(policy.trusted).to.equal(true);
       expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
     });
@@ -228,7 +229,7 @@ describe("lifecycle-script-policy", function() {
     });
   });
 
-  describe("evaluateScriptPolicy with allowTopLevelScripts (opt-in)", function() {
+  describe("evaluateScriptPolicy with allowTopLevelScripts (opt-in, source mode)", function() {
     it("reports topLevel on the policy result", () => {
       const top = mkDep({ spec: "github:user/foo", top: true });
       const transitive = mkDep({ spec: "github:user/foo" });
@@ -244,7 +245,7 @@ describe("lifecycle-script-policy", function() {
 
     it("allows all scripts for a top-level dep when allowTopLevel is true", () => {
       const dep = mkDep({ spec: "github:user/foo", top: true });
-      const policy = evaluateScriptPolicy(dep, {}, { allowTopLevel: true });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source", allowTopLevel: true });
       expect(policy.allowAll).to.equal(true);
       expect(isScriptAllowed(policy, "preinstall")).to.equal(true);
       expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
@@ -252,13 +253,13 @@ describe("lifecycle-script-policy", function() {
 
     it("supports the wildcard '*' for allowTopLevel", () => {
       const dep = mkDep({ spec: "github:user/foo", top: true });
-      const policy = evaluateScriptPolicy(dep, {}, { allowTopLevel: "*" });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source", allowTopLevel: "*" });
       expect(isScriptAllowed(policy, "install")).to.equal(true);
     });
 
     it("restricts to listed script names when allowTopLevel is an array", () => {
       const dep = mkDep({ spec: "github:user/foo", top: true });
-      const policy = evaluateScriptPolicy(dep, {}, { allowTopLevel: ["postinstall"] });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source", allowTopLevel: ["postinstall"] });
       expect(policy.allowAll).to.equal(false);
       expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
       expect(isScriptAllowed(policy, "preinstall")).to.equal(false);
@@ -266,13 +267,13 @@ describe("lifecycle-script-policy", function() {
 
     it("does NOT allow transitive (non-top-level) deps even when allowTopLevel is true", () => {
       const dep = mkDep({ spec: "github:user/foo", top: false });
-      const policy = evaluateScriptPolicy(dep, {}, { allowTopLevel: true });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source", allowTopLevel: true });
       expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
     });
 
     it("treats allowTopLevel false/undefined as off", () => {
       const dep = mkDep({ spec: "github:user/foo", top: true });
-      expect(isScriptAllowed(evaluateScriptPolicy(dep, {}, { allowTopLevel: false }), "install")).to.equal(false);
+      expect(isScriptAllowed(evaluateScriptPolicy(dep, {}, { mode: "source", allowTopLevel: false }), "install")).to.equal(false);
       expect(isScriptAllowed(evaluateScriptPolicy(dep, {}, {}), "install")).to.equal(false);
     });
 
@@ -281,7 +282,7 @@ describe("lifecycle-script-policy", function() {
       const policy = evaluateScriptPolicy(
         dep,
         { "foo@github:user/foo": ["preinstall"] },
-        { allowTopLevel: ["postinstall"] }
+        { mode: "source", allowTopLevel: ["postinstall"] }
       );
       expect(isScriptAllowed(policy, "preinstall")).to.equal(true);
       expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
@@ -290,16 +291,18 @@ describe("lifecycle-script-policy", function() {
 
     it("does not affect trusted (registry) top-level deps", () => {
       const dep = mkDep({ spec: "^1.0.0", top: true });
-      const policy = evaluateScriptPolicy(dep, {}, { allowTopLevel: true });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "source", allowTopLevel: true });
       expect(policy.trusted).to.equal(true);
       expect(policy.topLevel).to.equal(true);
     });
   });
 
   describe("scriptPolicy modes", function() {
-    it("defaults to source and rejects an unknown mode", () => {
-      expect(normalizeScriptPolicy(undefined)).to.equal("source");
-      expect(normalizeScriptPolicy("")).to.equal("source");
+    it("defaults to review and rejects an unknown mode", () => {
+      expect(normalizeScriptPolicy(undefined)).to.equal("review");
+      expect(normalizeScriptPolicy("")).to.equal("review");
+      expect(normalizeScriptPolicyIfSet(undefined)).to.equal(undefined);
+      expect(normalizeScriptPolicyIfSet("off")).to.equal("off");
       expect(normalizeScriptPolicy("REVIEW")).to.equal("review");
       expect(() => normalizeScriptPolicy("strict")).to.throw(/not valid/);
     });
@@ -307,7 +310,9 @@ describe("lifecycle-script-policy", function() {
     it("picks the strictest of the modes given", () => {
       expect(strictestScriptPolicy("source", "review")).to.equal("review");
       expect(strictestScriptPolicy("review", "off")).to.equal("off");
-      expect(strictestScriptPolicy(undefined, undefined)).to.equal("source");
+      expect(strictestScriptPolicy(undefined, undefined)).to.equal("review");
+      // an explicit mode looser than the default still wins
+      expect(strictestScriptPolicy("source", undefined)).to.equal("source");
       expect(strictestScriptPolicy("off", undefined, "source")).to.equal("off");
     });
 
@@ -317,6 +322,32 @@ describe("lifecycle-script-policy", function() {
       expect(policy.denied).to.equal(true);
       expect(policy.reason).to.equal("off");
       expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+    });
+
+    it('does not honor allowTopLevelScripts under "review"', () => {
+      // "I typed this name into package.json" is not "I read this code" - a
+      // blanket exemption for direct deps would be the widest hole in review
+      const dep = mkDep({ name: "foo", version: "1.0.0", spec: "^1.0.0", top: true });
+      const allowTopLevel = { allowTopLevel: true };
+
+      expect(
+        isScriptAllowed(evaluateScriptPolicy(dep, {}, { mode: "source", ...allowTopLevel }), "install")
+      ).to.equal(true);
+      expect(
+        isScriptAllowed(evaluateScriptPolicy(dep, {}, { mode: "review", ...allowTopLevel }), "install")
+      ).to.equal(false);
+    });
+
+    it('does not honor allowTopLevelScripts for a git dep under "review" either', () => {
+      const dep = mkDep({
+        name: "foo",
+        version: "1.0.0",
+        spec: "github:user/foo",
+        urlType: "github",
+        top: true
+      });
+      const policy = evaluateScriptPolicy(dep, {}, { mode: "review", allowTopLevel: true });
+      expect(isScriptAllowed(policy, "install")).to.equal(false);
     });
 
     it('"review" blocks a registry package that has no allowlist entry', () => {
@@ -358,7 +389,10 @@ describe("lifecycle-script-policy", function() {
 
     it("wins over allowTopLevelScripts", () => {
       const dep = mkDep({ name: "malware", spec: "github:x/malware", urlType: "github", top: true });
-      const policy = evaluateScriptPolicy(dep, { malware: false }, { allowTopLevel: true });
+      const policy = evaluateScriptPolicy(dep, { malware: false }, {
+        mode: "source",
+        allowTopLevel: true
+      });
       expect(isScriptAllowed(policy, "preinstall")).to.equal(false);
     });
   });

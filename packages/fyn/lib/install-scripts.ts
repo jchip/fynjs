@@ -1,6 +1,8 @@
 // @ts-nocheck
 import Path from "path";
+import readline from "readline";
 import chalk from "chalk";
+import ci from "ci-info";
 import _ from "lodash";
 import Fs from "./util/file-ops";
 import logger from "./logger";
@@ -181,6 +183,32 @@ export function resolveTarget(fyn, local = false) {
   }
 
   return { file: Path.join(fyn.cwd, "package.json"), fynpo: false };
+}
+
+/**
+ * Whether this run can stop and ask a person.
+ *
+ * @returns {boolean} true when there is a terminal and no CI environment
+ */
+export function canPrompt() {
+  return Boolean(!ci.isCI && process.stdin.isTTY && process.stdout.isTTY);
+}
+
+/**
+ * Ask a question on the terminal.
+ *
+ * @param {string} question the prompt
+ * @returns {Promise<string>} the trimmed, lowercased answer
+ */
+export function ask(question) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  return new Promise(resolve => {
+    rl.question(question, answer => {
+      rl.close();
+      resolve(String(answer).trim().toLowerCase());
+    });
+  });
 }
 
 /**
@@ -402,6 +430,103 @@ export class InstallScripts {
     logger.info(`pruned ${chalk.cyan(removed.join(", "))}`);
 
     return removed;
+  }
+
+  /**
+   * Stop an install that wants to run install scripts nobody has approved.
+   *
+   * On a terminal this asks; anywhere else - CI, a pipe, a hook - there is
+   * nobody to ask, so the install fails rather than quietly producing a tree
+   * whose native packages were never built. `--script-policy=source` is the
+   * documented way out.
+   *
+   * @param {object[]} records blocked-scripts records from this install
+   * @returns {Promise<object[]>} the records approved, empty when none were
+   * @throws {Error} when there is no terminal to ask on
+   */
+  async review(records) {
+    const pending = dedupeBlockedRecords(records);
+
+    if (pending.length === 0) {
+      return [];
+    }
+
+    if (!canPrompt()) {
+      const err = new Error(
+        `${pending.length} package(s) need approval to run their install scripts, and there is ` +
+          `no terminal to ask on: ${pending.map(r => `${r.name}@${r.version}`).join(", ")}.\n` +
+          `  Approve them where you can review the code:\n` +
+          `    ${chalk.cyan("fyn install-scripts approve <package>")}\n` +
+          `  Or record the approvals in your package.json / fynpo.json before installing.\n` +
+          `  To go back to trusting packages by where they came from, install with ` +
+          `${chalk.cyan("--script-policy=source")}.`
+      );
+      // a policy decision, not a crash - the message is the whole story, so
+      // suppress the CWD / argv / stack dump the generic failure path prints
+      err._fynAlreadyLogged = true;
+      logger.error(err.message);
+      throw err;
+    }
+
+    logger.info(
+      `${pending.length} package${pending.length > 1 ? "s" : ""} want to run install scripts ` +
+        `that have not been approved:`
+    );
+
+    const width = pending.reduce((w, r) => Math.max(w, `${r.name}@${r.version}`.length), 0);
+    for (const record of pending) {
+      logger.info(
+        `  ${chalk.cyan(`${record.name}@${record.version}`.padEnd(width))}  ` +
+          chalk.yellow(record.scripts.join(", "))
+      );
+    }
+
+    const answer = await ask(
+      `Approve? ${chalk.cyan("[a]")}ll / ${chalk.cyan("[s]")}elect / ` +
+        `${chalk.cyan("[n]")}one (default) `
+    );
+
+    let approve = [];
+
+    if (answer === "a" || answer === "all" || answer === "y" || answer === "yes") {
+      approve = pending;
+    } else if (answer === "s" || answer === "select") {
+      for (const record of pending) {
+        const yn = await ask(
+          `  ${record.name}@${record.version} (${record.scripts.join(", ")})? [y/N] `
+        );
+        if (yn === "y" || yn === "yes") {
+          approve.push(record);
+        }
+      }
+    }
+
+    if (approve.length === 0) {
+      logger.info("no approvals recorded - install scripts will not run");
+      return [];
+    }
+
+    const target = resolveTarget(this._fyn, false);
+    const read = await this.readTarget(target);
+    const { allowScripts, approved, skipped } = approveEntries(read.allowScripts, approve, {
+      pin: this._fyn.allowScriptsPin
+    });
+
+    if (skipped.length > 0) {
+      logger.warn(
+        `${chalk.magenta("denied, not approved")}: ${skipped.join(", ")} - ` +
+          `remove the ${chalk.cyan("false")} entry first if that was not intended`
+      );
+    }
+
+    if (approved.length === 0) {
+      return [];
+    }
+
+    await this.writeTarget(target, read, allowScripts);
+    logger.info(`approved ${chalk.cyan(approved.join(", "))}`);
+
+    return approve.filter(record => approved.includes(record.name));
   }
 }
 

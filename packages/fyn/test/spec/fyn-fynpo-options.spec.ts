@@ -128,9 +128,15 @@ describe("fynpo fyn.options", function () {
       expect(fyn.scriptPolicy).to.equal("source");
     });
 
-    it("defaults to source with nothing configured", async () => {
+    it("defaults to review with nothing configured", async () => {
       writeFynpo({});
       const fyn = await makeFyn();
+      expect(fyn.scriptPolicy).to.equal("review");
+    });
+
+    it("lets a package opt out to source when the repo says nothing", async () => {
+      writeFynpo({});
+      const fyn = await makeFyn({ pkgFyn: { scriptPolicy: "source" } });
       expect(fyn.scriptPolicy).to.equal("source");
     });
 

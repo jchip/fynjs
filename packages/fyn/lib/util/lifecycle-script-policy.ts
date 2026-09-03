@@ -45,8 +45,12 @@ export const LIFECYCLE_SCRIPTS = ["preinstall", "install", "postinstall"];
 /** Valid `fyn.scriptPolicy` modes, loosest to strictest. */
 export const SCRIPT_POLICY_MODES = ["source", "review", "off"];
 
-/** Today's behavior, and the default until the owner decides otherwise. */
-export const DEFAULT_SCRIPT_POLICY = "source";
+/**
+ * The default. Nothing runs its install scripts without an approval, workspace
+ * packages excepted - npm 12's model. `--script-policy=source` is the opt-out
+ * back to trusting a package because of where it came from.
+ */
+export const DEFAULT_SCRIPT_POLICY = "review";
 
 /**
  * Split a range union into its parts. Accepts npm's `||` and the single `|` a
@@ -104,6 +108,21 @@ export function normalizeScriptPolicy(mode, dflt = DEFAULT_SCRIPT_POLICY) {
 }
 
 /**
+ * Normalize a `fyn.scriptPolicy` value, keeping "not configured" distinct from
+ * the default so scopes can be merged before the default is applied.
+ *
+ * @param {*} mode the configured value
+ * @returns {(string|undefined)} the mode, or undefined when unset
+ * @throws {Error} when the value is set but not a known mode
+ */
+export function normalizeScriptPolicyIfSet(mode) {
+  if (mode === undefined || mode === null || mode === "") {
+    return undefined;
+  }
+  return normalizeScriptPolicy(mode);
+}
+
+/**
  * Pick the stricter of two policy modes. Used to merge a package's setting with
  * the monorepo's: a package may tighten what the repo asked for, never loosen
  * it.
@@ -112,14 +131,17 @@ export function normalizeScriptPolicy(mode, dflt = DEFAULT_SCRIPT_POLICY) {
  * @returns {string} the strictest mode given, or the default when none are
  */
 export function strictestScriptPolicy(...modes) {
-  return modes.reduce((strictest, mode) => {
-    if (mode === undefined) {
-      return strictest;
-    }
-    return SCRIPT_POLICY_MODES.indexOf(mode) > SCRIPT_POLICY_MODES.indexOf(strictest)
-      ? mode
-      : strictest;
-  }, DEFAULT_SCRIPT_POLICY);
+  const given = modes.filter(mode => mode !== undefined);
+
+  if (given.length === 0) {
+    return DEFAULT_SCRIPT_POLICY;
+  }
+
+  // reduce from the first value given, not from the default - otherwise an
+  // explicit mode looser than the default could never win
+  return given.reduce((strictest, mode) =>
+    SCRIPT_POLICY_MODES.indexOf(mode) > SCRIPT_POLICY_MODES.indexOf(strictest) ? mode : strictest
+  );
 }
 
 /**
@@ -553,7 +575,12 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
   // opt-in: trust lifecycle scripts of packages declared directly in the
   // top-level package.json (fyn.allowTopLevelScripts). Unioned with any
   // per-package fyn.allowScripts entry above.
-  if (topLevel && allowTopLevel !== undefined && allowTopLevel !== false) {
+  //
+  // "source" only. Under "review" the question is whether someone read this
+  // code, and "I typed this name into package.json" is not an answer to it - a
+  // blanket exemption for every direct dependency would be the widest hole in
+  // the policy, and a stale `true` would open it silently.
+  if (mode === "source" && topLevel && allowTopLevel !== undefined && allowTopLevel !== false) {
     normalizeAllowEntry(allowTopLevel, acc, { version: depInfo.version });
   }
 

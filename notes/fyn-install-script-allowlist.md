@@ -6,10 +6,10 @@ packages.
 
 Tracked as FPM-82. Blocked on FPM-81, which is now fixed.
 
-**Status: implemented** through stage 2 of *Migration* below — FPM-81, FPM-83, FPM-84, FPM-85,
-FPM-86. Every mode is built and the CLI is complete; the default is still `"source"`, so no
-existing install changes behavior. Stage 3 (making `"review"` the default) remains an owner
-decision. *Open questions* below records how each was answered in the build.
+**Status: shipped, all three stages** — FPM-81, FPM-83, FPM-84, FPM-85, FPM-86, FPM-87.
+`"review"` is now the default: nothing runs an install script without an approval, workspace
+packages excepted. `--script-policy=source` is the opt-out. *Open questions* below records how
+each was answered in the build, and *Migration* what the flip actually looked like.
 
 ## Why now
 
@@ -306,19 +306,39 @@ and diverges from npm's model. Worth revisiting if npm moves that way.
 dependency on upgrade. Belongs to a major, with the summary output shipped at least one minor
 earlier so people can see what would break.
 
-## Migration — needs an owner decision
+## Migration — done
 
-Shipping `"review"` as the default is a breaking change: any project relying on a registry
-package's `postinstall` (`sharp`, `esbuild`, `canvas`, anything with a native build) stops
-working until it has an allowlist. Nothing here should change a default without that call being
-made explicitly.
+`"review"` is the default as of FPM-87. It landed as a **minor on v3**, not a major: the
+feature is new and unreleased, so there is no installed base whose behavior it breaks.
 
-Suggested staging, for the decision rather than as a settled plan:
+Two decisions made at the flip, both the owner's:
 
-1. `scriptPolicy` accepted, defaults to `"source"`. `false` denials honored. No behavior change.
-2. `install-scripts ls` plus the end-of-install summary, so a project can see what it would need
-   to approve. Still no behavior change.
-3. `"review"` becomes the default in a major, with `--script-policy=source` as the escape hatch.
+**`fyn.allowTopLevelScripts` is `"source"`-only.** It exists because a direct dependency you
+typed yourself is more trusted than a transitive one — a provenance argument, which is exactly
+what `"review"` stops accepting. Left applying, a stale `allowTopLevelScripts: true` would
+exempt every direct dependency from the new default, silently, which would be the widest hole
+in it. Under `"source"` it means what it always did.
+
+**An unapproved install script stops the install rather than being skipped.** Skipping is what
+the stages before this did, and it is right when blocking is exceptional — a git dep or two.
+Once review is the default, a skipped `install` script means a native package that did not
+build, and finding that out at runtime is worse than finding it out now. So:
+
+- **On a terminal**, fyn lists what wants to run and asks: all / select / none. An approval is
+  written to `package.json` (or the monorepo's `fynpo.json`) and the scripts it just allowed are
+  queued — the install continues, no second run needed.
+- **Anywhere else** — CI, a pipe, a git hook — there is nobody to ask, so the install fails with
+  the list, the `approve` command, and `--script-policy=source`. Approvals belong in the repo,
+  committed like a lockfile.
+- **`"source"` keeps warning and continuing.** It is the documented opt-out, and an opt-out that
+  also fails your CI is not one.
+
+The staging that got here, for the record:
+
+1. `scriptPolicy` accepted, defaulting to `"source"`. `false` denials honored. No behavior change.
+2. `install-scripts ls`, the end-of-install summary, and `--allow-scripts-pending`, so a project
+   could see what it would need to approve. Still no behavior change.
+3. `"review"` becomes the default, with `--script-policy=source` as the escape hatch.
 
 ## Open questions, as answered
 
@@ -330,11 +350,8 @@ the string: one of `preinstall`/`install`/`postinstall` is a script name, anythi
 name so existing configs keep working. `"*"` means all scripts either way, so the two readings
 agree there.
 
-**Should `fyn.allowTopLevelScripts` survive `"review"` mode?** It does, unchanged. The argument
-for making it `"source"`-only stands — "I typed this name" is not "I read this code" — but it is
-opt-in, off by default, and sits below an explicit `false`, which wins over it. Narrowing an
-existing opt-in is its own behavior change; it belongs with the stage 3 default flip, where it
-should probably go.
+**Should `fyn.allowTopLevelScripts` survive `"review"` mode?** No — it is `"source"`-only, decided
+at the stage 3 flip where it belonged. See *Migration*.
 
 **Does the allowlist belong in the lockfile too?** Still open, still a separate design. What
 shipped instead is the install config (`.fyn.json`): each install records what it blocked and,
@@ -354,6 +371,7 @@ list it without re-resolving. That is a cache of the last install, not a fail-cl
 | D6 CLI and reporting | `lib/install-scripts.ts`, `lib/util/script-policy-report.ts`, `cli/main.ts` | FPM-85, FPM-86 |
 | D7 integration points | `lib/pkg-installer.ts`, `lib/pkg-opt-resolver.ts` | FPM-84 |
 | blocker: fynpo options channel | `Fyn.mergeFynpoOptions` | FPM-81 |
+| stage 3: `"review"` by default, prompt or fail | `InstallScripts.review`, `PkgInstaller._reviewBlockedScripts` | FPM-87 |
 
 Three decisions the build had to make that the design left implicit:
 

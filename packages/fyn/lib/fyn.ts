@@ -30,6 +30,7 @@ import { localExportsNeedInstall } from "./local-exports";
 import {
   mergeAllowScripts,
   normalizeScriptPolicy,
+  normalizeScriptPolicyIfSet,
   strictestScriptPolicy,
   DEFAULT_SCRIPT_POLICY
 } from "./util/lifecycle-script-policy";
@@ -1139,8 +1140,8 @@ class Fyn {
         this._scriptPolicy = normalizeScriptPolicy(cliOpt);
       } else if (this._pkg) {
         this._scriptPolicy = strictestScriptPolicy(
-          normalizeScriptPolicy(this.fynpoFynOptions.scriptPolicy),
-          normalizeScriptPolicy(_.get(this._pkg, ["fyn", "scriptPolicy"]))
+          normalizeScriptPolicyIfSet(this.fynpoFynOptions.scriptPolicy),
+          normalizeScriptPolicyIfSet(_.get(this._pkg, ["fyn", "scriptPolicy"]))
         );
       }
     }
@@ -1186,6 +1187,17 @@ class Fyn {
   get allowScriptsPin(): boolean {
     const opt = this._options.allowScriptsPin;
     return opt === undefined ? true : Boolean(opt);
+  }
+
+  /**
+   * Forget the merged allowlist, so it is rebuilt from disk. Used after the
+   * install-time review prompt writes new approvals.
+   *
+   * @returns {void}
+   */
+  resetAllowScripts(): void {
+    this._allowScripts = undefined;
+    this._pkg = this._pkg && { ...this._pkg };
   }
 
   // `--allow-scripts-pending` - also report which packages would need approval

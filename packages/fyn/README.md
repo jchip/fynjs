@@ -138,15 +138,20 @@ TypeScript paths, or equivalent tool settings to use it.
 ### Lifecycle script allow list (`fyn.allowScripts`)
 
 As a security hardening measure, `fyn` does **not** run a package's npm lifecycle
-scripts (`preinstall`, `install`, `postinstall`) during install unless the package
-came from a configured registry (the primary `registry` or a `@scope:registry`) or
-is a local `file:`/`link:`/symlink dependency. That is the default policy; see
-[`fyn.scriptPolicy`](#choosing-a-trust-model-fynscriptpolicy) for the stricter
-npm 12-style model, where a registry package needs approval too.
+scripts (`preinstall`, `install`, `postinstall`) during install unless someone has
+approved that package. Installing a package otherwise runs its author's code before
+you have read a line of it, and a compromised release reaches every machine that
+installs it.
 
-Packages pulled from other sources — `github:`, git URLs (`git+https`, `git+ssh`,
-…), and `http(s)` tarball URLs — have their lifecycle scripts **skipped by default**,
-and `fyn` prints a warning showing how to allow them.
+Approval is per package, in `fyn.allowScripts`. The only packages exempt are your
+own — `file:`/`link:` dependencies and fynpo siblings, which the pull request that
+changed them already reviewed.
+
+When an install finds scripts nobody has approved it **stops and asks**, on a
+terminal. In CI — or anywhere else there is no terminal to ask on — it **fails**,
+rather than quietly handing you a tree whose native packages were never built. See
+[`fyn.scriptPolicy`](#choosing-a-trust-model-fynscriptpolicy) for the opt-out back to
+trusting a package because of where it came from.
 
 To allow specific scripts for such a package, add a `fyn.allowScripts` map to your
 `package.json`. Each key is a package name and each value says which versions and
@@ -209,6 +214,10 @@ any non-registry package that is declared **directly** in your top-level
 }
 ```
 
+- **`"source"` mode only.** Under `"review"` (the default) it is ignored: the question there
+  is whether someone read the code, and "I typed this name into my `package.json`" does not
+  answer it. A blanket exemption for every direct dependency would be the widest hole in the
+  policy, and a stale `true` would open it silently.
 - This is **off by default**; the deny-by-default policy above is unchanged.
 - It only applies to dependencies you declared directly in the top-level
   `package.json`. Non-registry packages pulled in **transitively** stay blocked
@@ -225,30 +234,29 @@ any non-registry package that is declared **directly** in your top-level
 
 #### Choosing a trust model (`fyn.scriptPolicy`)
 
-The rule above — a registry package is trusted, a git/URL package is not — is one of three
-policies. `fyn.scriptPolicy` selects which:
+`fyn.scriptPolicy` picks which question decides whether a package may run its scripts:
 
 | mode | registry packages | git/URL packages | workspace-local packages |
 |---|---|---|---|
-| `"source"` *(default)* | run their scripts | need an allowlist entry | run their scripts |
-| `"review"` | need an allowlist entry | need an allowlist entry | run their scripts |
+| `"review"` *(default)* | need an allowlist entry | need an allowlist entry | run their scripts |
+| `"source"` | run their scripts | need an allowlist entry | run their scripts |
 | `"off"` | nothing runs | nothing runs | nothing runs |
 
-`"source"` trusts *provenance*: where a package came from. `"review"` trusts *review*: whether
-someone approved this exact code — npm 12's model, and the one that covers a compromised
-release of an ordinary dependency. `"off"` is npm's `ignore-scripts`, and like npm's it wins
-over the allowlist rather than being overridden by it.
+`"review"` asks whether someone approved *this code* — npm 12's model, and the only one that
+covers a compromised release of an ordinary dependency. `"source"` asks only where the package
+*came from*, so anything off a configured registry runs; it is the opt-out for a project that
+would rather not maintain an allowlist. `"off"` is npm's `ignore-scripts`, and like npm's it
+wins over the allowlist rather than being overridden by it.
 
 ```json
 {
   "fyn": {
-    "scriptPolicy": "review",
-    "allowScripts": { "sharp@0.34.4": ["install"] }
+    "scriptPolicy": "source"
   }
 }
 ```
 
-Or for one run: `fyn install --script-policy=review`.
+Or for one run: `fyn install --script-policy=source`.
 
 Workspace-local packages — `file:`/`link:` deps and fynpo siblings — are exempt in **every**
 mode, including `"review"`: an allowlist is a review gate on code you did not write, and
@@ -256,15 +264,31 @@ monorepo source is reviewed by the pull request that changed it. Set
 `fyn.reviewLocalPackages: true` if you want them reviewed like anything else. A local path
 declared *by* a git package is not workspace-local and stays blocked.
 
-Switching to `"review"` stops every package with a native build step from running its install
-scripts until it is approved. To see that cost before paying it:
+##### What an unapproved package looks like
+
+Under `"review"`, an install that finds unapproved install scripts stops before running
+anything:
 
 ```
-fyn install --allow-scripts-pending
+2 packages want to run install scripts that have not been approved:
+  sharp@0.34.4     install
+  esbuild@0.28.2   postinstall
+Approve? [a]ll / [s]elect / [n]one (default)
 ```
 
-which installs exactly as before but also reports which packages `"review"` would ask you to
-approve.
+`a` approves them all, `s` walks them one at a time, `n` continues with those scripts skipped.
+An approval is written to your `package.json` — or the monorepo's `fynpo.json` — so the next
+install does not ask again.
+
+Where there is no terminal to ask on — CI, a pipe, a git hook — the install **fails** with the
+same list and a non-zero exit, instead of producing a tree whose native packages silently never
+built. Record the approvals in `package.json` and commit them, the way you would a lockfile.
+
+To see what a project would need to approve without changing what an install runs:
+
+```
+fyn install --script-policy=source --allow-scripts-pending
+```
 
 #### One allowlist for a fynpo monorepo
 
