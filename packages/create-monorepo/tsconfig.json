@@ -1,6 +1,13 @@
 {
   "compilerOptions": {
+    // TypeScript 7 turns `strict` on by default; this package has always been checked
+    // without it. Pinned off so the upgrade preserves the existing bar rather than
+    // silently raising it. Turning it on is worthwhile, but is its own piece of work.
+    "strict": false,
     "outDir": "dist",
+    // TS7 (TS5011) requires this to be explicit; "./src" is the same common source
+    // directory TS inferred before, so the emitted layout is unchanged.
+    "rootDir": "./src",
     "lib": [
       "es2022"
     ],
