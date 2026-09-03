@@ -139,6 +139,10 @@ interface LocalPkgLink {
 /** Fynpo configuration */
 interface FynpoConfig {
   centralDir?: string;
+  /** monorepo-wide fyn options, applied to every package in the repo */
+  fyn?: {
+    options?: Partial<FynOptions>;
+  };
   resolutions?: Record<string, string>;
   overrides?: Record<string, string | Record<string, string>>;
   command?: {
@@ -153,9 +157,6 @@ interface FynpoConfig {
 interface FynpoData {
   config?: FynpoConfig;
   dir?: string;
-  fyn?: {
-    options?: Partial<FynOptions>;
-  };
   graph?: {
     getPackageAtDir(dir: string): unknown;
   };
@@ -477,17 +478,57 @@ class Fyn {
     return false;
   }
 
+  /**
+   * Options a fynpo config must never supply. `cwd`/`initCwd` are where fyn was
+   * invoked; a monorepo config that relocated the install would be changing
+   * which package.json is being installed.
+   */
+  static FYNPO_OPTIONS_DENY = ["cwd", "initCwd"];
+
+  /**
+   * Merge the monorepo's `fyn.options` (from fynpo.json / fynpo.config.js) into
+   * this instance's options.
+   *
+   * Precedence is CLI > rc > fynpo config: `_cliSource[key]` records where each
+   * option came from, and anything other than `"default"` means the user asked
+   * for that value, so the monorepo config must not override it.
+   */
+  mergeFynpoOptions(): void {
+    const fynpoOptions = _.get(this, ["_fynpo", "config", "fyn", "options"]) as
+      | Record<string, unknown>
+      | undefined;
+
+    if (_.isEmpty(fynpoOptions)) {
+      return;
+    }
+
+    for (const key of Object.keys(fynpoOptions)) {
+      if (Fyn.FYNPO_OPTIONS_DENY.includes(key)) {
+        continue;
+      }
+
+      const source = this._cliSource[key];
+      if (source && source !== "default") {
+        logger.debug(`fynpo config option ${key} ignored - already set by ${source}`);
+        continue;
+      }
+
+      const value = fynpoOptions[key];
+      const existing = this._options[key];
+      // deep merge object options, but a key the user set still wins
+      this._options[key] =
+        _.isPlainObject(value) && _.isPlainObject(existing)
+          ? _.merge({}, value, existing)
+          : value;
+    }
+
+    logger.debug("applied fynpo fyn.options", JSON.stringify(fynpoOptions));
+  }
+
   async _initializePkg(): Promise<void> {
     if (!this._fynpo) {
       this._fynpo = (await fynTil.loadFynpo(this._cwd)) as FynpoData;
-      // TODO: options from CLI should not be override by fynpo config options
-      // Preserve cwd from CLI/config, don't let fynpo config override it
-      const savedCwd = this._options.cwd;
-      _.merge(this._options, _.get(this, "_fynpo.fyn.options"));
-      if (savedCwd) {
-        this._options.cwd = savedCwd;
-        this._cwd = savedCwd;
-      }
+      this.mergeFynpoOptions();
     }
 
     this.checkLayoutOption();
