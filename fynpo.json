@@ -1,10 +1,4 @@
 {
-  "fyn": {
-    "options": {
-      "sourceMaps": false,
-      "layout": "detail"
-    }
-  },
   "packages": ["packages/*", "_w/*"],
   "command": {
     "publish": {
