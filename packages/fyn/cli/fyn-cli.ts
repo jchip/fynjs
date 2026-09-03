@@ -12,6 +12,7 @@ import PromiseQueue from "../lib/util/promise-queue";
 import sortObjKeys from "../lib/util/sort-obj-keys";
 import fyntil from "../lib/util/fyntil";
 import showStat from "./show-stat";
+import { InstallScripts } from "../lib/install-scripts";
 import showAudit from "./show-audit";
 import { runNpmScript, addNpmLifecycle } from "../lib/util/run-npm-script";
 import { makeNpmEnv } from "../lib/util/make-npm-env";
@@ -668,6 +669,51 @@ class FynCli {
     return showStat(this.fyn, argv.args.packages).finally(() => {
       return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
     });
+  }
+
+  /**
+   * `fyn install-scripts <action>` - review and record which packages may run
+   * their install scripts.
+   *
+   * @param {string} action one of ls / approve / deny / prune
+   * @param {object} argv parsed command args and options
+   * @returns {Promise<unknown>} the action's result
+   */
+  async installScripts(
+    action: string,
+    argv: { args?: Record<string, unknown>; opts?: Record<string, unknown> } = {}
+  ): Promise<unknown> {
+    const opts = argv.opts || {};
+    const packages = ((argv.args || {}).packages as string[]) || [];
+
+    await this.fyn._initializePkg();
+    const cmd = new InstallScripts({ fyn: this.fyn });
+
+    try {
+      switch (action) {
+        case "ls":
+          return await cmd.ls({ json: Boolean(opts.json) });
+        case "approve":
+          return await cmd.approve(packages, {
+            all: Boolean(opts.all),
+            local: Boolean(opts.local)
+          });
+        case "deny":
+          return await cmd.deny(packages, { local: Boolean(opts.local) });
+        case "prune":
+          return await cmd.prune({ local: Boolean(opts.local) });
+        default:
+          throw new Error(`unknown install-scripts action "${action}"`);
+      }
+    } catch (err) {
+      logger.error((err as Error).message);
+      fyntil.exit(1);
+      return undefined;
+    } finally {
+      if (this._opts.saveLogs) {
+        await this.saveLogs(this._opts.saveLogs);
+      }
+    }
   }
 
   audit(argv: AuditArgv): Promise<number> {

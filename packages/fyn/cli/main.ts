@@ -213,6 +213,19 @@ const options: Record<string, OptionSpec> = {
     desc: "fetch package dist tarball during dep resolving",
     argDefault: "false"
   },
+  "script-policy": {
+    args: "<mode string>",
+    desc: "install script policy: source (default), review, or off"
+  },
+  "allow-scripts": {
+    args: "[packages string..]",
+    desc: "let these packages run install scripts, for this run only"
+  },
+  "allow-scripts-pin": {
+    args: "<flag boolean>",
+    desc: "pin script approvals to the reviewed version",
+    argDefault: "true"
+  },
   "central-store": {
     args: "<flag boolean>",
     alias: ["central", "cs"],
@@ -407,6 +420,10 @@ const commands: Record<string, CommandSpec> = {
       "audit-file": {
         desc: "write audit report JSON to a file after install",
         args: "<path string>"
+      },
+      "allow-scripts-pending": {
+        desc: "also report which packages would need approval under script policy review",
+        args: "<flag boolean>"
       }
     }
   },
@@ -598,6 +615,65 @@ const commands: Record<string, CommandSpec> = {
         alias: ["y"],
         desc: "skip prompt and use default values",
         args: "<flag boolean>"
+      }
+    }
+  },
+
+  "install-scripts": {
+    desc: "Review which packages may run install scripts",
+    subCommands: {
+      ls: {
+        desc: "List packages awaiting install-script review",
+        alias: "list",
+        options: {
+          json: { args: "<flag boolean>", desc: "emit the list as JSON" }
+        },
+        async exec(cmd: CommandNode) {
+          const cli = new FynCli(await pickOptions(cmd));
+          return cli.installScripts("ls", cmd.jsonMeta);
+        }
+      },
+      approve: {
+        desc: "Allow packages to run their install scripts",
+        args: "[packages string..]",
+        options: {
+          all: { args: "<flag boolean>", desc: "approve every package awaiting review" },
+          local: {
+            args: "<flag boolean>",
+            desc: "write to this package's package.json instead of the monorepo's fynpo.json"
+          }
+        },
+        async exec(cmd: CommandNode) {
+          const cli = new FynCli(await pickOptions(cmd));
+          return cli.installScripts("approve", cmd.jsonMeta);
+        }
+      },
+      deny: {
+        desc: "Deny packages outright - wins over any approval",
+        args: "[packages string..]",
+        options: {
+          local: {
+            args: "<flag boolean>",
+            desc: "write to this package's package.json instead of the monorepo's fynpo.json"
+          }
+        },
+        async exec(cmd: CommandNode) {
+          const cli = new FynCli(await pickOptions(cmd));
+          return cli.installScripts("deny", cmd.jsonMeta);
+        }
+      },
+      prune: {
+        desc: "Drop approvals for packages that are no longer installed",
+        options: {
+          local: {
+            args: "<flag boolean>",
+            desc: "write to this package's package.json instead of the monorepo's fynpo.json"
+          }
+        },
+        async exec(cmd: CommandNode) {
+          const cli = new FynCli(await pickOptions(cmd));
+          return cli.installScripts("prune", cmd.jsonMeta);
+        }
       }
     }
   },

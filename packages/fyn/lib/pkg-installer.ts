@@ -17,10 +17,16 @@ import {
 } from "./local-exports";
 import { INSTALL_PACKAGE } from "./log-items";
 import { runNpmScript } from "./util/run-npm-script";
-import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
+import {
+  evaluateScriptPolicy,
+  isScriptAllowed,
+  strictestScriptPolicy,
+  LIFECYCLE_SCRIPTS
+} from "./util/lifecycle-script-policy";
 import {
   makeBlockedRecord,
-  formatBlockedScriptsSummary
+  formatBlockedScriptsSummary,
+  formatPendingScriptsSummary
 } from "./util/script-policy-report";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
@@ -84,8 +90,9 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   allowScripts: Record<string, unknown>;
   scriptPolicy: string;
   allowScriptsPin: boolean;
+  allowScriptsPending: boolean;
   scriptPolicyOptions: Record<string, unknown>;
-  setBlockedScripts(records: BlockedScriptRecord[]): void;
+  setBlockedScripts(blocked: BlockedScriptRecord[], pending?: BlockedScriptRecord[]): void;
   isNormalLayout: boolean;
   getOutputDir(): string;
   getInstalledPkgDir(name: string, version: string, pkg?: unknown): string;
@@ -133,6 +140,8 @@ class PkgInstaller {
   public toLink!: DepInfo[] | undefined;
   /** packages whose install scripts the policy blocked, reported once at the end */
   public blockedScripts: BlockedScriptRecord[] = [];
+  /** packages that would need approval under "review" - only with --allow-scripts-pending */
+  public pendingScripts: BlockedScriptRecord[] = [];
 
   constructor(options: PkgInstallerOptions) {
     this._fyn = options.fyn;
@@ -153,6 +162,7 @@ class PkgInstaller {
     this.postInstall = [];
     this.toLink = [];
     this.blockedScripts = [];
+    this.pendingScripts = [];
     this._data.cleanLinked();
     this._fyn._depResolver.resolvePkgPeerDep(this._fyn._pkg, "your app", this._data);
     // go through each package and insert
@@ -704,6 +714,43 @@ class PkgInstaller {
     if (blockedScripts.length > 0) {
       this._recordBlockedScripts(depInfo, scriptPolicy, blockedScripts);
     }
+
+    this._recordPendingReview(depInfo, { hasPI, ...scripts });
+  }
+
+  /**
+   * With `--allow-scripts-pending`, also answer the question `"review"` would
+   * ask - which packages have install scripts that nobody has approved - while
+   * still running the install under the mode in effect. That is how a project
+   * sees what switching to `"review"` would cost before switching.
+   *
+   * @param {object} depInfo resolved package data
+   * @param {object} scripts the package's scripts, plus `hasPI`
+   * @returns {void}
+   */
+  _recordPendingReview(depInfo, scripts) {
+    if (!this._fyn.allowScriptsPending) {
+      return;
+    }
+
+    const has = LIFECYCLE_SCRIPTS.filter(
+      name => Boolean(scripts[name]) || (name === "preinstall" && scripts.hasPI)
+    );
+
+    if (has.length === 0) {
+      return;
+    }
+
+    const policy = evaluateScriptPolicy(depInfo, this._fyn.allowScripts, {
+      ...this._fyn.scriptPolicyOptions,
+      mode: strictestScriptPolicy(this._fyn.scriptPolicy, "review")
+    });
+
+    const pending = has.filter(name => !isScriptAllowed(policy, name));
+
+    if (pending.length > 0) {
+      this.pendingScripts.push(makeBlockedRecord(depInfo, policy, pending));
+    }
   }
 
   /**
@@ -736,13 +783,20 @@ class PkgInstaller {
   _reportBlockedScripts() {
     const records = this.blockedScripts;
 
-    this._fyn.setBlockedScripts(records);
+    this._fyn.setBlockedScripts(records, this.pendingScripts);
 
     for (const line of formatBlockedScriptsSummary(records, {
       mode: this._fyn.scriptPolicy,
       pin: this._fyn.allowScriptsPin
     })) {
       logger.warn(line);
+    }
+
+    for (const line of formatPendingScriptsSummary(this.pendingScripts, {
+      mode: this._fyn.scriptPolicy,
+      pin: this._fyn.allowScriptsPin
+    })) {
+      logger.info(line);
     }
   }
 

@@ -132,12 +132,16 @@ describe("pkg-installer", function () {
     const mkInstaller = (over = {}) => {
       const installer: any = Object.create(PkgInstaller.prototype);
       installer.blockedScripts = [];
+      installer.pendingScripts = [];
       installer._fyn = {
         scriptPolicy: "review",
         allowScriptsPin: true,
+        allowScriptsPending: false,
         saved: undefined,
-        setBlockedScripts(records: unknown) {
-          installer._fyn.saved = records;
+        savedPending: undefined,
+        setBlockedScripts(blocked: unknown, pending: unknown) {
+          installer._fyn.saved = blocked;
+          installer._fyn.savedPending = pending;
         },
         ...over
       };
@@ -171,6 +175,123 @@ describe("pkg-installer", function () {
       const installer = mkInstaller();
       installer._reportBlockedScripts();
       expect(installer._fyn.saved).to.deep.equal([]);
+    });
+
+    it("records nothing pending unless --allow-scripts-pending is on", () => {
+      const installer = mkInstaller();
+      installer._recordPendingReview({ name: "sharp", version: "0.34.4" }, { install: "node x" });
+      expect(installer.pendingScripts).to.deep.equal([]);
+    });
+
+    it("records what review mode would block, while the install still runs", () => {
+      const installer = mkInstaller({
+        scriptPolicy: "source",
+        allowScriptsPending: true,
+        allowScripts: {},
+        scriptPolicyOptions: { mode: "source", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      installer._recordPendingReview(
+        { name: "sharp", version: "0.34.4" },
+        { install: "node install.js", hasPI: false }
+      );
+      expect(installer.pendingScripts).to.have.length(1);
+      expect(installer.pendingScripts[0].scripts).to.deep.equal(["install"]);
+    });
+
+    it("records nothing pending for a package already approved", () => {
+      const installer = mkInstaller({
+        scriptPolicy: "source",
+        allowScriptsPending: true,
+        allowScripts: { sharp: true },
+        scriptPolicyOptions: { mode: "source", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      installer._recordPendingReview(
+        { name: "sharp", version: "0.34.4" },
+        { install: "node install.js" }
+      );
+      expect(installer.pendingScripts).to.deep.equal([]);
+    });
+
+    /**
+     * Drive the real `_gatherPkg` script gating for one registry package that
+     * has a postinstall - the seam where the policy decides what gets queued.
+     *
+     * @param {object} fynOver stub fyn fields
+     * @param {object} [depOver] depInfo fields
+     * @returns {Promise<object>} the installer, after gathering
+     */
+    const gatherOne = async (fynOver: any, depOver: any = {}) => {
+      const installer: any = Object.create(PkgInstaller.prototype);
+      installer.blockedScripts = [];
+      installer.pendingScripts = [];
+      installer.preInstall = [];
+      installer.postInstall = [];
+      installer.toLink = [];
+      installer._fyn = {
+        allowScripts: {},
+        allowScriptsPin: true,
+        allowScriptsPending: false,
+        scriptPolicy: "source",
+        scriptPolicyOptions: { mode: "source", allowTopLevel: false, reviewLocalPackages: false },
+        setBlockedScripts() {},
+        ...fynOver
+      };
+
+      const depInfo: any = {
+        name: "sharp",
+        version: "0.34.4",
+        dir: "/nowhere",
+        json: { name: "sharp", version: "0.34.4", scripts: { postinstall: "node install.js" } },
+        ...depOver
+      };
+      depInfo[SEMVER] = "^0.34.0";
+
+      await installer._gatherPkg(depInfo);
+      return installer;
+    };
+
+    it('queues a registry package\'s postinstall under "source"', async () => {
+      const installer = await gatherOne({});
+      expect(installer.postInstall).to.have.length(1);
+      expect(installer.blockedScripts).to.deep.equal([]);
+    });
+
+    it('blocks and records it under "review"', async () => {
+      const installer = await gatherOne({
+        scriptPolicy: "review",
+        scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      expect(installer.postInstall).to.deep.equal([]);
+      expect(installer.blockedScripts).to.have.length(1);
+      expect(installer.blockedScripts[0].scripts).to.deep.equal(["postinstall"]);
+      // still linked - only the script is withheld
+      expect(installer.toLink).to.have.length(1);
+    });
+
+    it('runs it under "review" once allowlisted', async () => {
+      const installer = await gatherOne({
+        allowScripts: { "sharp@0.34.4": ["postinstall"] },
+        scriptPolicy: "review",
+        scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      expect(installer.postInstall).to.have.length(1);
+      expect(installer.blockedScripts).to.deep.equal([]);
+    });
+
+    it('blocks it under "off" even when allowlisted', async () => {
+      const installer = await gatherOne({
+        allowScripts: { sharp: true },
+        scriptPolicy: "off",
+        scriptPolicyOptions: { mode: "off", allowTopLevel: false, reviewLocalPackages: false }
+      });
+      expect(installer.postInstall).to.deep.equal([]);
+      expect(installer.blockedScripts).to.have.length(1);
+    });
+
+    it("blocks it when explicitly denied", async () => {
+      const installer = await gatherOne({ allowScripts: { sharp: false } });
+      expect(installer.postInstall).to.deep.equal([]);
+      expect(installer.blockedScripts[0].reason).to.equal("denied");
     });
   });
 });

@@ -89,6 +89,7 @@ interface FynOptions {
   allowTopLevelScripts?: AllowScriptsValue;
   reviewLocalPackages?: boolean;
   allowScriptsPin?: boolean;
+  allowScriptsPending?: boolean;
   pkgSrcMgr?: PkgSrcManager;
   data?: DepData;
   refreshMeta?: boolean;
@@ -152,6 +153,8 @@ interface InstallConfig {
   localExports?: unknown;
   /** packages whose install scripts the policy blocked on the last install */
   blockedScripts?: BlockedScriptRecord[];
+  /** packages that would need approval under "review", from --allow-scripts-pending */
+  pendingScripts?: BlockedScriptRecord[];
   [key: string]: unknown;
 }
 
@@ -287,6 +290,7 @@ class Fyn {
   private _scriptPolicy?: string;
   private _reviewLocalPackages?: boolean;
   private _blockedScripts?: BlockedScriptRecord[];
+  private _pendingScripts?: BlockedScriptRecord[];
 
   /** Local packages with nested dependencies */
   localPkgWithNestedDep: LocalDepInfo[];
@@ -622,6 +626,9 @@ class Fyn {
       }
 
       this.checkProductionMode();
+      // resolve the script policy now so a bad `--script-policy` fails here
+      // rather than partway through an install
+      logger.debug("install script policy", this.scriptPolicy);
 
       let fynpoNpmRun: string | string[] | (string | string[])[] | false | undefined;
 
@@ -901,7 +908,8 @@ class Fyn {
         production: this.production,
         layout: this._options.layout,
         shortPkgDir: this._shortPkgDir,
-        blockedScripts: this._blockedScripts || this._installConfig.blockedScripts || []
+        blockedScripts: this._blockedScripts || this._installConfig.blockedScripts || [],
+        pendingScripts: this._pendingScripts || this._installConfig.pendingScripts || []
         // not a good idea to save --run-npm options to install config because
         // future fyn install will automatically run them and would be unexpected.
         // if fynpo bootstrap should run certain npm scripts, user should set those
@@ -1180,16 +1188,27 @@ class Fyn {
     return opt === undefined ? true : Boolean(opt);
   }
 
+  // `--allow-scripts-pending` - also report which packages would need approval
+  // under `"review"`, without changing what this install runs.
+  get allowScriptsPending(): boolean {
+    return Boolean(this._options.allowScriptsPending);
+  }
+
   /**
-   * Record the packages whose install scripts were blocked, so they are saved
-   * with the install config and `fyn install-scripts ls` can list them without
-   * re-resolving the tree.
+   * Record the packages whose install scripts were blocked, and those that
+   * would need approval under `"review"`, so they are saved with the install
+   * config and `fyn install-scripts ls` can list them without re-resolving the
+   * tree.
    *
-   * @param {object[]} records blocked-scripts records
+   * @param {object[]} blocked blocked-scripts records
+   * @param {object[]} [pending] would-be-blocked-under-review records
    * @returns {void}
    */
-  setBlockedScripts(records: BlockedScriptRecord[]): void {
-    this._blockedScripts = records || [];
+  setBlockedScripts(blocked: BlockedScriptRecord[], pending?: BlockedScriptRecord[]): void {
+    this._blockedScripts = blocked || [];
+    if (pending !== undefined) {
+      this._pendingScripts = pending;
+    }
   }
 
   /**
@@ -1198,6 +1217,14 @@ class Fyn {
    */
   get blockedScripts(): BlockedScriptRecord[] {
     return this._blockedScripts || this._installConfig.blockedScripts || [];
+  }
+
+  /**
+   * @returns {object[]} packages that would need approval under `"review"` -
+   *   only populated when the install ran with `--allow-scripts-pending`
+   */
+  get pendingScripts(): BlockedScriptRecord[] {
+    return this._pendingScripts || this._installConfig.pendingScripts || [];
   }
 
   // Security policy: transitive (non-top-level) dependencies must resolve from

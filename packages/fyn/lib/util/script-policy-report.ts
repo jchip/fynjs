@@ -173,3 +173,52 @@ export function formatBlockedScriptsSummary(records, { mode = "source", pin = tr
 
   return lines;
 }
+
+/**
+ * Render the summary for packages that would need approval under `"review"`,
+ * shown with `--allow-scripts-pending` while the install still runs under the
+ * mode in effect. This is what switching to `"review"` would cost.
+ *
+ * @param {object[]} records pending-review records
+ * @param {object} [options] options
+ * @param {string} [options.mode] the scriptPolicy mode in effect
+ * @param {boolean} [options.pin] pin suggested approvals to the resolved version
+ * @returns {string[]} lines to log, empty when nothing is pending
+ */
+export function formatPendingScriptsSummary(records, { mode = "source", pin = true } = {}) {
+  const pending = dedupeBlockedRecords(records);
+
+  if (pending.length === 0) {
+    return [];
+  }
+
+  const lines = [
+    chalk.blue(
+      `${pending.length} package${pending.length > 1 ? "s" : ""} would need approval under ` +
+        `${chalk.cyan('scriptPolicy: "review"')} (currently ${chalk.cyan(mode)})`
+    )
+  ];
+
+  const width = pending.reduce((w, r) => Math.max(w, `${r.name}@${r.version}`.length), 0);
+
+  for (const record of pending) {
+    lines.push(
+      `  ${chalk.cyan(`${record.name}@${record.version}`.padEnd(width))}  ` +
+        chalk.yellow(record.scripts.join(", "))
+    );
+  }
+
+  const patch = buildAllowScriptsPatch(
+    pending.filter(r => r.reason !== "denied"),
+    { pin }
+  );
+
+  if (Object.keys(patch).length > 0) {
+    lines.push(
+      chalk.blue("  To approve them now:"),
+      `  ${chalk.cyan(JSON.stringify({ fyn: { allowScripts: patch } }))}`
+    );
+  }
+
+  return lines;
+}
