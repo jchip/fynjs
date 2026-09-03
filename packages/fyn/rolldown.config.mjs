@@ -117,14 +117,20 @@ export default defineConfig({
       "resolve-from": Path.resolve("stubs/resolve-from.js")
     }
   },
+  // Syntax lowering target. This belongs on `transform`, not `output` - rolldown rejects
+  // `output.target` with "Invalid key: Expected never but received target" and carries on with
+  // its default of `esnext`, so the target the config claimed was never actually applied.
+  //
+  // node22 is the monorepo baseline (package.json engines: node >=22.12.0). The old webpack
+  // build transpiled down to node18, below what fyn actually supports.
+  transform: {
+    target: "node22"
+  },
   output: {
     file: "dist/fyn.mjs",
     format: "esm",
     banner,
     minify: false,
-    inlineDynamicImports: true,
-    // the monorepo baseline (package.json engines: node >=22.12.0). The webpack build
-    // transpiled everything down to node18, below what fyn actually supports.
-    target: "node22"
+    inlineDynamicImports: true
   }
 });
