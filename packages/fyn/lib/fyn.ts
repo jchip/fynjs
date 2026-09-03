@@ -88,6 +88,7 @@ interface FynOptions {
   allowScripts?: AllowScriptsMap | string[] | string;
   allowTopLevelScripts?: AllowScriptsValue;
   reviewLocalPackages?: boolean;
+  allowScriptsPin?: boolean;
   pkgSrcMgr?: PkgSrcManager;
   data?: DepData;
   refreshMeta?: boolean;
@@ -127,6 +128,18 @@ interface DepItemRef {
   [key: string]: unknown;
 }
 
+/** A package whose install scripts the lifecycle-script policy blocked */
+interface BlockedScriptRecord {
+  name: string;
+  version: string;
+  key?: string;
+  scripts: string[];
+  urlType?: string;
+  reason?: string;
+  topLevel: boolean;
+  local: boolean;
+}
+
 /** Install configuration saved to node_modules */
 interface InstallConfig {
   time: number;
@@ -137,6 +150,8 @@ interface InstallConfig {
   localPkgLinks?: Record<string, LocalPkgLink>;
   localsByDepth?: string[][];
   localExports?: unknown;
+  /** packages whose install scripts the policy blocked on the last install */
+  blockedScripts?: BlockedScriptRecord[];
   [key: string]: unknown;
 }
 
@@ -271,6 +286,7 @@ class Fyn {
   private _enforceRegistryDeps?: boolean;
   private _scriptPolicy?: string;
   private _reviewLocalPackages?: boolean;
+  private _blockedScripts?: BlockedScriptRecord[];
 
   /** Local packages with nested dependencies */
   localPkgWithNestedDep: LocalDepInfo[];
@@ -884,7 +900,8 @@ class Fyn {
         centralDir,
         production: this.production,
         layout: this._options.layout,
-        shortPkgDir: this._shortPkgDir
+        shortPkgDir: this._shortPkgDir,
+        blockedScripts: this._blockedScripts || this._installConfig.blockedScripts || []
         // not a good idea to save --run-npm options to install config because
         // future fyn install will automatically run them and would be unexpected.
         // if fynpo bootstrap should run certain npm scripts, user should set those
@@ -1153,6 +1170,34 @@ class Fyn {
       allowTopLevel: this.allowTopLevelScripts,
       reviewLocalPackages: this.reviewLocalPackages
     };
+  }
+
+  // `--no-allow-scripts-pin` - when pinning is on (the default, as in npm) the
+  // approvals fyn suggests and writes name the reviewed version, so a later
+  // release comes back for review.
+  get allowScriptsPin(): boolean {
+    const opt = this._options.allowScriptsPin;
+    return opt === undefined ? true : Boolean(opt);
+  }
+
+  /**
+   * Record the packages whose install scripts were blocked, so they are saved
+   * with the install config and `fyn install-scripts ls` can list them without
+   * re-resolving the tree.
+   *
+   * @param {object[]} records blocked-scripts records
+   * @returns {void}
+   */
+  setBlockedScripts(records: BlockedScriptRecord[]): void {
+    this._blockedScripts = records || [];
+  }
+
+  /**
+   * @returns {object[]} packages whose install scripts were blocked - from this
+   *   run when there was one, else what the last install recorded
+   */
+  get blockedScripts(): BlockedScriptRecord[] {
+    return this._blockedScripts || this._installConfig.blockedScripts || [];
   }
 
   // Security policy: transitive (non-top-level) dependencies must resolve from

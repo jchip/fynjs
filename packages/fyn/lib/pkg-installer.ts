@@ -18,6 +18,10 @@ import {
 import { INSTALL_PACKAGE } from "./log-items";
 import { runNpmScript } from "./util/run-npm-script";
 import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
+import {
+  makeBlockedRecord,
+  formatBlockedScriptsSummary
+} from "./util/script-policy-report";
 import xaa from "./util/xaa";
 import { AggregateError } from "@jchip/error";
 import {
@@ -77,6 +81,11 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   central?: FynCentral | false;
   showDeprecated: string | false;
   lockOnly: string | false;
+  allowScripts: Record<string, unknown>;
+  scriptPolicy: string;
+  allowScriptsPin: boolean;
+  scriptPolicyOptions: Record<string, unknown>;
+  setBlockedScripts(records: BlockedScriptRecord[]): void;
   isNormalLayout: boolean;
   getOutputDir(): string;
   getInstalledPkgDir(name: string, version: string, pkg?: unknown): string;
@@ -84,6 +93,18 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   loadFvVersions(): Promise<FvVersions>;
   setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
   createSubNodeModulesDir(dir: string): Promise<string>;
+}
+
+/** A package whose install scripts the lifecycle-script policy blocked */
+interface BlockedScriptRecord {
+  name: string;
+  version: string;
+  key?: string;
+  scripts: string[];
+  urlType?: string;
+  reason?: string;
+  topLevel: boolean;
+  local: boolean;
 }
 
 /** Options for PkgInstaller constructor */
@@ -110,6 +131,8 @@ class PkgInstaller {
   public preInstall!: DepInfo[] | undefined;
   public postInstall!: DepInfo[] | undefined;
   public toLink!: DepInfo[] | undefined;
+  /** packages whose install scripts the policy blocked, reported once at the end */
+  public blockedScripts: BlockedScriptRecord[] = [];
 
   constructor(options: PkgInstallerOptions) {
     this._fyn = options.fyn;
@@ -129,6 +152,7 @@ class PkgInstaller {
     this.preInstall = [];
     this.postInstall = [];
     this.toLink = [];
+    this.blockedScripts = [];
     this._data.cleanLinked();
     this._fyn._depResolver.resolvePkgPeerDep(this._fyn._pkg, "your app", this._data);
     // go through each package and insert
@@ -565,6 +589,7 @@ class PkgInstaller {
         .then(() => this._saveLockData())
         .then(() => {
           this._fyn._depResolver._logConsolidatedPeerDepWarnings();
+          this._reportBlockedScripts();
           logger.info(`${chalk.green("done install")} ${logFormat.time(Date.now() - start)}`);
         })
         .finally(() => {
@@ -677,29 +702,47 @@ class PkgInstaller {
     }
 
     if (blockedScripts.length > 0) {
-      this._warnBlockedScripts(depInfo, scriptPolicy, blockedScripts);
+      this._recordBlockedScripts(depInfo, scriptPolicy, blockedScripts);
     }
   }
 
-  _warnBlockedScripts(depInfo, policy, blocked) {
-    const id = logFormat.pkgId(depInfo);
-    logger.warn(
-      `${chalk.black.bgYellow("WARN")} ${chalk.magenta("scripts blocked")} ${id}`,
-      chalk.yellow(
-        `skipped lifecycle [${blocked.join(", ")}] for non-registry (${policy.urlType}) package - not in fyn.allowScripts`
-      )
+  /**
+   * Record a package whose install scripts the policy blocked. Reported as one
+   * summary at the end of the install rather than a warning per package - under
+   * "review" mode every native dependency blocks on a first install.
+   *
+   * @param {object} depInfo resolved package data
+   * @param {object} policy result of `evaluateScriptPolicy`
+   * @param {string[]} blocked the lifecycle scripts that were skipped
+   * @returns {void}
+   */
+  _recordBlockedScripts(depInfo, policy, blocked) {
+    logger.debug(
+      "scripts blocked",
+      logFormat.pkgId(depInfo),
+      `[${blocked.join(", ")}]`,
+      policy.reason
     );
-    logger.verbose(
-      chalk.blue("  To allow, add to package.json:"),
-      chalk.cyan(
-        `"fyn": { "allowScripts": { "${policy.key}": [${blocked.map(s => `"${s}"`).join(", ")}] } }`
-      )
-    );
-    if (policy.topLevel) {
-      logger.verbose(
-        chalk.blue("  Or trust all direct deps' scripts with:"),
-        chalk.cyan(`"fyn": { "allowTopLevelScripts": true }`)
-      );
+    this.blockedScripts.push(makeBlockedRecord(depInfo, policy, blocked));
+  }
+
+  /**
+   * Report every package whose install scripts were blocked, with the exact
+   * config to paste to allow them, and hand the same records to fyn so they are
+   * saved for `fyn install-scripts ls`.
+   *
+   * @returns {void}
+   */
+  _reportBlockedScripts() {
+    const records = this.blockedScripts;
+
+    this._fyn.setBlockedScripts(records);
+
+    for (const line of formatBlockedScriptsSummary(records, {
+      mode: this._fyn.scriptPolicy,
+      pin: this._fyn.allowScriptsPin
+    })) {
+      logger.warn(line);
     }
   }
 

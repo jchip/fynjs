@@ -123,4 +123,54 @@ describe("pkg-installer", function () {
       expect(Fs.readFileSync(srcPkgJson, "utf8")).to.equal(srcBefore);
     });
   });
+
+  describe("blocked install scripts", function () {
+    /**
+     * @param {object} [over] stub fyn fields to override
+     * @returns {object} a PkgInstaller with a stub `_fyn`
+     */
+    const mkInstaller = (over = {}) => {
+      const installer: any = Object.create(PkgInstaller.prototype);
+      installer.blockedScripts = [];
+      installer._fyn = {
+        scriptPolicy: "review",
+        allowScriptsPin: true,
+        saved: undefined,
+        setBlockedScripts(records: unknown) {
+          installer._fyn.saved = records;
+        },
+        ...over
+      };
+      return installer;
+    };
+
+    it("records a blocked package instead of warning per package", () => {
+      const installer = mkInstaller();
+      installer._recordBlockedScripts(
+        { name: "sharp", version: "0.34.4" },
+        { key: "sharp@^0.34.0", reason: "review", topLevel: false, local: false },
+        ["install"]
+      );
+      expect(installer.blockedScripts).to.have.length(1);
+      expect(installer.blockedScripts[0]).to.include({ name: "sharp", version: "0.34.4" });
+      expect(installer.blockedScripts[0].scripts).to.deep.equal(["install"]);
+    });
+
+    it("hands the records to fyn so install-scripts ls can list them", () => {
+      const installer = mkInstaller();
+      installer._recordBlockedScripts(
+        { name: "sharp", version: "0.34.4" },
+        { key: "sharp@^0.34.0", reason: "review", topLevel: false, local: false },
+        ["install"]
+      );
+      installer._reportBlockedScripts();
+      expect(installer._fyn.saved).to.equal(installer.blockedScripts);
+    });
+
+    it("saves an empty set when nothing was blocked", () => {
+      const installer = mkInstaller();
+      installer._reportBlockedScripts();
+      expect(installer._fyn.saved).to.deep.equal([]);
+    });
+  });
 });
