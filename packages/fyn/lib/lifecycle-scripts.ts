@@ -69,10 +69,11 @@ const readPkgJson = (dir: string): Promise<Partial<PackageJson>> => {
 // When released, all code is bundled into dist/fyn.mjs; running from source this file is under
 // lib/, one level below package.json either way, so "../package.json" finds fyn.
 //
-// Except when this bundle is embedded in someone else's: fynpo inlines fyn's dist into its own,
-// and then "../package.json" is fynpo's and ./bin/fyn.mjs does not exist there. So try fyn's own
-// layout first and fall back to resolving fyn as a dependency, taking whichever actually has the
-// CLI. Lazy and memoized - a module-scope resolve that throws makes the whole bundle unloadable.
+// Except when this bundle is embedded in someone else's - anyone who bundles fyn rather than
+// depending on it at runtime. Then "../package.json" is the host's and ./bin/fyn.mjs does not
+// exist there. So try fyn's own layout first and fall back to resolving fyn as a dependency,
+// taking whichever actually has the CLI. Lazy and memoized: a module-scope resolve that throws
+// makes the whole bundle unloadable, which is how this was found.
 //
 let fynCliPath: string | undefined;
 

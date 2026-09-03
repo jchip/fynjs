@@ -799,9 +799,9 @@ class FynCli {
 
     // Set additional npm environment variables to match lifecycle-scripts.js
     env.npm_node_execpath = env.NODE = env.NODE || process.execPath;
-    // not `new URL("../bin/fyn.mjs", import.meta.url)`: when fyn's bundle is embedded in
-    // another package's - fynpo inlines it - that is the host's directory, and the path it
-    // produces does not exist. findFynCli checks.
+    // not `new URL("../bin/fyn.mjs", import.meta.url)`: if fyn's bundle is ever embedded in
+    // another package's, that is the host's directory and the path it produces does not exist.
+    // findFynCli checks that the file is really there.
     env.npm_execpath = findFynCli();
     env.INIT_CWD = this.fyn.cwd;
 
