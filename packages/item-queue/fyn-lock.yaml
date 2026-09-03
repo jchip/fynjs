@@ -2,6 +2,8 @@ $fyn:
  layout: normal
  flattenTop: true
 $pkg:
+ dep:
+  xflight: ../xflight
  dev:
   '@types/node': ^22.15.30
   '@vitest/coverage-v8': ^4.1.11
@@ -1836,6 +1838,14 @@ xaa:
  3.0.0-fynlocal_h:
   $: local
   _: ../xaa
+xflight:
+ _latest: 3.0.1-fynlocal_h
+ _:
+  ../xflight: 3.0.1-fynlocal_h
+ 3.0.1-fynlocal_h:
+  top: 1
+  $: local
+  _: ../xflight
 yocto-queue:
  _latest: 1.2.2
  _:

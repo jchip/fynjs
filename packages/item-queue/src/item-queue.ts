@@ -1,7 +1,7 @@
 
 import EventEmitter from "events";
 import assert from "assert";
-import { Inflight, InflightRecord, RecordKey } from "./inflight.js";
+import { InflightStore as Inflight, type InflightItem as InflightRecord, type RecordKey } from "xflight";
 const PAUSE_ITEM = Symbol("pause");
 const RESUME_ITEM = Symbol("resume");
 const NOOP_ITEM = Symbol("NOOP");
@@ -437,24 +437,28 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     const still = [];
     const now = Date.now();
 
-    for (const [id, v] of Object.entries(this._pending.inflights) as [
-      RecordKey,
-      InflightRecord<InflightData<ItemT>>
-    ][]) {
-      if (v) {
-        const lastXTime = this._pending.lastCheckTime(id, now);
-        const time = this._pending.time(id, now);
-        const overdue = time >= this._watchTime;
-        const checked = lastXTime >= this._watchTime;
+    // entries() replaced reaching into the raw record object - xflight keeps its map private
+    for (const [id, v] of this._pending.entries() as IterableIterator<
+      [RecordKey, InflightRecord<InflightData<ItemT>>]
+    >) {
+      //
+      // The `if (v)` guard that used to wrap this is gone: it existed because the old
+      // remove() set `this._inflights[key] = undefined` and left the key in place, so
+      // Object.entries() yielded [key, undefined] pairs. A Map drops the entry outright,
+      // so the guard became unreachable - item-queue's 100% branch threshold caught it.
+      //
+      const lastXTime = this._pending.lastCheckTime(id, now);
+      const time = this._pending.time(id, now);
+      const overdue = time >= this._watchTime;
+      const checked = lastXTime >= this._watchTime;
 
-        if (overdue) {
-          const data = { item: v.value.item, promise: v.value.promise, time };
-          if (checked) {
-            watched.push(data);
-            this._pending.resetCheckTime(id, now);
-          } else {
-            still.push(data);
-          }
+      if (overdue) {
+        const data = { item: v.value.item, promise: v.value.promise, time };
+        if (checked) {
+          watched.push(data);
+          this._pending.resetCheckTime(id, now);
+        } else {
+          still.push(data);
         }
       }
     }

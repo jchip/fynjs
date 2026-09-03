@@ -47,7 +47,9 @@
   ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
-  "dependencies": {},
+  "dependencies": {
+    "xflight": "^3.0.1"
+  },
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",

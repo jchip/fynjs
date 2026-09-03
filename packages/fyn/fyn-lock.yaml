@@ -2845,6 +2845,8 @@ item-queue:
   top: 1
   $: local
   _: ../item-queue
+  dependencies:
+   xflight: ^3.0.1
 jaro-winkler:
  _latest: 0.2.8
  _:
@@ -4568,6 +4570,13 @@ xenv-config:
   top: 1
   $: local
   _: ../xenv-config
+xflight:
+ _latest: 3.0.1-fynlocal_h
+ _:
+  ../xflight: 3.0.1-fynlocal_h
+ 3.0.1-fynlocal_h:
+  $: local
+  _: ../xflight
 xsh:
  _latest: 1.0.1-fynlocal_h
  _:
