@@ -714,10 +714,24 @@ class PkgInstaller {
     );
 
     if (blockedScripts.length > 0) {
-      this._recordBlockedScripts(depInfo, scriptPolicy, blockedScripts);
-      // kept out of the persisted record, which is JSON - this is only so an
-      // approval given at the prompt can queue the scripts it just allowed
-      this._blockedDeps.push({ depInfo, candidates });
+      // a script blocked by name - `denyScripts` naming it, or an
+      // `!postinstall` marker - is a denial, not something awaiting review.
+      // Recorded separately so it is not offered for an approval that could not
+      // take effect; the whole-package case is already `policy.denied`.
+      const byName = scriptPolicy.deniedScripts || new Set();
+      const denied = blockedScripts.filter(name => byName.has(name));
+      const pending = blockedScripts.filter(name => !byName.has(name));
+
+      if (denied.length > 0) {
+        this._recordBlockedScripts(depInfo, { ...scriptPolicy, reason: "denied" }, denied);
+      }
+
+      if (pending.length > 0) {
+        this._recordBlockedScripts(depInfo, scriptPolicy, pending);
+        // kept out of the persisted record, which is JSON - this is only so an
+        // approval given at the prompt can queue the scripts it just allowed
+        this._blockedDeps.push({ depInfo, candidates: pending });
+      }
     }
 
     this._recordPendingReview(depInfo, { hasPI, ...scripts });
@@ -765,7 +779,18 @@ class PkgInstaller {
       return;
     }
 
-    const approved = await new InstallScripts({ fyn: this._fyn }).review(this.blockedScripts);
+    // a denied package is not an unreviewed one - there is nothing to approve,
+    // and offering it would send `fyn install-scripts approve` at a package
+    // that refuses by design. Off a terminal that turned `deny` plus any CI
+    // install into a deadlock with no way out but deleting the denial. They
+    // stay in the end-of-install summary, which says why they were skipped.
+    const pending = this.blockedScripts.filter(record => record.reason !== "denied");
+
+    if (pending.length === 0) {
+      return;
+    }
+
+    const approved = await new InstallScripts({ fyn: this._fyn }).review(pending);
 
     if (approved.length === 0) {
       return;

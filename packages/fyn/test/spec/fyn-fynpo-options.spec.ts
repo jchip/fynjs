@@ -154,6 +154,55 @@ describe("fynpo fyn.options", function () {
       });
     });
 
+    it("keeps the monorepo's denyScripts out of the allowlist, as its own map", async () => {
+      writeFynpo({ denyScripts: { malware: {} } });
+      const fyn = await makeFyn({ pkgFyn: { allowScripts: { malware: true, sharp: true } } });
+      // the two maps stay separate - the evaluator folds deny first, so an
+      // approval never has to be rewritten to be overruled
+      expect(fyn.allowScripts).to.deep.equal({ malware: true, sharp: true });
+      expect(fyn.denyScripts).to.deep.equal({ malware: {} });
+    });
+
+    it("unions denyScripts across every scope - no scope can drop a denial", async () => {
+      writeFynpo({ denyScripts: { malware: {} }, allowScripts: { sharp: true } });
+      const fyn = await makeFyn({
+        pkgFyn: { denyScripts: { sketchy: {} }, allowScripts: { esbuild: true } },
+        denyScripts: { sharp: {}, esbuild: {} }
+      });
+      expect(fyn.denyScripts).to.deep.equal({
+        malware: {},
+        sketchy: {},
+        sharp: {},
+        esbuild: {}
+      });
+    });
+
+    it("scopes a denial by version and by script, like the allowlist", async () => {
+      writeFynpo({
+        denyScripts: { sharp: { semver: "^0.34.0" }, esbuild: { scripts: ["postinstall"] } }
+      });
+      const fyn = await makeFyn();
+      expect(fyn.denyScripts).to.deep.equal({
+        sharp: { semver: "^0.34.0" },
+        esbuild: { scripts: ["postinstall"] }
+      });
+    });
+
+    it("still takes the plain list the --deny-scripts flag produces", async () => {
+      writeFynpo({});
+      const fyn = await makeFyn({ denyScripts: "malware,sketchy" });
+      // a bare name normalizes to an entry that denies every version and script
+      expect(fyn.denyScripts).to.deep.equal({ malware: true, sketchy: true });
+    });
+
+    it("leaves denyScripts to its own merge, not the generic option merge", async () => {
+      writeFynpo({ denyScripts: { malware: {} } });
+      const fyn = await makeFyn({ denyScripts: { sketchy: {} } });
+      // the generic merge would have let the CLI value replace the monorepo's
+      expect(fyn._options.denyScripts).to.deep.equal({ sketchy: {} });
+      expect(fyn.denyScripts).to.deep.equal({ malware: {}, sketchy: {} });
+    });
+
     it("turns reviewLocalPackages on from any scope", async () => {
       writeFynpo({ reviewLocalPackages: true });
       const fyn = await makeFyn();

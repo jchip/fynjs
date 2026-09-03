@@ -164,6 +164,7 @@ which scripts are approved:
       "sharp": { "semver": "^0.34.4", "scripts": ["install"] },
       "esbuild": { "semver": "^0.28.2 || ^0.29.0" },
       "canvas": { "scripts": ["install"] },
+      "zlib-sync": { "scripts": ["*", "!postinstall"] },
       "lodash": {},
       "malware": false
     }
@@ -175,11 +176,18 @@ which scripts are approved:
   every version. A union works: `"^0.28.2 || ^0.29.0"`.
 - **`scripts`** — approved only for these lifecycle scripts. Omit it to approve all
   of them. Script names are matched case-insensitively.
-- So `esbuild` above is "those two release lines, any script", `canvas` is "any
-  version, `install` only", and `lodash` is "any version, any script".
+- So `esbuild` above is "those two release lines, any script", `canvas` is "any version,
+  `install` only", `zlib-sync` is "any script except `postinstall`", and `lodash` is "any
+  version, any script".
+- Inside `scripts`, **`!name` denies that one script** and `+name` allows it, same as a bare
+  name. So `["*", "!postinstall"]` is "every install script except postinstall", and
+  `["+install", "!preinstall"]` spells both halves out. `!*` denies them all. A `!` beats a
+  bare or `+` name for the same script, whichever order they appear in.
 - **`false`** denies a package outright. A denial wins over everything: any other
   entry matching the same package, `allowTopLevelScripts`, an `approve --all`, and
   an approval in a wider scope. Removing the `false` is the only way to undo it.
+  [`fyn.denyScripts`](#blacklisting-packages-fyndenyscripts) says the same thing in its own
+  map, can also scope by version and script, and is what `install-scripts deny` writes.
 
 This is the form `fyn install-scripts approve` writes. Several older and shorter
 forms are still read, so a hand-written or npm-written allowlist keeps working:
@@ -197,6 +205,55 @@ covers `0.34.4`. A key whose spec is not a semver range — a `github:`/git/URL 
 is matched literally against what the dependency asked for, since there is no
 version to range over. When a key and its value both carry a version constraint,
 both have to be satisfied.
+
+#### Blacklisting packages (`fyn.denyScripts`)
+
+`fyn.denyScripts` is the allowlist's opposite, and it takes **the same map shape** — it answers
+the same two questions, which versions and which scripts. The only difference is that a match
+denies:
+
+```json
+{
+  "fyn": {
+    "allowScripts": {
+      "sharp": { "semver": "^0.34.4", "scripts": ["install"] }
+    },
+    "denyScripts": {
+      "malware": {},
+      "sketchy": { "semver": "^2.0.0" },
+      "esbuild": { "scripts": ["postinstall"] }
+    }
+  }
+}
+```
+
+As on the allow side, an absent `semver` means every version and an absent `scripts` means
+every install script. So `malware` is denied outright, `sketchy` only at 2.x, and `esbuild`
+keeps every script but `postinstall`.
+
+Setting both is the point: `allowScripts` says what you reviewed, `denyScripts` says what you
+refuse, and **deny wins** — over a matching `allowScripts` entry, over `allowTopLevelScripts`,
+over an `install-scripts approve --all`, over `scriptPolicy: "all"`, and over an approval
+recorded in a wider scope. Removing the entry is the only way to undo it.
+
+- Entries need no `!` markers. Every entry in this map is already a denial, so `scripts` there
+  lists what to deny.
+- It applies at **every scope** — `fynpo.json` `fyn.options`, the package's own
+  `package.json`, and `--deny-scripts` on the command line — and the three **union**. No scope
+  can drop what a wider one denied, so a monorepo-wide denial is not something an individual
+  package can talk its way out of.
+- `fyn install-scripts deny <pkg>` writes an empty entry — `{}`, every version, every script.
+  In a fynpo repo it writes the root `fynpo.json`; `--local` writes the package's own
+  `package.json`. Narrowing an entry is a hand edit.
+- For one run: `fyn install --deny-scripts=malware,sketchy`. A bare name there means the same
+  as `{}`.
+- A denied package is **skipped, not queued for review**. The install reports it in the
+  end-of-install summary and carries on — it is never offered to the approval prompt, because
+  approving it could not take effect.
+- `install-scripts prune` never touches it. It drops stale *approvals*; a denial for a package
+  you no longer install is still the answer if it ever comes back.
+- The older `"allowScripts": { "malware": false }` form is still read and denies the whole
+  package; `denyScripts` is the form that can also scope by version and script.
 
 #### Trusting direct dependencies (`fyn.allowTopLevelScripts`)
 
@@ -240,6 +297,7 @@ any non-registry package that is declared **directly** in your top-level
 |---|---|---|---|
 | `"review"` *(default)* | need an allowlist entry | need an allowlist entry | run their scripts |
 | `"source"` | run their scripts | need an allowlist entry | run their scripts |
+| `"all"` | run their scripts | run their scripts | run their scripts |
 | `"off"` | nothing runs | nothing runs | nothing runs |
 
 `"review"` asks whether someone approved *this code* — npm 12's model, and the only one that
@@ -257,6 +315,25 @@ wins over the allowlist rather than being overridden by it.
 ```
 
 Or for one run: `fyn install --script-policy=source`.
+
+`"all"` asks nothing: every package runs its scripts whatever its source, including the
+`github:`/git/URL ones every other mode blocks. Reach for it when you have decided the tree is
+already trusted — a vendored or internally mirrored dependency set, or a throwaway sandbox — and
+maintaining approvals buys you nothing. It is the loosest mode fyn has, looser than the
+behavior fyn had before the allowlist existed.
+
+A denial is still honored under `"all"`: `fyn.denyScripts` and an `allowScripts` `false` are
+checked *before* the mode is. That makes `"all"` plus denials a blacklist — everything runs
+except what you name — instead of a switch that discards the denials you already recorded.
+
+```json
+{
+  "fyn": {
+    "scriptPolicy": "all",
+    "denyScripts": { "malware": {} }
+  }
+}
+```
 
 Workspace-local packages — `file:`/`link:` deps and fynpo siblings — are exempt in **every**
 mode, including `"review"`: an allowlist is a review gate on code you did not write, and
@@ -308,7 +385,8 @@ approval per dependency, reviewed once, rather than a copy in each of twenty pac
 ```
 
 Scopes combine as: **fynpo config → package.json → CLI**. Approvals accumulate across them; a
-package may add its own but a `false` at any scope is final. For `scriptPolicy` a package may
+package may add its own but a denial at any scope is final — a `denyScripts` entry or an
+`allowScripts` `false`, either way no tighter scope can lift it. For `scriptPolicy` a package may
 only *tighten* what the repo asked for (`"review"` → `"off"`, never back to `"source"`); a CLI
 flag is a one-off and overrides outright.
 
@@ -317,7 +395,7 @@ flag is a one-off and overrides outright.
 ```
 fyn install-scripts ls                 # what is awaiting review (--json for data)
 fyn install-scripts approve <pkg>...   # allow those packages (--all for everything pending)
-fyn install-scripts deny <pkg>...      # write an explicit false
+fyn install-scripts deny <pkg>...      # blacklist those packages (fyn.denyScripts)
 fyn install-scripts prune              # drop entries for packages no longer installed
 ```
 

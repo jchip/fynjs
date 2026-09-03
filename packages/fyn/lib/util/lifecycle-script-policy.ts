@@ -40,6 +40,19 @@ import { DEP_ITEM, SEMVER } from "../symbols";
 // Anything carrying a urlType that isn't a known registry alias is treated as
 // untrusted (deny-by-default).
 //
+// Two lists shape the outcome within a mode:
+//
+//   `fyn.allowScripts` - the allowlist, keyed by package name or `name@<range>`,
+//     merged loosest scope to tightest (fynpo config, package.json, CLI).
+//
+//   `fyn.denyScripts` - the blacklist, a list of the same keys. Each one is
+//     overlaid onto the merged allowlist as `false` (see {@link applyDenyScripts}),
+//     and a `false` is checked before every approval path there is. So deny beats
+//     allow at every scope: a package the monorepo denies cannot be re-approved by
+//     a package.json entry, a CLI flag, `"all"` mode, or allowTopLevelScripts.
+//     Denying a bare name covers every version; `name@<range>` denies only the
+//     versions in that range.
+//
 
 // urlTypes that still resolve from a configured registry and are trusted.
 export const TRUSTED_URL_TYPES = new Set(["npm"]);
@@ -163,23 +176,25 @@ export function normalizeAllowScriptsConfig(value) {
     return {};
   }
 
-  const list = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? value.split(",")
-      : undefined;
+  const list = Array.isArray(value) ? value : typeof value === "string" ? [value] : undefined;
 
   if (list === undefined) {
     return value;
   }
 
-  return list.reduce((map, name) => {
-    const key = String(name).trim();
-    if (key) {
-      map[key] = true;
-    }
-    return map;
-  }, {});
+  // commas are split inside array entries too, not just in a bare string:
+  // nix-clap's variadic `[packages string..]` hands `--allow-scripts=a,b` over
+  // as the single argv word ["a,b"], and without this that became one bogus
+  // key that matched no package and approved nothing.
+  return list
+    .flatMap(name => String(name).split(","))
+    .reduce((map, name) => {
+      const key = name.trim();
+      if (key) {
+        map[key] = true;
+      }
+      return map;
+    }, {});
 }
 
 /**
@@ -208,6 +223,39 @@ export function mergeAllowScripts(...maps) {
   }
 
   return merged;
+}
+
+/**
+ * Fold the `fyn.denyScripts` map for a package.
+ *
+ * The map has the same shape and key grammar as `fyn.allowScripts` -
+ * `{ semver, scripts }` with both fields optional, plus the shorthand forms -
+ * because it answers the same two questions. The only difference is that a
+ * match denies: an absent `semver` denies every version, an absent `scripts`
+ * denies every install script.
+ *
+ * Entries need no `!` markers; every entry in this map is already negative.
+ *
+ * @param {object} depInfo resolved package data
+ * @param {object} denyScripts the effective `fyn.denyScripts` map
+ * @returns {{denyAll:boolean, scripts:Set<string>, key:(string|undefined)}} what
+ *   this map denies for this package
+ */
+export function foldDenyScripts(depInfo, denyScripts) {
+  const acc = makeAcc();
+
+  if (!denyScripts) {
+    return { denyAll: false, scripts: acc.deny, key: undefined };
+  }
+
+  const key = foldAllowScripts(depInfo, denyScripts, acc, { version: depInfo.version });
+
+  // in a deny map, an entry with no `scripts` means every script
+  return {
+    denyAll: acc.allowAll || acc.denyAll || acc.denied,
+    scripts: new Set([...acc.scripts, ...acc.deny]),
+    key
+  };
 }
 
 /**
@@ -396,21 +444,55 @@ function normalizeAllowEntry(value, acc, ctx = {}) {
   for (const s of list) {
     if (s === false) {
       acc.denied = true;
-    } else if (s === true || s === "*") {
+      continue;
+    }
+
+    if (s === true || s === "*") {
       acc.allowAll = true;
-    } else if (typeof s === "string") {
-      if (classifyStringEntry(s) === "version") {
-        // npm's form: "canvas": "5.0.1" - all scripts, only that version
-        if (ctx.version && semverUtil.satisfies(ctx.version, s)) {
-          acc.allowAll = true;
-        }
+      continue;
+    }
+
+    if (typeof s !== "string") {
+      continue;
+    }
+
+    // `!postinstall` denies that one script; `+postinstall` and a bare
+    // `postinstall` allow it. `!` rather than `-` because a leading dash reads
+    // as part of a name, and a denial has to be obvious at a glance in a config
+    // someone else wrote.
+    const negated = s.startsWith("!");
+    const name = negated || s.startsWith("+") ? s.slice(1) : s;
+
+    if (negated) {
+      if (name === "*") {
+        acc.denyAll = true;
       } else {
-        acc.scripts.add(s.toLowerCase());
+        acc.deny.add(name.toLowerCase());
       }
+      continue;
+    }
+
+    if (classifyStringEntry(name) === "version") {
+      // npm's form: "canvas": "5.0.1" - all scripts, only that version
+      if (ctx.version && semverUtil.satisfies(ctx.version, name)) {
+        acc.allowAll = true;
+      }
+    } else {
+      acc.scripts.add(name.toLowerCase());
     }
   }
 
   return acc;
+}
+
+/**
+ * A fresh accumulator for folding allow or deny entries.
+ *
+ * @returns {{allowAll:boolean, scripts:Set<string>, deny:Set<string>,
+ *   denyAll:boolean, denied:boolean}} the accumulator
+ */
+function makeAcc() {
+  return { allowAll: false, scripts: new Set(), deny: new Set(), denyAll: false, denied: false };
 }
 
 // Index of an allowScripts map by package name, so matching does not rescan
@@ -526,7 +608,7 @@ export function isTopLevelDep(depInfo) {
  *   resolved script policy
  */
 export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
-  const { allowTopLevel, reviewLocalPackages = false } = options;
+  const { allowTopLevel, reviewLocalPackages = false, denyScripts } = options;
   const mode = normalizeScriptPolicy(options.mode);
   const urlType = getUrlType(depInfo);
   const keys = makeAllowKeys(depInfo);
@@ -534,20 +616,37 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
   const local = isLocalSource(depInfo);
 
   const base = { urlType, local, mode, topLevel, key: keys[0] };
-  const nothing = { trusted: false, allowAll: false, allowed: new Set() };
+  // a fully denied policy - `denied` short-circuits isScriptAllowed, so the
+  // per-script sets are empty rather than meaningful
+  const nothing = { trusted: false, allowAll: false, allowed: new Set(), deniedScripts: new Set() };
+
+  // `fyn.denyScripts` first: a denial outranks every way an approval can arrive
+  // - the allowlist, `allowTopLevelScripts`, the local exemption, and "all" -
+  // so there is nothing later that could undo it, and folding it here keeps
+  // that ordering impossible to get wrong.
+  const deny = foldDenyScripts(depInfo, denyScripts);
 
   // "off" is npm's ignore-scripts: the allowlist is not consulted at all.
   if (mode === "off") {
     return { ...base, ...nothing, denied: true, reason: "off" };
   }
 
-  const acc = { allowAll: false, scripts: new Set(), denied: false };
+  if (deny.denyAll) {
+    return { ...base, ...nothing, key: deny.key || keys[0], denied: true, reason: "denied" };
+  }
+
+  const acc = makeAcc();
   const matchedKey = foldAllowScripts(depInfo, allowScripts, acc, { version: depInfo.version });
   const key = matchedKey || keys[0];
 
-  if (acc.denied) {
+  if (acc.denied || acc.denyAll) {
     return { ...base, ...nothing, key, denied: true, reason: "denied" };
   }
+
+  // scripts denied by name, from `denyScripts` entries that named some, and
+  // from `!postinstall` markers in the allowlist entry. Checked ahead of
+  // `allowAll` in isScriptAllowed, so `["*", "!postinstall"]` reads as written.
+  const denied = new Set([...deny.scripts, ...acc.deny]);
 
   // "all": the blanket escape hatch. Checked after the allowlist fold so an
   // explicit `false` still denies - that is what makes this a blacklist rather
@@ -560,6 +659,7 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
       denied: false,
       allowAll: true,
       allowed: new Set(),
+      deniedScripts: denied,
       reason: "all"
     };
   }
@@ -575,6 +675,7 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
       denied: false,
       allowAll: true,
       allowed: new Set(),
+      deniedScripts: denied,
       reason: "local"
     };
   }
@@ -588,6 +689,7 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
       denied: false,
       allowAll: true,
       allowed: new Set(),
+      deniedScripts: denied,
       reason: "registry"
     };
   }
@@ -610,6 +712,7 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
     denied: acc.denied,
     allowAll: acc.allowAll,
     allowed: acc.scripts,
+    deniedScripts: new Set([...denied, ...acc.deny]),
     // key to suggest when warning - prefer a matched key, else the spec form
     key,
     reason: mode === "review" ? "review" : "untrusted-source"
@@ -625,8 +728,19 @@ export function isScriptAllowed(policy, scriptName) {
   if (policy.denied) {
     return false;
   }
+
+  const name = String(scriptName).toLowerCase();
+
+  // a script denied by name beats every approval, including `trusted` and the
+  // `"all"` mode - otherwise `["*", "!postinstall"]` and a scoped denyScripts
+  // entry would both be advisory
+  if (policy.deniedScripts && policy.deniedScripts.has(name)) {
+    return false;
+  }
+
   if (policy.trusted || policy.allowAll) {
     return true;
   }
-  return policy.allowed.has(String(scriptName).toLowerCase());
+
+  return policy.allowed.has(name);
 }

@@ -252,6 +252,16 @@ describe("script-policy-report", function () {
       );
     });
 
+    it("does not offer allowTopLevelScripts for a denied direct dep", () => {
+      // a denial is checked before allowTopLevelScripts, so the suggestion
+      // would be advice that provably changes nothing
+      const text = formatBlockedScriptsSummary([
+        mkRecord({ topLevel: true, reason: "denied" })
+      ]).join("\n");
+      expect(text).to.include("sharp@0.34.4");
+      expect(text).to.not.include("allowTopLevelScripts");
+    });
+
     it("does not suggest approving a package that was explicitly denied", () => {
       const text = formatBlockedScriptsSummary([
         mkRecord({ reason: "denied" }),

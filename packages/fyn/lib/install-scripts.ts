@@ -41,9 +41,9 @@ export function parseAllowKey(key) {
 /**
  * Add approvals to an allowScripts map.
  *
- * A `false` already recorded for the same key is left alone: a denial is a
- * decision someone made, and an approve - `--all` included - must not quietly
- * undo it.
+ * A package already denied is left alone: a denial is a decision someone made,
+ * and an approve - `--all` included - must not quietly undo it. Both spellings
+ * of a denial count, the `denyScripts` list and a `false` in the map.
  *
  * One package is one entry, keyed by its bare name, so approving a second
  * version widens the entry's `semver` instead of adding a near-duplicate key.
@@ -52,21 +52,25 @@ export function parseAllowKey(key) {
  * @param {object[]} records packages to approve, as blocked-scripts records
  * @param {object} [options] options
  * @param {boolean} [options.pin] scope each approval to the reviewed version
+ * @param {string[]} [options.denyScripts] the configured deny list
  * @returns {{allowScripts:object, approved:string[], skipped:string[]}} result
  */
-export function approveEntries(allowScripts, records, { pin = true } = {}) {
+export function approveEntries(allowScripts, records, { pin = true, denyScripts = {} } = {}) {
   const updated = { ...allowScripts };
   const approved = [];
   const skipped = [];
+  const denyNames = new Set(Object.keys(denyScripts || {}).map(key => parseAllowKey(key).name));
 
   for (const record of records) {
     const key = allowScriptsKey(record);
 
-    // a denial may have been written under a ranged key by hand; it still wins
-    // when the policy is evaluated, so approve must not look like it worked
-    const denied = Object.keys(updated).some(
-      k => updated[k] === false && parseAllowKey(k).name === record.name
-    );
+    // a denial may also have been written under a ranged key by hand; it still
+    // wins when the policy is evaluated, so approve must not look like it worked
+    const denied =
+      denyNames.has(record.name) ||
+      Object.keys(updated).some(
+        k => updated[k] === false && parseAllowKey(k).name === record.name
+      );
 
     if (denied) {
       skipped.push(key);
@@ -81,24 +85,35 @@ export function approveEntries(allowScripts, records, { pin = true } = {}) {
 }
 
 /**
- * Record explicit denials. A denial is written against the bare package name so
- * it covers every version, and it wins over any approval at evaluation time.
+ * Record explicit denials.
  *
- * @param {object} allowScripts the current map
+ * A denial is written against the bare package name so it covers every version,
+ * with an empty entry - `{}` - meaning "every version, every script", the same
+ * defaults the allowlist uses for an absent `semver` / `scripts`. A hand-edited
+ * entry can narrow either.
+ *
+ * @param {object} denyScripts the current deny map
  * @param {string[]} names package names to deny
- * @returns {{allowScripts:object, denied:string[]}} result
+ * @returns {{denyScripts:object, denied:string[], already:string[]}} result
  */
-export function denyEntries(allowScripts, names) {
-  const updated = { ...allowScripts };
+export function denyEntries(denyScripts, names) {
+  const updated = { ...(denyScripts || {}) };
   const denied = [];
+  const already = [];
 
   for (const name of names) {
     const { name: pkgName } = parseAllowKey(name);
-    updated[pkgName] = false;
+
+    if (updated[pkgName] !== undefined) {
+      already.push(pkgName);
+      continue;
+    }
+
+    updated[pkgName] = {};
     denied.push(pkgName);
   }
 
-  return { allowScripts: updated, denied };
+  return { denyScripts: updated, denied, already };
 }
 
 /**
@@ -186,6 +201,18 @@ export function resolveTarget(fyn, local = false) {
 }
 
 /**
+ * Where one fyn option lives in a target file. A fynpo.json keeps fyn's options
+ * under `fyn.options`, a package.json directly under `fyn`.
+ *
+ * @param {object} target from {@link resolveTarget}
+ * @param {string} key the option name
+ * @returns {string[]} the path into the file's JSON
+ */
+export function targetOptionPath(target, key) {
+  return target.fynpo ? ["fyn", "options", key] : ["fyn", key];
+}
+
+/**
  * Whether this run can stop and ask a person.
  *
  * @returns {boolean} true when there is a terminal and no CI environment
@@ -235,10 +262,13 @@ export class InstallScripts {
   }
 
   /**
-   * Read the allowScripts map from the file a change would be written to.
+   * Read the script-policy lists from the file a change would be written to.
+   *
+   * The deny list is normalized on the way in, so an entry written by hand in
+   * any of the accepted forms is still recognized as already denied.
    *
    * @param {object} target from {@link resolveTarget}
-   * @returns {Promise<{json:object, allowScripts:object}>} the file contents
+   * @returns {Promise<{json:object, allowScripts:object, denyScripts:object}>} the file contents
    */
   async readTarget(target) {
     let json = {};
@@ -255,21 +285,26 @@ export class InstallScripts {
       throw err;
     }
 
-    const path = target.fynpo ? ["fyn", "options", "allowScripts"] : ["fyn", "allowScripts"];
-
-    return { json, allowScripts: _.get(json, path) || {}, path };
+    return {
+      json,
+      allowScripts: _.get(json, targetOptionPath(target, "allowScripts")) || {},
+      denyScripts: _.get(json, targetOptionPath(target, "denyScripts")) || {}
+    };
   }
 
   /**
-   * Write an allowScripts map back to its file.
+   * Write script-policy lists back to their file. Only the keys named in
+   * `values` are touched, so approving does not rewrite the deny list.
    *
    * @param {object} target from {@link resolveTarget}
    * @param {object} read result of {@link readTarget}
-   * @param {object} allowScripts the map to write
+   * @param {object} values the option values to write, keyed by option name
    * @returns {Promise<void>} nothing
    */
-  async writeTarget(target, read, allowScripts) {
-    _.set(read.json, read.path, allowScripts);
+  async writeTarget(target, read, values) {
+    for (const key of Object.keys(values)) {
+      _.set(read.json, targetOptionPath(target, key), values[key]);
+    }
     await Fs.writeFile(target.file, `${JSON.stringify(read.json, null, 2)}\n`);
     logger.info(`updated ${chalk.cyan(target.file)}`);
   }
@@ -352,13 +387,20 @@ export class InstallScripts {
     const target = resolveTarget(this._fyn, local);
     const read = await this.readTarget(target);
     const { allowScripts, approved, skipped } = approveEntries(read.allowScripts, toApprove, {
-      pin
+      pin,
+      // a denial from any scope counts, not just the file being written: an
+      // approve recorded here would be dead config, and reporting it as
+      // approved would be a lie about what the next install runs
+      // both scopes: what this file already denies, plus what the merged
+      // config does - a denial in fynpo.json still blocks a --local approve
+      denyScripts: { ...(read.denyScripts || {}), ...(this._fyn.denyScripts || {}) }
     });
 
     if (skipped.length > 0) {
       logger.warn(
         `${chalk.magenta("denied, not approved")}: ${skipped.join(", ")} - ` +
-          `remove the ${chalk.cyan("false")} entry first if that was not intended`
+          `remove the ${chalk.cyan("denyScripts")} entry, or the ${chalk.cyan("allowScripts")} ` +
+          `${chalk.cyan("false")}, first if that was not intended`
       );
     }
 
@@ -366,7 +408,7 @@ export class InstallScripts {
       return [];
     }
 
-    await this.writeTarget(target, read, allowScripts);
+    await this.writeTarget(target, read, { allowScripts });
     logger.info(`approved ${chalk.cyan(approved.join(", "))}`);
     logger.info(
       `Install scripts do not run retroactively - run ${chalk.cyan("fyn install")} to run them.`
@@ -376,12 +418,13 @@ export class InstallScripts {
   }
 
   /**
-   * Deny packages outright. The denial wins over any approval, at any scope.
+   * Deny packages outright, on the `denyScripts` blacklist. The denial wins
+   * over any approval, at any scope.
    *
    * @param {string[]} names packages to deny
    * @param {object} [options] options
    * @param {boolean} [options.local] write to this package's package.json
-   * @returns {Promise<string[]>} the names denied
+   * @returns {Promise<string[]>} the names newly denied
    */
   async deny(names = [], { local = false } = {}) {
     if (names.length === 0) {
@@ -391,9 +434,18 @@ export class InstallScripts {
 
     const target = resolveTarget(this._fyn, local);
     const read = await this.readTarget(target);
-    const { allowScripts, denied } = denyEntries(read.allowScripts, names);
+    const { denyScripts, denied, already } = denyEntries(read.denyScripts, names);
 
-    await this.writeTarget(target, read, allowScripts);
+    if (already.length > 0) {
+      logger.info(`already denied ${chalk.cyan(already.join(", "))}`);
+    }
+
+    // nothing new to record - leave the file's formatting alone
+    if (denied.length === 0) {
+      return [];
+    }
+
+    await this.writeTarget(target, read, { denyScripts });
     logger.info(`denied ${chalk.cyan(denied.join(", "))}`);
 
     return denied;
@@ -426,7 +478,7 @@ export class InstallScripts {
       return [];
     }
 
-    await this.writeTarget(target, read, allowScripts);
+    await this.writeTarget(target, read, { allowScripts });
     logger.info(`pruned ${chalk.cyan(removed.join(", "))}`);
 
     return removed;
@@ -509,13 +561,20 @@ export class InstallScripts {
     const target = resolveTarget(this._fyn, false);
     const read = await this.readTarget(target);
     const { allowScripts, approved, skipped } = approveEntries(read.allowScripts, approve, {
-      pin: this._fyn.allowScriptsPin
+      pin: this._fyn.allowScriptsPin,
+      // a denial from any scope counts, not just the file being written: an
+      // approve recorded here would be dead config, and reporting it as
+      // approved would be a lie about what the next install runs
+      // both scopes: what this file already denies, plus what the merged
+      // config does - a denial in fynpo.json still blocks a --local approve
+      denyScripts: { ...(read.denyScripts || {}), ...(this._fyn.denyScripts || {}) }
     });
 
     if (skipped.length > 0) {
       logger.warn(
         `${chalk.magenta("denied, not approved")}: ${skipped.join(", ")} - ` +
-          `remove the ${chalk.cyan("false")} entry first if that was not intended`
+          `remove the ${chalk.cyan("denyScripts")} entry, or the ${chalk.cyan("allowScripts")} ` +
+          `${chalk.cyan("false")}, first if that was not intended`
       );
     }
 
@@ -523,7 +582,7 @@ export class InstallScripts {
       return [];
     }
 
-    await this.writeTarget(target, read, allowScripts);
+    await this.writeTarget(target, read, { allowScripts });
     logger.info(`approved ${chalk.cyan(approved.join(", "))}`);
 
     return approve.filter(record => approved.includes(record.name));

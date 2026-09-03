@@ -72,6 +72,22 @@ describe("install-scripts", function () {
       expect(skipped).to.deep.equal(["sharp"]);
     });
 
+    it("does not approve what the deny list names", () => {
+      const { allowScripts, approved, skipped } = approveEntries({}, [mkRecord()], {
+        denyScripts: { sharp: {} }
+      });
+      expect(allowScripts).to.deep.equal({});
+      expect(approved).to.deep.equal([]);
+      expect(skipped).to.deep.equal(["sharp"]);
+    });
+
+    it("matches a deny-list entry that carries a spec", () => {
+      const { approved } = approveEntries({}, [mkRecord()], {
+        denyScripts: { "sharp@^0.34.0": {} }
+      });
+      expect(approved).to.deep.equal([]);
+    });
+
     it("widens the semver of an entry it already wrote", () => {
       const first = approveEntries({}, [mkRecord()]).allowScripts;
       const { allowScripts } = approveEntries(first, [mkRecord({ version: "1.0.0" })]);
@@ -103,9 +119,25 @@ describe("install-scripts", function () {
 
   describe("denyEntries", function () {
     it("denies against the bare name so it covers every version", () => {
-      const { allowScripts, denied } = denyEntries({ "malware@1.0.0": true }, ["malware@1.0.0"]);
-      expect(allowScripts).to.deep.equal({ "malware@1.0.0": true, malware: false });
+      const { denyScripts, denied } = denyEntries({}, ["malware@1.0.0"]);
+      expect(denyScripts).to.deep.equal({ malware: {} });
       expect(denied).to.deep.equal(["malware"]);
+    });
+
+    it("keeps one entry per package", () => {
+      const { denyScripts, denied, already } = denyEntries({ malware: {} }, [
+        "malware",
+        "sketchy"
+      ]);
+      expect(denyScripts).to.deep.equal({ malware: {}, sketchy: {} });
+      expect(denied).to.deep.equal(["sketchy"]);
+      expect(already).to.deep.equal(["malware"]);
+    });
+
+    it("leaves the input map alone", () => {
+      const before = { malware: {} };
+      denyEntries(before, ["sketchy"]);
+      expect(before).to.deep.equal({ malware: {} });
     });
   });
 
@@ -164,12 +196,20 @@ describe("install-scripts", function () {
     const mkFyn = (over: any = {}) => ({
       cwd: dir,
       allowScriptsPin: true,
+      allowScripts: {},
+      denyScripts: {},
       blockedScripts: [],
       pendingScripts: [],
       _fynpo: {},
       loadFvVersions: async () => ({}),
       ...over
     });
+
+    /**
+     * @param {string} file the file to read back
+     * @returns {object} its parsed contents
+     */
+    const readJson = (file: string) => JSON.parse(Fs.readFileSync(Path.join(dir, file), "utf8"));
 
     it("defaults to the monorepo's fynpo.json inside a fynpo repo", () => {
       const target = resolveTarget(mkFyn({ _fynpo: { dir } }));
@@ -229,20 +269,71 @@ describe("install-scripts", function () {
       expect(approved.sort()).to.deep.equal(["canvas", "sharp"]);
     });
 
-    it("deny writes false and approve then leaves it alone", async () => {
+    it("deny writes fyn.denyScripts and approve then refuses", async () => {
       Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
       const fyn = mkFyn({ blockedScripts: [mkRecord({ name: "malware", version: "1.0.0" })] });
       const cmd = new InstallScripts({ fyn });
 
-      await cmd.deny(["malware"]);
-      expect(
-        JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ malware: false });
+      expect(await cmd.deny(["malware"])).to.deep.equal(["malware"]);
+      expect(readJson("package.json").fyn).to.deep.equal({ denyScripts: { malware: {} } });
 
       expect(await cmd.approve(["malware"])).to.deep.equal([]);
-      expect(
-        JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ malware: false });
+      // and nothing was written that would look like an approval
+      expect(readJson("package.json").fyn).to.deep.equal({ denyScripts: { malware: {} } });
+    });
+
+    it("deny writes the monorepo blacklist under fyn.options", async () => {
+      Fs.writeFileSync(
+        Path.join(dir, "fynpo.json"),
+        JSON.stringify({ packages: ["packages/*"], fyn: { options: { layout: "detail" } } })
+      );
+      const fyn = mkFyn({ _fynpo: { dir } });
+
+      await new InstallScripts({ fyn }).deny(["malware@1.0.0"]);
+
+      const written = readJson("fynpo.json");
+      // denied against the bare name, so it covers every version
+      expect(written.fyn.options.denyScripts).to.deep.equal({ malware: {} });
+      expect(written.fyn.options.layout).to.equal("detail");
+      expect(written.packages).to.deep.equal(["packages/*"]);
+    });
+
+    it("deny is idempotent - denying twice is still one entry", async () => {
+      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
+      const cmd = new InstallScripts({ fyn: mkFyn() });
+
+      await cmd.deny(["malware"]);
+      expect(await cmd.deny(["malware", "sketchy"])).to.deep.equal(["sketchy"]);
+
+      expect(readJson("package.json").fyn.denyScripts).to.deep.equal({
+        malware: {},
+        sketchy: {}
+      });
+    });
+
+    it("still honors a denial written in the old allowScripts false form", async () => {
+      Fs.writeFileSync(
+        Path.join(dir, "package.json"),
+        JSON.stringify({ name: "app", fyn: { allowScripts: { malware: false } } })
+      );
+      const fyn = mkFyn({ blockedScripts: [mkRecord({ name: "malware", version: "1.0.0" })] });
+
+      expect(await new InstallScripts({ fyn }).approve(["malware"])).to.deep.equal([]);
+      expect(readJson("package.json").fyn.allowScripts).to.deep.equal({ malware: false });
+    });
+
+    it("refuses to approve what another scope denied", async () => {
+      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
+      // the deny came from the monorepo config, not the package.json being written
+      const fyn = mkFyn({
+        denyScripts: { malware: {} },
+        blockedScripts: [mkRecord({ name: "malware", version: "1.0.0" })]
+      });
+
+      expect(await new InstallScripts({ fyn }).approve(["malware"], { local: true })).to.deep.equal(
+        []
+      );
+      expect(readJson("package.json").fyn).to.equal(undefined);
     });
 
     it("prune drops approvals for packages no longer installed", async () => {

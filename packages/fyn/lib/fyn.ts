@@ -87,6 +87,7 @@ interface FynOptions {
   enforceRegistryDeps?: boolean;
   scriptPolicy?: string;
   allowScripts?: AllowScriptsMap | string[] | string;
+  denyScripts?: AllowScriptsMap | string[] | string;
   allowTopLevelScripts?: AllowScriptsValue;
   reviewLocalPackages?: boolean;
   allowScriptsPin?: boolean;
@@ -286,6 +287,7 @@ class Fyn {
   private _npmConfigEnv?: Record<string, string>;
   private _shortPkgDir: boolean;
   private _allowScripts?: AllowScriptsMap;
+  private _denyScripts?: AllowScriptsMap;
   private _allowTopLevelScripts?: AllowScriptsValue;
   private _enforceRegistryDeps?: boolean;
   private _scriptPolicy?: string;
@@ -520,13 +522,15 @@ class Fyn {
 
   /**
    * Options with precedence rules of their own - allowlists union across scopes
-   * with a denial winning at any level, and the policy mode may only be
-   * tightened by a package. The `allowScripts` / `scriptPolicy` /
-   * `reviewLocalPackages` getters read the fynpo config directly, so the
-   * generic merge must leave these alone rather than flattening them here.
+   * with a denial winning at any level, the blacklist only ever unions, and the
+   * policy mode may only be tightened by a package. The `allowScripts` /
+   * `denyScripts` / `scriptPolicy` / `reviewLocalPackages` getters read the
+   * fynpo config directly, so the generic merge must leave these alone rather
+   * than flattening them here.
    */
   static FYNPO_OPTIONS_OWN_MERGE = [
     "allowScripts",
+    "denyScripts",
     "allowTopLevelScripts",
     "scriptPolicy",
     "reviewLocalPackages"
@@ -1105,6 +1109,28 @@ class Fyn {
     return this._allowScripts || {};
   }
 
+  // `fyn.denyScripts` - the blacklist. Same map shape and key grammar as
+  // `allowScripts`, because it answers the same two questions: which versions,
+  // which scripts. An entry with no `semver` denies every version; one with no
+  // `scripts` denies every install script.
+  //
+  // Every scope unions, unlike allowScripts' loosest-to-tightest merge: a
+  // denial is only ever a tightening, so neither a package nor the CLI can drop
+  // what the monorepo denied. That is why `mergeAllowScripts` is reused here -
+  // it already refuses to let a later scope overwrite an earlier entry's
+  // denial - and why deny needs no second precedence system: the evaluator
+  // folds this map before it folds any approval.
+  get denyScripts(): AllowScriptsMap {
+    if (this._denyScripts === undefined && this._pkg) {
+      this._denyScripts = mergeAllowScripts(
+        this.fynpoFynOptions.denyScripts,
+        _.get(this._pkg, ["fyn", "denyScripts"]),
+        this._options.denyScripts
+      ) as AllowScriptsMap;
+    }
+    return this._denyScripts || {};
+  }
+
   // `fyn.allowTopLevelScripts` - opt-in (default off) to trust the lifecycle
   // scripts of packages declared directly in the top-level package.json,
   // without per-package `fyn.allowScripts` entries. `true`/`"*"` allows all
@@ -1173,11 +1199,13 @@ class Fyn {
     mode: string;
     allowTopLevel: AllowScriptsValue;
     reviewLocalPackages: boolean;
+    denyScripts: AllowScriptsMap;
   } {
     return {
       mode: this.scriptPolicy,
       allowTopLevel: this.allowTopLevelScripts,
-      reviewLocalPackages: this.reviewLocalPackages
+      reviewLocalPackages: this.reviewLocalPackages,
+      denyScripts: this.denyScripts
     };
   }
 
@@ -1197,6 +1225,7 @@ class Fyn {
    */
   resetAllowScripts(): void {
     this._allowScripts = undefined;
+    this._denyScripts = undefined;
     this._pkg = this._pkg && { ...this._pkg };
   }
 

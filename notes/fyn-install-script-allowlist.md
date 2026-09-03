@@ -158,7 +158,9 @@ Keep `fyn.allowScripts` and accept npm's value forms alongside fyn's:
 | `false` | explicit denial, wins over everything | **new**, from npm |
 
 > As built, this grew a fifth form — `{ semver, scripts }`, each field optional — which is what
-> `approve` writes. See *What shipped* for why. Every form in this table is still read.
+> `approve` writes. See *What shipped* for why. Every form in this table is still read. The
+> `false` row later got a map of its own, `fyn.denyScripts`, sharing this same entry shape but
+> read as denials, and `scripts` gained `!name` / `+name` markers.
 
 `false` is the one genuinely missing primitive. `normalizeAllowEntry` currently treats any
 non-`true` non-string as absent, so a `false` is silently ignored rather than denying — and
@@ -177,6 +179,9 @@ Add `fyn.scriptPolicy`:
 | `"source"` | trusted (run) | allowlist required |
 | `"review"` | allowlist required | allowlist required |
 | `"off"` | nothing runs, allowlist not consulted | nothing runs |
+
+> As built, a fourth mode `"all"` was added below `"source"` — everything runs, whatever its
+> source, with denials still honored. See *What shipped*.
 
 `"source"` is today's behavior and stays the default until the owner decides otherwise;
 `"review"` is npm 12 parity; `"off"` is npm's `ignore-scripts`, and like npm's it takes
@@ -372,9 +377,54 @@ list it without re-resolving. That is a cache of the last install, not a fail-cl
 | D7 integration points | `lib/pkg-installer.ts`, `lib/pkg-opt-resolver.ts` | FPM-84 |
 | blocker: fynpo options channel | `Fyn.mergeFynpoOptions` | FPM-81 |
 | stage 3: `"review"` by default, prompt or fail | `InstallScripts.review`, `PkgInstaller._reviewBlockedScripts` | FPM-87 |
+| `"all"` mode, the blanket escape hatch | `SCRIPT_POLICY_MODES`, `evaluateScriptPolicy` | FPM-88 |
+| `denyScripts`, the explicit blacklist | `foldDenyScripts`, `Fyn.denyScripts`, `denyEntries`, `--deny-scripts` | — |
 
-Three decisions the build had to make that the design left implicit:
+Two additions after the migration, both asked for by the owner:
 
+- **`"all"` is a fourth mode, looser than `"source"`.** D3 stopped at three because the design
+  only needed to name what `"review"` was replacing. `"source"` still blocks git/URL packages —
+  the FPM-41 behavior that predates the allowlist entirely — so a project that has decided its
+  whole tree is trusted (vendored deps, an internal mirror, a throwaway sandbox) had no setting
+  that said so, and was pushed toward per-package approvals it had no intention of reading.
+  `"all"` is that setting. It sits at index 0 of `SCRIPT_POLICY_MODES`, so `strictestScriptPolicy`
+  keeps working unchanged: a package may still only tighten what the repo asked for.
+
+  It is checked *after* the allowlist fold, not before, so an explicit denial survives it. That
+  ordering is the whole point — it turns `"all"` into a blacklist ("everything runs except
+  these") instead of a switch that quietly discards the denials a repo already recorded.
+
+- **`denyScripts` is a map with the allowlist's own shape.** The owner asked for an explicit
+  blacklist settable alongside the allowlist, with deny winning. The first cut made it a flat
+  list of names normalized into `false` entries overlaid on the merged allowlist — which reused
+  the existing denial semantics for free, but could only ever express "this whole package". The
+  shape it landed on is the allowlist's: `{ semver, scripts }` keyed by package name, so a
+  denial can be scoped to a version line or to individual scripts, exactly as an approval can.
+
+  That symmetry is the argument. The two maps answer the same two questions, so they share one
+  grammar, one key matcher (`indexAllowScripts`), one entry reader, and one merge
+  (`mergeAllowScripts`, whose refusal to let a later scope overwrite an earlier entry is what
+  makes deny union across scopes). The evaluator folds the deny map *before* it folds any
+  approval, which is what gives deny priority without a second precedence system to keep in
+  sync — there is nothing later that could undo it.
+
+  Entries there need no `!` markers: every entry in that map is already negative.
+
+- **`!postinstall` in an allowlist entry's `scripts`.** The allow side needed the opposite
+  direction — "everything this package does except that one script" — and `["*", "!postinstall"]`
+  says it in one entry. `!` rather than `-` because a leading dash reads as part of a name; a
+  denial has to be obvious at a glance in a config someone else wrote. `+name` is accepted as
+  the explicit positive so both halves can be spelled out. Both the marker and a scoped
+  `denyScripts` entry feed one `deniedScripts` set, checked ahead of `allowAll` in
+  `isScriptAllowed`.
+
+- **A denial is not a pending review.** Found by the verify pass, then again one level down.
+  `pkg-installer` fed every blocked package to the interactive review gate, denials included.
+  Off a terminal that turned `deny` plus any CI install into a deadlock: the install failed
+  telling you to run `install-scripts approve`, which refuses a denied package by design. The
+  installer now partitions blocked scripts — denied-by-name ones are recorded as `"denied"` and
+  reported in the summary, and only genuinely unreviewed ones reach the prompt. A package can
+  land in both halves, and does when one script is denied and another is merely unapproved.
 - **The fynpo merge is key-by-key, not `_.merge`.** An option the user set on the command line
   (`_cliSource[key] !== "default"`) is skipped, and `cwd`/`initCwd` are never taken from a
   monorepo config — a repo-wide setting that relocated the install would change which

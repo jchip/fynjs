@@ -215,11 +215,15 @@ const options: Record<string, OptionSpec> = {
   },
   "script-policy": {
     args: "<mode string>",
-    desc: "install script policy: source (default), review, or off"
+    desc: "install script policy: all, source, review (default), or off"
   },
   "allow-scripts": {
     args: "[packages string..]",
     desc: "let these packages run install scripts, for this run only"
+  },
+  "deny-scripts": {
+    args: "[packages string..]",
+    desc: "block these packages from running install scripts, whatever approved them"
   },
   "allow-scripts-pin": {
     args: "<flag boolean>",

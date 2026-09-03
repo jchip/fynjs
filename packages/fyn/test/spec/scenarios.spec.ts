@@ -52,6 +52,11 @@ const debug = false;
   let registry;
   let saveCI;
   let unhandledRejectionHandler;
+  // rejections nobody awaited, collected for the step that was running at the
+  // time - fyn's local package builder reports a failed nested install this
+  // way, and rethrowing it from the handler only made vitest print an
+  // "Unhandled Errors" section, which does not fail the run.
+  let unhandledErrors: unknown[] = [];
   beforeAll(() => {
     chalk.level = 0;
     saveCI = ci.isCI;
@@ -65,8 +70,9 @@ const debug = false;
         // Ignore "exit 0" errors - these are expected when fynRun completes successfully
         return;
       }
-      // Re-throw other unhandled rejections
-      throw reason;
+      // Record it so the running step fails on it. Rethrowing here would only
+      // reach vitest as an unhandled error, which leaves the test green.
+      unhandledErrors.push(reason);
     };
     process.on("unhandledRejection", unhandledRejectionHandler);
     return mockNpm({ port: 0, logLevel: "warn" }).then(s => {
@@ -87,6 +93,7 @@ const debug = false;
   });
 
   beforeEach(() => {
+    unhandledErrors = [];
     logger._items = [];
     logger._itemOptions = {};
     logger._lines = [];
@@ -315,6 +322,18 @@ const debug = false;
           })
           .then(() => stepAction.verify(cwd, scenarioDir))
           .then(() => xaa.delay(10))
+          .then(() => {
+            // the delay above gives node a turn to report rejections nobody
+            // awaited; any that arrived belong to this step and fail it.
+            if (unhandledErrors.length > 0) {
+              const details = unhandledErrors
+                .map((e: any) => (e && e.stack) || String(e))
+                .join("\n---\n");
+              throw new Error(
+                `${unhandledErrors.length} unhandled rejection(s) during step "${step}":\n${details}`
+              );
+            }
+          })
           .finally(() => stepAction.after());
       });
     };

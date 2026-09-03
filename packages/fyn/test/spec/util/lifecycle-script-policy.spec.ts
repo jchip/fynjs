@@ -11,7 +11,10 @@ import {
   isScriptAllowed,
   normalizeScriptPolicy,
   normalizeScriptPolicyIfSet,
-  strictestScriptPolicy
+  strictestScriptPolicy,
+  mergeAllowScripts,
+  foldDenyScripts,
+  normalizeAllowScriptsConfig
 } from "../../../lib/util/lifecycle-script-policy";
 
 /**
@@ -586,6 +589,191 @@ describe("lifecycle-script-policy", function() {
       expect(
         isScriptAllowed(review({ "sharp@^0.34.0": false, sharp: { scripts: ["install"] } }), "install")
       ).to.equal(false);
+    });
+  });
+
+  describe("normalizeAllowScriptsConfig", function() {
+    it("splits commas inside array entries, the shape --allow-scripts=a,b arrives in", () => {
+      // nix-clap's variadic option hands `--allow-scripts=a,b` over as ["a,b"]
+      expect(normalizeAllowScriptsConfig(["esbuild,sharp"])).to.deep.equal({
+        esbuild: true,
+        sharp: true
+      });
+      expect(normalizeAllowScriptsConfig("esbuild, sharp")).to.deep.equal({
+        esbuild: true,
+        sharp: true
+      });
+      expect(normalizeAllowScriptsConfig(["esbuild", "sharp"])).to.deep.equal({
+        esbuild: true,
+        sharp: true
+      });
+    });
+
+    it("passes a map through untouched", () => {
+      const map = { sharp: { semver: "^1.0.0" } };
+      expect(normalizeAllowScriptsConfig(map)).to.equal(map);
+    });
+  });
+
+  describe("denyScripts", function() {
+    /**
+     * @param {object} [over] depInfo overrides
+     * @returns {object} a fake registry depInfo for sharp@0.34.4
+     */
+    const dep = (over = {}) =>
+      mkDep({ name: "sharp", version: "0.34.4", spec: "^0.34.0", ...over });
+
+    /**
+     * @param {object} allowScripts the allowlist
+     * @param {object} denyScripts the denylist
+     * @param {object} [options] extra policy options
+     * @returns {object} the policy
+     */
+    const policyFor = (allowScripts, denyScripts, options = {}) =>
+      evaluateScriptPolicy(dep(), allowScripts, { mode: "review", denyScripts, ...options });
+
+    describe("foldDenyScripts", function() {
+      it("reads the same entry shape as allowScripts", () => {
+        expect(foldDenyScripts(dep(), { sharp: {} }).denyAll).to.equal(true);
+        expect(foldDenyScripts(dep(), { sharp: { semver: "^0.34.0" } }).denyAll).to.equal(true);
+        expect(foldDenyScripts(dep(), { sharp: true }).denyAll).to.equal(true);
+      });
+
+      it("denies only the named scripts when the entry names some", () => {
+        const folded = foldDenyScripts(dep(), { sharp: { scripts: ["postinstall"] } });
+        expect(folded.denyAll).to.equal(false);
+        expect([...folded.scripts]).to.deep.equal(["postinstall"]);
+      });
+
+      it("does not match a version the entry's semver excludes", () => {
+        expect(foldDenyScripts(dep(), { sharp: { semver: "^0.33.0" } }).denyAll).to.equal(false);
+      });
+
+      it("matches a range in the key, like the allowlist does", () => {
+        expect(foldDenyScripts(dep(), { "sharp@^0.34.0": {} }).denyAll).to.equal(true);
+        expect(foldDenyScripts(dep(), { "sharp@^0.33.0": {} }).denyAll).to.equal(false);
+      });
+
+      it("denies nothing for an absent or empty map", () => {
+        expect(foldDenyScripts(dep(), undefined).denyAll).to.equal(false);
+        expect(foldDenyScripts(dep(), {}).denyAll).to.equal(false);
+      });
+    });
+
+    describe("deny beats every kind of approval", function() {
+      const denyAll = { sharp: {} };
+
+      it("beats an allowScripts approval", () => {
+        expect(isScriptAllowed(policyFor({ sharp: {} }, denyAll), "install")).to.equal(false);
+      });
+
+      it('beats "all" mode', () => {
+        expect(
+          isScriptAllowed(policyFor({}, denyAll, { mode: "all" }), "install")
+        ).to.equal(false);
+      });
+
+      it('beats the registry exemption under "source"', () => {
+        expect(
+          isScriptAllowed(policyFor({}, denyAll, { mode: "source" }), "install")
+        ).to.equal(false);
+      });
+
+      it("beats allowTopLevelScripts", () => {
+        const policy = evaluateScriptPolicy(dep({ top: true }), {}, {
+          mode: "source",
+          allowTopLevel: true,
+          denyScripts: denyAll
+        });
+        expect(isScriptAllowed(policy, "install")).to.equal(false);
+      });
+
+      it("beats the workspace-local exemption", () => {
+        const local = dep({ spec: "../sharp" });
+        local[DEP_ITEM].localType = "sym";
+        local.local = "sym";
+        const policy = evaluateScriptPolicy(local, {}, {
+          mode: "review",
+          denyScripts: denyAll
+        });
+        expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+      });
+
+      it("denying a bare name blocks a version-keyed approval", () => {
+        expect(
+          isScriptAllowed(policyFor({ "sharp@^0.34.0": {} }, { sharp: {} }), "install")
+        ).to.equal(false);
+      });
+
+      it("denying name@<range> blocks only the matching versions", () => {
+        expect(isScriptAllowed(policyFor({ sharp: {} }, { "sharp@^0.34.0": {} }), "install"))
+          .to.equal(false);
+        expect(isScriptAllowed(policyFor({ sharp: {} }, { "sharp@^0.33.0": {} }), "install"))
+          .to.equal(true);
+      });
+    });
+
+    describe("a deny entry that names scripts", function() {
+      it("denies those and leaves the rest allowed", () => {
+        const policy = policyFor({ sharp: {} }, { sharp: { scripts: ["postinstall"] } });
+        expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+        expect(isScriptAllowed(policy, "install")).to.equal(true);
+        expect(isScriptAllowed(policy, "preinstall")).to.equal(true);
+      });
+
+      it("still denies a script the package was never approved for", () => {
+        const policy = policyFor({}, { sharp: { scripts: ["postinstall"] } });
+        expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+      });
+    });
+  });
+
+  describe("per-script markers in allowScripts", function() {
+    /**
+     * @param {(string[]|object)} scripts the entry's scripts value
+     * @param {string} name the lifecycle script to test
+     * @returns {boolean} whether it is allowed
+     */
+    const allowed = (scripts, name) =>
+      isScriptAllowed(
+        evaluateScriptPolicy(
+          mkDep({ name: "sharp", version: "0.34.4", spec: "^0.34.0" }),
+          { sharp: { scripts } },
+          { mode: "review" }
+        ),
+        name
+      );
+
+    it("treats a bare name and +name the same", () => {
+      expect(allowed(["install"], "install")).to.equal(true);
+      expect(allowed(["+install"], "install")).to.equal(true);
+      expect(allowed(["+install"], "postinstall")).to.equal(false);
+    });
+
+    it("!name denies that script", () => {
+      expect(allowed(["*", "!postinstall"], "postinstall")).to.equal(false);
+      expect(allowed(["*", "!postinstall"], "install")).to.equal(true);
+      expect(allowed(["*", "!postinstall"], "preinstall")).to.equal(true);
+    });
+
+    it("a denial wins however the approval was spelled", () => {
+      expect(allowed(["postinstall", "!postinstall"], "postinstall")).to.equal(false);
+      expect(allowed(["+postinstall", "!postinstall"], "postinstall")).to.equal(false);
+    });
+
+    it("!* denies every script", () => {
+      expect(allowed(["*", "!*"], "install")).to.equal(false);
+      expect(allowed(["install", "!*"], "install")).to.equal(false);
+    });
+
+    it("markers work in the array shorthand too", () => {
+      const policy = evaluateScriptPolicy(
+        mkDep({ name: "sharp", version: "0.34.4", spec: "^0.34.0" }),
+        { sharp: ["*", "!preinstall"] },
+        { mode: "review" }
+      );
+      expect(isScriptAllowed(policy, "preinstall")).to.equal(false);
+      expect(isScriptAllowed(policy, "install")).to.equal(true);
     });
   });
 });

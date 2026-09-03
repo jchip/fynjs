@@ -353,5 +353,78 @@ describe("pkg-installer", function () {
       expect(installer.postInstall).to.have.length(1);
       expect(installer.postInstall[0].install).to.deep.equal(["install", "postinstall"]);
     });
+  
+    it("does not offer a denied package for review - there is nothing to approve", async () => {
+      // a denied package used to be handed to the review prompt like an
+      // unreviewed one. Off a terminal that threw "needs approval, no terminal
+      // to ask on" and exited 1, pointing at `install-scripts approve`, which
+      // refuses a denied package by design - deny plus CI was a deadlock.
+      const installer = await gatherOne({
+        scriptPolicy: "review",
+        allowScripts: { sharp: false },
+        scriptPolicyOptions: { mode: "review", allowTopLevel: false, reviewLocalPackages: false }
+      });
+
+      expect(installer.blockedScripts).to.have.length(1);
+      expect(installer.blockedScripts[0].reason).to.equal("denied");
+
+      let asked = false;
+      installer._fyn.scriptPolicy = "review";
+      installer._blockedDeps = installer._blockedDeps || [];
+      const OriginalReview = installer._reviewBlockedScripts;
+      // if it reached the prompt it would throw, since vitest is not a terminal
+      await OriginalReview.call(installer).catch(() => {
+        asked = true;
+      });
+
+      expect(asked, "a denied package was sent to the review gate").to.equal(false);
+    });
+  
+    it("records a script denied by name as denied, not as awaiting review", async () => {
+      // an approval cannot lift a per-script denial, so offering one would be
+      // the deadlock again - just scoped to a script instead of a package
+      const installer = await gatherOne({
+        scriptPolicy: "review",
+        allowScripts: { sharp: {} },
+        scriptPolicyOptions: {
+          mode: "review",
+          allowTopLevel: false,
+          reviewLocalPackages: false,
+          denyScripts: { sharp: { scripts: ["postinstall"] } }
+        }
+      });
+
+      expect(installer.postInstall).to.deep.equal([]);
+      expect(installer.blockedScripts).to.have.length(1);
+      expect(installer.blockedScripts[0].reason).to.equal("denied");
+      // nothing queued for the prompt
+      expect(installer._blockedDeps).to.deep.equal([]);
+    });
+
+    it("splits a package whose scripts are part denied, part unreviewed", async () => {
+      const installer = await gatherOne(
+        {
+          scriptPolicy: "review",
+          allowScripts: {},
+          scriptPolicyOptions: {
+            mode: "review",
+            allowTopLevel: false,
+            reviewLocalPackages: false,
+            denyScripts: { sharp: { scripts: ["postinstall"] } }
+          }
+        },
+        {
+          json: {
+            scripts: { install: "node a.js", postinstall: "node b.js" }
+          }
+        }
+      );
+
+      const reasons = installer.blockedScripts.map(r => r.reason).sort();
+      expect(reasons).to.deep.equal(["denied", "review"]);
+      // only the unreviewed half is offered for approval
+      expect(installer._blockedDeps).to.have.length(1);
+      expect(installer._blockedDeps[0].candidates).to.deep.equal(["install"]);
+    });
   });
 });

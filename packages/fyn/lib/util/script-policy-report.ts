@@ -262,8 +262,9 @@ export function blockedReasonText(record) {
   switch (record.reason) {
     case "off":
       return "scriptPolicy is off";
+    // the denial may be spelled either way, and the record does not say which
     case "denied":
-      return "denied in allowScripts";
+      return "denied (denyScripts / allowScripts false)";
     case "review":
       return "not reviewed";
     default:
@@ -321,7 +322,9 @@ export function formatBlockedScriptsSummary(records, { mode = "source", pin = tr
       );
     }
 
-    if (blocked.some(r => r.topLevel)) {
+    // a denial is checked before allowTopLevelScripts, so offering it as a way
+    // out for a denied package would be advice that provably does nothing
+    if (blocked.some(r => r.topLevel && r.reason !== "denied")) {
       lines.push(
         chalk.blue("  Direct dependencies can also be trusted as a group with:"),
         `  ${chalk.cyan(`{ "fyn": { "allowTopLevelScripts": true } }`)}`
