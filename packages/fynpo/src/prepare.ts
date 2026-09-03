@@ -10,6 +10,11 @@ import Chalk from "chalk";
 import assert from "assert";
 import semver from "semver";
 import * as utils from "./utils";
+import { checkNupdateTag, updateDep } from "./utils/update-package-versions.js";
+import {
+  checkGitClean as gitIsClean,
+  commitAndTagUpdates as commitAndTag,
+} from "./utils/git-commit-updates.js";
 import {
   printHeader,
   printSection,
@@ -105,42 +110,17 @@ export class Prepare {
   /**
    * Point a dependency range at a newly released version, keeping its semver prefix.
    *
+   * Delegates to the shared helper (FJM-24); kept as a method because the class is the
+   * unit under test.
+   *
    * @returns true if any section was actually changed
    */
   updateDep(pkg, name, ver): boolean {
-    let changed = false;
-
-    ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"].forEach(
-      (sec) => {
-        const deps = pkg[sec];
-        if (_.isEmpty(deps) || !deps.hasOwnProperty(name)) {
-          return;
-        }
-
-        let semType = "";
-        const sem = deps[name][0];
-
-        if (sem.match(/[\^~]/)) {
-          semType = sem;
-        } else if (!sem.match(/[0-9]/)) {
-          return;
-        }
-
-        const updated = `${semType}${ver}`;
-        if (deps[name] !== updated) {
-          deps[name] = updated;
-          changed = true;
-        }
-      }
-    );
-
-    return changed;
+    return updateDep(pkg, name, ver);
   }
 
   checkGitClean = () => {
-    return this._sh(`git diff --quiet`)
-      .then(() => (this._gitClean = true))
-      .catch(() => (this._gitClean = false));
+    return gitIsClean(this._sh.bind(this)).then((clean) => (this._gitClean = clean));
   };
 
   _sh(command) {
@@ -148,67 +128,7 @@ export class Prepare {
   }
 
   _checkNupdateTag(pkg, newV) {
-    const { pkgJson } = pkg;
-    const fynpoTags = _.get(this._fynpoRc, "command.publish.tags");
-    const versionTagging = _.get(this._fynpoRc, "command.publish.versionTagging", {});
-    const existPubConfig = _.get(pkgJson, "publishConfig");
-
-    let updated;
-
-    if (fynpoTags) {
-      Object.keys(fynpoTags).find((tag) => {
-        const tagInfo = fynpoTags[tag];
-        if (tagInfo.enabled === false) {
-          return undefined;
-        }
-
-        let enabled = _.get(tagInfo, ["packages", pkgJson.name]);
-
-        if (enabled === undefined && tagInfo.regex) {
-          enabled = Boolean(tagInfo.regex.find((r) => new RegExp(r).exec(pkgJson.name)));
-        }
-
-        const tagPkgs = _.get(tagInfo, "packages");
-        if (tagInfo.enabled === false || !tagPkgs.hasOwnProperty(pkgJson.name)) {
-          return undefined;
-        }
-
-        if (!enabled) {
-          // npm tag not enabled for package
-          if (pkgJson.publishConfig) {
-            // remove tag from package.json if it exist
-            delete pkgJson.publishConfig.tag;
-          }
-          // default to latest tag
-          return (updated = "latest");
-        }
-
-        // enabled, update tag in package.json
-        pkgJson.publishConfig = Object.assign({}, pkgJson.publishConfig, { tag });
-        return (updated = tag);
-      });
-    }
-
-    if (versionTagging.hasOwnProperty(pkgJson.name)) {
-      assert(!updated, `package ${pkgJson.name} has both tag and versionTagging`);
-      const semv = semver.parse(newV);
-      const tag = `ver${semv.major}`;
-      pkgJson.publishConfig = Object.assign({}, pkgJson.publishConfig, { tag });
-      updated = tag;
-    }
-
-    // reset exist tag to latest in case lerna config
-    if (existPubConfig && !updated && existPubConfig.tag && existPubConfig.tag !== "latest") {
-      logger.warn(
-        Chalk.red(
-          `Pkg ${pkgJson.name} has exist publishConfig.tag ${existPubConfig.tag} \
-that's not latest but none set in fynpo config`
-        )
-      );
-      // existPubConfig.tag = "latest";
-    }
-
-    pkgJson.version = newV;
+    return checkNupdateTag(pkg, newV, { fynpoRc: this._fynpoRc });
   }
 
   /**
@@ -220,39 +140,16 @@ that's not latest but none set in fynpo config`
   // no explicit Promise<> annotation: `Promise` here is aveazul's, and TypeScript requires the
   // global one as an async return type. Inference gives the right shape anyway.
   commitAndTagUpdates = async (packages) => {
-    const didNothing = { committed: false, tagged: 0 };
-
-    if (!this._options.commit) {
-      logger.warn("commit option disabled, skip committing updates.");
-      return didNothing;
-    }
-
-    if (!this._gitClean) {
-      logger.warn("Your git branch is not clean, skip committing updates.");
-      return didNothing;
-    }
-
-    const addOutput = await this._sh(`git add ${packages.map((x) => `"${x}"`).join(" ")}`);
-    logger.info("git add", addOutput);
-
-    const commitOutput = await this._sh(
-      `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
-        ` -m " - ${this._tags.join("\n - ")}"`
+    return commitAndTag(
+      {
+        sh: this._sh.bind(this),
+        commit: this._options.commit,
+        tag: this._options.tag === true,
+        gitClean: this._gitClean,
+        isSelective: this._isSelective(),
+      },
+      { packages, tags: this._tags }
     );
-    logger.info("git commit", commitOutput);
-
-    if (this._options.tag !== true) {
-      return { committed: true, tagged: 0 };
-    }
-
-    await Promise.each(this._tags, (tag) => {
-      logger.info("tagging", tag);
-      return this._sh(`git tag ${tag}`).then((tagOut) => {
-        logger.info("tag", tag, "output", tagOut);
-      });
-    });
-
-    return { committed: true, tagged: this._tags.length };
   };
 
   async exec() {

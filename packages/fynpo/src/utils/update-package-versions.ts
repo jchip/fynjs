@@ -7,7 +7,7 @@ import semver from "semver";
 import { logger } from "../logger";
 import { makePublishFilter } from "../utils";
 
-const checkNupdateTag = (pkg, newV, opts) => {
+export const checkNupdateTag = (pkg, newV, opts) => {
   const { pkgJson } = pkg;
   const fynpoTags = _.get(opts.fynpoRc, "command.publish.tags");
   const versionTagging = _.get(opts.fynpoRc, "command.publish.versionTagging", {});
@@ -71,7 +71,14 @@ that's not latest but none set in fynpo config`
   pkgJson.version = newV;
 };
 
-const updateDep = (pkg, name, ver) => {
+/**
+ * Point a dependency range at a newly released version, keeping its semver prefix.
+ *
+ * @returns true if any section was actually changed
+ */
+export const updateDep = (pkg, name, ver): boolean => {
+  let changed = false;
+
   ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"].forEach((sec) => {
     const deps = pkg[sec];
     if (_.isEmpty(deps) || !deps.hasOwnProperty(name)) {
@@ -87,8 +94,14 @@ const updateDep = (pkg, name, ver) => {
       return;
     }
 
-    deps[name] = `${semType}${ver}`;
+    const updated = `${semType}${ver}`;
+    if (deps[name] !== updated) {
+      deps[name] = updated;
+      changed = true;
+    }
   });
+
+  return changed;
 };
 
 export const updatePackageVersions = ({ versions, tags, collated }) => {

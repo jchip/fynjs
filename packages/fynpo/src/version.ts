@@ -14,6 +14,10 @@
 import Fs from "fs";
 import xsh from "xsh";
 import { execShell } from "./utils/exec-shell.js";
+import {
+  checkGitClean as gitIsClean,
+  commitAndTagUpdates as commitAndTag,
+} from "./utils/git-commit-updates.js";
 import Path from "path";
 import Promise from "aveazul";
 xsh.Promise = Promise;
@@ -79,9 +83,7 @@ export class Version {
   }
 
   checkGitClean = () => {
-    return this._sh(`git diff --quiet`)
-      .then(() => (this._gitClean = true))
-      .catch(() => (this._gitClean = false));
+    return gitIsClean(this._sh.bind(this)).then((clean) => (this._gitClean = clean));
   };
 
   /**
@@ -93,37 +95,17 @@ export class Version {
   }
 
   commitAndTagUpdates = async ({ packages, tags }) => {
-    if (!this._options.commit) {
-      logger.warn("commit option disabled, skip committing updates.");
-      return;
-    }
-
-    if (!this._gitClean) {
-      logger.warn("Your git branch is not clean, skip committing updates.");
-      return;
-    }
-
-    const addOutput = await this._sh(
-      `git add ${this._changeLogFile} ${packages.map((x) => `"${x}"`).join(" ")}`
+    return commitAndTag(
+      {
+        sh: this._sh.bind(this),
+        commit: this._options.commit,
+        tag: this._options.tag === true,
+        gitClean: this._gitClean,
+        isSelective: this._isSelective(),
+        changeLogFile: this._changeLogFile,
+      },
+      { packages, tags }
     );
-    logger.info("git add", addOutput);
-
-    const commitOutput = await this._sh(
-      `git commit -n -m "${utils.makePublishCommitSubject(this._isSelective())}"` +
-        ` -m " - ${tags.join("\n - ")}"`
-    );
-    logger.info("git commit", commitOutput);
-
-    if (this._options.tag !== true) {
-      return;
-    }
-
-    await Promise.each(tags, (tag) => {
-      logger.info("tagging", tag);
-      return this._sh(`git tag ${tag}`).then((tagOut) => {
-        logger.info("tag", tag, "output", tagOut);
-      });
-    });
   };
 
   async exec() {
