@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "mod-h": "^3.0.1"
+  },
+  "fyn": {
+    "scriptPolicy": "all"
   }
 }

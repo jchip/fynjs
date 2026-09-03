@@ -21,6 +21,11 @@ import { DEP_ITEM, SEMVER } from "../symbols";
 //     Workspace-local packages stay exempt: they are reviewed by the PR that
 //     changed them.
 //
+//   "all" - the blanket escape hatch. Every package runs its install scripts,
+//     whatever its source. An explicit `false` in the allowlist still denies,
+//     which turns this mode into a blacklist: everything runs except what you
+//     name.
+//
 //   "off" - nothing runs, and the allowlist is not consulted. This is npm's
 //     `ignore-scripts`, and like npm's it wins over the allowlist rather than
 //     the other way around.
@@ -43,7 +48,7 @@ export const TRUSTED_URL_TYPES = new Set(["npm"]);
 export const LIFECYCLE_SCRIPTS = ["preinstall", "install", "postinstall"];
 
 /** Valid `fyn.scriptPolicy` modes, loosest to strictest. */
-export const SCRIPT_POLICY_MODES = ["source", "review", "off"];
+export const SCRIPT_POLICY_MODES = ["all", "source", "review", "off"];
 
 /**
  * The default. Nothing runs its install scripts without an approval, workspace
@@ -542,6 +547,21 @@ export function evaluateScriptPolicy(depInfo, allowScripts, options = {}) {
 
   if (acc.denied) {
     return { ...base, ...nothing, key, denied: true, reason: "denied" };
+  }
+
+  // "all": the blanket escape hatch. Checked after the allowlist fold so an
+  // explicit `false` still denies - that is what makes this a blacklist rather
+  // than a way to lose the denials you already recorded.
+  if (mode === "all") {
+    return {
+      ...base,
+      key,
+      trusted: true,
+      denied: false,
+      allowAll: true,
+      allowed: new Set(),
+      reason: "all"
+    };
   }
 
   // workspace-local packages are exempt in every mode, including "review":

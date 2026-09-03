@@ -305,6 +305,7 @@ describe("lifecycle-script-policy", function() {
       expect(normalizeScriptPolicyIfSet("off")).to.equal("off");
       expect(normalizeScriptPolicy("REVIEW")).to.equal("review");
       expect(() => normalizeScriptPolicy("strict")).to.throw(/not valid/);
+      expect(normalizeScriptPolicy("all")).to.equal("all");
     });
 
     it("picks the strictest of the modes given", () => {
@@ -314,6 +315,39 @@ describe("lifecycle-script-policy", function() {
       // an explicit mode looser than the default still wins
       expect(strictestScriptPolicy("source", undefined)).to.equal("source");
       expect(strictestScriptPolicy("off", undefined, "source")).to.equal("off");
+    });
+
+    it('"all" runs every package\'s scripts, whatever its source', () => {
+      const registry = mkDep({ name: "foo", version: "1.0.0", spec: "^1.0.0" });
+      const git = mkDep({ name: "bar", version: "1.0.0", spec: "github:x/bar", urlType: "github" });
+
+      for (const dep of [registry, git]) {
+        const policy = evaluateScriptPolicy(dep, {}, { mode: "all" });
+        expect(policy.trusted).to.equal(true);
+        expect(policy.reason).to.equal("all");
+        expect(isScriptAllowed(policy, "preinstall")).to.equal(true);
+        expect(isScriptAllowed(policy, "postinstall")).to.equal(true);
+      }
+    });
+
+    it('"all" is a blacklist - an explicit false still denies', () => {
+      const dep = mkDep({ name: "malware", version: "1.0.0", spec: "^1.0.0" });
+      const policy = evaluateScriptPolicy(dep, { malware: false }, { mode: "all" });
+      expect(policy.denied).to.equal(true);
+      expect(policy.reason).to.equal("denied");
+      expect(isScriptAllowed(policy, "postinstall")).to.equal(false);
+
+      // and a package nobody denied still runs
+      const other = mkDep({ name: "sharp", version: "1.0.0", spec: "^1.0.0" });
+      expect(
+        isScriptAllowed(evaluateScriptPolicy(other, { malware: false }, { mode: "all" }), "install")
+      ).to.equal(true);
+    });
+
+    it('"off" still wins over "all" when both scopes are in play', () => {
+      expect(strictestScriptPolicy("all", "off")).to.equal("off");
+      expect(strictestScriptPolicy("all", "review")).to.equal("review");
+      expect(strictestScriptPolicy("all")).to.equal("all");
     });
 
     it('"off" blocks everything and does not consult the allowlist', () => {
