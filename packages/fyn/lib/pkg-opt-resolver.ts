@@ -222,9 +222,11 @@ class PkgOptResolver {
       version,
       top: !_.get(item, ["parent", "depth"])
     };
-    const policy = evaluateScriptPolicy(optDepInfo, this._fyn.allowScripts, {
-      allowTopLevel: this._fyn.allowTopLevelScripts
-    });
+    const policy = evaluateScriptPolicy(
+      optDepInfo,
+      this._fyn.allowScripts,
+      this._fyn.scriptPolicyOptions
+    );
     return { allowed: isScriptAllowed(policy, "preinstall"), policy };
   }
 

@@ -42,16 +42,17 @@ describe("fynpo fyn.options", function () {
    * @param {object} cliSource where each option came from
    * @returns {object} an initialized Fyn instance
    */
-  const makeFyn = async (opts = {}, cliSource = {}): Promise<any> => {
+  const makeFyn = async (opts: any = {}, cliSource = {}): Promise<any> => {
+    const { pkgFyn, ...rest } = opts;
     const fyn: any = new (Fyn as any)({
       opts: {
         registry: "http://localhost/",
         pkgFile: false,
-        pkgData: { name: "t", version: "1.0.0" },
+        pkgData: { name: "t", version: "1.0.0", ...(pkgFyn ? { fyn: pkgFyn } : {}) },
         targetDir: "xout",
         cwd,
         fynDir: path.join(cwd, ".fyn"),
-        ...opts
+        ...rest
       },
       _cliSource: cliSource
     });
@@ -88,11 +89,75 @@ describe("fynpo fyn.options", function () {
   });
 
   it("deep merges object options, with the locally set keys winning", async () => {
-    writeFynpo({ allowScripts: { "a@1.0.0": true, "b@2.0.0": true } });
-    const fyn = await makeFyn({ allowScripts: { "b@2.0.0": false } });
-    expect(fyn._options.allowScripts).to.deep.equal({
-      "a@1.0.0": true,
-      "b@2.0.0": false
+    writeFynpo({ resolutions: { "a": "1.0.0", "b": "2.0.0" } });
+    const fyn = await makeFyn({ resolutions: { "b": "3.0.0" } });
+    expect(fyn._options.resolutions).to.deep.equal({ a: "1.0.0", b: "3.0.0" });
+  });
+
+  it("leaves the script-policy options to their own precedence rules", async () => {
+    // allowScripts unions across scopes with a denial winning at any level, so
+    // the generic option merge must not flatten it - see Fyn.allowScripts
+    writeFynpo({ allowScripts: { "a@1.0.0": true, "b@2.0.0": false } });
+    const fyn = await makeFyn({ allowScripts: { "b@2.0.0": true } });
+    expect(fyn._options.allowScripts).to.deep.equal({ "b@2.0.0": true });
+    expect(fyn.allowScripts).to.deep.equal({ "a@1.0.0": true, "b@2.0.0": false });
+  });
+
+  describe("script policy scopes", function () {
+    it("applies the monorepo's scriptPolicy to a package that sets none", async () => {
+      writeFynpo({ scriptPolicy: "review" });
+      const fyn = await makeFyn();
+      expect(fyn.scriptPolicy).to.equal("review");
+    });
+
+    it("lets a package tighten the monorepo's mode", async () => {
+      writeFynpo({ scriptPolicy: "review" });
+      const fyn = await makeFyn({ pkgFyn: { scriptPolicy: "off" } });
+      expect(fyn.scriptPolicy).to.equal("off");
+    });
+
+    it("does not let a package loosen the monorepo's mode", async () => {
+      writeFynpo({ scriptPolicy: "review" });
+      const fyn = await makeFyn({ pkgFyn: { scriptPolicy: "source" } });
+      expect(fyn.scriptPolicy).to.equal("review");
+    });
+
+    it("lets the CLI override the mode outright", async () => {
+      writeFynpo({ scriptPolicy: "review" });
+      const fyn = await makeFyn({ scriptPolicy: "source" });
+      expect(fyn.scriptPolicy).to.equal("source");
+    });
+
+    it("defaults to source with nothing configured", async () => {
+      writeFynpo({});
+      const fyn = await makeFyn();
+      expect(fyn.scriptPolicy).to.equal("source");
+    });
+
+    it("unions allowScripts across scopes, with a denial final", async () => {
+      writeFynpo({ allowScripts: { sharp: true, malware: false } });
+      const fyn = await makeFyn({
+        pkgFyn: { allowScripts: { canvas: "5.0.1", malware: true } },
+        allowScripts: "esbuild"
+      });
+      expect(fyn.allowScripts).to.deep.equal({
+        sharp: true,
+        malware: false,
+        canvas: "5.0.1",
+        esbuild: true
+      });
+    });
+
+    it("turns reviewLocalPackages on from any scope", async () => {
+      writeFynpo({ reviewLocalPackages: true });
+      const fyn = await makeFyn();
+      expect(fyn.reviewLocalPackages).to.equal(true);
+    });
+
+    it("takes allowTopLevelScripts from the package over the monorepo", async () => {
+      writeFynpo({ allowTopLevelScripts: true });
+      const fyn = await makeFyn({ pkgFyn: { allowTopLevelScripts: ["postinstall"] } });
+      expect(fyn.allowTopLevelScripts).to.deep.equal(["postinstall"]);
     });
   });
 });

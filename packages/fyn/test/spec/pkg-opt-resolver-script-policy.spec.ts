@@ -17,11 +17,28 @@ import DepItem from "../../lib/dep-item";
  * @param {object} [fyn] stub fields for `this._fyn`
  * @param {object} [fyn.allowScripts] the fyn.allowScripts whitelist
  * @param {boolean} [fyn.allowTopLevelScripts] the fyn.allowTopLevelScripts flag
+ * @param {string} [fyn.scriptPolicy] the fyn.scriptPolicy mode
+ * @param {boolean} [fyn.reviewLocalPackages] the fyn.reviewLocalPackages flag
  * @returns {object} a PkgOptResolver with a stub `_fyn`
  */
-function mkResolver({ allowScripts = {}, allowTopLevelScripts = false } = {}) {
+function mkResolver({
+  allowScripts = {},
+  allowTopLevelScripts = false,
+  scriptPolicy = "source",
+  reviewLocalPackages = false
+} = {}) {
   const resolver = Object.create(PkgOptResolver.prototype);
-  resolver._fyn = { allowScripts, allowTopLevelScripts };
+  resolver._fyn = {
+    allowScripts,
+    allowTopLevelScripts,
+    scriptPolicy,
+    reviewLocalPackages,
+    scriptPolicyOptions: {
+      mode: scriptPolicy,
+      allowTopLevel: allowTopLevelScripts,
+      reviewLocalPackages
+    }
+  };
   return resolver;
 }
 
@@ -92,6 +109,27 @@ describe("pkg-opt-resolver preinstall script policy", function() {
       "opt-pkg",
       "1.0.0"
     );
+    expect(allowed).to.equal(false);
+  });
+
+  it('blocks a registry optional dep\'s preinstall under "review"', () => {
+    const resolver = mkResolver({ scriptPolicy: "review" });
+    const { allowed } = resolver.checkPreinstallPolicy(mkItem("^1.2.3", 1), "opt-pkg", "1.0.0");
+    expect(allowed).to.equal(false);
+  });
+
+  it('allows an allowlisted registry optional dep under "review"', () => {
+    const resolver = mkResolver({
+      scriptPolicy: "review",
+      allowScripts: { "opt-pkg": ["preinstall"] }
+    });
+    const { allowed } = resolver.checkPreinstallPolicy(mkItem("^1.2.3", 1), "opt-pkg", "1.0.0");
+    expect(allowed).to.equal(true);
+  });
+
+  it('blocks everything under "off"', () => {
+    const resolver = mkResolver({ scriptPolicy: "off", allowScripts: { "opt-pkg": true } });
+    const { allowed } = resolver.checkPreinstallPolicy(mkItem("^1.2.3", 1), "opt-pkg", "1.0.0");
     expect(allowed).to.equal(false);
   });
 });

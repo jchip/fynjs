@@ -27,6 +27,12 @@ import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
 import pathUpEach from "./util/path-up-each";
 import { localExportsNeedInstall } from "./local-exports";
+import {
+  mergeAllowScripts,
+  normalizeScriptPolicy,
+  strictestScriptPolicy,
+  DEFAULT_SCRIPT_POLICY
+} from "./util/lifecycle-script-policy";
 
 import type { PkgVersion } from "./dep-data";
 
@@ -78,6 +84,10 @@ interface FynOptions {
   buildLocal?: boolean;
   npmLock?: boolean;
   enforceRegistryDeps?: boolean;
+  scriptPolicy?: string;
+  allowScripts?: AllowScriptsMap | string[] | string;
+  allowTopLevelScripts?: AllowScriptsValue;
+  reviewLocalPackages?: boolean;
   pkgSrcMgr?: PkgSrcManager;
   data?: DepData;
   refreshMeta?: boolean;
@@ -259,6 +269,8 @@ class Fyn {
   private _allowScripts?: AllowScriptsMap;
   private _allowTopLevelScripts?: AllowScriptsValue;
   private _enforceRegistryDeps?: boolean;
+  private _scriptPolicy?: string;
+  private _reviewLocalPackages?: boolean;
 
   /** Local packages with nested dependencies */
   localPkgWithNestedDep: LocalDepInfo[];
@@ -486,6 +498,20 @@ class Fyn {
   static FYNPO_OPTIONS_DENY = ["cwd", "initCwd"];
 
   /**
+   * Options with precedence rules of their own - allowlists union across scopes
+   * with a denial winning at any level, and the policy mode may only be
+   * tightened by a package. The `allowScripts` / `scriptPolicy` /
+   * `reviewLocalPackages` getters read the fynpo config directly, so the
+   * generic merge must leave these alone rather than flattening them here.
+   */
+  static FYNPO_OPTIONS_OWN_MERGE = [
+    "allowScripts",
+    "allowTopLevelScripts",
+    "scriptPolicy",
+    "reviewLocalPackages"
+  ];
+
+  /**
    * Merge the monorepo's `fyn.options` (from fynpo.json / fynpo.config.js) into
    * this instance's options.
    *
@@ -503,7 +529,7 @@ class Fyn {
     }
 
     for (const key of Object.keys(fynpoOptions)) {
-      if (Fyn.FYNPO_OPTIONS_DENY.includes(key)) {
+      if (Fyn.FYNPO_OPTIONS_DENY.includes(key) || Fyn.FYNPO_OPTIONS_OWN_MERGE.includes(key)) {
         continue;
       }
 
@@ -1024,27 +1050,109 @@ class Fyn {
     return this._options.showDeprecated && "show-deprecated";
   }
 
-  // package.json `fyn.allowScripts` whitelist - maps `name@spec` or
-  // `name@version` to the lifecycle scripts allowed for packages that did not
-  // come from a configured registry (github/git/url tarball deps).
+  /**
+   * The monorepo's `fyn.options` block, when installing inside a fynpo repo.
+   * This is the repo-wide baseline for the script policy - one allowlist,
+   * reviewed once, instead of a copy in every package.
+   *
+   * @returns {object} the fynpo `fyn.options`, or an empty object
+   */
+  get fynpoFynOptions(): Record<string, unknown> {
+    return (_.get(this, ["_fynpo", "config", "fyn", "options"]) ||
+      {}) as Record<string, unknown>;
+  }
+
+  // The effective `fyn.allowScripts` whitelist - maps `name`, `name@spec` or
+  // `name@version` to the lifecycle scripts allowed for the package.
+  //
+  // Scopes merge loosest to tightest: the fynpo repo-wide allowlist, then this
+  // package.json, then the CLI. Approvals accumulate; a `false` at any level is
+  // final, so a package cannot approve what the monorepo denied.
   get allowScripts(): AllowScriptsMap {
     if (this._allowScripts === undefined && this._pkg) {
-      this._allowScripts = (_.get(this._pkg, ["fyn", "allowScripts"]) as AllowScriptsMap) || {};
+      this._allowScripts = mergeAllowScripts(
+        this.fynpoFynOptions.allowScripts,
+        _.get(this._pkg, ["fyn", "allowScripts"]),
+        this._options.allowScripts
+      ) as AllowScriptsMap;
     }
     return this._allowScripts || {};
   }
 
-  // package.json `fyn.allowTopLevelScripts` - opt-in (default off) to trust the
-  // lifecycle scripts of non-registry packages (github/git/url tarball) that are
-  // declared directly in the top-level package.json, without per-package
-  // `fyn.allowScripts` entries. `true`/`"*"` allows all lifecycle scripts; an
-  // array allows only those script names. Transitive deps stay blocked.
+  // `fyn.allowTopLevelScripts` - opt-in (default off) to trust the lifecycle
+  // scripts of packages declared directly in the top-level package.json,
+  // without per-package `fyn.allowScripts` entries. `true`/`"*"` allows all
+  // lifecycle scripts; an array allows only those script names. Transitive deps
+  // stay blocked. Precedence: CLI > package.json > fynpo config.
   get allowTopLevelScripts(): AllowScriptsValue {
     if (this._allowTopLevelScripts === undefined && this._pkg) {
-      this._allowTopLevelScripts =
-        (_.get(this._pkg, ["fyn", "allowTopLevelScripts"]) as AllowScriptsValue) || false;
+      const values = [
+        this._options.allowTopLevelScripts,
+        _.get(this._pkg, ["fyn", "allowTopLevelScripts"]),
+        this.fynpoFynOptions.allowTopLevelScripts
+      ];
+      this._allowTopLevelScripts = (values.find(v => v !== undefined) ||
+        false) as AllowScriptsValue;
     }
     return this._allowTopLevelScripts || false;
+  }
+
+  // `fyn.scriptPolicy` - which trust model gates install scripts:
+  //
+  //   "source" (default) - a registry or workspace-local package runs its
+  //     scripts; a github/git/url package needs an allowlist entry.
+  //   "review"           - nothing but workspace-local packages runs without an
+  //     allowlist entry (npm 12 parity).
+  //   "off"              - nothing runs, allowlist not consulted.
+  //
+  // The CLI is a one-off and wins outright. Otherwise a package may only
+  // tighten the mode the monorepo asked for, never loosen it.
+  get scriptPolicy(): string {
+    if (this._scriptPolicy === undefined) {
+      const cliOpt = this._options.scriptPolicy;
+      if (cliOpt) {
+        this._scriptPolicy = normalizeScriptPolicy(cliOpt);
+      } else if (this._pkg) {
+        this._scriptPolicy = strictestScriptPolicy(
+          normalizeScriptPolicy(this.fynpoFynOptions.scriptPolicy),
+          normalizeScriptPolicy(_.get(this._pkg, ["fyn", "scriptPolicy"]))
+        );
+      }
+    }
+    return this._scriptPolicy || DEFAULT_SCRIPT_POLICY;
+  }
+
+  // `fyn.reviewLocalPackages` - opt in to reviewing workspace-local packages
+  // like any other. Off by default: monorepo source is reviewed by the PR that
+  // changed it, and an approval step there teaches approving without reading.
+  // Tighten-only, so any scope turning it on turns it on.
+  get reviewLocalPackages(): boolean {
+    if (this._reviewLocalPackages === undefined && this._pkg) {
+      this._reviewLocalPackages = Boolean(
+        this._options.reviewLocalPackages ||
+          _.get(this._pkg, ["fyn", "reviewLocalPackages"]) ||
+          this.fynpoFynOptions.reviewLocalPackages
+      );
+    }
+    return Boolean(this._reviewLocalPackages);
+  }
+
+  /**
+   * The options every lifecycle-script policy evaluation needs, so the two
+   * enforcement points (installer and optional-dep probe) cannot drift.
+   *
+   * @returns {object} options for `evaluateScriptPolicy`
+   */
+  get scriptPolicyOptions(): {
+    mode: string;
+    allowTopLevel: AllowScriptsValue;
+    reviewLocalPackages: boolean;
+  } {
+    return {
+      mode: this.scriptPolicy,
+      allowTopLevel: this.allowTopLevelScripts,
+      reviewLocalPackages: this.reviewLocalPackages
+    };
   }
 
   // Security policy: transitive (non-top-level) dependencies must resolve from

@@ -632,14 +632,17 @@ class PkgInstaller {
     json._fyn = {};
     const scripts = json.scripts || {};
 
-    // Security hardening: packages that did not come from a configured registry
-    // (github/git/url tarball deps) do not run their lifecycle scripts unless
-    // explicitly whitelisted in package.json `fyn.allowScripts`, or - for deps
-    // declared directly in the top-level package.json - opted in via
-    // `fyn.allowTopLevelScripts`.
-    const scriptPolicy = evaluateScriptPolicy(depInfo, this._fyn.allowScripts, {
-      allowTopLevel: this._fyn.allowTopLevelScripts
-    });
+    // Security hardening: a package only runs its lifecycle scripts when
+    // `fyn.scriptPolicy` allows it. Under "source" (the default) that means it
+    // came from a configured registry or the workspace; under "review" it means
+    // an explicit `fyn.allowScripts` entry, workspace-local packages excepted.
+    // Deps declared directly in the top-level package.json can also be opted in
+    // via `fyn.allowTopLevelScripts`.
+    const scriptPolicy = evaluateScriptPolicy(
+      depInfo,
+      this._fyn.allowScripts,
+      this._fyn.scriptPolicyOptions
+    );
     const blockedScripts = [];
     const isAllowed = scriptName => {
       if (isScriptAllowed(scriptPolicy, scriptName)) {
