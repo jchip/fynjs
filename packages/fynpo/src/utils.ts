@@ -8,8 +8,8 @@ import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
 import {
   FynpoDepGraph,
+  FynpoPackageInfo,
   PackageBasicInfo,
-  PackageInfo,
   PackageRef,
   resolvePackagesConfig,
   makeGitignoreMatcher,
@@ -552,7 +552,7 @@ export function makeVersionLockMap(
     const lockRef = locks.map((ref: string) => new PackageRef(ref));
 
     const foundLocks = [];
-    _.each(graph.packages.byId, (pkgInfo: PackageInfo, _id: string) => {
+    _.each(graph.packages.byId, (pkgInfo: FynpoPackageInfo, _id: string) => {
       const matched = lockRef.find((pkgRef) => pkgRef.match(pkgInfo));
       if (matched) {
         if (mapping[pkgInfo.path]) {
