@@ -5,7 +5,7 @@ import assert from "assert";
 import Fs from "./util/file-ops";
 import _ from "lodash";
 import chalk from "chalk";
-import { simpleCompare as simpleSemverCompare } from "./util/semver";
+import { simpleCompare as simpleSemverCompare, isLocalHard } from "./util/semver";
 import Semver from "semver";
 import Yaml from "yamljs";
 import sortObjKeys from "./util/sort-obj-keys";
@@ -358,7 +358,17 @@ class PkgDepLocker {
         const badDeps = vpkg && vpkg.dependencies && !this._depsResolvable(vpkg.dependencies);
         if (!_.isEmpty(vpkg) && vpkg._valid !== false && !badVersionKey && !badDeps) {
           if (vpkg.$ === "local") {
-            vpkg.local = true;
+            //
+            // The lock records only THAT a package was local (`$: local`), never which kind
+            // of link it was - but the version key does: `localify()` writes `-fynlocal_h`
+            // for a hard link and `-fynlocal` otherwise. Read it back, because the link type
+            // is what the installer dispatches on (`local === "hard"`), and a plain `true`
+            // here reaches `_linkLocalPkg` as neither "hard" nor "sym" and throws (FJM-159).
+            //
+            // `sym` vs `sym1` is not recoverable - `localify` collapses both - but nothing
+            // can act on that difference today: `_linkLocalPkg` throws for either.
+            //
+            vpkg.local = isLocalHard(version) ? "hard" : "sym";
             vpkg.dist = {
               integrity: "local",
               fullPath: vpkg._

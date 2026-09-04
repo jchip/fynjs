@@ -72,8 +72,12 @@ export interface LockVersionMeta {
   /** Has install or postinstall script (1 = true) */
   hasI?: number;
 
-  /** Is a local package (fynlocal) - set when loading from lock */
-  local?: boolean;
+  /**
+   * Link type of a local package (fynlocal) - "hard" or "sym", set when loading from lock.
+   * Derived from the version key's `-fynlocal_h` / `-fynlocal` tag, since the lock itself
+   * records only that the package was local (FJM-159).
+   */
+  local?: string;
 
   /** Loaded from lock file - set when populating from lock data */
   fromLocked?: boolean;
