@@ -38,7 +38,11 @@ import Arborist from "@npmcli/arborist";
 // Import the module object (not a named binding) so execFileSync is resolved at
 // call time — tests stub childProcess.execFileSync on the CJS module object.
 import childProcess from "child_process";
+import type { NativePromise } from "./types";
 import type { DepItem } from "./dep-item";
+// type-only, so it adds no module cycle: `FynpoData` is declared next to `Fyn` because it
+// carries the whole fynpo.json config shape
+import type { FynpoData } from "./fyn";
 import type { Inflight as InflightType, ItemQueue } from "item-queue";
 
 /** Options for PkgSrcManager constructor */
@@ -57,39 +61,37 @@ interface PkgSrcManagerOptions {
 interface FynForSrcManager {
   concurrency: number;
   cwd?: string;
-  _fynCacheDir: string;
   _options: {
     refreshMeta?: boolean;
     metaMemoize?: string;
   };
-  _fynpo?: {
-    config?: {
-      publishUtil?: Record<string, unknown>;
-    };
-    graph?: {
-      getPackageAtDir(path: string): unknown;
-    };
-  };
+  _fynpo?: FynpoData;
   isFynpo: boolean;
   forceCache: boolean | string;
   remoteMetaDisabled: boolean | string;
   remoteTgzDisabled: boolean | string;
-  central?: FynCentralInstance;
+  /** `false` when the central store is off - reads of it guard on that first */
+  central?: FynCentralInstance | false;
   copy: string[];
 }
 
-/** FynCentral instance interface */
+/**
+ * FynCentral instance interface
+ *
+ * NativePromise throughout: `Promise` in this module is aveazul's (FPO-41), while
+ * `FynCentral`'s methods are plain `async` and return the global one.
+ */
 interface FynCentralInstance {
-  allow(integrity: string): Promise<boolean>;
-  has(integrity: string): Promise<boolean>;
-  validate(integrity: string): Promise<boolean>;
-  getContentPath(integrity: string): Promise<string>;
-  delete(integrity: string): Promise<void>;
+  allow(integrity: string): NativePromise<boolean>;
+  has(integrity: string): NativePromise<boolean>;
+  validate(integrity: string): NativePromise<boolean>;
+  getContentPath(integrity: string): NativePromise<string>;
+  delete(integrity: string): NativePromise<void>;
   storeTarStream(
     tarId: string,
     integrity: string,
-    tarStream: () => Promise<Readable>
-  ): Promise<void>;
+    tarStream: () => NativePromise<Readable>
+  ): NativePromise<void>;
 }
 
 /** Fetch item representing a dependency to fetch */

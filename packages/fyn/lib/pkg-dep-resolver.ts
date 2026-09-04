@@ -163,7 +163,8 @@ interface PkgOptResolver {
   resolve(): void;
   isPending(): boolean;
   add(data: { item: DepItem; meta: PackageMeta; err?: Error }): void;
-  _depResolver: PkgDepResolver;
+  /** assigned by us right after construction; we never read it back */
+  _depResolver: unknown;
 }
 
 /** Yarn lock parsed data */

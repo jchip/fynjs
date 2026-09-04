@@ -34,8 +34,9 @@ export interface PackageDist {
 export interface PackageVersionMeta {
   /** Package name - absent from the partial metas fyn synthesizes (lock entries, opt failures) */
   name?: string;
-  /** Package version */
-  version: string;
+  /** Package version - absent from the partial metas fyn synthesizes (lock entries keyed
+   * by version, opt-failure placeholders) */
+  version?: string;
   /** Distribution info */
   dist?: PackageDist;
   /** npm scripts */

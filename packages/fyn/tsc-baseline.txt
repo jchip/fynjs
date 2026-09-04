@@ -9,8 +9,6 @@ lib/fyn-global.ts TS2554
 lib/fyn.ts TS2322
 lib/fyn.ts TS2322
 lib/fyn.ts TS2322
-lib/fyn.ts TS2322
-lib/fyn.ts TS2345
 lib/fyn.ts TS2345
 lib/fyn.ts TS2367
 lib/fyn.ts TS2538
@@ -78,8 +76,6 @@ lib/pkg-dep-resolver.ts TS1064
 lib/pkg-dep-resolver.ts TS2322
 lib/pkg-dep-resolver.ts TS2322
 lib/pkg-dep-resolver.ts TS2322
-lib/pkg-dep-resolver.ts TS2322
-lib/pkg-dep-resolver.ts TS2352
 lib/pkg-dep-resolver.ts TS2352
 lib/pkg-dep-resolver.ts TS2365
 lib/pkg-dep-resolver.ts TS2554
