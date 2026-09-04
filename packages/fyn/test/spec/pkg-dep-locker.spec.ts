@@ -202,6 +202,14 @@ describe("pkg-dep-locker", function() {
       expect(meta._).to.equal("https://registry.npmjs.org/mod-bad-os/-/mod-bad-os-1.0.0.tgz");
     });
 
+    // FPM-93: the package was never opened, so it has no `dependencies` here. Saying nothing
+    // would assert it has none; `_missingJson` says they are unknown, and a machine that can
+    // actually use the package fetches the real meta before resolving it.
+    it("should mark a platform failure as having no package.json recorded", () => {
+      expect(genLock(OPT_FAILED_PLATFORM)._missingJson).to.equal(true);
+      expect(genLock(OPT_FAILED_PLATFORM)).to.not.have.property("dependencies");
+    });
+
     it("should record a failed optional check (1)", () => {
       expect(genLock(1).optFailed).to.equal(1);
     });

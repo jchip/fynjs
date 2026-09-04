@@ -199,7 +199,12 @@ class PkgDepLocker {
           }
 
           if (!meta.optFailed) {
-            if (_.isEmpty(json)) {
+            // A package skipped on os/cpu was never opened, so `json` here is only the os/cpu
+            // stub that pkg-dep-resolver synthesized for it - recording no `dependencies` would
+            // assert it has none, when they are simply unknown (FPM-93). A machine that can use
+            // the package fetches the real meta; one that cannot ignores the flag and resolves
+            // straight from this entry.
+            if (_.isEmpty(json) || (vpkg.optFailed === OPT_FAILED_PLATFORM && !vpkg.local)) {
               meta._missingJson = true;
             } else {
               // save dependencies from package.json to meta in lockfile

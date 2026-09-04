@@ -211,6 +211,34 @@ interface ResolveResult {
 const simpleSemverCompare = semverUtil.simpleCompare;
 const { checkPkgOsCpu, relativePath, unSlashNpmScope } = fyntil;
 
+/**
+ * Decide whether a lock entry that records no package.json still needs a real meta fetch.
+ *
+ * `_missingJson` says the lock never captured the package's json, so its dependencies are
+ * unknown rather than absent. Normally that has to be fetched for real before the package can be
+ * resolved into the tree.
+ *
+ * The exception is a package this platform cannot use. An optional dep skipped on os/cpu is
+ * recorded from its registry meta alone (pkg-dep-resolver synthesizes an os/cpu-only json for
+ * it), so every such entry is `_missingJson` by construction - and on a machine that will never
+ * install it, its dependencies do not matter. Fetching them anyway would cost a packument for
+ * every platform variant in the tree on every install, which is the whole reason those entries
+ * are in the lock (FPM-63, FPM-93).
+ *
+ * @param metaJson locked version metadata
+ * @returns true when the real meta has to be fetched before this item can resolve
+ */
+export function lockedMetaNeedsFetch(
+  metaJson: { _missingJson?: boolean; os?: string[]; cpu?: string[] } | undefined
+): boolean {
+  if (!metaJson || !metaJson._missingJson) {
+    return false;
+  }
+
+  // unknown deps only matter where the package can actually be installed
+  return checkPkgOsCpu(metaJson) === true;
+}
+
 const failMetaMsg = name =>
   `Unable to retrieve meta for package ${name} - If you've updated its version recently, try to run fyn with '--refresh-meta' again`;
 
@@ -1736,12 +1764,14 @@ ${item.depPath.join(" > ")}`
 
     return promise
       .then((r: ResolveResult | false | undefined) => {
-        if (r && !_.get(r, ["meta", "versions", (r as ResolveResult).resolved, "_missingJson"])) {
+        if (r && !lockedMetaNeedsFetch(_.get(r, ["meta", "versions", (r as ResolveResult).resolved]))) {
           return r;
         }
 
         if (this._lockOnly || item.localType) {
-          return undefined;
+          // nothing can be fetched here, so a lock entry with unknown deps is still the best
+          // answer available - better than dropping the package from the tree entirely
+          return r || undefined;
         }
         // neither local nor lock was able to resolve for item
         // so try to fetch from registry for real meta to resolve
