@@ -30,6 +30,20 @@ const OMIT_SRC: Record<string, string> = {
   peer: "per"
 };
 
+/**
+ * How long to wait on npm's bulk advisories endpoint before giving up, in ms.
+ *
+ * That endpoint intermittently accepts the connection and never answers. npm-registry-fetch
+ * would apply its own defaults here - a 5 minute timeout over 3 attempts - which turns a
+ * stalled endpoint into a ~15 minute silent install hang. Audit is advisory and its caller
+ * already degrades to cached data or a warning, so bound it tightly instead: one attempt,
+ * ten seconds, then fall through.
+ */
+const AUDIT_FETCH_TIMEOUT = 10 * 1000;
+
+/** No retries on the audit fetch - an endpoint that just stalled is unlikely to answer the retry. */
+const AUDIT_FETCH_RETRY = { retries: 0 };
+
 /** Options for AuditReport constructor */
 export interface AuditReportOptions {
   fyn: {
@@ -194,7 +208,9 @@ class AuditReport {
         ...fetchOpts,
         method: "POST",
         body: payload,
-        gzip: true
+        gzip: true,
+        timeout: AUDIT_FETCH_TIMEOUT,
+        retry: AUDIT_FETCH_RETRY
       });
 
       const advisories = (await response.json()) as Record<string, Advisory[]>;
