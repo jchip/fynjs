@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { Prepare, prepareOutcome } from "../src/prepare";
 import path from "path";
 import fs from "fs";
@@ -159,6 +159,31 @@ describe("fynpo prepare", () => {
     prepare._checkNupdateTag(pkg, "3.0.1");
     expect(pkg.pkgJson.version).toEqual("3.0.1");
     expect(pkg.pkgJson.publishConfig.tag).toEqual("ver3");
+  });
+
+  it("marks the publish commit selective when --only narrowed the release (FJM-153)", async () => {
+    const selective = new Prepare({ cwd: dir, commit: true, tag: false, only: ["pkg1"] }, graph);
+    selective._gitClean = true;
+    const shSpy = vi.spyOn(selective, "_sh").mockResolvedValue("");
+
+    await selective.commitAndTagUpdates(["package.json"]);
+
+    expect(shSpy).toHaveBeenCalledWith(expect.stringContaining(`-m "[Publish][Selective]"`));
+
+    vi.restoreAllMocks();
+  });
+
+  it("leaves the publish commit subject alone for a full release", async () => {
+    const full = new Prepare({ cwd: dir, commit: true, tag: false }, graph);
+    full._gitClean = true;
+    const shSpy = vi.spyOn(full, "_sh").mockResolvedValue("");
+
+    await full.commitAndTagUpdates(["package.json"]);
+
+    expect(shSpy).toHaveBeenCalledWith(expect.stringContaining(`-m "[Publish]"`));
+    expect(shSpy).not.toHaveBeenCalledWith(expect.stringContaining("[Selective]"));
+
+    vi.restoreAllMocks();
   });
 
   it("read changelog", () => {

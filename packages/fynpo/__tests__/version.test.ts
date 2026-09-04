@@ -133,5 +133,31 @@ describe("fynpo Version", () => {
 
     vi.restoreAllMocks();
   });
+
+  it("marks the publish commit selective when --only narrowed the release (FJM-153)", async () => {
+    const version = new Version({ cwd: dir, commit: true, tag: false, only: ["pkg1"] }, graph);
+    version._gitClean = true;
+    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue("");
+
+    await version.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
+
+    expect(shSpy).toHaveBeenCalledWith(expect.stringContaining(`-m "[Publish][Selective]"`));
+
+    vi.restoreAllMocks();
+  });
+
+  it("leaves the publish commit subject alone for a full release", async () => {
+    const version = new Version({ cwd: dir, commit: true, tag: false }, graph);
+    version._gitClean = true;
+    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue("");
+
+    await version.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
+
+    expect(shSpy).toHaveBeenCalledWith(expect.stringContaining(`-m "[Publish]"`));
+    expect(shSpy).not.toHaveBeenCalledWith(expect.stringContaining("[Selective]"));
+
+    vi.restoreAllMocks();
+  });
+
 });
 

@@ -125,14 +125,6 @@ export default class Changelog {
       });
   };
 
-  /**
-   * A release is selective when --only narrowed it to a subset of packages. Such a release is
-   * tagged in its own namespace so it does not move the repo wide changelog boundary.
-   */
-  _isSelective(): boolean {
-    return [].concat(this._options.only || []).filter(Boolean).length > 0;
-  }
-
   commitAndTagUpdates = async ({ packages, tags }) => {
     return commitAndTag(
       {
@@ -140,7 +132,7 @@ export default class Changelog {
         commit: this._options.commit,
         tag: this._options.tag === true,
         gitClean: this._gitClean,
-        isSelective: this._isSelective(),
+        isSelective: utils.isSelectiveRelease(this._options),
         changeLogFile: this._changeLogFile,
       },
       { packages, tags }

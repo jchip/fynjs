@@ -110,14 +110,6 @@ export class Prepare {
   }
 
   /**
-   * A release is selective when --only narrowed it to a subset of packages. Such a release is
-   * tagged in its own namespace so it does not move the repo wide changelog boundary.
-   */
-  _isSelective(): boolean {
-    return [].concat(this._options.only || []).filter(Boolean).length > 0;
-  }
-
-  /**
    * Point a dependency range at a newly released version, keeping its semver prefix.
    *
    * Delegates to the shared helper (FJM-24); kept as a method because the class is the
@@ -156,7 +148,7 @@ export class Prepare {
         commit: this._options.commit,
         tag: this._options.tag === true,
         gitClean: this._gitClean,
-        isSelective: this._isSelective(),
+        isSelective: utils.isSelectiveRelease(this._options),
       },
       { packages, tags: this._tags }
     );

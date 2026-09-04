@@ -92,6 +92,19 @@ export function makePublishCommitSubject(selective: boolean): string {
 }
 
 /**
+ * A release is selective when `--only` narrowed it to a subset of packages. Such a release is
+ * tagged in its own namespace so it does not move the repo wide changelog boundary.
+ *
+ * Shared by `prepare`, `version` and `update-changelog`, which had three copies of this
+ * (FJM-153). The `--only` normalization matches {@link expandSelection}.
+ *
+ * @param options the command's resolved options
+ */
+export function isSelectiveRelease(options: { only?: string | string[] }): boolean {
+  return [].concat(options.only || []).filter(Boolean).length > 0;
+}
+
+/**
  * Normalize the `--only` selection and expand it across version lock groups.
  *
  * Publishing half of a version lock group would break the invariant the locks exist to

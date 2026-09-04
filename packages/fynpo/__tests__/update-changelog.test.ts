@@ -54,3 +54,38 @@ describe("fynpo Changelog.commitChangeLogFile", () => {
     vi.restoreAllMocks();
   });
 });
+
+describe("fynpo Changelog.commitAndTagUpdates", () => {
+  const dir = path.join(__dirname, "../test/sample");
+  let graph: FynpoDepGraph;
+
+  beforeAll(async () => {
+    graph = new FynpoDepGraph({ cwd: dir });
+    await graph.resolve();
+  });
+
+  it("marks the publish commit selective when --only narrowed the release (FJM-153)", async () => {
+    const cl = new Changelog({ cwd: dir, commit: true, tag: false, only: ["pkg1"] }, graph);
+    cl._gitClean = true;
+    const shSpy = vi.spyOn(cl as any, "_sh").mockResolvedValue("");
+
+    await cl.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
+
+    expect(shSpy).toHaveBeenCalledWith(expect.stringContaining(`-m "[Publish][Selective]"`));
+
+    vi.restoreAllMocks();
+  });
+
+  it("leaves the publish commit subject alone for a full release", async () => {
+    const cl = new Changelog({ cwd: dir, commit: true, tag: false }, graph);
+    cl._gitClean = true;
+    const shSpy = vi.spyOn(cl as any, "_sh").mockResolvedValue("");
+
+    await cl.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
+
+    expect(shSpy).toHaveBeenCalledWith(expect.stringContaining(`-m "[Publish]"`));
+    expect(shSpy).not.toHaveBeenCalledWith(expect.stringContaining("[Selective]"));
+
+    vi.restoreAllMocks();
+  });
+});

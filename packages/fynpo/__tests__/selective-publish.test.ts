@@ -24,6 +24,7 @@ import {
   parsePublishedPackageNames,
   expandSelection,
   selectivePublishSubject,
+  isSelectiveRelease,
 } from "../src/utils";
 import { collectSelectiveBaselines, collateCommitsPackages } from "../src/utils/git-list-commits";
 
@@ -72,6 +73,27 @@ describe("selective release tag namespace", () => {
     const term = makePublishTagSearchTerm(custom);
     expect(minimatch(customFull, term)).toBe(true);
     expect(minimatch(customSel, term)).toBe(false);
+  });
+});
+
+describe("isSelectiveRelease", () => {
+  // prepare, version and update-changelog all derive `isSelective` from this one helper
+  // (FJM-153), so the shapes --only can arrive in are pinned here rather than three times.
+  it("is not selective without --only", () => {
+    expect(isSelectiveRelease({})).toBe(false);
+    expect(isSelectiveRelease({ only: undefined })).toBe(false);
+    expect(isSelectiveRelease({ only: [] })).toBe(false);
+  });
+
+  it("ignores empty entries, which is what a bare --only leaves behind", () => {
+    expect(isSelectiveRelease({ only: "" })).toBe(false);
+    expect(isSelectiveRelease({ only: ["", ""] })).toBe(false);
+  });
+
+  it("is selective for one name or many, given as a string or an array", () => {
+    expect(isSelectiveRelease({ only: "pkg1" })).toBe(true);
+    expect(isSelectiveRelease({ only: ["pkg1"] })).toBe(true);
+    expect(isSelectiveRelease({ only: ["pkg1", "pkg2"] })).toBe(true);
   });
 });
 
