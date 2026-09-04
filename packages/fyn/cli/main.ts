@@ -480,6 +480,11 @@ const commands: Record<string, CommandSpec> = {
         args: "<flag boolean>",
         desc: "save fyn section to package-fyn.json",
         argDefault: "false"
+      },
+      audit: {
+        desc: "run security audit after install (use --no-audit to skip)",
+        args: "<flag boolean>",
+        default: true
       }
     }
   },
@@ -505,7 +510,7 @@ const commands: Record<string, CommandSpec> = {
         pickOpts.noStartupInfo = true;
         fynTil.resetFynpo();
         logger.info("installing...");
-        return await new FynCli(pickOpts).install();
+        return await new FynCli(pickOpts).install({ opts: { audit: meta.opts.audit } });
       }
     },
     options: {
@@ -513,6 +518,11 @@ const commands: Record<string, CommandSpec> = {
         args: "<flag boolean>",
         argDefault: "true",
         desc: "Run install after removed"
+      },
+      audit: {
+        desc: "run security audit after install (use --no-audit to skip)",
+        args: "<flag boolean>",
+        default: true
       }
     }
   },
