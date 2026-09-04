@@ -7,7 +7,9 @@ versions:
     version: 1.0.0
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-bad-os/-/mod-bad-os-1.0.0.tgz'
+      tarball: http://localhost:4873/mod-bad-os/-/mod-bad-os-1.0.0.tgz
+    dependencies:
+      mod-c: ^2.0.0
     os:
       - foo
       - bar

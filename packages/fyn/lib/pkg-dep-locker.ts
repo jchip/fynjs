@@ -186,7 +186,7 @@ class PkgDepLocker {
             meta.hasPI = 1;
           }
 
-          if (scripts.install || scripts.postinstall || scripts.postInstall) {
+          if (scripts.install || scripts.postinstall || scripts.postInstall || vpkg.hasI) {
             meta.hasI = 1;
           }
 
@@ -199,12 +199,10 @@ class PkgDepLocker {
           }
 
           if (!meta.optFailed) {
-            // A package skipped on os/cpu was never opened, so `json` here is only the os/cpu
-            // stub that pkg-dep-resolver synthesized for it - recording no `dependencies` would
-            // assert it has none, when they are simply unknown (FPM-93). A machine that can use
-            // the package fetches the real meta; one that cannot ignores the flag and resolves
-            // straight from this entry.
-            if (_.isEmpty(json) || (vpkg.optFailed === OPT_FAILED_PLATFORM && !vpkg.local)) {
+            // A package skipped on os/cpu carries the deps its meta recorded (FPM-94), so it is
+            // only "no json" when the meta had none to give - an entry from a lock written
+            // before that, which said nothing about its deps rather than that it had none.
+            if (_.isEmpty(json) || json._missingJson) {
               meta._missingJson = true;
             } else {
               // save dependencies from package.json to meta in lockfile

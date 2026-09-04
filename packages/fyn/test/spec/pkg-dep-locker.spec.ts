@@ -158,7 +158,7 @@ describe("pkg-dep-locker", function() {
   // honoring another machine's copy of it skipped packages that were perfectly usable
   // (FPM-67). A failed check or install has no such fallback, so it is still recorded.
   describe("failed optional dependencies", function() {
-    const genLock = optFailed => {
+    const genLock = (optFailed, json?) => {
       const locker = new PkgDepLocker(false, true, {
         _pkgSrcMgr: { getRegistryUrl: () => "https://registry.npmjs.org/" }
       });
@@ -168,8 +168,9 @@ describe("pkg-dep-locker", function() {
         version: "1.0.0",
         dsrc: "opt",
         preInstalled: true,
-        // what pkg-dep-resolver leaves behind for a package it skipped on os/cpu
-        json: { os: ["linux"], cpu: ["x64"] },
+        // what pkg-dep-resolver leaves behind for a package it skipped on os/cpu: the os/cpu
+        // that explain the skip, plus whatever its meta said about its deps (FPM-94)
+        json: json || { os: ["linux"], cpu: ["x64"] },
         dist: {
           integrity: "sha512-test",
           tarball: "https://registry.npmjs.org/mod-bad-os/-/mod-bad-os-1.0.0.tgz"
@@ -202,12 +203,37 @@ describe("pkg-dep-locker", function() {
       expect(meta._).to.equal("https://registry.npmjs.org/mod-bad-os/-/mod-bad-os-1.0.0.tgz");
     });
 
-    // FPM-93: the package was never opened, so it has no `dependencies` here. Saying nothing
-    // would assert it has none; `_missingJson` says they are unknown, and a machine that can
-    // actually use the package fetches the real meta before resolving it.
-    it("should mark a platform failure as having no package.json recorded", () => {
-      expect(genLock(OPT_FAILED_PLATFORM)._missingJson).to.equal(true);
+    // FPM-94: the entry a machine writes for a package it skips has to match the one a machine
+    // that installs it writes, or the lock churns with whoever ran the install. The deps come
+    // from the meta the resolver used, so a package with none records none - not "unknown".
+    it("should not claim a platform failure has no package.json recorded", () => {
+      expect(genLock(OPT_FAILED_PLATFORM)).to.not.have.property("_missingJson");
       expect(genLock(OPT_FAILED_PLATFORM)).to.not.have.property("dependencies");
+    });
+
+    it("should record the dependencies a platform failure's meta carried", () => {
+      const meta = genLock(OPT_FAILED_PLATFORM, {
+        os: ["linux"],
+        cpu: ["x64"],
+        dependencies: { "mod-a": "^1.0.0" },
+        peerDependencies: { "mod-b": "^2.0.0" }
+      });
+      expect(meta.dependencies).to.deep.equal({ "mod-a": "^1.0.0" });
+      expect(meta.peerDependencies).to.deep.equal({ "mod-b": "^2.0.0" });
+      expect(meta).to.not.have.property("_missingJson");
+    });
+
+    // an entry read from a lock written before FPM-94 recorded nothing about its deps. That is
+    // not the same as having none, so the admission is carried through rather than laundered
+    // into a false claim.
+    it("should carry _missingJson through from a meta that had it", () => {
+      const meta = genLock(OPT_FAILED_PLATFORM, {
+        os: ["linux"],
+        cpu: ["x64"],
+        _missingJson: true
+      });
+      expect(meta._missingJson).to.equal(true);
+      expect(meta).to.not.have.property("dependencies");
     });
 
     it("should record a failed optional check (1)", () => {

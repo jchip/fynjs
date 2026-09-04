@@ -1056,8 +1056,26 @@ class PkgDepResolver {
       !pkgV.json &&
       (metaJson.os || metaJson.cpu)
     ) {
-      // Store minimal os/cpu info so lockfile can record platform mismatch
-      pkgV.json = { os: metaJson.os, cpu: metaJson.cpu } as PackageVersionMeta;
+      // Nothing installs this package here, so pkg-installer never reads its package.json off
+      // disk the way it does for everything else - which is where a lock entry's dependencies
+      // normally come from. Record them from the meta the resolver already has instead: it is
+      // the same object fyn enumerates every other package's children from, so the entry ends
+      // up identical to one written by a machine that CAN install it (FPM-94). Without this the
+      // entry claimed no dependencies (FPM-93) or admitted it did not know (`_missingJson`),
+      // either way differing from machine to machine.
+      pkgV.json = _.pick(metaJson, [
+        "os",
+        "cpu",
+        "dependencies",
+        "optionalDependencies",
+        "peerDependencies",
+        "bundleDependencies",
+        "bundledDependencies",
+        "_hasShrinkwrap",
+        // an older lock recorded nothing to copy - keep saying so rather than asserting
+        // "no dependencies", until a registry refresh fills the entry in for real
+        "_missingJson"
+      ]) as PackageVersionMeta;
     }
 
     if (localFromMeta) {
@@ -1101,8 +1119,11 @@ class PkgDepResolver {
       }
     }
 
+    // recorded whether or not this machine installs the package, so the lock entry reads the
+    // same either way (FPM-94)
+    if (metaJson.deprecated) pkgV.deprecated = metaJson.deprecated;
+
     if (!optFailed) {
-      if (metaJson.deprecated) pkgV.deprecated = metaJson.deprecated;
       let deepRes = false;
       if (firstSeenVersion || (deepRes = this._shouldDeepResolve(pkgV as PkgVersionInfo))) {
         const pkgDepth = this._depthResolving![item.depth][item.name];
