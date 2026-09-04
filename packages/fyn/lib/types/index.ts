@@ -107,6 +107,7 @@ export type {
 export type { InstallPkgJson, InstallDistInfo, DepInfo } from "./installer";
 
 // Lock file types
+export { OPT_FAILED_PLATFORM } from "./lock-file";
 export type {
   LockVersionMeta,
   PkgLockData,

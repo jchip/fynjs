@@ -28,7 +28,8 @@ import {
   LOCAL_VERSION_MAPS,
   RESOLVE_ORDER,
   PACKAGE_RAW_INFO,
-  DEP_ITEM
+  DEP_ITEM,
+  OPT_FAILED_PLATFORM
 } from "./types";
 import type { DepData, PkgVersion } from "./dep-data";
 import type {
@@ -917,7 +918,6 @@ class PkgDepResolver {
       }
     }
 
-    const OPT_FAILED_PLATFORM = 3;
     const platformCheck = (): string | true => {
       const sysCheck = checkPkgOsCpu(metaJson);
       if (sysCheck !== true) {

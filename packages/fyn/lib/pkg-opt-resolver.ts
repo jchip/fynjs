@@ -18,12 +18,11 @@ import { OPTIONAL_RESOLVER } from "./log-items";
 import { DEP_ITEM, SEMVER } from "./symbols";
 import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
 import type { FetchPkg } from "./pkg-dist-fetcher";
-import type { PackageMeta, NativePromise } from "./types";
+import { OPT_FAILED_PLATFORM, type PackageMeta, type NativePromise } from "./types";
+
+export { OPT_FAILED_PLATFORM };
 
 const { readPkgJson } = fyntil;
-
-/** `optFailed` value meaning the package's os/cpu did not match the machine that checked it */
-export const OPT_FAILED_PLATFORM = 3;
 
 /**
  * Decide what a lockfile's `optFailed` record means for the machine running *this* install.

@@ -19,6 +19,7 @@ import {
   LATEST_SORTED_VERSIONS,
   LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS,
+  OPT_FAILED_PLATFORM,
   type LockVersionMeta,
   type PackageMeta,
   type PackageVersionMeta,
@@ -172,7 +173,12 @@ class PkgDepLocker {
           const dist = vpkg.dist || {};
           if (vpkg.top) meta.top = 1;
           const scripts = json.scripts || {};
-          if (vpkg.optFailed) {
+          // A platform failure is not recorded: it is this machine's verdict, not a fact about
+          // the package, and any reader can re-derive it from the `os`/`cpu` saved below. Writing
+          // it made lock content depend on which machine ran the install, and made a lock skip a
+          // package on machines that can actually use it (FPM-67, FPM-92). Reasons 1 and 2 are a
+          // real check/install failure with nothing to re-derive them from, so they stay.
+          if (vpkg.optFailed && vpkg.optFailed !== OPT_FAILED_PLATFORM) {
             meta.optFailed = vpkg.optFailed;
             // no need to remember whether there's preinstall or not if
             // it's already marked as failed.

@@ -7,6 +7,15 @@
  */
 
 /**
+ * `optFailed` value meaning the package's os/cpu did not match the machine that checked it.
+ *
+ * Not written to the lock any more - see {@link LockVersionMeta.optFailed} - but still used
+ * in memory to mark a package skipped by the platform check, and still honored when read from
+ * a lock file written by an older fyn.
+ */
+export const OPT_FAILED_PLATFORM = 3;
+
+/**
  * Version metadata in lock file
  *
  * Represents package version data stored in the lock file.
@@ -63,7 +72,15 @@ export interface LockVersionMeta {
   /** Package is a top-level (direct) dependency (1 = true) */
   top?: number;
 
-  /** Optional dependency that failed to install (failure reason code) */
+  /**
+   * Optional dependency that failed (failure reason code).
+   *
+   * - `1` the optional check (preinstall) failed
+   * - `2` the package failed to install
+   * - `3` {@link OPT_FAILED_PLATFORM}, os/cpu mismatch. No longer written (FPM-92) - it is a
+   *   verdict about the machine that generated the lock, and it is derivable from the `os`/`cpu`
+   *   saved on the same entry. Still read, so existing lock files keep their behavior.
+   */
   optFailed?: number;
 
   /** Has preinstall script (1 = true) */

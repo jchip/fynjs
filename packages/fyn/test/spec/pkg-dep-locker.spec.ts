@@ -4,6 +4,7 @@ import Fs from "fs";
 import Os from "os";
 import Path from "path";
 import PkgDepLocker from "../../lib/pkg-dep-locker";
+import { RSEMVERS, OPT_FAILED_PLATFORM } from "../../lib/types";
 
 describe("pkg-dep-locker", function() {
   const item = { name: "@anthropic-ai/sdk" };
@@ -149,6 +150,64 @@ describe("pkg-dep-locker", function() {
       Fs.unlinkSync(file);
       expect(ok).to.equal(false);
       expect(locker._lockData).to.deep.equal({});
+    });
+  });
+
+  // FPM-92: what a failed optional records in the lock. A platform (os/cpu) failure is this
+  // machine's verdict, re-derivable by any reader from the os/cpu on the same entry, and
+  // honoring another machine's copy of it skipped packages that were perfectly usable
+  // (FPM-67). A failed check or install has no such fallback, so it is still recorded.
+  describe("failed optional dependencies", function() {
+    const genLock = optFailed => {
+      const locker = new PkgDepLocker(false, true, {
+        _pkgSrcMgr: { getRegistryUrl: () => "https://registry.npmjs.org/" }
+      });
+
+      const vpkg = {
+        name: "mod-bad-os",
+        version: "1.0.0",
+        dsrc: "opt",
+        preInstalled: true,
+        // what pkg-dep-resolver leaves behind for a package it skipped on os/cpu
+        json: { os: ["linux"], cpu: ["x64"] },
+        dist: {
+          integrity: "sha512-test",
+          tarball: "https://registry.npmjs.org/mod-bad-os/-/mod-bad-os-1.0.0.tgz"
+        },
+        optFailed
+      };
+
+      const pkgsData = {
+        "mod-bad-os": {
+          versions: { "1.0.0": vpkg },
+          [RSEMVERS]: { "^1.0.0": "1.0.0" }
+        }
+      };
+
+      locker.generate({
+        getPkgsData: (failed?: boolean) => (failed ? pkgsData : {})
+      });
+
+      return locker._lockData["mod-bad-os"]["1.0.0"];
+    };
+
+    it("should not record a platform failure, which any reader re-derives from os/cpu", () => {
+      const meta = genLock(OPT_FAILED_PLATFORM);
+      expect(meta).to.not.have.property("optFailed");
+      // the entry still has to carry everything that lets another platform resolve it from
+      // the lock alone, without a registry packument fetch
+      expect(meta.os).to.deep.equal(["linux"]);
+      expect(meta.cpu).to.deep.equal(["x64"]);
+      expect(meta.$).to.equal("sha512-test");
+      expect(meta._).to.equal("https://registry.npmjs.org/mod-bad-os/-/mod-bad-os-1.0.0.tgz");
+    });
+
+    it("should record a failed optional check (1)", () => {
+      expect(genLock(1).optFailed).to.equal(1);
+    });
+
+    it("should record a failed install (2)", () => {
+      expect(genLock(2).optFailed).to.equal(2);
     });
   });
 });
