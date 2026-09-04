@@ -64,9 +64,14 @@ import {
  * These types enable proper typing when accessing symbol-keyed properties
  */
 
-/** Symbol properties for PackageMeta */
+/**
+ * Symbol properties for PackageMeta
+ *
+ * The semver maps hold `string | string[]`: one range can resolve to several versions when
+ * shrinkwrapping is involved, which the dep locker records as an array (FJM-158).
+ */
 export interface PackageMetaSymbols {
-  [LOCK_RSEMVERS]?: Record<string, string>;
+  [LOCK_RSEMVERS]?: Record<string, string | string[]>;
   [SORTED_VERSIONS]?: string[];
   [LATEST_SORTED_VERSIONS]?: string[];
   /** Timestamp (ms since epoch) of the latest version publication */
@@ -80,7 +85,7 @@ export interface PackageMetaSymbols {
 export interface KnownPackageSymbols {
   [LATEST_TAG_VERSION]?: string;
   [RSEMVERS]: Record<string, string | string[]>;
-  [LOCK_RSEMVERS]?: Record<string, string>;
+  [LOCK_RSEMVERS]?: Record<string, string | string[]>;
   [RESOLVE_ORDER]: string[];
 }
 
@@ -92,8 +97,8 @@ export interface PkgVersionInfoSymbols {
 
 /** Symbol properties for PkgData */
 export interface PkgDataSymbols {
-  [RSEMVERS]?: Record<string, string>;
-  [LOCK_RSEMVERS]?: Record<string, string>;
+  [RSEMVERS]?: Record<string, string | string[]>;
+  [LOCK_RSEMVERS]?: Record<string, string | string[]>;
   [RESOLVE_ORDER]?: string[];
 }
 

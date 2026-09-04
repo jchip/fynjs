@@ -147,8 +147,8 @@ export interface PackageMeta extends PackageMetaSymbols {
   local?: string;
   /** Cached JSON string representation */
   jsonStr?: string;
-  /** URL-based versions (git, http, etc.) */
-  urlVersions?: Record<string, { version: string }>;
+  /** URL-based versions (git, http, etc.) - full manifests, as in `versions` */
+  urlVersions?: Record<string, PackageVersionMeta>;
 }
 
 /**

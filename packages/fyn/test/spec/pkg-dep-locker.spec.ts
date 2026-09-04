@@ -105,6 +105,37 @@ describe("pkg-dep-locker", function() {
       expect(makeLocker(lock).convert({ name: "@sentry/react" })).to.equal(false);
     });
 
+    it("convert() expands the serialized form instead of handing it back", () => {
+      // What convert() returns is used as a package meta - the resolver reads it like one
+      // and `update()` merges registry versions straight into it - so the serialized-only
+      // fields must not survive the trip, and the `1` flags must come back as booleans
+      // (FJM-158).
+      const lock = consistentLock();
+      lock["@sentry/react"]["10.49.0"]._hasShrinkwrap = 1;
+      lock["@sentry/react"]["10.49.0"].top = 1;
+
+      const vpkg = makeLocker(lock).convert({ name: "@sentry/react" }).versions["10.49.0"];
+
+      expect(vpkg).to.not.have.property("$");
+      expect(vpkg).to.not.have.property("_");
+      expect(vpkg).to.not.have.property("top");
+      expect(vpkg._hasShrinkwrap).to.equal(true);
+      expect(vpkg.dist).to.deep.equal({ integrity: undefined, tarball: "react.tgz" });
+      expect(vpkg.fromLocked).to.equal(true);
+      expect(vpkg.name).to.equal("@sentry/react");
+      expect(vpkg.version).to.equal("10.49.0");
+      // the entry carried over from the lock, untouched
+      expect(vpkg.dependencies).to.deep.equal({ "@sentry/core": "10.49.0" });
+    });
+
+    it("convert() leaves _hasShrinkwrap false when the lock does not set it", () => {
+      const vpkg = makeLocker(consistentLock()).convert({ name: "@sentry/react" }).versions[
+        "10.49.0"
+      ];
+
+      expect(vpkg._hasShrinkwrap).to.equal(false);
+    });
+
     it("read() ignores a lockfile with git conflict markers", async () => {
       const file = Path.join(Os.tmpdir(), `fyn-lock-conflict-${Date.now()}.yaml`);
       Fs.writeFileSync(

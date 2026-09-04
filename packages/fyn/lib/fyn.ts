@@ -241,10 +241,9 @@ interface LocalPkgInstallResult {
   [key: string]: unknown;
 }
 
-/** Dependency info for local packages */
+/** A local package to build, identified by where its source lives */
 interface LocalDepInfo {
   fullPath?: string;
-  [key: string]: unknown;
 }
 
 const createLock = util.promisify(lockfile.lock);
@@ -304,8 +303,8 @@ class Fyn {
   private _blockedScripts?: BlockedScriptRecord[];
   private _pendingScripts?: BlockedScriptRecord[];
 
-  /** Local packages with nested dependencies */
-  localPkgWithNestedDep: LocalDepInfo[];
+  /** Local packages with nested dependencies - written by the dep linker, never read back */
+  localPkgWithNestedDep: unknown[];
 
   constructor({ opts = {}, _cliSource = {}, _fynpo = true }: FynConstructorOptions) {
     this._cliSource = { ..._cliSource };
@@ -1357,7 +1356,7 @@ class Fyn {
     return Path.join(this.fynDir, "tmp");
   }
 
-  addLocalPkgWithNestedDep(depInfo: LocalDepInfo): void {
+  addLocalPkgWithNestedDep(depInfo: unknown): void {
     this.localPkgWithNestedDep.push(depInfo);
   }
 

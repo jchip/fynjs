@@ -40,7 +40,8 @@ import type {
   PkgVersionInfo,
   ResolutionData,
   PackageJson,
-  FynpoPackage
+  FynpoPackage,
+  NativePromise
 } from "./types";
 // `FynpoData` stays declared next to `Fyn`, because it carries the whole `fynpo.json`
 // config shape, which is only meaningful there. This is a type-only import, so it adds
@@ -135,7 +136,8 @@ interface PkgDepLocker {
 
 /** Package distribution fetcher interface */
 interface PkgDistFetcher {
-  putPkgInNodeModules(pkg: PkgVersionInfo, force: boolean): Promise<void>;
+  // NativePromise: `Promise` in this module is aveazul's (FPO-41), the fetcher's is the global one
+  putPkgInNodeModules(pkg: PkgVersionInfo, force: boolean): NativePromise<unknown>;
 }
 
 /** Local package builder interface */
@@ -876,8 +878,9 @@ class PkgDepResolver {
   findVersionFromDistTag(meta: PackageMeta, semver: string): string | undefined {
     if (Semver.validRange(semver) === null) {
       const lockRsv = meta[LOCK_RSEMVERS];
-      if (lockRsv && lockRsv[semver]) {
-        return lockRsv[semver];
+      const locked = lockRsv && lockRsv[semver];
+      if (locked) {
+        return Array.isArray(locked) ? locked[0] : locked;
       }
 
       const dtags = meta["dist-tags"];
@@ -1184,7 +1187,7 @@ class PkgDepResolver {
     const getKnownSemver = (): string | false | undefined => {
       const find = (rsv: Record<string, string | string[]> | undefined): string | false | undefined => {
         let x: string | string[] | undefined = rsv && rsv[item.semver];
-        if (!x) return x;
+        if (!x) return undefined;
         if (Array.isArray(x)) x = x[0];
         if (noLocal && semverUtil.isLocal(x)) return false;
         return x;

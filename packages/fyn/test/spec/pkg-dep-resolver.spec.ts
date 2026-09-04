@@ -3,6 +3,8 @@ import Fs from "fs";
 import * as Yaml from "js-yaml";
 import Path from "path";
 import Fyn from "../../lib/fyn";
+import PkgDepResolver from "../../lib/pkg-dep-resolver";
+import { LOCK_RSEMVERS } from "../../lib/symbols";
 import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
 import { expect } from "chai";
@@ -509,3 +511,31 @@ describe("pkg-dep-resolver", function() {
     });
   });
 });
+
+//
+// A semver range can resolve to more than one version - the dep locker's `gen` records an
+// array then, because shrinkwrapping can pin the same range twice. `getKnownSemver`'s `find`
+// has always taken the first of those; `findVersionFromDistTag` used to hand the array back
+// as if it were a version string (FJM-158).
+//
+describe("findVersionFromDistTag with a multi-version lock entry", function() {
+  const findVersion = (lockRsemvers, semver) =>
+    PkgDepResolver.prototype.findVersionFromDistTag.call(
+      Object.create(PkgDepResolver.prototype),
+      { versions: {}, [LOCK_RSEMVERS]: lockRsemvers },
+      semver
+    );
+
+  it("returns the first version when the lock recorded several", () => {
+    expect(findVersion({ latest: ["3.10.1", "3.10.0"] }, "latest")).to.equal("3.10.1");
+  });
+
+  it("returns the version as-is when the lock recorded one", () => {
+    expect(findVersion({ latest: "3.10.1" }, "latest")).to.equal("3.10.1");
+  });
+
+  it("ignores the lock map for something that is a valid semver range", () => {
+    expect(findVersion({ "^3.0.0": ["3.10.1"] }, "^3.0.0")).to.equal(undefined);
+  });
+});
+

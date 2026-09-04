@@ -20,6 +20,8 @@ import {
   LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS,
   type LockVersionMeta,
+  type PackageMeta,
+  type PackageVersionMeta,
   type PkgLockData,
   type LockDepItem,
   type LockPkgDepItems,
@@ -39,10 +41,10 @@ interface ConvertedLockData {
   [LATEST_SORTED_VERSIONS]?: string[];
   [LATEST_VERSION_TIME]?: number;
   [LOCAL_VERSION_MAPS]?: Record<string, string>;
-  versions: Record<string, LockVersionMeta>;
+  versions: Record<string, PackageVersionMeta>;
   "dist-tags"?: Record<string, string>;
   time?: Record<string, string>;
-  urlVersions?: Record<string, unknown>;
+  urlVersions?: Record<string, PackageVersionMeta>;
 }
 
 /** Lock file data structure with symbol support */
@@ -58,19 +60,6 @@ interface LockData {
 }
 
 /** Package metadata from registry */
-interface PkgMeta {
-  local?: boolean;
-  versions: Record<string, LockVersionMeta>;
-  "dist-tags"?: Record<string, string>;
-  time?: Record<string, string>;
-  urlVersions?: Record<string, unknown>;
-  [SORTED_VERSIONS]?: string[];
-  [LATEST_TAG_VERSION]?: string;
-  [LATEST_VERSION_TIME]?: number;
-  [LATEST_SORTED_VERSIONS]?: string[];
-  [LOCAL_VERSION_MAPS]?: Record<string, string>;
-}
-
 /** Version package data from dep-data */
 interface VersionPkgData extends PkgVersion {
   top?: boolean;
@@ -245,7 +234,7 @@ class PkgDepLocker {
   /**
    * Take dep-item with its real meta and update lock data
    */
-  update(item: LockDepItem, meta: PkgMeta): PkgMeta | ConvertedLockData {
+  update(item: LockDepItem, meta: PackageMeta): PackageMeta | ConvertedLockData {
     if (!this._enable || meta.local) return meta;
     let locked = this._lockData[item.name] as ConvertedLockData | PkgLockData | undefined;
     if (!locked) {
@@ -357,6 +346,21 @@ class PkgDepLocker {
         const badVersionKey = !isLocalVpkg && !Semver.valid(version);
         const badDeps = vpkg && vpkg.dependencies && !this._depsResolvable(vpkg.dependencies);
         if (!_.isEmpty(vpkg) && vpkg._valid !== false && !badVersionKey && !badDeps) {
+          //
+          // `vpkg` is the serialized shape - `$`, `_` and the `1` flags. What the resolver
+          // wants back is the same shape a registry meta has, so expand into a new object
+          // rather than mutating the serialized one into something else in place (FJM-158).
+          // `$`/`_` are dropped: they exist only on disk.
+          //
+          const { $: _dollar, _: _under, top: _top, _valid: _v, ...carried } = vpkg;
+          const expanded: PackageVersionMeta = {
+            ...carried,
+            fromLocked: true,
+            name: item.name,
+            version,
+            // on disk this is `1`; everything that reads it wants a boolean
+            _hasShrinkwrap: Boolean(vpkg._hasShrinkwrap)
+          };
           if (vpkg.$ === "local") {
             //
             // The lock records only THAT a package was local (`$: local`), never which kind
@@ -368,8 +372,8 @@ class PkgDepLocker {
             // `sym` vs `sym1` is not recoverable - `localify` collapses both - but nothing
             // can act on that difference today: `_linkLocalPkg` throws for either.
             //
-            vpkg.local = isLocalHard(version) ? "hard" : "sym";
-            vpkg.dist = {
+            expanded.local = isLocalHard(version) ? "hard" : "sym";
+            expanded.dist = {
               integrity: "local",
               fullPath: vpkg._
             };
@@ -377,20 +381,12 @@ class PkgDepLocker {
             // When loading from lockfile, the tarball URL may have an old registry host/port
             // We need to update it to use the current registry to avoid connection errors
             const tarballUrl = this.normalizeTarballUrl(item, vpkg._);
-            vpkg.dist = {
+            expanded.dist = {
               integrity: fyntil.shaToIntegrity(vpkg.$),
               tarball: tarballUrl
             };
           }
-          vpkg.$ = undefined;
-          vpkg._ = undefined;
-          vpkg.fromLocked = true;
-          vpkg.name = item.name;
-          vpkg.version = version;
-          if (vpkg._hasShrinkwrap) {
-            vpkg._hasShrinkwrap = true;
-          }
-          versions[version] = vpkg;
+          versions[version] = expanded;
         } else {
           if (badVersionKey) {
             logger.error(
