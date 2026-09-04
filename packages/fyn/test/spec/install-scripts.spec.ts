@@ -1,8 +1,9 @@
-import { describe, it, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeEach, afterEach, vi } from "vitest";
 import { expect } from "chai";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
+import logger from "../../lib/logger";
 import {
   parseAllowKey,
   approveEntries,
@@ -375,6 +376,33 @@ describe("install-scripts", function () {
       });
       const records = await new InstallScripts({ fyn }).ls();
       expect(records.map((r: any) => r.name)).to.deep.equal(["canvas", "sharp"]);
+    });
+
+    it("does not suggest --allow-scripts-pending when review is already the mode", async () => {
+      // FPM-91: the flag previews what "review" would ask, so under "review" it
+      // is a no-op and the suggestion reads as though review were off
+      const lines: string[] = [];
+      const spy = vi.spyOn(logger, "info").mockImplementation((...args: any[]) => {
+        lines.push(args.join(" "));
+      });
+
+      await new InstallScripts({ fyn: mkFyn({ scriptPolicy: "review" }) }).ls();
+      spy.mockRestore();
+
+      expect(lines.join("\n")).to.contain("No packages are awaiting install-script review.");
+      expect(lines.join("\n")).to.not.contain("--allow-scripts-pending");
+    });
+
+    it("suggests --allow-scripts-pending from a looser mode", async () => {
+      const lines: string[] = [];
+      const spy = vi.spyOn(logger, "info").mockImplementation((...args: any[]) => {
+        lines.push(args.join(" "));
+      });
+
+      await new InstallScripts({ fyn: mkFyn({ scriptPolicy: "source" }) }).ls();
+      spy.mockRestore();
+
+      expect(lines.join("\n")).to.contain("--allow-scripts-pending");
     });
 
     it("explains that a monorepo allowlist needs a fynpo.json", async () => {

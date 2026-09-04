@@ -327,10 +327,18 @@ export class InstallScripts {
 
     if (records.length === 0) {
       logger.info(chalk.green("No packages are awaiting install-script review."));
-      logger.info(
-        `Run ${chalk.cyan("fyn install --allow-scripts-pending")} to see what ` +
-          `${chalk.cyan('scriptPolicy: "review"')} would ask you to approve.`
-      );
+      //
+      // Only worth suggesting from a looser mode: that flag previews what
+      // "review" would ask, so under "review" it is a no-op, and offering it
+      // reads as though review is not on when in fact it is and simply has
+      // nothing to flag. FPM-91.
+      //
+      if (this._fyn.scriptPolicy !== "review") {
+        logger.info(
+          `Run ${chalk.cyan("fyn install --allow-scripts-pending")} to see what ` +
+            `${chalk.cyan('scriptPolicy: "review"')} would ask you to approve.`
+        );
+      }
       return records;
     }
 
