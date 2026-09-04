@@ -117,4 +117,12 @@ export type {
 } from "./lock-file";
 
 // Structural views of the Fyn class shared by more than one collaborator
-export type { FynPkgDirs, FynForDepLocker, FynForLifecycle } from "./fyn-views";
+export type { NativePromise } from "./native-promise";
+export type {
+  FynPkgDirs,
+  FynPkgsData,
+  FynpoPackage,
+  FynpoGraph,
+  FynForDepLocker,
+  FynForLifecycle
+} from "./fyn-views";

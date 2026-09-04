@@ -17,6 +17,8 @@ import fyntil from "./util/fyntil";
 import { OPTIONAL_RESOLVER } from "./log-items";
 import { DEP_ITEM, SEMVER } from "./symbols";
 import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
+import type { FetchPkg } from "./pkg-dist-fetcher";
+import type { PackageMeta, NativePromise } from "./types";
 
 const { readPkgJson } = fyntil;
 
@@ -62,24 +64,17 @@ interface OptDepItem {
   runningScript?: boolean;
 }
 
-/** Optional dependency data */
+/**
+ * Optional dependency data
+ *
+ * `meta` is the package's meta as the resolver hands it over - the same `PackageMeta` the
+ * rest of the resolution pipeline passes around. It used to be re-declared here as a bag of
+ * the handful of fields this module reads, which made the two descriptions of the same
+ * object incompatible (FJM-154).
+ */
 interface OptDepData {
   item: OptDepItem;
-  meta: {
-    local?: string;
-    versions: Record<
-      string,
-      {
-        local?: string;
-        optFailed?: number;
-        hasPI?: number;
-        fromLocked?: boolean;
-        scripts?: { preinstall?: string };
-        dist?: { fullPath?: string };
-        [key: string]: unknown;
-      }
-    >;
-  };
+  meta: PackageMeta;
   err?: Error;
 }
 
@@ -93,17 +88,19 @@ interface CheckResult {
 interface FynForOptResolver extends FynForDepLinker {
   _options: { sourceMaps?: boolean };
   refreshOptionals?: boolean;
-  lockOnly?: boolean;
+  lockOnly?: string | false;
+  /** the merged `fyn.allowScripts` whitelist, passed to `evaluateScriptPolicy` */
+  allowScripts: Record<string, unknown>;
+  /** mode, allowTopLevel, reviewLocalPackages and denyScripts, as one options object */
+  scriptPolicyOptions: Record<string, unknown>;
+  // NativePromise, not Promise: `Promise` in this module is aveazul's (FPO-41), while the
+  // dist fetcher's methods are plain `async` and so return the global one
   _distFetcher: {
-    findPkgInNodeModules(pkg: { name: string; version: string }): Promise<{
+    findPkgInNodeModules(pkg: { name: string; version: string }): NativePromise<{
       pkgJson?: Record<string, unknown>;
       existDir?: string;
     }>;
-    putPkgInNodeModules(
-      pkg: Record<string, unknown>,
-      check: boolean,
-      optional: boolean
-    ): Promise<unknown>;
+    putPkgInNodeModules(pkg: FetchPkg, check: boolean, optional: boolean): NativePromise<unknown>;
   };
 }
 
@@ -135,13 +132,16 @@ class PkgOptResolver {
   private _resolving: boolean;
   private _failedChecks: Array<{ err?: Error; data: OptDepData }>;
   private _failedPkgs: OptDepData[];
-  private _depResolver: DepResolver;
+  /** assigned by `PkgDepResolver` right after it is constructed, so not private (FJM-154) */
+  _depResolver: DepResolver;
   private _inflights: Inflight;
   private _fyn: FynForOptResolver;
   private _depLinker: PkgDepLinker;
   private _promiseQ!: PromiseQueue;
 
-  constructor(options: { depResolver: DepResolver; fyn: FynForOptResolver }) {
+  // depResolver is optional here because `PkgDepResolver` assigns it right after it
+  // constructs this - `Fyn` itself only passes `fyn`
+  constructor(options: { depResolver?: DepResolver; fyn: FynForOptResolver }) {
     this._optPkgCount = 0;
     this._passedPkgs = [];
     this._checkedPkgs = {};

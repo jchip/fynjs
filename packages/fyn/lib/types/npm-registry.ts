@@ -32,14 +32,16 @@ export interface PackageDist {
  * This is the data stored in versions[x] of the packument.
  */
 export interface PackageVersionMeta {
-  /** Package name */
-  name: string;
+  /** Package name - absent from the partial metas fyn synthesizes (lock entries, opt failures) */
+  name?: string;
   /** Package version */
   version: string;
   /** Distribution info */
   dist?: PackageDist;
   /** npm scripts */
   scripts?: PackageScripts;
+  /** Executables the package installs, as a path or a name -> path map */
+  bin?: string | Record<string, string>;
   /** Supported operating systems */
   os?: string[];
   /** Supported CPU architectures */
@@ -68,6 +70,10 @@ export interface PackageVersionMeta {
   hasPI?: number;
   /** Has install script (encoded as number) */
   hasI?: number;
+  /** Optional dependency failure code, written by the opt resolver and the lock */
+  optFailed?: number;
+  /** This version's meta came from the lockfile rather than the registry */
+  fromLocked?: boolean;
   /** Package has npm-shrinkwrap.json */
   _hasShrinkwrap?: boolean;
   /** Shrinkwrap data */

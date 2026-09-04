@@ -39,14 +39,14 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   name: string;
   /** Package version */
   version: string;
-  /** Distribution info */
-  dist: PackageDist;
+  /** Distribution info - a local (linked) package has none */
+  dist?: PackageDist;
   /** Source type (e.g., "npm", "git", "file") */
   src: string;
   /** Dependency source (dep, dev, opt, peer) */
   dsrc: string;
-  /** Resolved nested dependencies */
-  res: ResolutionData;
+  /** Resolved nested dependencies - filled in as resolution progresses */
+  res?: ResolutionData;
   /** Request paths that led to this package */
   requests: string[][];
   /** Package was promoted to top level */

@@ -38,9 +38,12 @@ export interface FynForExtractor {
   createPkgOutDir(dir: string): Promise<void>;
   loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<unknown>;
   isNormalLayout: boolean;
-  central: {
-    replicate(src: string, dest: string): Promise<void>;
-  };
+  /** `false` when the central store is off - every read of this guards on it first */
+  central:
+    | {
+        replicate(src: string, dest: string): Promise<void>;
+      }
+    | false;
 }
 
 /** Options for PkgDistExtractor constructor */
@@ -176,7 +179,11 @@ class PkgDistExtractor {
       if (typeof result === "string") {
         act = "hardlink";
         retrieve = () => {
-          return this._fyn.central.replicate(result, fullOutDir);
+          // a string result is a central store path, so the store is enabled here
+          const central = this._fyn.central as {
+            replicate(src: string, dest: string): Promise<void>;
+          };
+          return central.replicate(result, fullOutDir);
         };
       } else {
         act = "extract";

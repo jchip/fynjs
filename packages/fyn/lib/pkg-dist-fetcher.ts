@@ -17,7 +17,7 @@ import type { Readable } from "stream";
 const WATCH_TIME = 2000;
 
 /** Package info for fetching */
-interface FetchPkg {
+export interface FetchPkg {
   name: string;
   version: string;
   local?: string;
@@ -57,7 +57,8 @@ interface FynForDistFetcher extends FynForExtractor {
 
 /** Package source manager interface */
 interface PkgSrcManager {
-  fetchTarball(pkg: FetchPkg): Promise<Readable>;
+  /** a thenable of its own making (`TarballFetchResult`), not a Promise */
+  fetchTarball(pkg: FetchPkg): PromiseLike<Readable>;
   fetchUrlSemverMeta(depItem: DepItem): Promise<{
     urlVersions: Record<string, { dist: { fullPath: string } }>;
   }>;

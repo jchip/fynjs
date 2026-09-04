@@ -3,7 +3,7 @@ import Fs from "./util/file-ops";
 import Path from "path";
 import _ from "lodash";
 import logger from "./logger";
-import type { FynPkgDirs } from "./types";
+import type { FynPkgDirs, FynPkgsData } from "./types";
 
 /** Package JSON bin field type */
 export type BinList = string | Record<string, string>;
@@ -35,18 +35,6 @@ export interface DepInfo {
   [key: string]: unknown;
 }
 
-/** Package data structure */
-export interface PkgData {
-  name: string;
-  version: string;
-  json: {
-    name: string;
-    bin?: BinList;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-}
-
 /** Linked bin tracking */
 interface LinkedBin {
   relTarget: string;
@@ -55,11 +43,7 @@ interface LinkedBin {
 }
 
 /** Fyn instance interface for bin linker */
-export interface FynForBinLinker extends FynPkgDirs {
-  _data: {
-    getPkgsData(): Record<string, { versions: Record<string, PkgData> }>;
-  };
-}
+export interface FynForBinLinker extends FynPkgDirs, FynPkgsData {}
 
 /** Options for PkgBinLinker constructor */
 export interface PkgBinLinkerOptions {

@@ -40,6 +40,8 @@ import {
   type InstallPkgJson,
   type ResolutionData,
   type KnownPackage,
+  type PackageJson,
+  type NativePromise,
   type FynForDepLocker
 } from "./types";
 import type { DepData } from "./dep-data";
@@ -80,12 +82,18 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
     resolvePkgPeerDep(pkg: unknown, name: string, data: DepData): void;
     resolvePeerDep(depInfo: DepInfo): void;
   };
-  _pkg: Record<string, unknown>;
+  _pkg: PackageJson;
   _depLocker?: PkgDepLocker;
   _localPkgBuilder?: {
-    waitForItem(dir: string): Promise<{ error?: Error } | null>;
+    // NativePromise: `Promise` in this module is aveazul's (FPO-41), the builder's is the global one
+    waitForItem(dir: string): NativePromise<{ error?: Error } | null>;
   };
   cwd: string;
+  /** the install config `fyn` persists in the output dir, read and written in place */
+  _installConfig: Record<string, unknown>;
+  /** whether packages install under a shortened dir name */
+  _shortPkgDir: boolean;
+  setLocalExports(manifest: unknown): void;
   central?: FynCentral | false;
   showDeprecated: string | false;
   lockOnly: string | false;
@@ -99,7 +107,8 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   isNormalLayout: boolean;
   getOutputDir(): string;
   getFvDir(x?: string): string;
-  loadFvVersions(): Promise<FvVersions>;
+  // NativePromise: `Promise` here is aveazul's (FPO-41), Fyn's method returns the global one
+  loadFvVersions(): NativePromise<FvVersions>;
   setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
 }
 

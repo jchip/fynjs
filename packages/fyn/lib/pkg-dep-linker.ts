@@ -10,8 +10,8 @@ import type {
   DepInfo,
   ResolutionData,
   ResolutionEntry,
-  PkgVersionInfo,
-  FynPkgDirs
+  FynPkgDirs,
+  FynPkgsData
 } from "./types";
 
 /**
@@ -36,18 +36,10 @@ interface ResData extends ResolutionData {
   [key: string]: unknown;
 }
 
-/** Package data from registry */
-interface PkgData {
-  promoted?: boolean;
-  [key: string]: unknown;
-}
-
 /** Fyn instance interface for dep linker */
-export interface FynForDepLinker extends FynPkgDirs {
-  _data: {
-    getPkgsData(): Record<string, { versions: Record<string, PkgVersionInfo> }>;
-  };
-  addLocalPkgWithNestedDep(depInfo: DepInfo): void;
+export interface FynForDepLinker extends FynPkgDirs, FynPkgsData {
+  /** stashed on `Fyn.localPkgWithNestedDep` as-is; nothing reads the shape back */
+  addLocalPkgWithNestedDep(depInfo: unknown): void;
   cwd: string;
 }
 

@@ -39,8 +39,13 @@ import type {
   KnownPackage,
   PkgVersionInfo,
   ResolutionData,
-  PackageJson
+  PackageJson,
+  FynpoPackage
 } from "./types";
+// `FynpoData` stays declared next to `Fyn`, because it carries the whole `fynpo.json`
+// config shape, which is only meaningful there. This is a type-only import, so it adds
+// no module cycle at runtime.
+import type { FynpoData } from "./fyn";
 
 /** Depth info item for a package at a specific depth */
 interface DepthInfoItem {
@@ -77,52 +82,20 @@ interface ResolverPackageJson extends PackageJson {
 /** Minimal interface for dependency extraction - used by makePkgDepItems */
 type DependencySource = ResolverPackageJson | PackageVersionMeta;
 
-/** Fynpo package graph interface */
-interface FynpoGraph {
-  packages: {
-    byPath: Record<string, FynpoPackage>;
-    byName: Record<string, FynpoPackage[]>;
-  };
-  getPackageByName(name: string): FynpoPackage | undefined;
-  getPackageAtDir(dir: string): FynpoPackage | undefined;
-  resolvePackage(name: string, semver: string, strict: boolean): FynpoPackage | undefined;
-  addDep(
-    fromPkg: FynpoPackage,
-    toPkg: FynpoPackage,
-    section: string,
-    steps: unknown[]
-  ): boolean;
-}
-
-/** Fynpo package info */
-interface FynpoPackage {
-  name: string;
-  version: string;
-  path: string;
-}
-
-/** Fynpo configuration and data */
-interface FynpoData {
-  config?: {
-    localDepAutoSemver?: "patch" | "minor" | "major";
-    [key: string]: unknown;
-  };
-  dir: string;
-  graph: FynpoGraph;
-  indirects: unknown[];
-}
-
 /** Fyn instance interface for the dependency resolver */
 interface FynForDepResolver {
   concurrency: number;
   production: boolean;
   deepResolve?: boolean;
-  lockOnly: boolean;
+  /** `Fyn.lockOnly` is the mode string "lock-only", not a boolean - it is only read for truth */
+  lockOnly: string | false;
   fynlocal: boolean;
   isFynpo: boolean;
   preferLock: boolean;
   alwaysFetchDist?: boolean;
   refreshOptionals?: boolean;
+  /** deps below the top level must come from a registry - see `_enforceRegistryDep` */
+  enforceRegistryDeps?: boolean;
   lockTime?: Date;
   cwd: string;
   _fynpo?: FynpoData;
@@ -144,7 +117,8 @@ interface FynForDepResolver {
 interface PkgSrcManager {
   hasMeta(item: DepItem): boolean;
   fetchMeta(item: DepItem): Promise<PackageMeta>;
-  fetchLocalItem(item: DepItem): Promise<PackageMeta | undefined>;
+  /** `false` when the item is not a local package at all */
+  fetchLocalItem(item: DepItem): false | Promise<PackageMeta | undefined>;
   getLocalPackageMeta(item: DepItem, version: string): PackageMeta | undefined;
   getAllLocalMetaOfPackage(name: string): Record<string, PackageMeta> | undefined;
 }
@@ -152,7 +126,8 @@ interface PkgSrcManager {
 /** Package dependency locker interface */
 interface PkgDepLocker {
   hasLock(item: DepItem): boolean;
-  convert(item: DepItem): PackageMeta | undefined;
+  /** `false` when there is no usable lock entry */
+  convert(item: DepItem): PackageMeta | false | undefined;
   update(item: DepItem, meta: PackageMeta): PackageMeta;
   remove(item: DepItem): void;
   setPkgDepItems(items: PkgDepItems): void;
@@ -253,11 +228,13 @@ class PkgDepResolver {
   private _options: PkgDepResolverOptions;
   private _fyn: FynForDepResolver;
   private _pkgSrcMgr: PkgSrcManager;
-  private _data: DepData;
+  /** read by `Fyn` when it starts the dist fetcher, so not private (FJM-154) */
+  _data: DepData;
   private _promiseQ: PromiseQueue;
   private _defer: { promise: Promise<void>; resolve: () => void; reject: (err: Error) => void };
   private _optResolver: PkgOptResolver;
-  private _lockOnly: boolean;
+  /** `Fyn.lockOnly` - the mode string "lock-only", or false; only read for truth */
+  private _lockOnly: string | false;
   private _depthResolving: DepthResolving | undefined;
   private _localsByDepth?: DepItem[][];
   private _buildLocal?: LocalPkgBuilder;
@@ -403,10 +380,15 @@ class PkgDepResolver {
     }
   }
 
+  /**
+   * @param depInfo where the peer resolutions are stashed - anything carrying a `res` bag.
+   *   The installer passes the whole `DepData` for the app's own peer deps ("your app"),
+   *   `resolvePeerDep` passes one package's info (FJM-154).
+   */
   resolvePkgPeerDep(
     json: PackageVersionMeta,
     pkgId: string,
-    depInfo: PkgVersionInfo
+    depInfo: PkgVersionInfo | DepData
   ): void {
     const peerDepMeta = json.peerDependenciesMeta || {};
     _.each(json.peerDependencies || (json as Record<string, unknown>).peerDepenencies as Record<string, string>, (semver: string, name: string) => {
@@ -975,7 +957,7 @@ class PkgDepResolver {
       throw new Error(sysCheck);
     }
 
-    const pkgsData = this._data.getPkgsData(item.optFailed) as Record<string, KnownPackage>;
+    const pkgsData = this._data.getPkgsData(Boolean(item.optFailed)) as Record<string, KnownPackage>;
     let pkgV: PkgVersionInfo | undefined; // specific version of the known package
     let kpkg = pkgsData[item.name]; // known package
 

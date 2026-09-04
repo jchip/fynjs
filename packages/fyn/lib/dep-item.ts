@@ -50,13 +50,14 @@ interface PkgVersionData {
 
 export class DepItem implements DepItemRef {
   name: string;
-  /** Optional dependency failure flag (truthy = failed, number for failure code) */
-  optFailed?: boolean | number;
+  /** Optional dependency failure code - truthy means failed; never assigned a boolean */
+  optFailed?: number;
   /** Version string (may be set during resolution) */
   version?: string;
   /** Was optional check performed */
   optChecked?: boolean;
-  private _semver: SemverAnalysis;
+  /** read by the dep locker's `makeDep`, so not private (FJM-154) */
+  _semver: SemverAnalysis;
   /** Original top level package.json dep section (dep, dev, per, opt) */
   src: string;
   /** Source from the direct parent package */

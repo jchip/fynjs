@@ -74,7 +74,7 @@ export class DepData {
   }
 
   getPkg(item: DepItemRef): KnownPackage {
-    return this.getPkgsData(item.optFailed)[item.name];
+    return this.getPkgsData(Boolean(item.optFailed))[item.name];
   }
 
   getPkgById(id: string): KnownPackage | PkgVersionInfo | undefined {

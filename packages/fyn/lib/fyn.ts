@@ -18,7 +18,7 @@ import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import lockfile from "lockfile";
 import ck from "chalker/chalk";
-import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson } from "./types";
+import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson, type FynpoGraph } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
 import { Minimatch } from "minimatch";
@@ -84,6 +84,8 @@ interface FynOptions {
   runNpm?: string[];
   buildLocal?: boolean;
   npmLock?: boolean;
+  /** keep .map files when hard-linking a package's files into place */
+  sourceMaps?: boolean;
   enforceRegistryDeps?: boolean;
   scriptPolicy?: string;
   allowScripts?: AllowScriptsMap | string[] | string;
@@ -187,9 +189,7 @@ interface FynpoConfig {
 interface FynpoData {
   config?: FynpoConfig;
   dir?: string;
-  graph?: {
-    getPackageAtDir(dir: string): unknown;
-  };
+  graph?: FynpoGraph;
   indirects?: unknown[];
   [key: string]: unknown;
 }
@@ -243,7 +243,7 @@ interface LocalPkgInstallResult {
 
 /** Dependency info for local packages */
 interface LocalDepInfo {
-  fullPath: string;
+  fullPath?: string;
   [key: string]: unknown;
 }
 
@@ -253,39 +253,48 @@ const { posixify } = fynTil;
 
 
 class Fyn {
-  // Class properties with type annotations
+  //
+  // The members below without `private` are the ones collaborators read off a `Fyn` through
+  // their `FynFor*` views (FJM-22). TypeScript's `private` is compile-time only, so marking
+  // them private did not stop the access - it just made `Fyn` fail to satisfy the very views
+  // it is passed as, since a private member is not assignable to a public one of the same
+  // name. They are documented here as the collaborator surface instead (FJM-154).
+  //
   private _cliSource: CliSource;
-  private _shownMissingFiles: Set<string>;
-  private _options: FynOptions;
-  private _cwd: string;
+  _shownMissingFiles: Set<string>;
+  _options: FynOptions;
+  _cwd: string;
   private _initCwd: string;
   private _lockTime?: Date;
-  private _installConfig: InstallConfig;
+  _installConfig: InstallConfig;
   private _noPkgDirMatchName: boolean;
-  private _fynpo?: FynpoData;
-  private _pkg!: PackageJson;
+  _fynpo?: FynpoData;
+  _pkg!: PackageJson;
   private _pkgFile!: string;
   private _pkgFyn?: Record<string, unknown>;
-  private _pkgSrcMgr!: PkgSrcManager;
-  private _depLocker!: PkgDepLocker;
-  private _distFetcher?: PkgDistFetcher;
-  private _depResolver?: PkgDepResolver;
+  _pkgSrcMgr!: PkgSrcManager;
+  _depLocker!: PkgDepLocker;
+  /** set in `resolveDependencies`, before the collaborators that read it exist */
+  _distFetcher!: PkgDistFetcher;
+  /** set in `resolveDependencies`, before the collaborators that read it exist */
+  _depResolver!: PkgDepResolver;
   private _optResolver?: PkgOptResolver;
-  private _data?: DepData;
+  /** set in `resolveDependencies`, before any collaborator that reads it exists */
+  _data!: DepData;
   private _central?: FynCentral | false;
   private _npmLockData?: NpmLockData | null;
   private _yarnLock?: YarnLockData;
   private _runNpm?: string[];
-  private _resolutions?: Record<string, string>;
-  private _resolutionsMatchers?: ResolutionMatcher[];
+  _resolutions?: Record<string, string>;
+  _resolutionsMatchers?: ResolutionMatcher[];
   private _overrides?: Record<string, string | Record<string, string>>;
-  private _overridesMatchers?: OverrideMatcher[];
+  _overridesMatchers?: OverrideMatcher[];
   private _changeProdMode?: string;
   private _layout?: string;
   private _localPkgInstall?: Record<string, LocalPkgInstallResult>;
-  private _localPkgBuilder?: LocalPkgBuilder;
+  _localPkgBuilder?: LocalPkgBuilder;
   private _npmConfigEnv?: Record<string, string>;
-  private _shortPkgDir: boolean;
+  _shortPkgDir: boolean;
   private _allowScripts?: AllowScriptsMap;
   private _denyScripts?: AllowScriptsMap;
   private _allowTopLevelScripts?: AllowScriptsValue;

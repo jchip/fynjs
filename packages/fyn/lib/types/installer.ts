@@ -23,8 +23,9 @@ export interface InstallPkgJson extends PackageVersionMeta {
   _id?: string;
   /** Deprecation message (copied from deprecated for persistence) */
   _deprecated?: string;
-  /** Has preinstall script (boolean form for install tracking) */
-  hasPI?: boolean;
+  /** Has preinstall script - encoded as `1`, like `PackageVersionMeta.hasPI`, and only
+   * ever read for truth. It was declared `boolean` here, which nothing ever assigns. */
+  hasPI?: number;
   /** Package was loaded from lock file */
   fromLocked?: boolean;
 }

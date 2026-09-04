@@ -11,6 +11,48 @@
  * shared members are declared once and cannot drift apart (FJM-22).
  */
 
+import type { KnownPackage } from "./resolution";
+
+/**
+ * Read access to the resolved dependency data - `Fyn._data`, a {@link DepData}.
+ *
+ * Shared by the dep linker, the bin linker and the installer. The dep linker and the bin
+ * linker used to declare this themselves with their own, different value types, which made
+ * the two views structurally incompatible: the installer extends both, so it could not
+ * satisfy either (FJM-154). Declaring it once against what `DepData` actually returns keeps
+ * that from happening again.
+ */
+export interface FynPkgsData {
+  _data: {
+    getPkgsData(bad?: boolean): Record<string, KnownPackage>;
+  };
+}
+
+/** One package in a fynpo monorepo's graph */
+export interface FynpoPackage {
+  name: string;
+  version: string;
+  path: string;
+}
+
+/**
+ * The fynpo monorepo graph, as reached through `Fyn._fynpo.graph`.
+ *
+ * Declared once here because `Fyn` and the dep resolver had two different versions of it -
+ * `Fyn` knew only `getPackageAtDir`, so `Fyn` did not satisfy the resolver's view, which
+ * also reads `packages.byPath` (FJM-154).
+ */
+export interface FynpoGraph {
+  packages: {
+    byPath: Record<string, FynpoPackage>;
+    byName: Record<string, FynpoPackage[]>;
+  };
+  getPackageByName(name: string): FynpoPackage | undefined;
+  getPackageAtDir(dir: string): FynpoPackage | undefined;
+  resolvePackage(name: string, semver: string, strict: boolean): FynpoPackage | undefined;
+  addDep(fromPkg: FynpoPackage, toPkg: FynpoPackage, section: string, steps: unknown[]): boolean;
+}
+
 /**
  * Where a package's files live, and how a nested `node_modules` under one is made.
  *
