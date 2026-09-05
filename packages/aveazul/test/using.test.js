@@ -1,6 +1,9 @@
 
 
 import AveAzul from "./promise-lib.js";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 
 describe("AveAzul.using", () => {
   beforeEach(() => {

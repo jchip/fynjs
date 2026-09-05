@@ -1,6 +1,9 @@
 
 
 import AveAzul from "./promise-lib.js";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 const fs = require("fs");
 const path = require("path");
 
@@ -377,7 +380,7 @@ describe("AveAzul.promisifyAll", () => {
     expect(typeof fsCopy.opendirAsync).toBe("function");
 
     // Test reading package.json file
-    const packageJsonPath = path.join(__dirname, "..", "package.json");
+    const packageJsonPath = path.join(import.meta.dirname, "..", "package.json");
     const content = await fsCopy.readFileAsync(packageJsonPath, "utf8");
 
     // Parse and verify it's a valid JSON with expected properties
@@ -395,7 +398,7 @@ describe("AveAzul.promisifyAll", () => {
     expect(stats.size).toBeGreaterThan(0);
 
     // Test Dir object promisification
-    const testDir = path.join(__dirname, "..");
+    const testDir = path.join(import.meta.dirname, "..");
     const dir = await fsCopy.opendirAsync(testDir);
 
     // Test that Dir.read is promisified
