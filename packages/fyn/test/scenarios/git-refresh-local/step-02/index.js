@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
+const { repoDir, writeStepPkgJson } = require("../local-repo");
 
 module.exports = {
   title: "should refresh stale git cache after local commit (git rev-parse check)",
@@ -9,24 +10,15 @@ module.exports = {
   copyCache: true, // Copy cache from previous step
   before(cwd, scenarioDir) {
     // Use the local git repository fixture in .tmp (gitignored)
-    const gitRepoDir = path.join(scenarioDir, "..", "..", "..", ".tmp", "test-git-repo");
-    
+    const gitRepoDir = repoDir(scenarioDir);
+
     if (!fs.existsSync(gitRepoDir)) {
       throw new Error("Local git repo fixture not found - step-01 should have created it");
     }
-    
-    // Ensure package.json uses file:// URL - update step-02/pkg.json which framework will merge
-    const stepDir = path.join(scenarioDir, "step-02");
-    const pkgJsonSource = path.join(stepDir, "pkg.json");
-    const absoluteRepoPath = path.resolve(gitRepoDir);
-    const fileUrl = process.platform === "win32" 
-      ? `git+file:///${absoluteRepoPath.replace(/\\/g, "/")}`
-      : `git+file://${absoluteRepoPath}`;
-    
-    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonSource, "utf8"));
-    pkgJson.dependencies["test-from-gh"] = fileUrl;
-    fs.writeFileSync(pkgJsonSource, JSON.stringify(pkgJson, null, 2) + "\n");
-    
+
+    // Generate step-02/pkg.json, which the framework merges into package.json after this hook
+    writeStepPkgJson(scenarioDir, "step-02");
+
     // Modify index.js in the local repo (no need to clone or push)
     const indexPath = path.join(gitRepoDir, "src", "index.js");
     let indexContent = "";

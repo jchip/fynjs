@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const Yaml = require("js-yaml");
+const { writeStepPkgJson } = require("../local-repo");
 // META_CACHE_STALE_TIME is 24 hours in milliseconds (from pkg-src-manager.ts)
 const META_CACHE_STALE_TIME = 24 * 60 * 60 * 1000;
 
@@ -8,19 +9,9 @@ module.exports = {
   title: "should refresh stale cache even without new commits (24h fallback) - local repo",
   timeout: 120000,
   before(cwd, scenarioDir) {
-    // Ensure package.json uses file:// URL - update step-03/pkg.json which framework will merge
-    const gitRepoDir = path.join(scenarioDir, "..", "..", "..", ".tmp", "test-git-repo");
-    const stepDir = path.join(scenarioDir, "step-03");
-    const pkgJsonSource = path.join(stepDir, "pkg.json");
-    const absoluteRepoPath = path.resolve(gitRepoDir);
-    const fileUrl = process.platform === "win32" 
-      ? `git+file:///${absoluteRepoPath.replace(/\\/g, "/")}`
-      : `git+file://${absoluteRepoPath}`;
-    
-    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonSource, "utf8"));
-    pkgJson.dependencies["test-from-gh"] = fileUrl;
-    fs.writeFileSync(pkgJsonSource, JSON.stringify(pkgJson, null, 2) + "\n");
-    
+    // Generate step-03/pkg.json, which the framework merges into package.json after this hook
+    writeStepPkgJson(scenarioDir, "step-03");
+
     // Age cache buckets to test staleness fallback (no new commits, but cache is stale)
     const cacheDir = path.join(scenarioDir, ".fyn", "_cacache");
     

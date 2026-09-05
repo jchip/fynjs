@@ -1,16 +1,16 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
+const { repoDir, writeStepPkgJson } = require("../local-repo");
 
 module.exports = {
   title: "should install git dependency from local repo and create cache",
   before(cwd, scenarioDir) {
     console.log(`Step 1 before: cwd=${cwd}, scenarioDir=${scenarioDir}`);
     // Create a local git repository fixture in .tmp (gitignored)
-    const gitRepoDir = path.join(scenarioDir, "..", "..", "..", ".tmp", "test-git-repo");
+    const gitRepoDir = repoDir(scenarioDir);
     console.log(`Git repo dir: ${gitRepoDir}`);
-    console.log(`Resolved git repo dir: ${path.resolve(gitRepoDir)}`);
-    
+
     // Initialize git repo if it doesn't exist
     if (!fs.existsSync(gitRepoDir)) {
       fs.mkdirSync(gitRepoDir, { recursive: true });
@@ -55,28 +55,9 @@ module.exports = {
       execSync("git branch -M main", { cwd: gitRepoDir, stdio: "pipe" });
     }
     
-    // The framework merges pkg.json AFTER before hook runs
-    // So we need to update step-01/pkg.json which will be merged into package.json
-    const stepDir = path.join(scenarioDir, "step-01");
-    const pkgJsonSource = path.join(stepDir, "pkg.json");
-
-    if (!fs.existsSync(pkgJsonSource)) {
-      throw new Error(`pkg.json not found at ${pkgJsonSource}`);
-    }
-    
-    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonSource, "utf8"));
-    
-    // Use file:// URL format - need absolute path
-    const absoluteRepoPath = path.resolve(gitRepoDir);
-    // On Windows, file:// URLs need forward slashes and 3 slashes for absolute paths
-    const fileUrl = process.platform === "win32" 
-      ? `git+file:///${absoluteRepoPath.replace(/\\/g, "/")}`
-      : `git+file://${absoluteRepoPath}`;
-    
-    pkgJson.dependencies["test-from-gh"] = fileUrl;
-    
-    // Write to step-01/pkg.json - framework will merge this into package.json after before hook
-    fs.writeFileSync(pkgJsonSource, JSON.stringify(pkgJson, null, 2) + "\n");
+    // The framework merges the step's pkg.json into package.json right after this hook returns,
+    // so generate it here rather than committing a machine-specific path.
+    const fileUrl = writeStepPkgJson(scenarioDir, "step-01");
 
     console.log(`Using local git repo: ${fileUrl}`);
   }
