@@ -92,7 +92,6 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",
-    "esbuild": "^0.25.0",
     "munchy": "^1.0.7",
     "prettier": "^3.5.3",
     "publish-util": "^3.0.0",
