@@ -27,9 +27,6 @@
       }
     }
   },
-  "ignore": [
-    "packages/pacote-jchip"
-  ],
   "caching": {
     "enable": false,
     "server": "http://localhost:8080/upload",
