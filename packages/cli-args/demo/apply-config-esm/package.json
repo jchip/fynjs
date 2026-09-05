@@ -4,12 +4,9 @@
   "description": "Demo of NixClap applyConfig feature using ESM",
   "type": "module",
   "scripts": {
-    "dev": "tsx apply-config.ts"
+    "dev": "node --import @fynjs/ts-resolve/register apply-config.ts"
   },
   "dependencies": {
     "@fynjs/cli-args": "../.."
-  },
-  "devDependencies": {
-    "tsx": "^4.19.4"
   }
 }

@@ -1,5 +1,3 @@
-#!/usr/bin/env tsx
-
 import { NixClap } from "@fynjs/cli-args";
 
 /**

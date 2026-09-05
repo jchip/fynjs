@@ -33,17 +33,17 @@ describe("ts-runner", function() {
         opts.fail(new Error("not found"));
         return undefined;
       };
-      const result = TsRunner.load("tsx");
+      const result = TsRunner.load("ts-resolve");
       expect(result).to.be.undefined;
-      expect(TsRunner["error-tsx"]).to.exist;
+      expect(TsRunner["error-ts-resolve"]).to.exist;
     });
 
     it("should return module when found", () => {
       const mockModule = {};
       TsRunner._require = _mod => mockModule;
-      const result = TsRunner.load("tsx");
+      const result = TsRunner.load("ts-resolve");
       expect(result).to.equal(mockModule);
-      expect(TsRunner.loaded).to.equal("tsx");
+      expect(TsRunner.loaded).to.equal("ts-resolve");
     });
 
     it("should store error when module load fails", () => {
@@ -52,9 +52,9 @@ describe("ts-runner", function() {
         opts.fail(expectedError);
         return undefined;
       };
-      const result = TsRunner.load("tsx");
+      const result = TsRunner.load("ts-resolve");
       expect(result).to.be.undefined;
-      expect(TsRunner["error-tsx"]).to.equal(expectedError);
+      expect(TsRunner["error-ts-resolve"]).to.equal(expectedError);
     });
   });
 
@@ -75,23 +75,7 @@ describe("ts-runner", function() {
       expect(TsRunner.loaded).to.equal("ts-resolve");
     });
 
-    it("should try tsx if ts-resolve fails then stop", () => {
-      let attemptedModules = [];
-      TsRunner._require = mod => {
-        attemptedModules.push(mod);
-        if (mod === "tsx") {
-          return {};
-        }
-        return undefined;
-      };
-
-      TsRunner.startRunner();
-
-      expect(attemptedModules).to.deep.equal(["@fynjs/ts-resolve/register", "tsx"]);
-      expect(TsRunner.loaded).to.equal("tsx");
-    });
-
-    it("should try ts-node if ts-resolve and tsx fail", () => {
+    it("should try ts-node if ts-resolve fails then stop", () => {
       let attemptedModules = [];
       TsRunner._require = mod => {
         attemptedModules.push(mod);
@@ -105,7 +89,6 @@ describe("ts-runner", function() {
 
       expect(attemptedModules).to.deep.equal([
         "@fynjs/ts-resolve/register",
-        "tsx",
         "ts-node/register/transpile-only"
       ]);
       expect(TsRunner.loaded).to.equal("ts-node");
@@ -116,7 +99,7 @@ describe("ts-runner", function() {
     // node the require throws something that is not a not-found, optional-require hands it
     // to `fail`, and the next runner must still get its turn.
     //
-    it("should fall through to tsx when ts-resolve throws a non not-found error", () => {
+    it("should fall through to ts-node when ts-resolve throws a non not-found error", () => {
       const hookErr = new TypeError("registerHooks is not a function");
       let attemptedModules = [];
       TsRunner._require = (mod, opts) => {
@@ -130,9 +113,12 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal(["@fynjs/ts-resolve/register", "tsx"]);
+      expect(attemptedModules).to.deep.equal([
+        "@fynjs/ts-resolve/register",
+        "ts-node/register/transpile-only"
+      ]);
       expect(TsRunner["error-ts-resolve"]).to.equal(hookErr);
-      expect(TsRunner.loaded).to.equal("tsx");
+      expect(TsRunner.loaded).to.equal("ts-node");
     });
 
     it("should handle case when no runner can be loaded", () => {
@@ -147,12 +133,10 @@ describe("ts-runner", function() {
 
       expect(attemptedModules).to.deep.equal([
         "@fynjs/ts-resolve/register",
-        "tsx",
         "ts-node/register/transpile-only"
       ]);
       expect(TsRunner.loaded).to.be.undefined;
       expect(TsRunner["error-ts-resolve"]).to.exist;
-      expect(TsRunner["error-tsx"]).to.exist;
       expect(TsRunner["error-ts-node"]).to.exist;
     });
 
@@ -176,7 +160,7 @@ describe("ts-runner", function() {
       // Set xrunId to simulate running as sub-invocation
       process.env[env.xrunId] = "test-run";
 
-      // Mock successful tsx load
+      // Mock successful runner load
       TsRunner._require = () => ({});
 
       TsRunner.startRunner();

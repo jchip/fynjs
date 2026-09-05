@@ -36,7 +36,7 @@ An ES Module demo project that provides the same functionality as sample-1-cjs b
 **Features:**
 
 - ES Module format (`"type": "module"`)
-- TypeScript source files with tsx runner
+- TypeScript source files run on node via `@fynjs/ts-resolve`
 - Compiled JavaScript output
 - Same calculator functionality as CJS version
 
@@ -50,7 +50,7 @@ fyn install
 **Run:**
 
 ```bash
-npm run test      # runs TypeScript version with tsx
+fyn run test      # runs TypeScript version on node via @fynjs/ts-resolve
 npm run test-js   # runs compiled JavaScript version
 ```
 

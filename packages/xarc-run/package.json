@@ -98,7 +98,6 @@
     "publish-util": "^3.0.0",
     "run-verify": "^2.0.0",
     "strip-ansi": "^6.0.0",
-    "tsx": "^4.19.4",
     "vitest": "^4.1.11",
     "xaa": "^3.0.0",
     "xstdout": "^0.1.1"

@@ -24,7 +24,6 @@ const TsRunner = {
   // routes that to `fail`, and tsx / ts-node still get their turn.
   //
   "runner-ts-resolve": "@fynjs/ts-resolve/register",
-  "runner-tsx": "tsx",
   "runner-ts-node": "ts-node/register/transpile-only",
   loaded: undefined,
   runner: undefined,
@@ -44,7 +43,7 @@ const TsRunner = {
     return runner;
   },
   startRunner() {
-    const runners = ["ts-resolve", "tsx", "ts-node"];
+    const runners = ["ts-resolve", "ts-node"];
     for (const runner of runners) {
       if (TsRunner.load(runner)) {
         break;

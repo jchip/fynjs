@@ -85,12 +85,12 @@
     "xaa": "^3.0.0"
   },
   "devDependencies": {
+    "@fynjs/ts-resolve": "^1.0.0",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "bluebird": "^3.7.2",
     "publish-util": "^3.0.0",
     "run-verify": "^2.0.0",
-    "tsx": "^4.20.6",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },

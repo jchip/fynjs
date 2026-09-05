@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "test": "node demo.js",
-    "test-ts": "tsx demo.ts"
+    "test-ts": "node --import @fynjs/ts-resolve/register demo.ts"
   },
   "fyn": {
     "dependencies": {
@@ -16,8 +16,5 @@
   },
   "dependencies": {
     "aveazul": "^1.0.0"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.4"
   }
 }
