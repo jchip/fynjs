@@ -1,9 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
-import { copyFileSync, mkdirSync } from "node:fs";
 import Path from "node:path";
-
-const require = createRequire(import.meta.url);
 
 //
 // The release build deliberately does NOT go through xrun.
@@ -33,7 +29,4 @@ run("create-tgz", process.execPath, ["test/fixtures/mock-npm/create-tgz"]);
 
 run("bundle", bin("rolldown"), ["-c", "rolldown.config.mjs"]);
 
-// v8-compile-cache is loaded opportunistically by bin/bundle.js
-mkdirSync("dist", { recursive: true });
-copyFileSync(require.resolve("v8-compile-cache"), Path.join("dist", "v8-compile-cache.js"));
 process.stdout.write("> build complete\n");

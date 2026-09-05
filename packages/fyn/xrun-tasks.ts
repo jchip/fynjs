@@ -9,13 +9,8 @@ const xrun = require("@fynjs/run");
 xrun.load("fyn", {
   // rolldown emits an ESM bundle (dist/fyn.mjs). ESM is required, not preferred: chalker uses
   // top-level await to reach ESM-only chalk, and no CJS output format can represent it.
-  bundle: [xrun.exec("rolldown -c rolldown.config.mjs"), "v8-compile-cache"],
+  bundle: xrun.exec("rolldown -c rolldown.config.mjs"),
 
-  "v8-compile-cache": () => {
-    const v8CompileCache = require.resolve("v8-compile-cache");
-    const distPath = Path.join(__dirname, "dist");
-    return xrun.exec(`cp ${v8CompileCache} ${distPath}`);
-  },
   "replace-npm-g": {
     desc: "Replace the version that was installed by 'npm i -g' with current",
     task: [

@@ -137,7 +137,6 @@
     "prettier": "^3.5.3",
     "rolldown": "^1.2.6",
     "typescript": "^7.0.2",
-    "v8-compile-cache": "^2.3.0",
     "vitest": "^4.1.11",
     "which": "^2.0.2",
     "xstdout": "^0.1.1"
