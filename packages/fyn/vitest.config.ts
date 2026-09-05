@@ -58,8 +58,5 @@ export default defineConfig({
       "@": Path.resolve(__dirname, "./lib")
     },
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"]
-  },
-  esbuild: {
-    target: "node14"
   }
 });
