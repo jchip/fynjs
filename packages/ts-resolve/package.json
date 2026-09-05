@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/ts-resolve",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Resolve TypeScript sources for node's built-in type stripping - no transpiler",
   "engines": {
     "node": ">=22.15.0"

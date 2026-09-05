@@ -91,7 +91,7 @@
     "xsh": "^1.0.1"
   },
   "devDependencies": {
-    "@fynjs/ts-resolve": "^1.0.0",
+    "@fynjs/ts-resolve": "^0.0.1",
     "@vitest/coverage-v8": "^4.1.11",
     "munchy": "^1.0.7",
     "prettier": "^3.5.3",

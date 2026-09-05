@@ -71,7 +71,7 @@
   "license": "Apache-2.0",
   "dependencies": {},
   "devDependencies": {
-    "@fynjs/ts-resolve": "^1.0.0",
+    "@fynjs/ts-resolve": "^0.0.1",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
