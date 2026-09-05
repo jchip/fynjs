@@ -12,6 +12,18 @@ import path from "path";
 import WrapProcess from "./wrap-process.js";
 
 const TsRunner = {
+  //
+  // `@fynjs/ts-resolve` is ESM-only, but it stays on this same require path: node's
+  // `require(esm)` is unflagged from 22.12, which is already this package's floor, and
+  // `./register` has no top-level await - the one graph `require(esm)` refuses. So it is
+  // required like the others and returns a (truthy) namespace object.
+  //
+  // It is first because it is the cheapest: a resolve hook feeding node's own type
+  // stripping, no transpiler and no native binary. Its only hard requirement is node
+  // >= 22.15 for `module.registerHooks`; below that the require throws, optional-require
+  // routes that to `fail`, and tsx / ts-node still get their turn.
+  //
+  "runner-ts-resolve": "@fynjs/ts-resolve/register",
   "runner-tsx": "tsx",
   "runner-ts-node": "ts-node/register/transpile-only",
   loaded: undefined,
@@ -32,7 +44,7 @@ const TsRunner = {
     return runner;
   },
   startRunner() {
-    const runners = ["tsx", "ts-node"];
+    const runners = ["ts-resolve", "tsx", "ts-node"];
     for (const runner of runners) {
       if (TsRunner.load(runner)) {
         break;

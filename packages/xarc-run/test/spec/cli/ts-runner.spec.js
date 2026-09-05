@@ -59,7 +59,23 @@ describe("ts-runner", function() {
   });
 
   describe("startRunner", () => {
-    it("should try tsx first then ts-node", () => {
+    it("should try ts-resolve first", () => {
+      let attemptedModules = [];
+      TsRunner._require = mod => {
+        attemptedModules.push(mod);
+        if (mod === "@fynjs/ts-resolve/register") {
+          return {};
+        }
+        return undefined;
+      };
+
+      TsRunner.startRunner();
+
+      expect(attemptedModules).to.deep.equal(["@fynjs/ts-resolve/register"]);
+      expect(TsRunner.loaded).to.equal("ts-resolve");
+    });
+
+    it("should try tsx if ts-resolve fails then stop", () => {
       let attemptedModules = [];
       TsRunner._require = mod => {
         attemptedModules.push(mod);
@@ -71,11 +87,11 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal(["tsx"]);
+      expect(attemptedModules).to.deep.equal(["@fynjs/ts-resolve/register", "tsx"]);
       expect(TsRunner.loaded).to.equal("tsx");
     });
 
-    it("should try ts-node if tsx fails", () => {
+    it("should try ts-node if ts-resolve and tsx fail", () => {
       let attemptedModules = [];
       TsRunner._require = mod => {
         attemptedModules.push(mod);
@@ -87,8 +103,36 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal(["tsx", "ts-node/register/transpile-only"]);
+      expect(attemptedModules).to.deep.equal([
+        "@fynjs/ts-resolve/register",
+        "tsx",
+        "ts-node/register/transpile-only"
+      ]);
       expect(TsRunner.loaded).to.equal("ts-node");
+    });
+
+    //
+    // ts-resolve is ESM-only and needs node >= 22.15 for module.registerHooks. On an older
+    // node the require throws something that is not a not-found, optional-require hands it
+    // to `fail`, and the next runner must still get its turn.
+    //
+    it("should fall through to tsx when ts-resolve throws a non not-found error", () => {
+      const hookErr = new TypeError("registerHooks is not a function");
+      let attemptedModules = [];
+      TsRunner._require = (mod, opts) => {
+        attemptedModules.push(mod);
+        if (mod === "@fynjs/ts-resolve/register") {
+          opts.fail(hookErr);
+          return undefined;
+        }
+        return {};
+      };
+
+      TsRunner.startRunner();
+
+      expect(attemptedModules).to.deep.equal(["@fynjs/ts-resolve/register", "tsx"]);
+      expect(TsRunner["error-ts-resolve"]).to.equal(hookErr);
+      expect(TsRunner.loaded).to.equal("tsx");
     });
 
     it("should handle case when no runner can be loaded", () => {
@@ -101,10 +145,28 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal(["tsx", "ts-node/register/transpile-only"]);
+      expect(attemptedModules).to.deep.equal([
+        "@fynjs/ts-resolve/register",
+        "tsx",
+        "ts-node/register/transpile-only"
+      ]);
       expect(TsRunner.loaded).to.be.undefined;
+      expect(TsRunner["error-ts-resolve"]).to.exist;
       expect(TsRunner["error-tsx"]).to.exist;
       expect(TsRunner["error-ts-node"]).to.exist;
+    });
+
+    //
+    // The real thing, not a mock: @fynjs/ts-resolve is ESM-only, so this is the check that
+    // the require path in ts-runner can actually load it on this node.
+    //
+    it("should really load @fynjs/ts-resolve through require", () => {
+      delete TsRunner["error-ts-resolve"];
+      const result = TsRunner.load("ts-resolve");
+      expect(TsRunner["error-ts-resolve"], String(TsRunner["error-ts-resolve"])).to.be.undefined;
+      expect(result).to.exist;
+      expect(TsRunner.loaded).to.equal("ts-resolve");
+      expect(TsRunner.path).to.include("ts-resolve");
     });
 
     it("should respect xrunId environment variable", () => {
@@ -143,20 +205,20 @@ describe("ts-runner", function() {
       logger.log = (msg) => logMessages.push(msg);
 
       try {
-        // Mock successful tsx load with path
+        // Mock successful ts-resolve load with path
         TsRunner._require = (mod) => {
           return {};
         };
         TsRunner._require.resolve = (mod) => {
-          return "/some/path/to/tsx/index.js";
+          return "/some/path/to/ts-resolve/register.js";
         };
 
         TsRunner.startRunner();
 
         // Verify logger.log was called with the correct message
         expect(logMessages).to.have.lengthOf(1);
-        expect(logMessages[0]).to.include("Loaded tsx for TypeScript files");
-        expect(TsRunner.loaded).to.equal("tsx");
+        expect(logMessages[0]).to.include("Loaded ts-resolve for TypeScript files");
+        expect(TsRunner.loaded).to.equal("ts-resolve");
       } finally {
         // Restore logger
         logger.log = originalLog;
@@ -173,7 +235,7 @@ describe("ts-runner", function() {
       logger.log = (msg) => logMessages.push(msg);
 
       try {
-        // Mock successful tsx load
+        // Mock successful ts-resolve load
         TsRunner._require = () => ({});
 
         TsRunner.startRunner();
@@ -181,7 +243,7 @@ describe("ts-runner", function() {
         // Verify logger.log was NOT called for success message
         // (it shouldn't log when xrunId is set)
         expect(logMessages).to.have.lengthOf(0);
-        expect(TsRunner.loaded).to.equal("tsx");
+        expect(TsRunner.loaded).to.equal("ts-resolve");
       } finally {
         // Restore logger and env
         logger.log = originalLog;
