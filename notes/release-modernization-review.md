@@ -170,3 +170,59 @@ Source `.ts` specifier counts: cli-args 62, aveazul 25, publish-util 12, fynpo-b
 **Output shape** (decided): keep `.js` with `"type": "module"` rather than emitting `.mjs` — no rename step, declarations stay `.d.ts`.
 
 Out of scope: `@fynjs/run` is CJS-only today and must keep loading arbitrary user `xrun.js`/`xclap.js` task files, so it is treated separately from the 18. The CLIs (`fyn`, `fynpo`, `fynpo-cli`, `@fynjs/create-monorepo`) are format-invisible to users.
+
+## 12. Correction to §11 — ESM-only is implemented (recorded 2026-09-05, FPM-105)
+
+**The "Out of scope" clause closing §11 (line 172) is superseded.** Both of its claims are now false:
+
+- `@fynjs/run` (`packages/xarc-run`) is no longer CJS-only — it was migrated to `"type": "module"` in
+  FJM-116 (`969db557`), along with its 26 spec files.
+- The CLIs are no longer merely "format-invisible". `fynpo-cli` and `@fynjs/create-monorepo` are ESM,
+  and `fynpo` itself completed a full ESM migration — source, bin, and stubs — in FPM-100 (`ec9a26bf`).
+
+§11 above is left intact as the dated decision record. This section records what is actually true today.
+
+### Current state
+
+Verified by reading every `package.json` under the `fynpo.json` `packages` globs (`packages/*`, `_w/*`)
+on branch `fpm-97-drop-dead-esbuild`.
+
+| Scope | Count | `"type": "module"` |
+|---|---|---|
+| `packages/*` with a tracked `package.json` | 32 | 30 yes, 2 no |
+| `_w/*` (external forks) | 2 | neither declares `type` |
+
+The two `packages/*` holdouts are `bluebird` and `fyn`. Everything else — including `@fynjs/run`,
+`fynpo`, `fynpo-cli`, `@fynjs/create-monorepo`, and the new `@fynjs/ts-resolve` — is ESM.
+
+Two tree changes since §11 was written: `packages/pacote-jchip` was removed in FPM-103 (`98fdb865`),
+and `packages/ts-resolve` (`@fynjs/ts-resolve`) was added.
+
+### The remaining exceptions
+
+**`packages/bluebird` — deliberately CJS, permanently.** Its entire body is:
+
+```js
+module.exports = require("aveazul");
+```
+
+It is a CJS alias shim whose only job is to satisfy a bare `require("bluebird")`, so it must stay CJS —
+`"type": "module"` would break the one thing it exists to do. It is `private: true`, has no consumers in
+the monorepo, and is retained for posterity per the repo owner. This exception was previously recorded
+nowhere; it is recorded here.
+
+**`packages/fyn` — published-ESM but not directory-ESM.** What ships is already ESM: the bin entries are
+`bin/fyn.mjs`, `bin/fun.mjs`, `bin/index.mjs`, `bin/check-node.mjs`, and the bundle is `dist/fyn.mjs`;
+`files` is `["bin", "dist"]`, so a consumer sees no CJS. What blocks the directory-level `"type": "module"`
+is 79 tracked `.js` files that sit under the package root's `package.json` (no nested `package.json`
+re-scopes them) and are all CJS: 5 build stubs in `stubs/`, the mock registry under
+`test/fixtures/mock-npm/`, the `test/scenarios/**/step-*/index.js` scenario drivers, and 5 top-level
+`test/test-*.js` scripts. Adding `"type": "module"` reinterprets all of them as ESM at once.
+
+Tracked as **FPM-111**. Doing nothing is defensible: consumers already receive pure ESM, so the change
+would buy directory tidiness at the cost of rewriting 79 files.
+
+**`_w/ignore-walk` and `_w/npm-packlist` — undecided.** These are external forks vendored into the
+`fynpo.json` `packages` glob, so fynpo manages them, but neither declares a `type` field and §11 never
+mentioned them. No decision has been made about whether the ESM-only policy applies to vendored forks.
+Flagged here as an open question rather than settled either way.
