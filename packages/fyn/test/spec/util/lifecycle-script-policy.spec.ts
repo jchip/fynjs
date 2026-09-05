@@ -545,6 +545,18 @@ describe("lifecycle-script-policy", function() {
       expect(isScriptAllowed(review(single), "install")).to.equal(true);
     });
 
+    it("matches a space-joined comparator range, the `>=x <y` form a widened allowlist uses", () => {
+      // splitRange only breaks on `|`, so the comparators stay one AND range
+      const bounded = { "sharp@>=0.33.0 <1": ["install"] };
+      expect(isScriptAllowed(review(bounded), "install")).to.equal(true);
+      expect(isScriptAllowed(review(bounded, { version: "0.32.0" }), "install")).to.equal(false);
+      expect(isScriptAllowed(review(bounded, { version: "1.0.0" }), "install")).to.equal(false);
+      // and in the object form, where fynpo.json carries it
+      const value = { sharp: { semver: ">=0.33.0 <1", scripts: ["install"] } };
+      expect(isScriptAllowed(review(value), "install")).to.equal(true);
+      expect(isScriptAllowed(review(value, { version: "0.32.0" }), "install")).to.equal(false);
+    });
+
     it("still matches a git spec literally, where there is no version to range over", () => {
       const dep = mkDep({
         name: "foo",
