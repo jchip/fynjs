@@ -1,4 +1,4 @@
-import { fitLines, setHelpZebra } from "../../src/xtil";
+import { fitLines, setHelpZebra } from "../../src/xtil.ts";
 import { describe, it, expect, beforeEach } from "vitest";
 
 describe("fitLines", () => {

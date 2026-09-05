@@ -30,8 +30,10 @@ export type CommandMeta = {
 
   /**
    * Full options associated with the command (including array indices).
+   * Each entry is the option's full args map, keyed by arg name (or index for
+   * unnamed args), which is why the value is a record and not a bare value.
    */
-  optsFull: Record<string, string | string[]>;
+  optsFull: Record<string, Record<string, string | string[]>>;
 
   /**
    * Name of the command.

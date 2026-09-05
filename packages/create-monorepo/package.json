@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "ci:check": "vitest run",
+    "ci:check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && vitest run",
     "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "prepublishOnly": "xrun --serial build docs && publish-util-prepublishonly",
     "postpack": "publish-util-postpack",

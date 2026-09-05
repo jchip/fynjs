@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { prePackObj } from "../src/prepack.ts";
+import { prePackObj } from "../src/prepack.js";
 
 describe("prePackObj", () => {
   it("should keep standard consumer-facing fields and strip the rest", () => {

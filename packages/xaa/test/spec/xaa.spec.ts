@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import * as xaa from "../../src";
+import * as xaa from "../../src/index.ts";
 
 describe("xaa", () => {
   describe("delay", () => {

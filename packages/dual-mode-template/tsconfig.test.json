@@ -1,0 +1,15 @@
+{
+  // Type-check gate for tests as well as src. The build config (tsconfig.json)
+  // pins rootDir to ./src so dist keeps its flat layout, which excludes test/
+  // from that program; this config re-includes it for a no-emit check only.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src",
+    "test"
+  ]
+}

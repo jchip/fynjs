@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { FynpoDepGraph, getDepSection } from "../src";
+import { FynpoDepGraph, getDepSection } from "../src/index.js";
 import path from "path";
 import Fs from "fs";
 

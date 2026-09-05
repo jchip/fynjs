@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Updated } from "../src/updated";
 import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
@@ -80,8 +80,13 @@ describe("fynpo Updated", () => {
     const updated = new Updated(opts, graph);
 
     // Mock getUpdatedPackages to return empty array
-    getUpdatedPackages.mockReturnValue({
+    vi.mocked(getUpdatedPackages).mockReturnValue({
       pkgs: [],
+      depMap: {},
+      depSections: {},
+      verLocks: {},
+      forceUpdated: [],
+      latestTag: undefined,
     });
 
     updated.exec();

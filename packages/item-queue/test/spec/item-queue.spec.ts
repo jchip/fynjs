@@ -131,7 +131,7 @@ describe("item-queue", () => {
   it("should take initial item Q", async () => {
     let sum = 0;
     const items = [1, 2, 3, 4, 5];
-    const pq = new ItemQueue({
+    const pq = new ItemQueue<number>({
       concurrency: 2,
       processItem: (x) => Promise.resolve((sum += x)),
     });
@@ -195,7 +195,7 @@ describe("item-queue", () => {
   it("should addItems as an array", async () => {
     let sum = 0;
     const items = [1, 2, 3, 4, 5];
-    const pq = new ItemQueue({
+    const pq = new ItemQueue<number>({
       concurrency: 2,
       processItem: (x) => Promise.resolve((sum += x)),
     });

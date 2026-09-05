@@ -3,7 +3,7 @@ import Fs from "fs";
 import Os from "os";
 import Path from "path";
 
-import { makeGitignoreMatcher } from "../src/gitignore";
+import { makeGitignoreMatcher } from "../src/gitignore.js";
 
 describe("makeGitignoreMatcher", () => {
   let dir: string;

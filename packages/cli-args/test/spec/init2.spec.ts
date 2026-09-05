@@ -50,7 +50,7 @@ describe("init2", () => {
       },
       exec: (cmd: CommandNode) => {
         rootExecuted = true;
-        receivedFiles = cmd.jsonMeta.args.files || [];
+        receivedFiles = (cmd.jsonMeta.args.files as string[]) || [];
       },
       subCommands: {
         build: {

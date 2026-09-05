@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deconstructMM, unrollMmMatch } from "../src/minimatch-group";
+import { deconstructMM, unrollMmMatch } from "../src/minimatch-group.js";
 import { Minimatch, GLOBSTAR } from "minimatch";
 
 describe("deconstructMM", function () {

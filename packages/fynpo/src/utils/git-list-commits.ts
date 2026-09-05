@@ -117,11 +117,11 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
   const selection = expandSelection(opts.only, (rc && rc.versionLocks) || []);
 
   const collated = {
-    realPackages: [],
-    packages: {},
-    samples: {},
-    others: {},
-    files: {},
+    realPackages: [] as string[],
+    packages: {} as Record<string, any>,
+    samples: {} as Record<string, any>,
+    others: {} as Record<string, any>,
+    files: {} as Record<string, any>,
     changed,
     opts,
   };

@@ -122,7 +122,7 @@ describe("fynpo Version", () => {
     const version = new Version(opts, graph);
     version._gitClean = true;
 
-    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue("");
+    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue({ stdout: "", stderr: "" });
 
     await version.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
 
@@ -137,7 +137,7 @@ describe("fynpo Version", () => {
   it("marks the publish commit selective when --only narrowed the release (FJM-153)", async () => {
     const version = new Version({ cwd: dir, commit: true, tag: false, only: ["pkg1"] }, graph);
     version._gitClean = true;
-    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue("");
+    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue({ stdout: "", stderr: "" });
 
     await version.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
 
@@ -149,7 +149,7 @@ describe("fynpo Version", () => {
   it("leaves the publish commit subject alone for a full release", async () => {
     const version = new Version({ cwd: dir, commit: true, tag: false }, graph);
     version._gitClean = true;
-    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue("");
+    const shSpy = vi.spyOn(version, "_sh").mockResolvedValue({ stdout: "", stderr: "" });
 
     await version.commitAndTagUpdates({ packages: ["package.json"], tags: ["pkg1@1.0.0"] });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import chalk, { Chalk } from "chalk";
+import chalk, { Chalk, type ColorSupportLevel } from "chalk";
 import ansiColors from "ansi-colors";
 import chalker from "../../src/index.ts";
 
@@ -44,7 +44,7 @@ const ENGINES = [
     name: "chalk",
     colors: chalk,
     // chalk 5+ dropped `chalk.Instance` in favor of the named `Chalk` export
-    context: (level: number) => new Chalk({ level }),
+    context: (level: ColorSupportLevel) => new Chalk({ level }),
     expected: CHALK_EXPECTED
   },
   {
@@ -277,7 +277,10 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       };
 
     it("should load ansi-colors if chalk is not available", async () => {
-      const colors = ansiColors.create();
+      // ansi-colors implements alias() at runtime but omits it from its bundled types
+      const colors = ansiColors.create() as ReturnType<typeof ansiColors.create> & {
+        alias(name: string, color: (text: string) => string): void;
+      };
       const calls: string[] = [];
 
       colors.enabled = true;

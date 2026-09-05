@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import os from "node:os";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";
-import { FynpoConfigManager } from "../src/fynpo-config.ts";
+import { FynpoConfigManager } from "../src/fynpo-config.js";
 
 /**
  * Each case gets its own mkdtemp directory: `import()` caches by URL, so reusing a path would

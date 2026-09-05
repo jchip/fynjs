@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as Fs from "fs";
 import * as Os from "os";
 import * as Path from "path";
-import { writePkgFile } from "../src/utils.ts";
+import { writePkgFile } from "../src/utils.js";
 
 //
 // FPM-66: publish-util rewrote a package.json with a plain writeFile, which opens the

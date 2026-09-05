@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractFromObj, removeFromObj, renameFromObj } from "../src/utils.ts";
+import { extractFromObj, removeFromObj, renameFromObj } from "../src/utils.js";
 
 describe("utils", () => {
   describe("extractFromObj", () => {

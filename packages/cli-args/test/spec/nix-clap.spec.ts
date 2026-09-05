@@ -7,12 +7,12 @@
 
 */
 
-import { CommandExecFunc, CommandSpec, NixClap } from "../../src";
-import { defaultOutput, defaultExit, ParseResult } from "../../src/nix-clap";
+import { type CommandExecFunc, type CommandSpec, NixClap } from "../../src/index.ts";
+import { defaultOutput, defaultExit, type ParseResult } from "../../src/nix-clap.ts";
 import { describe, it, expect, beforeEach } from "vitest";
-import { OptionSpec } from "../../src/option-base";
-import { CommandNode } from "../../src/command-node";
-import { setHelpZebra } from "../../src/xtil";
+import type { OptionSpec } from "../../src/option-base.ts";
+import { CommandNode } from "../../src/command-node.ts";
+import { setHelpZebra } from "../../src/xtil.ts";
 
 describe("nix-clap", () => {
   const noop = () => undefined;
@@ -2871,7 +2871,9 @@ Options:
     const nc = new NixClap({
       ...noOutputExit,
       handlers: {
-        "no-action": () => (called = true)
+        "no-action": () => {
+          called = true;
+        }
       }
     })
       .removeDefaultHandlers("*")

@@ -1,0 +1,18 @@
+{
+  // Type-check gate that covers tests as well as src. It cannot live in
+  // tsconfig.json because that one drives the `tsc` build and pins
+  // `rootDir: "./src"` to keep the emitted layout; test files sit outside it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // The tests import the sources as `../../src/index.ts`, which is the specifier
+    // form node's type-stripping needs (it does not map `.js` back to `.ts`). Only
+    // legal alongside `noEmit`, hence only here; it relaxes no type checking.
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src",
+    "test"
+  ]
+}

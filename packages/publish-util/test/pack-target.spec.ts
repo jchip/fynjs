@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as Fs from "fs";
 import * as Os from "os";
 import * as Path from "path";
-import { getPackInfo, metaFileOf } from "../src/utils.ts";
+import { getPackInfo, metaFileOf } from "../src/utils.js";
 
 //
 // FPM-75: prepack/postpack used getInfo(), whose default cwd is INIT_CWD - the directory

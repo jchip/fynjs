@@ -31,12 +31,13 @@ export const confippet = {
   providerTypes,
   extHandlers,
   util,
-  loadConfig
+  loadConfig,
+  /**
+   * The lazily composed preset config store.
+   */
+  get config() {
+    return getPresetConfig();
+  }
 };
-
-Object.defineProperty(confippet, "config", {
-  enumerable: true,
-  get: () => getPresetConfig()
-});
 
 export default confippet;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import PkgPreper from "../src/index.ts";
-import type { PkgPreperOptions } from "../src/index.ts";
+import PkgPreper from "../src/index.js";
+import type { PkgPreperOptions } from "../src/index.js";
 import * as Path from "node:path";
 import * as Fs from "node:fs";
 import * as Os from "node:os";

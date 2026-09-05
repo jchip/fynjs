@@ -1,5 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { OptionBase, optUnknown } from "../../src/option-base";
+import { OptionBase, optUnknown } from "../../src/option-base.ts";
 
 describe("option args", () => {
   it("should parse args and basic props", () => {
@@ -197,6 +197,7 @@ describe("option args", () => {
     const opt = new OptionBase("test", {
       args: "< xfoo> [ yfoo]",
       desc: "test option 1",
+      // @ts-expect-error - coercions is deprecated legacy property name, kept for backward compatibility
       coercions: {
         xfoo: () => "blah xfoo",
         yfoo: () => "blah yfoo"

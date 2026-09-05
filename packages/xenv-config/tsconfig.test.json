@@ -1,0 +1,17 @@
+{
+  // Type-check gate that covers tests as well as src. It cannot live in
+  // tsconfig.json because that one drives the `tsc` build and pins
+  // `rootDir: "./src"` to keep the emitted layout; test files sit outside it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Tests import source by its real ".ts" path; safe here because this
+    // config never emits.
+    "allowImportingTsExtensions": true,
+    "rootDir": "."
+  },
+  "include": [
+    "src",
+    "test"
+  ]
+}

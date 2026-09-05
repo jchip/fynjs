@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as Fs from "fs";
 import * as Os from "os";
 import * as Path from "path";
-import { prePack } from "../src/prepack.ts";
-import { postPack } from "../src/postpack.ts";
-import { metaFileOf, loadInfo } from "../src/utils.ts";
+import { prePack } from "../src/prepack.js";
+import { postPack } from "../src/postpack.js";
+import { metaFileOf, loadInfo } from "../src/utils.js";
 
 //
 // prepack prunes the manifest in place and postpack puts the original back.  They used to

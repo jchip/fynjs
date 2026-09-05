@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createLogUpdate } from "log-update";
-import { VisualLogger, OutputInterface } from "../../src/index.ts";
+import { VisualLogger, type OutputInterface } from "../../src/index.ts";
 import { makeTtyStream } from "./vterm.ts";
 
 //

@@ -39,7 +39,7 @@ vi.mock("fs", async (importOriginal) => {
   return { ...actual, default: { ...actual, createWriteStream }, createWriteStream };
 });
 
-import { VisualExec } from "../src/visual-exec";
+import { VisualExec } from "../src/visual-exec.ts";
 
 describe("outputFile flushing", () => {
   it("does not resolve until the output file is closed", async () => {

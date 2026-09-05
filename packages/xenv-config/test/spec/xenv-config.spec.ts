@@ -129,7 +129,7 @@ describe("xenv-config", function() {
 
     it("should load env value, by type from default, as number", () => {
       const k = `K${Date.now()}`;
-      process.env[k] = 999;
+      process.env[k] = "999";
       const cfg = xenvConfig({ test: { env: k, default: 0 } });
       expect(cfg.test).to.equal(999);
       delete process.env[k];
@@ -233,7 +233,7 @@ describe("xenv-config", function() {
 
     it("should load config if sources set it first", () => {
       const k = `TEST${Date.now()}`;
-      process.env[k] = 999;
+      process.env[k] = "999";
       const cfg = xenvConfig(
         { test: { env: k, type: "number" } },
         { test: 222 },

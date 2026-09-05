@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import * as xaa from "../../src";
+import * as xaa from "../../src/index.ts";
 
 describe("index", function () {
   it("should load", () => {

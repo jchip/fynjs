@@ -20,7 +20,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
-    "ci:check": "tsc --noEmit -p tsconfig.json && vitest run",
+    "ci:check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && vitest run",
     "prepublishOnly": "npm run build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"

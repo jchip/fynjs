@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { processInput, processOutput } from "../src/caching";
+import { processInput, processOutput } from "../src/caching.js";
 import npmPacklist from "npm-packlist";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";

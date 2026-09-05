@@ -6,7 +6,7 @@ import {
   includeFilter,
   outOfScopePackages,
   packageScope,
-} from "../src/packages-config";
+} from "../src/packages-config.js";
 
 describe("resolvePackagesConfig", () => {
   it("defaults to auto-search on, respectGitignore off, nothing else set", () => {
