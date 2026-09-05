@@ -9,15 +9,18 @@ const execFileAsync = promisify(execFile);
  * vitest's SSR transform removes `import.meta.resolve`, so the real resolver can only be
  * exercised in an actual node process. probe.ts runs there against genuine `import.meta` and
  * a fixture app with its own node_modules, and reports what happened as JSON.
+ *
+ * Plain `node` is enough: probe.ts imports src with an explicit .ts specifier and src has no
+ * relative imports, so node's built-in type stripping needs no resolver help. The point here
+ * was always a real node process, never a transpiler.
  */
 
 const probe = fileURLToPath(new URL("../fixtures/app/probe.ts", import.meta.url));
-const tsx = fileURLToPath(new URL("../../node_modules/.bin/tsx", import.meta.url));
 
 let report: Record<string, any>;
 
 beforeAll(async () => {
-  const { stdout } = await execFileAsync(tsx, [probe], { encoding: "utf8" });
+  const { stdout } = await execFileAsync(process.execPath, [probe], { encoding: "utf8" });
   report = JSON.parse(stdout);
 }, 60000);
 
