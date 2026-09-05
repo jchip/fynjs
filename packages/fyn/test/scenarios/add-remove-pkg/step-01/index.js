@@ -6,6 +6,7 @@ module.exports = {
     return []
       .concat(options.baseArgs)
       .concat([
+        `--reg=${options.registry}`,
         `--layout=detail`,
         `add`,
         `--no-audit`,

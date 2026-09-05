@@ -4,27 +4,50 @@ node_modules:
     .fyn.json: file
     _:
       mod-a:
+        0.2.0:
+          mod-a:
+            package.json:
+              id: mod-a@0.2.0
+        0.4.5:
+          mod-a:
+            package.json:
+              id: mod-a@0.4.5
+        1.1.2:
+          mod-a:
+            package.json:
+              id: mod-a@1.1.2
         2.0.0:
           mod-a:
-            .npmignore: file
-            LICENSE: file
-            README.md: file
             package.json:
               id: mod-a@2.0.0
       mod-b:
-        2.0.0:
-          mod-b:
-            LICENSE: file
-            README.md: file
-            package.json:
-              id: mod-b@2.0.0
-      mod-d:
         1.0.0:
-          mod-d:
-            LICENSE: file
-            README.md: file
+          mod-b:
+            node_modules:
+              mod-a: -> ../../../../mod-a/0.2.0/mod-a
             package.json:
-              id: mod-d@1.0.0
-  mod-a: '-> .f/_/mod-a/2.0.0/mod-a'
-  mod-b: '-> .f/_/mod-b/2.0.0/mod-b'
-  mod-d: '-> .f/_/mod-d/1.0.0/mod-d'
+              id: mod-b@1.0.0
+      mod-d:
+        3.0.1:
+          mod-d:
+            node_modules:
+              mod-a: -> ../../../../mod-a/1.1.2/mod-a
+            package.json:
+              id: mod-d@3.0.1
+      mod-e:
+        2.1.1:
+          mod-e:
+            node_modules:
+              mod-a: -> ../../../../mod-a/0.4.5/mod-a
+            package.json:
+              id: mod-e@2.1.1
+      mod-f:
+        2.1.1:
+          mod-f:
+            package.json:
+              id: mod-f@2.1.1
+  mod-a: -> .f/_/mod-a/2.0.0/mod-a
+  mod-b: -> .f/_/mod-b/1.0.0/mod-b
+  mod-d: -> .f/_/mod-d/3.0.1/mod-d
+  mod-e: -> .f/_/mod-e/2.1.1/mod-e
+  mod-f: -> .f/_/mod-f/2.1.1/mod-f

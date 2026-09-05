@@ -171,6 +171,12 @@ const debug = false;
         if (debug && step === options.debugStep) {
           debugger;
         }
+        //
+        // a step that times out or aborts mid-install leaves this behind, and fyn
+        // only considers a lock stale after 30 minutes - long enough for every
+        // following step to fail with EEXIST, burying the failure that started it
+        //
+        Fs.rmSync(Path.join(cwd, "node_modules", ".f", ".installing.lock"), { force: true });
         return Promise.try(() => stepAction.before(cwd, scenarioDir))
           .then(() => {
             const stepLockFile = Path.join(stepDir, "lock.yaml");

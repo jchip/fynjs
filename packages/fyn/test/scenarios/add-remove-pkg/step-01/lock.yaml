@@ -1,39 +1,76 @@
 $fyn:
- flattenTop: true
  layout: detail
+ flattenTop: true
 $pkg:
  dep:
   mod-a: ^2.0.0
  dev:
-  mod-d: ^1.0.0
+  mod-d: ^3.0.1
   mod-g: ../../fixtures/mod-g
 mod-a:
  _latest: 2.0.0
  _:
+  ^0.2.0: 0.2.0
+  ^0.4.0: 0.4.5
+  ^1.0.1: 1.1.2
   ^2.0.0: 2.0.0
  2.0.0:
   top: 1
-  $: sha1-A14kUd8F5xnolX2Pq2UBNeUUd94=
-  _: 'https://registry.npmjs.org/mod-a/-/mod-a-2.0.0.tgz'
-  dependencies:
-   mod-b: ^2.0.0
+  $: sha1-IvKTyjJUm6kNS8Wrn0tBqMAF8kk=
+  _: 'http://localhost:50399/mod-a/-/mod-a-2.0.0.tgz'
+ 1.1.2:
+  $: sha1-UX5L1E/HLIObywRmKzQtLV+cWoY=
+  _: 'http://localhost:50399/mod-a/-/mod-a-1.1.2.tgz'
+ 0.4.5:
+  $: sha1-yUikVUSzIsbg1dXHuJrfvmg6yLs=
+  _: 'http://localhost:50399/mod-a/-/mod-a-0.4.5.tgz'
+ 0.2.0:
+  $: sha1-HLEtskEesTbPPCkFd9P3WYaqYLs=
+  _: 'http://localhost:50399/mod-a/-/mod-a-0.2.0.tgz'
 mod-b:
- _latest: 2.0.0
- _:
-  ^2.0.0: 2.0.0
- 2.0.0:
-  $: sha1-08ELWBWzFomlG3x9hDQYJTU6I4I=
-  _: 'https://registry.npmjs.org/mod-b/-/mod-b-2.0.0.tgz'
-mod-d:
  _latest: 1.0.0
  _:
   ^1.0.0: 1.0.0
  1.0.0:
-  top: 1
-  $: sha1-VNntO9nFKWIr3Bh0ABEo6IiRRug=
-  _: 'https://registry.npmjs.org/mod-d/-/mod-d-1.0.0.tgz'
+  $: sha1-59K8lMnOO9GI7vxdlCTF9RTbpa8=
+  _: 'http://localhost:50399/mod-b/-/mod-b-1.0.0.tgz'
   dependencies:
-   mod-b: ^2.0.0
+   mod-a: ^0.2.0
+   mod-d: ^3.0.0
+  optionalDependencies:
+   mod-e: ^2.0.0
+mod-d:
+ _latest: 3.0.1
+ _:
+  '^3.0.0,^3.0.1': 3.0.1
+ 3.0.1:
+  top: 1
+  $: sha1-ykGVD5aIwTJiBmgvzeHh3T5XUOY=
+  _: 'http://localhost:50399/mod-d/-/mod-d-3.0.1.tgz'
+  dependencies:
+   mod-a: ^1.0.1
+   mod-b: ^1.0.0
+mod-e:
+ _latest: 2.1.1
+ _:
+  ^2.0.0: 2.1.1
+ 2.1.1:
+  hasPI: 1
+  $: sha1-1hEoioX8nsrEHpFWJbW9aS8Wi88=
+  _: 'http://localhost:50399/mod-e/-/mod-e-2.1.1.tgz'
+  dependencies:
+   mod-f: ^2.0.0
+  optionalDependencies:
+   mod-a: ^0.4.0
+mod-f:
+ _latest: 2.1.1
+ _:
+  ^2.0.0: 2.1.1
+ 2.1.1:
+  $: sha1-unnR228fCQMHail28gpkObicMEY=
+  _: 'http://localhost:50399/mod-f/-/mod-f-2.1.1.tgz'
+  peerDependencies:
+   mod-a: ^0.3.0
 mod-g:
  _latest: 2.1.0-fynlocal_h
  _:

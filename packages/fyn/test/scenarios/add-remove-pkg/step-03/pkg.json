@@ -12,7 +12,7 @@
     }
   },
   "devDependencies": {
-    "mod-d": "^1.0.0",
+    "mod-d": "^3.0.1",
     "mod-g": "^2.1.0"
   },
   "dependencies": {
