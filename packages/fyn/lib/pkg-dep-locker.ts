@@ -5,7 +5,7 @@ import assert from "assert";
 import Fs from "./util/file-ops";
 import _ from "lodash";
 import chalk from "chalk";
-import { simpleCompare as simpleSemverCompare, isLocalHard } from "./util/semver";
+import { simpleCompare as simpleSemverCompare, isLocalHard, unlocalify } from "./util/semver";
 import Semver from "semver";
 import Yaml from "yamljs";
 import sortObjKeys from "./util/sort-obj-keys";
@@ -470,7 +470,16 @@ class PkgDepLocker {
     // non-semver specs (url/git/file/tag) can't be checked here - don't flag them
     if (!Semver.validRange(spec)) return true;
 
-    return versions.some(v => Semver.valid(v) && Semver.satisfies(v, spec));
+    //
+    // A fynlocal version carries a `-fynlocal_h<hash>` suffix, which is not valid semver at all
+    // (`_` is illegal in a prerelease identifier). Comparing it raw makes Semver.valid() return
+    // null for every locally linked dep, so the lock gets declared corrupt and re-resolved from
+    // the registry for no reason. Compare against the base version instead.
+    //
+    return versions.some(v => {
+      const base = unlocalify(v);
+      return Semver.valid(base) && Semver.satisfies(base, spec);
+    });
   }
 
   /**

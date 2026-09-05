@@ -96,6 +96,42 @@ describe("pkg-dep-locker", function() {
       expect(makeLocker(lock).convert({ name: "@sentry/react" })).to.equal(false);
     });
 
+    it("convert() accepts a dep satisfied by a fynlocal version (FPM-110)", () => {
+      // A locally linked dep is recorded as `<version>-fynlocal_h<hash>`, which is not valid
+      // semver - `_` is illegal in a prerelease identifier. Comparing it raw made every local
+      // link look like lock corruption, so the entry was discarded and re-resolved from the
+      // registry. The range key here is a path, mirroring the real lock, so the rangeMap
+      // shortcut deliberately does not rescue it.
+      const lock = {
+        "@sentry/react": {
+          _: { "^10.44.0": "10.49.0" },
+          "10.49.0": { $: 0, _: "react.tgz", dependencies: { "@sentry/core": "^10.44.0" } }
+        },
+        "@sentry/core": {
+          _: { "../../_w/core": "10.49.0-fynlocal_h1a2b3c" },
+          "10.49.0-fynlocal_h1a2b3c": { $: 0, _: "core.tgz" }
+        }
+      };
+      const locked = makeLocker(lock).convert({ name: "@sentry/react" });
+      expect(locked).to.be.an("object");
+      expect(locked.versions).to.have.property("10.49.0");
+    });
+
+    it("convert() still rejects a fynlocal version that misses the range (FPM-110)", () => {
+      // the fix must only unwrap the suffix, not stop checking - 9.x cannot satisfy ^10.44.0
+      const lock = {
+        "@sentry/react": {
+          _: { "^10.44.0": "10.49.0" },
+          "10.49.0": { $: 0, _: "react.tgz", dependencies: { "@sentry/core": "^10.44.0" } }
+        },
+        "@sentry/core": {
+          _: { "../../_w/core": "9.1.0-fynlocal_h1a2b3c" },
+          "9.1.0-fynlocal_h1a2b3c": { $: 0, _: "core.tgz" }
+        }
+      };
+      expect(makeLocker(lock).convert({ name: "@sentry/react" })).to.equal(false);
+    });
+
     it("convert() rejects an entry with a non-semver version key", () => {
       const lock = {
         "@sentry/react": {
