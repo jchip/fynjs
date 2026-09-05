@@ -4,7 +4,7 @@
   "private": true,
   "description": "Managing NodeJS application configuration",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.18.0"
   },
   "type": "module",
   "types": "./dist/index.d.ts",

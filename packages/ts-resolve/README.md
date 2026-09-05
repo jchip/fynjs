@@ -53,4 +53,7 @@ JSX is not supported - node cannot strip it. This repo has no `.tsx` sources.
 
 ## Requirements
 
-Node >= 22.15, for the synchronous in-thread `module.registerHooks` API.
+Node >= 22.18, for two reasons: the synchronous in-thread `module.registerHooks` API
+(node 22.15), and node's native TypeScript type-stripping being on by default (node
+22.18) so that `--import @fynjs/ts-resolve/register.ts` can load at all. Below 22.18
+the hook's own entry point cannot be read.

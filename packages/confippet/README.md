@@ -102,7 +102,7 @@ config object: `$(path)` to read a value, and `_$` for `use`, `defaults`,
 
 ## Differences from electrode-confippet
 
-- **ESM** with TypeScript declarations, Node >= 22.12. Upstream is CJS with
+- **ESM** with TypeScript declarations, Node >= 22.18. Upstream is CJS with
   `export =`. `require()` still works — Node supports requiring ESM.
 - **`js-yaml` on the current major** instead of the EOL 3.x line. Upstream
   already called `load`, not the removed `safeLoad`, so behavior is unchanged.

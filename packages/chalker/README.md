@@ -126,7 +126,7 @@ Set the default colors library. By default, `chalker` loads `chalk` first and fa
 [ansi-colors].
 
 > `chalker` is published as an ESM-only package (`"type": "module"`). It can still be loaded
-> from CommonJS with `require("chalker")` on Node >=22.12, but since `require()` of an ESM
+> from CommonJS with `require("chalker")` on Node >=22.18, but since `require()` of an ESM
 > module returns the module's namespace object, you need to access `.default`:
 >
 > ```js

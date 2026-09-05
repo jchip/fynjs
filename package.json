@@ -6,7 +6,7 @@
   "homepage": "https://github.com/jchip/fynjs",
   "private": true,
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "test": "fynpo run test --stream --ignore ignore-walk npm-packlist",

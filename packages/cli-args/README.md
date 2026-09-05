@@ -796,7 +796,7 @@ npm install @fynjs/cli-args
 
 **Requirements:**
 
-- Node.js >= 22.12
+- Node.js >= 22.18
 - ESM or CommonJS (both supported)
 
 # Interface

@@ -29,7 +29,7 @@ console.log(server.info.port);
 await server.close();
 ```
 
-The package is ESM, and Node >= 22.12 can `require()` it directly, so CJS test
+The package is ESM, and Node >= 22.18 can `require()` it directly, so CJS test
 fixtures work too:
 
 ```js

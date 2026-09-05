@@ -30,7 +30,7 @@ Everything lives in [`packages/`](packages) and is published independently.
 
 ## Development
 
-Requires node.js `>=22.12.0` and [fyn] + [fynpo] installed globally.
+Requires node.js `>=22.18.0` and [fyn] + [fynpo] installed globally.
 
 ```sh
 npm install -g fyn fynpo   # once
