@@ -1,7 +1,7 @@
 import { ClapNode } from "./clap-node.js";
 import { OptionBase, optUnknown } from "./option-base.js";
-import { OptionMatch } from "./options.js";
-import { OptionSource } from "./node-generator.js";
+import type { OptionMatch } from "./options.js";
+import type { OptionSource } from "./node-generator.js";
 
 /**
  * Represents an option node in the command-line argument parser.

@@ -1,5 +1,5 @@
 import { resolveNpmCmd } from "./resolve-npm-cmd.js";
-import { quote, relative } from "./utils.js";
+import { quote, relative, unquote } from "./utils.js";
 export { quote, relative, unquote } from "./utils.js";
 export { resolveNpmCmd } from "./resolve-npm-cmd.js";
 const RESOLVE_CACHE = {};

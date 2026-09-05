@@ -1,4 +1,4 @@
-import { PkgInfo, CheckResult } from "check-pkg-new-version-engine";
+import type { PkgInfo, CheckResult } from "check-pkg-new-version-engine";
 import semver from "semver";
 
 /**

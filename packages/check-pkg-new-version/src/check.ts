@@ -1,7 +1,7 @@
 import { internalCheckIsNewer } from "./check-is-newer.js";
 import { internalFetchJSON } from "./fetch-json.js";
 import { getNpmRcConfig } from "./npm-config.js";
-import { CheckNewVersionOptions, checkPkgNewVersionEngine } from "check-pkg-new-version-engine";
+import { type CheckNewVersionOptions, checkPkgNewVersionEngine } from "check-pkg-new-version-engine";
 
 /**
  * Check package new version using internal fetchDistTags and notify callback

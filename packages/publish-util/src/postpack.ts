@@ -1,6 +1,6 @@
 import * as Path from "path";
 import * as Fs from "fs/promises";
-import { getPackInfo, metaFileOf, writePkgFile, SaveMeta } from "./utils.js";
+import { getPackInfo, metaFileOf, writePkgFile, type SaveMeta } from "./utils.js";
 
 /**
  * Restore the manifest prepack saved.

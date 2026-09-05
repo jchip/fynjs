@@ -1,6 +1,6 @@
 import * as xaa from "xaa";
-import { promisify, PromisifyOptions } from "./promisify.js";
-import { promisifyAll, PromisifyAllOptions } from "./promisify-all.js";
+import { promisify, type PromisifyOptions } from "./promisify.js";
+import { promisifyAll, type PromisifyAllOptions } from "./promisify-all.js";
 import { Disposer } from "./disposer.js";
 import { using } from "./using.js";
 import { isPromise, triggerUncaughtException, toArray } from "./util.js";

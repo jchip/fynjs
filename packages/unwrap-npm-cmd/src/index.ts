@@ -1,4 +1,4 @@
-import { resolveNpmCmd, ResolveResult } from "./resolve-npm-cmd.js";
+import { resolveNpmCmd, type ResolveResult } from "./resolve-npm-cmd.js";
 import { quote, relative, unquote } from "./utils.js";
 
 export { quote, relative, unquote } from "./utils.js";

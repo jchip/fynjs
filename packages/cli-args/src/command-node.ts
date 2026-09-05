@@ -1,12 +1,12 @@
 import { ClapNode } from "./clap-node.js";
 import { CommandBase } from "./command-base.js";
-import { CommandMeta } from "./command-meta.js";
+import type { CommandMeta } from "./command-meta.js";
 import { OptionNode } from "./option-node.js";
-import { ClapNodeGenerator, OptionSource } from "./node-generator.js";
+import { ClapNodeGenerator, type OptionSource } from "./node-generator.js";
 import { camelCase, isThenable } from "./xtil.js";
 import { _PARENT, _ASYNC_EXEC } from "./symbols.js";
 import { isRootCommand } from "./base.js";
-import { ParseResult } from "./nix-clap.js";
+import type { ParseResult } from "./nix-clap.js";
 
 /**
  * Object representation for an instance of a command on the CLI

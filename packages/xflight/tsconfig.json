@@ -5,6 +5,7 @@
     // silently raising it. Turning it on is worthwhile, but is its own piece of work.
     "strict": false,
     "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
     "outDir": "dist",
     // TS7 (TS5011) requires this to be explicit; "./src" is the same common source
     // directory TS inferred before, so the emitted layout is unchanged.

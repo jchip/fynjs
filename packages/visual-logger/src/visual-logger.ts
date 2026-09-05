@@ -1,6 +1,6 @@
 import * as util from "util";
 import chalk from "chalk";
-import { defaultOutput, OutputInterface } from "./default-output.js";
+import { defaultOutput, type OutputInterface } from "./default-output.js";
 
 export const Levels = {
   debug: 10,

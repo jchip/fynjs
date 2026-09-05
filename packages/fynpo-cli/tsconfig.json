@@ -5,6 +5,10 @@
     // silently raising it. Turning it on is worthwhile, but is its own piece of work.
     "strict": false,
     "skipLibCheck": true,
+    // verbatimModuleSyntax makes tsc flag type names left in value imports. Node's
+    // type-stripping is not type-aware, so such a name survives into the running JS
+    // and throws "does not provide an export named ...".
+    "verbatimModuleSyntax": true,
     "outDir": "dist",
     // TS7 (TS5011) requires this to be explicit; "./bin" is the same common source
     // directory TS inferred before, so the emitted layout is unchanged.

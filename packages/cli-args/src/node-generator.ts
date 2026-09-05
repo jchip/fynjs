@@ -1,7 +1,7 @@
 import assert from "assert";
 import {
-  ArgInfo,
-  BaseSpec,
+  type ArgInfo,
+  type BaseSpec,
   CliBase,
   isRootCommand,
   UnknownCliArgError,
@@ -11,9 +11,9 @@ import { ClapNode } from "./clap-node.js";
 import { CommandNode } from "./command-node.js";
 import { OptionBase } from "./option-base.js";
 import { OptionNode } from "./option-node.js";
-import { OptionMatch } from "./options.js";
+import type { OptionMatch } from "./options.js";
 import { isBoolean, toBoolean, isNumber } from "./xtil.js";
-import { CommandMatched } from "./command-base.js";
+import type { CommandMatched } from "./command-base.js";
 import { unknownCommandBase, unknownCommandBaseNoOptions } from "./command-base.js";
 import { _PARENT } from "./symbols.js";
 

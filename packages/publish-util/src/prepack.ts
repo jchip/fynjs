@@ -7,9 +7,9 @@ import {
   keepStandardFields,
   renameFromObj,
   writePkgFile,
-  ExtractSpec,
-  RemoveSpec,
-  RenameSpec,
+  type ExtractSpec,
+  type RemoveSpec,
+  type RenameSpec,
 } from "./utils.js";
 import _ from "lodash";
 

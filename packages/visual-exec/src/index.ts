@@ -1,9 +1,9 @@
 export {
   VisualExec,
-  VisualExecOptions,
-  ExecOutput,
-  ExecErrorContext,
-  VisualExecError,
+  type VisualExecOptions,
+  type ExecOutput,
+  type ExecErrorContext,
+  type VisualExecError,
   parsers,
   jsonLinesParser,
   keyValueParser

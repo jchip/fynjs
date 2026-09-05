@@ -1,6 +1,6 @@
 
 import { isCI } from "ci-info";
-import { CheckNewVersionOptions, NpmConfig, PkgInfo } from "./types.js";
+import type { CheckNewVersionOptions, NpmConfig, PkgInfo } from "./types.js";
 import os from "os";
 import Path from "path";
 import { promises as Fs } from "fs";

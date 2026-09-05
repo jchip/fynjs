@@ -1,6 +1,6 @@
 import assert from "assert";
 import { CommandBase } from "./command-base.js";
-import { OptionBase, OptionSpec } from "./option-base.js";
+import { OptionBase, type OptionSpec } from "./option-base.js";
 import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.js";
 
 /**

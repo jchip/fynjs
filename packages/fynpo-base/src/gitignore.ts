@@ -1,7 +1,7 @@
 import Fs from "fs";
 import Path from "path";
 
-import ignore, { Ignore } from "ignore";
+import ignore, { type Ignore } from "ignore";
 
 //
 // Gitignore matching, used for two separate things (FPO-17):

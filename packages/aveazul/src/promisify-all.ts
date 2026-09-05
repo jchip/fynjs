@@ -1,4 +1,4 @@
-import { promisify, PromisifyOptions } from "./promisify.js";
+import { promisify, type PromisifyOptions } from "./promisify.js";
 import { isIdentifier, isClass, isPromisified, getObjectDataKeys } from "./util.js";
 
 const defaultSuffix = "Async";

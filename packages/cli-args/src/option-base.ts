@@ -1,4 +1,4 @@
-import { BaseSpec, CliBase } from "./base.js";
+import { type BaseSpec, CliBase } from "./base.js";
 import { dup, prefixOption } from "./xtil.js";
 
 export const SUPPORT_TYPES = ["count", "string", "number", "float", "boolean"];

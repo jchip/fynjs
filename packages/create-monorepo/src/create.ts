@@ -15,7 +15,7 @@ const cjsRequire = createRequire(import.meta.url);
 import { loadCk } from "./ck.js";
 import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils.js";
 import { prepareFynpoDir, checkDir } from "./prep-fynpo-dir.js";
-import { ParsedOpts } from "./interfaces.js";
+import type { ParsedOpts } from "./interfaces.js";
 import { isGitInitialized, initializeGitRepo } from "./initialize-git.js";
 
 const dirname = Path.dirname(fileURLToPath(import.meta.url));

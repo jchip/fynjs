@@ -1,4 +1,4 @@
-import { OutputInterface } from "./default-output.js";
+import { type OutputInterface } from "./default-output.js";
 export declare const Levels: {
     readonly debug: 10;
     readonly verbose: 20;

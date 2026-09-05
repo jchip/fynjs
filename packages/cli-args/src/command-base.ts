@@ -1,7 +1,7 @@
-import { BaseSpec, CliBase, isRootCommand } from "./base.js";
+import { type BaseSpec, CliBase, isRootCommand } from "./base.js";
 import { CommandNode } from "./command-node.js";
-import { NixClapConfig, ParseResult } from "./nix-clap.js";
-import { GroupOptionSpec, Options } from "./options.js";
+import type { NixClapConfig, ParseResult } from "./nix-clap.js";
+import { type GroupOptionSpec, Options } from "./options.js";
 import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.js";
 
 /**

@@ -1,4 +1,4 @@
-import { CheckResult, PkgInfo } from "./types.js";
+import type { CheckResult, PkgInfo } from "./types.js";
 import semver from "semver";
 
 /** what npm calls the current release when no tag is asked for */

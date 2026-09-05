@@ -1,4 +1,4 @@
-import { ExtractSpec, RemoveSpec, RenameSpec } from "./utils.js";
+import { type ExtractSpec, type RemoveSpec, type RenameSpec } from "./utils.js";
 export interface PrePackConfig {
     rename?: RenameSpec;
     keep?: ExtractSpec;

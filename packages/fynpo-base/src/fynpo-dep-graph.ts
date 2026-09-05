@@ -6,7 +6,7 @@ import type { ExtrasData } from "filter-scan-dir";
 import { Minimatch } from "minimatch";
 import _ from "lodash";
 import Semver from "semver";
-import { groupMM, MMGroups } from "./minimatch-group.js";
+import { groupMM, type MMGroups } from "./minimatch-group.js";
 import { posixify } from "./util.js";
 import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";

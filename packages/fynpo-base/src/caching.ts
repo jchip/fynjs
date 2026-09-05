@@ -1,4 +1,4 @@
-import { filterScanDir, ExtrasData } from "filter-scan-dir";
+import { filterScanDir, type ExtrasData } from "filter-scan-dir";
 import { Minimatch } from "minimatch";
 import _ from "lodash";
 import Fs from "fs";
