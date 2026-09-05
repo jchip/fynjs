@@ -2,26 +2,20 @@
 
 import Path from "path";
 import Fs from "fs";
-import { execShell } from "./utils/exec-shell.js";
-import { logger } from "./logger";
-import * as utils from "./utils";
+import { execShell } from "./utils/exec-shell.ts";
+import { logger } from "./logger.ts";
+import * as utils from "./utils.ts";
 import _ from "lodash";
-import { npmRunScriptStreaming, npmRunScript } from "./npm-run-script";
+import { npmRunScriptStreaming, npmRunScript } from "./npm-run-script.ts";
 import boxen from "boxen";
 import chalk from "chalk";
-import {
-  FynpoDepGraph,
-  FynpoTopoPackages,
-  PackageDepData,
-  FynpoPackageInfo,
-  pkgInfoId,
-} from "@fynpo/base";
+import { FynpoDepGraph, type FynpoTopoPackages, type PackageDepData, type FynpoPackageInfo, pkgInfoId } from "@fynpo/base";
 import { ItemQueue } from "item-queue";
-import { TopoRunner } from "./topo-runner";
-import { PkgBuildCache } from "./caching";
+import { TopoRunner } from "./topo-runner.ts";
+import { PkgBuildCache } from "./caching.ts";
 import * as xaa from "xaa";
-import { InstallDeps } from "./install-deps";
-import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps";
+import { InstallDeps } from "./install-deps.ts";
+import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps.ts";
 
 type RunResult = { failed: boolean; exitCode: number } & Error;
 

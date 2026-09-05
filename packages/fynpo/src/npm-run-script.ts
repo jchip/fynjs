@@ -1,5 +1,5 @@
 /* copied from https://github.com/lerna/lerna/blob/main/utils/npm-run-script/npm-run-script.js */
-import { spawnStreaming, exec } from "./child-process";
+import { spawnStreaming, exec } from "./child-process.ts";
 
 const makeOpts = (pkg, reject) => {
   return {

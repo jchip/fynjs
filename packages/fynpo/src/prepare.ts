@@ -2,19 +2,19 @@
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
-import { execShell } from "./utils/exec-shell.js";
-import { logger } from "./logger";
-import { readChangelogVersions } from "./read-changelog-versions";
+import { execShell } from "./utils/exec-shell.ts";
+import { logger } from "./logger.ts";
+import { readChangelogVersions } from "./read-changelog-versions.ts";
 import Promise from "aveazul";
 import Chalk from "chalk";
 import assert from "assert";
 import semver from "semver";
-import * as utils from "./utils";
-import { checkNupdateTag, updateDep } from "./utils/update-package-versions.js";
+import * as utils from "./utils.ts";
+import { checkNupdateTag, updateDep } from "./utils/update-package-versions.ts";
 import {
   checkGitClean as gitIsClean,
   commitAndTagUpdates as commitAndTag,
-} from "./utils/git-commit-updates.js";
+} from "./utils/git-commit-updates.ts";
 import {
   printHeader,
   printSection,
@@ -23,7 +23,7 @@ import {
   printWarning,
   printNextSteps,
   printCommand,
-} from "./release-output";
+} from "./release-output.ts";
 // prepare packages for publish
 
 /**

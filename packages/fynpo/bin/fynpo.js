@@ -1,26 +1,32 @@
 #!/usr/bin/env node
 
-const Path = require("path");
-const { pathToFileURL } = require("url");
+import Path from "node:path";
+import { pathToFileURL } from "node:url";
 
 //
 // The release bundle is ESM (dist/bundle.mjs) because chalker uses top-level await to optionally
 // load ESM-only chalk, and no CJS output format can represent module-scope await.
 //
-// This file stays CJS so package.json can remain type: commonjs. main() was already async, so
-// reaching the ESM bundle costs nothing extra.
+// The package is `type: module`, so this file is ESM too. `src` is not published (files: bin,
+// dist, templates), so the TypeScript branch only ever hits in a dev checkout - installed copies
+// always fall through to the bundle. src imports carry explicit .ts specifiers, so node's own
+// type stripping loads them with no runner.
 //
+const here = import.meta.dirname;
+const importFile = async rel => {
+  const mod = await import(pathToFileURL(Path.join(here, rel)).href);
+  return mod.default || mod;
+};
+
 async function load() {
   try {
-    const dist = require("../src/index.ts");
+    const src = await importFile("../src/index.ts");
     console.log(`
 fynpo loaded from typescript source instead of the bundled source
 `);
-    return dist;
+    return src;
   } catch (err) {
-    const url = pathToFileURL(Path.join(__dirname, "../dist/bundle.mjs")).href;
-    const mod = await import(url);
-    return mod.default || mod;
+    return importFile("../dist/bundle.mjs");
   }
 }
 

@@ -1,16 +1,16 @@
-import { execShell } from "./utils/exec-shell.js";
+import { execShell } from "./utils/exec-shell.ts";
 import Path from "path";
 import Fs from "fs";
 // imported under its own name: shadowing `Promise` makes async return types invalid (FPO-41)
 import AveAzul from "aveazul";
-import { logger } from "./logger";
-import * as utils from "./utils";
+import { logger } from "./logger.ts";
+import * as utils from "./utils.ts";
 import * as _ from "lodash";
 import fyn from "fyn/bin/index.mjs";
 import shell from "shelljs";
-import { FynpoDepGraph, FynpoPackageInfo } from "@fynpo/base";
-import { TopoRunner } from "./topo-runner";
-import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps";
+import { FynpoDepGraph, type FynpoPackageInfo } from "@fynpo/base";
+import { TopoRunner } from "./topo-runner.ts";
+import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps.ts";
 import {
   printHeader,
   printSection,
@@ -20,7 +20,7 @@ import {
   printError,
   printNextSteps,
   printCommand,
-} from "./release-output";
+} from "./release-output.ts";
 
 /** a packed tarball waiting to be published, and what it holds */
 type TgzToPublish = { file: string; name: string; version: string };

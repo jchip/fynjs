@@ -4,8 +4,8 @@ import Fs from "fs";
 import Chalk from "chalk";
 import assert from "assert";
 import semver from "semver";
-import { logger } from "../logger";
-import { makePublishFilter } from "../utils";
+import { logger } from "../logger.ts";
+import { makePublishFilter } from "../utils.ts";
 
 export const checkNupdateTag = (pkg, newV, opts) => {
   const { pkgJson } = pkg;

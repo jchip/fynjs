@@ -13,28 +13,28 @@
 
 import Fs from "fs";
 import xsh from "xsh";
-import { execShell } from "./utils/exec-shell.js";
+import { execShell } from "./utils/exec-shell.ts";
 import {
   checkGitClean as gitIsClean,
   commitAndTagUpdates as commitAndTag,
-} from "./utils/git-commit-updates.js";
+} from "./utils/git-commit-updates.ts";
 import Path from "path";
 import Promise from "aveazul";
 xsh.Promise = Promise;
-xsh.envPath.addToFront(Path.join(__dirname, "../node_modules/.bin"));
+xsh.envPath.addToFront(Path.join(import.meta.dirname, "../node_modules/.bin"));
 import _ from "lodash";
-import * as utils from "./utils";
-import { logger } from "./logger";
-import { getUpdatedPackages } from "./utils/get-updated-packages";
-import { determinePackageVersions } from "./utils/get-package-version";
-import { updateChangelog } from "./utils/update-changelog-file";
-import { updatePackageVersions } from "./utils/update-package-versions";
-import { getCurrentBranch } from "./utils/get-current-branch";
+import * as utils from "./utils.ts";
+import { logger } from "./logger.ts";
+import { getUpdatedPackages } from "./utils/get-updated-packages.ts";
+import { determinePackageVersions } from "./utils/get-package-version.ts";
+import { updateChangelog } from "./utils/update-changelog-file.ts";
+import { updatePackageVersions } from "./utils/update-package-versions.ts";
+import { getCurrentBranch } from "./utils/get-current-branch.ts";
 import {
   isAnythingCommitted,
   getNewCommits,
   collateCommitsPackages,
-} from "./utils/git-list-commits";
+} from "./utils/git-list-commits.ts";
 import { FynpoDepGraph } from "@fynpo/base";
 
 export class Version {

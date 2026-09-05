@@ -2,23 +2,17 @@
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
-import { ItemQueueResult } from "item-queue";
-import { logger } from "./logger";
+import type { ItemQueueResult } from "item-queue";
+import { logger } from "./logger.ts";
 import chalk from "chalk";
-import { isCI } from "./is-ci";
-import {
-  FynpoDepGraph,
-  FynpoPackageInfo,
-  FynpoTopoPackages,
-  PackageDepData,
-  pkgInfoId,
-} from "@fynpo/base";
+import { isCI } from "./is-ci.ts";
+import { FynpoDepGraph, type FynpoPackageInfo, type FynpoTopoPackages, type PackageDepData, pkgInfoId } from "@fynpo/base";
 
-import { TopoRunner } from "./topo-runner";
-import { PkgBuildCache } from "./caching";
+import { TopoRunner } from "./topo-runner.ts";
+import { PkgBuildCache } from "./caching.ts";
 import * as xaa from "xaa";
-import { InstallDeps } from "./install-deps";
-import { checkGlobalFynVersion } from "./utils";
+import { InstallDeps } from "./install-deps.ts";
+import { checkGlobalFynVersion } from "./utils.ts";
 
 type PackageInstallInfo = {
   depData: PackageDepData;

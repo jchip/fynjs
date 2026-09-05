@@ -1,25 +1,19 @@
 import Fs from "fs";
 const pFs = Fs.promises;
 import Path from "path";
-import { logger } from "./logger";
+import { logger } from "./logger.ts";
 import _ from "lodash";
 import { cosmiconfigSync } from "cosmiconfig";
 import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
-import {
-  FynpoDepGraph,
-  FynpoPackageInfo,
-  PackageBasicInfo,
-  PackageRef,
-  resolvePackagesConfig,
-  makeGitignoreMatcher,
-} from "@fynpo/base";
+import { FynpoDepGraph, type FynpoPackageInfo, type PackageBasicInfo, PackageRef, resolvePackagesConfig, makeGitignoreMatcher } from "@fynpo/base";
 import os from "os";
-import { startMetaMemoizer } from "./meta-memoizer";
+import { createRequire } from "node:module";
+import { startMetaMemoizer } from "./meta-memoizer.ts";
 
 export const defaultTagTemplate = `fynpo-rel-{YYYY}{MM}{DD}-{COMMIT}`;
 
-const xrequire = eval("require");
+const xrequire = createRequire(import.meta.url);
 
 const optionalRequire = makeOptionalRequire(xrequire);
 
@@ -331,7 +325,9 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
     const dest = Path.join(cwd, fileName);
 
     if (commitlint) {
-      const srcTmplDir = Path.join(__dirname, "../templates");
+      // src/ and dist/bundle.mjs both sit one level under the package root, so the same
+      // `..` hop reaches templates/ whether this runs from source or from the bundle.
+      const srcTmplDir = Path.join(import.meta.dirname, "../templates");
       const src = Path.join(srcTmplDir, fileName);
       if (Fs.existsSync(src)) {
         shell.cp(src, dest);

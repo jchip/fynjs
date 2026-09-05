@@ -1,5 +1,5 @@
 import VisualLogger from "visual-logger";
-import { isCI } from "./is-ci";
+import { isCI } from "./is-ci.ts";
 
 export const logger = new VisualLogger();
 

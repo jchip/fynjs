@@ -2,11 +2,12 @@ import Promise from "aveazul";
 import Path from "path";
 import Fs from "fs";
 import { minimatch } from "minimatch";
-import { logger } from "../logger";
-import { execSync } from "../child-process";
-import { selectivePublishSubject, parsePublishedPackageNames, expandSelection } from "../utils";
+import { logger } from "../logger.ts";
+import { execSync } from "../child-process.ts";
+import { selectivePublishSubject, parsePublishedPackageNames, expandSelection } from "../utils.ts";
+import { createRequire } from "node:module";
 
-const xrequire = eval("require");
+const xrequire = createRequire(import.meta.url);
 
 export const isAnythingCommitted = (opts) => {
   const anyCommits = execSync("git", ["rev-list", "--count", "--all", "--max-count=1"], opts);

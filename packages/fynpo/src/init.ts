@@ -1,9 +1,9 @@
 
-import { execShell } from "./utils/exec-shell.js";
+import { execShell } from "./utils/exec-shell.ts";
 import fs from "fs-extra";
 import Path from "path";
-import { logger } from "./logger";
-import * as utils from "./utils";
+import { logger } from "./logger.ts";
+import * as utils from "./utils.ts";
 import _ from "lodash";
 import chalk from "chalk";
 import { optionalRequire } from "optional-require";

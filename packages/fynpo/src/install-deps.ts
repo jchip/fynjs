@@ -1,10 +1,10 @@
 import Path from "path";
 import VisualExec from "visual-exec";
-import { isCI } from "./is-ci";
+import { isCI } from "./is-ci.ts";
 import _ from "lodash";
-import { logger } from "./logger";
-import { FynpoPackageInfo } from "@fynpo/base";
-import { getFynExecutable, startFynMetaMemoizer } from "./utils";
+import { logger } from "./logger.ts";
+import type { FynpoPackageInfo } from "@fynpo/base";
+import { getFynExecutable, startFynMetaMemoizer } from "./utils.ts";
 
 export class InstallDeps {
   fynOptArgs: string[];

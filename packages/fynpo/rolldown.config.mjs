@@ -88,6 +88,7 @@ const evalRequirePlugin = {
   }
 };
 
+// stubs are CJS (module.exports); the package is `type: module`, so they must be .cjs
 const stub = name => Path.resolve(`stubs/${name}`);
 
 //
@@ -120,31 +121,31 @@ export default defineConfig({
     extensions: [".tsx", ".ts", ".js"],
     symlinks: true,
     alias: {
-      xml2js: stub("xml2js.js"),
-      "iconv-lite": stub("iconv-lite.js"),
-      "./iconv-loader": stub("iconv-loader.js"),
-      debug: stub("debug.js"),
+      xml2js: stub("xml2js.cjs"),
+      "iconv-lite": stub("iconv-lite.cjs"),
+      "./iconv-loader": stub("iconv-loader.cjs"),
+      debug: stub("debug.cjs"),
       // the real require-at uses eval("require"), which makes node unable to determine the
       // module format of an ESM bundle that also has top-level await
-      "require-at": stub("require-at.js"),
+      "require-at": stub("require-at.cjs"),
       // dedupe to the top-level optional-require 2.x: older nested copies still have
       // eval("require"), which breaks the ESM bundle the same way
       "optional-require": fileURLToPath(import.meta.resolve("optional-require")),
-      "@commitlint/resolve-extends": stub("resolve-extends.js"),
-      "./parser-flow.js": stub("parser-flow.js"),
-      "./parser-typescript.js": stub("parser-typescript.js"),
-      "./third-party.js": stub("parser-typescript.js"),
-      "./parser-angular.js": stub("parser-flow.js"),
-      "./parser-babel.js": stub("parser-flow.js"),
-      "./parser-espree.js": stub("parser-flow.js"),
-      "./parser-glimmer.js": stub("parser-flow.js"),
-      "./parser-graphql.js": stub("parser-flow.js"),
-      "./parser-html.js": stub("parser-flow.js"),
-      "./parser-markdown.js": stub("parser-flow.js"),
-      "./parser-meriyah.js": stub("parser-flow.js"),
-      "./parser-postcss.js": stub("parser-flow.js"),
-      "./parser-yaml.js": stub("parser-flow.js"),
-      "util/types": stub("util-types.js")
+      "@commitlint/resolve-extends": stub("resolve-extends.cjs"),
+      "./parser-flow.js": stub("parser-flow.cjs"),
+      "./parser-typescript.js": stub("parser-typescript.cjs"),
+      "./third-party.js": stub("parser-typescript.cjs"),
+      "./parser-angular.js": stub("parser-flow.cjs"),
+      "./parser-babel.js": stub("parser-flow.cjs"),
+      "./parser-espree.js": stub("parser-flow.cjs"),
+      "./parser-glimmer.js": stub("parser-flow.cjs"),
+      "./parser-graphql.js": stub("parser-flow.cjs"),
+      "./parser-html.js": stub("parser-flow.cjs"),
+      "./parser-markdown.js": stub("parser-flow.cjs"),
+      "./parser-meriyah.js": stub("parser-flow.cjs"),
+      "./parser-postcss.js": stub("parser-flow.cjs"),
+      "./parser-yaml.js": stub("parser-flow.cjs"),
+      "util/types": stub("util-types.cjs")
     }
   },
   // Syntax lowering target. This belongs on `transform`, not `output` - rolldown rejects

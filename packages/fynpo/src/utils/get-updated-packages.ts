@@ -1,6 +1,6 @@
 
-import { logger } from "../logger";
-import { execSync } from "../child-process";
+import { logger } from "../logger.ts";
+import { execSync } from "../child-process.ts";
 import { minimatch } from "minimatch";
 import Path from "path";
 import slash from "slash";
@@ -12,7 +12,7 @@ import {
   makePublishFilter,
   makeForeignRepoDetector,
   expandSelection,
-} from "../utils";
+} from "../utils.ts";
 
 const ifTagExists = (opts) => {
   let result = false;

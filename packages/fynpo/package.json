@@ -1,6 +1,7 @@
 {
   "name": "fynpo",
   "version": "3.0.5",
+  "type": "module",
   "description": "fynpo is a zero setup monorepo manager for node.js",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fynpo",
   "scripts": {
@@ -11,7 +12,7 @@
     "prepublishOnly": "xrun --serial [build, test]",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack",
-    "start": "tsx src/fynpo.ts"
+    "start": "node src/fynpo.ts"
   },
   "keywords": [
     "lerna",
@@ -116,7 +117,6 @@
     "publish-util": "^3.0.0",
     "rolldown": "^1.2.6",
     "source-map-support": "^0.5.19",
-    "tsx": "^4.20.6",
     "typedoc": "^0.28.14",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"

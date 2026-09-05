@@ -1,10 +1,10 @@
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
-import { logger } from "./logger";
-import { isCI } from "./is-ci";
+import { logger } from "./logger.ts";
+import { isCI } from "./is-ci.ts";
 import npmPacklist from "npm-packlist";
-import { FynpoPackageInfo, PackageDepData } from "@fynpo/base";
+import type { FynpoPackageInfo, PackageDepData } from "@fynpo/base";
 import envPaths from "env-paths";
 import { request, stream } from "undici";
 import { caching } from "@fynpo/base";

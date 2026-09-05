@@ -3,9 +3,10 @@ import Path from "path";
 import Fs from "fs";
 import semver from "semver";
 import _ from "lodash";
-import { makePublishFilter } from "../utils";
+import { makePublishFilter } from "../utils.ts";
+import { createRequire } from "node:module";
 
-const xrequire = eval("require");
+const xrequire = createRequire(import.meta.url);
 
 const getTaggedVersion = (pkg, fynpoRc) => {
   const newVer = pkg.newVersion;

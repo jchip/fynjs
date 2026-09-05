@@ -23,7 +23,10 @@
     "noImplicitReturns": true,
     "alwaysStrict": true,
     "strictFunctionTypes": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    // source is authored with explicit `.ts` relative specifiers so node can run it
+    // directly with no loader; this lets tsc accept them and still emit `.js`.
+    "rewriteRelativeImportExtensions": true
   },
   "include": ["src"]
 }

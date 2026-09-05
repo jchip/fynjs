@@ -22,7 +22,7 @@
 
 import Fs from "fs";
 import Path from "path";
-import { PackageDepData } from "@fynpo/base";
+import type { PackageDepData } from "@fynpo/base";
 
 /**
  * Manifest fields a consumer actually resolves against.

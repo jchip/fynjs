@@ -2,25 +2,26 @@
 
 import Path from "path";
 import { NixClap } from "@fynjs/cli-args";
-import { Bootstrap } from "./bootstrap";
-import { Prepare } from "./prepare";
-import Changelog from "./update-changelog";
-import Publish from "./publish";
-import { Run } from "./run";
-import { Init } from "./init";
-import { Updated } from "./updated";
-import { Commitlint } from "./commitlint";
-import { Version } from "./version";
+import { Bootstrap } from "./bootstrap.ts";
+import { Prepare } from "./prepare.ts";
+import Changelog from "./update-changelog.ts";
+import Publish from "./publish.ts";
+import { Run } from "./run.ts";
+import { Init } from "./init.ts";
+import { Updated } from "./updated.ts";
+import { Commitlint } from "./commitlint.ts";
+import { Version } from "./version.ts";
 import {
   FynpoDepGraph,
   outOfScopePackages,
 } from "@fynpo/base";
-import { logger } from "./logger";
-import * as utils from "./utils";
+import { logger } from "./logger.ts";
+import * as utils from "./utils.ts";
 import Fs from "fs";
 import _ from "lodash";
+import { createRequire } from "node:module";
 
-const xrequire = eval("require");
+const xrequire = createRequire(import.meta.url);
 
 
 /**
@@ -353,7 +354,7 @@ const execLinting = (cmd, _parsed) => {
   return new Commitlint(opts).exec();
 };
 
-const myPkg = xrequire(Path.join(__dirname, "../package.json"));
+const myPkg = xrequire(Path.join(import.meta.dirname, "../package.json"));
 
 //
 // Top-level CLI options, shared across sub-commands via each entry's `allowCmd`.

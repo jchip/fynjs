@@ -1,5 +1,5 @@
-import { logger } from "../logger";
-import * as utils from "../utils";
+import { logger } from "../logger.ts";
+import * as utils from "../utils.ts";
 
 /** Runs a shell command in the command's cwd - each command class passes its own `_sh`. */
 export type ShellRunner = (command: string) => any;

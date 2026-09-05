@@ -1,8 +1,8 @@
 
 import _ from "lodash";
-import * as utils from "../utils";
+import * as utils from "../utils.ts";
 import semver from "semver";
-import { logger } from "../logger";
+import { logger } from "../logger.ts";
 
 const findVersion = (name, updateType, collated) => {
   const types = ["patch", "minor", "major"];

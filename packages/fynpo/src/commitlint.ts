@@ -1,9 +1,9 @@
 /* reuses some of the awesome work from https://github.com/conventional-changelog/commitlint */
 
 import stdin from "get-stdin";
-import * as utils from "./utils";
+import * as utils from "./utils.ts";
 import Path from "path";
-import { logger } from "./logger";
+import { logger } from "./logger.ts";
 import _ from "lodash";
 import resolveFrom from "resolve-from";
 import resolveGlobal from "resolve-global";
@@ -11,8 +11,9 @@ import resolveExtends from "@commitlint/resolve-extends";
 import executeRule from "@commitlint/execute-rule";
 import lint from "@commitlint/lint";
 import read from "@commitlint/read";
+import { createRequire } from "node:module";
 
-const xrequire = eval("require");
+const xrequire = createRequire(import.meta.url);
 
 export interface LoadOptions {
   cwd?: string;
@@ -103,7 +104,7 @@ export class Commitlint {
   loadFormatter(config, options) {
     const moduleName = options.format || config.formatter || "@commitlint/format";
     const modulePath =
-      resolveFrom.silent(__dirname, moduleName) ||
+      resolveFrom.silent(import.meta.dirname, moduleName) ||
       resolveFrom.silent(options.cwd, moduleName) ||
       resolveGlobal.silent(moduleName);
 

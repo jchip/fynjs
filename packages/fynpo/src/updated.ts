@@ -1,7 +1,7 @@
 /* reuses some of the logics from https://github.com/lerna/lerna/blob/main/commands/changed/index.js */
-import * as utils from "./utils";
-import { logger } from "./logger";
-import { getUpdatedPackages } from "./utils/get-updated-packages";
+import * as utils from "./utils.ts";
+import { logger } from "./logger.ts";
+import { getUpdatedPackages } from "./utils/get-updated-packages.ts";
 import _ from "lodash";
 import { FynpoDepGraph } from "@fynpo/base";
 
