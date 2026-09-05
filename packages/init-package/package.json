@@ -45,7 +45,6 @@
     "@types/semver": "^7.5.8",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
-    "tsx": "^4.19.4",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
