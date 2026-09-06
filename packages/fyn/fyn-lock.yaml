@@ -53,7 +53,7 @@ $pkg:
   rolldown: ^1.2.6
   typescript: ^7.0.2
   vitest: ^4.1.11
-  which: ^2.0.2
+  which: ^6.0.1
   xstdout: ^0.1.1
 '@babel/code-frame':
  _latest: 8.0.0
@@ -3759,7 +3759,7 @@ unwrap-npm-cmd:
   $: local
   _: ../unwrap-npm-cmd
   dependencies:
-   which: ^7.0.0
+   which: ^6.0.1
 util-deprecate:
  _latest: 1.0.2
  _:
@@ -3890,15 +3890,21 @@ walk-up-path:
 which:
  _latest: 7.0.0
  _:
-  '^2.0.1,^2.0.2': 2.0.2
+  ^2.0.1: 2.0.2
+  ^6.0.1: 6.0.1
   ^7.0.0: 7.0.0
  7.0.0:
   $: sha512-RancgH2dmbLdHl6LRhEqvklWMgl/Hdnun0Y90KhBOLkMefg8Qa7/Zel8Sm+8HEcP6DEjzsWzpkuBQEZok58isA==
   _: 'https://registry.npmjs.org/which/-/which-7.0.0.tgz'
   dependencies:
    isexe: ^4.0.0
- 2.0.2:
+ 6.0.1:
   top: 1
+  $: sha512-oGLe46MIrCRqX7ytPUf66EAYvdeMIZYn3WaocqqKZAxrBpkqHfL/qvTyJ/bTk5+AqHCjXmrv3CEWgy368zhRUg==
+  _: 'https://registry.npmjs.org/which/-/which-6.0.1.tgz'
+  dependencies:
+   isexe: ^4.0.0
+ 2.0.2:
   $: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==
   _: 'https://registry.npmjs.org/which/-/which-2.0.2.tgz'
   dependencies:
