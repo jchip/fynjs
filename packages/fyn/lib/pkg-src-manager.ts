@@ -259,7 +259,7 @@ async function checkGitRepoHasNewCommits(
   gitUrl: string,
   ref: string | undefined,
   cachedCommitHash: string | null
-): Promise<boolean | null> {
+): NativePromise<boolean | null> {
   if (!cachedCommitHash) return true; // No cache, assume new commits
 
   try {
@@ -710,7 +710,7 @@ class PkgSrcManager {
     return Boolean(this._meta[item.name]);
   }
 
-  pkgPreperInstallDep(dir: string, displayTitle: string): Promise<void> {
+  pkgPreperInstallDep(dir: string, displayTitle: string): NativePromise<void> {
     const node = process.env.NODE || process.execPath;
     const fyn = Path.join(__dirname, "../bin/fyn.mjs");
     return new VisualExec({
@@ -791,7 +791,7 @@ class PkgSrcManager {
       });
   }
 
-  async _prepPkgDirForManifest(item: FetchItem, manifest: PkgInfo, dir: string): Promise<Packument> {
+  async _prepPkgDirForManifest(item: FetchItem, manifest: PkgInfo, dir: string): NativePromise<Packument> {
     //
     // The full git url with commit hash should be available in manifest._resolved
     // use that as cache key to lookup cached manifest
@@ -1320,12 +1320,12 @@ class PkgSrcManager {
     return `${pkgInfo.name}@${pkgInfo.version}`;
   }
 
-  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgInfo): Promise<string | Readable> {
+  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgInfo): NativePromise<string | Readable> {
     const { central, copy } = this._fyn;
 
     const tarId = this.tarballFetchId(pkgInfo);
 
-    const tarStream = async (): Promise<Readable> => {
+    const tarStream = async (): NativePromise<Readable> => {
       return integrity && (await cacache.get.hasContent(this._cacheDir, integrity))
         ? this.cacacheTarballStream(integrity)
         : this.pacoteTarballStream(tarId, pkgInfo, integrity);

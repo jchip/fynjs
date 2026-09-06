@@ -9,7 +9,7 @@ const { getGlobalNodeModules } = fynTil;
 
 let nodeGypBinPath;
 
-function _searchNodeGypBin({ npmDir, searchPath }) {
+function _searchNodeGypBin({ npmDir, searchPath }: { npmDir: string; searchPath?: string }) {
   if (!nodeGypBinPath) {
     nodeGypBinPath = [
       searchPath,

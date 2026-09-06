@@ -337,7 +337,7 @@ class PkgOptResolver {
 
     const checkPkg = (
       path: string
-    ): Promise<false | { path: string; pkg: Record<string, unknown> }> => {
+    ): NativePromise<false | { path: string; pkg: Record<string, unknown> }> => {
       return readPkgJson(path, true).then((pkg: Record<string, unknown>) => {
         return semverUtil.equal(pkg.version as string, version) && { path, pkg };
       });
@@ -345,7 +345,7 @@ class PkgOptResolver {
 
     const fvInstalledPath = this._fyn.getInstalledPkgDir(name, version);
 
-    const linkLocalPackage = async (): Promise<
+    const linkLocalPackage = async (): NativePromise<
       false | { path: string; pkg: Record<string, unknown> }
     > => {
       const meta = data.meta;
@@ -495,7 +495,7 @@ class PkgOptResolver {
     return processCheckResult(promise);
   }
 
-  resolve(): Promise<void> {
+  resolve(): NativePromise<void> {
     this._optPkgCount = 0;
     this._resolving = true;
     this.start();

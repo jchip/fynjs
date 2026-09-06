@@ -162,7 +162,7 @@ class PkgInstaller {
     this._localLinks = {};
   }
 
-  async install(): Promise<void> {
+  async install(): NativePromise<void> {
     this._stepTime = Date.now();
 
     this.timeCheck("beginning");
@@ -200,7 +200,7 @@ class PkgInstaller {
     });
   }
 
-  async _linkLocalPkg(depInfo: DepInfo): Promise<void> {
+  async _linkLocalPkg(depInfo: DepInfo): NativePromise<void> {
     // avoid linking multiple times
     if (depInfo.linkLocal) {
       return;
@@ -222,7 +222,7 @@ class PkgInstaller {
     }
   }
 
-  async _savePkgJson(log?: boolean): Promise<void> {
+  async _savePkgJson(log?: boolean): NativePromise<void> {
     //
     // TODO: skip modifying package.json in node_modules
     // this was done to follow npm behavior of adding some extra fields
@@ -298,7 +298,7 @@ class PkgInstaller {
    *
    * @param pkgJsonFp - installed package.json to detach
    */
-  async _detachPkgJsonLink(pkgJsonFp: string): Promise<void> {
+  async _detachPkgJsonLink(pkgJsonFp: string): NativePromise<void> {
     const stat = await xaa.try(() => Fs.stat(pkgJsonFp));
     if (!stat || stat.nlink < 2) {
       return;
@@ -338,12 +338,12 @@ class PkgInstaller {
     return optRequests.length === depInfo.requests.length; // all of them trace from opt
   }
 
-  async _removeDepsOf(depInfo: DepInfo, originId: string): Promise<void> {
+  async _removeDepsOf(depInfo: DepInfo, originId: string): NativePromise<void> {
     if (depInfo._removingDeps || !originId) return;
     depInfo._removingDeps = true;
 
     const dataPackages = this._fyn._data.getPkgsData() as InstallerPkgsData;
-    const doRemove = async (section: Record<string, { resolved: string }> | undefined): Promise<void> => {
+    const doRemove = async (section: Record<string, { resolved: string }> | undefined): NativePromise<void> => {
       if (!section) return;
       for (const name in section) {
         const pkgData = dataPackages[name];
@@ -407,7 +407,7 @@ class PkgInstaller {
     await doRemove(depInfo.res?.opt);
   }
 
-  async _removeFailedOptional(depInfo: DepInfo, causeId?: string): Promise<void> {
+  async _removeFailedOptional(depInfo: DepInfo, causeId?: string): NativePromise<void> {
     if (depInfo._removing) return;
     depInfo._removing = true;
     // - reverse search each request path to the first opt pkg
@@ -468,7 +468,7 @@ class PkgInstaller {
     this._stepTime = tmp;
   }
 
-  async _runPreInstallScripts(depInfo: DepInfo): Promise<void> {
+  async _runPreInstallScripts(depInfo: DepInfo): NativePromise<void> {
     return runNpmScript({
       appDir: this._fyn.cwd,
       fyn: this._fyn,
@@ -482,7 +482,7 @@ class PkgInstaller {
     });
   }
 
-  async _runPostInstallScripts(depInfo: DepInfo): Promise<void> {
+  async _runPostInstallScripts(depInfo: DepInfo): NativePromise<void> {
     const integrity = fynTil.distIntegrity(depInfo.dist);
     const centralBeforeSha =
       this._fyn.central &&
@@ -623,7 +623,7 @@ class PkgInstaller {
     );
   }
 
-  async _installLocalExports(): Promise<void> {
+  async _installLocalExports(): NativePromise<void> {
     const pkgsData = this._data.getPkgsData() as InstallerPkgsData;
     const config = resolveLocalExportsConfig(this._fyn._pkg);
     const manifest = await makeLocalExportsManifest({
@@ -639,7 +639,7 @@ class PkgInstaller {
     this._fyn.setLocalExports(manifest);
   }
 
-  async _buildLocalPkg(depInfo: DepInfo): Promise<void> {
+  async _buildLocalPkg(depInfo: DepInfo): NativePromise<void> {
     if (this._fyn._options.buildLocal && this._fyn._localPkgBuilder) {
       const itemRes = await this._fyn._localPkgBuilder.waitForItem(depInfo.dir!);
       if (itemRes && itemRes.error) {
@@ -656,7 +656,7 @@ class PkgInstaller {
     }
   }
 
-  async _gatherPkg(depInfo: DepInfo): Promise<void> {
+  async _gatherPkg(depInfo: DepInfo): NativePromise<void> {
     const { name, version } = depInfo;
     if (depInfo.local) {
       this.timeCheck("buildLocal");
@@ -930,13 +930,13 @@ class PkgInstaller {
     return this._binLinker.clearExtras();
   }
 
-  async _initFvVersions(): Promise<void> {
+  async _initFvVersions(): NativePromise<void> {
     if (!this._fvVersions) {
       this._fvVersions = await this._fyn.loadFvVersions();
     }
   }
 
-  async _cleanOrphanedFv(): Promise<void> {
+  async _cleanOrphanedFv(): NativePromise<void> {
     for (const pkgName in this._fvVersions) {
       const versions = this._fvVersions[pkgName];
       if (versions !== null) {
@@ -945,7 +945,7 @@ class PkgInstaller {
     }
   }
 
-  async _cleanUp(scope?: string): Promise<void> {
+  async _cleanUp(scope?: string): NativePromise<void> {
     const outDir = this._fyn.getOutputDir();
     const pkgsData = this._data.getPkgsData() as InstallerPkgsData;
 
@@ -993,7 +993,7 @@ class PkgInstaller {
    *
    * @returns {*} none
    */
-  async _linkTopPackages(): Promise<void> {
+  async _linkTopPackages(): NativePromise<void> {
     // only for detail layout
     if (this._fyn.isNormalLayout) {
       return;
@@ -1045,7 +1045,7 @@ class PkgInstaller {
     }
   }
 
-  async _linkNestedPackages(depInfo: DepInfo): Promise<boolean | undefined> {
+  async _linkNestedPackages(depInfo: DepInfo): NativePromise<boolean | undefined> {
     this._fyn._depResolver.resolvePeerDep(depInfo);
     await this._depLinker.linkPackage(depInfo);
     //
@@ -1061,7 +1061,7 @@ class PkgInstaller {
     return undefined;
   }
 
-  async _cleanUpVersions(pkgName: string): Promise<void> {
+  async _cleanUpVersions(pkgName: string): NativePromise<void> {
     const kpkg = this._data.getPkgsData()[pkgName];
     const pkg = kpkg?.versions as Record<string, DepInfo> | undefined;
     const versions = this._fvVersions[pkgName];
@@ -1123,7 +1123,7 @@ class PkgInstaller {
     this._fvVersions[pkgName] = null;
   }
 
-  async _removeDir(dir: string): Promise<void | null> {
+  async _removeDir(dir: string): NativePromise<void | null> {
     try {
       const stat = await Fs.stat(dir);
       if (stat.isDirectory()) {

@@ -406,7 +406,21 @@ async function handleSourceMap({ file, destFiles, src, dest, srcFp, destFp, sour
  * @param {*} dest
  * @param {*} sym1
  */
-async function linkPackTree({ tree, src, dest, sym1, sourceMaps, isRoot = false }) {
+async function linkPackTree({
+  tree,
+  src,
+  dest,
+  sym1,
+  sourceMaps,
+  isRoot = false
+}: {
+  tree: any;
+  src: string;
+  dest: string;
+  sym1?: boolean;
+  sourceMaps?: boolean;
+  isRoot?: boolean;
+}) {
   const files = tree[SYM_FILES];
 
   const destFiles = await prepDestDir(dest);

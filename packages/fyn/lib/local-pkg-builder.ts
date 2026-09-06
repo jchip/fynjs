@@ -17,6 +17,21 @@ import { runNpmScript } from "./util/run-npm-script";
 import { AggregateError } from "@jchip/error";
 
 class LocalPkgBuilder {
+  //
+  // `declare` rather than plain field declarations: these are all assigned in the
+  // constructor or in start(), and declare emits nothing, so the runtime shape of the
+  // class is untouched by typing it.
+  //
+  declare _options: any;
+  declare _fyn: any;
+  declare _fynJs: string;
+  declare _waitItems: Record<string, any>;
+  declare _failedItems: Record<string, any>;
+  declare _promiseQ: PromiseQueue;
+  declare _started: any;
+  declare _defer: any;
+  declare _startError: any;
+
   constructor(options) {
     this._options = options;
     this._fyn = options.fyn;

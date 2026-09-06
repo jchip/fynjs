@@ -63,6 +63,15 @@ const runNpmScript = ({
   depInfo,
   ignoreFailure,
   withLifecycle = false
+}: {
+  appDir: string;
+  fyn: any;
+  scripts: string[];
+  dir?: string;
+  pkgJson?: any;
+  depInfo: any;
+  ignoreFailure?: boolean;
+  withLifecycle?: boolean;
 }) => {
   const pkgId = logFormat.pkgId(depInfo);
 

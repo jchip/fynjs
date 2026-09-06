@@ -931,7 +931,7 @@ class PkgDepResolver {
     item: DepItem,
     meta: PackageMeta,
     resolved: string
-  ): Promise<null> {
+  ): NativePromise<null> {
     let firstKnown = true;
     item.resolve(resolved, meta);
 
@@ -1749,7 +1749,7 @@ ${item.depPath.join(" > ")}`
   }
 
   resolveItem(item: DepItem & { _semver: SemverAnalysis; _resolveByLock?: boolean }): Promise<void> {
-    const tryLocal = (): Promise<ResolveResult | false> => {
+    const tryLocal = (): NativePromise<ResolveResult | false> => {
       return xaa
         .wrap(() => this._pkgSrcMgr.fetchLocalItem(item))
         .then((meta: PackageMeta | undefined) => {
@@ -1761,7 +1761,7 @@ ${item.depPath.join(" > ")}`
         });
     };
 
-    const tryLock = (): Promise<ResolveResult | false> => {
+    const tryLock = (): NativePromise<ResolveResult | false> => {
       return xaa.wrap(() => {
         const r = this._resolveWithLockData(item);
 
