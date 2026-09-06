@@ -1,3 +1,409 @@
+# 9/5/2026
+
+## Packages
+
+-   `@fynjs/cli-args@1.1.0` `(1.0.1 => 1.1.0)`
+-   `@fynjs/run@1.1.0` `(1.0.1 => 1.1.0)`
+-   `@fynjs/ts-resolve@1.0.0` `(0.0.1 => 1.0.0)`
+-   `@fynpo/base@2.1.0` `(2.0.2 => 2.1.0)`
+-   `@jchip/error@2.1.0` `(2.0.0 => 2.1.0)`
+-   `aveazul@2.1.0` `(2.0.1 => 2.1.0)`
+-   `chalker@2.1.0` `(2.0.1 => 2.1.0)`
+-   `check-pkg-new-version@1.1.0` `(1.0.0 => 1.1.0)`
+-   `check-pkg-new-version-engine@2.1.0` `(2.0.0 => 2.1.0)`
+-   `filter-scan-dir@2.1.0` `(2.0.1 => 2.1.0)`
+-   `fyn@3.1.0` `(3.0.5 => 3.1.0)`
+-   `fynpo@3.1.0` `(3.0.5 => 3.1.0)`
+-   `fynpo-cli@3.1.0` `(3.0.5 => 3.1.0)`
+-   `item-queue@2.1.0` `(2.0.1 => 2.1.0)`
+-   `optional-import@1.1.0` `(1.0.2 => 1.1.0)`
+-   `pkg-preper@0.3.0` `(0.2.1 => 0.3.0)`
+-   `publish-util@3.1.0` `(3.0.0 => 3.1.0)`
+-   `run-verify@2.1.0` `(2.0.0 => 2.1.0)`
+-   `string-array@2.1.0` `(2.0.0 => 2.1.0)`
+-   `unwrap-npm-cmd@2.1.0` `(2.0.0 => 2.1.0)`
+-   `visual-exec@1.1.0` `(1.0.2 => 1.1.0)`
+-   `visual-logger@2.1.0` `(2.0.1 => 2.1.0)`
+-   `xaa@3.1.0` `(3.0.0 => 3.1.0)`
+-   `xenv-config@2.1.0` `(2.0.0 => 2.1.0)`
+-   `xflight@3.1.0` `(3.0.1 => 3.1.0)`
+-   `xsh@1.1.0` `(1.0.1 => 1.1.0)`
+
+## Commits
+
+-   `packages/cli-args`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-98: [maj] reset @fynjs/ts-resolve to 0.0.1 for its first publish [commit](https://github.com/jchip/fynjs/commit/9e053ff323d2c70ef42957cac5e3b078797c8ed4)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: finish dropping tsx - root, fyn, xarc-run, and the demos [commit](https://github.com/jchip/fynjs/commit/3fb12ab6c55047f26eaa5e45822842210f27f4b1)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+    -   FJM-152: cli-args docs name the package @fynjs/cli-args, NixClap only for the class [commit](https://github.com/jchip/fynjs/commit/704c932f2c0959944bf4a583c5aef092067672a8)
+
+-   `packages/confippet`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/create-monorepo`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/dual-mode-template`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/http-server`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/xarc-run`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-98: [maj] reset @fynjs/ts-resolve to 0.0.1 for its first publish [commit](https://github.com/jchip/fynjs/commit/9e053ff323d2c70ef42957cac5e3b078797c8ed4)
+    -   FPM-101: finish dropping tsx - root, fyn, xarc-run, and the demos [commit](https://github.com/jchip/fynjs/commit/3fb12ab6c55047f26eaa5e45822842210f27f4b1)
+    -   FPM-99: use @fynjs/ts-resolve as the first TypeScript runner in xarc-run [commit](https://github.com/jchip/fynjs/commit/bdfe177b2c152f45f4fc06c24b0147f0139d2aeb)
+    -   FPM-97: remove dead esbuild devDependency from xarc-run [commit](https://github.com/jchip/fynjs/commit/cedcaadf4b200d4e63ce4bb3d3b693defee77a39)
+
+-   `packages/ts-resolve`
+
+    -   FPM-119: cover require() by wrapping Module._resolveFilename alongside the hook [commit](https://github.com/jchip/fynjs/commit/77bba006eed09c5fa0f0186c0de733e3eb1142c3)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-98: [maj] reset @fynjs/ts-resolve to 0.0.1 for its first publish [commit](https://github.com/jchip/fynjs/commit/9e053ff323d2c70ef42957cac5e3b078797c8ed4)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-98: add @fynjs/ts-resolve for node native TypeScript loading [commit](https://github.com/jchip/fynjs/commit/8520e8e740cfca10f86f466d0b6745ef4e24278a)
+
+-   `packages/fynpo-base`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-25: remove the superseded readFynpoPackages/makePkgDeps API from @fynpo/base [maj] [commit](https://github.com/jchip/fynjs/commit/5ca3f9a613e89bc629397cd267f84941f32d2e14)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/error`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/aveazul`
+
+    -   FPM-98: update fyn locks for the ts-resolve 0.0.1 reset [commit](https://github.com/jchip/fynjs/commit/fe2aeed3c430031c7a3cc14266f34dfc743bb26b)
+    -   FPM-117: convert aveazul tests to TypeScript and put them behind the type-check gate [commit](https://github.com/jchip/fynjs/commit/0350a66aab25d33b8e9ce99c704499aa297e3a50)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-98: [maj] reset @fynjs/ts-resolve to 0.0.1 for its first publish [commit](https://github.com/jchip/fynjs/commit/9e053ff323d2c70ef42957cac5e3b078797c8ed4)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-107: drop dead visual-exec tests and make aveazuls tests real ESM [commit](https://github.com/jchip/fynjs/commit/fa39a0793012e18c497a77e9d117228102f011d2)
+    -   FPM-101: finish dropping tsx - root, fyn, xarc-run, and the demos [commit](https://github.com/jchip/fynjs/commit/3fb12ab6c55047f26eaa5e45822842210f27f4b1)
+    -   FPM-94: drop _missingJson from platform variants in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/35528e7b1a34abe8cb4c71423d9017b3fa5b89c3)
+    -   FPM-93: add _missingJson to platform-skipped entries in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/6945082f07b123a2f8ade64865f89db04241d954)
+    -   FPM-92: drop optFailed: 3 entries from tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/8f6ad01722cf78e8e6bb429d954d927cc42b40a4)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/bluebird`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+
+-   `packages/chalker`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/check-pkg-new-version`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/check-pkg-new-version-engine`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/filter-scan-dir`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/fyn`
+
+    -   FPM-98: update fyn locks for the ts-resolve 0.0.1 reset [commit](https://github.com/jchip/fynjs/commit/fe2aeed3c430031c7a3cc14266f34dfc743bb26b)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-98: [maj] reset @fynjs/ts-resolve to 0.0.1 for its first publish [commit](https://github.com/jchip/fynjs/commit/9e053ff323d2c70ef42957cac5e3b078797c8ed4)
+    -   FPM-110: compare fynlocal deps against their base version in the lock check [commit](https://github.com/jchip/fynjs/commit/6d1a4f9c40b951eb5d58c7ca9a14ae125ba8ce03)
+    -   FPM-112/113: drop the dead link-npm-g task and stop tracking generated scenario pkg.json [commit](https://github.com/jchip/fynjs/commit/70a6354579cd70c0db379d0149680954b8138cfd)
+    -   FPM-106: remove the dead v8-compile-cache copy from fyns build [commit](https://github.com/jchip/fynjs/commit/8b3ceb57236e91f18e3287bb5d9cbcc8f4360de1)
+    -   FPM-104: float fyn to vite 8 and drop the dead esbuild target [commit](https://github.com/jchip/fynjs/commit/b3665ccd9b9d19a83f10fc16fa2f7a3ea50ff156)
+    -   FPM-101: finish dropping tsx - root, fyn, xarc-run, and the demos [commit](https://github.com/jchip/fynjs/commit/3fb12ab6c55047f26eaa5e45822842210f27f4b1)
+    -   FPM-102: update fyn lock after dropping vite deps [commit](https://github.com/jchip/fynjs/commit/e83b760f6712247045fb9d5ed6e9dc313d70d9be)
+    -   FPM-102: bump vite-node to v6 and drop fyns unreferenced vite deps [commit](https://github.com/jchip/fynjs/commit/bdaf3a008c1221e8166864e49c1afc384b8e743e)
+    -   FPM-103: remove the dead pacote-jchip package [commit](https://github.com/jchip/fynjs/commit/9a3a2460953a965038096ca6bcaf9a300d090b11)
+    -   FJM-162: widen the esbuild allowScripts range to >=0.25.12 <1 [commit](https://github.com/jchip/fynjs/commit/28bb90d75b46190e9d06ab15203952eede1f03c0)
+    -   FPM-95: run the add-remove-pkg scenario against the mock registry and clear a stale install lock between steps [commit](https://github.com/jchip/fynjs/commit/90fcdb777f3a78bc928735c32776261135812fb0)
+    -   FPM-95: let add and remove take --no-audit, and use it in the add-remove-pkg scenario [commit](https://github.com/jchip/fynjs/commit/765a8e68dc5e48a2313b150dc3bc251f26276a9d)
+    -   FPM-94: drop _missingJson from platform variants in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/35528e7b1a34abe8cb4c71423d9017b3fa5b89c3)
+    -   FPM-94: record a platform-skipped optionals deps from its meta so lock entries match across machines [commit](https://github.com/jchip/fynjs/commit/dc6098aeade053921eb138aa3fc7aee1ca17e08b)
+    -   FPM-93: add _missingJson to platform-skipped entries in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/6945082f07b123a2f8ade64865f89db04241d954)
+    -   FPM-93: mark a platform-skipped lock entry as having no package.json recorded [commit](https://github.com/jchip/fynjs/commit/d2ee0577751d1704e1638441f312fa2f89b1d01c)
+    -   FPM-92: drop optFailed: 3 entries from tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/8f6ad01722cf78e8e6bb429d954d927cc42b40a4)
+    -   FPM-92: stop writing optFailed: 3 (platform) to the lockfile [commit](https://github.com/jchip/fynjs/commit/eb1aa3ff53e37961b91e59eaf5401c4a5b508044)
+    -   FPM-91: only suggest --allow-scripts-pending from a looser policy mode [commit](https://github.com/jchip/fynjs/commit/dbba963e9752978c86ddf523bff2e1bdff1c80fc)
+    -   FPM-90: bound the audit advisories fetch with a 10s timeout [commit](https://github.com/jchip/fynjs/commit/c3347ebccd86e07e0ad96fff4af05549d840bcce)
+    -   FJM-158: reconcile the lockfile and registry package meta shapes [commit](https://github.com/jchip/fynjs/commit/c3dfdcf09b1a61cf097a046b89d6b95672064c22)
+    -   FJM-159: read a locked local packages link type from its version tag [commit](https://github.com/jchip/fynjs/commit/08bb8856875155d8733363680d02c313093b9462)
+    -   FJM-154: fix the last FynForSrcManager view mismatches [commit](https://github.com/jchip/fynjs/commit/2b91393f1d18e81902b83e2608b736b3cf21f7a8)
+    -   FJM-154: gate fyns typecheck on a baseline and fix the FynFor* view mismatches [commit](https://github.com/jchip/fynjs/commit/671f9b7e1c8942cf1849a6a3b6c6d472815aeb69)
+    -   FJM-26: item-queue uses xflights InflightStore instead of its own copy [maj] [commit](https://github.com/jchip/fynjs/commit/6cb06bd007b5b7230bc65f0aacc4875c20e79e1a)
+    -   FJM-154: add typescript 7 and a tsc typecheck script to fyn [commit](https://github.com/jchip/fynjs/commit/86a489a14e9e38bb351afe8ee0b0e6166352e1a7)
+    -   FJM-22: centralize shared Fyn view fragments and rename the colliding FynInstance interfaces [commit](https://github.com/jchip/fynjs/commit/064d3a0ae565fc768b12be1aa8483a4e73e45428)
+    -   FPM-89: prune against the installed tree, not just the .f/_ store [commit](https://github.com/jchip/fynjs/commit/c27ab91d48a8e733e109709d096c29781556316d)
+    -   FPM-88: denyScripts as a map sharing the allowlist shape, plus !script markers [commit](https://github.com/jchip/fynjs/commit/3cc3047b984fa988c943d14f64415a3fbf063e18)
+    -   FPM-88: add scriptPolicy all as the blanket escape hatch [commit](https://github.com/jchip/fynjs/commit/f6e2667165f20efdd724247d75ec3e5349d989bc)
+    -   FPM-88: keep fyn a runtime dep of fynpo, not inlined into its bundle [commit](https://github.com/jchip/fynjs/commit/feda4d5799a90306fd323590907b2f57668df9b9)
+    -   FPM-88: let fyns bundle be embedded, so fynpo inlines fyns dist [commit](https://github.com/jchip/fynjs/commit/deb6fdf349eedce4094d935185a6e807fd7b5677)
+    -   FPM-88: convert fyn bin to ESM .mjs, and fix fynpos dead rolldown target [commit](https://github.com/jchip/fynjs/commit/2c2528db8b31a6f2b9bc348e3d802813c4f2b6bf)
+    -   FPM-88: compile vendored yarn parser with rolldown as TypeScript, target node22.12 [commit](https://github.com/jchip/fynjs/commit/b9ff32374355f5ea3aab51079759a6ff2caa0d88)
+    -   FPM-88: target node22 in both build steps, fixing a dead rolldown option and a node 8 babel target [commit](https://github.com/jchip/fynjs/commit/d37c9bb00bdf4a490c4292367fd47097914376f8)
+    -   FPM-87: make scriptPolicy review the default, prompting on a terminal and failing without one [commit](https://github.com/jchip/fynjs/commit/3e8afb4068e2ef0e7b34db0c0501518ba1c15471)
+    -   FPM-86: allowScripts entries as { semver, scripts }, with range matching on keys [commit](https://github.com/jchip/fynjs/commit/695dfcd4cf6b79539cbe7356de4af42d55578e3f)
+    -   FPM-82: record what shipped for the install-script allowlist, document it in fyn README [commit](https://github.com/jchip/fynjs/commit/feef2214ba2d182ce3ff1fddb3098c80630a0bb8)
+    -   FPM-86: fyn install-scripts ls/approve/deny/prune and allow-scripts flags [commit](https://github.com/jchip/fynjs/commit/461f8537f434c8aa1c26a04b26570870f8eb1a88)
+    -   FPM-85: one end-of-install summary for blocked scripts, remediation off verbose [commit](https://github.com/jchip/fynjs/commit/6aa5463c8cef5694f6082bd9bd0d7382f5881169)
+    -   FPM-84: fynpo-wide allowScripts and scriptPolicy with scope precedence [commit](https://github.com/jchip/fynjs/commit/97c69dc6b9495c71c6468791069bbd442487ca48)
+    -   FPM-83: script policy modes, explicit false denials, local package exemption [commit](https://github.com/jchip/fynjs/commit/c686c3831148b4f5fc0c09a19459cc8085f3060f)
+    -   FPM-81: fynpo fyn.options now reaches fyn, with CLI precedence [commit](https://github.com/jchip/fynjs/commit/3e0b2ab6275ddaa4d46c0c05895e71814e371941)
+    -   FJM-149: use aveazul directly instead of the private bluebird wrapper [commit](https://github.com/jchip/fynjs/commit/1a6e04086ecfa54408b7231e2dda94300b484fc6)
+    -   FPM-80: correct the reflink claim - macOS has no reflink for copyFile [commit](https://github.com/jchip/fynjs/commit/57df43d8c3bfea3830eb85f762f4a841be5cb74d)
+    -   FPM-72: point setup-path at the bin symlink fyn actually maintains [commit](https://github.com/jchip/fynjs/commit/20870df2eb5a8cbe4d8dc128e31e55ced71a582b)
+    -   FPM-80: pin that replicate never hardlinks back into the central store [commit](https://github.com/jchip/fynjs/commit/5ed7c3d6638ab39a8f864d946c5eead4424d7f93)
+    -   FPM-76: detach an installed package.json still hardlinked to its source [commit](https://github.com/jchip/fynjs/commit/41eba23cfdf98b70007929b76a42c491d1100a73)
+    -   FPM-78: set npm_lifecycle_script for lifecycle scripts [commit](https://github.com/jchip/fynjs/commit/1ded7193754fd4b44beaf7698ccd5aa082239f56)
+    -   FPM-77: set npm_lifecycle_event for lifecycle scripts [commit](https://github.com/jchip/fynjs/commit/2b53cfdeddd752e3f0f013cb0f68b88813c5b6ad)
+    -   FPM-77: set npm_package_json for lifecycle scripts [commit](https://github.com/jchip/fynjs/commit/cf3ff693ab0961e440b8eccb08d6cae263cd1468)
+    -   FPM-74: dont search parent dirs for package.json when cwd is explicit [commit](https://github.com/jchip/fynjs/commit/c238ecba386a75628a3f507e8b801809f0f9b034)
+
+-   `packages/fynpo`
+
+    -   FPO-60: keep fyns ESM entry external so fynpo publish can load it [commit](https://github.com/jchip/fynjs/commit/75664c6f8c64fd9eb98c612fc0e39947ca70b28f)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-100: migrate fynpo to ESM - source, bin, and stubs [commit](https://github.com/jchip/fynjs/commit/1e3f0390e74e3bd281c0c1f1937b527b8ff4539e)
+    -   FJM-153: one shared isSelectiveRelease() instead of three copies in fynpo [commit](https://github.com/jchip/fynjs/commit/3654c08f51f29efffe08a4cafe69d26b0f660a6b)
+    -   FJM-25: annotate fynpos version-lock scan with FynpoPackageInfo [commit](https://github.com/jchip/fynjs/commit/b5b6e0fd599fa81c8ef3b56435ead98042c640f6)
+    -   FJM-25: migrate fynpo prepare to the FynpoDepGraph API [commit](https://github.com/jchip/fynjs/commit/0043a4aa91a90c4e03761d08e1752fc920ea8eae)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+    -   FJM-24: deduplicate checkGitClean, commitAndTagUpdates, checkNupdateTag and updateDep in fynpo [commit](https://github.com/jchip/fynjs/commit/462431c262ca96f6c6d86611d0be054164f58d40)
+    -   FJM-23: extract shared execShell utility in fynpo [commit](https://github.com/jchip/fynjs/commit/dd1e6f5f235dc237a62e630728bfcd37d1d59989)
+    -   FPM-88: convert fyn bin to ESM .mjs, and fix fynpos dead rolldown target [commit](https://github.com/jchip/fynjs/commit/2c2528db8b31a6f2b9bc348e3d802813c4f2b6bf)
+    -   FPO-57: commit the version-lock indirect bump tests the gitignore was hiding [commit](https://github.com/jchip/fynjs/commit/eb0b85e168474907d3991e607e77c4dac6eb40da)
+
+-   `packages/fynpo-cli`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/init-package`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/item-queue`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: finish dropping tsx - root, fyn, xarc-run, and the demos [commit](https://github.com/jchip/fynjs/commit/3fb12ab6c55047f26eaa5e45822842210f27f4b1)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FPM-94: drop _missingJson from platform variants in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/35528e7b1a34abe8cb4c71423d9017b3fa5b89c3)
+    -   FPM-93: add _missingJson to platform-skipped entries in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/6945082f07b123a2f8ade64865f89db04241d954)
+    -   FPM-92: drop optFailed: 3 entries from tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/8f6ad01722cf78e8e6bb429d954d927cc42b40a4)
+    -   FJM-26: item-queue uses xflights InflightStore instead of its own copy [maj] [commit](https://github.com/jchip/fynjs/commit/6cb06bd007b5b7230bc65f0aacc4875c20e79e1a)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+    -   FJM-150: make item-queue samples/example1.js runnable - ESM syntax, declared deps [commit](https://github.com/jchip/fynjs/commit/85ddf8c68bee5f0ee4272088e3a5595fc52082fa)
+    -   FJM-149: use aveazul directly instead of the private bluebird wrapper [commit](https://github.com/jchip/fynjs/commit/1a6e04086ecfa54408b7231e2dda94300b484fc6)
+
+-   `packages/optional-import`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: run optional-imports probe on plain node instead of tsx [commit](https://github.com/jchip/fynjs/commit/f16240f145cb9e398e86082bc81d62d6600da567)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/pkg-preper`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FPM-94: drop _missingJson from platform variants in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/35528e7b1a34abe8cb4c71423d9017b3fa5b89c3)
+    -   FPM-93: add _missingJson to platform-skipped entries in tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/6945082f07b123a2f8ade64865f89db04241d954)
+    -   FPM-92: drop optFailed: 3 entries from tracked fyn-locks [commit](https://github.com/jchip/fynjs/commit/8f6ad01722cf78e8e6bb429d954d927cc42b40a4)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/publish-util`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+    -   FPM-75: let an explicit PUBLISH_UTIL_PKG_DIR win over the runner env [commit](https://github.com/jchip/fynjs/commit/23225587f44746d802a82066720192b3d2d3827f)
+    -   FPM-75: resolve the pack target from npm_package_json and cwd, never INIT_CWD [commit](https://github.com/jchip/fynjs/commit/164eb8204972a3fcac871e5a9cf0b4efeb502278)
+    -   FPM-66: never leave a package.json truncated during an update [commit](https://github.com/jchip/fynjs/commit/082b190c027f9a9d5ab4f0dac9f527c2617e0cbb)
+
+-   `packages/run-verify`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/string-array`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/visual-exec`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-115: type execute() and show() generically instead of Promise<ExecOutput | unknown> [commit](https://github.com/jchip/fynjs/commit/01c1b1a7d2aca8c248471ca1ea8094b81f93d0da)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-107: drop dead visual-exec tests and make aveazuls tests real ESM [commit](https://github.com/jchip/fynjs/commit/fa39a0793012e18c497a77e9d117228102f011d2)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+    -   FJM-27: remove divergent visual-logger types.d.ts from visual-exec [commit](https://github.com/jchip/fynjs/commit/ace7c61f7e44f694731880098a124e88dfbf2116)
+
+-   `packages/visual-logger`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/xaa`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-157: widen xaa concurrency test budget so CI load cannot flake it [commit](https://github.com/jchip/fynjs/commit/d2f515b3217f4d067286091df56de228c8d32a7e)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/xenv-config`
+
+    -   FPM-116: match test import specifiers to each packages own src convention [commit](https://github.com/jchip/fynjs/commit/be3628fdf5254a52c489be5a6f39a22017c398c6)
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `packages/xflight`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FPM-101: drop the unused tsx devDependency from 20 packages [commit](https://github.com/jchip/fynjs/commit/f76efd6a4a8ca63619b89f0f35ecbc5ba4c620a2)
+    -   FJM-26: extract InflightStore as the generic core of xflights Inflight [min] [commit](https://github.com/jchip/fynjs/commit/db5b2526756bc762538cb4eb42f0a099c9c3344e)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+    -   FJM-151: correct xflight README - no Promise auto-detection, ESM-only require, real class name [commit](https://github.com/jchip/fynjs/commit/95d4a20193cf93cb0dee0c4e8b511c16c4b30c25)
+    -   FJM-149: use aveazul directly instead of the private bluebird wrapper [commit](https://github.com/jchip/fynjs/commit/1a6e04086ecfa54408b7231e2dda94300b484fc6)
+
+-   `packages/xsh`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+    -   FPM-114: type-check test files via a per-package tsconfig.test.json gate [commit](https://github.com/jchip/fynjs/commit/d889fd00481448c1693a6f5c4fd4bcb9c41efef3)
+    -   FPM-108: enable verbatimModuleSyntax and mark type-only imports [commit](https://github.com/jchip/fynjs/commit/1185231920647f7faad85460ee292fff14c44bbd)
+    -   FJM-155: upgrade typescript to 7 across all packages [commit](https://github.com/jchip/fynjs/commit/52df6fc4f5e5c4b67ab2d308b7089649d1beb76a)
+
+-   `.github`
+
+    -   FPM-118: raise the node floor to 22.18 so plain-node TypeScript actually runs [commit](https://github.com/jchip/fynjs/commit/fe72d6a16c0ea31a1b640c2ba4d31831f9647aa8)
+
+-   `notes`
+
+    -   FPM-105: record that ESM-only is implemented and note the exceptions [commit](https://github.com/jchip/fynjs/commit/885f1f25a05b074406dfde7793d9aab1d4292d39)
+    -   FPM-88: denyScripts as a map sharing the allowlist shape, plus !script markers [commit](https://github.com/jchip/fynjs/commit/3cc3047b984fa988c943d14f64415a3fbf063e18)
+    -   FPM-87: make scriptPolicy review the default, prompting on a terminal and failing without one [commit](https://github.com/jchip/fynjs/commit/3e8afb4068e2ef0e7b34db0c0501518ba1c15471)
+    -   FPM-86: allowScripts entries as { semver, scripts }, with range matching on keys [commit](https://github.com/jchip/fynjs/commit/695dfcd4cf6b79539cbe7356de4af42d55578e3f)
+    -   FPM-82: record what shipped for the install-script allowlist, document it in fyn README [commit](https://github.com/jchip/fynjs/commit/feef2214ba2d182ce3ff1fddb3098c80630a0bb8)
+    -   FPM-82: design note for fyn install-script allowlist with npm 12 parity and fynpo-wide config [commit](https://github.com/jchip/fynjs/commit/6fe83fe1bf4bce54928c21cdc4dd6f599ce7d392)
+
+-   `packages`
+
+    -   FPM-103: remove the dead pacote-jchip package [commit](https://github.com/jchip/fynjs/commit/9a3a2460953a965038096ca6bcaf9a300d090b11)
+
+-   `MISC`
+
+    -   Update fyn and fynpo devDeps to 3.0.5 [commit](https://github.com/jchip/fynjs/commit/e4043c987b05b37eb4e20e23bd1bf45796700422)
+    -   FPM-81: drop the fynpo fyn.options that had never applied [commit](https://github.com/jchip/fynjs/commit/f1057cfd3e7b2b7c757c86ba3050fba21ee4d2b1)
+
 # 9/1/2026
 
 ## Packages
