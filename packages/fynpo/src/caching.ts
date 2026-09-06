@@ -2,7 +2,7 @@ import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
 import { logger } from "./logger.ts";
-import { isCI } from "./is-ci.ts";
+import { isCI } from "ci-info";
 import npmPacklist from "npm-packlist";
 import type { FynpoPackageInfo, PackageDepData } from "@fynpo/base";
 import envPaths from "env-paths";

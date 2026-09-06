@@ -1,6 +1,6 @@
 import Path from "path";
 import VisualExec from "visual-exec";
-import { isCI } from "./is-ci.ts";
+import { isCI } from "ci-info";
 import _ from "lodash";
 import { logger } from "./logger.ts";
 import type { FynpoPackageInfo } from "@fynpo/base";

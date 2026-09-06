@@ -5,7 +5,7 @@ import _ from "lodash";
 import type { ItemQueueResult } from "item-queue";
 import { logger } from "./logger.ts";
 import chalk from "chalk";
-import { isCI } from "./is-ci.ts";
+import { isCI } from "ci-info";
 import { FynpoDepGraph, type FynpoPackageInfo, type FynpoTopoPackages, type PackageDepData, pkgInfoId } from "@fynpo/base";
 
 import { TopoRunner } from "./topo-runner.ts";
