@@ -52,7 +52,7 @@
     "directory": "packages/unwrap-npm-cmd"
   },
   "dependencies": {
-    "which": "^7.0.0"
+    "which": "^6.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
