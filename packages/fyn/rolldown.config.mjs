@@ -10,7 +10,8 @@ const require = createRequire(import.meta.url);
  * to reach ESM-only chalk), and no CJS output format can represent module-scope await. ESM also
  * keeps `import.meta` and dynamic `import(url)` intact, both of which webpack mangled.
  *
- * bin/fyn.js stays CJS and reaches this bundle through a dynamic import.
+ * bin/fyn.mjs reaches this bundle through a dynamic import - see bin/index.mjs for why the
+ * specifier is a URL computed at runtime rather than a literal.
  */
 
 // `__dirname`/`__filename` do not exist in ESM. webpack left them as the CJS wrapper's runtime
@@ -121,10 +122,12 @@ export default defineConfig({
   // `output.target` with "Invalid key: Expected never but received target" and carries on with
   // its default of `esnext`, so the target the config claimed was never actually applied.
   //
-  // node22.12 is exactly the engines floor (package.json engines: node >=22.12.0). The old
-  // webpack build transpiled down to node18, below what fyn actually supports.
+  // Keep this in lockstep with three things that must agree: package.json engines
+  // (>=22.18.0), bin/check-node.mjs MIN_NODE, and the lowest leg of the CI matrix. Lowering it
+  // below the floor ships syntax fyn claims not to need; raising it above ships syntax that
+  // check-node.mjs would wave straight through into a parse error.
   transform: {
-    target: "node22.12"
+    target: "node22.18"
   },
   output: {
     file: "dist/fyn.mjs",
