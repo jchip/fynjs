@@ -1,6 +1,6 @@
 {
   "name": "xenv-config",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Load config from env, user config, or default spec",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -51,7 +51,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "lodash": "^4.17.21",
     "prettier": "^3.5.3",
-    "publish-util": "^3.0.0",
+    "publish-util": "^3.1.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },

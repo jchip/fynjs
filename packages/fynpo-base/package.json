@@ -1,6 +1,6 @@
 {
   "name": "@fynpo/base",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "zero setup monorepo manager for node.js",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -56,16 +56,16 @@
     "@vitest/coverage-v8": "^4.1.11",
     "npm-packlist": "^11.3.0",
     "prettier": "^3.5.3",
-    "publish-util": "^3.0.0",
+    "publish-util": "^3.1.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "filter-scan-dir": "^2.0.1",
+    "filter-scan-dir": "^2.1.0",
     "ignore": "^7.0.6",
     "lodash": "^4.17.21",
     "minimatch": "^10.0.3",
-    "optional-import": "^1.0.2",
+    "optional-import": "^1.1.0",
     "semver": "^7.7.2"
   },
   "files": [

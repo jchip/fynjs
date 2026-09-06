@@ -1,6 +1,6 @@
 {
   "name": "visual-logger",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/visual-logger",
   "description": "Visual logger for CLI in NodeJS",
   "type": "module",
@@ -67,7 +67,7 @@
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.5.3",
-    "publish-util": "^3.0.0",
+    "publish-util": "^3.1.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },

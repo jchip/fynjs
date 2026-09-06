@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/ts-resolve",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Resolve TypeScript sources for node's built-in type stripping - no transpiler",
   "engines": {
     "node": ">=22.18.0"
@@ -41,6 +41,9 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.15.30",

@@ -1,6 +1,6 @@
 {
   "name": "visual-exec",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/visual-exec",
   "description": "Visual shell exec with spinners and progress display",
   "type": "module",
@@ -50,13 +50,13 @@
     "ci-info": "^4.4.0",
     "has-ansi": "^6.0.2",
     "strip-ansi": "^7.2.0",
-    "visual-logger": "^2.0.1",
-    "xsh": "^1.0.1"
+    "visual-logger": "^2.1.0",
+    "xsh": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
-    "publish-util": "^3.0.0",
+    "publish-util": "^3.1.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },

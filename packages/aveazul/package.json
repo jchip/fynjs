@@ -1,6 +1,6 @@
 {
   "name": "aveazul",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Bluebird drop-in replacement built on native Promise",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -81,16 +81,16 @@
     "directory": "packages/aveazul"
   },
   "dependencies": {
-    "@jchip/error": "^2.0.0",
-    "xaa": "^3.0.0"
+    "@jchip/error": "^2.1.0",
+    "xaa": "^3.1.0"
   },
   "devDependencies": {
-    "@fynjs/ts-resolve": "^0.0.1",
+    "@fynjs/ts-resolve": "^1.0.0",
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
     "bluebird": "^3.7.2",
-    "publish-util": "^3.0.0",
-    "run-verify": "^2.0.0",
+    "publish-util": "^3.1.0",
+    "run-verify": "^2.1.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },

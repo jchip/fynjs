@@ -1,6 +1,6 @@
 {
   "name": "item-queue",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/item-queue",
   "description": "An item processing queue with Promise",
   "type": "module",
@@ -48,17 +48,17 @@
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "xflight": "^3.0.1"
+    "xflight": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@vitest/coverage-v8": "^4.1.11",
-    "aveazul": "^2.0.1",
+    "aveazul": "^2.1.0",
     "chalk": "^6.0.0",
     "prettier": "^3.5.3",
-    "publish-util": "^3.0.0",
+    "publish-util": "^3.1.0",
     "typescript": "^7.0.2",
-    "visual-logger": "^2.0.1",
+    "visual-logger": "^2.1.0",
     "vitest": "^4.1.11"
   },
   "files": [
