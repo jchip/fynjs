@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import Path from "path";
 import { promisify } from "util";
 
-import { loadCk, plainCk, stripMarkers } from "../src/ck.ts";
+import { loadCk, plainCk, stripMarkers } from "../src/ck.js";
 
 const execFileAsync = promisify(execFile);
 

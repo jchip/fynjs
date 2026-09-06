@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { internalCheckIsNewer } from "../../src/check-is-newer.ts";
+import { internalCheckIsNewer } from "../../src/check-is-newer.js";
 
 describe("internalCheckIsNewer", () => {
   it("should check if newer version exists", () => {

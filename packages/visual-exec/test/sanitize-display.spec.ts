@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { VisualExec, sanitizeForDisplay, sanitizeForOutput } from "../src/visual-exec.ts";
+import { VisualExec, sanitizeForDisplay, sanitizeForOutput } from "../src/visual-exec.js";
 
 const ESC = String.fromCharCode(27);
 

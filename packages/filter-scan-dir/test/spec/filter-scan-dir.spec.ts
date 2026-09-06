@@ -1,5 +1,5 @@
 import Path from "path";
-import { filterScanDir, filterScanDirSync } from "../../src/index.ts";
+import { filterScanDir, filterScanDirSync } from "../../src/index.js";
 import { describe, it, expect } from "vitest";
 
 describe("filter-scan-dir", function () {

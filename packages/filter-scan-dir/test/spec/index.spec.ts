@@ -1,7 +1,7 @@
 "use strict";
 
 import { describe, it, expect } from "vitest";
-import { filterScanDir, filterScanDirSync } from "../../src/index.ts";
+import { filterScanDir, filterScanDirSync } from "../../src/index.js";
 
 describe("exports", function () {
   it("should have proper exports", async () => {

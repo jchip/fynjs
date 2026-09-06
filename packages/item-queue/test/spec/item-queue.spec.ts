@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ItemQueue } from "../../src/index.ts";
+import { ItemQueue } from "../../src/index.js";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

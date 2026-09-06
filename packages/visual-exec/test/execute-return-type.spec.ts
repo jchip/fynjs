@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { VisualExec, type ExecOutput } from "../src/visual-exec.ts";
+import { VisualExec, type ExecOutput } from "../src/visual-exec.js";
 
 // Mock visual-logger to avoid actual console output during tests
 vi.mock("visual-logger", () => {

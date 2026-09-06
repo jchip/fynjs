@@ -1,6 +1,6 @@
 import Path from "path";
 import { describe, it, expect } from "vitest";
-import { direntCmp, join2 } from "../../src/util.ts";
+import { direntCmp, join2 } from "../../src/util.js";
 
 describe("dirent-cmp", function () {
   it("should compare elements", () => {

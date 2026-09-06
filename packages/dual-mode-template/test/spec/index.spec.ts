@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { greet, add, greetWithOptions } from "../../src/index.ts";
+import { greet, add, greetWithOptions } from "../../src/index.js";
 
 describe("dual-mode-template", () => {
   describe("greet", () => {

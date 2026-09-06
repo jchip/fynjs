@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Inflight } from "../../src/index.ts";
+import { Inflight } from "../../src/index.js";
 
 describe("inflight", () => {
   it("should add item with start and check time from NOW", () => {

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { NixClap } from "../../src/index.ts";
+import { NixClap } from "../../src/index.js";
 
 describe("Root Command", () => {
   it("should execute root command with arguments", () => {

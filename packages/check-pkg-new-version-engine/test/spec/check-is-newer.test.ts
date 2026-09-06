@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { internalCheckIsNewer } from "../../src/check-is-newer.ts";
+import { internalCheckIsNewer } from "../../src/check-is-newer.js";
 
 const check = (current: string, latest: string, tag = "latest") =>
   internalCheckIsNewer({ name: "test", version: current } as any, { latest }, tag);

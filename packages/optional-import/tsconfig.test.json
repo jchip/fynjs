@@ -6,9 +6,10 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": ".",
-    // The tests and the probe fixture import the sources as `../../src/index.ts`,
-    // which is the specifier form node's type-stripping needs (it does not map
-    // `.js` back to `.ts`) — test/fixtures/app/probe.ts really is run by node.
+    // Only for test/fixtures/app/probe.ts, which is spawned as a real `node probe.ts`
+    // child process by test/spec/integration.spec.ts. Node's type-stripping does not
+    // map a `.js` specifier back to a `.ts` file, so that one import must stay `.ts`.
+    // Every other test here imports src as `.js`, matching the rest of the repo.
     // Only legal alongside `noEmit`, hence only here; it relaxes no type checking.
     "allowImportingTsExtensions": true
   },

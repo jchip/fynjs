@@ -1,8 +1,8 @@
 
-import { NixClap } from "../../src/index.ts";
+import { NixClap } from "../../src/index.js";
 import { expect, describe, it } from "vitest";
-import { OptionNode } from "../../src/option-node.ts";
-import { CommandNode } from "../../src/command-node.ts";
+import { OptionNode } from "../../src/option-node.js";
+import { CommandNode } from "../../src/command-node.js";
 
 describe("parser", () => {
   function verifyNodeCommands(node: CommandNode, commands: string[]): void {

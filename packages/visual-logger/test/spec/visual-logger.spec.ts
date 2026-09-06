@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import chalk from "chalk";
-import { VisualLogger, type OutputInterface } from "../../src/index.ts";
+import { VisualLogger, type OutputInterface } from "../../src/index.js";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

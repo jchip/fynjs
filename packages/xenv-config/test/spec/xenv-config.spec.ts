@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import xenvConfig from "../../src/index.ts";
+import xenvConfig from "../../src/index.js";
 import { merge } from "lodash";
 
 describe("xenv-config", function() {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Path from "path";
-import { unwrapNpmCmd, quote, unquote, relative } from "../src/index.ts";
+import { unwrapNpmCmd, quote, unquote, relative } from "../src/index.js";
 
 describe("utils", () => {
   describe("quote", () => {

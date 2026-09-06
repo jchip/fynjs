@@ -1,5 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { OptionBase, optUnknown } from "../../src/option-base.ts";
+import { OptionBase, optUnknown } from "../../src/option-base.js";
 
 describe("option args", () => {
   it("should parse args and basic props", () => {

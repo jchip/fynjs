@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cleanErrorStack, AggregateError, aggregateErrorStack } from "../../src/index.ts";
+import { cleanErrorStack, AggregateError, aggregateErrorStack } from "../../src/index.js";
 
 describe("cleanErrorStack", () => {
   it("should clean and replace stack path", () => {

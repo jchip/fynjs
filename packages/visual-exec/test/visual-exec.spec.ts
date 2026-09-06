@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { VisualExec, type VisualExecOptions, parsers } from "../src/visual-exec.ts";
+import { VisualExec, type VisualExecOptions, parsers } from "../src/visual-exec.js";
 import Path from "path";
 import fs from "fs";
 import os from "os";

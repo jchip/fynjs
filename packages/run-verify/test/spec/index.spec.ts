@@ -14,7 +14,7 @@ import {
   runFinally,
   runDefer,
   IS_FINALLY
-} from "../../src/index.ts";
+} from "../../src/index.js";
 
 const fooEvent = (delay: number, cb: (err: Error | null, result?: string) => void) =>
   setTimeout(() => cb(null, "foo"), delay);

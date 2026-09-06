@@ -14,7 +14,7 @@ import {
   padLeft,
   resetZebraIndex,
   nextZebraIndex
-} from "../../src/xtil.ts";
+} from "../../src/xtil.js";
 
 describe("xtil", () => {
   // Disable zebra by default for consistent test output

@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import { internalNotify } from "../../src/notify-new-version.ts";
+import { internalNotify } from "../../src/notify-new-version.js";
 
 describe("notifyNewer", () => {
   it("should notify about new version", () => {

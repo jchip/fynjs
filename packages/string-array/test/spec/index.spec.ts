@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parse } from "../../src/index.ts";
+import { parse } from "../../src/index.js";
 
 describe("string-array parse", () => {
   const emptyResult = { prefix: "", array: [], remain: "" };

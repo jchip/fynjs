@@ -5,9 +5,6 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    // Tests import source by its real ".ts" path; safe here because this
-    // config never emits.
-    "allowImportingTsExtensions": true,
     "rootDir": "."
   },
   "include": [

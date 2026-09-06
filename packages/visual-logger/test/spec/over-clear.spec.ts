@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createLogUpdate } from "log-update";
-import { VisualLogger, type OutputInterface } from "../../src/index.ts";
-import { makeTtyStream } from "./vterm.ts";
+import { VisualLogger, type OutputInterface } from "../../src/index.js";
+import { makeTtyStream } from "./vterm.js";
 
 //
 // FJM-144: a render scheduled by the spinner tick used to land after the frame was torn

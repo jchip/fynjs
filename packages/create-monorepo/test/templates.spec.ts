@@ -3,7 +3,7 @@ import Fs from "fs";
 import Os from "os";
 import Path from "path";
 
-import { copyTemplate } from "../src/utils.ts";
+import { copyTemplate } from "../src/utils.js";
 
 const tmplDir = Path.join(__dirname, "..", "templates");
 

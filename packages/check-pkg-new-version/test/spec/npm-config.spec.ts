@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import os from "node:os";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";
-import { getNpmRcConfig } from "../../src/npm-config.ts";
+import { getNpmRcConfig } from "../../src/npm-config.js";
 
 describe("getNpmRcConfig", () => {
   const origCwd = process.cwd();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { defaultOutput } from "../../src/index.ts";
+import { defaultOutput } from "../../src/index.js";
 
 describe("default output write", () => {
   it("should write to process.stdout", () => {

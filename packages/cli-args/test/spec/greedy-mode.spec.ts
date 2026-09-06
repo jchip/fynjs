@@ -1,5 +1,5 @@
-import { NixClap, type CommandSpec, type OptionSpec } from "../../src/index.ts";
-import type { ParseResult } from "../../src/nix-clap.ts";
+import { NixClap, type CommandSpec, type OptionSpec } from "../../src/index.js";
+import type { ParseResult } from "../../src/nix-clap.js";
 import { describe, it, expect } from "vitest";
 
 describe("nix-clap explicit greedy mode with -#", () => {

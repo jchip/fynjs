@@ -5,7 +5,7 @@ import {
   tryResolve,
   setDefaultLog,
   type ImportMetaLike
-} from "../../src/index.ts";
+} from "../../src/index.js";
 
 /**
  * vitest's SSR transform does not provide `import.meta.resolve`, so these tests inject the

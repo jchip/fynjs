@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { NixClap } from "../../src/nix-clap.ts";
-import type { CommandMeta } from "../../src/command-meta.ts";
+import { NixClap } from "../../src/nix-clap.js";
+import type { CommandMeta } from "../../src/command-meta.js";
 
 describe("CommandMeta", () => {
   const noOutputExit = {

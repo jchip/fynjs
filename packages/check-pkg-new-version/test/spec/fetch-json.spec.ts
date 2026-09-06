@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { internalFetchJSON } from "../../src/fetch-json.ts";
+import { internalFetchJSON } from "../../src/fetch-json.js";
 
 describe("internalFetchJSON", () => {
   it("should return {} when the request fails", async () => {

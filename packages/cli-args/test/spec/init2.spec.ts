@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { NixClap } from "../../src/nix-clap.ts";
-import { CommandNode } from "../../src/command-node.ts";
+import { NixClap } from "../../src/nix-clap.js";
+import { CommandNode } from "../../src/command-node.js";
 
 describe("init2", () => {
   const noop = () => undefined;

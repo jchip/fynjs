@@ -7,12 +7,12 @@
 
 */
 
-import { type CommandExecFunc, type CommandSpec, NixClap } from "../../src/index.ts";
-import { defaultOutput, defaultExit, type ParseResult } from "../../src/nix-clap.ts";
+import { type CommandExecFunc, type CommandSpec, NixClap } from "../../src/index.js";
+import { defaultOutput, defaultExit, type ParseResult } from "../../src/nix-clap.js";
 import { describe, it, expect, beforeEach } from "vitest";
-import type { OptionSpec } from "../../src/option-base.ts";
-import { CommandNode } from "../../src/command-node.ts";
-import { setHelpZebra } from "../../src/xtil.ts";
+import type { OptionSpec } from "../../src/option-base.js";
+import { CommandNode } from "../../src/command-node.js";
+import { setHelpZebra } from "../../src/xtil.js";
 
 describe("nix-clap", () => {
   const noop = () => undefined;
