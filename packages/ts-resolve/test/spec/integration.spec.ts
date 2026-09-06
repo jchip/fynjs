@@ -75,4 +75,22 @@ describe("register (end to end, real node)", () => {
     // "type": "module" on the package, not anything this resolver can do.
     expect(stderr).toMatch(/Unexpected token 'export'/);
   });
+
+  it("patches the CommonJS resolver, on every supported node", () => {
+    // The cjs fixture above only proves this below node 26.2; from 26.2 the
+    // registerHooks resolve hook covers require() on its own, so deleting the
+    // patch still passes there. Asserting the patch directly keeps the check
+    // meaningful on the node the developer happens to be running.
+    const probe = [
+      "const M = require('node:module');",
+      "const before = M._resolveFilename;",
+      `require(${JSON.stringify(register)});`,
+      "console.log(M._resolveFilename === before ? 'unpatched' : 'patched');"
+    ].join("\n");
+    const out = execFileSync(process.execPath, ["--input-type=commonjs", "-e", probe], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"]
+    }).trim();
+    expect(out).toBe("patched");
+  });
 });

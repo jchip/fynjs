@@ -57,3 +57,17 @@ Node >= 22.18, for two reasons: the synchronous in-thread `module.registerHooks`
 (node 22.15), and node's native TypeScript type-stripping being on by default (node
 22.18) so that `--import @fynjs/ts-resolve/register.ts` can load at all. Below 22.18
 the hook's own entry point cannot be read.
+
+## How `require()` is covered
+
+`install()` registers the resolve hook *and* wraps `Module._resolveFilename`.
+
+The wrap is not redundant. A CommonJS file run as the entry point is loaded
+through the ESM loader's CJS translator, and below node 26.2 the `require` that
+translator hands it goes straight to `Module._resolveFilename` without
+consulting `registerHooks` - so the hook never sees those specifiers and
+`require("./lib.js")` fails with `MODULE_NOT_FOUND`. From 26.2 the hook covers
+that path too and the wrap simply agrees with it.
+
+Resolution is all that was ever missing: node's CJS loader already strips types
+from a `.ts` file it is handed, on every version this package supports.
