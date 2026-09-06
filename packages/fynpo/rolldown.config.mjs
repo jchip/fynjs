@@ -100,13 +100,30 @@ const stub = name => Path.resolve(`stubs/${name}`);
 // bundle never imports; those belong to import-fresh and resolve-global, whose own package.json
 // declares them. `publishUtil.keep` is the single source of truth now.
 //
-const externals = [
-  ...pkgJson.publishUtil.keep[0].dependencies,
-  // subpaths are not covered by the bare package name
+// subpaths are not covered by the bare package name
+const subpathExternals = [
   "fyn/package.json",
   // ESM has no directory-index resolution, so this must name the file explicitly
-  "fyn/bin/index.js",
+  "fyn/bin/index.mjs",
 ];
+
+// A subpath external only holds while the specifier matches what the source imports. FPM-88
+// renamed fyn's bin to `.mjs` and this list kept saying `.js`, so rolldown silently inlined fyn's
+// entry - and inlined, its `import.meta.url`-relative path to `../dist/fyn.mjs` pointed inside
+// fynpo's own dist, where no such file exists. That surfaced only in `fynpo publish`, the one
+// caller that imports fyn in-process, and only after the release was underway (FPO-60). Resolving
+// them here turns the next rename into a build failure instead.
+for (const spec of subpathExternals) {
+  try {
+    require.resolve(spec);
+  } catch {
+    throw new Error(
+      `rolldown external "${spec}" does not resolve - it would be inlined instead of left external`
+    );
+  }
+}
+
+const externals = [...pkgJson.publishUtil.keep[0].dependencies, ...subpathExternals];
 
 export default defineConfig({
   input: Path.resolve("src/index.ts"),
