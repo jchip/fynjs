@@ -6,6 +6,11 @@ import defaults from "../defaults.js";
 import xsh from "xsh";
 
 class XReporterConsole {
+  declare _logger: any;
+  declare _sep: any;
+  declare _tags: any;
+  declare _xrun: any;
+
   constructor(xrun) {
     this._xrun = xrun;
     xrun.on("execute", data => this._onExecute(data));
@@ -26,7 +31,7 @@ class XReporterConsole {
     this._tags[qItem.id] = { sep: this._sep, msg };
   }
 
-  _indent(qItem, sep) {
+  _indent(qItem, sep?) {
     if (sep === undefined) {
       this._sep = this._sep === "." ? "-" : ".";
       sep = this._sep;

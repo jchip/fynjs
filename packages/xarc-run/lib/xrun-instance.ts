@@ -3,7 +3,7 @@ import XReporterConsole from "../lib/reporters/console.js";
 import XTaskSpec from "./xtask-spec.js";
 
 function createXrunInstance() {
-  const xrun = new XRun({});
+  const xrun: any = new XRun({});
   xrun[Symbol("reporter")] = new XReporterConsole(xrun);
 
   xrun.load = xrun.load.bind(xrun);

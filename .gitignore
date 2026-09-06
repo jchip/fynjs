@@ -12,3 +12,4 @@ _w
 dist-*
 .config
 .local
+dist

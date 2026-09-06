@@ -39,6 +39,11 @@ const isReadableStream = x => Boolean(x && x.pipe && x.on && x._readableState);
  *
  */
 class XQtor {
+  declare _done: any;
+  declare _tasks: any;
+  declare _xrun: any;
+  declare xqItems: any;
+
   constructor(options) {
     this._tasks = options.tasks;
     this._done = options.done;
@@ -46,7 +51,7 @@ class XQtor {
     this.xqItems = [];
   }
 
-  next(err, xqId) {
+  next(err?, xqId?) {
     process.nextTick(() => this._next(err, xqId), 0);
   }
 
@@ -120,7 +125,7 @@ because value type ${vtype} is unknown and no value.item`)
     return this.next(null, qItem.id);
   }
 
-  pushMarkItem(qItem, callback) {
+  pushMarkItem(qItem, callback?) {
     const x = this._makeXqMarkItem(qItem, callback);
     this.pushItem(x);
     return x;
@@ -145,7 +150,7 @@ because value type ${vtype} is unknown and no value.item`)
     return false;
   }
 
-  _parseShellFlags(flags, value) {
+  _parseShellFlags(flags, value?) {
     const unknowns = [];
 
     flags = flags.reduce((a, o) => {
@@ -287,7 +292,7 @@ because value type ${vtype} is unknown and no value.item`)
     return this.next(null, qItem.id);
   }
 
-  _processArray(qItem, tasks, top) {
+  _processArray(qItem, tasks, top?) {
     // check first element for concurrent signature
     // top level task arrays are automatically serial
     // or check first element for serial signature
@@ -391,7 +396,7 @@ because value type ${vtype} is unknown and no value.item`)
     return this.next();
   }
 
-  _shellXer(qItem, cmdVal, anon) {
+  _shellXer(qItem, cmdVal, anon?) {
     cmdVal = this._parseAnonShell(cmdVal);
 
     if (cmdVal.error) {
@@ -467,7 +472,7 @@ because value type ${vtype} is unknown and no value.item`)
     let child;
 
     const watch = { finish: false };
-    const done = err => {
+    const done = (err?: any) => {
       // even if there's error, but if it's due to child being terminated with
       // SIGTERM, then treat that as a normal exit.
       if (this._isChildSigTerm(err, child) || this._isChildTerminated(child)) {
@@ -495,7 +500,7 @@ because value type ${vtype} is unknown and no value.item`)
     const cmd2 = unwrapNpmCmd(cmd, { path: env.PATH });
 
     if (tty || spawn) {
-      const spawnOpts = { shell: true };
+      const spawnOpts: any = { shell: true };
       Object.assign(spawnOpts, itemOptions, options, { env });
       if (tty) spawnOpts.stdio = "inherit";
 
@@ -521,9 +526,9 @@ because value type ${vtype} is unknown and no value.item`)
       child = exec(Object.assign({ silent: false }, itemOptions, options, { env }), cmd2, done);
     }
 
-    if (!watch.finish) {
+    if (!(watch as any).finish) {
       this._handleChildTask(child, cmd);
-      watch.cancel = () => {
+      (watch as any).cancel = () => {
         this._xrun.killChildProcess(child);
         done();
       };
@@ -542,7 +547,7 @@ because value type ${vtype} is unknown and no value.item`)
     }
   }
 
-  _processMoreFromFn(qItem, value, callback) {
+  _processMoreFromFn(qItem, value, callback?) {
     let tof = typeof value;
 
     if (tof === "string") {
@@ -593,7 +598,7 @@ because value type ${vtype} is unknown and no value.item`)
       const handle = err => {
         val.removeListener("end", handle);
         val.removeListener("error", handle);
-        return err ? reject(err) : resolve();
+        return err ? reject(err) : resolve(undefined);
       };
 
       val.once("close", handle);
@@ -609,7 +614,7 @@ because value type ${vtype} is unknown and no value.item`)
     });
 
     const watch = { finish: false, qItem };
-    const done = (err, value) => {
+    const done = (err?: any, value?: any) => {
       if (watch.finish) return;
       watch.finish = true;
       if (value) {
@@ -618,7 +623,7 @@ because value type ${vtype} is unknown and no value.item`)
       this.next(err, qItem.id);
     };
 
-    watch.cancel = done;
+    (watch as any).cancel = done;
 
     try {
       this.pushMarkItem(qItem);
@@ -652,7 +657,7 @@ because value type ${vtype} is unknown and no value.item`)
             acc.push(
               ...node.errors
                 .filter(e => e.message.includes("unknown CLI option"))
-                .map(e => e.data.name)
+                .map((e: any) => e.data.name)
             );
             return acc;
           }, []);
@@ -794,11 +799,11 @@ because value type ${vtype} is unknown and no value.item`)
         xqId: qItem.id
       }
     });
-    mark.mark = true;
+    (mark as any).mark = true;
     return mark;
   }
 
-  _emit(event, data) {
+  _emit(event, data?) {
     try {
       this._xrun.emit(event, data);
     } catch (err) {

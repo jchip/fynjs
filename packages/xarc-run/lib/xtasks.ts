@@ -3,6 +3,10 @@ import defaults from "./defaults.js";
 import NSOrder from "./ns-order.js";
 
 class XTasks {
+  declare _namespaces: any;
+  declare _nsOrder: any;
+  declare _tasks: any;
+
   constructor(namespace, tasks) {
     this._tasks = { [defaults.NAMESPACE]: {} };
     this._nsOrder = new NSOrder();
@@ -73,7 +77,7 @@ class XTasks {
       name = name.substr(1).trim();
     }
     assert(name, invalidName);
-    let res = { name };
+    let res: any = { name };
     const nsSepIdx = name.indexOf(defaults.NS_SEP);
     // no NS_SEP found
     if (nsSepIdx < 0) {
@@ -96,9 +100,9 @@ class XTasks {
       const err = new Error(
         `${opt}Task ${res.name}${res.ns ? " in namespace " + res.ns : ""} not found`
       );
-      err.optional = optional;
-      err.res = res;
-      err.code = "TASK_NOT_FOUND";
+      (err as any).optional = optional;
+      (err as any).res = res;
+      (err as any).code = "TASK_NOT_FOUND";
       throw err;
     }
     return res;

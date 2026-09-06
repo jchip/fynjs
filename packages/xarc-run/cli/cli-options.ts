@@ -1,6 +1,6 @@
 import assert from "assert";
 import chalk from "../lib/chalk.js";
-import myPkg from "../package.json" with { type: "json" };
+import myPkg from "../lib/my-pkg.js";
 import config from "./config.js";
 
 export default {

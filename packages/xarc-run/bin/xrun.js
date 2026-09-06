@@ -29,7 +29,7 @@ function resolveCliDir() {
   }
 
   // not installed under either - running from this package's own checkout
-  return Path.join(import.meta.dirname, "..", "cli");
+  return Path.join(import.meta.dirname, "..", "dist", "cli");
 }
 
 //

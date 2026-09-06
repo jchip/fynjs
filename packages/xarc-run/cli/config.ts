@@ -1,4 +1,4 @@
-import myPkg from "../package.json" with { type: "json" };
+import myPkg from "../lib/my-pkg.js";
 
 export default {
   taskFile: "xrun-tasks.js",

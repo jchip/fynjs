@@ -2,6 +2,18 @@ import genXqId from "./gen-xqid.js";
 import assert from "assert";
 
 class XQItem {
+  declare _isFinally: any;
+  declare anon: any;
+  declare argv: any;
+  declare children: any;
+  declare id: any;
+  declare level: any;
+  declare name: any;
+  declare ns: any;
+  declare parentId: any;
+  declare resolved: any;
+  declare type: any;
+
   constructor(options) {
     this.id = genXqId();
     this.argv = [];

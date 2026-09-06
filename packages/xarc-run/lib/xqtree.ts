@@ -1,6 +1,9 @@
 import XQItem from "./xqitem.js";
 
 class XQTree {
+  declare _items: any;
+  declare tree: any;
+
   constructor() {
     this.tree = {};
     this._items = {};

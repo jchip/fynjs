@@ -7,6 +7,12 @@ const pad2 = x => {
 };
 
 class Logger {
+  declare _L: any;
+  declare _R: any;
+  declare _buf: any;
+  declare _c: any;
+  declare _quiet: any;
+
   constructor() {
     this.coloring(true);
     this.buffering(true);
@@ -99,7 +105,7 @@ class Logger {
   }
 }
 
-const logger = new Logger();
+const logger: any = new Logger();
 logger.pad2 = pad2;
 
 export default logger;

@@ -4,6 +4,14 @@
  * throughout the execution pipeline without tight coupling to CLI parsing details.
  */
 class CliContext {
+  declare _cmdArgs: any;
+  declare _opts: any;
+  declare _parsed: any;
+  declare _remainingArgs: any;
+  declare _searchResult: any;
+  declare _subCmdNodes: any;
+  declare _tasks: any;
+
   constructor(cmdArgs) {
     // Full cmdArgs from CLI parsing
     this._cmdArgs = cmdArgs;

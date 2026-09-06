@@ -27,7 +27,7 @@ import { NixClap } from "@fynjs/cli-args";
 import xsh from "xsh";
 import usage from "./usage.js";
 import logger from "../lib/logger.js";
-import myPkg from "../package.json" with { type: "json" };
+import myPkg from "../lib/my-pkg.js";
 import ck from "./ck.js";
 import config from "./config.js";
 import env from "./env.js";
@@ -101,7 +101,7 @@ async function parseArgs(argv, start) {
   const saveCwd = env.get(env.xrunCwd);
   opts.cwd = updateCwd(opts.cwd);
 
-  let searchResult = {};
+  let searchResult: any = {};
 
   /* istanbul ignore next */
   if (!opts.require) {
@@ -111,7 +111,7 @@ async function parseArgs(argv, start) {
   const Pkg = readPackageJson(opts.cwd);
 
   const pkgOptField = config.getPkgOpt(Pkg);
-  let pkgConfig = {};
+  let pkgConfig: any = {};
 
   if (pkgOptField) {
     pkgConfig = Object.assign(pkgConfig, Pkg[pkgOptField]);

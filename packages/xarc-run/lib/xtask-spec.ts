@@ -1,6 +1,12 @@
 import { mkCmd } from "xsh";
 
 class XTaskSpec {
+  declare cmd: any;
+  declare flags: any;
+  declare options: any;
+  declare type: any;
+  declare xrun: any;
+
   constructor(spec) {
     this.type = spec.type || "exec";
 

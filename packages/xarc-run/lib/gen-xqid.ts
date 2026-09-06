@@ -1,4 +1,4 @@
-export default tag => {
+export default (tag?: any) => {
   return (
     (tag ? `${tag}_` : "") +
     Math.random()

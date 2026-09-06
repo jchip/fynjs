@@ -11,7 +11,7 @@ import logger from "../lib/logger.js";
 import path from "path";
 import WrapProcess from "./wrap-process.js";
 
-const TsRunner = {
+const TsRunner: any = {
   //
   // `@fynjs/ts-resolve` is ESM-only, but it stays on this same require path: node's
   // `require(esm)` is unflagged from 22.12, which is already this package's floor, and

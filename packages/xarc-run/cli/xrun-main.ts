@@ -17,6 +17,7 @@ const optionalRequire = makeOptionalRequire(require);
 import env from "./env.js";
 import WrapProcess from "./wrap-process.js";
 import { CliContext } from "../lib/cli-context.js";
+import { myPkgDir } from "../lib/my-pkg.js";
 
 /**
  * Flush logger based on options
@@ -38,7 +39,7 @@ function flushLogger(opts) {
  */
 function handleExitOrDone(code, done) {
   if (done) {
-    const err = new Error(`exit code: ${code}`);
+    const err: any = new Error(`exit code: ${code}`);
     err.exitCode = code;
     done(err);
   } else {
@@ -90,12 +91,27 @@ function findRunnerModule(xrunPath) {
   let runner;
 
   //
-  // The runner may resolve to this package's own ESM entry, in which case require(esm) hands
-  // back the module namespace rather than the instance - the runner sits on `.default`. A copy
-  // that is still CJS has no `.default` and is used as-is.
+  // Only a copy of this package that is NOT the one running counts here. Node lets a package
+  // self-reference its own name once it declares `exports`, so `require("@fynjs/run")` from
+  // inside our own cli resolves right back to our own `main` - loading a SECOND copy of every
+  // module, with a second xrun instance. Tasks get registered into the instance this module
+  // graph owns, so that second runner reports zero tasks and the run dies with "No tasks found".
+  //
+  // The runner may resolve to a copy's ESM entry, in which case require(esm) hands back the
+  // module namespace rather than the instance - the runner sits on `.default`. A copy that is
+  // still CJS has no `.default` and is used as-is.
   //
   /* istanbul ignore next: the .default arm needs a real require of this package - see below */
   const loadRunner = p => {
+    let resolved;
+    try {
+      resolved = require.resolve(p);
+    } catch {
+      return undefined;
+    }
+    if (!Path.relative(myPkgDir, resolved).startsWith("..")) {
+      return undefined;
+    }
     const mod = optionalRequire(p);
     return mod && (mod.default || mod);
   };
@@ -140,7 +156,20 @@ function handleNoTasks(cliContext, cwd, done, opts) {
   flushLogger(opts);
 
   const fromCwd = optionalRequire.resolve("@fynjs/run") || "not found - probably not installed";
-  const fromMyDir = Path.dirname(require.resolve(".."));
+  //
+  // Purely diagnostic, so it must never be the thing that throws. `require.resolve("..")` goes
+  // through this package's own `main`, which does not exist when running from source before a
+  // build - and a "no tasks found" message that dies while explaining itself is worse than the
+  // original problem.
+  //
+  let fromMyDir: string;
+  try {
+    fromMyDir = Path.dirname(require.resolve(".."));
+  } catch {
+    // only reachable running from source with no build in place, which a test run is not
+    /* istanbul ignore next */
+    fromMyDir = `not resolvable from ${import.meta.dirname}`;
+  }
   const searchResult = cliContext.getSearchResult();
   const info = searchResult.xrunFile
     ? `
@@ -342,7 +371,7 @@ async function xrunMain(argv, offset, xrunPath = "", done = null) {
 
   // Find and load runner module
   const { runner, foundPath } = findRunnerModule(xrunPath);
-  const rawCmdArgs = await parseCmdArgs.parseArgs(argv, offset, foundPath);
+  const rawCmdArgs = await parseCmdArgs.parseArgs(argv, offset);
 
   // Create CliContext as the primary interface
   const cliContext = new CliContext(rawCmdArgs);

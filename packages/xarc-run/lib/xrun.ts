@@ -11,7 +11,7 @@ import jaroWinkler from "jaro-winkler";
 import XTaskSpec from "./xtask-spec.js";
 import xsh from "xsh";
 import updateEnv from "./util/update-env.js";
-import myPkg from "../package.json" with { type: "json" };
+import myPkg from "./my-pkg.js";
 import { CliContext } from "./cli-context.js";
 import { exec } from "child_process";
 
@@ -38,7 +38,17 @@ function _concurrent(...tasks) {
 }
 
 class XRun extends EventEmitter {
-  constructor(namespace, tasks) {
+  declare _cliContext: any;
+  declare _isStop: any;
+  declare _logger: any;
+  declare _pending: any;
+  declare _stopOnError: any;
+  declare _taskChildren: any;
+  declare _tasks: any;
+  declare failed: any;
+  declare xqTree: any;
+
+  constructor(namespace?: any, tasks?: any) {
     super();
     this._tasks = new XTasks(namespace, tasks);
     this.failed = null;
@@ -64,7 +74,7 @@ class XRun extends EventEmitter {
     } else {
       assert(
         STOP_ON_ERROR.indexOf(v) >= 0,
-        `stopOnError must be true or false, or one of ${STOP_ON_ERROR.map(JSON.stringify).join(
+        `stopOnError must be true or false, or one of ${STOP_ON_ERROR.map(v => JSON.stringify(v)).join(
           ", "
         )}`
       );
@@ -317,7 +327,7 @@ class XRun extends EventEmitter {
     }
   }
 
-  updateEnv(envValues, options = {}) {
+  updateEnv(envValues, options: any = {}) {
     return updateEnv(envValues, options.target || process.env, options.override);
   }
 

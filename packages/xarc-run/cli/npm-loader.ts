@@ -1,7 +1,7 @@
 import logger from "../lib/logger.js";
 import chalk from "../lib/chalk.js";
 import readPkgUp from "read-pkg-up";
-import myPkg from "../package.json" with { type: "json" };
+import myPkg from "../lib/my-pkg.js";
 import config from "./config.js";
 import env from "./env.js";
 

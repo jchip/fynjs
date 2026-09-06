@@ -1,7 +1,7 @@
 import { makeOptionalRequire } from "optional-require";
 import { processTasks } from "./task-file.js";
 import WrapProcess from "./wrap-process.js";
-import myPkg from "../package.json" with { type: "json" };
+import myPkg from "../lib/my-pkg.js";
 import path from "path";
 
 /**

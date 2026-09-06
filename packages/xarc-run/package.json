@@ -2,14 +2,23 @@
   "name": "@fynjs/run",
   "version": "1.1.0",
   "description": "concurrent or serial run npm scripts, javascript tasks, and more",
-  "main": "lib/index.js",
-  "types": "lib/xrun.d.ts",
+  "main": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/index.d.ts",
+      "default": "./dist/lib/index.js"
+    },
+    "./cli/xrun": "./dist/cli/xrun.js",
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "pretest": "echo hello",
     "test": "vitest run",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "ci:check": "vitest run --coverage",
     "test:watch": "vitest",
@@ -36,8 +45,7 @@
     "registry": "https://registry.npmjs.com/"
   },
   "files": [
-    "lib",
-    "cli",
+    "dist",
     "bin"
   ],
   "keywords": [

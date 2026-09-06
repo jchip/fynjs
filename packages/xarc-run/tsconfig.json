@@ -1,19 +1,20 @@
 {
   "compilerOptions": {
-    // @fynjs/run ships lib/ and cli/ as source - `main` is lib/index.js and there is no build
-    // step - so tsc's only job here is checking. Nothing is emitted and the published layout is
-    // unchanged. Renaming the sources to .ts is a separate, publish-visible phase (FJM-51).
-    "noEmit": true,
-    "allowJs": true,
-    "checkJs": true,
+    // lib/ and cli/ are the sources; dist/ mirrors that structure (dist/lib, dist/cli) because
+    // bin/xrun.js reaches the CLI by path at runtime and the tests import lib/ and cli/ directly.
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
 
+    // NodeNext so the `./foo.js` specifiers throughout the sources mean what node means by them:
+    // they resolve to the sibling .ts at build time and stay .js in the emit.
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",
     "lib": ["ES2022"],
 
-    // Off to match every other package in the monorepo rather than silently holding this one to
-    // a different bar. Turning it on repo-wide is FJM-156.
+    // Off to match every other package in the monorepo rather than holding this one to a
+    // different bar. Turning it on repo-wide is FJM-156.
     "strict": false,
 
     "skipLibCheck": true,

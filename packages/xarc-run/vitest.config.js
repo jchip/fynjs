@@ -40,11 +40,11 @@ export default defineConfig({
     coverage: {
       provider: "v8", // Using v8 because istanbul doesn't work with forks pool (needed for process.chdir())
       reporter: ["text", "lcov", "text-summary"],
-      include: ["cli/**/*.js", "lib/**/*.js"],
+      include: ["cli/**/*.ts", "lib/**/*.ts"],
       exclude: [
         "demos",
         "bin",
-        "cli/check-global.js",
+        "cli/check-global.ts",
         "xclap.js",
         "xtasks.js",
         "xrun-tasks.js",

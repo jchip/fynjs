@@ -2,6 +2,9 @@ import each from "lodash.foreach";
 import assert from "assert";
 
 class NSOrder {
+  declare _namespaces: any;
+  declare _overrides: any;
+
   constructor() {
     this._namespaces = [];
     this._overrides = {};
