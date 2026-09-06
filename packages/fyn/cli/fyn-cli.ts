@@ -20,7 +20,6 @@ import runScript from "@npmcli/run-script";
 import xaa from "../lib/util/xaa";
 import { scanFileStats } from "../lib/util/stat-dir";
 import { checkPkgNewVersionEngine } from "check-pkg-new-version-engine";
-import fetch from "node-fetch-npm";
 import myPkg from "./mypkg";
 import { cleanErrorStack } from "@jchip/error";
 import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";

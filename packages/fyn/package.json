@@ -133,7 +133,6 @@
     "@vitest/ui": "^5.0.0",
     "agentkeepalive": "^3.5.3",
     "js-yaml": "^5.4.1",
-    "node-fetch-npm": "^2.0.4",
     "patch-package": "^8.0.0",
     "prettier": "^3.5.3",
     "rolldown": "^1.2.6",

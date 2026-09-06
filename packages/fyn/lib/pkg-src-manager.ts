@@ -30,7 +30,6 @@ import PkgPreper from "pkg-preper";
 import { VisualExec } from "visual-exec";
 import fyntil from "./util/fyntil";
 import { MARK_URL_SPEC } from "./constants";
-import nodeFetch from "node-fetch-npm";
 import { AggregateError } from "@jchip/error";
 import { prePackObj } from "publish-util";
 import { PackageRef } from "@fynpo/base";
@@ -1141,7 +1140,7 @@ class PkgSrcManager {
           const checkMemoizedCache = async () => {
             for (const key of cacheKeys) {
               const encKey = encodeURIComponent(key);
-              const res = await nodeFetch(`${metaMemoizeUrl}?key=${encKey}`);
+              const res = await fetch(`${metaMemoizeUrl}?key=${encKey}`);
               if (res.status === 200) {
                 return true;
               }
@@ -1190,7 +1189,7 @@ class PkgSrcManager {
         this._meta[pkgKey] = meta;
         if (!cacheMemoized && metaMemoizeUrl) {
           const encKey = encodeURIComponent(cacheKey);
-          nodeFetch(`${metaMemoizeUrl}?key=${encKey}`, { method: "POST", body: "" }).then(
+          fetch(`${metaMemoizeUrl}?key=${encKey}`, { method: "POST", body: "" }).then(
             _.noop,
             _.noop
           );
