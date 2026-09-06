@@ -12,6 +12,7 @@
     "test": "fynpo run test --stream --ignore ignore-walk npm-packlist",
     "ci:check": "fyn testing && fynpo run ci:check --stream",
     "coverage": "fynpo run coverage --stream",
+    "check:engines": "node tools/check-engines.mjs",
     "git-clone1": "if [ ! -d _w/npm-packlist ]; then mkdir -p _w; cd _w; git clone git@github.com:jchip/npm-packlist.git; cd ..; fi",
     "git-clone2": "if [ ! -d _w/ignore-walk ]; then mkdir -p _w; cd _w; git clone git@github.com:jchip/ignore-walk.git; cd ..; fi",
     "bootstrap": "fyn git-clone1 && fyn git-clone2 && fyn install --no-fynlocal && fynpo bootstrap",
@@ -36,7 +37,8 @@
   },
   "devDependencies": {
     "fyn": "^3.1.1",
-    "fynpo": "^3.1.1"
+    "fynpo": "^3.1.1",
+    "semver": "^7.8.5"
   },
   "dependencies": {
     "vite-node": "^6.0.0"
