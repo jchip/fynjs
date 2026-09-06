@@ -45,10 +45,11 @@
     "@types/js-yaml": "^4.0.9",
     "@types/lodash": "^4.17.25",
     "@types/node": "^22.15.30",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.0",
     "prettier": "^3.5.3",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   },
   "repository": {
     "type": "git",

@@ -120,7 +120,8 @@
     "source-map-support": "^0.5.19",
     "typedoc": "^0.28.14",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
