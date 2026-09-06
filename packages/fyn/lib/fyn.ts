@@ -1226,8 +1226,10 @@ class Fyn {
   }
 
   /**
-   * Forget the merged allowlist, so it is rebuilt from disk. Used after the
-   * install-time review prompt writes new approvals.
+   * Forget the merged allowlist so the next read rebuilds it from the config
+   * this instance holds. Used after the install-time review prompt writes new
+   * approvals - {@link applyAllowScripts} is what puts them in memory to be
+   * rebuilt from.
    *
    * @returns {void}
    */
@@ -1235,6 +1237,30 @@ class Fyn {
     this._allowScripts = undefined;
     this._denyScripts = undefined;
     this._pkg = this._pkg && { ...this._pkg };
+  }
+
+  /**
+   * Adopt install-script approvals that were just written to a config file.
+   *
+   * The review prompt writes the approval to disk, but `allowScripts` merges
+   * from the config this instance already holds - `_pkg` for a package.json
+   * target, the fynpo config for a fynpo.json one - and neither is re-read
+   * mid-install. Without this the install that asked re-evaluates against the
+   * policy from before the approval, leaves the package blocked, and reports
+   * it as unreviewed right after saying it was approved. FPM-125.
+   *
+   * @param {object} allowScripts the merged allowlist written to the file
+   * @param {object} [options] options
+   * @param {boolean} [options.fynpo] the approval went to the fynpo.json target
+   * @returns {void}
+   */
+  applyAllowScripts(allowScripts: AllowScriptsMap, { fynpo = false } = {}): void {
+    if (fynpo) {
+      _.set(this, ["_fynpo", "config", "fyn", "options", "allowScripts"], allowScripts);
+    } else if (this._pkg) {
+      _.set(this._pkg, ["fyn", "allowScripts"], allowScripts);
+    }
+    this.resetAllowScripts();
   }
 
   // `--allow-scripts-pending` - also report which packages would need approval

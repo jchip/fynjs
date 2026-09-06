@@ -632,6 +632,10 @@ export class InstallScripts {
     }
 
     await this.writeTarget(target, read, { allowScripts });
+    // the file on disk is not what this install evaluates policy from - hand
+    // the approval to the live instance too, or the requeue below re-evaluates
+    // against the policy from before the prompt. FPM-125.
+    this._fyn.applyAllowScripts(allowScripts, { fynpo: target.fynpo });
     logger.info(`approved ${chalk.cyan(approved.join(", "))}`);
 
     return approve.filter(record => approved.includes(record.name));

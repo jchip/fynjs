@@ -103,6 +103,60 @@ describe("fynpo fyn.options", function () {
     expect(fyn.allowScripts).to.deep.equal({ "a@1.0.0": true, "b@2.0.0": false });
   });
 
+  /**
+   * FPM-125: the install-time review prompt wrote the approval to disk, but
+   * `allowScripts` merges from the config already in memory and nothing
+   * re-read the file mid-install. So the run that asked re-evaluated against
+   * the pre-approval policy, left the package blocked, and reported it as
+   * "not reviewed" one line after saying it was approved.
+   */
+  describe("applyAllowScripts", function () {
+    it("makes an approval written to package.json visible to this run", async () => {
+      const fyn = await makeFyn();
+      expect(fyn.allowScripts).to.deep.equal({});
+
+      fyn.applyAllowScripts({ "sharp@0.34.4": { scripts: ["install"] } });
+
+      expect(fyn.allowScripts).to.deep.equal({
+        "sharp@0.34.4": { scripts: ["install"] }
+      });
+    });
+
+    it("makes an approval written to fynpo.json visible to this run", async () => {
+      writeFynpo({});
+      const fyn = await makeFyn();
+      expect(fyn.allowScripts).to.deep.equal({});
+
+      fyn.applyAllowScripts({ "sharp@0.34.4": true }, { fynpo: true });
+
+      expect(fyn.allowScripts).to.deep.equal({ "sharp@0.34.4": true });
+    });
+
+    it("keeps a denial from another scope winning over the approval", async () => {
+      // an approval must not be able to resurrect what the monorepo denied,
+      // which is the whole reason the merge is scoped rather than a plain
+      // assignment
+      writeFynpo({ allowScripts: { malware: false } });
+      const fyn = await makeFyn();
+
+      fyn.applyAllowScripts({ malware: true, sharp: true });
+
+      expect(fyn.allowScripts.malware).to.equal(false);
+      expect(fyn.allowScripts.sharp).to.equal(true);
+    });
+
+    it("replaces a previous approval rather than accumulating stale entries", async () => {
+      const fyn = await makeFyn({ pkgFyn: { allowScripts: { "sharp@0.34.0": true } } });
+      expect(fyn.allowScripts).to.deep.equal({ "sharp@0.34.0": true });
+
+      // the review prompt hands over the whole merged map it wrote, so the
+      // superseded pin must not linger
+      fyn.applyAllowScripts({ "sharp@0.34.4": true });
+
+      expect(fyn.allowScripts).to.deep.equal({ "sharp@0.34.4": true });
+    });
+  });
+
   describe("script policy scopes", function () {
     it("applies the monorepo's scriptPolicy to a package that sets none", async () => {
       writeFynpo({ scriptPolicy: "review" });
