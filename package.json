@@ -35,8 +35,8 @@
     "url": "https://github.com/jchip/fynjs/issues"
   },
   "devDependencies": {
-    "fyn": "^3.0.5",
-    "fynpo": "^3.0.5"
+    "fyn": "^3.1.0",
+    "fynpo": "^3.1.0"
   },
   "dependencies": {
     "vite-node": "^6.0.0"
