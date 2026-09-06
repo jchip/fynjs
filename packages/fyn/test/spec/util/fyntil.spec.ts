@@ -135,21 +135,21 @@ describe("fyntil", function () {
 
   describe("checkValueSatisfyRules", () => {
     it("should return true for no rules", () => {
-      expect(fyntil.checkValueSatisfyRules(null, "a")).equal(true);
-      expect(fyntil.checkValueSatisfyRules("", "a")).equal(true);
+      expect(fyntil.checkValueSatisfyRules(null, "a")).toBe(true);
+      expect(fyntil.checkValueSatisfyRules("", "a")).toBe(true);
     });
 
     it("should deny ! value", () => {
-      expect(fyntil.checkValueSatisfyRules(["!test"], "test")).equal(false);
+      expect(fyntil.checkValueSatisfyRules(["!test"], "test")).toBe(false);
     });
 
     it("should return true for no explicit accept values", () => {
-      expect(fyntil.checkValueSatisfyRules([], "blah")).equal(true);
-      expect(fyntil.checkValueSatisfyRules(["!foo"], "blah")).equal(true);
+      expect(fyntil.checkValueSatisfyRules([], "blah")).toBe(true);
+      expect(fyntil.checkValueSatisfyRules(["!foo"], "blah")).toBe(true);
     });
 
     it("should deny value that's not listed", () => {
-      expect(fyntil.checkValueSatisfyRules(["foo"], "blah")).equal(false);
+      expect(fyntil.checkValueSatisfyRules(["foo"], "blah")).toBe(false);
     });
   });
 
@@ -216,11 +216,11 @@ describe("fyntil", function () {
 
   describe("relativePath", () => {
     it("return dir with leading .", () => {
-      expect(fyntil.relativePath("/blah/foo/test/abc", "/blah/foo/test/abc/def")).equals("./def");
+      expect(fyntil.relativePath("/blah/foo/test/abc", "/blah/foo/test/abc/def")).toBe("./def");
     });
 
     it("return relative dir", () => {
-      expect(fyntil.relativePath("/blah/foo/test/abc", "/blah/foo/test/xyz/123")).equals(
+      expect(fyntil.relativePath("/blah/foo/test/abc", "/blah/foo/test/xyz/123")).toBe(
         "../xyz/123",
       );
     });

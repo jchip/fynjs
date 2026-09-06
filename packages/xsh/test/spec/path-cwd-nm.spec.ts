@@ -4,11 +4,11 @@ import xsh from "../../src/index.ts";
 
 describe("path-cwd-nmdir", function () {
   it("should leave path w/o cwd as is", () => {
-    expect(xsh.pathCwdNm.remove("/test/foo/blah")).to.equal("/test/foo/blah");
+    expect(xsh.pathCwdNm.remove("/test/foo/blah")).toBe("/test/foo/blah");
   });
 
   it("remove cwd/node_modules from path", () => {
-    expect(xsh.pathCwdNm.remove(Path.resolve("node_modules", "foo", "bar"))).to.equal(
+    expect(xsh.pathCwdNm.remove(Path.resolve("node_modules", "foo", "bar"))).toBe(
       Path.normalize("/foo/bar")
     );
   });
@@ -17,16 +17,16 @@ describe("path-cwd-nmdir", function () {
     const x = Path.resolve("node_modules", "foo", "bar");
     const e = Path.normalize("/foo/bar");
 
-    expect(xsh.pathCwdNm.remove(`${x} ${x}`, "g")).to.equal(`${e} ${e}`);
+    expect(xsh.pathCwdNm.remove(`${x} ${x}`, "g")).toBe(`${e} ${e}`);
   });
 
   it("replace cwd/node_modules from path", () => {
-    expect(xsh.pathCwdNm.replace(Path.resolve("node_modules", "foo", "bar"))).to.equal(
+    expect(xsh.pathCwdNm.replace(Path.resolve("node_modules", "foo", "bar"))).toBe(
       Path.normalize("CWD/~/foo/bar")
     );
     expect(
       xsh.pathCwdNm.replace(Path.resolve("node_modules", "foo", "bar"), Path.join("$", "~"))
-    ).to.equal(Path.normalize("$/~/foo/bar"));
+    ).toBe(Path.normalize("$/~/foo/bar"));
   });
 
   it("replace all cwd/node_modules from path with g flag", () => {
@@ -34,8 +34,8 @@ describe("path-cwd-nmdir", function () {
     const e1 = Path.normalize("CWD/~/foo/bar");
     const e2 = Path.normalize("$/~/foo/bar");
 
-    expect(xsh.pathCwdNm.replace(`${x} ${x}`, false, "g")).to.equal(`${e1} ${e1}`);
-    expect(xsh.pathCwdNm.replace(`${x} ${x}`, Path.normalize("$/~"), "g")).to.equal(`${e2} ${e2}`);
+    expect(xsh.pathCwdNm.replace(`${x} ${x}`, false, "g")).toBe(`${e1} ${e1}`);
+    expect(xsh.pathCwdNm.replace(`${x} ${x}`, Path.normalize("$/~"), "g")).toBe(`${e2} ${e2}`);
   });
 
   it("replace all CWD and /node_modules/ from path with g flag", () => {
@@ -43,8 +43,8 @@ describe("path-cwd-nmdir", function () {
     const e1 = Path.normalize("CWD/test/~/foo/~/bar");
     const e2 = Path.normalize("CWD/test/~/foo/~/bar");
 
-    expect(xsh.pathCwdNm.replace(`${x} ${x}`, false, "g")).to.equal(`${e1} ${e1}`);
-    expect(xsh.pathCwdNm.replace(`${x} ${x}`, Path.normalize("$/~"), "g")).to.equal(`${e2} ${e2}`);
+    expect(xsh.pathCwdNm.replace(`${x} ${x}`, false, "g")).toBe(`${e1} ${e1}`);
+    expect(xsh.pathCwdNm.replace(`${x} ${x}`, Path.normalize("$/~"), "g")).toBe(`${e2} ${e2}`);
   });
 
   it("removes cwd/node_modules when cwd has regex metacharacters", () => {
@@ -52,7 +52,7 @@ describe("path-cwd-nmdir", function () {
     const cwd = Path.normalize("/tmp/my (project)");
     process.cwd = () => cwd;
     try {
-      expect(xsh.pathCwdNm.remove(Path.join(cwd, "node_modules", "foo", "bar"))).to.equal(
+      expect(xsh.pathCwdNm.remove(Path.join(cwd, "node_modules", "foo", "bar"))).toBe(
         Path.normalize("/foo/bar")
       );
     } finally {

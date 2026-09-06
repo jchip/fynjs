@@ -223,22 +223,22 @@ describe("nix-clap", () => {
   it("should parse single required param for command", () => {
     const nc = initParser().removeAllListeners("parse-fail");
     const { command } = nc.parse2(getArgv("cmd3"));
-    expect(command.error.message).contains("Not enough arguments for command 'cmd3'");
+    expect(command.error.message).toContain("Not enough arguments for command 'cmd3'");
     const { command: x } = nc.parse2(getArgv("cmd3 test"));
-    expect(Object.keys(x.subCmdNodes).length, "should have only one command").to.equal(1);
-    expect(x.subCmdNodes.cmd3.argsList).to.deep.equal(["test"]);
-    expect(x.subCmdNodes.cmd3.argsMap).to.deep.equal({ 0: "test", id: "test" });
-    expect(x.subCmdNodes.cmd3.name).eq("cmd3");
-    expect(x.subCmdNodes.cmd3.alias).eq("cmd3");
+    expect(Object.keys(x.subCmdNodes).length, "should have only one command").toBe(1);
+    expect(x.subCmdNodes.cmd3.argsList).toStrictEqual(["test"]);
+    expect(x.subCmdNodes.cmd3.argsMap).toStrictEqual({ 0: "test", id: "test" });
+    expect(x.subCmdNodes.cmd3.name).toBe("cmd3");
+    expect(x.subCmdNodes.cmd3.alias).toBe("cmd3");
     const { command: x2 } = nc.parse2(getArgv("cmd3 test foo"));
-    expect(Object.keys(x2.subCmdNodes).length, "should have one commands").to.equal(1);
-    expect(x2.subCmdNodes.cmd3.argsList).to.deep.equal(["test"]);
-    expect(x2.subCmdNodes.cmd3.argsMap).to.deep.equal({ 0: "test", id: "test" });
+    expect(Object.keys(x2.subCmdNodes).length, "should have one commands").toBe(1);
+    expect(x2.subCmdNodes.cmd3.argsList).toStrictEqual(["test"]);
+    expect(x2.subCmdNodes.cmd3.argsMap).toStrictEqual({ 0: "test", id: "test" });
     expect(
       Object.keys(x2.subCmdNodes.cmd3.subCmdNodes).length,
       "cmd3 should have one sub command"
-    ).to.eq(1);
-    expect(x2.subCmdNodes.cmd3.subCmdNodes.foo.jsonMeta).to.deep.eq({
+    ).toBe(1);
+    expect(x2.subCmdNodes.cmd3.subCmdNodes.foo.jsonMeta).toStrictEqual({
       name: "foo",
       alias: "foo",
       argList: [],
@@ -260,7 +260,7 @@ describe("nix-clap", () => {
     );
     const m = x.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       fooNum: 900,
       floatNum: 1.23,
       customFn: "xfoo-value",
@@ -276,7 +276,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "cmd1-foo": "cli",
       fooNum: "cli",
       floatNum: "cli",
@@ -294,9 +294,9 @@ describe("nix-clap", () => {
     });
     const subCommands = Object.values(m.subCommands);
 
-    expect(subCommands.length, "should have one command").to.equal(1);
+    expect(subCommands.length, "should have one command").toBe(1);
 
-    expect(subCommands[0]).to.deep.equal({
+    expect(subCommands[0]).toStrictEqual({
       name: "cmd1",
       alias: "cmd1",
       argList: ["a"],
@@ -330,12 +330,12 @@ describe("nix-clap", () => {
 
   it("should return the default value if custom regex doesn't match", () => {
     const x = initParser().parse(getArgv("--customRegex blah"));
-    expect(x.command.getErrorNodes()[0].error.message).contains(
+    expect(x.command.getErrorNodes()[0].error.message).toContain(
       `argument 'blah' didn't match RegExp requirement for customRegex`
     );
     const m = x.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       customRegex: "blah",
       "log-level": "info",
       "force-cache": true,
@@ -344,7 +344,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       customRegex: "cli",
       "log-level": "default",
       "force-cache": "default",
@@ -357,7 +357,7 @@ describe("nix-clap", () => {
 
   it("should throw if regex-unmatch event throws", () => {
     const parsed = initParser(undefined, undefined, {}).parse(getArgv("--customRegex blah"));
-    expect(parsed.command.getErrorNodes()[0].error.message).to.equal(
+    expect(parsed.command.getErrorNodes()[0].error.message).toBe(
       `argument 'blah' didn't match RegExp requirement for customRegex`
     );
   });
@@ -374,9 +374,9 @@ describe("nix-clap", () => {
     });
     const { command } = nc.parse2(getArgv("--regex boo"));
     const meta = command.jsonMeta;
-    expect(meta.opts.regex).eq("foo");
-    // expect(parsed.source.regex).to.equal("cli-default");
-    // expect(parsed.opts.regex).to.equal("foo");
+    expect(meta.opts.regex).toBe("foo");
+    // expect(parsed.source.regex).toBe("cli-default");
+    // expect(parsed.opts.regex).toBe("foo");
   });
 
   it("should return undefined if command RegExp didn't match and no default", () => {
@@ -393,8 +393,8 @@ describe("nix-clap", () => {
     );
     const x = nc.parse(getArgv("foo bleah"));
     const meta = x.command.jsonMeta;
-    expect(meta.subCommands.foo.args.foo).eq("bleah");
-    expect(x.command.getErrorNodes()[0].error.message).contains(
+    expect(meta.subCommands.foo.args.foo).toBe("bleah");
+    expect(x.command.getErrorNodes()[0].error.message).toContain(
       `argument 'bleah' didn't match RegExp requirement for foo`
     );
   });
@@ -413,16 +413,16 @@ describe("nix-clap", () => {
       })
       .parse2(getArgv("--foo x"));
     // console.log(x.jsonMeta, null, 2);
-    // expect(parsed.opts.foo).to.equal("bar coercion function threw error");
+    // expect(parsed.opts.foo).toBe("bar coercion function threw error");
   });
 
   it("should count options", () => {
     const nc = initParser();
     const x = nc.parse(getArgv("--count-opt -ccc"));
-    expect(x.command.jsonMeta.optsCount["count-opt"]).equal(4);
+    expect(x.command.jsonMeta.optsCount["count-opt"]).toBe(4);
     const m = x.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       "count-opt": 4,
       c: 4,
       "log-level": "info",
@@ -433,7 +433,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "count-opt": "cli",
       c: "cli",
       "log-level": "default",
@@ -444,7 +444,7 @@ describe("nix-clap", () => {
       forceCache: "default",
       applyDefault: "default"
     });
-    expect(m.optsCount).deep.eq({
+    expect(m.optsCount).toStrictEqual({
       "count-opt": 4,
       "log-level": 1,
       "force-cache": 1,
@@ -463,10 +463,10 @@ describe("nix-clap", () => {
      */
     const verify = (p: ParseResult, boolVal: boolean) => {
       const argv = p.command.jsonMeta;
-      expect(argv.opts["force-cache"]).to.equal(boolVal);
-      expect(argv.source["force-cache"]).to.equal("cli");
-      expect(argv.subCommands.cmd2).to.be.ok;
-      expect(argv.subCommands.cmd4).to.be.ok;
+      expect(argv.opts["force-cache"]).toBe(boolVal);
+      expect(argv.source["force-cache"]).toBe("cli");
+      expect(argv.subCommands.cmd2).toBeTruthy();
+      expect(argv.subCommands.cmd4).toBeTruthy();
     };
     verify(initParser().parse(getArgv("-f cmd2 cmd4")), true);
     verify(initParser().parse(getArgv("-f true cmd2 cmd4")), true);
@@ -487,36 +487,36 @@ describe("nix-clap", () => {
 
   it("should handle boolean that's part of a single dash option group", () => {
     const { command: x } = initParser().parse2(getArgv("cmd1 a -bnx"));
-    expect(x.jsonMeta.opts["bar-bool"]).equal(true);
+    expect(x.jsonMeta.opts["bar-bool"]).toBe(true);
     const { command: x2 } = initParser().parse2(getArgv("cmd1 a -nxb"));
-    expect(x2.jsonMeta.opts["bar-bool"]).equal(true);
+    expect(x2.jsonMeta.opts["bar-bool"]).toBe(true);
 
     const { command: x3 } = initParser().parse2(getArgv("cmd1 a -nxb -f"));
-    expect(x3.jsonMeta.opts["bar-bool"]).equal(true);
+    expect(x3.jsonMeta.opts["bar-bool"]).toBe(true);
 
     const { command: x4 } = initParser().parse2(getArgv("cmd1 a -nxb cmd2"));
-    expect(x4.jsonMeta.opts["bar-bool"]).equal(true);
+    expect(x4.jsonMeta.opts["bar-bool"]).toBe(true);
   });
 
   it("should take value specified by = to be false for no arg option", () => {
     const line = "cmd1 a --missing-type=no b";
     const x = initParser().parse(getArgv(line), 0);
     const cmd = x.command;
-    expect(cmd.jsonMeta.opts["missing-type"]).eq(false);
+    expect(cmd.jsonMeta.opts["missing-type"]).toBe(false);
   });
 
   it("should take no value specified to be true for no arg option", () => {
     const line = "cmd1 a --missing-type b";
     const x = initParser().parse(getArgv(line), 0);
     const cmd = x.command;
-    expect(cmd.jsonMeta.opts["missing-type"]).eq(true);
+    expect(cmd.jsonMeta.opts["missing-type"]).toBe(true);
   });
 
   it("should take value specified to be true for no arg option", () => {
     const line = "cmd1 a --missing-type=true b";
     const x = initParser().parse(getArgv(line), 0);
     const cmd = x.command;
-    expect(cmd.jsonMeta.opts["missing-type"]).eq(true);
+    expect(cmd.jsonMeta.opts["missing-type"]).toBe(true);
   });
 
   it("should apply boolean option default value of true when not provided", () => {
@@ -524,19 +524,19 @@ describe("nix-clap", () => {
     // When not provided on CLI, it should default to true
     const x = initParser().parse(getArgv("cmd1 a b"), 0);
     const m = x.command.jsonMeta;
-    expect(m.opts["force-cache"]).eq(true);
-    expect(m.source["force-cache"]).eq("default");
+    expect(m.opts["force-cache"]).toBe(true);
+    expect(m.source["force-cache"]).toBe("default");
   });
 
   it("should override boolean default true with false when explicitly set", () => {
     // force-cache defaults to true, but can be set to false
     const x1 = initParser().parse(getArgv("--force-cache=false cmd1 a b"), 0);
-    expect(x1.command.jsonMeta.opts["force-cache"]).eq(false);
-    expect(x1.command.jsonMeta.source["force-cache"]).eq("cli");
+    expect(x1.command.jsonMeta.opts["force-cache"]).toBe(false);
+    expect(x1.command.jsonMeta.source["force-cache"]).toBe("cli");
 
     const x2 = initParser().parse(getArgv("--no-force-cache cmd1 a b"), 0);
-    expect(x2.command.jsonMeta.opts["force-cache"]).eq(false);
-    expect(x2.command.jsonMeta.source["force-cache"]).eq("cli");
+    expect(x2.command.jsonMeta.opts["force-cache"]).toBe(false);
+    expect(x2.command.jsonMeta.source["force-cache"]).toBe("cli");
   });
 
   it("should apply optional boolean default value of true when not provided", () => {
@@ -552,28 +552,28 @@ describe("nix-clap", () => {
 
     // When not provided, should default to true
     const x1 = nc.parse([], 0);
-    expect(x1.command.jsonMeta.opts.feature).eq(true);
-    expect(x1.command.jsonMeta.source.feature).eq("default");
+    expect(x1.command.jsonMeta.opts.feature).toBe(true);
+    expect(x1.command.jsonMeta.source.feature).toBe("default");
 
     // When --no-feature is provided, should be false
     const x2 = nc.parse(["--no-feature"], 0);
-    expect(x2.command.jsonMeta.opts.feature).eq(false);
-    expect(x2.command.jsonMeta.source.feature).eq("cli");
+    expect(x2.command.jsonMeta.opts.feature).toBe(false);
+    expect(x2.command.jsonMeta.source.feature).toBe("cli");
 
     // When --feature=false is provided, should be false
     const x3 = nc.parse(["--feature=false"], 0);
-    expect(x3.command.jsonMeta.opts.feature).eq(false);
-    expect(x3.command.jsonMeta.source.feature).eq("cli");
+    expect(x3.command.jsonMeta.opts.feature).toBe(false);
+    expect(x3.command.jsonMeta.source.feature).toBe("cli");
   });
 
   it("should parse command at the beginning", () => {
     const line =
       "cmd1 a --cmd1-bar woo -q v --count-opt -ccc --fooNum=900 --missing-type yes --no-foobool -bnx --bool-2=0 --fc true -a 100 200 -b";
     const x = initParser().parse(getArgv(line), 0);
-    expect(x.command.error.message).contains(`Encountered unknown CLI option 'n'`);
+    expect(x.command.error.message).toContain(`Encountered unknown CLI option 'n'`);
     const m = x.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       "log-level": "v",
       q: "v",
       "count-opt": 4,
@@ -602,7 +602,7 @@ describe("nix-clap", () => {
       arrayOptRequire: ["100", "200"],
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "log-level": "cli",
       q: "cli",
       "count-opt": "cli",
@@ -639,7 +639,7 @@ describe("nix-clap", () => {
       const x = nc.parse(getArgv("--subtype-array 1 2 3 4 5"));
       const m = x.command.jsonMeta;
 
-      expect(m.opts).deep.eq({
+      expect(m.opts).toStrictEqual({
         "subtype-array": [1, 2, 3, 4, 5],
         "log-level": "info",
         "force-cache": true,
@@ -649,7 +649,7 @@ describe("nix-clap", () => {
         forceCache: true,
         applyDefault: true
       });
-      expect(m.source).deep.eq({
+      expect(m.source).toStrictEqual({
         "subtype-array": "cli",
         "log-level": "default",
         "force-cache": "default",
@@ -665,7 +665,7 @@ describe("nix-clap", () => {
       const x = nc.parse(getArgv("--subtype-array"));
       const m = x.command.jsonMeta;
 
-      expect(m.opts).deep.eq({
+      expect(m.opts).toStrictEqual({
         "subtype-array": undefined,
         subtypeArray: undefined,
         "log-level": "info",
@@ -675,7 +675,7 @@ describe("nix-clap", () => {
         forceCache: true,
         applyDefault: true
       });
-      expect(m.source).deep.eq({
+      expect(m.source).toStrictEqual({
         "subtype-array": "cli",
         "log-level": "default",
         "force-cache": "default",
@@ -696,7 +696,7 @@ describe("nix-clap", () => {
     const x = nc.parse(getArgv("sum 1 2 3 4"));
     const m = x.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       "log-level": "info",
       "force-cache": true,
       "apply-default": true,
@@ -704,7 +704,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "log-level": "default",
       "force-cache": "default",
       "apply-default": "default",
@@ -712,7 +712,7 @@ describe("nix-clap", () => {
       forceCache: "default",
       applyDefault: "default"
     });
-    expect(m.subCommands).deep.eq({
+    expect(m.subCommands).toStrictEqual({
       sum: {
         name: "sum",
         alias: "sum",
@@ -735,14 +735,14 @@ describe("nix-clap", () => {
     const nc = initParser(() => (execed = true));
     nc.skipExec();
     nc.parse(getArgv("cmd8 1 2"));
-    expect(execed).to.equal(false);
+    expect(execed).toBe(false);
   });
 
   it("should terminate option arg gathering with --", () => {
     const nc = initParser();
     const { command: x } = nc.parse(getArgv("--str-opt -- cmd2"));
     const m = x.jsonMeta;
-    expect(m.opts).deep.equal({
+    expect(m.opts).toStrictEqual({
       "str-opt": undefined,
       strOpt: undefined,
       "log-level": "info",
@@ -752,7 +752,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "str-opt": "cli",
       "log-level": "default",
       "force-cache": "default",
@@ -762,10 +762,10 @@ describe("nix-clap", () => {
       forceCache: "default",
       applyDefault: "default"
     });
-    expect(m.subCommands).deep.equal({});
+    expect(m.subCommands).toStrictEqual({});
 
     const parsed = nc.parse(getArgv("--array-opt-require -- d"));
-    expect(parsed.command.error.message).to.equal(
+    expect(parsed.command.error.message).toBe(
       "Not enough arguments for option 'array-opt-require'"
     );
   });
@@ -775,7 +775,7 @@ describe("nix-clap", () => {
     const { command: x } = nc.parse(getArgv("--array-opt-require a b c -- cmd2"));
     const m = x.jsonMeta;
 
-    expect(m.opts).deep.equal({
+    expect(m.opts).toStrictEqual({
       "array-opt-require": ["a", "b", "c"],
       "log-level": "info",
       "force-cache": true,
@@ -785,7 +785,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "array-opt-require": "cli",
       "log-level": "default",
       "force-cache": "default",
@@ -795,7 +795,7 @@ describe("nix-clap", () => {
       forceCache: "default",
       applyDefault: "default"
     });
-    expect(m.subCommands).deep.equal({});
+    expect(m.subCommands).toStrictEqual({});
   });
 
   const testOptArgTerminator = (terminator: string) => {
@@ -804,7 +804,7 @@ describe("nix-clap", () => {
 
     const m = x.command.jsonMeta;
 
-    expect(m.opts).deep.equal({
+    expect(m.opts).toStrictEqual({
       "array-opt-require": ["a", "b", "c"],
       "log-level": "info",
       "force-cache": true,
@@ -814,7 +814,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "array-opt-require": "cli",
       "log-level": "default",
       "force-cache": "default",
@@ -824,10 +824,10 @@ describe("nix-clap", () => {
       forceCache: "default",
       applyDefault: "default"
     });
-    expect(m.argList).to.be.empty;
-    expect(m.subCommands).deep.eq({});
+    expect(m.argList).toHaveLength(0);
+    expect(m.subCommands).toStrictEqual({});
     // Command requires a subcommand but got unknown 'd' - error expected
-    expect(x.command.error.message).contain(`requires a subcommand`);
+    expect(x.command.error.message).toContain(`requires a subcommand`);
   };
 
   it("should terminate option array with -. and parse the remaining args", () => {
@@ -844,10 +844,10 @@ describe("nix-clap", () => {
     const m = x.command.jsonMeta;
 
     const cmd1 = m.subCommands.cmd1;
-    expect(cmd1.argList).deep.equal(["a", "b", "c"]);
-    expect(cmd1.opts).deep.equal({ dev: ["x", "y", "z"], "cmd1-foo": "boo", cmd1Foo: "boo" });
-    expect(cmd1.source).deep.eq({ dev: "cli", "cmd1-foo": "default", cmd1Foo: "default" });
-    expect(m.opts).to.deep.eq({
+    expect(cmd1.argList).toStrictEqual(["a", "b", "c"]);
+    expect(cmd1.opts).toStrictEqual({ dev: ["x", "y", "z"], "cmd1-foo": "boo", cmd1Foo: "boo" });
+    expect(cmd1.source).toStrictEqual({ dev: "cli", "cmd1-foo": "default", cmd1Foo: "default" });
+    expect(m.opts).toStrictEqual({
       "log-level": "info",
       "force-cache": true,
       "apply-default": true,
@@ -855,7 +855,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).to.deep.eq({
+    expect(m.source).toStrictEqual({
       "log-level": "default",
       "force-cache": "default",
       "apply-default": "default",
@@ -869,22 +869,22 @@ describe("nix-clap", () => {
     const nc = initParser();
     // the first -. ends --dev, the 2nd -. ends cmd1 args
     const x = nc.parse(getArgv(`cmd1 a --dev x y z -. -. cmd2 cmd3`));
-    expect(x.command.error.message).contains("Not enough arguments for command 'cmd3'");
+    expect(x.command.error.message).toContain("Not enough arguments for command 'cmd3'");
     const m = x.command.jsonMeta;
     const { cmd1, cmd2, cmd3 } = m.subCommands;
-    expect(cmd1.argList).deep.equal(["a"]);
-    expect(cmd1.opts).to.deep.eq({
+    expect(cmd1.argList).toStrictEqual(["a"]);
+    expect(cmd1.opts).toStrictEqual({
       dev: ["x", "y", "z"],
       "cmd1-foo": "boo",
       cmd1Foo: "boo"
     });
-    expect(cmd1.source).deep.eq({
+    expect(cmd1.source).toStrictEqual({
       dev: "cli",
       "cmd1-foo": "default",
       cmd1Foo: "default"
     });
-    expect(cmd2).to.be.ok;
-    expect(cmd3).to.be.ok;
+    expect(cmd2).toBeTruthy();
+    expect(cmd3).toBeTruthy();
   });
 
   it("should accept opt in middle of command args", () => {
@@ -894,9 +894,9 @@ describe("nix-clap", () => {
     const m = x.command.jsonMeta;
     const { cmd1, cmd2 } = m.subCommands;
 
-    expect(cmd2).to.be.ok;
-    expect(cmd1.argList).deep.equal(["a", "b"]);
-    expect(cmd1.opts).deep.eq({
+    expect(cmd2).toBeTruthy();
+    expect(cmd1.argList).toStrictEqual(["a", "b"]);
+    expect(cmd1.opts).toStrictEqual({
       "cmd1-boo": true,
       "1b": true,
       "cmd1-foo": "sss",
@@ -904,7 +904,7 @@ describe("nix-clap", () => {
       cmd1Boo: true,
       cmd1Foo: "sss"
     });
-    expect(cmd1.source).deep.eq({
+    expect(cmd1.source).toStrictEqual({
       "cmd1-boo": "cli",
       "1b": "cli",
       "cmd1-foo": "cli",
@@ -920,9 +920,9 @@ describe("nix-clap", () => {
     const cmd = x.command;
     const m = cmd.jsonMeta;
 
-    expect(cmd.error.message).contains("Encountered unknown CLI argument 'd'");
+    expect(cmd.error.message).toContain("Encountered unknown CLI argument 'd'");
 
-    expect(m.opts).to.deep.eq({
+    expect(m.opts).toStrictEqual({
       "log-level": "info",
       "force-cache": true,
       "apply-default": true,
@@ -930,7 +930,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).to.deep.eq({
+    expect(m.source).toStrictEqual({
       "log-level": "default",
       "force-cache": "default",
       "apply-default": "default",
@@ -940,12 +940,12 @@ describe("nix-clap", () => {
     });
 
     const cmd1 = m.subCommands.cmd1;
-    expect(cmd1.argList).deep.eq(["a", "b", "c"]);
-    expect(cmd1.opts).to.deep.eq({
+    expect(cmd1.argList).toStrictEqual(["a", "b", "c"]);
+    expect(cmd1.opts).toStrictEqual({
       "cmd1-foo": "boo",
       cmd1Foo: "boo"
     });
-    expect(cmd1.source).to.deep.eq({
+    expect(cmd1.source).toStrictEqual({
       "cmd1-foo": "default",
       cmd1Foo: "default"
     });
@@ -965,21 +965,21 @@ describe("nix-clap", () => {
     const x1 = nc.parse(getArgv("cmd7 a -- d e f"));
 
     // cmd7 requires at least 2 args, but -- terminate parsing and it didn't get enough
-    expect(x1.command.error.message).contains("Not enough arguments for command 'cmd7'");
+    expect(x1.command.error.message).toContain("Not enough arguments for command 'cmd7'");
     const m = x1.command.jsonMeta;
-    expect(x1.command.jsonMeta.subCommands.cmd7.argList).deep.eq(["a"]);
+    expect(x1.command.jsonMeta.subCommands.cmd7.argList).toStrictEqual(["a"]);
 
     //
 
     const x2 = nc.parse(getArgv("cmd7 a b -- d"));
-    expect(x2.command.getErrorNodes()).to.be.empty;
-    expect(x2.command.jsonMeta.subCommands.cmd7.argList).deep.eq(["a", "b"]);
+    expect(x2.command.getErrorNodes()).toHaveLength(0);
+    expect(x2.command.jsonMeta.subCommands.cmd7.argList).toStrictEqual(["a", "b"]);
 
     //
 
     const x3 = nc.parse(getArgv("cmd7 a b c -- d"));
-    expect(x3.command.getErrorNodes()).to.be.empty;
-    expect(x3.command.jsonMeta.subCommands.cmd7.argList).deep.eq(["a", "b", "c"]);
+    expect(x3.command.getErrorNodes()).toHaveLength(0);
+    expect(x3.command.jsonMeta.subCommands.cmd7.argList).toStrictEqual(["a", "b", "c"]);
   });
 
   it("should pass parsed result to exec handler with remaining args after --", () => {
@@ -988,19 +988,19 @@ describe("nix-clap", () => {
         args: "[args string..]",
         exec: (cmd: CommandNode, parsed?: ParseResult) => {
           invoked = cmd;
-          expect(parsed).to.be.ok;
-          expect(parsed._).to.deep.eq(["d", "e", "f", "--blah"]);
-          expect(cmd.jsonMeta.argList).deep.eq(["a", "b", "c"]);
+          expect(parsed).toBeTruthy();
+          expect(parsed._).toStrictEqual(["d", "e", "f", "--blah"]);
+          expect(cmd.jsonMeta.argList).toStrictEqual(["a", "b", "c"]);
         }
       }
     });
 
     const parsed = nc.parse(getArgv("cmd a b c -- d e f --blah"));
     nc.runExec(parsed);
-    expect(invoked).to.be.ok;
-    expect(invoked.name).to.equal("cmd");
-    expect(parsed.execCmd).to.be.ok;
-    expect(parsed.execCmd.name).to.equal("cmd");
+    expect(invoked).toBeTruthy();
+    expect(invoked.name).toBe("cmd");
+    expect(parsed.execCmd).toBeTruthy();
+    expect(parsed.execCmd.name).toBe("cmd");
   });
 
   it("should set execCmd on parsed result after execution", () => {
@@ -1012,10 +1012,10 @@ describe("nix-clap", () => {
     });
 
     const parsed = nc.parse(getArgv("build"));
-    expect(parsed.execCmd).to.be.undefined;
+    expect(parsed.execCmd).toBeUndefined();
     nc.runExec(parsed);
-    expect(parsed.execCmd).to.be.ok;
-    expect(parsed.execCmd.name).to.equal("build");
+    expect(parsed.execCmd).toBeTruthy();
+    expect(parsed.execCmd.name).toBe("build");
   });
 
   it("should keep the first execCmd when several commands execute", () => {
@@ -1038,9 +1038,9 @@ describe("nix-clap", () => {
     const parsed = nc.parse(getArgv("build test"));
     nc.runExec(parsed);
 
-    expect(invoked).to.deep.equal(["build", "test"]);
+    expect(invoked).toStrictEqual(["build", "test"]);
     // execCmd is set by the first command to run and not overwritten by later ones
-    expect(parsed.execCmd.name).to.equal("build");
+    expect(parsed.execCmd.name).toBe("build");
   });
 
   it("should invoke exec commands synchronously without a parsed result", () => {
@@ -1056,8 +1056,8 @@ describe("nix-clap", () => {
 
     const parsed = nc.parse(getArgv("build"));
     // no parsed result to record execCmd on - the exec still runs
-    expect(parsed.command.invokeExec(true)).to.equal(1);
-    expect(invoked).to.deep.equal(["build"]);
+    expect(parsed.command.invokeExec(true)).toBe(1);
+    expect(invoked).toStrictEqual(["build"]);
   });
 
   it("should invoke exec commands without a parsed result", async () => {
@@ -1074,8 +1074,8 @@ describe("nix-clap", () => {
     const parsed = nc.parse(getArgv("build"));
     // no parsed result to record execCmd on - the exec still runs
     const count = await parsed.command.invokeExecAsync(true);
-    expect(count).to.equal(1);
-    expect(invoked).to.deep.equal(["build"]);
+    expect(count).toBe(1);
+    expect(invoked).toStrictEqual(["build"]);
   });
 
   it("should not recurse into sub-commands when includeSubCommands is false", () => {
@@ -1094,17 +1094,17 @@ describe("nix-clap", () => {
     const shallow = parsed.command.getExecCommands([], false);
     const deep = parsed.command.getExecCommands([], true);
 
-    expect(shallow).to.be.empty;
-    expect(deep.map(c => c.name)).to.deep.equal(["build", "lib"]);
+    expect(shallow).toHaveLength(0);
+    expect(deep.map(c => c.name)).toStrictEqual(["build", "lib"]);
   });
 
   it("should ignore removeDefaultHandlers for an event with no default handler", () => {
     const nc = new NixClap({ ...noOutputExit }).init({}, {});
 
-    expect(() => nc.removeDefaultHandlers("no-such-event")).to.not.throw();
-    expect(nc.removeDefaultHandlers("no-such-event")).to.equal(nc);
+    expect(() => nc.removeDefaultHandlers("no-such-event")).not.toThrow();
+    expect(nc.removeDefaultHandlers("no-such-event")).toBe(nc);
     // a real default handler is still removable afterwards
-    expect(nc.removeDefaultHandlers("no-action")).to.equal(nc);
+    expect(nc.removeDefaultHandlers("no-action")).toBe(nc);
   });
 
   it("should skip the help check when help is disabled", () => {
@@ -1123,9 +1123,9 @@ describe("nix-clap", () => {
     // with `help: false` there is no help option, so _checkFailures skips the help
     // branch entirely and parsing proceeds normally
     const parsed = nc.parse(getArgv("build"));
-    expect(parsed.helpNode).to.be.undefined;
+    expect(parsed.helpNode).toBeUndefined();
     nc.runExec(parsed);
-    expect(executed).to.be.true;
+    expect(executed).toBe(true);
   });
 
   describe("async exec handler warning", () => {
@@ -1146,9 +1146,9 @@ describe("nix-clap", () => {
       nc.parse(getArgv("build"));
 
       const msg = out.join("");
-      expect(msg).includes("async exec handler for command 'build' invoked synchronously");
-      expect(msg).includes("myprog will not wait for it");
-      expect(msg).includes("Use parseAsync instead of parse");
+      expect(msg).toContain("async exec handler for command 'build' invoked synchronously");
+      expect(msg).toContain("myprog will not wait for it");
+      expect(msg).toContain("Use parseAsync instead of parse");
     });
 
     it("should warn once listing every async command", () => {
@@ -1161,9 +1161,9 @@ describe("nix-clap", () => {
       nc.parse(getArgv("build test"));
 
       const msg = out.join("");
-      expect(msg.match(/Warning:/g)).to.have.lengthOf(1);
-      expect(msg).includes("commands 'build', 'test' invoked synchronously");
-      expect(msg).includes("will not wait for them");
+      expect(msg.match(/Warning:/g)).toHaveLength(1);
+      expect(msg).toContain("commands 'build', 'test' invoked synchronously");
+      expect(msg).toContain("will not wait for them");
     });
 
     it("should warn when the root command exec handler returns a promise", () => {
@@ -1178,7 +1178,7 @@ describe("nix-clap", () => {
       const parsed = nc.parse(getArgv("hello"));
       nc.runExec(parsed);
 
-      expect(out.join("")).includes("invoked synchronously");
+      expect(out.join("")).toContain("invoked synchronously");
     });
 
     it("should fall back to 'program' when no name is configured", () => {
@@ -1188,7 +1188,7 @@ describe("nix-clap", () => {
       });
 
       nc.parse(getArgv("build"));
-      expect(out.join("")).includes("program will not wait for it");
+      expect(out.join("")).toContain("program will not wait for it");
     });
 
     it("should not warn for sync exec handlers", () => {
@@ -1198,7 +1198,7 @@ describe("nix-clap", () => {
       });
 
       nc.parse(getArgv("build"));
-      expect(out.join("")).to.not.include("Warning:");
+      expect(out.join("")).not.toContain("Warning:");
     });
 
     it("should not warn when parseAsync awaits the handlers", async () => {
@@ -1215,8 +1215,8 @@ describe("nix-clap", () => {
 
       await nc.parseAsync(getArgv("build"));
 
-      expect(ran).to.be.true;
-      expect(out.join("")).to.not.include("Warning:");
+      expect(ran).toBe(true);
+      expect(out.join("")).not.toContain("Warning:");
     });
   });
 
@@ -1235,9 +1235,9 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("unknown-script"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.run.argList).deep.eq(["unknown-script"]);
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.run).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.run.argList).toStrictEqual(["unknown-script"]);
     });
 
     it("should handle unknown command with multiple args", () => {
@@ -1250,8 +1250,8 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("unknown x y z"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.run.argList).deep.eq(["unknown", "x", "y", "z"]);
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.run.argList).toStrictEqual(["unknown", "x", "y", "z"]);
     });
 
     it("should work normally when fallback command is explicitly provided", () => {
@@ -1264,9 +1264,9 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("run blah"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.run.argList).deep.eq(["blah"]);
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.run).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.run.argList).toStrictEqual(["blah"]);
     });
 
     it("should work normally for other known commands", () => {
@@ -1283,9 +1283,9 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("install"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.install).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.undefined;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.install).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.run).toBeUndefined();
     });
 
     it("should still use defaultCommand when no args provided", () => {
@@ -1309,8 +1309,8 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv(""));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(installExecuted).to.be.true;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(installExecuted).toBe(true);
     });
 
     it("should not trigger fallback when option is first", () => {
@@ -1325,9 +1325,9 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("--verbose"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.opts.verbose).to.be.true;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.undefined;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.opts.verbose).toBe(true);
+      expect(parsed.command.jsonMeta.subCommands.run).toBeUndefined();
     });
 
     it("should throw error if fallback command doesn't exist", () => {
@@ -1339,9 +1339,9 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("unknown"));
-      expect(parsed.command.getErrorNodes().length).to.be.greaterThan(0);
+      expect(parsed.command.getErrorNodes().length).toBeGreaterThan(0);
       // Command requires a subcommand but fallback doesn't exist and 'unknown' is not a valid subcommand
-      expect(parsed.command.getErrorNodes()[0].error.message).to.contain("requires a subcommand");
+      expect(parsed.command.getErrorNodes()[0].error.message).toContain("requires a subcommand");
     });
 
     it("should not trigger fallback if allowUnknownCommand is enabled", () => {
@@ -1358,10 +1358,10 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("unknown"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
       // Should create unknown command, not fallback to run
-      expect(parsed.command.jsonMeta.subCommands.unknown).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.undefined;
+      expect(parsed.command.jsonMeta.subCommands.unknown).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.run).toBeUndefined();
     });
 
     it("should invoke defaultCommand when only options are provided", () => {
@@ -1387,10 +1387,10 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv("--verbose"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.opts.verbose).to.be.true;
-      expect(installExecuted).to.be.true;
-      expect(parsed.command.jsonMeta.subCommands.install).to.be.ok;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.opts.verbose).toBe(true);
+      expect(installExecuted).toBe(true);
+      expect(parsed.command.jsonMeta.subCommands.install).toBeTruthy();
     });
 
     it("should invoke defaultCommand when no args provided", () => {
@@ -1414,8 +1414,8 @@ describe("nix-clap", () => {
       });
 
       const parsed = nc.parse(getArgv(""));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(installExecuted).to.be.true;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(installExecuted).toBe(true);
     });
 
     it("should not trigger fallback when already inside a matched command", () => {
@@ -1435,10 +1435,10 @@ describe("nix-clap", () => {
       // When 'install' is matched and then 'unknown' is encountered,
       // it should be treated as an argument to 'install', not trigger fallback
       const parsed = nc.parse(getArgv("install unknown"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.install).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.install.argList).deep.eq(["unknown"]);
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.undefined;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.install).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.install.argList).toStrictEqual(["unknown"]);
+      expect(parsed.command.jsonMeta.subCommands.run).toBeUndefined();
     });
 
     it("should not trigger fallback when inside a command that doesn't accept args", () => {
@@ -1458,8 +1458,8 @@ describe("nix-clap", () => {
       // it should error, not trigger fallback
       const parsed = nc.parse(getArgv("install unknown"));
       // Should have an error because 'install' doesn't accept args and 'unknown' is not a subcommand
-      expect(parsed.command.getErrorNodes().length).to.be.greaterThan(0);
-      expect(parsed.command.getErrorNodes()[0].error.message).to.contain("unknown CLI argument");
+      expect(parsed.command.getErrorNodes().length).toBeGreaterThan(0);
+      expect(parsed.command.getErrorNodes()[0].error.message).toContain("unknown CLI argument");
     });
 
     it("should not trigger fallback if root has already processed arguments", () => {
@@ -1479,10 +1479,10 @@ describe("nix-clap", () => {
       const parsed = nc.parse(getArgv("file.txt unknown"));
       // Should have an error because root already processed 'file.txt' as an argument
       // and can't accept more, and 'unknown' is not a known command
-      expect(parsed.command.getErrorNodes().length).to.be.greaterThan(0);
-      expect(parsed.command.getErrorNodes()[0].error.message).to.contain("unknown CLI argument");
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.undefined;
-      expect(parsed.command.jsonMeta.argList).deep.eq(["file.txt"]);
+      expect(parsed.command.getErrorNodes().length).toBeGreaterThan(0);
+      expect(parsed.command.getErrorNodes()[0].error.message).toContain("unknown CLI argument");
+      expect(parsed.command.jsonMeta.subCommands.run).toBeUndefined();
+      expect(parsed.command.jsonMeta.argList).toStrictEqual(["file.txt"]);
     });
 
     it("should trigger fallback only for first unknown non-option arg", () => {
@@ -1498,10 +1498,10 @@ describe("nix-clap", () => {
 
       // Options can come first, fallback should still trigger for first unknown non-option arg
       const parsed = nc.parse(getArgv("--verbose unknown"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.opts.verbose).to.be.true;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.run.argList).deep.eq(["unknown"]);
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.opts.verbose).toBe(true);
+      expect(parsed.command.jsonMeta.subCommands.run).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.run.argList).toStrictEqual(["unknown"]);
     });
 
     it("should not trigger fallback if a known command was encountered first", () => {
@@ -1519,9 +1519,9 @@ describe("nix-clap", () => {
 
       // Known command 'install' was encountered, so fallback shouldn't trigger for subsequent unknown
       const parsed = nc.parse(getArgv("install"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.install).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.run).to.be.undefined;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.install).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.run).toBeUndefined();
     });
 
     it("should not insert defaultCommand when --help is specified", () => {
@@ -1552,9 +1552,9 @@ describe("nix-clap", () => {
       nc.parse(getArgv("--help"));
       // Help should show root command help, not install command help
       const output = helpOutput.join("");
-      expect(output).to.contain("install");
-      expect(output).to.contain("run");
-      expect(output).to.contain("Commands:");
+      expect(output).toContain("install");
+      expect(output).toContain("run");
+      expect(output).toContain("Commands:");
     });
 
     it("should not insert defaultCommand when --version is specified", () => {
@@ -1581,17 +1581,17 @@ describe("nix-clap", () => {
       );
 
       nc.parse(getArgv("--version"));
-      expect(versionOutput.trim()).to.eq("1.0.0");
+      expect(versionOutput.trim()).toBe("1.0.0");
     });
   });
 
   it("should terminate command array and parsing with --", () => {
     const nc = initParser();
     const x = nc.parse(getArgv("cmd1 -- d --1f=xyz"));
-    expect(x.command.getErrorNodes()).to.be.empty;
-    expect(x.command.jsonMeta.subCommands.cmd1.argList).deep.eq([]);
-    expect(x.command.jsonMeta.subCommands.cmd1.opts).deep.eq({ "cmd1-foo": "boo", cmd1Foo: "boo" });
-    expect(x.command.jsonMeta.subCommands.cmd1.source).deep.eq({
+    expect(x.command.getErrorNodes()).toHaveLength(0);
+    expect(x.command.jsonMeta.subCommands.cmd1.argList).toStrictEqual([]);
+    expect(x.command.jsonMeta.subCommands.cmd1.opts).toStrictEqual({ "cmd1-foo": "boo", cmd1Foo: "boo" });
+    expect(x.command.jsonMeta.subCommands.cmd1.source).toStrictEqual({
       "cmd1-foo": "default",
       cmd1Foo: "default"
     });
@@ -1603,12 +1603,12 @@ describe("nix-clap", () => {
       "cmd1 a --cmd1-bar woo -q v --count-opt -ccc -. -- --fooNum=900 --missing-type yes --no-foobool -bnxb";
     const p = nc.parse(getArgv(line));
     const x = p.command;
-    expect(p.command.getErrorNodes()).to.be.empty;
-    expect(p._).deep.eq(["--fooNum=900", "--missing-type", "yes", "--no-foobool", "-bnxb"]);
-    expect(p.index).eq(10);
+    expect(p.command.getErrorNodes()).toHaveLength(0);
+    expect(p._).toStrictEqual(["--fooNum=900", "--missing-type", "yes", "--no-foobool", "-bnxb"]);
+    expect(p.index).toBe(10);
     const m = x.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       "log-level": "v",
       q: "v",
       "count-opt": 4,
@@ -1620,7 +1620,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.optsCount).deep.eq({
+    expect(m.optsCount).toStrictEqual({
       "log-level": 1,
       "count-opt": 4,
       "force-cache": 1,
@@ -1630,7 +1630,7 @@ describe("nix-clap", () => {
       forceCache: 1,
       applyDefault: 1
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "log-level": "cli",
       q: "cli",
       "count-opt": "cli",
@@ -1643,7 +1643,7 @@ describe("nix-clap", () => {
       applyDefault: "default"
     });
 
-    expect(m.subCommands).deep.eq({
+    expect(m.subCommands).toStrictEqual({
       cmd1: {
         name: "cmd1",
         alias: "cmd1",
@@ -1694,7 +1694,7 @@ describe("nix-clap", () => {
     const p = nc.parse(getArgv("--missing-type --str-opt"));
     const m = p.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       strOpt: undefined,
       "str-opt": undefined, // no arg specified => undefined
       "missing-type": true,
@@ -1706,7 +1706,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "missing-type": "cli",
       "str-opt": "cli",
       "log-level": "default",
@@ -1731,7 +1731,7 @@ describe("nix-clap", () => {
     }).init({}, {});
 
     const { command: x } = nc.parse(getArgv("blah"));
-    expect(x.error.message).contains("unknown CLI argument 'blah'");
+    expect(x.error.message).toContain("unknown CLI argument 'blah'");
   });
 
   it("should set unknown cli option error", () => {
@@ -1742,7 +1742,7 @@ describe("nix-clap", () => {
       output: o => (outputed += o)
     }).init({}, {});
     const { command: x } = nc.parse2(getArgv("--blah"));
-    expect(x.error.message).contains("Encountered unknown CLI option 'blah'");
+    expect(x.error.message).toContain("Encountered unknown CLI option 'blah'");
   });
 
   it("should fail for unknown option arg type", () => {
@@ -1752,7 +1752,7 @@ describe("nix-clap", () => {
           args: "< blah>"
         }
       })
-    ).to.throw("option foo - Unknown type 'blah' for argument '< blah>'.");
+    ).toThrow("option foo - Unknown type 'blah' for argument '< blah>'.");
 
     expect(() =>
       new NixClap({ ...noOutputExit }).init({
@@ -1760,16 +1760,16 @@ describe("nix-clap", () => {
           args: "< blah..1,>"
         }
       })
-    ).to.throw("option foo - Unknown type 'blah' for argument '< blah..1,>'.");
+    ).toThrow("option foo - Unknown type 'blah' for argument '< blah..1,>'.");
   });
 
   it("should handle requireArg option missing arg", () => {
     const nc = initParser();
     const { command: x } = nc.parse2(getArgv("--rao"));
-    expect(x.error.message).to.contain("Not enough arguments for option 'require-arg-opt'");
+    expect(x.error.message).toContain("Not enough arguments for option 'require-arg-opt'");
 
     const { command: x2 } = nc.parse2(getArgv("--require-arg-opt"));
-    expect(x2.error.message).to.equal("Not enough arguments for option 'require-arg-opt'");
+    expect(x2.error.message).toBe("Not enough arguments for option 'require-arg-opt'");
   });
 
   it("should fail if user didn't specify a required option", () => {
@@ -1813,8 +1813,8 @@ describe("nix-clap", () => {
   it("should handle cmd alias as a string", () => {
     const nc = initParser();
     const { command: x } = nc.parse2(getArgv("4"));
-    expect(x.getErrorNodes()).to.be.empty;
-    expect(x.jsonMeta.subCommands).deep.eq({
+    expect(x.getErrorNodes()).toHaveLength(0);
+    expect(x.jsonMeta.subCommands).toStrictEqual({
       cmd4: {
         name: "cmd4",
         alias: "4",
@@ -1833,8 +1833,8 @@ describe("nix-clap", () => {
   it("should handle cmd alias as an array", () => {
     const nc = initParser();
     const { command: x } = nc.parse(getArgv("c5"));
-    expect(x.getErrorNodes()).to.be.empty;
-    expect(x.jsonMeta.subCommands).to.deep.equal({
+    expect(x.getErrorNodes()).toHaveLength(0);
+    expect(x.jsonMeta.subCommands).toStrictEqual({
       cmd5: {
         name: "cmd5",
         alias: "c5",
@@ -1866,8 +1866,8 @@ describe("nix-clap", () => {
     const r = nc.parse(getArgv("--blah 12345.9"));
     const m = r.command.jsonMeta;
 
-    expect(m.opts.blah).eq("as-string-value");
-    expect(m.optsFull.blah.x1).eq("as-string-value");
+    expect(m.opts.blah).toBe("as-string-value");
+    expect(m.optsFull.blah.x1).toBe("as-string-value");
   });
 
   it("should set error for unknown coercion", () => {
@@ -1884,7 +1884,7 @@ describe("nix-clap", () => {
     );
 
     const r = nc.parse(getArgv("--blah 12345.9"));
-    expect(r.errorNodes![0].error.message).contains("Unknown custom type handler: number");
+    expect(r.errorNodes![0].error.message).toContain("Unknown custom type handler: number");
   });
 
   it("should handle type coercion for commands", () => {
@@ -1901,15 +1901,15 @@ describe("nix-clap", () => {
       }
     );
     const { command: x } = nc.parse2(getArgv("foo hello wooo"));
-    expect(x.getErrorNodes()).to.be.empty;
+    expect(x.getErrorNodes()).toHaveLength(0);
     const { foo } = x.jsonMeta.subCommands;
-    expect(foo.argList).deep.equal(["hello", "wooo"]);
-    expect(foo.args.oop).equal("for-oop hello");
-    expect(foo.args.boo).equal("wooo");
+    expect(foo.argList).toStrictEqual(["hello", "wooo"]);
+    expect(foo.args.oop).toBe("for-oop hello");
+    expect(foo.args.boo).toBe("wooo");
     const { command: p2 } = nc.parse2(getArgv("foo hello abc"));
     const cmd2 = x.jsonMeta.subCommands.foo;
-    expect(p2.getErrorNodes()).not.to.be.empty;
-    expect(cmd2.args.boo).to.equal("wooo");
+    expect(p2.getErrorNodes()).not.toHaveLength(0);
+    expect(cmd2.args.boo).toBe("wooo");
   });
 
   it("should parse process.argv", () => {
@@ -1918,7 +1918,7 @@ describe("nix-clap", () => {
     const x = nc.parse();
     const m = x.command.jsonMeta;
 
-    expect(m.subCommands.cmd1).deep.eq({
+    expect(m.subCommands.cmd1).toStrictEqual({
       name: "cmd1",
       alias: "cmd1",
       argList: ["a"],
@@ -1967,9 +1967,9 @@ describe("nix-clap", () => {
     process.argv = getArgv("node blah.js cmd1 a --cmd1-bar woo");
     const r = nc.parse();
     const h = nc.makeHelp();
-    expect(h[1]).to.equal("Usage: foo-test <command>");
+    expect(h[1]).toBe("Usage: foo-test <command>");
     const h2 = r.command.cmdBase.makeHelp("foo-1");
-    expect(h2[0]).contain("foo-1 cmd1");
+    expect(h2[0]).toContain("foo-1 cmd1");
   });
 
   it("should add command name to sub command help", () => {
@@ -1985,7 +1985,7 @@ describe("nix-clap", () => {
     );
     const r = nc.parse(["cmd1"]);
     const h = r.command.subCmdNodes.cmd1.cmdBase.makeHelp();
-    expect(h[0]).contain("cmd1 cmd2");
+    expect(h[0]).toContain("cmd1 cmd2");
   });
 
   it("should handle unknown options", () => {
@@ -1995,12 +1995,12 @@ describe("nix-clap", () => {
     const m = x.jsonMeta;
 
     const errors = x.errors;
-    expect(errors).not.empty;
+    expect(errors.length).toBeGreaterThan(0);
 
-    expect(errors[0].message).contain("Encountered unknown CLI option 'unknown-opt'");
-    expect(errors[1].message).contain("Encountered unknown CLI option 'foo-zoo'");
+    expect(errors[0].message).toContain("Encountered unknown CLI option 'unknown-opt'");
+    expect(errors[1].message).toContain("Encountered unknown CLI option 'foo-zoo'");
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       "unknown-opt": true,
       "foo-zoo": false,
       "log-level": "info",
@@ -2012,7 +2012,7 @@ describe("nix-clap", () => {
       forceCache: true,
       applyDefault: true
     });
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "unknown-opt": "cli",
       "foo-zoo": "cli",
       "log-level": "default",
@@ -2024,7 +2024,7 @@ describe("nix-clap", () => {
       forceCache: "default",
       applyDefault: "default"
     });
-    expect(m.optsCount).deep.eq({
+    expect(m.optsCount).toStrictEqual({
       "unknown-opt": 1,
       "foo-zoo": 1,
       "log-level": 1,
@@ -2044,33 +2044,33 @@ describe("nix-clap", () => {
     function t0() {
       const p = nc.parse(getArgv("6"));
       const x = p.command;
-      expect(x.errors).not.to.be.empty;
-      expect(x.errors[0].message).contains("Not enough arguments for command 'cmd6'");
+      expect(x.errors).not.toHaveLength(0);
+      expect(x.errors[0].message).toContain("Not enough arguments for command 'cmd6'");
     }
 
     function t1() {
       const p = nc.parse(getArgv("cmd6 1"));
       const m = p.command.jsonMeta;
-      expect(p.command.errors).to.be.empty;
-      expect(m.subCommands.cmd6.argList).to.deep.eq(["1"]);
+      expect(p.command.errors).toHaveLength(0);
+      expect(m.subCommands.cmd6.argList).toStrictEqual(["1"]);
     }
 
     function t2() {
       const p = nc.parse(getArgv("cmd6 1 2"));
-      expect(p.command.errors).to.be.empty;
-      expect(p.command.jsonMeta.subCommands.cmd6.argList).to.deep.eq(["1", "2"]);
+      expect(p.command.errors).toHaveLength(0);
+      expect(p.command.jsonMeta.subCommands.cmd6.argList).toStrictEqual(["1", "2"]);
     }
 
     function t3() {
       const p = nc.parse(getArgv("cmd6 1 2 3"));
-      expect(p.command.errors).to.be.empty;
-      expect(p.command.jsonMeta.subCommands.cmd6.argList).to.deep.eq(["1", "2", "3"]);
+      expect(p.command.errors).toHaveLength(0);
+      expect(p.command.jsonMeta.subCommands.cmd6.argList).toStrictEqual(["1", "2", "3"]);
     }
 
     function t4() {
       const p = nc.parse(getArgv("cmd6 1 2 3 4"));
-      expect(p.command.errors).to.be.empty;
-      expect(p.command.jsonMeta.subCommands.cmd6.argList).to.deep.eq(["1", "2", "3", "4"]);
+      expect(p.command.errors).toHaveLength(0);
+      expect(p.command.jsonMeta.subCommands.cmd6.argList).toStrictEqual(["1", "2", "3", "4"]);
     }
 
     t0();
@@ -2094,7 +2094,7 @@ describe("nix-clap", () => {
           }
         }
       )
-    ).to.throw("Command test option blah already used by parent command 'program'");
+    ).toThrow("Command test option blah already used by parent command 'program'");
 
     expect(() =>
       new NixClap({ ...noOutputExit }).init(
@@ -2116,7 +2116,7 @@ describe("nix-clap", () => {
           }
         }
       )
-    ).to.throw("Command test2 option blah already used by parent command 'test'");
+    ).toThrow("Command test2 option blah already used by parent command 'test'");
   });
 
   it("should allow sub command to have same option as parent with allowDuplicateOption", () => {
@@ -2136,8 +2136,8 @@ describe("nix-clap", () => {
     const { command: p } = nc.parse2(getArgv("--blah test --blah"));
     const m = p.jsonMeta;
 
-    expect(m.opts).deep.equal({ blah: true });
-    expect(m.subCommands.test.opts).deep.equal({ blah: true });
+    expect(m.opts).toStrictEqual({ blah: true });
+    expect(m.subCommands.test.opts).toStrictEqual({ blah: true });
 
     // Also works with nested sub-commands
     const nc2 = new NixClap({ ...noOutputExit, allowDuplicateOption: true }).init(
@@ -2162,9 +2162,9 @@ describe("nix-clap", () => {
     const { command: p2 } = nc2.parse2(getArgv("--blah test --blah test2 --blah"));
     const m2 = p2.jsonMeta;
 
-    expect(m2.opts).deep.equal({ blah: true });
-    expect(m2.subCommands.test.opts).deep.equal({ blah: true });
-    expect(m2.subCommands.test.subCommands.test2.opts).deep.equal({ blah: true });
+    expect(m2.opts).toStrictEqual({ blah: true });
+    expect(m2.subCommands.test.opts).toStrictEqual({ blah: true });
+    expect(m2.subCommands.test.subCommands.test2.opts).toStrictEqual({ blah: true });
   });
 
   it("should handle sub command option alias duplicate parent option alias", () => {
@@ -2183,11 +2183,11 @@ describe("nix-clap", () => {
     const { command: p } = nc.parse2(getArgv("-b test -b"));
     const m = p.jsonMeta;
 
-    expect(m.opts).deep.equal({
+    expect(m.opts).toStrictEqual({
       blah: true,
       b: true
     });
-    expect(m.subCommands.test.opts).deep.equal({
+    expect(m.subCommands.test.opts).toStrictEqual({
       xy: true,
       b: true
     });
@@ -2205,7 +2205,7 @@ describe("nix-clap", () => {
     //       }
     //     }
     //   )
-    // ).to.throw("Command test option xy alias b conflicts with top level alias");
+    // ).toThrow("Command test option xy alias b conflicts with top level alias");
   });
 
   it("should handle sub command option alias duplicate top option", () => {
@@ -2225,11 +2225,11 @@ describe("nix-clap", () => {
     const { command: p } = nc.parse2(getArgv("-b test --blah"));
     const m = p.jsonMeta;
 
-    expect(m.opts).deep.equal({
+    expect(m.opts).toStrictEqual({
       blah: true,
       b: true
     });
-    expect(m.subCommands.test.opts).deep.equal({
+    expect(m.subCommands.test.opts).toStrictEqual({
       xy: true,
       blah: true
     });
@@ -2249,7 +2249,7 @@ describe("nix-clap", () => {
           }
         }
       )
-    ).to.throw("Command test option blah already used by parent command");
+    ).toThrow("Command test option blah already used by parent command");
   });
 
   it("should allow sub command option with same name and alias as parent with allowDuplicateOption", () => {
@@ -2271,15 +2271,15 @@ describe("nix-clap", () => {
     const { command: p } = nc.parse2(getArgv("--blah test --foo"));
     const m = p.jsonMeta;
 
-    expect(m.opts).deep.equal({ blah: true }); // --blah used directly
-    expect(m.subCommands.test.opts).deep.equal({ blah: true, foo: true }); // --foo alias used
+    expect(m.opts).toStrictEqual({ blah: true }); // --blah used directly
+    expect(m.subCommands.test.opts).toStrictEqual({ blah: true, foo: true }); // --foo alias used
 
     // Using --foo at both levels
     const { command: p2 } = nc.parse2(getArgv("--foo test --blah"));
     const m2 = p2.jsonMeta;
 
-    expect(m2.opts).deep.equal({ blah: true, foo: true }); // --foo alias used
-    expect(m2.subCommands.test.opts).deep.equal({ blah: true }); // --blah used directly
+    expect(m2.opts).toStrictEqual({ blah: true, foo: true }); // --foo alias used
+    expect(m2.subCommands.test.opts).toStrictEqual({ blah: true }); // --blah used directly
   });
 
   it("should fail if option alias conflict", () => {
@@ -2288,7 +2288,7 @@ describe("nix-clap", () => {
         blah: { alias: "foo" },
         plug: { alias: "foo" }
       })
-    ).to.throw("Option alias foo already used by option blah");
+    ).toThrow("Option alias foo already used by option blah");
   });
 
   it("should fail if command option alias conflict", () => {
@@ -2304,7 +2304,7 @@ describe("nix-clap", () => {
           }
         }
       )
-    ).to.throw("Init command cmd failed - Option alias foo already used by option blah");
+    ).toThrow("Init command cmd failed - Option alias foo already used by option blah");
   });
 
   it("should fail if command alias conflict", () => {
@@ -2320,7 +2320,7 @@ describe("nix-clap", () => {
           }
         }
       )
-    ).to.throw("Command cmd2 alias foo already used by command cmd");
+    ).toThrow("Command cmd2 alias foo already used by command cmd");
   });
 
   it("should fail if command specify variadic not in last arg", () => {
@@ -2333,7 +2333,7 @@ describe("nix-clap", () => {
           }
         }
       );
-    }).to.throw("For args specifier of 'cmd', only the last one can be variadic");
+    }).toThrow("For args specifier of 'cmd', only the last one can be variadic");
   });
 
   it("should fail if command specify invalid arg", () => {
@@ -2346,7 +2346,7 @@ describe("nix-clap", () => {
           }
         }
       );
-    }).to.throw("command cmd - Unknown type 'foo  blah' for argument '<woo foo  blah>'.");
+    }).toThrow("command cmd - Unknown type 'foo  blah' for argument '<woo foo  blah>'.");
   });
 
   it("should fail if command specify invalid arg type", () => {
@@ -2359,7 +2359,7 @@ describe("nix-clap", () => {
           }
         }
       );
-    }).to.throw("command cmd - Unknown type 'foo' for argument '<woo foo>'.");
+    }).toThrow("command cmd - Unknown type 'foo' for argument '<woo foo>'.");
   });
 
   it("should fail if arg specifier is invalid", () => {
@@ -2369,7 +2369,7 @@ describe("nix-clap", () => {
           args: "test"
         }
       });
-    }).to.throw("Invalid args specifier 'test");
+    }).toThrow("Invalid args specifier 'test");
   });
 
   it("should fail if sub command got invalid arg", () => {
@@ -2383,9 +2383,9 @@ describe("nix-clap", () => {
     );
 
     const parsed = nc.parse2(getArgv("cmd1 1 2 3"));
-    expect(parsed.errorNodes.length, "error expected").to.equal(1);
-    expect(parsed.errorNodes[0].name).to.equal("cmd1");
-    expect(parsed.errorNodes[0].error.message).equal(
+    expect(parsed.errorNodes.length, "error expected").toBe(1);
+    expect(parsed.errorNodes[0].name).toBe("cmd1");
+    expect(parsed.errorNodes[0].error.message).toBe(
       `Encountered unknown CLI argument '3' while parsing for command 'cmd1'.`
     );
   });
@@ -2727,7 +2727,7 @@ Options:
       .version("1.0.0")
       .init({}, numCommands);
     let help = nc.makeHelp("s");
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage:  s",
       "",
@@ -2738,7 +2738,7 @@ Options:
       "  --help, -?, -h  Show help. Add command path to show its help       [string ..]"
     ]);
     help = nc.makeHelp("sum");
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage:  sum",
       "",
@@ -2748,7 +2748,7 @@ Options:
       "  --help, -?, -h  Show help. Add command path to show its help       [string ..]"
     ]);
     help = nc.makeHelp("sr");
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage:  sr",
       "",
@@ -2760,7 +2760,7 @@ Options:
       "  --help, -?, -h  Show help. Add command path to show its help       [string ..]"
     ]);
     help = nc.makeHelp("sort");
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage:  sort",
       "",
@@ -2771,7 +2771,7 @@ Options:
       "  --help, -?, -h  Show help. Add command path to show its help       [string ..]"
     ]);
     help = nc.makeHelp("blah");
-    expect(help).to.deep.equal(["Unknown command: blah"]);
+    expect(help).toStrictEqual(["Unknown command: blah"]);
   });
 
   it("should make help for command with custom usage", () => {
@@ -2790,7 +2790,7 @@ Options:
         }
       );
     let help = nc.makeHelp("foo");
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage: test foo bar",
       "",
@@ -2799,7 +2799,7 @@ Options:
       "  --help, -?, -h  Show help. Add command path to show its help       [string ..]"
     ]);
     help = nc.makeHelp("blah");
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage: blah blah",
       "",
@@ -2832,7 +2832,7 @@ Options:
         }
       );
     const help = nc.makeHelp();
-    expect(help).to.deep.equal([
+    expect(help).toStrictEqual([
       "",
       "Usage: test <command>",
       "",
@@ -2858,12 +2858,12 @@ Options:
     let called = false;
     nc.once("no-action", () => (called = true));
     nc.parse([]);
-    expect(called).to.be.true;
+    expect(called).toBe(true);
 
     called = false;
     nc.once("no-action", () => (called = true));
     await nc.parseAsync([]);
-    expect(called).to.be.true;
+    expect(called).toBe(true);
   });
 
   it("should not emit no-action event when there's no command with exec", () => {
@@ -2887,7 +2887,7 @@ Options:
         }
       );
     nc.parse([]);
-    expect(called).to.be.undefined;
+    expect(called).toBeUndefined();
   });
 
   it("should show help for no-action event", () => {
@@ -2898,7 +2898,7 @@ Options:
     let showed;
     nc.showHelp = () => (showed = true);
     nc.parse([]);
-    expect(showed).to.be.true;
+    expect(showed).toBe(true);
   });
 
   it("should invoke default command handler with its default options applied", async () => {
@@ -2923,12 +2923,12 @@ Options:
       } else {
         p = nc.parse([]);
       }
-      expect(cmd).to.be.ok;
-      expect(cmd!.name).to.equal("foo");
-      expect(cmd!.jsonMeta.opts).deep.eq({
+      expect(cmd).toBeTruthy();
+      expect(cmd!.name).toBe("foo");
+      expect(cmd!.jsonMeta.opts).toStrictEqual({
         bar: "hello"
       });
-      expect(cmd!.jsonMeta.source).deep.eq({
+      expect(cmd!.jsonMeta.source).toStrictEqual({
         bar: "default"
       });
     };
@@ -2952,7 +2952,7 @@ Options:
     );
 
     const parsed = nc.parse(getArgv(""));
-    expect(parsed.errorNodes![0].error.message).contain("default command foox not found");
+    expect(parsed.errorNodes![0].error.message).toContain("default command foox not found");
   });
 
   describe("defaultCommand insertion via options", () => {
@@ -2980,13 +2980,13 @@ Options:
       // All arguments are options, unknown to root but known to default command
       // Using = syntax to avoid non-option arguments (preprocessing sees values as non-option)
       const parsed = nc.parse(getArgv("--port=8080 --host=localhost"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.host).to.equal("localhost");
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.host).toBe("localhost");
       // Root should not have these options
-      expect(parsed.command.jsonMeta.opts.port).to.be.undefined;
-      expect(parsed.command.jsonMeta.opts.host).to.be.undefined;
+      expect(parsed.command.jsonMeta.opts.port).toBeUndefined();
+      expect(parsed.command.jsonMeta.opts.host).toBeUndefined();
     });
 
     it("should not insert default command when non-option argument exists", () => {
@@ -3011,11 +3011,11 @@ Options:
 
       // Has non-option argument, so default command should not be inserted via options
       const parsed = nc.parse(getArgv("build --port=8080"));
-      expect(parsed.command.jsonMeta.subCommands.build).to.be.ok;
+      expect(parsed.command.jsonMeta.subCommands.build).toBeTruthy();
       // Port option should error since build doesn't have it and default command insertion is disabled
-      expect(parsed.command.getErrorNodes().length).to.be.greaterThan(0);
+      expect(parsed.command.getErrorNodes().length).toBeGreaterThan(0);
       // Default command should not be inserted
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.undefined;
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeUndefined();
     });
 
     it("should insert default command with multiple options", () => {
@@ -3038,11 +3038,11 @@ Options:
 
       // Using = syntax for options with values to avoid non-option arguments
       const parsed = nc.parse(getArgv("--port=8080 --host=localhost --debug"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.host).to.equal("localhost");
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.debug).to.be.true;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.host).toBe("localhost");
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.debug).toBe(true);
     });
 
     it("should handle root options mixed with default command options", () => {
@@ -3064,10 +3064,10 @@ Options:
       // Mix of root option and default command option
       // Using = syntax for option with value
       const parsed = nc.parse(getArgv("--verbose --port=8080"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.opts.verbose).to.be.true;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.opts.verbose).toBe(true);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
     });
 
     it("should not insert default command when command is explicitly provided", () => {
@@ -3092,11 +3092,11 @@ Options:
 
       // Explicit command provided, default command should not be inserted via options
       const parsed = nc.parse(getArgv("build --port=8080"));
-      expect(parsed.command.jsonMeta.subCommands.build).to.be.ok;
+      expect(parsed.command.jsonMeta.subCommands.build).toBeTruthy();
       // Port option doesn't belong to build, so it should error
-      expect(parsed.command.getErrorNodes().length).to.be.greaterThan(0);
+      expect(parsed.command.getErrorNodes().length).toBeGreaterThan(0);
       // Default command should not be inserted
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.undefined;
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeUndefined();
     });
 
     it("should handle -- terminator correctly", () => {
@@ -3119,9 +3119,9 @@ Options:
       // Preprocessing scans all args and detects file.txt after --, so it sets flag to false
       const parsed = nc.parse(getArgv("--port=8080 -- file.txt"));
       // Port option is unknown to root, so it should error (default command insertion disabled)
-      expect(parsed.command.getErrorNodes().length).to.be.greaterThan(0);
+      expect(parsed.command.getErrorNodes().length).toBeGreaterThan(0);
       // Default command should not be inserted via options
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.undefined;
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeUndefined();
     });
 
     it("should keep root options at root when default command is inserted", () => {
@@ -3143,13 +3143,13 @@ Options:
       // First option is root-only (verbose), second triggers default command insertion (port)
       // Root option should stay at root, default command option should go to default command
       const parsed = nc.parse(getArgv("--verbose --port=8080"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
       // Verbose should stay at root (doesn't belong to serve)
-      expect(parsed.command.jsonMeta.opts.verbose).to.be.true;
+      expect(parsed.command.jsonMeta.opts.verbose).toBe(true);
       // Port should be in serve
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
-      expect(parsed.command.jsonMeta.opts.port).to.be.undefined;
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
+      expect(parsed.command.jsonMeta.opts.port).toBeUndefined();
     });
 
     it("should handle short option aliases for default command", () => {
@@ -3171,15 +3171,15 @@ Options:
 
       // Using = syntax to avoid non-option argument (preprocessing sees 8080 as non-option)
       const parsed = nc.parse(getArgv("-p=8080"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
       
       // Test with boolean option (no value, so no non-option arg)
       const parsed2 = nc.parse(getArgv("-d"));
-      expect(parsed2.command.getErrorNodes()).to.be.empty;
-      expect(parsed2.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed2.command.jsonMeta.subCommands.serve.opts.debug).to.be.true;
+      expect(parsed2.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed2.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed2.command.jsonMeta.subCommands.serve.opts.debug).toBe(true);
     });
 
     it("should move options from root to default command when inserted during execution", () => {
@@ -3212,13 +3212,13 @@ Options:
       // Parse with options that trigger default command insertion during parsing
       // This covers the early return path (lines 905-906) when default command already exists
       const parsed = nc.parse(getArgv("--port=8080"));
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
       
       // When runExec is called, _makeDefaultExecCommand checks if default command already exists
       // and returns early (line 905-906), which is covered by this test
       nc.runExec(parsed);
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
     });
 
     it("should handle default command insertion with complete flag for single-char options", () => {
@@ -3242,9 +3242,9 @@ Options:
       // This exercises the complete=true path when default command is inserted (lines 391-393)
       // Note: The complete=true path is also exercised when -abc is split and a, b are processed
       const parsed = nc.parse(getArgv("-d"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.debug).to.be.true;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.debug).toBe(true);
     });
 
     it("should move multiple options when default command inserted via options", () => {
@@ -3269,14 +3269,14 @@ Options:
       // First add root option, then add default command options
       // This tests the path where options need to be moved when default command is inserted
       const parsed = nc.parse(getArgv("--verbose --port=8080 --host=localhost --debug"));
-      expect(parsed.command.getErrorNodes()).to.be.empty;
-      expect(parsed.command.jsonMeta.subCommands.serve).to.be.ok;
+      expect(parsed.command.getErrorNodes()).toHaveLength(0);
+      expect(parsed.command.jsonMeta.subCommands.serve).toBeTruthy();
       // Verbose stays at root (doesn't belong to serve)
-      expect(parsed.command.jsonMeta.opts.verbose).to.be.true;
+      expect(parsed.command.jsonMeta.opts.verbose).toBe(true);
       // Default command options should be in serve
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).to.equal(8080);
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.host).to.equal("localhost");
-      expect(parsed.command.jsonMeta.subCommands.serve.opts.debug).to.be.true;
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.port).toBe(8080);
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.host).toBe("localhost");
+      expect(parsed.command.jsonMeta.subCommands.serve.opts.debug).toBe(true);
     });
   });
 
@@ -3295,7 +3295,7 @@ Options:
     const parsed = nc.parse(getArgv("foo --blah"));
     const m = parsed.command.jsonMeta;
     const fooCmd = m.subCommands.foo;
-    expect(fooCmd).to.deep.equal({
+    expect(fooCmd).toStrictEqual({
       name: "foo",
       alias: "foo",
       argList: [],
@@ -3327,7 +3327,7 @@ Options:
     const nc = initParser();
     const parsed = nc.parse(getArgv("--array-opt-opt 25 b c"), 0);
     const m = parsed.command.jsonMeta;
-    expect(m.opts.arrayOptOpt).to.deep.eq({
+    expect(m.opts.arrayOptOpt).toStrictEqual({
       0: 25,
       1: ["b", "c"]
     });
@@ -3347,7 +3347,7 @@ Options:
     });
     const m = parsed.command.jsonMeta;
 
-    expect(m.opts).deep.eq({
+    expect(m.opts).toStrictEqual({
       "count-opt": 4,
       c: 4,
       fooNum: 900,
@@ -3368,7 +3368,7 @@ Options:
       anything: 999
     });
 
-    expect(m.source).deep.eq({
+    expect(m.source).toStrictEqual({
       "count-opt": "cli",
       c: "cli",
       fooNum: "cli",
@@ -3399,10 +3399,10 @@ Options:
     nc.applyConfig({ verbose: false, timeout: 5000 }, parsed);
     const m = parsed.command.jsonMeta;
 
-    expect(m.opts.verbose).to.equal(true); // CLI takes precedence
-    expect(m.opts.timeout).to.equal(5000); // Config applied
-    expect(m.source.verbose).to.equal("cli");
-    expect(m.source.timeout).to.equal("user");
+    expect(m.opts.verbose).toBe(true); // CLI takes precedence
+    expect(m.opts.timeout).toBe(5000); // Config applied
+    expect(m.source.verbose).toBe("cli");
+    expect(m.source.timeout).toBe("user");
   });
 
   it("should skip exec if skipExec flag is set", () => {
@@ -3416,17 +3416,17 @@ Options:
     };
     let nc = new NixClap(noOutputExit).init({}, commands);
     let parsed = nc.parse(getArgv("cmd1"));
-    expect(parsed).to.be.ok;
+    expect(parsed).toBeTruthy();
     const m = parsed.command.jsonMeta;
-    expect(m.subCommands.cmd1).to.be.ok;
-    expect(called).to.equal(true);
+    expect(m.subCommands.cmd1).toBeTruthy();
+    expect(called).toBe(true);
     called = undefined;
     nc = new NixClap({ skipExec: true, ...noOutputExit }).init({}, commands);
     parsed = nc.parse(getArgv("cmd1"));
-    expect(parsed).to.be.ok;
+    expect(parsed).toBeTruthy();
     const m2 = parsed.command.jsonMeta;
-    expect(m2.subCommands.cmd1).to.be.ok;
-    expect(called).to.equal(undefined);
+    expect(m2.subCommands.cmd1).toBeTruthy();
+    expect(called).toBe(undefined);
   });
 
   it("should skip exec for parseAsync if skipExec flag is set", async () => {
@@ -3440,20 +3440,20 @@ Options:
     };
     let nc = new NixClap(noOutputExit).init({}, commands);
     let parsed = await nc.parseAsync(getArgv("cmd1"));
-    expect(parsed).to.be.ok;
+    expect(parsed).toBeTruthy();
     const m = parsed.command.jsonMeta;
-    expect(m.subCommands.cmd1).to.be.ok;
-    expect(called).to.equal(true);
+    expect(m.subCommands.cmd1).toBeTruthy();
+    expect(called).toBe(true);
 
     called = false;
 
     nc = new NixClap({ skipExec: true, ...noOutputExit }).init({}, commands);
 
     parsed = await nc.parseAsync(getArgv("cmd1"));
-    expect(parsed).to.be.ok;
+    expect(parsed).toBeTruthy();
     const m2 = parsed.command.jsonMeta;
-    expect(m2.subCommands.cmd1).to.be.ok;
-    expect(called).to.equal(false);
+    expect(m2.subCommands.cmd1).toBeTruthy();
+    expect(called).toBe(false);
   });
 
   it("should skip default exec if skipExecDefault flag is set", async () => {
@@ -3481,18 +3481,18 @@ Options:
         parsed = nc.parse([]);
       }
 
-      expect(parsed).to.be.ok;
-      // expect(parsed.command).to.be.empty;
-      expect(called).to.equal(true);
+      expect(parsed).toBeTruthy();
+      // expect(Object.keys(parsed.command)).toHaveLength(0);
+      expect(called).toBe(true);
       called = undefined;
       nc = new NixClap({ skipExecDefault: true, ...noOutputExit, defaultCommand: "cmd1" }).init(
         {},
         commands
       );
       parsed = nc.removeDefaultHandlers("no-action").parse([]);
-      expect(parsed).to.be.ok;
-      // expect(parsed.command).to.be.empty;
-      expect(called).to.equal(undefined);
+      expect(parsed).toBeTruthy();
+      // expect(Object.keys(parsed.command)).toHaveLength(0);
+      expect(called).toBe(undefined);
     };
 
     await verify(false);

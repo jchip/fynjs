@@ -71,8 +71,8 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, {});
 
-      expect(xrun._tasks._tasks.npm.test.cmd).equal("mocha");
-      expect(xrun._tasks._tasks.npm.build.cmd).equal("webpack");
+      expect(xrun._tasks._tasks.npm.test.cmd).toBe("mocha");
+      expect(xrun._tasks._tasks.npm.build.cmd).toBe("webpack");
     });
 
     it("should handle pre/post scripts", () => {
@@ -88,9 +88,9 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, {});
 
-      expect(xrun._tasks._tasks.npm.pretest.cmd).equal("eslint");
-      expect(xrun._tasks._tasks.npm.test[2].cmd).equal("mocha");
-      expect(xrun._tasks._tasks.npm.posttest.cmd).equal("coverage");
+      expect(xrun._tasks._tasks.npm.pretest.cmd).toBe("eslint");
+      expect(xrun._tasks._tasks.npm.test[2].cmd).toBe("mocha");
+      expect(xrun._tasks._tasks.npm.posttest.cmd).toBe("coverage");
     });
 
     it("should not load npm scripts when npm option is false", () => {
@@ -124,7 +124,7 @@ describe("npm-loader", function() {
       npmLoader(xrun, {});
 
       expect(xrun._tasks._tasks["pkg"].foo).toStrictEqual(["bar", "baz"]);
-      expect(xrun._tasks._tasks["pkg"].qux).equal("quux");
+      expect(xrun._tasks._tasks["pkg"].qux).toBe("quux");
     });
 
     it("should not load tasks if package config has no tasks", () => {
@@ -155,8 +155,8 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, {});
 
-      expect(xrun._tasks._tasks.npm.test.cmd).equal("mocha");
-      expect(xrun._tasks._tasks["pkg"].foo).equal("bar");
+      expect(xrun._tasks._tasks.npm.test.cmd).toBe("mocha");
+      expect(xrun._tasks._tasks["pkg"].foo).toBe("bar");
     });
   });
 

@@ -174,8 +174,8 @@ describe("path and file: URL specifiers", () => {
       }
     });
     expect(seen!.code).toBe("ERR_MODULE_NOT_FOUND");
-    expect(seen!.message).includes(missing);
-    expect(seen!.message).includes("file:///fake/caller.js");
+    expect(seen!.message).toContain(missing);
+    expect(seen!.message).toContain("file:///fake/caller.js");
   });
 
   it("should omit the caller location when the meta has no url", async () => {
@@ -189,8 +189,8 @@ describe("path and file: URL specifiers", () => {
         return null;
       }
     });
-    expect(seen!.message).includes(missing);
-    expect(seen!.message).to.not.include("imported from");
+    expect(seen!.message).toContain(missing);
+    expect(seen!.message).not.toContain("imported from");
   });
 
   it("should still import a path that exists", async () => {
@@ -258,7 +258,7 @@ describe("path and file: URL specifiers", () => {
         return null;
       }
     });
-    expect(seen!.message).includes("C:\\no\\such.js");
+    expect(seen!.message).toContain("C:\\no\\such.js");
   });
 
   it("should fall back when the resolver returns an unusable file url", async () => {

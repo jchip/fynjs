@@ -4,13 +4,13 @@ import xsh from "../../src/index.ts";
 describe("xsh", function () {
   it("should take a custom Promise", () => {
     (xsh as any).Promise = "test";
-    expect(xsh.Promise).to.equal("test");
+    expect(xsh.Promise).toBe("test");
     (xsh as any).Promise = null;
-    expect(xsh.Promise).to.equal(Promise);
+    expect(xsh.Promise).toBe(Promise);
   });
 
   it("should expose shelljs as $", () => {
-    expect(xsh.$).to.be.ok;
-    expect(xsh.$.exec).to.be.a("function");
+    expect(xsh.$).toBeTruthy();
+    expect(typeof xsh.$.exec).toBe("function");
   });
 });

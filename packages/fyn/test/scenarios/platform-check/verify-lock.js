@@ -16,17 +16,17 @@ module.exports = function verifyLockedPlatformOptional(cwd, name, field, depende
   const lock = Yaml.load(Fs.readFileSync(Path.join(cwd, "fyn-lock.yaml")).toString());
 
   const pkg = lock[name];
-  expect(pkg, `${name} should be in the lock`).to.be.an("object");
+  expect(Object.prototype.toString.call(pkg), `${name} should be in the lock`).toBe("[object Object]");
 
   const meta = pkg["1.0.0"];
-  expect(meta, `${name}@1.0.0 should be in the lock`).to.be.an("object");
+  expect(Object.prototype.toString.call(meta), `${name}@1.0.0 should be in the lock`).toBe("[object Object]");
 
-  expect(meta, `${name} should not record this machine's platform verdict`).to.not.have.property(
+  expect(meta, `${name} should not record this machine's platform verdict`).not.toHaveProperty(
     "optFailed"
   );
-  expect(meta[field], `${name} should record its ${field}`).to.deep.equal(["foo", "bar", "blah"]);
-  expect(meta._, `${name} should record its tarball`).to.contain(`/${name}/-/${name}-1.0.0.tgz`);
-  expect(meta.$, `${name} should record its integrity`).to.exist;
+  expect(meta[field], `${name} should record its ${field}`).toStrictEqual(["foo", "bar", "blah"]);
+  expect(meta._, `${name} should record its tarball`).toContain(`/${name}/-/${name}-1.0.0.tgz`);
+  expect(meta.$, `${name} should record its integrity`).toEqual(expect.anything());
 
   //
   // FPM-94: nothing installs this package here, so its package.json is never read off disk the
@@ -34,13 +34,13 @@ module.exports = function verifyLockedPlatformOptional(cwd, name, field, depende
   // used instead, which is what makes this entry identical to the one written by a machine that
   // CAN install it - no `_missingJson`, and the deps spelled out when it has any.
   //
-  expect(meta, `${name} should not admit to an unread package.json`).to.not.have.property(
+  expect(meta, `${name} should not admit to an unread package.json`).not.toHaveProperty(
     "_missingJson"
   );
 
   if (dependencies) {
-    expect(meta.dependencies, `${name} should record its dependencies`).to.deep.equal(dependencies);
+    expect(meta.dependencies, `${name} should record its dependencies`).toStrictEqual(dependencies);
   } else {
-    expect(meta, `${name} should record no dependencies`).to.not.have.property("dependencies");
+    expect(meta, `${name} should record no dependencies`).not.toHaveProperty("dependencies");
   }
 };

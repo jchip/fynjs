@@ -20,7 +20,7 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout.join("")).includes("test hello 1 world");
+    expect(intercept.stdout.join("")).toContain("test hello 1 world");
   });
 
   it("should not log to stdout when buffering in coloring off", () => {
@@ -35,7 +35,7 @@ describe("logger", function() {
     }
 
     expect(intercept.stdout.join("")).not.toContain("test hello 1 world");
-    expect(logger.buffer.join("")).includes("test hello 1 world");
+    expect(logger.buffer.join("")).toContain("test hello 1 world");
   });
 
   it("should log to stdout in coloring on", () => {
@@ -50,8 +50,8 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout.join("")).includes("test hello 1 world");
-    expect(intercept.stdout.join("")).includes("test hello 1 world");
+    expect(intercept.stdout.join("")).toContain("test hello 1 world");
+    expect(intercept.stdout.join("")).toContain("test hello 1 world");
   });
 
   it("should pad2 1 to 01", () => {
@@ -103,7 +103,7 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout.join("")).includes("test");
+    expect(intercept.stdout.join("")).toContain("test");
     logger.quiet(false);
   });
 
@@ -130,7 +130,7 @@ describe("logger", function() {
 
     const buf = logger.buffer;
     for (let i = 1; i <= 4; i++) {
-      expect(buf[i - 1]).includes(`test ${i} hello world`);
+      expect(buf[i - 1]).toContain(`test ${i} hello world`);
     }
 
     logger.resetBuffer();
@@ -159,7 +159,7 @@ describe("logger", function() {
 
     const verify = buf => {
       for (let i = 1; i <= 4; i++) {
-        expect(buf[i - 1]).includes(`test ${i} hello world`);
+        expect(buf[i - 1]).toContain(`test ${i} hello world`);
       }
     };
     verify(logger.buffer);

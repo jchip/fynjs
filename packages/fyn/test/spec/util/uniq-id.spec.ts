@@ -7,7 +7,7 @@ describe("uniq-id", function() {
     let id;
     for (let i = 0; i < 100; i++) {
       id = uniqId();
-      expect(id).to.not.equal(last);
+      expect(id).not.toBe(last);
       last = id;
     }
   });

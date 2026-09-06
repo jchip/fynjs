@@ -35,9 +35,9 @@ module.exports = {
     const logText = logData.map(x => stripAnsi(String(x))).join(" ");
     
     // Check that the warning contains the peer dep, "is missing", "(by:", and the requiring package
-    expect(logText).to.include(peerDep);
-    expect(logText).to.include("is missing");
-    expect(logText).to.include("(by:");
-    expect(logText).to.include(requiringPkg);
+    expect(logText).toContain(peerDep);
+    expect(logText).toContain("is missing");
+    expect(logText).toContain("(by:");
+    expect(logText).toContain(requiringPkg);
   }
 };

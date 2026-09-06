@@ -31,6 +31,6 @@ module.exports = {
     const actualLogger = (typeof global !== "undefined" && global.__fynTestLogger) || logger;
     const logData = actualLogger.logData || (actualLogger._logData && Array.isArray(actualLogger._logData) ? actualLogger._logData : []) || [];
     const warning = logData.map(x => stripAnsi(String(x))).find(x => x.indexOf(msg) > 0);
-    expect(warning).to.be.undefined;
+    expect(warning).toBeUndefined();
   }
 };

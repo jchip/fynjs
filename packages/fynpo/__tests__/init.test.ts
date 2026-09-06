@@ -56,13 +56,13 @@ describe("fynpo Init", () => {
       const out = fs.readFileSync(path.join(dir, "fynpo.config.js"), "utf8");
 
       // a promise leaking through instead of the formatted string is the failure this guards
-      expect(out).to.not.contain("[object Promise]");
-      expect(out).to.contain('"use strict"');
-      expect(out).to.contain("module.exports =");
-      expect(out).to.contain("commitlint");
+      expect(out).not.toContain("[object Promise]");
+      expect(out).toContain('"use strict"');
+      expect(out).toContain("module.exports =");
+      expect(out).toContain("commitlint");
       // prettier put it on more than one line and terminated the statement
-      expect(out.split("\n").length).to.be.greaterThan(3);
-      expect(out.trimEnd().endsWith(";")).to.equal(true);
+      expect(out.split("\n").length).toBeGreaterThan(3);
+      expect(out.trimEnd().endsWith(";")).toBe(true);
     });
 
     it("should write the config unformatted when prettier is not available", async () => {
@@ -85,11 +85,11 @@ describe("fynpo Init", () => {
         await init.updateFynpoConfig();
 
         const out = fs.readFileSync(path.join(dir, "fynpo.config.js"), "utf8");
-        expect(out).to.contain('"use strict"');
-        expect(out).to.contain("module.exports =");
-        expect(out).to.contain("commitlint");
+        expect(out).toContain('"use strict"');
+        expect(out).toContain("module.exports =");
+        expect(out).toContain("commitlint");
         // still valid, just not run through prettier - which would have ended it with a semicolon
-        expect(out.trimEnd().endsWith(";")).to.equal(false);
+        expect(out.trimEnd().endsWith(";")).toBe(false);
       } finally {
         vi.doUnmock("optional-require");
         vi.resetModules();
@@ -102,7 +102,7 @@ describe("fynpo Init", () => {
       const init = new Init({ cwd: dir });
       await init.updateFynpoConfig();
 
-      expect(fs.existsSync(path.join(dir, "fynpo.config.js"))).to.equal(false);
+      expect(fs.existsSync(path.join(dir, "fynpo.config.js"))).toBe(false);
     });
   });
 

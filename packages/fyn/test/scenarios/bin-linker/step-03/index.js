@@ -10,6 +10,6 @@ module.exports = {
     await xaa.delay(100);
     debugger;
     // const link = Fs.readlinkSync(Path.join(cwd, "node_modules/mod-g"));
-    // expect(link).contains("4.0.0");
+    // expect(link).toContain("4.0.0");
   }
 };

@@ -21,17 +21,17 @@ describe("win32 global bin", () => {
     //
     it("targets the package's own declared bin file, like a normal dep install", () => {
       const target = globalBinTargetPath("/g/packages/g1", "cowsay", "cli.js");
-      expect(target).to.equal(Path.join("/g/packages/g1", "node_modules", "cowsay", "cli.js"));
+      expect(target).toBe(Path.join("/g/packages/g1", "node_modules", "cowsay", "cli.js"));
     });
 
     it("never targets the .bin wrapper dir", () => {
       const target = globalBinTargetPath("/g/packages/g1", "cowsay", "cli.js");
-      expect(target).to.not.include(`${Path.sep}.bin${Path.sep}`);
+      expect(target).not.toContain(`${Path.sep}.bin${Path.sep}`);
     });
 
     it("handles a scoped package", () => {
       const target = globalBinTargetPath("/g/packages/g1", "@scope/tool", "bin/run.js");
-      expect(target).to.equal(
+      expect(target).toBe(
         Path.join("/g/packages/g1", "node_modules", "@scope/tool", "bin/run.js")
       );
     });
@@ -39,26 +39,26 @@ describe("win32 global bin", () => {
 
   describe("normalizeDeclaredBins", () => {
     it("maps the object form through unchanged", () => {
-      expect(normalizeDeclaredBins({ cowsay: "cli.js", cowthink: "cli.js" }, "cowsay")).to.deep.equal(
+      expect(normalizeDeclaredBins({ cowsay: "cli.js", cowthink: "cli.js" }, "cowsay")).toStrictEqual(
         { cowsay: "cli.js", cowthink: "cli.js" }
       );
     });
 
     it("names a string bin after the package", () => {
-      expect(normalizeDeclaredBins("cli.js", "cowsay")).to.deep.equal({ cowsay: "cli.js" });
+      expect(normalizeDeclaredBins("cli.js", "cowsay")).toStrictEqual({ cowsay: "cli.js" });
     });
 
     // matches PkgBinLinkerBase.linkBin, which uses Path.basename(name) / _.last(sym.split("/"))
     it("drops the scope, so the command is not named @scope/tool", () => {
-      expect(normalizeDeclaredBins("cli.js", "@scope/tool")).to.deep.equal({ tool: "cli.js" });
-      expect(normalizeDeclaredBins({ "@scope/tool": "cli.js" }, "@scope/tool")).to.deep.equal({
+      expect(normalizeDeclaredBins("cli.js", "@scope/tool")).toStrictEqual({ tool: "cli.js" });
+      expect(normalizeDeclaredBins({ "@scope/tool": "cli.js" }, "@scope/tool")).toStrictEqual({
         tool: "cli.js"
       });
     });
 
     it("returns nothing for a package with no bin", () => {
-      expect(normalizeDeclaredBins(undefined, "x")).to.deep.equal({});
-      expect(normalizeDeclaredBins(null, "x")).to.deep.equal({});
+      expect(normalizeDeclaredBins(undefined, "x")).toStrictEqual({});
+      expect(normalizeDeclaredBins(null, "x")).toStrictEqual({});
     });
   });
 
@@ -91,10 +91,10 @@ describe("win32 global bin", () => {
       await linker.linkBinPath(target, "cowsay");
 
       const cmd = read("cowsay.cmd");
-      expect(cmd).to.include(`"${target}"`);
-      expect(cmd).to.not.include(`%~dp0\\${target}`);
+      expect(cmd).toContain(`"${target}"`);
+      expect(cmd).not.toContain(`%~dp0\\${target}`);
       // the node.exe probe still uses %~dp0 - that part is correct
-      expect(cmd).to.include(`%~dp0\\node.exe`);
+      expect(cmd).toContain(`%~dp0\\node.exe`);
     });
 
     it("keeps a relative target for a normal node_modules/.bin, so the tree stays portable", async () => {
@@ -104,8 +104,8 @@ describe("win32 global bin", () => {
       await linker.linkBinPath(target, "cowsay");
 
       const cmd = read("cowsay.cmd");
-      expect(cmd).to.include("%~dp0\\..");
-      expect(cmd).to.not.include(`"${target}"`);
+      expect(cmd).toContain("%~dp0\\..");
+      expect(cmd).not.toContain(`"${target}"`);
     });
 
     it("round-trips an absolute target back out of the wrapper", async () => {
@@ -114,7 +114,7 @@ describe("win32 global bin", () => {
 
       await linker.linkBinPath(target, "cowsay");
 
-      expect(await linker._readBinLinkTarget(Path.join(binDir, "cowsay"))).to.equal(target);
+      expect(await linker._readBinLinkTarget(Path.join(binDir, "cowsay"))).toBe(target);
     });
 
     it("round-trips a relative target back out of the wrapper", async () => {
@@ -124,7 +124,7 @@ describe("win32 global bin", () => {
       await linker.linkBinPath(target, "cowsay");
 
       const readBack = await linker._readBinLinkTarget(Path.join(binDir, "cowsay"));
-      expect(Path.resolve(binDir, readBack)).to.equal(target);
+      expect(Path.resolve(binDir, readBack)).toBe(target);
     });
 
     it("matchesBinPath recognizes a link it just wrote with an absolute target", async () => {
@@ -133,8 +133,8 @@ describe("win32 global bin", () => {
 
       await linker.linkBinPath(target, "cowsay");
 
-      expect(await linker.matchesBinPath("cowsay", target)).to.equal(true);
-      expect(await linker.matchesBinPath("cowsay", Path.join(tmp, "other", "cli.js"))).to.equal(
+      expect(await linker.matchesBinPath("cowsay", target)).toBe(true);
+      expect(await linker.matchesBinPath("cowsay", Path.join(tmp, "other", "cli.js"))).toBe(
         false
       );
     });
@@ -144,12 +144,12 @@ describe("win32 global bin", () => {
       const target = Path.join(tmp, "packages", "g1", "node_modules", "cowsay", "cli.js");
 
       await linker.linkBinPath(target, "cowsay");
-      expect(Fs.existsSync(Path.join(binDir, "cowsay"))).to.equal(true);
-      expect(Fs.existsSync(Path.join(binDir, "cowsay.cmd"))).to.equal(true);
+      expect(Fs.existsSync(Path.join(binDir, "cowsay"))).toBe(true);
+      expect(Fs.existsSync(Path.join(binDir, "cowsay.cmd"))).toBe(true);
 
       await linker.removeBinLink("cowsay");
-      expect(Fs.existsSync(Path.join(binDir, "cowsay"))).to.equal(false);
-      expect(Fs.existsSync(Path.join(binDir, "cowsay.cmd"))).to.equal(false);
+      expect(Fs.existsSync(Path.join(binDir, "cowsay"))).toBe(false);
+      expect(Fs.existsSync(Path.join(binDir, "cowsay.cmd"))).toBe(false);
     });
 
     it("_cleanLink keeps a wrapper whose absolute target exists, and drops a stale one", async () => {
@@ -160,11 +160,11 @@ describe("win32 global bin", () => {
       Fs.writeFileSync(target, "#!/usr/bin/env node\n");
 
       await linker.linkBinPath(target, "cowsay");
-      expect(await linker._cleanLink("cowsay")).to.equal(false);
+      expect(await linker._cleanLink("cowsay")).toBe(false);
 
       Fs.rmSync(target);
-      expect(await linker._cleanLink("cowsay")).to.equal(true);
-      expect(Fs.existsSync(Path.join(binDir, "cowsay.cmd"))).to.equal(false);
+      expect(await linker._cleanLink("cowsay")).toBe(true);
+      expect(Fs.existsSync(Path.join(binDir, "cowsay.cmd"))).toBe(false);
     });
   });
 });

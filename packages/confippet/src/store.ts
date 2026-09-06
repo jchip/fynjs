@@ -17,7 +17,7 @@ function hideProperties(obj: any, props: string[]): void {
  * The operations hanging off a store's `_$`.
  *
  * They are kept off the store's own enumerable keys so the store itself stays a
- * plain config object - `expect(store).to.deep.equal({})` after a reset.
+ * plain config object - `expect(store).toStrictEqual({})` after a reset.
  */
 export class Config {
   store: any;

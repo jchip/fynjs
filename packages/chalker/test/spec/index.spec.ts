@@ -76,7 +76,7 @@ describe("chalker", function () {
         const r = chalker(
           "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>"
         );
-        expect(r).to.equal(BASIC);
+        expect(r).toBe(BASIC);
         console.log(r);
       });
 
@@ -85,23 +85,23 @@ describe("chalker", function () {
           "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>",
           { supportsColor: false }
         );
-        expect(r).to.equal("red bold textgreen on blue bold");
+        expect(r).toBe("red bold textgreen on blue bold");
       });
 
       it("should support colors module namespace default", () => {
         const r = chalker("<red>red text</red>", { default: engine.context(1) });
-        expect(r).to.equal("\u001b[31mred text\u001b[39m");
+        expect(r).toBe("\u001b[31mred text\u001b[39m");
       });
 
       it("should support template string tagging", () => {
         const x = chalker``;
-        expect(x).to.equal(``);
+        expect(x).toBe(``);
         const y = "hello world";
         const b = "<blue>";
         const x2 = chalker`${b}blue</><red>${y}</red>`;
-        expect(x2).to.equal("\u001b[34mblue\u001b[39m\u001b[31mhello world\u001b[39m");
+        expect(x2).toBe("\u001b[34mblue\u001b[39m\u001b[31mhello world\u001b[39m");
         const r = chalker`<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>`;
-        expect(r).to.equal(BASIC);
+        expect(r).toBe(BASIC);
         console.log(r);
       });
 
@@ -116,38 +116,38 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
           ctx
         );
 
-        expect(r).to.equal(engine.expected.nesting);
+        expect(r).toBe(engine.expected.nesting);
         console.log(r);
       });
 
       it("should support hex colors", () => {
         const ctx = engine.context(2);
         const r = chalker("<#FFA010.bg#1f9020>hex colors</>", ctx);
-        expect(r).to.equal(engine.expected.hex);
+        expect(r).toBe(engine.expected.hex);
         console.log(r);
       });
 
       it("should support hex 'bg-#' colors", () => {
         const ctx = engine.context(2);
         const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
-        expect(r).to.equal(engine.expected.hex);
+        expect(r).toBe(engine.expected.hex);
         console.log(r);
       });
 
       it("should support hex 'bg #' colors", () => {
         const ctx = engine.context(2);
         const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
-        expect(r).to.equal(engine.expected.hex);
+        expect(r).toBe(engine.expected.hex);
         console.log(r);
       });
 
       it("should support rgb triples", () => {
         const ctx = engine.context(2);
         const r = chalker("<(255, 10, 20).bg(20,10,255)>rgb red on blue</>", ctx);
-        expect(r).to.equal(engine.expected.rgb);
+        expect(r).toBe(engine.expected.rgb);
         console.log(r);
         const r2 = chalker("<rgb(255, 10, 20).bgRgb(20,10,255)>rgb red on blue</>", ctx);
-        expect(r2).to.equal(r);
+        expect(r2).toBe(r);
       });
 
       it("should support keyword", () => {
@@ -156,13 +156,13 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
           "<orange.bgKeyword(`green`)>orange on green</><'green'.bg gold>green on gold</>",
           ctx
         );
-        expect(r).to.equal(engine.expected.keyword);
+        expect(r).toBe(engine.expected.keyword);
         console.log(r);
         const r2 = chalker(
           `<'orange'.bg("green")>orange on green</><(green).bg(gold)>green on gold</>`,
           ctx
         );
-        expect(r2).to.equal(r);
+        expect(r2).toBe(r);
       });
 
       it("should support advanced color methods missing from chalk 5", () => {
@@ -172,7 +172,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
             ".bgHsl(120,100,25).bgHsv(120,100,50).bgHwb(120,0,50)>text</>",
           ctx
         );
-        expect(r).to.equal(
+        expect(r).toBe(
           "rgb(255,165,0)|bgRgb(255,215,0)|rgb(255,136,0)|rgb(255,136,0)|" +
             "rgb(128,68,0)|bgRgb(0,128,0)|bgRgb(0,128,0)|bgRgb(0,128,0):text"
         );
@@ -184,22 +184,22 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
           `<gold.bg-green>&lt;Gold on&gt; &xyz;&nbsp;Green-&quot;&amp;&apos;&copy;&reg;</gold.bg-green>`,
           ctx
         );
-        expect(r).to.equal(engine.expected.html);
+        expect(r).toBe(engine.expected.html);
         console.log(r);
       });
 
       it("should decode html escape code points", () => {
         const r = chalker("&#x0391; &#x398; &#8201; &#8657; &#x2666; &#xD83D;&#xDC69;");
         const x = "Α Θ   ⇑ ♦ 👩";
-        expect(r).to.equal(x);
+        expect(r).toBe(x);
       });
 
       it("should fail for mismatched ()", () => {
-        expect(() => chalker("<(10,20,30>bad</>")).to.throw("missing matching ()");
+        expect(() => chalker("<(10,20,30>bad</>")).toThrow("missing matching ()");
       });
 
       it("should fail if op name is invalid", () => {
-        expect(() => chalker(`<blah(red)>bad</>`)).to.throw("blah is not a chalk function");
+        expect(() => chalker(`<blah(red)>bad</>`)).toThrow("blah is not a chalk function");
       });
 
       it("should handle chalk api throwing", () => {
@@ -209,36 +209,36 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
               throw new Error("fake");
             }
           })
-        ).to.throw("calling chalk.blah failed with: fake");
+        ).toThrow("calling chalk.blah failed with: fake");
       });
 
       it("should handle empty/null string or strings w/o markers", () => {
-        expect(chalker(null)).to.equal("");
-        expect(chalker(undefined)).to.equal("");
-        expect(chalker("")).to.equal("");
-        expect(chalker("<")).to.equal("<");
-        expect(chalker("hello world")).to.equal("hello world");
-        expect(chalker("&quot;hello world&quot;")).to.equal(`"hello world"`);
+        expect(chalker(null)).toBe("");
+        expect(chalker(undefined)).toBe("");
+        expect(chalker("")).toBe("");
+        expect(chalker("<")).toBe("<");
+        expect(chalker("hello world")).toBe("hello world");
+        expect(chalker("&quot;hello world&quot;")).toBe(`"hello world"`);
       });
 
       it("should fail for invalid keyword", () => {
-        expect(() => chalker(`<blah>bad</blah>`)).to.throw(
+        expect(() => chalker(`<blah>bad</blah>`)).toThrow(
           "blah is not found and invalid as a keyword"
         );
       });
 
       it("should fail for unbalanced markers", () => {
-        expect(() => chalker(`<red>`)).to.throw("unbalanced open/close markers: [<red>]");
-        expect(() => chalker(`oops <red>red<blue></blue>`)).to.throw(
+        expect(() => chalker(`<red>`)).toThrow("unbalanced open/close markers: [<red>]");
+        expect(() => chalker(`oops <red>red<blue></blue>`)).toThrow(
           "unbalanced open/close markers: oops [<red>]..."
         );
-        expect(() => chalker(`<red>red<blue><cyan></>`)).to.throw(
+        expect(() => chalker(`<red>red<blue><cyan></>`)).toThrow(
           "unbalanced open/close markers: <red>red[<blue>]..."
         );
       });
 
       it("should fail for mismatched markers", () => {
-        expect(() => chalker(`blah <red>red<blue>blue</blue></rad>`)).to.throw(
+        expect(() => chalker(`blah <red>red<blue>blue</blue></rad>`)).toThrow(
           "blah [** <red> **]red<blue>blue</blue>[** </rad> **]"
         );
       });
@@ -247,7 +247,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
         const r = chalker.remove(
           "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>"
         );
-        expect(r).to.equal("red bold text 👩green on blue bold");
+        expect(r).toBe("red bold text 👩green on blue bold");
       });
 
       it("should remove markers but keep html escapes if flag is true", () => {
@@ -255,7 +255,7 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
           "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>",
           true
         );
-        expect(r).to.equal("red bold text &#xD83D;&#xDC69;green on blue bold");
+        expect(r).toBe("red bold text &#xD83D;&#xDC69;green on blue bold");
       });
     });
   });
@@ -295,10 +295,10 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
         const freshModule = await import("../../src/index.ts");
         const freshChalker = freshModule.default;
 
-        expect(calls).to.deep.equal(["chalk", "ansi-colors"]);
-        expect(freshChalker.CHALK).to.equal(colors);
-        expect(freshChalker("<red>red text</red>")).to.equal("ansi-colors red: red text");
-        expect(freshChalker("<#FFA010>hex text</>")).to.equal(
+        expect(calls).toStrictEqual(["chalk", "ansi-colors"]);
+        expect(freshChalker.CHALK).toBe(colors);
+        expect(freshChalker("<red>red text</red>")).toBe("ansi-colors red: red text");
+        expect(freshChalker("<#FFA010>hex text</>")).toBe(
           "\u001b[38;2;255;160;16mhex text\u001b[39m"
         );
       } finally {

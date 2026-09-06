@@ -224,12 +224,12 @@ describe("option args", () => {
   });
 
   it("optUnknown should return true for unknown", () => {
-    expect(optUnknown.isUnknown).eq(true);
-    expect(optUnknown.unknown).eq(true);
+    expect(optUnknown.isUnknown).toBe(true);
+    expect(optUnknown.unknown).toBe(true);
   });
 
   it("should return false for unknown", () => {
-    expect(new OptionBase("blah", {}).isUnknown).equal(false);
-    expect(new OptionBase("blah", {}).unknown).equal(false);
+    expect(new OptionBase("blah", {}).isUnknown).toBe(false);
+    expect(new OptionBase("blah", {}).unknown).toBe(false);
   });
 });

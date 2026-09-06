@@ -42,7 +42,7 @@ describe("lifecycle-scripts", function() {
       .wrap(() => ls.execute(["test"]))
       .then(() => {
         intercept.restore();
-        expect(intercept.stdout.map(x => x.trim())).to.include("hello");
+        expect(intercept.stdout.map(x => x.trim())).toContain("hello");
       })
       .catch(err => {
         failRestore(err, intercept);
@@ -58,8 +58,8 @@ describe("lifecycle-scripts", function() {
       .then(() => {
         intercept.restore();
         const output = extractOutput(intercept);
-        expect(output.stdout[0]).to.equal("hello");
-        expect(output.stderr[0]).to.equal("stderr foo");
+        expect(output.stdout[0]).toBe("hello");
+        expect(output.stderr[0]).toBe("stderr foo");
       })
       .catch(err => failRestore(err, intercept));
 
@@ -73,8 +73,8 @@ describe("lifecycle-scripts", function() {
       .then(() => {
         intercept.restore();
         const output = extractOutput(intercept);
-        expect(output.stdout).to.be.empty;
-        expect(output.stderr).to.be.empty;
+        expect(output.stdout).toHaveLength(0);
+        expect(output.stderr).toHaveLength(0);
       })
       .catch(err => failRestore(err, intercept));
 
@@ -92,11 +92,11 @@ describe("lifecycle-scripts", function() {
       })
       .then(() => {
         intercept.restore();
-        expect(error).to.exist;
+        expect(error).toBeDefined();
         const output = extractOutput(intercept);
-        expect(output.stdout).to.be.empty;
-        expect(output.stderr[0]).to.equal("stderr blah");
-        expect(error.stack).includes("exit code 127");
+        expect(output.stdout).toHaveLength(0);
+        expect(output.stderr[0]).toBe("stderr blah");
+        expect(error.stack).toContain("exit code 127");
       });
 
     return promise;
@@ -108,7 +108,7 @@ describe("lifecycle-scripts", function() {
       .execute("test2", true)
       .then(() => {
         intercept.restore();
-        expect(intercept.stdout.map(x => x.trim())).to.include(
+        expect(intercept.stdout.map(x => x.trim())).toContain(
           "> No output from f1@1.0.0 npm script test2"
         );
       })
@@ -125,7 +125,7 @@ describe("lifecycle-scripts", function() {
       .then(() => {
         intercept.restore();
         const output = extractOutput(intercept);
-        expect(output.stdout).includes("foo-bar");
+        expect(output.stdout).toContain("foo-bar");
       })
       .catch(err => failRestore(err, intercept));
 
@@ -153,7 +153,7 @@ describe("lifecycle-scripts", function() {
       .then(() => {
         intercept.restore();
         const output = extractOutput(intercept);
-        expect(output.stdout).includes(Path.join(dir, "package.json"));
+        expect(output.stdout).toContain(Path.join(dir, "package.json"));
       })
       .catch(err => failRestore(err, intercept));
   });
@@ -167,7 +167,7 @@ describe("lifecycle-scripts", function() {
       .then(() => {
         intercept.restore();
         const output = extractOutput(intercept);
-        expect(output.stdout).includes("test-lifecycle");
+        expect(output.stdout).toContain("test-lifecycle");
       })
       .catch(err => failRestore(err, intercept));
   });
@@ -181,7 +181,7 @@ describe("lifecycle-scripts", function() {
       .then(() => {
         intercept.restore();
         const output = extractOutput(intercept);
-        expect(output.stdout).includes(
+        expect(output.stdout).toContain(
           'node -e "console.log(process.env.npm_lifecycle_script)"'
         );
       })
@@ -194,7 +194,7 @@ describe("lifecycle-scripts", function() {
     })
       .execute("test-not-exist")
       .then(x => {
-        expect(x).to.equal(false);
+        expect(x).toBe(false);
       });
 
     return promise;

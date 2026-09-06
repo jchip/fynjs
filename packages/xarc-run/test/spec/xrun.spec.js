@@ -121,7 +121,7 @@ describe("xrun", function() {
       runTimeout(500),
       expectError(() => xrun.asyncRun("foo --a=50 --bar=60")),
       error => {
-        expect(error.message).equal("Unknown options for task foo: a, bar");
+        expect(error.message).toBe("Unknown options for task foo: a, bar");
         expect(context).toBeUndefined();
       }
     );
@@ -157,14 +157,14 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         expect(Object.prototype.toString.call(receivedContext)).toBe("[object Object]");
-        expect(receivedContext.argOpts.a).equal(50);
-        expect(receivedContext.argOpts.bar).equal(60);
+        expect(receivedContext.argOpts.a).toBe(50);
+        expect(receivedContext.argOpts.bar).toBe(60);
       },
       next => xrun.run("blah", next),
       () => {
         expect(Object.prototype.toString.call(receivedCtx)).toBe("[object Object]");
-        expect(receivedCtx.argOpts.x).equal(500);
-        expect(receivedCtx.argOpts.abc).equal(100);
+        expect(receivedCtx.argOpts.x).toBe(500);
+        expect(receivedCtx.argOpts.abc).toBe(100);
       }
     );
   });
@@ -556,7 +556,7 @@ describe("xrun", function() {
       expectError(next => xrun.run("foo", next)),
       err => {
         expect(doneItem).toBe(0);
-        expect(err.message).contains("Unknown flag foo in shell task");
+        expect(err.message).toContain("Unknown flag foo in shell task");
       }
     );
   });
@@ -569,7 +569,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).include("Unable to process XTaskSpec type blah");
+        expect(err.message).toContain("Unable to process XTaskSpec type blah");
       }
     );
   });
@@ -582,7 +582,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).include("Unable to process XTaskSpec type blah");
+        expect(err.message).toContain("Unable to process XTaskSpec type blah");
       }
     );
   });
@@ -649,7 +649,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).contains(`ETIMEDOUT`);
+        expect(err.message).toContain(`ETIMEDOUT`);
         expect(doneItem).toBe(1);
       }
     );
@@ -674,7 +674,7 @@ describe("xrun", function() {
       },
       () => {
         intercept.restore();
-        expect(intercept.stdout.join()).not.include("BAD IF YOU SEE THIS");
+        expect(intercept.stdout.join()).not.toContain("BAD IF YOU SEE THIS");
       },
       runFinally(() => {
         intercept.restore();
@@ -699,7 +699,7 @@ describe("xrun", function() {
       },
       () => {
         intercept.restore();
-        expect(intercept.stdout.join()).not.include("BAD IF YOU SEE THIS");
+        expect(intercept.stdout.join()).not.toContain("BAD IF YOU SEE THIS");
       },
       runFinally(() => {
         intercept.restore();
@@ -726,7 +726,7 @@ describe("xrun", function() {
       },
       () => {
         intercept.restore();
-        expect(intercept.stdout.join()).not.include("BAD IF YOU SEE THIS");
+        expect(intercept.stdout.join()).not.toContain("BAD IF YOU SEE THIS");
       },
       runFinally(() => {
         intercept.restore();
@@ -754,7 +754,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).contains(`Missing )$ in shell task: ~(spawn,syncsleep 1`);
+        expect(err.message).toContain(`Missing )$ in shell task: ~(spawn,syncsleep 1`);
         expect(doneItem).toBe(0);
       }
     );
@@ -1294,7 +1294,7 @@ describe("xrun", function() {
         // restore process.exit
         process.exit = ox;
         intercept.restore();
-        expect(intercept.stdout.join()).include("Execution Failed - Errors:");
+        expect(intercept.stdout.join()).toContain("Execution Failed - Errors:");
         expect(testStatus).toBe(1);
       }
     );
@@ -1325,7 +1325,7 @@ describe("xrun", function() {
       () => {
         process.exit = ox;
         intercept.restore();
-        expect(intercept.stdout.join()).include("Execution Failed - Errors:");
+        expect(intercept.stdout.join()).toContain("Execution Failed - Errors:");
         expect(testStatus).toBe("test");
       }
     );
@@ -1425,7 +1425,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("", next)),
       err => {
-        expect(err[0].message).includes(`xqitem must have a name`);
+        expect(err[0].message).toContain(`xqitem must have a name`);
       }
     );
   });
@@ -1584,8 +1584,8 @@ describe("xrun", function() {
       xrun._exitOnError(new Error("test 1"));
       intercept.restore();
       expect(intercept.stdout.length).toBeGreaterThan(2);
-      expect(intercept.stdout[1]).include("1  test 1");
-      expect(intercept.stdout[2]).include(" at ");
+      expect(intercept.stdout[1]).toContain("1  test 1");
+      expect(intercept.stdout[2]).toContain(" at ");
     });
   });
 
@@ -1728,7 +1728,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(() => testAsync(tasks)),
       err => {
-        expect(err.message).contains("test oops");
+        expect(err.message).toContain("test oops");
       }
     );
   });
