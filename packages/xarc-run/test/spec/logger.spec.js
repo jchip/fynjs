@@ -1,6 +1,6 @@
 import logger from "../../lib/logger.js";
 import xstdout from "xstdout";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 
 describe("logger", function() {
   beforeEach(() => {
@@ -34,7 +34,7 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout.join("")).to.not.includes("test hello 1 world");
+    expect(intercept.stdout.join("")).not.toContain("test hello 1 world");
     expect(logger.buffer.join("")).includes("test hello 1 world");
   });
 
@@ -55,26 +55,26 @@ describe("logger", function() {
   });
 
   it("should pad2 1 to 01", () => {
-    expect(logger.pad2(1)).to.equal("01");
+    expect(logger.pad2(1)).toBe("01");
   });
 
   it("should pad2 12 to 12", () => {
-    expect(logger.pad2(12)).to.equal("12");
+    expect(logger.pad2(12)).toBe("12");
   });
 
   it("formatElapse should format msec to minutes", () => {
-    expect(logger.formatElapse(60000)).to.equal("1.00 min");
-    expect(logger.formatElapse(692384)).to.equal("11.54 min");
+    expect(logger.formatElapse(60000)).toBe("1.00 min");
+    expect(logger.formatElapse(692384)).toBe("11.54 min");
   });
 
   it("formatElapse should format msec to seconds", () => {
-    expect(logger.formatElapse(1000)).to.equal("1.00 sec");
-    expect(logger.formatElapse(14534)).to.equal("14.53 sec");
+    expect(logger.formatElapse(1000)).toBe("1.00 sec");
+    expect(logger.formatElapse(14534)).toBe("14.53 sec");
   });
 
   it("formatElapse should format msec ", () => {
-    expect(logger.formatElapse(999)).to.equal("999 ms");
-    expect(logger.formatElapse(163)).to.equal("163 ms");
+    expect(logger.formatElapse(999)).toBe("999 ms");
+    expect(logger.formatElapse(163)).toBe("163 ms");
   });
 
   it("should log nothing in quiet mode", () => {
@@ -87,9 +87,9 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(logger.buffer).to.deep.equal([]);
-    expect(intercept.stdout).to.be.empty;
-    expect(intercept.stderr).to.be.empty;
+    expect(logger.buffer).toStrictEqual([]);
+    expect(intercept.stdout).toHaveLength(0);
+    expect(intercept.stderr).toHaveLength(0);
     logger.quiet(false);
   });
 
@@ -125,8 +125,8 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout).to.be.empty;
-    expect(intercept.stderr).to.be.empty;
+    expect(intercept.stdout).toHaveLength(0);
+    expect(intercept.stderr).toHaveLength(0);
 
     const buf = logger.buffer;
     for (let i = 1; i <= 4; i++) {
@@ -134,7 +134,7 @@ describe("logger", function() {
     }
 
     logger.resetBuffer();
-    expect(logger.buffer).to.deep.equal([]);
+    expect(logger.buffer).toStrictEqual([]);
 
     logger.quiet(false);
   });
@@ -154,8 +154,8 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(intercept.stdout).to.be.empty;
-    expect(intercept.stderr).to.be.empty;
+    expect(intercept.stdout).toHaveLength(0);
+    expect(intercept.stderr).toHaveLength(0);
 
     const verify = buf => {
       for (let i = 1; i <= 4; i++) {
@@ -172,7 +172,7 @@ describe("logger", function() {
       intercept.restore();
     }
 
-    expect(logger.buffer).to.deep.equal([]);
+    expect(logger.buffer).toStrictEqual([]);
     verify(intercept.stdout);
 
     logger.quiet(false);

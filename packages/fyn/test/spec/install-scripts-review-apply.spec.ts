@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach, vi } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, vi, expect } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
@@ -86,14 +85,14 @@ describe("review() applies the approval it just wrote", function () {
     const approved = await new InstallScripts({ fyn }).review([mkRecord()]);
 
     // it did approve, and it did write the file
-    expect(approved).to.have.length(1);
+    expect(approved).toHaveLength(1);
     const onDisk = JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8"));
-    expect(onDisk.fyn.allowScripts).to.not.equal(undefined);
+    expect(onDisk.fyn.allowScripts).not.toBe(undefined);
 
     // and the same map reached the running install
-    expect(fyn.applied).to.have.length(1);
-    expect(fyn.applied[0].allowScripts).to.deep.equal(onDisk.fyn.allowScripts);
-    expect(fyn.applied[0].opts).to.deep.equal({ fynpo: false });
+    expect(fyn.applied).toHaveLength(1);
+    expect(fyn.applied[0].allowScripts).toStrictEqual(onDisk.fyn.allowScripts);
+    expect(fyn.applied[0].opts).toStrictEqual({ fynpo: false });
   });
 
   it("targets the fynpo config when the approval went to fynpo.json", async () => {
@@ -105,8 +104,8 @@ describe("review() applies the approval it just wrote", function () {
 
     await new InstallScripts({ fyn }).review([mkRecord()]);
 
-    expect(fyn.applied).to.have.length(1);
-    expect(fyn.applied[0].opts).to.deep.equal({ fynpo: true });
+    expect(fyn.applied).toHaveLength(1);
+    expect(fyn.applied[0].opts).toStrictEqual({ fynpo: true });
   });
 
   it("does not touch the live instance when nothing was approved", async () => {
@@ -115,7 +114,7 @@ describe("review() applies the approval it just wrote", function () {
 
     const approved = await new InstallScripts({ fyn }).review([mkRecord()]);
 
-    expect(approved).to.deep.equal([]);
-    expect(fyn.applied).to.deep.equal([]);
+    expect(approved).toStrictEqual([]);
+    expect(fyn.applied).toStrictEqual([]);
   });
 });

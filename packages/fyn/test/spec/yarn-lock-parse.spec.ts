@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { parseYarnLock } from "../../yarn";
 
 //
@@ -32,44 +31,45 @@ nested-opts@^1.0.0:
 
 describe("yarn lockfile parser", function () {
   it("parses a v1 lockfile into name@spec entries", () => {
-    expect(parseYarnLock(SAMPLE)).to.deep.equal({
+    // toEqual, not toStrictEqual: parseYarnLock returns null-prototype objects (yarn/src/util/map.ts)
+    expect(parseYarnLock(SAMPLE)).toEqual({
       "@babel/code-frame@^7.0.0": {
         version: "7.12.13",
         resolved:
           "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.12.13.tgz#dcfc826b",
         integrity: "sha512-HV1Cm0Q3ZrpCR93tkWOYiuYIgLxZXZFVG2VgK+MBWjUqZTundupbfx2aXarXuw5Ko==",
-        dependencies: { "@babel/highlight": "^7.12.13" }
+        dependencies: { "@babel/highlight": "^7.12.13" },
       },
       "@babel/code-frame@^7.10.4": {
         version: "7.12.13",
         resolved:
           "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.12.13.tgz#dcfc826b",
         integrity: "sha512-HV1Cm0Q3ZrpCR93tkWOYiuYIgLxZXZFVG2VgK+MBWjUqZTundupbfx2aXarXuw5Ko==",
-        dependencies: { "@babel/highlight": "^7.12.13" }
+        dependencies: { "@babel/highlight": "^7.12.13" },
       },
       "lodash@^4.17.21": {
         version: "4.17.21",
-        resolved: "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c5"
+        resolved: "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c5",
       },
       "nested-opts@^1.0.0": {
         version: "1.0.0",
-        optionalDependencies: { fsevents: "^2.3.2" }
-      }
+        optionalDependencies: { fsevents: "^2.3.2" },
+      },
     });
   });
 
   it("gives every entry a null prototype, as yarn does", () => {
     const parsed = parseYarnLock(SAMPLE) as Record<string, unknown>;
-    expect(Object.getPrototypeOf(parsed)).to.equal(null);
-    expect(Object.getPrototypeOf(parsed["lodash@^4.17.21"])).to.equal(null);
+    expect(Object.getPrototypeOf(parsed)).toBe(null);
+    expect(Object.getPrototypeOf(parsed["lodash@^4.17.21"])).toBe(null);
   });
 
   it("strips a byte order mark", () => {
-    expect(parseYarnLock(`﻿${SAMPLE}`)).to.deep.equal(parseYarnLock(SAMPLE));
+    expect(parseYarnLock(`﻿${SAMPLE}`)).toStrictEqual(parseYarnLock(SAMPLE));
   });
 
   it("returns an empty object for an empty lockfile", () => {
-    expect(parseYarnLock("# yarn lockfile v1\n")).to.deep.equal({});
+    expect(parseYarnLock("# yarn lockfile v1\n")).toEqual({});
   });
 
   it("merges both sides of a conflicted lockfile", () => {
@@ -84,17 +84,17 @@ theirs@^2.0.0:
   version "2.0.0"
 >>>>>>> other
 `;
-    expect(parseYarnLock(conflicted)).to.deep.equal({
+    expect(parseYarnLock(conflicted)).toEqual({
       "mine@^1.0.0": { version: "1.0.0" },
-      "theirs@^2.0.0": { version: "2.0.0" }
+      "theirs@^2.0.0": { version: "2.0.0" },
     });
   });
 
   it("falls back to YAML when the lockfile grammar does not fit", () => {
     // upstream yarn uses js-yaml with FAILSAFE_SCHEMA here; fyn substitutes yamljs, so this
     // pins the one place the vendored parser diverges from yarn v1.22.22
-    expect(parseYarnLock('# yarn lockfile v1\n\nbroken@^1.0.0:\n  : "no key"\n')).to.deep.equal({
-      "broken@^1.0.0": ': "no key"'
+    expect(parseYarnLock('# yarn lockfile v1\n\nbroken@^1.0.0:\n  : "no key"\n')).toStrictEqual({
+      "broken@^1.0.0": ': "no key"',
     });
   });
 
@@ -105,7 +105,7 @@ theirs@^2.0.0:
     } catch (err) {
       caught = err as Error;
     }
-    expect(caught).to.be.an("error");
-    expect(caught?.message).to.match(/Unknown token.*3:1 in lockfile/);
+    expect(caught).toBeInstanceOf(Error);
+    expect(caught?.message).toMatch(/Unknown token.*3:1 in lockfile/);
   });
 });

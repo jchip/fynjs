@@ -1,4 +1,4 @@
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import xrun from "../../../cli/xrun.js";
 import logger from "../../../lib/logger.js";
 import WrapProcess from "../../../cli/wrap-process.js";
@@ -74,10 +74,10 @@ describe("xrun cli", function() {  logger.quiet(true);
     // only opts carries a quiet preference; flushing without one must not un-quiet the logger
     logger.quiet(true);
     flushLogger();
-    expect(logger._quiet).to.equal(true);
+    expect(logger._quiet).toBe(true);
 
     flushLogger({ quiet: false });
-    expect(logger._quiet).to.equal(false);
+    expect(logger._quiet).toBe(false);
     logger.quiet(true);
   });
 
@@ -91,10 +91,10 @@ describe("xrun cli", function() {  logger.quiet(true);
     handleNoTasks(cliContext, process.cwd(), undefined, { quiet: false });
 
     const output = logOutput.join("\n");
-    expect(output).to.include("*** No tasks found ***");
-    expect(output).to.include("your task file");
-    expect(output).to.include("didn't load any tasks or contains errors");
-    expect(output).to.include("there are multiple copies of this package");
+    expect(output).toContain("*** No tasks found ***");
+    expect(output).toContain("your task file");
+    expect(output).toContain("didn't load any tasks or contains errors");
+    expect(output).toContain("there are multiple copies of this package");
   });
 
   it("should handle error in task listing", () => {
@@ -114,7 +114,7 @@ describe("xrun cli", function() {  logger.quiet(true);
 
     handleTaskListing(runner, opts);
 
-    expect(logOutput).to.include("Invalid namespace");
+    expect(logOutput).toContain("Invalid namespace");
   });
 
   it("should display help and example when opts.quiet is falsy", () => {
@@ -130,8 +130,8 @@ describe("xrun cli", function() {  logger.quiet(true);
     handleHelp(runner, cmdArgs, opts, cmdName);
 
     const output = logOutput.join("\n");
-    expect(stripAnsi(output)).to.include("Help: xrun -h");
-    expect(stripAnsi(output)).to.include("Example: xrun build");
+    expect(stripAnsi(output)).toContain("Help: xrun -h");
+    expect(stripAnsi(output)).toContain("Example: xrun build");
   });
 
   it("should do nothing when opts.nmbin is falsy", () => {
@@ -144,10 +144,10 @@ describe("xrun cli", function() {  logger.quiet(true);
       setupNodeModulesBin({ nmbin: falsyValue, cwd: process.cwd() });
 
       // Verify no messages were logged
-      expect(logOutput).to.have.lengthOf(0);
+      expect(logOutput).toHaveLength(0);
 
       // Verify PATH wasn't modified
-      expect(env.get(envPath.envKey)).to.equal(origPath);
+      expect(env.get(envPath.envKey)).toBe(origPath);
     });
 
     // Restore original env values
@@ -165,10 +165,10 @@ describe("xrun cli", function() {  logger.quiet(true);
     setupNodeModulesBin({ nmbin: true, cwd: nonExistentPath });
 
     // Verify no messages were logged
-    expect(logOutput).to.have.lengthOf(0);
+    expect(logOutput).toHaveLength(0);
 
     // Verify PATH wasn't modified
-    expect(env.get(envPath.envKey)).to.equal(origPath);
+    expect(env.get(envPath.envKey)).toBe(origPath);
 
     // Restore original env values
     env.set(envPath.envKey, origPath);
@@ -193,13 +193,13 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       // Verify the message was logged
       const output = stripAnsi(logOutput.join("\n"));
-      expect(output).to.include("Added");
-      expect(output).to.include("to front of PATH");
+      expect(output).toContain("Added");
+      expect(output).toContain("to front of PATH");
 
       // Verify PATH was modified to include our directory
       const newPath = env.get(envPath.envKey);
-      expect(newPath).to.include(nmBinDir);
-      expect(newPath.startsWith(nmBinDir)).to.be.true; // Should be added to front
+      expect(newPath).toContain(nmBinDir);
+      expect(newPath.startsWith(nmBinDir)).toBe(true); // Should be added to front
     } finally {
       // Clean up
       fs.rmSync(tempDir, { recursive: true, force: true });
@@ -228,12 +228,12 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       // Verify the message was logged
       const output = stripAnsi(logOutput.join("\n"));
-      expect(output).to.include("Added");
-      expect(output).to.include("to front of PATH");
+      expect(output).toContain("Added");
+      expect(output).toContain("to front of PATH");
 
       // Verify PATH was set to just our directory
       const newPath = env.get(envPath.envKey);
-      expect(newPath).to.equal(nmBinDir);
+      expect(newPath).toBe(nmBinDir);
     } finally {
       // Clean up
       fs.rmSync(tempDir, { recursive: true, force: true });
@@ -264,11 +264,11 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       // Verify the message was logged
       const output = stripAnsi(logOutput.join("\n"));
-      expect(output).to.include("PATH already contains");
-      expect(output).to.include(".bin");
+      expect(output).toContain("PATH already contains");
+      expect(output).toContain(".bin");
 
       // Verify PATH wasn't modified
-      expect(env.get(envPath.envKey)).to.equal(`${nmBinDir}${path.delimiter}/usr/local/bin`);
+      expect(env.get(envPath.envKey)).toBe(`${nmBinDir}${path.delimiter}/usr/local/bin`);
     } finally {
       // Clean up
       fs.rmSync(tempDir, { recursive: true, force: true });
@@ -291,7 +291,7 @@ describe("xrun cli", function() {  logger.quiet(true);
       setupEnvironment();
 
       // Verify xrunId was incremented
-      expect(env.get(env.xrunId)).to.equal("6");
+      expect(env.get(env.xrunId)).toBe("6");
     } finally {
       // Restore original env values
       env.set(env.xrunId, origXrunId);
@@ -311,7 +311,7 @@ describe("xrun cli", function() {  logger.quiet(true);
       setupEnvironment();
 
       // Verify xrunId was initialized to "1"
-      expect(env.get(env.xrunId)).to.equal("1");
+      expect(env.get(env.xrunId)).toBe("1");
     } finally {
       // Restore original env values
       env.set(env.xrunId, origXrunId);
@@ -331,7 +331,7 @@ describe("xrun cli", function() {  logger.quiet(true);
       setupEnvironment();
 
       // Verify forceColor was set to "1"
-      expect(env.get(env.forceColor)).to.equal("1");
+      expect(env.get(env.forceColor)).toBe("1");
     } finally {
       // Restore original env values
       env.set(env.xrunId, origXrunId);
@@ -341,56 +341,56 @@ describe("xrun cli", function() {  logger.quiet(true);
 
   it("should handle --options flag", async () => {
     await xrun(["node", "xrun", "--options"], 2);
-    expect(exitCode).to.equal(0);
+    expect(exitCode).toBe(0);
   });
 
   it("should handle --list option", async () => {
     await xrun(["node", "xrun", "--quiet", "--list"], 2);
-    expect(exitCode).to.equal(0);
-    expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
-    expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
-    expect(logOutput.some(x => x.includes("xfoo3"))).to.be.true;
-    expect(logOutput.some(x => x.includes("xfoo4"))).to.be.true;
+    expect(exitCode).toBe(0);
+    expect(logOutput.some(x => x.includes("xfoo1"))).toBe(true);
+    expect(logOutput.some(x => x.includes("xfoo2"))).toBe(true);
+    expect(logOutput.some(x => x.includes("xfoo3"))).toBe(true);
+    expect(logOutput.some(x => x.includes("xfoo4"))).toBe(true);
   });
 
   it("should handle --list with namespace", async () => {
     await xrun(["node", "xrun", "--quiet", "--list", "1"], 2);
-    expect(exitCode).to.equal(0);
-    expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
-    expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+    expect(exitCode).toBe(0);
+    expect(logOutput.some(x => x.includes("xfoo1"))).toBe(true);
+    expect(logOutput.some(x => x.includes("xfoo2"))).toBe(true);
   });
 
   it("should handle --full option", async () => {
     await xrun(["node", "xrun", "--quiet", "--list", "--full"], 2);
-    expect(exitCode).to.equal(0);
-    expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
-    expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
+    expect(exitCode).toBe(0);
+    expect(logOutput.some(x => x.includes("/xfoo1"))).toBe(true);
+    expect(logOutput.some(x => x.includes("/xfoo2"))).toBe(true);
   });
 
   it("should handle --full > 1 option", async () => {
     await xrun(["node", "xrun", "--quiet", "--list", "-ff"], 2);
-    expect(exitCode).to.equal(0);
-    expect(logOutput.some(x => x.includes("/xfoo1"))).to.be.true;
-    expect(logOutput.some(x => x.includes("/xfoo2"))).to.be.true;
+    expect(exitCode).toBe(0);
+    expect(logOutput.some(x => x.includes("/xfoo1"))).toBe(true);
+    expect(logOutput.some(x => x.includes("/xfoo2"))).toBe(true);
   });
 
   it("should handle --ns option", async () => {
     await xrun(["node", "xrun", "--quiet", "--ns"], 2);
-    expect(exitCode).to.equal(0);
-    expect(logOutput.some(x => x.includes("1"))).to.be.true;
+    expect(exitCode).toBe(0);
+    expect(logOutput.some(x => x.includes("1"))).toBe(true);
   });
 
   it.skip("should handle --help option", async () => {
     await xrun(["node", "xrun", "--quiet", "--help", "xfoo1"], 2);
-    expect(exitCode).to.equal(1);
-    // expect(logOutput.some(x => x.includes("help for tasks: xfoo1"))).to.be.true;
+    expect(exitCode).toBe(1);
+    // expect(logOutput.some(x => x.includes("help for tasks: xfoo1"))).toBe(true);
   });
 
   it("should handle serial tasks with --serial", async () => {
     return new Promise(resolve => {
       xrun(["node", "xrun", "--quiet", "--serial", "xfoo1", "xfoo2"], 2, "", () => {
-        expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
-        // expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+        expect(logOutput.some(x => x.includes("xfoo1"))).toBe(true);
+        // expect(logOutput.some(x => x.includes("xfoo2"))).toBe(true);
         resolve();
       });
     });
@@ -402,8 +402,8 @@ describe("xrun cli", function() {  logger.quiet(true);
         get: () => ["node", "xrun", "--quiet", "--serial", "xfoo1", "xfoo2"]
       });
       xrun(undefined, undefined, "", () => {
-        expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
-        // expect(logOutput.some(x => x.includes("xfoo2"))).to.be.true;
+        expect(logOutput.some(x => x.includes("xfoo1"))).toBe(true);
+        // expect(logOutput.some(x => x.includes("xfoo2"))).toBe(true);
         resolve();
       });
     });
@@ -411,18 +411,19 @@ describe("xrun cli", function() {  logger.quiet(true);
 
   it("should handle --nmbin option", async () => {
     await xrun(["node", "xrun", "--quiet", "--nmbin", "xfoo1"], 2);
-    // expect(logOutput.some(x => x.includes("Added") || x.includes("PATH already contains"))).to.be
-    //   .true;
+    // expect(
+    //   logOutput.some(x => x.includes("Added") || x.includes("PATH already contains"))
+    // ).toBe(true);
   });
 
   it("should handle task options", async () => {
     await xrun(["node", "xrun", "--quiet", ".arg-opts", "-a=1", "--test=true"], 2);
-    // expect(logOutput.some(x => x.includes(".arg-opts"))).to.be.true;
+    // expect(logOutput.some(x => x.includes(".arg-opts"))).toBe(true);
   });
 
   it("should handle namespaced tasks", async () => {
     await xrun(["node", "xrun", "--quiet", "1/xfoo1"], 2);
-    // expect(logOutput.some(x => x.includes("xfoo1"))).to.be.true;
+    // expect(logOutput.some(x => x.includes("xfoo1"))).toBe(true);
   });
 
   it("should find no tasks in empty directory", async () => {
@@ -436,9 +437,9 @@ describe("xrun cli", function() {  logger.quiet(true);
       xrun(["node", "xrun", "--quiet", "--list"], 2, "", err => {
         process.chdir(origCwd);
         const output = logOutput.join("\n");
-        expect(err.exitCode).to.equal(1);
-        expect(output).to.includes("No tasks found");
-        expect(output).to.includes(`You do not have a "xrun-tasks.js|ts"`);
+        expect(err.exitCode).toBe(1);
+        expect(output).toContain("No tasks found");
+        expect(output).toContain(`You do not have a "xrun-tasks.js|ts"`);
         resolve();
       });
     });
@@ -450,12 +451,12 @@ describe("xrun cli", function() {  logger.quiet(true);
     const result = processTasks(tasks);
 
     // Tasks with leading slash AND another slash should have leading slash removed
-    expect(result).to.include("namespace/task1");
-    expect(result).to.include("another/task2");
+    expect(result).toContain("namespace/task1");
+    expect(result).toContain("another/task2");
 
     // Other tasks should remain unchanged
-    expect(result).to.include("normal-task");
-    expect(result).to.include("/single-slash"); // Leading slash remains as no other slash present
+    expect(result).toContain("normal-task");
+    expect(result).toContain("/single-slash"); // Leading slash remains as no other slash present
   });
 
   it("should join and parse tasks that represent an array", () => {
@@ -465,7 +466,7 @@ describe("xrun cli", function() {  logger.quiet(true);
     const result = processTasks(tasks);
 
     // Should be parsed into an array of tasks
-    expect(result).to.deep.equal(["task1 task2 task3"]);
+    expect(result).toStrictEqual(["task1 task2 task3"]);
   });
 
   it("should handle array tasks that fail to parse", () => {
@@ -475,7 +476,7 @@ describe("xrun cli", function() {  logger.quiet(true);
     const result = processTasks(tasks);
 
     // Should be parsed into a nested array structure
-    expect(result).to.deep.equal(null);
+    expect(result).toStrictEqual(null);
   });
 
   it("should honor env.xrunQuiet in subsequent invocations", () => {
@@ -489,7 +490,7 @@ describe("xrun cli", function() {  logger.quiet(true);
         opts: { quiet: true }
       };
       handleQuietFlag(jsonMeta1, jsonMeta1.opts);
-      expect(env.get(env.xrunQuiet)).to.equal("1");
+      expect(env.get(env.xrunQuiet)).toBe("1");
 
       // Test inheriting quiet flag
       const jsonMeta2 = {
@@ -497,8 +498,8 @@ describe("xrun cli", function() {  logger.quiet(true);
         opts: { quiet: false }
       };
       const isQuiet = handleQuietFlag(jsonMeta2, jsonMeta2.opts);
-      expect(isQuiet).to.be.true;
-      expect(jsonMeta2.opts.quiet).to.be.true;
+      expect(isQuiet).toBe(true);
+      expect(jsonMeta2.opts.quiet).toBe(true);
 
       // Test with quiet explicitly disabled
       const jsonMeta3 = {
@@ -506,8 +507,8 @@ describe("xrun cli", function() {  logger.quiet(true);
         opts: { quiet: false }
       };
       const notQuiet = handleQuietFlag(jsonMeta3, jsonMeta3.opts);
-      expect(notQuiet).to.be.false;
-      expect(jsonMeta3.opts.quiet).to.be.false;
+      expect(notQuiet).toBe(false);
+      expect(jsonMeta3.opts.quiet).toBe(false);
     } finally {
       // Restore original env value
       if (origQuiet === undefined) {
@@ -547,19 +548,19 @@ describe("xrun cli", function() {  logger.quiet(true);
     it("should handle undefined opts.env", () => {
       const opts = { env: undefined };
 
-      expect(() => processEnvOptions(opts)).to.not.throw();
+      expect(() => processEnvOptions(opts)).not.toThrow();
 
       // No environment variables should be set
-      expect(env.get("NODE_ENV")).to.equal(savedEnvValues.NODE_ENV);
+      expect(env.get("NODE_ENV")).toBe(savedEnvValues.NODE_ENV);
     });
 
     it("should handle null opts.env", () => {
       const opts = { env: null };
 
-      expect(() => processEnvOptions(opts)).to.not.throw();
+      expect(() => processEnvOptions(opts)).not.toThrow();
 
       // No environment variables should be set
-      expect(env.get("NODE_ENV")).to.equal(savedEnvValues.NODE_ENV);
+      expect(env.get("NODE_ENV")).toBe(savedEnvValues.NODE_ENV);
     });
 
     it("should handle single env string", () => {
@@ -567,7 +568,7 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       processEnvOptions(opts);
 
-      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("NODE_ENV")).toBe("development");
     });
 
     it("should handle array of env strings", () => {
@@ -575,8 +576,8 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       processEnvOptions(opts);
 
-      expect(env.get("NODE_ENV")).to.equal("development");
-      expect(env.get("FOO")).to.equal("bar");
+      expect(env.get("NODE_ENV")).toBe("development");
+      expect(env.get("FOO")).toBe("bar");
     });
 
     it("should handle empty strings in env array", () => {
@@ -584,8 +585,8 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       processEnvOptions(opts);
 
-      expect(env.get("NODE_ENV")).to.equal("development");
-      expect(env.get("FOO")).to.equal("bar");
+      expect(env.get("NODE_ENV")).toBe("development");
+      expect(env.get("FOO")).toBe("bar");
     });
 
     it("should handle env string with empty value", () => {
@@ -593,7 +594,7 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       processEnvOptions(opts);
 
-      expect(env.get("NODE_ENV")).to.equal("");
+      expect(env.get("NODE_ENV")).toBe("");
     });
 
     it("should handle env string with no equals sign", () => {
@@ -601,7 +602,7 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       processEnvOptions(opts);
 
-      expect(env.get("DEBUG")).to.equal("undefined");
+      expect(env.get("DEBUG")).toBe("undefined");
     });
 
     it("should handle env string with multiple equals signs", () => {
@@ -610,7 +611,7 @@ describe("xrun cli", function() {  logger.quiet(true);
       processEnvOptions(opts);
 
       // split("=") splits on all = signs, but destructuring only takes first two elements
-      expect(env.get("TEST_VAR")).to.equal("key");
+      expect(env.get("TEST_VAR")).toBe("key");
     });
 
     it("should ignore env strings with empty key", () => {
@@ -619,7 +620,7 @@ describe("xrun cli", function() {  logger.quiet(true);
       processEnvOptions(opts);
 
       // Empty key should be ignored
-      expect(env.get("NODE_ENV")).to.equal("development");
+      expect(env.get("NODE_ENV")).toBe("development");
     });
 
     it("should handle mixed valid and invalid env strings", () => {
@@ -636,22 +637,22 @@ describe("xrun cli", function() {  logger.quiet(true);
 
       processEnvOptions(opts);
 
-      expect(env.get("NODE_ENV")).to.equal("development");
-      expect(env.get("FOO")).to.equal("bar");
-      expect(env.get("DEBUG")).to.equal("undefined");
-      expect(env.get("EMPTY_VAR")).to.equal("");
+      expect(env.get("NODE_ENV")).toBe("development");
+      expect(env.get("FOO")).toBe("bar");
+      expect(env.get("DEBUG")).toBe("undefined");
+      expect(env.get("EMPTY_VAR")).toBe("");
     });
 
     it("should overwrite existing environment variables", () => {
       // Set initial value
       env.set("NODE_ENV", "initial");
-      expect(env.get("NODE_ENV")).to.equal("initial");
+      expect(env.get("NODE_ENV")).toBe("initial");
 
       const opts = { env: "NODE_ENV=overwritten" };
 
       processEnvOptions(opts);
 
-      expect(env.get("NODE_ENV")).to.equal("overwritten");
+      expect(env.get("NODE_ENV")).toBe("overwritten");
     });
   });
 });

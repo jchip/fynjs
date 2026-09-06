@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import os from "os";
 import path from "path";
 import logger from "../../../lib/logger";
@@ -20,8 +19,8 @@ describe("check-pkg-need-install", function () {
         error = err;
       }
 
-      expect(error).to.exist;
-      expect(warnings.some(w => w.includes(missingDir))).to.equal(true);
+      expect(error).toEqual(expect.anything());
+      expect(warnings.some((w) => w.includes(missingDir))).toBe(true);
     } finally {
       (logger as any).warn = origWarn;
     }

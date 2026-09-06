@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "vitest";
 import Path from "path";
 import fs from "fs";
 import os from "os";
@@ -54,7 +54,7 @@ describe("npm-loader", function() {
   describe("when no package.json exists", () => {
     it("should do nothing", () => {
       npmLoader(xrun, {});
-      expect(xrun._tasks._tasks).to.deep.equal({ "/": {} });
+      expect(xrun._tasks._tasks).toStrictEqual({ "/": {} });
     });
   });
 
@@ -104,7 +104,7 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, { npm: false });
 
-      expect(xrun._tasks._tasks.npm).to.be.undefined;
+      expect(xrun._tasks._tasks.npm).toBeUndefined();
     });
   });
 
@@ -123,7 +123,7 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, {});
 
-      expect(xrun._tasks._tasks["pkg"].foo).to.deep.equal(["bar", "baz"]);
+      expect(xrun._tasks._tasks["pkg"].foo).toStrictEqual(["bar", "baz"]);
       expect(xrun._tasks._tasks["pkg"].qux).equal("quux");
     });
 
@@ -136,7 +136,7 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, {});
 
-      expect(xrun._tasks._tasks["/pkg"]).to.be.undefined;
+      expect(xrun._tasks._tasks["/pkg"]).toBeUndefined();
     });
 
     it("should handle both npm scripts and package config", () => {
@@ -172,7 +172,7 @@ describe("npm-loader", function() {
 
       npmLoader(xrun, {});
 
-      expect(env.get(env.xrunPackagePath)).to.contain(Path.join(testDir, "package.json"));
+      expect(env.get(env.xrunPackagePath)).toContain(Path.join(testDir, "package.json"));
     });
   });
 });

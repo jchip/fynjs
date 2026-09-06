@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import Fs from "fs";
 import Path from "path";
 import { findFynCli } from "../../../lib/lifecycle-scripts";
@@ -12,16 +11,16 @@ import { findFynCli } from "../../../lib/lifecycle-scripts";
 describe("findFynCli", function () {
   it("resolves fyn's own CLI, and the file is really there", () => {
     const cli = findFynCli();
-    expect(cli.endsWith(Path.join("bin", "fyn.mjs"))).to.equal(true);
-    expect(Fs.existsSync(cli), `${cli} does not exist`).to.equal(true);
+    expect(cli.endsWith(Path.join("bin", "fyn.mjs"))).toBe(true);
+    expect(Fs.existsSync(cli), `${cli} does not exist`).toBe(true);
   });
 
   it("points at this package, not somewhere else on disk", () => {
     const pkgDir = Path.resolve(__dirname, "../../..");
-    expect(Path.resolve(findFynCli())).to.equal(Path.join(pkgDir, "bin", "fyn.mjs"));
+    expect(Path.resolve(findFynCli())).toBe(Path.join(pkgDir, "bin", "fyn.mjs"));
   });
 
   it("memoizes, so repeated lifecycle scripts do not re-resolve", () => {
-    expect(findFynCli()).to.equal(findFynCli());
+    expect(findFynCli()).toBe(findFynCli());
   });
 });

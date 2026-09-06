@@ -1,26 +1,26 @@
 import NSOrder from "../../lib/ns-order.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 
 describe("ns-order", function() {
   it("should order namespaces according to overrides specs", () => {
     const nsOrder = new NSOrder();
     const a = nsOrder.add("hello");
-    expect(a).to.deep.equal(["hello"]);
+    expect(a).toStrictEqual(["hello"]);
     const b = nsOrder.add("world");
-    expect(b).to.deep.equal(["hello", "world"]);
+    expect(b).toStrictEqual(["hello", "world"]);
     const c = nsOrder.add("foo", "hello");
-    expect(c).to.deep.equal(["foo", "hello", "world"]);
+    expect(c).toStrictEqual(["foo", "hello", "world"]);
     nsOrder.add("bar", ["hello", "world"]);
     const d = nsOrder.add("bar", "blah");
-    expect(d).to.deep.equal(["foo", "bar", "hello", "world"]);
+    expect(d).toStrictEqual(["foo", "bar", "hello", "world"]);
     const e = nsOrder.add("blah", "foo");
-    expect(e).to.deep.equal(["bar", "blah", "foo", "hello", "world"]);
+    expect(e).toStrictEqual(["bar", "blah", "foo", "hello", "world"]);
   });
 
   it("should detect first level circular override", () => {
     const nsOrder = new NSOrder();
     nsOrder.add("hello", "world");
-    expect(() => nsOrder.add("world", "hello")).to.throw(
+    expect(() => nsOrder.add("world", "hello")).toThrow(
       "circular namespace override between 'world' and 'hello'"
     );
   });
@@ -29,6 +29,6 @@ describe("ns-order", function() {
     const nsOrder = new NSOrder();
     nsOrder.add("hello", "world");
     nsOrder.add("world", "blah");
-    expect(() => nsOrder.add("blah", "hello")).to.throw("there may be circular overrides");
+    expect(() => nsOrder.add("blah", "hello")).toThrow("there may be circular overrides");
   });
 });

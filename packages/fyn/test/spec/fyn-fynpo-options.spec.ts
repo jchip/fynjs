@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -63,35 +62,35 @@ describe("fynpo fyn.options", function () {
   it("applies an option only the fynpo config supplies", async () => {
     writeFynpo({ layout: "detail", sourceMaps: false });
     const fyn = await makeFyn();
-    expect(fyn._options.layout).to.equal("detail");
-    expect(fyn._options.sourceMaps).to.equal(false);
+    expect(fyn._options.layout).toBe("detail");
+    expect(fyn._options.sourceMaps).toBe(false);
   });
 
   it("applies the fynpo value when the option is only at its default", async () => {
     writeFynpo({ layout: "detail" });
     const fyn = await makeFyn({ layout: "normal" }, { layout: "default" });
-    expect(fyn._options.layout).to.equal("detail");
+    expect(fyn._options.layout).toBe("detail");
   });
 
   it("lets an explicit CLI flag win over the fynpo config", async () => {
     writeFynpo({ layout: "detail" });
     const fyn = await makeFyn({ layout: "normal" }, { layout: "cli" });
-    expect(fyn._options.layout).to.equal("normal");
+    expect(fyn._options.layout).toBe("normal");
   });
 
   it("never lets the fynpo config relocate cwd", async () => {
     writeFynpo({ cwd: path.join(os.tmpdir(), "somewhere-else"), layout: "detail" });
     const fyn = await makeFyn();
-    expect(fyn._options.cwd).to.equal(cwd);
-    expect(fyn._cwd).to.equal(cwd);
+    expect(fyn._options.cwd).toBe(cwd);
+    expect(fyn._cwd).toBe(cwd);
     // the rest of the block still applies
-    expect(fyn._options.layout).to.equal("detail");
+    expect(fyn._options.layout).toBe("detail");
   });
 
   it("deep merges object options, with the locally set keys winning", async () => {
     writeFynpo({ resolutions: { "a": "1.0.0", "b": "2.0.0" } });
     const fyn = await makeFyn({ resolutions: { "b": "3.0.0" } });
-    expect(fyn._options.resolutions).to.deep.equal({ a: "1.0.0", b: "3.0.0" });
+    expect(fyn._options.resolutions).toStrictEqual({ a: "1.0.0", b: "3.0.0" });
   });
 
   it("leaves the script-policy options to their own precedence rules", async () => {
@@ -99,8 +98,8 @@ describe("fynpo fyn.options", function () {
     // the generic option merge must not flatten it - see Fyn.allowScripts
     writeFynpo({ allowScripts: { "a@1.0.0": true, "b@2.0.0": false } });
     const fyn = await makeFyn({ allowScripts: { "b@2.0.0": true } });
-    expect(fyn._options.allowScripts).to.deep.equal({ "b@2.0.0": true });
-    expect(fyn.allowScripts).to.deep.equal({ "a@1.0.0": true, "b@2.0.0": false });
+    expect(fyn._options.allowScripts).toStrictEqual({ "b@2.0.0": true });
+    expect(fyn.allowScripts).toStrictEqual({ "a@1.0.0": true, "b@2.0.0": false });
   });
 
   /**
@@ -113,11 +112,11 @@ describe("fynpo fyn.options", function () {
   describe("applyAllowScripts", function () {
     it("makes an approval written to package.json visible to this run", async () => {
       const fyn = await makeFyn();
-      expect(fyn.allowScripts).to.deep.equal({});
+      expect(fyn.allowScripts).toStrictEqual({});
 
       fyn.applyAllowScripts({ "sharp@0.34.4": { scripts: ["install"] } });
 
-      expect(fyn.allowScripts).to.deep.equal({
+      expect(fyn.allowScripts).toStrictEqual({
         "sharp@0.34.4": { scripts: ["install"] }
       });
     });
@@ -125,11 +124,11 @@ describe("fynpo fyn.options", function () {
     it("makes an approval written to fynpo.json visible to this run", async () => {
       writeFynpo({});
       const fyn = await makeFyn();
-      expect(fyn.allowScripts).to.deep.equal({});
+      expect(fyn.allowScripts).toStrictEqual({});
 
       fyn.applyAllowScripts({ "sharp@0.34.4": true }, { fynpo: true });
 
-      expect(fyn.allowScripts).to.deep.equal({ "sharp@0.34.4": true });
+      expect(fyn.allowScripts).toStrictEqual({ "sharp@0.34.4": true });
     });
 
     it("keeps a denial from another scope winning over the approval", async () => {
@@ -141,19 +140,19 @@ describe("fynpo fyn.options", function () {
 
       fyn.applyAllowScripts({ malware: true, sharp: true });
 
-      expect(fyn.allowScripts.malware).to.equal(false);
-      expect(fyn.allowScripts.sharp).to.equal(true);
+      expect(fyn.allowScripts.malware).toBe(false);
+      expect(fyn.allowScripts.sharp).toBe(true);
     });
 
     it("replaces a previous approval rather than accumulating stale entries", async () => {
       const fyn = await makeFyn({ pkgFyn: { allowScripts: { "sharp@0.34.0": true } } });
-      expect(fyn.allowScripts).to.deep.equal({ "sharp@0.34.0": true });
+      expect(fyn.allowScripts).toStrictEqual({ "sharp@0.34.0": true });
 
       // the review prompt hands over the whole merged map it wrote, so the
       // superseded pin must not linger
       fyn.applyAllowScripts({ "sharp@0.34.4": true });
 
-      expect(fyn.allowScripts).to.deep.equal({ "sharp@0.34.4": true });
+      expect(fyn.allowScripts).toStrictEqual({ "sharp@0.34.4": true });
     });
   });
 
@@ -161,37 +160,37 @@ describe("fynpo fyn.options", function () {
     it("applies the monorepo's scriptPolicy to a package that sets none", async () => {
       writeFynpo({ scriptPolicy: "review" });
       const fyn = await makeFyn();
-      expect(fyn.scriptPolicy).to.equal("review");
+      expect(fyn.scriptPolicy).toBe("review");
     });
 
     it("lets a package tighten the monorepo's mode", async () => {
       writeFynpo({ scriptPolicy: "review" });
       const fyn = await makeFyn({ pkgFyn: { scriptPolicy: "off" } });
-      expect(fyn.scriptPolicy).to.equal("off");
+      expect(fyn.scriptPolicy).toBe("off");
     });
 
     it("does not let a package loosen the monorepo's mode", async () => {
       writeFynpo({ scriptPolicy: "review" });
       const fyn = await makeFyn({ pkgFyn: { scriptPolicy: "source" } });
-      expect(fyn.scriptPolicy).to.equal("review");
+      expect(fyn.scriptPolicy).toBe("review");
     });
 
     it("lets the CLI override the mode outright", async () => {
       writeFynpo({ scriptPolicy: "review" });
       const fyn = await makeFyn({ scriptPolicy: "source" });
-      expect(fyn.scriptPolicy).to.equal("source");
+      expect(fyn.scriptPolicy).toBe("source");
     });
 
     it("defaults to review with nothing configured", async () => {
       writeFynpo({});
       const fyn = await makeFyn();
-      expect(fyn.scriptPolicy).to.equal("review");
+      expect(fyn.scriptPolicy).toBe("review");
     });
 
     it("lets a package opt out to source when the repo says nothing", async () => {
       writeFynpo({});
       const fyn = await makeFyn({ pkgFyn: { scriptPolicy: "source" } });
-      expect(fyn.scriptPolicy).to.equal("source");
+      expect(fyn.scriptPolicy).toBe("source");
     });
 
     it("unions allowScripts across scopes, with a denial final", async () => {
@@ -200,7 +199,7 @@ describe("fynpo fyn.options", function () {
         pkgFyn: { allowScripts: { canvas: "5.0.1", malware: true } },
         allowScripts: "esbuild"
       });
-      expect(fyn.allowScripts).to.deep.equal({
+      expect(fyn.allowScripts).toStrictEqual({
         sharp: true,
         malware: false,
         canvas: "5.0.1",
@@ -213,8 +212,8 @@ describe("fynpo fyn.options", function () {
       const fyn = await makeFyn({ pkgFyn: { allowScripts: { malware: true, sharp: true } } });
       // the two maps stay separate - the evaluator folds deny first, so an
       // approval never has to be rewritten to be overruled
-      expect(fyn.allowScripts).to.deep.equal({ malware: true, sharp: true });
-      expect(fyn.denyScripts).to.deep.equal({ malware: {} });
+      expect(fyn.allowScripts).toStrictEqual({ malware: true, sharp: true });
+      expect(fyn.denyScripts).toStrictEqual({ malware: {} });
     });
 
     it("unions denyScripts across every scope - no scope can drop a denial", async () => {
@@ -223,7 +222,7 @@ describe("fynpo fyn.options", function () {
         pkgFyn: { denyScripts: { sketchy: {} }, allowScripts: { esbuild: true } },
         denyScripts: { sharp: {}, esbuild: {} }
       });
-      expect(fyn.denyScripts).to.deep.equal({
+      expect(fyn.denyScripts).toStrictEqual({
         malware: {},
         sketchy: {},
         sharp: {},
@@ -236,7 +235,7 @@ describe("fynpo fyn.options", function () {
         denyScripts: { sharp: { semver: "^0.34.0" }, esbuild: { scripts: ["postinstall"] } }
       });
       const fyn = await makeFyn();
-      expect(fyn.denyScripts).to.deep.equal({
+      expect(fyn.denyScripts).toStrictEqual({
         sharp: { semver: "^0.34.0" },
         esbuild: { scripts: ["postinstall"] }
       });
@@ -246,27 +245,27 @@ describe("fynpo fyn.options", function () {
       writeFynpo({});
       const fyn = await makeFyn({ denyScripts: "malware,sketchy" });
       // a bare name normalizes to an entry that denies every version and script
-      expect(fyn.denyScripts).to.deep.equal({ malware: true, sketchy: true });
+      expect(fyn.denyScripts).toStrictEqual({ malware: true, sketchy: true });
     });
 
     it("leaves denyScripts to its own merge, not the generic option merge", async () => {
       writeFynpo({ denyScripts: { malware: {} } });
       const fyn = await makeFyn({ denyScripts: { sketchy: {} } });
       // the generic merge would have let the CLI value replace the monorepo's
-      expect(fyn._options.denyScripts).to.deep.equal({ sketchy: {} });
-      expect(fyn.denyScripts).to.deep.equal({ malware: {}, sketchy: {} });
+      expect(fyn._options.denyScripts).toStrictEqual({ sketchy: {} });
+      expect(fyn.denyScripts).toStrictEqual({ malware: {}, sketchy: {} });
     });
 
     it("turns reviewLocalPackages on from any scope", async () => {
       writeFynpo({ reviewLocalPackages: true });
       const fyn = await makeFyn();
-      expect(fyn.reviewLocalPackages).to.equal(true);
+      expect(fyn.reviewLocalPackages).toBe(true);
     });
 
     it("takes allowTopLevelScripts from the package over the monorepo", async () => {
       writeFynpo({ allowTopLevelScripts: true });
       const fyn = await makeFyn({ pkgFyn: { allowTopLevelScripts: ["postinstall"] } });
-      expect(fyn.allowTopLevelScripts).to.deep.equal(["postinstall"]);
+      expect(fyn.allowTopLevelScripts).toStrictEqual(["postinstall"]);
     });
   });
 });

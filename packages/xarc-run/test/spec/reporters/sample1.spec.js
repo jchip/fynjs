@@ -1,6 +1,6 @@
 import xrun from "../../../lib/index.js";
 import sample1 from "../../fixtures/sample1.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import xstdout from "xstdout";
 import chalk from "../../../lib/chalk.js";
 import logger from "../../../lib/logger.js";
@@ -114,7 +114,7 @@ Done Process x1/x1foo serial array ["?woofoo",["foo2","foo4"],"foo5a","foo6","fo
           )
           .map(x => x.replace(/^\[[^\]]+\] /, ""))
           .join("");
-        expect(output).to.equal(expectOutput);
+        expect(output).toBe(expectOutput);
       },
       runFinally(() => intercept.restore())
     );
@@ -182,10 +182,10 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
         xrun.run("foo2ba", next);
       }),
       error => {
-        expect(error.message).to.equal("xerr");
-        expect(error.more).to.exist;
-        expect(error.more.length).to.equal(1);
-        expect(error.more[0].message).to.equal("xerr");
+        expect(error.message).toBe("xerr");
+        expect(error.more).toEqual(expect.anything());
+        expect(error.more.length).toBe(1);
+        expect(error.more[0].message).toBe("xerr");
       },
       next => {
         const wait = () => {
@@ -208,7 +208,7 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
           ) // remove elapse time in ms, min, sec
           .map(x => x.replace(/^\[[^\]]+\] /, ""))
           .join("");
-        expect(output).to.equal(expectOutput);
+        expect(output).toBe(expectOutput);
       }
     );
   });

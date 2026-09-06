@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -38,8 +37,8 @@ describe("fyn install-config layout", function () {
 
     // _options.layout is the source of truth read by isNormalLayout at runtime;
     // it must be forced to the existing install's layout (was a no-op before).
-    expect(fyn._options.layout).to.equal("detail");
-    expect(fyn.isNormalLayout).to.equal(false);
+    expect(fyn._options.layout).toBe("detail");
+    expect(fyn.isNormalLayout).toBe(false);
   });
 });
 
@@ -72,8 +71,8 @@ describe("fyn createPkgOutDir", function () {
     await fyn.createPkgOutDir(dir);
 
     // stale content from the previous install must be gone; the dir remains
-    expect(fs.existsSync(path.join(dir, "stale.js"))).to.equal(false);
-    expect(fs.existsSync(dir)).to.equal(true);
+    expect(fs.existsSync(path.join(dir, "stale.js"))).toBe(false);
+    expect(fs.existsSync(dir)).toBe(true);
   });
 
   it("does not clear when keep is set", async () => {
@@ -93,6 +92,6 @@ describe("fyn createPkgOutDir", function () {
 
     await fyn.createPkgOutDir(dir, true);
 
-    expect(fs.existsSync(path.join(dir, "keep.js"))).to.equal(true);
+    expect(fs.existsSync(path.join(dir, "keep.js"))).toBe(true);
   });
 });

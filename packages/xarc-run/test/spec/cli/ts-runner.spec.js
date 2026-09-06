@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "vitest";
 import TsRunner from "../../../cli/ts-runner.js";
 import env from "../../../cli/env.js";
 import logger from "../../../lib/logger.js";
@@ -34,16 +34,16 @@ describe("ts-runner", function() {
         return undefined;
       };
       const result = TsRunner.load("ts-resolve");
-      expect(result).to.be.undefined;
-      expect(TsRunner["error-ts-resolve"]).to.exist;
+      expect(result).toBeUndefined();
+      expect(TsRunner["error-ts-resolve"]).toEqual(expect.anything());
     });
 
     it("should return module when found", () => {
       const mockModule = {};
       TsRunner._require = _mod => mockModule;
       const result = TsRunner.load("ts-resolve");
-      expect(result).to.equal(mockModule);
-      expect(TsRunner.loaded).to.equal("ts-resolve");
+      expect(result).toBe(mockModule);
+      expect(TsRunner.loaded).toBe("ts-resolve");
     });
 
     it("should store error when module load fails", () => {
@@ -53,8 +53,8 @@ describe("ts-runner", function() {
         return undefined;
       };
       const result = TsRunner.load("ts-resolve");
-      expect(result).to.be.undefined;
-      expect(TsRunner["error-ts-resolve"]).to.equal(expectedError);
+      expect(result).toBeUndefined();
+      expect(TsRunner["error-ts-resolve"]).toBe(expectedError);
     });
   });
 
@@ -71,8 +71,8 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal(["@fynjs/ts-resolve/register"]);
-      expect(TsRunner.loaded).to.equal("ts-resolve");
+      expect(attemptedModules).toStrictEqual(["@fynjs/ts-resolve/register"]);
+      expect(TsRunner.loaded).toBe("ts-resolve");
     });
 
     it("should try ts-node if ts-resolve fails then stop", () => {
@@ -87,11 +87,11 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal([
+      expect(attemptedModules).toStrictEqual([
         "@fynjs/ts-resolve/register",
         "ts-node/register/transpile-only"
       ]);
-      expect(TsRunner.loaded).to.equal("ts-node");
+      expect(TsRunner.loaded).toBe("ts-node");
     });
 
     //
@@ -113,12 +113,12 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal([
+      expect(attemptedModules).toStrictEqual([
         "@fynjs/ts-resolve/register",
         "ts-node/register/transpile-only"
       ]);
-      expect(TsRunner["error-ts-resolve"]).to.equal(hookErr);
-      expect(TsRunner.loaded).to.equal("ts-node");
+      expect(TsRunner["error-ts-resolve"]).toBe(hookErr);
+      expect(TsRunner.loaded).toBe("ts-node");
     });
 
     it("should handle case when no runner can be loaded", () => {
@@ -131,13 +131,13 @@ describe("ts-runner", function() {
 
       TsRunner.startRunner();
 
-      expect(attemptedModules).to.deep.equal([
+      expect(attemptedModules).toStrictEqual([
         "@fynjs/ts-resolve/register",
         "ts-node/register/transpile-only"
       ]);
-      expect(TsRunner.loaded).to.be.undefined;
-      expect(TsRunner["error-ts-resolve"]).to.exist;
-      expect(TsRunner["error-ts-node"]).to.exist;
+      expect(TsRunner.loaded).toBeUndefined();
+      expect(TsRunner["error-ts-resolve"]).toEqual(expect.anything());
+      expect(TsRunner["error-ts-node"]).toEqual(expect.anything());
     });
 
     //
@@ -147,10 +147,10 @@ describe("ts-runner", function() {
     it("should really load @fynjs/ts-resolve through require", () => {
       delete TsRunner["error-ts-resolve"];
       const result = TsRunner.load("ts-resolve");
-      expect(TsRunner["error-ts-resolve"], String(TsRunner["error-ts-resolve"])).to.be.undefined;
-      expect(result).to.exist;
-      expect(TsRunner.loaded).to.equal("ts-resolve");
-      expect(TsRunner.path).to.include("ts-resolve");
+      expect(TsRunner["error-ts-resolve"], String(TsRunner["error-ts-resolve"])).toBeUndefined();
+      expect(result).toEqual(expect.anything());
+      expect(TsRunner.loaded).toBe("ts-resolve");
+      expect(TsRunner.path).toContain("ts-resolve");
     });
 
     it("should respect xrunId environment variable", () => {
@@ -167,7 +167,7 @@ describe("ts-runner", function() {
 
       // Even if a runner is loaded, it shouldn't affect the existing state
       if (prevLoaded) {
-        expect(TsRunner.loaded).to.equal(prevLoaded);
+        expect(TsRunner.loaded).toBe(prevLoaded);
       }
 
       // Restore previous state
@@ -200,9 +200,9 @@ describe("ts-runner", function() {
         TsRunner.startRunner();
 
         // Verify logger.log was called with the correct message
-        expect(logMessages).to.have.lengthOf(1);
-        expect(logMessages[0]).to.include("Loaded ts-resolve for TypeScript files");
-        expect(TsRunner.loaded).to.equal("ts-resolve");
+        expect(logMessages).toHaveLength(1);
+        expect(logMessages[0]).toContain("Loaded ts-resolve for TypeScript files");
+        expect(TsRunner.loaded).toBe("ts-resolve");
       } finally {
         // Restore logger
         logger.log = originalLog;
@@ -226,8 +226,8 @@ describe("ts-runner", function() {
 
         // Verify logger.log was NOT called for success message
         // (it shouldn't log when xrunId is set)
-        expect(logMessages).to.have.lengthOf(0);
-        expect(TsRunner.loaded).to.equal("ts-resolve");
+        expect(logMessages).toHaveLength(0);
+        expect(TsRunner.loaded).toBe("ts-resolve");
       } finally {
         // Restore logger and env
         logger.log = originalLog;

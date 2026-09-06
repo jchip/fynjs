@@ -4,7 +4,7 @@ import xstdout from "xstdout";
 import Fs from "fs";
 import Path from "path";
 import instance from "../../lib/xrun-instance.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 
 describe("print tasks", function() {
   beforeEach(() => {
@@ -29,6 +29,6 @@ describe("print tasks", function() {
     
     const outFile = "test/fixtures/print1.out.txt";
     const out = Fs.readFileSync(Path.resolve(outFile)).toString();
-    expect(intercept.stdout.join("").trim()).to.equal(out.trim());
+    expect(intercept.stdout.join("").trim()).toBe(out.trim());
   });
 });

@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach, afterAll } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, afterAll, expect } from "vitest";
 import Fs from "fs";
 import Path from "path";
 import Fyn from "../../lib/fyn";
@@ -21,13 +20,13 @@ describe("short-pkg-dir", function () {
   describe("constructor flag", () => {
     it("defaults to long form when FYN_SHORT_PKG_DIR is unset", () => {
       const fyn = new Fyn({ opts: { cwd: "/tmp/x", targetDir: "node_modules" } });
-      expect(fyn._shortPkgDir).to.equal(false);
+      expect(fyn._shortPkgDir).toBe(false);
     });
 
     it("opts into short form when FYN_SHORT_PKG_DIR is set", () => {
       process.env.FYN_SHORT_PKG_DIR = "1";
       const fyn = new Fyn({ opts: { cwd: "/tmp/x", targetDir: "node_modules" } });
-      expect(fyn._shortPkgDir).to.equal(true);
+      expect(fyn._shortPkgDir).toBe(true);
     });
   });
 
@@ -37,8 +36,8 @@ describe("short-pkg-dir", function () {
     it("produces long-form path by default", () => {
       const fyn = new Fyn({ opts });
       const dir = fyn.getInstalledPkgDir("pkg-a", "1.2.3");
-      expect(dir).to.equal(
-        Path.join("/proj", "node_modules", ".f", "_", "pkg-a", "1.2.3", "node_modules", "pkg-a")
+      expect(dir).toBe(
+        Path.join("/proj", "node_modules", ".f", "_", "pkg-a", "1.2.3", "node_modules", "pkg-a"),
       );
     });
 
@@ -46,14 +45,12 @@ describe("short-pkg-dir", function () {
       process.env.FYN_SHORT_PKG_DIR = "1";
       const fyn = new Fyn({ opts });
       const dir = fyn.getInstalledPkgDir("pkg-a", "1.2.3");
-      expect(dir).to.equal(
-        Path.join("/proj", "node_modules", ".f", "_", "pkg-a", "1.2.3", "pkg-a")
-      );
+      expect(dir).toBe(Path.join("/proj", "node_modules", ".f", "_", "pkg-a", "1.2.3", "pkg-a"));
     });
 
     it("preserves scoped package name in both forms", () => {
       const long = new Fyn({ opts }).getInstalledPkgDir("@scope/pkg", "1.0.0");
-      expect(long).to.equal(
+      expect(long).toBe(
         Path.join(
           "/proj",
           "node_modules",
@@ -62,21 +59,21 @@ describe("short-pkg-dir", function () {
           "@scope/pkg",
           "1.0.0",
           "node_modules",
-          "@scope/pkg"
-        )
+          "@scope/pkg",
+        ),
       );
       process.env.FYN_SHORT_PKG_DIR = "1";
       const short = new Fyn({ opts }).getInstalledPkgDir("@scope/pkg", "1.0.0");
-      expect(short).to.equal(
-        Path.join("/proj", "node_modules", ".f", "_", "@scope/pkg", "1.0.0", "@scope/pkg")
+      expect(short).toBe(
+        Path.join("/proj", "node_modules", ".f", "_", "@scope/pkg", "1.0.0", "@scope/pkg"),
       );
     });
 
     it("falls back to top-level dir when version is omitted (unaffected by flag)", () => {
       const expected = Path.join("/proj", "node_modules", ".f", "_", "pkg-a");
-      expect(new Fyn({ opts }).getInstalledPkgDir("pkg-a")).to.equal(expected);
+      expect(new Fyn({ opts }).getInstalledPkgDir("pkg-a")).toBe(expected);
       process.env.FYN_SHORT_PKG_DIR = "1";
-      expect(new Fyn({ opts }).getInstalledPkgDir("pkg-a")).to.equal(expected);
+      expect(new Fyn({ opts }).getInstalledPkgDir("pkg-a")).toBe(expected);
     });
   });
 
@@ -105,14 +102,14 @@ describe("short-pkg-dir", function () {
       const fyn = makeFyn();
       await fyn.saveInstallConfig();
       const cfg = JSON.parse(Fs.readFileSync(fynJsonPath()).toString());
-      expect(cfg.shortPkgDir).to.equal(false);
+      expect(cfg.shortPkgDir).toBe(false);
     });
 
     it("writes shortPkgDir: true to .fyn.json when env var is set", async () => {
       const fyn = makeFyn("1");
       await fyn.saveInstallConfig();
       const cfg = JSON.parse(Fs.readFileSync(fynJsonPath()).toString());
-      expect(cfg.shortPkgDir).to.equal(true);
+      expect(cfg.shortPkgDir).toBe(true);
     });
   });
 });

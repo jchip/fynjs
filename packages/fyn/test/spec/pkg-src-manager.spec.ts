@@ -1,5 +1,4 @@
-
-import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach, expect } from "vitest";
 import Fs from "fs";
 import Http from "http";
 import * as Yaml from "js-yaml";
@@ -7,7 +6,6 @@ import Path from "path";
 import _ from "lodash";
 import xsh from "xsh";
 import cacache from "cacache";
-import { expect } from "chai";
 import Fyn from "../../lib/fyn";
 import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
@@ -20,12 +18,12 @@ import { MARK_URL_SPEC } from "../../lib/constants";
 const tmpName = () =>
   `.tmp_${Date.now()}_${process.pid.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-describe("pkg-src-manager", function() {
+describe("pkg-src-manager", function () {
   let fynCacheDir;
 
   let server;
   beforeAll(() => {
-    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
+    return mockNpm({ port: 0, logLevel: "warn" }).then((s) => (server = s));
   });
 
   afterAll(() => {
@@ -45,15 +43,15 @@ describe("pkg-src-manager", function() {
     const mgr = new PkgSrcManager({
       registry: `http://${host}`,
       fynCacheDir,
-      fyn: {}
+      fyn: {},
     });
     return mgr
       .fetchMeta({
         name: "mod-a",
-        semver: ""
+        semver: "",
       })
-      .then(meta => {
-        expect(meta.fynFo.etag).to.exist;
+      .then((meta) => {
+        expect(meta.fynFo.etag).toEqual(expect.anything());
       });
   });
 
@@ -62,26 +60,26 @@ describe("pkg-src-manager", function() {
     const options = {
       registry: `http://${host}`,
       fynCacheDir,
-      fyn: {}
+      fyn: {},
     };
     let etag;
     let mgr = new PkgSrcManager(options);
     return mgr
       .fetchMeta({
         name: "mod-a",
-        semver: ""
+        semver: "",
       })
-      .then(meta => {
-        expect(meta.fynFo.etag).to.exist;
+      .then((meta) => {
+        expect(meta.fynFo.etag).toEqual(expect.anything());
         etag = meta.fynFo.etag;
         return new PkgSrcManager(options).fetchMeta({
           name: "mod-a",
-          semver: ""
+          semver: "",
         });
       })
-      .then(meta => {
-        expect(meta.fynFo.etag).to.exist;
-        expect(meta.fynFo.etag).to.equal(etag);
+      .then((meta) => {
+        expect(meta.fynFo.etag).toEqual(expect.anything());
+        expect(meta.fynFo.etag).toBe(etag);
       });
   });
 
@@ -96,12 +94,12 @@ describe("pkg-src-manager", function() {
       forceCache: false,
       remoteMetaDisabled: "offline",
       remoteTgzDisabled: false,
-      copy: []
+      copy: [],
     };
     const mgr = new PkgSrcManager({
       registry,
       fynCacheDir,
-      fyn
+      fyn,
     });
     const packumentUrl = mgr.makePackumentUrl("mod-a");
     const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
@@ -110,12 +108,12 @@ describe("pkg-src-manager", function() {
       versions: {
         "2.0.0": {
           name: "mod-a",
-          version: "2.0.0"
-        }
+          version: "2.0.0",
+        },
       },
       "dist-tags": {
-        latest: "2.0.0"
-      }
+        latest: "2.0.0",
+      },
     };
 
     await cacache.put(fynCacheDir, cacheKey, JSON.stringify(packument));
@@ -123,10 +121,10 @@ describe("pkg-src-manager", function() {
 
     const meta = await mgr.fetchMeta({
       name: "mod-a",
-      semver: ""
+      semver: "",
     });
 
-    expect(meta["dist-tags"].latest).to.equal("2.0.0");
+    expect(meta["dist-tags"].latest).toBe("2.0.0");
   });
 
   it("should reread cache on meta-memoize hit before reusing packument", async () => {
@@ -138,25 +136,25 @@ describe("pkg-src-manager", function() {
         versions: {
           "1.0.0": {
             name: "mod-a",
-            version: "1.0.0"
-          }
+            version: "1.0.0",
+          },
         },
         "dist-tags": {
-          latest: "1.0.0"
-        }
+          latest: "1.0.0",
+        },
       },
       fresh: {
         name: "mod-a",
         versions: {
           "2.0.0": {
             name: "mod-a",
-            version: "2.0.0"
-          }
+            version: "2.0.0",
+          },
         },
         "dist-tags": {
-          latest: "2.0.0"
-        }
-      }
+          latest: "2.0.0",
+        },
+      },
     };
     const fyn = {
       concurrency: 1,
@@ -166,12 +164,12 @@ describe("pkg-src-manager", function() {
       forceCache: false,
       remoteMetaDisabled: false,
       remoteTgzDisabled: false,
-      copy: []
+      copy: [],
     };
     const mgr = new PkgSrcManager({
       registry,
       fynCacheDir,
-      fyn
+      fyn,
     });
     const packumentUrl = mgr.makePackumentUrl("mod-a");
     const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
@@ -182,7 +180,7 @@ describe("pkg-src-manager", function() {
     const staleTime = new Date(Date.now() - 26 * 60 * 60 * 1000);
     Fs.utimesSync(bucket, staleTime, staleTime);
 
-    const memoServer = await new Promise(resolve => {
+    const memoServer = await new Promise((resolve) => {
       const server2 = Http.createServer(async (req, res) => {
         const { searchParams } = new URL(req.url, "http://localhost");
         const key = searchParams.get("key");
@@ -210,12 +208,12 @@ describe("pkg-src-manager", function() {
     try {
       const meta = await mgr.fetchMeta({
         name: "mod-a",
-        semver: ""
+        semver: "",
       });
 
-      expect(meta["dist-tags"].latest).to.equal("2.0.0");
+      expect(meta["dist-tags"].latest).toBe("2.0.0");
     } finally {
-      await new Promise(resolve => memoServer.close(resolve));
+      await new Promise((resolve) => memoServer.close(resolve));
     }
   });
 
@@ -230,12 +228,12 @@ describe("pkg-src-manager", function() {
       forceCache: false,
       remoteMetaDisabled: "offline",
       remoteTgzDisabled: false,
-      copy: []
+      copy: [],
     };
     const mgr = new PkgSrcManager({
       registry,
       fynCacheDir,
-      fyn
+      fyn,
     });
     const packumentUrl = mgr.makePackumentUrl("mod-a");
     const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
@@ -245,24 +243,24 @@ describe("pkg-src-manager", function() {
       versions: {
         "1.0.0": {
           name: "mod-a",
-          version: "1.0.0"
-        }
+          version: "1.0.0",
+        },
       },
       "dist-tags": {
-        latest: "1.0.0"
-      }
+        latest: "1.0.0",
+      },
     };
     const freshPackument = {
       name: "mod-a",
       versions: {
         "2.0.0": {
           name: "mod-a",
-          version: "2.0.0"
-        }
+          version: "2.0.0",
+        },
       },
       "dist-tags": {
-        latest: "2.0.0"
-      }
+        latest: "2.0.0",
+      },
     };
 
     await cacache.put(fynCacheDir, cacheKey, JSON.stringify(stalePackument));
@@ -276,10 +274,10 @@ describe("pkg-src-manager", function() {
 
     const meta = await mgr.fetchMeta({
       name: "mod-a",
-      semver: ""
+      semver: "",
     });
 
-    expect(meta["dist-tags"].latest).to.equal("2.0.0");
+    expect(meta["dist-tags"].latest).toBe("2.0.0");
   });
 
   it("requests packument with camelCase pacote v21 options", async () => {
@@ -291,7 +289,7 @@ describe("pkg-src-manager", function() {
       return Promise.resolve({
         name,
         versions: { "1.0.0": { name, version: "1.0.0" } },
-        "dist-tags": { latest: "1.0.0" }
+        "dist-tags": { latest: "1.0.0" },
       });
     };
 
@@ -303,12 +301,12 @@ describe("pkg-src-manager", function() {
       forceCache: false,
       remoteMetaDisabled: false,
       remoteTgzDisabled: false,
-      copy: []
+      copy: [],
     };
     const mgr = new PkgSrcManager({
       registry: "http://localhost/",
       fynCacheDir,
-      fyn
+      fyn,
     });
 
     try {
@@ -317,20 +315,20 @@ describe("pkg-src-manager", function() {
           item: { name: "mod-a" },
           packumentUrl: mgr.makePackumentUrl("mod-a"),
           cacheKey: "test-cache-key",
-          defer: { resolve, reject }
+          defer: { resolve, reject },
         });
       });
 
-      expect(result["dist-tags"].latest).to.equal("1.0.0");
+      expect(result["dist-tags"].latest).toBe("1.0.0");
       // the v21-correct camelCase options must reach pacote
-      expect(captured.fullMetadata).to.equal(true);
-      expect(captured.fetchRetries).to.equal(3);
-      expect(captured.preferOnline).to.equal(true);
+      expect(captured.fullMetadata).toBe(true);
+      expect(captured.fetchRetries).toBe(3);
+      expect(captured.preferOnline).toBe(true);
       // the old kebab-case / nonexistent names must be gone
-      expect(captured).to.not.have.property("full-metadata");
-      expect(captured).to.not.have.property("fetch-retries");
-      expect(captured).to.not.have.property("cache-policy");
-      expect(captured).to.not.have.property("cache-key");
+      expect(captured).not.toHaveProperty("full-metadata");
+      expect(captured).not.toHaveProperty("fetch-retries");
+      expect(captured).not.toHaveProperty("cache-policy");
+      expect(captured).not.toHaveProperty("cache-key");
     } finally {
       pacote.packument = origPackument;
     }
@@ -339,11 +337,12 @@ describe("pkg-src-manager", function() {
   it("refreshes fetched packument cache timestamps with the manager cache directory", async () => {
     const pacote = require("pacote");
     const origPackument = pacote.packument;
-    pacote.packument = name => Promise.resolve({
-      name,
-      versions: { "1.0.0": { name, version: "1.0.0" } },
-      "dist-tags": { latest: "1.0.0" }
-    });
+    pacote.packument = (name) =>
+      Promise.resolve({
+        name,
+        versions: { "1.0.0": { name, version: "1.0.0" } },
+        "dist-tags": { latest: "1.0.0" },
+      });
 
     const mgr = new PkgSrcManager({
       registry: "http://localhost/",
@@ -355,8 +354,8 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: false,
         remoteTgzDisabled: false,
-        copy: []
-      }
+        copy: [],
+      },
     });
     const cacheKey = "test-cache-key";
     await cacache.put(fynCacheDir, cacheKey, "cached");
@@ -370,12 +369,12 @@ describe("pkg-src-manager", function() {
           item: { name: "mod-a" },
           packumentUrl: mgr.makePackumentUrl("mod-a"),
           cacheKey,
-          defer: { resolve, reject }
+          defer: { resolve, reject },
         });
       });
-      await new Promise(resolve => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
-      expect(Fs.statSync(bucket).mtimeMs).to.be.greaterThan(staleTime.getTime());
+      expect(Fs.statSync(bucket).mtimeMs).toBeGreaterThan(staleTime.getTime());
     } finally {
       pacote.packument = origPackument;
     }
@@ -392,8 +391,8 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: false,
         remoteTgzDisabled: false,
-        copy: []
-      }
+        copy: [],
+      },
     });
     mgr.fetchUrlSemverMeta = () => Promise.resolve({ name: "gitdep", versions: {} });
 
@@ -401,11 +400,11 @@ describe("pkg-src-manager", function() {
       mgr.netRetrieveMeta({
         item: { name: "gitdep", urlType: "git" },
         cacheKey: "unused-url-cache-key",
-        defer: { resolve, reject }
+        defer: { resolve, reject },
       });
     });
 
-    expect(mgr._metaStat.inTx).to.equal(0);
+    expect(mgr._metaStat.inTx).toBe(0);
   });
 
   it("settles the in-flight meta count after a failed packument fetch", async () => {
@@ -422,8 +421,8 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: false,
         remoteTgzDisabled: false,
-        copy: []
-      }
+        copy: [],
+      },
     });
 
     try {
@@ -434,15 +433,15 @@ describe("pkg-src-manager", function() {
             item: { name: "mod-a" },
             packumentUrl: mgr.makePackumentUrl("mod-a"),
             cacheKey: "unused-packument-cache-key",
-            defer: { resolve, reject }
+            defer: { resolve, reject },
           });
         });
       } catch (err) {
         error = err;
       }
 
-      expect(error).to.be.an("error");
-      expect(mgr._metaStat.inTx).to.equal(0);
+      expect(error).toBeInstanceOf(Error);
+      expect(mgr._metaStat.inTx).toBe(0);
     } finally {
       pacote.packument = origPackument;
     }
@@ -459,12 +458,12 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: false,
         remoteTgzDisabled: false,
-        copy: []
-      }
+        copy: [],
+      },
     });
     const error = new Error("registry unavailable");
     let queued = 0;
-    mgr._netQ.addItem = item => {
+    mgr._netQ.addItem = (item) => {
       queued++;
       mgr._metaStat.wait--;
       item.defer.reject(error);
@@ -477,9 +476,9 @@ describe("pkg-src-manager", function() {
       caught = err;
     }
 
-    expect(caught).to.equal(error);
-    expect(queued).to.equal(1);
-    expect(mgr._metaStat.wait).to.equal(0);
+    expect(caught).toBe(error);
+    expect(queued).toBe(1);
+    expect(mgr._metaStat.wait).toBe(0);
   });
 
   it("uses stale metadata when its network refresh fails", async () => {
@@ -493,13 +492,13 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: false,
         remoteTgzDisabled: false,
-        copy: []
-      }
+        copy: [],
+      },
     });
     const packument = {
       name: "mod-a",
       versions: { "1.0.0": { name: "mod-a", version: "1.0.0" } },
-      "dist-tags": { latest: "1.0.0" }
+      "dist-tags": { latest: "1.0.0" },
     };
     const cacheKey = `make-fetch-happen:request-cache:${mgr.makePackumentUrl("mod-a")}`;
     await cacache.put(fynCacheDir, cacheKey, JSON.stringify(packument));
@@ -508,7 +507,7 @@ describe("pkg-src-manager", function() {
     Fs.utimesSync(getBucketPath(fynCacheDir, cacheKey), staleTime, staleTime);
 
     let queued = 0;
-    mgr._netQ.addItem = item => {
+    mgr._netQ.addItem = (item) => {
       queued++;
       mgr._metaStat.wait--;
       item.defer.reject(new Error("registry unavailable"));
@@ -516,9 +515,9 @@ describe("pkg-src-manager", function() {
 
     const meta = await mgr.fetchMeta({ name: "mod-a", semver: "" });
 
-    expect(meta).to.deep.equal(packument);
-    expect(queued).to.equal(1);
-    expect(mgr._metaStat.wait).to.equal(0);
+    expect(meta).toStrictEqual(packument);
+    expect(queued).toBe(1);
+    expect(mgr._metaStat.wait).toBe(0);
   });
 
   it("loads prepared URL metadata while offline", async () => {
@@ -527,7 +526,7 @@ describe("pkg-src-manager", function() {
       name: item.name,
       version: "1.0.0",
       _id: `${item.name}@1.0.0`,
-      _resolved: "git+https://github.com/user/repo.git#0123456789012345678901234567890123456789"
+      _resolved: "git+https://github.com/user/repo.git#0123456789012345678901234567890123456789",
     };
     const cacheKey = `fyn-tarball-for-${item.semver}`;
     const integrity = await cacache.put(fynCacheDir, cacheKey, "prepared tarball", { metadata });
@@ -541,8 +540,8 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: "offline",
         remoteTgzDisabled: "offline",
-        copy: []
-      }
+        copy: [],
+      },
     });
     let queued = 0;
     mgr._netQ.addItem = () => queued++;
@@ -551,17 +550,17 @@ describe("pkg-src-manager", function() {
     const manifest = meta.versions[metadata.version];
     const markerData = JSON.parse(manifest.dist.tarball.slice(MARK_URL_SPEC.length));
 
-    expect(meta.name).to.equal(item.name);
-    expect(meta.urlVersions[item.semver]).to.equal(manifest);
-    expect(manifest.dist.integrity.toString()).to.equal(integrity.toString());
-    expect(markerData).to.deep.equal({
+    expect(meta.name).toBe(item.name);
+    expect(meta.urlVersions[item.semver]).toBe(manifest);
+    expect(manifest.dist.integrity.toString()).toBe(integrity.toString());
+    expect(markerData).toStrictEqual({
       urlType: item.urlType,
       semver: item.semver,
       _resolved: metadata._resolved,
-      _id: metadata._id
+      _id: metadata._id,
     });
-    expect(queued).to.equal(0);
-    expect(mgr._metaStat.wait).to.equal(0);
+    expect(queued).toBe(0);
+    expect(mgr._metaStat.wait).toBe(0);
   });
 
   it("keeps the offline URL cache-miss error balanced", async () => {
@@ -576,8 +575,8 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: "offline",
         remoteTgzDisabled: "offline",
-        copy: []
-      }
+        copy: [],
+      },
     });
     let queued = 0;
     mgr._netQ.addItem = () => queued++;
@@ -589,9 +588,9 @@ describe("pkg-src-manager", function() {
       error = err;
     }
 
-    expect(error.message).to.include("offline");
-    expect(queued).to.equal(0);
-    expect(mgr._metaStat.wait).to.equal(0);
+    expect(error.message).toContain("offline");
+    expect(queued).toBe(0);
+    expect(mgr._metaStat.wait).toBe(0);
   });
 
   it("tarball-stream fallback requests full metadata with the correct camelCase option", () => {
@@ -611,15 +610,15 @@ describe("pkg-src-manager", function() {
       forceCache: false,
       remoteMetaDisabled: false,
       remoteTgzDisabled: false,
-      copy: []
+      copy: [],
     };
     const mgr = new PkgSrcManager({ registry: "http://localhost/", fynCacheDir, fyn });
 
     try {
       // no dist.tarball -> takes the pacote.tarball.stream fallback path
       mgr.pacoteTarballStream("mod-a@1.0.0", { name: "mod-a", version: "1.0.0" }, "sha512-x");
-      expect(captured.fullMetadata).to.equal(true);
-      expect(captured).to.not.have.property("fullMeta");
+      expect(captured.fullMetadata).toBe(true);
+      expect(captured).not.toHaveProperty("fullMeta");
     } finally {
       pacote.tarball.stream = origStream;
     }
@@ -641,8 +640,8 @@ describe("pkg-src-manager", function() {
       name: "gitdep",
       version: "1.0.0",
       dist: {
-        tarball: `${MARK_URL_SPEC}${JSON.stringify({ _resolved: resolved })}`
-      }
+        tarball: `${MARK_URL_SPEC}${JSON.stringify({ _resolved: resolved })}`,
+      },
     };
     await cacache.put(fynCacheDir, `fyn-tarball-for-${semver}`, "cached", { metadata });
 
@@ -656,17 +655,17 @@ describe("pkg-src-manager", function() {
         forceCache: false,
         remoteMetaDisabled: false,
         remoteTgzDisabled: false,
-        copy: []
-      }
+        copy: [],
+      },
     });
 
     try {
       await mgr._prepPkgDirForManifest(
         { name: "gitdep", semver, urlType: "git" },
         { name: "gitdep", version: "1.0.0", _resolved: resolved },
-        Path.join(fynCacheDir, "unused-prepared-dir")
+        Path.join(fynCacheDir, "unused-prepared-dir"),
       );
-      expect(commitChecks).to.equal(1);
+      expect(commitChecks).toBe(1);
     } finally {
       childProcess.execFileSync = origExecFileSync;
     }
@@ -677,19 +676,19 @@ describe("pkg-src-manager", function() {
     const sha = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"; // 40 hex chars
 
     it("treats a 40-hex committish as a pinned commit", () => {
-      expect(isPinnedGitCommit(`github:user/repo#${sha}`)).to.equal(true);
-      expect(isPinnedGitCommit(`git+https://github.com/user/repo.git#${sha}`)).to.equal(true);
+      expect(isPinnedGitCommit(`github:user/repo#${sha}`)).toBe(true);
+      expect(isPinnedGitCommit(`git+https://github.com/user/repo.git#${sha}`)).toBe(true);
       // a bare sha spec (no '#') is also pinned
-      expect(isPinnedGitCommit(sha)).to.equal(true);
+      expect(isPinnedGitCommit(sha)).toBe(true);
     });
 
     it("treats branch/tag refs and plain specs as not pinned", () => {
-      expect(isPinnedGitCommit("github:user/repo#main")).to.equal(false);
-      expect(isPinnedGitCommit("github:user/repo#v1.2.3")).to.equal(false);
-      expect(isPinnedGitCommit("github:user/repo")).to.equal(false);
-      expect(isPinnedGitCommit(`github:user/repo#${sha.slice(0, 7)}`)).to.equal(false);
-      expect(isPinnedGitCommit("")).to.equal(false);
-      expect(isPinnedGitCommit(undefined)).to.equal(false);
+      expect(isPinnedGitCommit("github:user/repo#main")).toBe(false);
+      expect(isPinnedGitCommit("github:user/repo#v1.2.3")).toBe(false);
+      expect(isPinnedGitCommit("github:user/repo")).toBe(false);
+      expect(isPinnedGitCommit(`github:user/repo#${sha.slice(0, 7)}`)).toBe(false);
+      expect(isPinnedGitCommit("")).toBe(false);
+      expect(isPinnedGitCommit(undefined)).toBe(false);
     });
   });
 });

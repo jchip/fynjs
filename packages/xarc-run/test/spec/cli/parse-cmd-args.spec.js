@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "vitest";
 import Path from "path";
 import fs from "fs";
 import os from "os";
@@ -39,14 +39,14 @@ describe("parse-cmd-args", function() {
     it("parses tasks after --", async () => {
       const args = ["node", "xrun", "task1", "task2"];
       const result = await parseArgs(args, 2);
-      expect(result.tasks).to.deep.equal(["task1", "task2"]);
+      expect(result.tasks).toStrictEqual(["task1", "task2"]);
     });
 
     it("handles task arguments", async () => {
       const args = ["node", "xrun", "task1", "--task-opt=value", "task2"];
       const result = await parseArgs(args, 2);
-      expect(result.tasks).to.deep.equal(["task1", "task2"]);
-      expect(result.parsed.command.subCmdNodes.task1.opts.taskOpt).to.equal("value");
+      expect(result.tasks).toStrictEqual(["task1", "task2"]);
+      expect(result.parsed.command.subCmdNodes.task1.opts.taskOpt).toBe("value");
     });
   });
 
@@ -54,7 +54,7 @@ describe("parse-cmd-args", function() {
     it("should handle when no --env option is provided", async () => {
       const args = ["node", "xrun", "task1"];
       const result = await parseArgs(args, 2);
-      expect(result.opts.env).to.be.undefined;
+      expect(result.opts.env).toBeUndefined();
     });
   });
 
@@ -62,8 +62,8 @@ describe("parse-cmd-args", function() {
     it("finds task file in specified directory", async () => {
       const args = ["node", "xrun", "task1"];
       const result = await parseArgs(args, 2);
-      expect(result.searchResult.found).to.equal(true);
-      expect(result.searchResult.xrunFile).to.match(/xrun-tasks\.js$/);
+      expect(result.searchResult.found).toBe(true);
+      expect(result.searchResult.xrunFile).toMatch(/xrun-tasks\.js$/);
     });
   });
 
@@ -127,67 +127,67 @@ describe("parse-cmd-args", function() {
     it("should find xrun-tasks.js in current directory", () => {
       fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.match(/xrun-tasks\.js$/);
-      expect(result.dir).to.equal(testDir);
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toMatch(/xrun-tasks\.js$/);
+      expect(result.dir).toBe(testDir);
     });
 
     it("should find xrun.ts in current directory", () => {
       fs.writeFileSync(Path.join(testDir, "xrun.ts"), "export default {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.match(/xrun\.ts$/);
-      expect(result.dir).to.equal(testDir);
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toMatch(/xrun\.ts$/);
+      expect(result.dir).toBe(testDir);
     });
 
     it("should search up directories when search is true", () => {
       fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: subSubDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.match(/xrun-tasks\.js$/);
-      expect(result.dir).to.equal(testDir);
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toMatch(/xrun-tasks\.js$/);
+      expect(result.dir).toBe(testDir);
     });
 
     it("should stop searching at package.json even if no task file found", () => {
       fs.writeFileSync(Path.join(subDir, "package.json"), "{}");
       fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: subSubDir });
-      expect(result.found).to.be.false;
-      expect(result.foundPkg).to.be.true;
-      expect(result.dir).to.equal(subSubDir); // The search stops but we keep original dir
+      expect(result.found).toBe(false);
+      expect(result.foundPkg).toBe(true);
+      expect(result.dir).toBe(subSubDir); // The search stops but we keep original dir
     });
 
     it("should not search up when search is false", () => {
       fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(false, { cwd: subSubDir });
-      expect(result.found).to.be.false;
-      expect(result.dir).to.equal(subSubDir);
+      expect(result.found).toBe(false);
+      expect(result.dir).toBe(subSubDir);
     });
 
     it("should handle directory with no task file", () => {
       // Create a package.json to stop the search from going up to project root
       fs.writeFileSync(Path.join(testDir, "package.json"), "{}");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.false;
-      expect(result.foundPkg).to.be.true;  // Found the package.json we created
-      expect(result.dir).to.equal(testDir); // Keep original dir when nothing is found
+      expect(result.found).toBe(false);
+      expect(result.foundPkg).toBe(true);  // Found the package.json we created
+      expect(result.dir).toBe(testDir); // Keep original dir when nothing is found
     });
 
     it("should handle directory option", () => {
       fs.writeFileSync(Path.join(subDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir, dir: "subdir" });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.match(/xrun-tasks\.js$/);
-      expect(result.dir).to.equal(subDir);
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toMatch(/xrun-tasks\.js$/);
+      expect(result.dir).toBe(subDir);
     });
 
     it("should update cwd when task file is found during search", () => {
       fs.writeFileSync(Path.join(testDir, "xrun-tasks.js"), "module.exports = {};");
       const opts = { cwd: subSubDir };
       const result = searchTaskFile(true, opts);
-      expect(result.found).to.be.true;
-      expect(result.dir).to.equal(testDir);
-      expect(result.cwd).to.equal(testDir);
+      expect(result.found).toBe(true);
+      expect(result.dir).toBe(testDir);
+      expect(result.cwd).toBe(testDir);
     });
   });
 
@@ -218,70 +218,70 @@ describe("parse-cmd-args", function() {
 
     it("should use process.cwd() when dir is not provided", () => {
       const result = updateCwd();
-      expect(result).to.equal(mockCwd);
-      expect(env.get(env.xrunCwd)).to.equal(mockCwd);
+      expect(result).toBe(mockCwd);
+      expect(env.get(env.xrunCwd)).toBe(mockCwd);
     });
 
     it("should use process.cwd() when dir is undefined", () => {
       const result = updateCwd(undefined);
-      expect(result).to.equal(mockCwd);
-      expect(env.get(env.xrunCwd)).to.equal(mockCwd);
+      expect(result).toBe(mockCwd);
+      expect(env.get(env.xrunCwd)).toBe(mockCwd);
     });
 
     it("should use process.cwd() when dir is null", () => {
       const result = updateCwd(null);
-      expect(result).to.equal(mockCwd);
-      expect(env.get(env.xrunCwd)).to.equal(mockCwd);
+      expect(result).toBe(mockCwd);
+      expect(env.get(env.xrunCwd)).toBe(mockCwd);
     });
 
     it("should use process.cwd() when dir is empty string", () => {
       const result = updateCwd("");
-      expect(result).to.equal(mockCwd);
-      expect(env.get(env.xrunCwd)).to.equal(mockCwd);
+      expect(result).toBe(mockCwd);
+      expect(env.get(env.xrunCwd)).toBe(mockCwd);
     });
 
     it("should resolve relative paths to absolute", () => {
       const relPath = "./test";
       const absPath = Path.resolve(relPath);
       const result = updateCwd(relPath);
-      expect(result).to.equal(absPath);
-      expect(env.get(env.xrunCwd)).to.equal(absPath);
-      expect(mockCwd).to.equal(absPath);
+      expect(result).toBe(absPath);
+      expect(env.get(env.xrunCwd)).toBe(absPath);
+      expect(mockCwd).toBe(absPath);
     });
 
     it("should resolve parent directory paths", () => {
       const relPath = "../";
       const absPath = Path.resolve(relPath);
       const result = updateCwd(relPath);
-      expect(result).to.equal(absPath);
-      expect(env.get(env.xrunCwd)).to.equal(absPath);
-      expect(mockCwd).to.equal(absPath);
+      expect(result).toBe(absPath);
+      expect(env.get(env.xrunCwd)).toBe(absPath);
+      expect(mockCwd).toBe(absPath);
     });
 
     it("should resolve complex relative paths", () => {
       const relPath = "./test/../other/./path";
       const absPath = Path.resolve(relPath);
       const result = updateCwd(relPath);
-      expect(result).to.equal(absPath);
-      expect(env.get(env.xrunCwd)).to.equal(absPath);
-      expect(mockCwd).to.equal(absPath);
+      expect(result).toBe(absPath);
+      expect(env.get(env.xrunCwd)).toBe(absPath);
+      expect(mockCwd).toBe(absPath);
     });
 
     it("should keep absolute paths as is", () => {
       const absPath = Path.resolve("./test"); // Create an absolute path for testing
       const result = updateCwd(absPath);
-      expect(result).to.equal(absPath);
-      expect(env.get(env.xrunCwd)).to.equal(absPath);
-      expect(mockCwd).to.equal(absPath);
+      expect(result).toBe(absPath);
+      expect(env.get(env.xrunCwd)).toBe(absPath);
+      expect(mockCwd).toBe(absPath);
     });
 
     it("should normalize path separators", () => {
       const mixedPath = "test\\subdir/path";
       const normalizedPath = Path.resolve(mixedPath);
       const result = updateCwd(mixedPath);
-      expect(result).to.equal(normalizedPath);
-      expect(env.get(env.xrunCwd)).to.equal(normalizedPath);
-      expect(mockCwd).to.equal(normalizedPath);
+      expect(result).toBe(normalizedPath);
+      expect(env.get(env.xrunCwd)).toBe(normalizedPath);
+      expect(mockCwd).toBe(normalizedPath);
     });
 
     it("should exit when directory doesn't exist", () => {
@@ -290,7 +290,7 @@ describe("parse-cmd-args", function() {
         throw new Error("ENOENT");
       };
       updateCwd(nonExistentDir);
-      expect(exitCode).to.equal(1);
+      expect(exitCode).toBe(1);
     });
 
     it("should exit when path is not a directory", () => {
@@ -299,16 +299,16 @@ describe("parse-cmd-args", function() {
         throw new Error("ENOTDIR");
       };
       updateCwd(filePath);
-      expect(exitCode).to.equal(1);
+      expect(exitCode).toBe(1);
     });
 
     it("should update env.xrunCwd even when directory hasn't changed", () => {
       const currentCwd = mockCwd;
       env.set(env.xrunCwd, "some-other-path"); // Set to different value
       const result = updateCwd(currentCwd);
-      expect(result).to.equal(currentCwd);
-      expect(env.get(env.xrunCwd)).to.equal(currentCwd);
-      expect(mockCwd).to.equal(currentCwd);
+      expect(result).toBe(currentCwd);
+      expect(env.get(env.xrunCwd)).toBe(currentCwd);
+      expect(mockCwd).toBe(currentCwd);
     });
 
     it("should handle symlinked directories", function() {
@@ -327,9 +327,9 @@ describe("parse-cmd-args", function() {
         fs.symlinkSync(tempDir, symlinkPath);
 
         const result = updateCwd(symlinkPath);
-        expect(result).to.equal(symlinkPath);
-        expect(env.get(env.xrunCwd)).to.equal(symlinkPath);
-        expect(mockCwd).to.equal(symlinkPath);
+        expect(result).toBe(symlinkPath);
+        expect(env.get(env.xrunCwd)).toBe(symlinkPath);
+        expect(mockCwd).toBe(symlinkPath);
       } finally {
         // Cleanup
         try {

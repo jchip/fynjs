@@ -1,9 +1,8 @@
 
-import { describe, it, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
-import { expect } from "chai";
 import DepItem from "../../lib/dep-item";
 import { DEP_ITEM } from "../../lib/symbols";
 import { scanFileStats } from "../../lib/util/stat-dir";
@@ -30,8 +29,8 @@ const expectFailure = async (fn, match) => {
   } catch (err) {
     error = err;
   }
-  expect(error, "expected operation to fail").to.exist;
-  expect(error.message).to.match(match);
+  expect(error, "expected operation to fail").toEqual(expect.anything());
+  expect(error.message).toMatch(match);
   return error;
 };
 
@@ -97,14 +96,14 @@ describe("local exports", function() {
 
     const plainTarget = Path.join(cwd, "_fyn/plain-pkg/src");
     const scopedTarget = Path.join(cwd, "_fyn/@scope/ui/themes");
-    expect(Fs.realpathSync(plainTarget)).to.equal(Fs.realpathSync(Path.join(plain.dir, "src")));
-    expect(Fs.realpathSync(scopedTarget)).to.equal(
+    expect(Fs.realpathSync(plainTarget)).toBe(Fs.realpathSync(Path.join(plain.dir, "src")));
+    expect(Fs.realpathSync(scopedTarget)).toBe(
       Fs.realpathSync(Path.join(scoped.dir, "themes"))
     );
-    expect(Fs.existsSync(Path.join(cwd, "_fyn/.fyn-local-exports.json"))).to.equal(true);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn/.fyn-local-exports.json"))).toBe(true);
 
     Fs.writeFileSync(Path.join(plain.dir, "src/value.js"), "module.exports = 'changed';\n");
-    expect(Fs.readFileSync(Path.join(plainTarget, "value.js"), "utf8")).to.equal(
+    expect(Fs.readFileSync(Path.join(plainTarget, "value.js"), "utf8")).toBe(
       "module.exports = 'changed';\n"
     );
   });
@@ -118,8 +117,8 @@ describe("local exports", function() {
 
     await reconcileLocalExports({ cwd, manifest });
 
-    expect(Fs.existsSync(Path.join(cwd, "_fyn/local-pkg/src"))).to.equal(false);
-    expect(Fs.realpathSync(Path.join(cwd, "_fyn/local-pkg/themes"))).to.equal(
+    expect(Fs.existsSync(Path.join(cwd, "_fyn/local-pkg/src"))).toBe(false);
+    expect(Fs.realpathSync(Path.join(cwd, "_fyn/local-pkg/themes"))).toBe(
       Fs.realpathSync(Path.join(producer.dir, "themes"))
     );
 
@@ -128,7 +127,7 @@ describe("local exports", function() {
       depInfos: [makeDepInfo({ producer, localExports: false })]
     });
     await reconcileLocalExports({ cwd, manifest: disabled });
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
   });
 
   it("ignores registry, Git, and URL-ancestry packages before parsing config", async () => {
@@ -162,7 +161,7 @@ describe("local exports", function() {
     const manifest = await makeLocalExportsManifest({ cwd, depInfos });
     await reconcileLocalExports({ cwd, manifest });
 
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
   });
 
   it("rejects malformed configuration before writing", async () => {
@@ -174,7 +173,7 @@ describe("local exports", function() {
       });
     for (const localExports of ["src", ["src"], null, { src: true }, { src: {} }]) {
       await expectFailure(makeManifest.bind(null, localExports), /localExports|local-pkg/i);
-      expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+      expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
     }
   });
 
@@ -198,7 +197,7 @@ describe("local exports", function() {
 
     for (const testCase of cases) {
       await expectFailure(makeManifest.bind(null, testCase.exports), testCase.match);
-      expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+      expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
     }
   });
 
@@ -216,7 +215,7 @@ describe("local exports", function() {
         }),
       /escape|outside|source|symlink/i
     );
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
   });
 
   it("rejects multiple local versions of an exporting package before writing", async () => {
@@ -231,7 +230,7 @@ describe("local exports", function() {
         }),
       /duplicate-pkg|version|collision|destination/i
     );
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
   });
 
   it("removes stale projections and the managed root when none remain", async () => {
@@ -247,12 +246,12 @@ describe("local exports", function() {
       depInfos: [makeDepInfo({ producer, localExports: { src: "src", themes: false } })]
     });
     await reconcileLocalExports({ cwd, manifest: reduced });
-    expect(Fs.existsSync(Path.join(cwd, "_fyn/local-pkg/src"))).to.equal(true);
-    expect(Fs.existsSync(Path.join(cwd, "_fyn/local-pkg/themes"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn/local-pkg/src"))).toBe(true);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn/local-pkg/themes"))).toBe(false);
 
     const empty = await makeLocalExportsManifest({ cwd, depInfos: [] });
     await reconcileLocalExports({ cwd, manifest: empty });
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
   });
 
   it("refuses to modify an unowned _fyn tree", async () => {
@@ -268,7 +267,7 @@ describe("local exports", function() {
       () => reconcileLocalExports({ cwd, manifest }),
       /_fyn|owned|manifest|refus/i
     );
-    expect(Fs.readFileSync(Path.join(cwd, "_fyn/user.txt"), "utf8")).to.equal("keep\n");
+    expect(Fs.readFileSync(Path.join(cwd, "_fyn/user.txt"), "utf8")).toBe("keep\n");
   });
 
   it("sync repairs a missing projection", async () => {
@@ -281,10 +280,10 @@ describe("local exports", function() {
 
     const target = Path.join(cwd, "_fyn/local-pkg/src");
     Fs.unlinkSync(target);
-    expect(Fs.existsSync(target)).to.equal(false);
+    expect(Fs.existsSync(target)).toBe(false);
 
     await syncLocalExports({ cwd, manifest });
-    expect(Fs.realpathSync(target)).to.equal(Fs.realpathSync(Path.join(producer.dir, "src")));
+    expect(Fs.realpathSync(target)).toBe(Fs.realpathSync(Path.join(producer.dir, "src")));
   });
 
   it("reports missing and misdirected projections as needing install", async () => {
@@ -296,25 +295,25 @@ describe("local exports", function() {
     await reconcileLocalExports({ cwd, manifest });
 
     const target = Path.join(cwd, "_fyn/local-pkg/src");
-    expect(await localExportsNeedInstall({ cwd, manifest })).to.equal(false);
+    expect(await localExportsNeedInstall({ cwd, manifest })).toBe(false);
 
     Fs.unlinkSync(target);
-    expect(await localExportsNeedInstall({ cwd, manifest })).to.equal(true);
+    expect(await localExportsNeedInstall({ cwd, manifest })).toBe(true);
     await syncLocalExports({ cwd, manifest });
 
     const wrong = Path.join(root, "wrong");
     Fs.mkdirSync(wrong);
     Fs.unlinkSync(target);
     makeDirLink(wrong, target);
-    expect(await localExportsNeedInstall({ cwd, manifest })).to.equal(true);
+    expect(await localExportsNeedInstall({ cwd, manifest })).toBe(true);
   });
 
   it("resolves the export directory config with default and per-package overrides", async () => {
-    expect(resolveLocalExportsConfig(undefined)).to.deep.equal({
+    expect(resolveLocalExportsConfig(undefined)).toStrictEqual({
       defaultDir: "_fyn",
       byPackage: {}
     });
-    expect(resolveLocalExportsConfig({ fyn: {} })).to.deep.equal({
+    expect(resolveLocalExportsConfig({ fyn: {} })).toStrictEqual({
       defaultDir: "_fyn",
       byPackage: {}
     });
@@ -325,7 +324,7 @@ describe("local exports", function() {
           localExportsDirs: { "@acme/ui": "_ui", tools: "vendor/tools" }
         }
       })
-    ).to.deep.equal({
+    ).toStrictEqual({
       defaultDir: "_local",
       byPackage: { "@acme/ui": "_ui", tools: "vendor/tools" }
     });
@@ -359,20 +358,20 @@ describe("local exports", function() {
     ];
 
     const manifest = await makeLocalExportsManifest({ cwd, config, depInfos });
-    expect(manifest.exports["_local/plain-pkg/src"].root).to.equal("_local");
-    expect(manifest.exports["vendor/ui/@scope/ui/themes"].root).to.equal("vendor/ui");
+    expect(manifest.exports["_local/plain-pkg/src"].root).toBe("_local");
+    expect(manifest.exports["vendor/ui/@scope/ui/themes"].root).toBe("vendor/ui");
 
     await reconcileLocalExports({ cwd, manifest });
 
-    expect(Fs.realpathSync(Path.join(cwd, "_local/plain-pkg/src"))).to.equal(
+    expect(Fs.realpathSync(Path.join(cwd, "_local/plain-pkg/src"))).toBe(
       Fs.realpathSync(Path.join(plain.dir, "src"))
     );
-    expect(Fs.realpathSync(Path.join(cwd, "vendor/ui/@scope/ui/themes"))).to.equal(
+    expect(Fs.realpathSync(Path.join(cwd, "vendor/ui/@scope/ui/themes"))).toBe(
       Fs.realpathSync(Path.join(scoped.dir, "themes"))
     );
-    expect(Fs.existsSync(Path.join(cwd, "_local/.fyn-local-exports.json"))).to.equal(true);
-    expect(Fs.existsSync(Path.join(cwd, "vendor/ui/.fyn-local-exports.json"))).to.equal(true);
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
+    expect(Fs.existsSync(Path.join(cwd, "_local/.fyn-local-exports.json"))).toBe(true);
+    expect(Fs.existsSync(Path.join(cwd, "vendor/ui/.fyn-local-exports.json"))).toBe(true);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
   });
 
   it("relocates a projection when its configured directory changes", async () => {
@@ -382,7 +381,7 @@ describe("local exports", function() {
       depInfos: [makeDepInfo({ producer, localExports: { src: "src" } })]
     });
     await reconcileLocalExports({ cwd, manifest: before });
-    expect(Fs.existsSync(Path.join(cwd, "_fyn/movable/src"))).to.equal(true);
+    expect(Fs.existsSync(Path.join(cwd, "_fyn/movable/src"))).toBe(true);
 
     const config = resolveLocalExportsConfig({ fyn: { localExportsDirs: { movable: "_moved" } } });
     const after = await makeLocalExportsManifest({
@@ -392,8 +391,8 @@ describe("local exports", function() {
     });
     await reconcileLocalExports({ cwd, manifest: after, previous: before });
 
-    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).to.equal(false);
-    expect(Fs.realpathSync(Path.join(cwd, "_moved/movable/src"))).to.equal(
+    expect(Fs.existsSync(Path.join(cwd, "_fyn"))).toBe(false);
+    expect(Fs.realpathSync(Path.join(cwd, "_moved/movable/src"))).toBe(
       Fs.realpathSync(Path.join(producer.dir, "src"))
     );
   });
@@ -407,22 +406,22 @@ describe("local exports", function() {
       depInfos: [makeDepInfo({ producer, localExports: { src: "src" } })]
     });
 
-    expect(await localExportsNeedInstall({ cwd, manifest })).to.equal(true);
+    expect(await localExportsNeedInstall({ cwd, manifest })).toBe(true);
     await reconcileLocalExports({ cwd, manifest });
-    expect(await localExportsNeedInstall({ cwd, manifest })).to.equal(false);
+    expect(await localExportsNeedInstall({ cwd, manifest })).toBe(false);
 
     Fs.unlinkSync(Path.join(cwd, "_local/checked/src"));
-    expect(await localExportsNeedInstall({ cwd, manifest })).to.equal(true);
+    expect(await localExportsNeedInstall({ cwd, manifest })).toBe(true);
   });
 
   it("maps configured directories to consumer scan ignore globs", async () => {
-    expect(localExportsScanIgnores(undefined)).to.deep.equal(["**/_fyn"]);
+    expect(localExportsScanIgnores(undefined)).toStrictEqual(["**/_fyn"]);
     expect(
       localExportsScanIgnores({
         fyn: { localExportsDir: "_local", localExportsDirs: { pkg: "vendor/tools" } }
       })
-    ).to.deep.equal(["**/_local", "**/vendor/tools"]);
-    expect(localExportsScanIgnores({ fyn: { localExportsDir: "../bad" } })).to.deep.equal([]);
+    ).toStrictEqual(["**/_local", "**/vendor/tools"]);
+    expect(localExportsScanIgnores({ fyn: { localExportsDir: "../bad" } })).toStrictEqual([]);
   });
 
   it("ignores the generated _fyn tree during consumer file scans", async () => {
@@ -437,7 +436,7 @@ describe("local exports", function() {
     Fs.utimesSync(generatedFile, futureTime, futureTime);
 
     const stats = await scanFileStats(cwd);
-    expect(stats.latestFile).to.not.include(`${Path.sep}_fyn${Path.sep}`);
-    expect(stats.latestMtimeMs).to.be.lessThan(futureTime.getTime());
+    expect(stats.latestFile).not.toContain(`${Path.sep}_fyn${Path.sep}`);
+    expect(stats.latestMtimeMs).toBeLessThan(futureTime.getTime());
   });
 });

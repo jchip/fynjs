@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import Semver from "semver";
 
 describe("overrides", function() {
@@ -74,38 +73,38 @@ describe("overrides", function() {
         overrides: { lodash: "4.17.21" }
       });
       const matchers = fyn._processOverrides({ lodash: "4.17.21" });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("lodash");
-      expect(matchers[0].replacement).to.equal("4.17.21");
-      expect(matchers[0].versionConstraint).to.be.null;
-      expect(matchers[0].parentPath).to.equal("");
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("lodash");
+      expect(matchers[0].replacement).toBe("4.17.21");
+      expect(matchers[0].versionConstraint).toBeNull();
+      expect(matchers[0].parentPath).toBe("");
     });
 
     it("should parse overrides with version constraints", () => {
       const fyn = createMockFyn({});
       const matchers = fyn._processOverrides({ "lodash@^4.0.0": "4.17.21" });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("lodash");
-      expect(matchers[0].replacement).to.equal("4.17.21");
-      expect(matchers[0].versionConstraint).to.equal("^4.0.0");
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("lodash");
+      expect(matchers[0].replacement).toBe("4.17.21");
+      expect(matchers[0].versionConstraint).toBe("^4.0.0");
     });
 
     it("should parse scoped package overrides", () => {
       const fyn = createMockFyn({});
       const matchers = fyn._processOverrides({ "@scope/pkg": "1.0.0" });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("@scope/pkg");
-      expect(matchers[0].replacement).to.equal("1.0.0");
-      expect(matchers[0].versionConstraint).to.be.null;
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("@scope/pkg");
+      expect(matchers[0].replacement).toBe("1.0.0");
+      expect(matchers[0].versionConstraint).toBeNull();
     });
 
     it("should parse scoped package overrides with version constraints", () => {
       const fyn = createMockFyn({});
       const matchers = fyn._processOverrides({ "@scope/pkg@^1.0.0": "1.2.3" });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("@scope/pkg");
-      expect(matchers[0].replacement).to.equal("1.2.3");
-      expect(matchers[0].versionConstraint).to.equal("^1.0.0");
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("@scope/pkg");
+      expect(matchers[0].replacement).toBe("1.2.3");
+      expect(matchers[0].versionConstraint).toBe("^1.0.0");
     });
 
     it("should resolve $ references", () => {
@@ -113,9 +112,9 @@ describe("overrides", function() {
         dependencies: { "base-pkg": "2.0.0" }
       });
       const matchers = fyn._processOverrides({ lodash: "$base-pkg" });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("lodash");
-      expect(matchers[0].replacement).to.equal("2.0.0");
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("lodash");
+      expect(matchers[0].replacement).toBe("2.0.0");
     });
 
     it("should parse nested overrides", () => {
@@ -125,10 +124,10 @@ describe("overrides", function() {
           "child-pkg": "1.0.0"
         }
       });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("child-pkg");
-      expect(matchers[0].replacement).to.equal("1.0.0");
-      expect(matchers[0].parentPath).to.equal("parent-pkg");
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("child-pkg");
+      expect(matchers[0].replacement).toBe("1.0.0");
+      expect(matchers[0].parentPath).toBe("parent-pkg");
     });
 
     it("should parse deeply nested overrides", () => {
@@ -140,10 +139,10 @@ describe("overrides", function() {
           }
         }
       });
-      expect(matchers).to.have.length(1);
-      expect(matchers[0].pkgName).to.equal("child");
-      expect(matchers[0].replacement).to.equal("1.0.0");
-      expect(matchers[0].parentPath).to.equal("grandparent/parent");
+      expect(matchers).toHaveLength(1);
+      expect(matchers[0].pkgName).toBe("child");
+      expect(matchers[0].replacement).toBe("1.0.0");
+      expect(matchers[0].parentPath).toBe("grandparent/parent");
     });
 
     it("should parse multiple overrides at same level", () => {
@@ -153,8 +152,8 @@ describe("overrides", function() {
         "pkg-b": "2.0.0",
         "pkg-c": "3.0.0"
       });
-      expect(matchers).to.have.length(3);
-      expect(matchers.map(m => m.pkgName)).to.deep.equal(["pkg-a", "pkg-b", "pkg-c"]);
+      expect(matchers).toHaveLength(3);
+      expect(matchers.map(m => m.pkgName)).toStrictEqual(["pkg-a", "pkg-b", "pkg-c"]);
     });
   });
 
@@ -174,19 +173,19 @@ describe("overrides", function() {
     };
 
     it("should match exact version constraints", () => {
-      expect(matchesVersionConstraint("^4.0.0", "4.0.0")).to.be.true;
-      expect(matchesVersionConstraint("^4.0.0", "4.17.0")).to.be.true;
-      expect(matchesVersionConstraint("^4.0.0", "5.0.0")).to.be.false;
+      expect(matchesVersionConstraint("^4.0.0", "4.0.0")).toBe(true);
+      expect(matchesVersionConstraint("^4.0.0", "4.17.0")).toBe(true);
+      expect(matchesVersionConstraint("^4.0.0", "5.0.0")).toBe(false);
     });
 
     it("should match range constraints", () => {
-      expect(matchesVersionConstraint("^4.17.0", "^4.0.0")).to.be.true;
-      expect(matchesVersionConstraint("^5.0.0", "^4.0.0")).to.be.false;
+      expect(matchesVersionConstraint("^4.17.0", "^4.0.0")).toBe(true);
+      expect(matchesVersionConstraint("^5.0.0", "^4.0.0")).toBe(false);
     });
 
     it("should match tilde constraints", () => {
-      expect(matchesVersionConstraint("~4.17.0", "~4.17.0")).to.be.true;
-      expect(matchesVersionConstraint("~4.17.5", "~4.17.0")).to.be.true;
+      expect(matchesVersionConstraint("~4.17.0", "~4.17.0")).toBe(true);
+      expect(matchesVersionConstraint("~4.17.5", "~4.17.0")).toBe(true);
     });
   });
 
@@ -251,28 +250,28 @@ describe("overrides", function() {
 
     it("should match single parent", () => {
       const item = createMockItem(["parent-pkg"]);
-      expect(matchesParentPath(item, "parent-pkg")).to.be.true;
+      expect(matchesParentPath(item, "parent-pkg")).toBe(true);
     });
 
     it("should not match when parent chain is empty", () => {
       const item = createMockItem([]);
-      expect(matchesParentPath(item, "parent-pkg")).to.be.false;
+      expect(matchesParentPath(item, "parent-pkg")).toBe(false);
     });
 
     it("should match nested parents", () => {
       const item = createMockItem(["grandparent", "parent"]);
-      expect(matchesParentPath(item, "grandparent/parent")).to.be.true;
-      expect(matchesParentPath(item, "parent")).to.be.true;
+      expect(matchesParentPath(item, "grandparent/parent")).toBe(true);
+      expect(matchesParentPath(item, "parent")).toBe(true);
     });
 
     it("should handle scoped package parents", () => {
       const item = createMockItem(["@scope/parent-pkg"]);
-      expect(matchesParentPath(item, "@scope/parent-pkg")).to.be.true;
+      expect(matchesParentPath(item, "@scope/parent-pkg")).toBe(true);
     });
 
     it("should not match wrong parent", () => {
       const item = createMockItem(["different-pkg"]);
-      expect(matchesParentPath(item, "parent-pkg")).to.be.false;
+      expect(matchesParentPath(item, "parent-pkg")).toBe(false);
     });
   });
 });

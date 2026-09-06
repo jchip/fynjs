@@ -1,7 +1,6 @@
-import { describe, it, beforeEach, afterAll } from "vitest";
+import { describe, it, beforeEach, afterAll, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { expect } from "chai";
 
 import PkgBinLinkerWin32 from "../../lib/pkg-bin-linker-win32";
 
@@ -30,14 +29,14 @@ describe("pkg-bin-linker-win32", function () {
 
     await linker.linkBinPath(target, "foo");
 
-    expect(fs.readFileSync(path.join(binDir, "foo"), "utf8")).to.include(relTarget);
-    expect(fs.readFileSync(path.join(binDir, "foo.cmd"), "utf8")).to.include(relTarget);
-    expect(await linker.matchesBinPath("foo", target)).to.equal(true);
+    expect(fs.readFileSync(path.join(binDir, "foo"), "utf8")).toContain(relTarget);
+    expect(fs.readFileSync(path.join(binDir, "foo.cmd"), "utf8")).toContain(relTarget);
+    expect(await linker.matchesBinPath("foo", target)).toBe(true);
 
     await linker.removeBinLink("foo");
 
-    expect(fs.existsSync(path.join(binDir, "foo"))).to.equal(false);
-    expect(fs.existsSync(path.join(binDir, "foo.cmd"))).to.equal(false);
+    expect(fs.existsSync(path.join(binDir, "foo"))).toBe(false);
+    expect(fs.existsSync(path.join(binDir, "foo.cmd"))).toBe(false);
   });
 
   it("_cleanLink keeps a live bin but removes one whose target is gone", async () => {
@@ -54,13 +53,13 @@ describe("pkg-bin-linker-win32", function () {
     fs.rmSync(path.join(testDir, "packages/g2"), { recursive: true, force: true });
 
     // live bin is kept
-    expect(await linker._cleanLink("foo")).to.equal(false);
-    expect(fs.existsSync(path.join(binDir, "foo.cmd"))).to.equal(true);
+    expect(await linker._cleanLink("foo")).toBe(false);
+    expect(fs.existsSync(path.join(binDir, "foo.cmd"))).toBe(true);
 
     // stale bin is removed (the base Fs.access check would wrongly keep the
     // regular-file wrapper because the wrapper itself still exists)
-    expect(await linker._cleanLink("bar")).to.equal(true);
-    expect(fs.existsSync(path.join(binDir, "bar"))).to.equal(false);
-    expect(fs.existsSync(path.join(binDir, "bar.cmd"))).to.equal(false);
+    expect(await linker._cleanLink("bar")).toBe(true);
+    expect(fs.existsSync(path.join(binDir, "bar"))).toBe(false);
+    expect(fs.existsSync(path.join(binDir, "bar.cmd"))).toBe(false);
   });
 });

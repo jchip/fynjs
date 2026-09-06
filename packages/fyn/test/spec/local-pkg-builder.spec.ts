@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { LocalPkgBuilder } from "../../lib/local-pkg-builder";
 
 describe("LocalPkgBuilder", function() {
@@ -18,6 +17,6 @@ describe("LocalPkgBuilder", function() {
     await builder.start();
     const result = await builder.waitForItem(item.fullPath);
 
-    expect(result.error).to.equal(error);
+    expect(result.error).toBe(error);
   });
 });

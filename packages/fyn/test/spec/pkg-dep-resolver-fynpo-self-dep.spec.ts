@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import Path from "path";
 import PkgDepResolver from "../../lib/pkg-dep-resolver";
 import DepItem from "../../lib/dep-item";
@@ -10,7 +9,7 @@ import { PACKAGE_RAW_INFO } from "../../lib/types";
 // to its own copy in the monorepo.  fyn must not record that as a dep relation, or
 // fynpo sees a bogus circular dep when it replays the relations from .fynpo-data.json
 //
-describe("pkg-dep-resolver fynpo self dep", function() {
+describe("pkg-dep-resolver fynpo self dep", function () {
   const fynpoDir = Path.resolve("/test-fynpo");
   const selfDir = Path.join(fynpoDir, "_w", "npm-packlist");
   const otherDir = Path.join(fynpoDir, "packages", "ignore-walk");
@@ -27,13 +26,13 @@ describe("pkg-dep-resolver fynpo self dep", function() {
 
     const graph = {
       packages: { byPath, byName },
-      getPackageByName: name => byName[name] && byName[name][0],
-      resolvePackage: name => byName[name] && byName[name][0],
+      getPackageByName: (name) => byName[name] && byName[name][0],
+      resolvePackage: (name) => byName[name] && byName[name][0],
       // pretend the graph has no self dep guard, so this test only covers fyn's own
       addDep: (fromPkg, toPkg, section, steps) => {
         added.push({ from: fromPkg.path, to: toPkg.path, section, steps });
         return true;
-      }
+      },
     };
 
     const resolver = Object.create(PkgDepResolver.prototype);
@@ -45,7 +44,7 @@ describe("pkg-dep-resolver fynpo self dep", function() {
       enforceRegistryDeps: false,
       _shownMissingFiles: new Set(),
       _fynpo: { dir: fynpoDir, graph, indirects },
-      checkNoFynLocal: () => false
+      checkNoFynLocal: () => false,
     };
 
     return { resolver, added, indirects };
@@ -64,13 +63,13 @@ describe("pkg-dep-resolver fynpo self dep", function() {
       version: "11.3.0",
       // pacote pulls npm-packlist@^11.2.0, which matches the monorepo's own copy
       dependencies: { "npm-packlist": "^11.2.0" },
-      [PACKAGE_RAW_INFO]: { dir: selfDir, str: "" }
+      [PACKAGE_RAW_INFO]: { dir: selfDir, str: "" },
     };
 
     resolver.makePkgDepItems(pkg, makeDepItem(), false, true);
 
-    expect(added).to.deep.equal([]);
-    expect(indirects).to.deep.equal([]);
+    expect(added).toStrictEqual([]);
+    expect(indirects).toStrictEqual([]);
   });
 
   it("should still record a dep relation on another local package", () => {
@@ -79,15 +78,15 @@ describe("pkg-dep-resolver fynpo self dep", function() {
       name: "npm-packlist",
       version: "11.3.0",
       dependencies: { "ignore-walk": "^7.0.0" },
-      [PACKAGE_RAW_INFO]: { dir: selfDir, str: "" }
+      [PACKAGE_RAW_INFO]: { dir: selfDir, str: "" },
     };
 
     resolver.makePkgDepItems(pkg, makeDepItem(), false, true);
 
-    expect(added).to.have.lengthOf(1);
-    expect(added[0].from).to.equal(selfPath);
-    expect(added[0].to).to.equal(otherPath);
-    expect(indirects).to.have.lengthOf(1);
-    expect(indirects[0].onPkg.name).to.equal("ignore-walk");
+    expect(added).toHaveLength(1);
+    expect(added[0].from).toBe(selfPath);
+    expect(added[0].to).toBe(otherPath);
+    expect(indirects).toHaveLength(1);
+    expect(indirects[0].onPkg.name).toBe("ignore-walk");
   });
 });

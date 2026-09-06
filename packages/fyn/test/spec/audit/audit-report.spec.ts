@@ -5,8 +5,7 @@
  * Network calls are not tested here (integration tests would cover that).
  */
 
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 
 import AuditReport from "../../../lib/audit/audit-report";
 
@@ -46,10 +45,10 @@ describe("audit-report", () => {
 
       const payload = report.buildBulkPayload();
 
-      expect(payload).to.have.property("lodash");
-      expect(payload).to.have.property("express");
-      expect(payload.lodash).to.have.members(["4.17.21", "4.17.15"]);
-      expect(payload.express).to.have.members(["4.18.0"]);
+      expect(payload).toHaveProperty("lodash");
+      expect(payload).toHaveProperty("express");
+      expect(new Set(payload.lodash)).toEqual(new Set(["4.17.21", "4.17.15"]));
+      expect(new Set(payload.express)).toEqual(new Set(["4.18.0"]));
     });
 
     it("should skip local packages", () => {
@@ -69,8 +68,8 @@ describe("audit-report", () => {
 
       const payload = report.buildBulkPayload();
 
-      expect(payload).to.have.property("lodash");
-      expect(payload).to.not.have.property("my-local-pkg");
+      expect(payload).toHaveProperty("lodash");
+      expect(payload).not.toHaveProperty("my-local-pkg");
     });
 
     it("should omit dev dependencies when specified", () => {
@@ -91,8 +90,8 @@ describe("audit-report", () => {
 
       const payload = report.buildBulkPayload();
 
-      expect(payload).to.have.property("lodash");
-      expect(payload).to.not.have.property("mocha");
+      expect(payload).toHaveProperty("lodash");
+      expect(payload).not.toHaveProperty("mocha");
     });
 
     it("should omit optional dependencies when specified", () => {
@@ -113,8 +112,8 @@ describe("audit-report", () => {
 
       const payload = report.buildBulkPayload();
 
-      expect(payload).to.have.property("lodash");
-      expect(payload).to.not.have.property("optional-pkg");
+      expect(payload).toHaveProperty("lodash");
+      expect(payload).not.toHaveProperty("optional-pkg");
     });
 
     it("should handle empty packages", () => {
@@ -125,7 +124,7 @@ describe("audit-report", () => {
 
       const payload = report.buildBulkPayload();
 
-      expect(payload).to.deep.equal({});
+      expect(payload).toStrictEqual({});
     });
 
     it("should not include duplicate versions", () => {
@@ -142,7 +141,7 @@ describe("audit-report", () => {
 
       const payload = report.buildBulkPayload();
 
-      expect(payload.lodash).to.have.lengthOf(1);
+      expect(payload.lodash).toHaveLength(1);
     });
 
     //
@@ -163,7 +162,7 @@ describe("audit-report", () => {
         omit: ["dev"]
       });
 
-      expect(report.buildBulkPayload()).to.have.property("minimatch");
+      expect(report.buildBulkPayload()).toHaveProperty("minimatch");
     });
 
     it("should omit a package whose every source is omitted", () => {
@@ -179,7 +178,7 @@ describe("audit-report", () => {
         omit: ["dev", "peer"]
       });
 
-      expect(report.buildBulkPayload()).to.not.have.property("dev-only");
+      expect(report.buildBulkPayload()).not.toHaveProperty("dev-only");
     });
   });
 
@@ -192,7 +191,7 @@ describe("audit-report", () => {
 
       const url = report.getAuditRegistryUrl();
 
-      expect(url).to.equal("https://registry.npmjs.org/");
+      expect(url).toBe("https://registry.npmjs.org/");
     });
 
     it("should not double slash if already present", () => {
@@ -203,7 +202,7 @@ describe("audit-report", () => {
 
       const url = report.getAuditRegistryUrl();
 
-      expect(url).to.equal("https://registry.npmjs.org/");
+      expect(url).toBe("https://registry.npmjs.org/");
     });
 
     it("should default to npmjs.org when no registry specified", () => {
@@ -214,7 +213,7 @@ describe("audit-report", () => {
 
       const url = report.getAuditRegistryUrl();
 
-      expect(url).to.equal("https://registry.npmjs.org/");
+      expect(url).toBe("https://registry.npmjs.org/");
     });
   });
 
@@ -249,10 +248,10 @@ describe("audit-report", () => {
 
       const vulns = report.matchVulnerabilities(auditResult);
 
-      expect(vulns).to.have.lengthOf(1);
-      expect(vulns[0].name).to.equal("lodash");
-      expect(vulns[0].version).to.equal("4.17.15");
-      expect(vulns[0].advisory.severity).to.equal("high");
+      expect(vulns).toHaveLength(1);
+      expect(vulns[0].name).toBe("lodash");
+      expect(vulns[0].version).toBe("4.17.15");
+      expect(vulns[0].advisory.severity).toBe("high");
     });
 
     it("should not report a vulnerability reached only through an omitted type", () => {
@@ -274,7 +273,7 @@ describe("audit-report", () => {
         omit: ["dev"]
       });
 
-      expect(report.matchVulnerabilities(auditResult)).to.have.lengthOf(0);
+      expect(report.matchVulnerabilities(auditResult)).toHaveLength(0);
     });
 
     it("should still report it when production also depends on it", () => {
@@ -296,7 +295,7 @@ describe("audit-report", () => {
         omit: ["dev"]
       });
 
-      expect(report.matchVulnerabilities(auditResult)).to.have.lengthOf(1);
+      expect(report.matchVulnerabilities(auditResult)).toHaveLength(1);
     });
 
     it("should not match packages outside vulnerable range", () => {
@@ -325,7 +324,7 @@ describe("audit-report", () => {
 
       const vulns = report.matchVulnerabilities(auditResult);
 
-      expect(vulns).to.have.lengthOf(0);
+      expect(vulns).toHaveLength(0);
     });
 
     it("should match multiple versions of same package", () => {
@@ -355,7 +354,7 @@ describe("audit-report", () => {
 
       const vulns = report.matchVulnerabilities(auditResult);
 
-      expect(vulns).to.have.lengthOf(2);
+      expect(vulns).toHaveLength(2);
     });
 
     it("should handle packages not in advisory list", () => {
@@ -384,7 +383,7 @@ describe("audit-report", () => {
 
       const vulns = report.matchVulnerabilities(auditResult);
 
-      expect(vulns).to.have.lengthOf(0);
+      expect(vulns).toHaveLength(0);
     });
 
     it("should handle multiple advisories per package", () => {
@@ -411,7 +410,7 @@ describe("audit-report", () => {
       const vulns = report.matchVulnerabilities(auditResult);
 
       // Should match both advisories for the same version
-      expect(vulns).to.have.lengthOf(2);
+      expect(vulns).toHaveLength(2);
     });
 
     it("should handle empty advisories", () => {
@@ -428,7 +427,7 @@ describe("audit-report", () => {
 
       const vulns = report.matchVulnerabilities({ advisories: {} });
 
-      expect(vulns).to.have.lengthOf(0);
+      expect(vulns).toHaveLength(0);
     });
   });
 });

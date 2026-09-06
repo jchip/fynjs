@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "fs";
 import Path from "path";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import vitestConfig from "../../vitest.config.js";
 
 const specDir = import.meta.dirname;
@@ -35,8 +35,8 @@ describe("vitest projects", function() {
     // interception off, or its output goes over the onUserConsoleLog RPC and a
     // log still in flight at worker teardown fails the whole run
     //
-    expect(intercepting).to.not.be.empty;
-    expect(project.test.disableConsoleIntercept).to.equal(true);
-    expect(project.test.include).to.include.members(intercepting);
+    expect(intercepting).not.toHaveLength(0);
+    expect(project.test.disableConsoleIntercept).toBe(true);
+    expect(project.test.include).toEqual(expect.arrayContaining(intercepting));
   });
 });

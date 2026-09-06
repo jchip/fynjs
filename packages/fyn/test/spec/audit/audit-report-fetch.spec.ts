@@ -9,8 +9,7 @@
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
-import { describe, it, beforeEach, afterEach, vi } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, vi, expect } from "vitest";
 
 const { npmFetchMock } = vi.hoisted(() => ({ npmFetchMock: vi.fn() }));
 
@@ -49,12 +48,12 @@ describe("audit-report fetchAdvisories()", () => {
 
     await makeReport(true).fetchAdvisories();
 
-    expect(npmFetchMock.mock.calls).to.have.lengthOf(1);
+    expect(npmFetchMock.mock.calls).toHaveLength(1);
     const [url, opts] = npmFetchMock.mock.calls[0];
-    expect(url).to.equal("https://registry.npmjs.org/-/npm/v1/security/advisories/bulk");
-    expect(opts.method).to.equal("POST");
-    expect(opts.timeout).to.equal(10000);
-    expect(opts.retry).to.deep.equal({ retries: 0 });
+    expect(url).toBe("https://registry.npmjs.org/-/npm/v1/security/advisories/bulk");
+    expect(opts.method).toBe("POST");
+    expect(opts.timeout).toBe(10000);
+    expect(opts.retry).toStrictEqual({ retries: 0 });
   });
 
   it("should surface a stalled endpoint as an error rather than hanging", async () => {
@@ -70,10 +69,10 @@ describe("audit-report fetchAdvisories()", () => {
       caught = err as Error;
     }
 
-    expect(caught).to.exist;
-    expect(caught.message).to.contain("network timeout");
+    expect(caught).toEqual(expect.anything());
+    expect(caught.message).toContain("network timeout");
     // one attempt only - the retrying is npm-registry-fetch's job and we turned it off
-    expect(npmFetchMock.mock.calls).to.have.lengthOf(1);
+    expect(npmFetchMock.mock.calls).toHaveLength(1);
   });
 
   it("should fall back to cached advisories when the endpoint stalls", async () => {
@@ -93,7 +92,7 @@ describe("audit-report fetchAdvisories()", () => {
 
     const result = await report.fetchAdvisories();
 
-    expect(npmFetchMock.mock.calls).to.have.lengthOf(1);
-    expect(result).to.deep.equal(cached);
+    expect(npmFetchMock.mock.calls).toHaveLength(1);
+    expect(result).toStrictEqual(cached);
   });
 });

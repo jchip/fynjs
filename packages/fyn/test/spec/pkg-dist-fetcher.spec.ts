@@ -1,11 +1,9 @@
-
 import { describe, it, beforeAll, afterAll } from "vitest";
 import Fs from "fs";
 import * as Yaml from "js-yaml";
 import Path from "path";
 import Fyn from "../../lib/fyn";
 import mockNpm from "../fixtures/mock-npm";
-import { expect } from "chai";
 import _ from "lodash";
 import PkgDepLinker from "../../lib/pkg-dep-linker";
 import xsh from "xsh";
@@ -17,13 +15,13 @@ import logger from "../../lib/logger";
 const tmpName = () =>
   `.tmp_${Date.now()}_${process.pid.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-describe("pkg-dist-fetcher", function() {
+describe("pkg-dist-fetcher", function () {
   logger._logLevel = 999;
   const fynDir = Path.join(__dirname, `../${tmpName()}`);
 
   let server;
   beforeAll(() => {
-    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
+    return mockNpm({ port: 0, logLevel: "warn" }).then((s) => (server = s));
   });
 
   afterAll(() => {
@@ -43,8 +41,8 @@ describe("pkg-dist-fetcher", function() {
         cwd: fynDir,
         targetDir,
         fynDir,
-        ignoreDist: true
-      }
+        ignoreDist: true,
+      },
     });
     // TODO: verify tarballs actually fetched
     return fyn.resolveDependencies().then(() => fyn.fetchPackages());

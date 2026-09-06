@@ -6,8 +6,7 @@
 // stub `_fyn`, so no network / extraction / script execution is needed.
 //
 
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import PkgOptResolver from "../../lib/pkg-opt-resolver";
 import DepItem from "../../lib/dep-item";
 
@@ -25,7 +24,7 @@ function mkResolver({
   allowScripts = {},
   allowTopLevelScripts = false,
   scriptPolicy = "source",
-  reviewLocalPackages = false
+  reviewLocalPackages = false,
 } = {}) {
   const resolver = Object.create(PkgOptResolver.prototype);
   resolver._fyn = {
@@ -36,8 +35,8 @@ function mkResolver({
     scriptPolicyOptions: {
       mode: scriptPolicy,
       allowTopLevel: allowTopLevelScripts,
-      reviewLocalPackages
-    }
+      reviewLocalPackages,
+    },
   };
   return resolver;
 }
@@ -52,23 +51,30 @@ function mkResolver({
  */
 function mkItem(spec, parentDepth) {
   const parent = new DepItem(
-    { name: "parent", version: "1.0.0", semver: "^1.0.0", src: "dep", dsrc: "dep", depth: parentDepth },
-    null
+    {
+      name: "parent",
+      version: "1.0.0",
+      semver: "^1.0.0",
+      src: "dep",
+      dsrc: "dep",
+      depth: parentDepth,
+    },
+    null,
   );
   return new DepItem({ name: "opt-pkg", semver: spec, src: "opt", dsrc: "opt" }, parent);
 }
 
-describe("pkg-opt-resolver preinstall script policy", function() {
+describe("pkg-opt-resolver preinstall script policy", function () {
   it("blocks preinstall for a transitive non-registry (github) optional dep", () => {
     const resolver = mkResolver();
     const { allowed, policy } = resolver.checkPreinstallPolicy(
       mkItem("github:evil/repo", 1),
       "opt-pkg",
-      "1.0.0"
+      "1.0.0",
     );
-    expect(allowed).to.equal(false);
-    expect(policy.trusted).to.equal(false);
-    expect(policy.urlType).to.equal("github");
+    expect(allowed).toBe(false);
+    expect(policy.trusted).toBe(false);
+    expect(policy.urlType).toBe("github");
   });
 
   it("allows preinstall for a registry (semver) optional dep", () => {
@@ -76,10 +82,10 @@ describe("pkg-opt-resolver preinstall script policy", function() {
     const { allowed, policy } = resolver.checkPreinstallPolicy(
       mkItem("^1.2.3", 1),
       "opt-pkg",
-      "1.0.0"
+      "1.0.0",
     );
-    expect(allowed).to.equal(true);
-    expect(policy.trusted).to.equal(true);
+    expect(allowed).toBe(true);
+    expect(policy.trusted).toBe(true);
   });
 
   it("allows a non-registry optional dep explicitly whitelisted in fyn.allowScripts", () => {
@@ -87,9 +93,9 @@ describe("pkg-opt-resolver preinstall script policy", function() {
     const { allowed } = resolver.checkPreinstallPolicy(
       mkItem("github:evil/repo", 1),
       "opt-pkg",
-      "1.0.0"
+      "1.0.0",
     );
-    expect(allowed).to.equal(true);
+    expect(allowed).toBe(true);
   });
 
   it("allows a top-level non-registry optional dep when fyn.allowTopLevelScripts is on", () => {
@@ -97,9 +103,9 @@ describe("pkg-opt-resolver preinstall script policy", function() {
     const { allowed } = resolver.checkPreinstallPolicy(
       mkItem("github:evil/repo", 0),
       "opt-pkg",
-      "1.0.0"
+      "1.0.0",
     );
-    expect(allowed).to.equal(true);
+    expect(allowed).toBe(true);
   });
 
   it("still blocks a transitive non-registry optional dep when allowTopLevelScripts is on", () => {
@@ -107,29 +113,29 @@ describe("pkg-opt-resolver preinstall script policy", function() {
     const { allowed } = resolver.checkPreinstallPolicy(
       mkItem("github:evil/repo", 1),
       "opt-pkg",
-      "1.0.0"
+      "1.0.0",
     );
-    expect(allowed).to.equal(false);
+    expect(allowed).toBe(false);
   });
 
   it('blocks a registry optional dep\'s preinstall under "review"', () => {
     const resolver = mkResolver({ scriptPolicy: "review" });
     const { allowed } = resolver.checkPreinstallPolicy(mkItem("^1.2.3", 1), "opt-pkg", "1.0.0");
-    expect(allowed).to.equal(false);
+    expect(allowed).toBe(false);
   });
 
   it('allows an allowlisted registry optional dep under "review"', () => {
     const resolver = mkResolver({
       scriptPolicy: "review",
-      allowScripts: { "opt-pkg": ["preinstall"] }
+      allowScripts: { "opt-pkg": ["preinstall"] },
     });
     const { allowed } = resolver.checkPreinstallPolicy(mkItem("^1.2.3", 1), "opt-pkg", "1.0.0");
-    expect(allowed).to.equal(true);
+    expect(allowed).toBe(true);
   });
 
   it('blocks everything under "off"', () => {
     const resolver = mkResolver({ scriptPolicy: "off", allowScripts: { "opt-pkg": true } });
     const { allowed } = resolver.checkPreinstallPolicy(mkItem("^1.2.3", 1), "opt-pkg", "1.0.0");
-    expect(allowed).to.equal(false);
+    expect(allowed).toBe(false);
   });
 });

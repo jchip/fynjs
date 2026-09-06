@@ -1,11 +1,11 @@
 import XTasks from "../../lib/xtasks.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import sample1 from "../fixtures/sample1.js";
 
 describe("xtasks", function() {
   it("should take no params in constructor", () => {
     const xtasks = new XTasks();
-    expect(xtasks._tasks).to.exist;
+    expect(xtasks._tasks).toEqual(expect.anything());
   });
 
   const makeIt = () => {
@@ -22,12 +22,12 @@ describe("xtasks", function() {
 
   it("should load tasks into custom namespace", () => {
     const xtasks = makeIt();
-    expect(xtasks._tasks[1].foo1).to.equal("1-foo1");
+    expect(xtasks._tasks[1].foo1).toBe("1-foo1");
   });
 
   it("should lookup task by name from first matching namespace", () => {
     const xtasks = makeIt();
-    expect(xtasks.lookup("foo1")).to.deep.equal({
+    expect(xtasks.lookup("foo1")).toStrictEqual({
       ns: "1",
       name: "foo1",
       item: "1-foo1",
@@ -37,19 +37,19 @@ describe("xtasks", function() {
 
   it("should lookup task by name from default namespace", () => {
     const xtasks = makeIt();
-    expect(xtasks.lookup("def1")).to.deep.equal({
+    expect(xtasks.lookup("def1")).toStrictEqual({
       ns: "/",
       name: "def1",
       item: "default1",
       search: true
     });
-    expect(xtasks.lookup("/def1")).to.deep.equal({ ns: "/", name: "def1", item: "default1" });
+    expect(xtasks.lookup("/def1")).toStrictEqual({ ns: "/", name: "def1", item: "default1" });
   });
 
   it("should lookup task by namespace/name", () => {
     const xtasks = makeIt();
-    expect(xtasks.lookup("1/foo1")).to.deep.equal({ ns: "1", name: "foo1", item: "1-foo1" });
-    expect(xtasks.lookup("sample1/foo1")).to.deep.equal({
+    expect(xtasks.lookup("1/foo1")).toStrictEqual({ ns: "1", name: "foo1", item: "1-foo1" });
+    expect(xtasks.lookup("sample1/foo1")).toStrictEqual({
       ns: "sample1",
       name: "foo1",
       item: "sample1-foo1"
@@ -58,7 +58,7 @@ describe("xtasks", function() {
 
   it("should return names", () => {
     const xtasks = makeIt();
-    expect(xtasks.names()).to.deep.equal([
+    expect(xtasks.names()).toStrictEqual([
       "def1",
       "foo1",
       "def1",
@@ -87,7 +87,7 @@ describe("xtasks", function() {
 
   it("should return full names", () => {
     const xtasks = makeIt();
-    expect(xtasks.fullNames()).to.deep.equal([
+    expect(xtasks.fullNames()).toStrictEqual([
       "/def1",
       "1/foo1",
       "1/def1",

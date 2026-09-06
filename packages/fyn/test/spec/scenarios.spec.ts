@@ -1,4 +1,3 @@
-
 /**
  * Scenario testing framework for fyn
  *
@@ -13,7 +12,6 @@
  */
 
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi, expect } from "vitest";
-import { expect as chaiExpect } from "chai";
 import Fs from "fs";
 import Path from "path";
 import _ from "lodash";
@@ -34,7 +32,7 @@ import chalk from "chalk";
 const optionalRequire = makeOptionalRequire(import.meta.url);
 
 const BASE_ARGS = ["--pg=none", "-q=none", "--no-rcfile"];
-const getFynDirArg = dir => `--fyn-dir=${dir}`;
+const getFynDirArg = (dir) => `--fyn-dir=${dir}`;
 
 function readJson(path) {
   try {
@@ -46,7 +44,7 @@ function readJson(path) {
 
 const debug = false;
 
-(debug ? describe.only : describe)("scenario", function() {
+(debug ? describe.only : describe)("scenario", function () {
   let server;
   const saveExit = fyntil.exit;
   let registry;
@@ -61,7 +59,7 @@ const debug = false;
     chalk.level = 0;
     saveCI = ci.isCI;
     ci.isCI = false;
-    fyntil.exit = code => {
+    fyntil.exit = (code) => {
       throw new Error(`exit ${code}`);
     };
     // Handle unhandled rejections for "exit 0" errors (Vitest treats them differently than Mocha)
@@ -75,7 +73,7 @@ const debug = false;
       unhandledErrors.push(reason);
     };
     process.on("unhandledRejection", unhandledRejectionHandler);
-    return mockNpm({ port: 0, logLevel: "warn" }).then(s => {
+    return mockNpm({ port: 0, logLevel: "warn" }).then((s) => {
       server = s;
       registry = `http://localhost:${server.info.port}`;
     });
@@ -108,11 +106,11 @@ const debug = false;
     before: _.noop,
     after: _.noop,
     verify: _.noop,
-    extraArgs: []
+    extraArgs: [],
   };
 
   function executeScenario(scenarioDir, options) {
-    const cleanLock = lock => {
+    const cleanLock = (lock) => {
       _.each(lock, (pkg, name) => {
         if (name.startsWith("$")) return;
         _.each(pkg, (vpkg, ver) => {
@@ -131,13 +129,13 @@ const debug = false;
         const actualLockFile = Path.join(_cwd, "fyn-lock.yaml");
         const expectLock = Yaml.load(Fs.readFileSync(expectLockFile).toString());
         const actualLock = Yaml.load(Fs.readFileSync(actualLockFile).toString());
-        chaiExpect(cleanLock(actualLock), "lock file should match").to.deep.equal(
-          cleanLock(expectLock)
+        expect(cleanLock(actualLock), "lock file should match").toStrictEqual(
+          cleanLock(expectLock),
         );
       }
     };
 
-    const deleteNullFields = obj => {
+    const deleteNullFields = (obj) => {
       _.each(obj, (v, k) => {
         if (v === null || v === undefined) {
           delete obj[k];
@@ -148,7 +146,7 @@ const debug = false;
     };
     const accumulatedPkgJson = {};
 
-    const makeStep = step => {
+    const makeStep = (step) => {
       const stepDir = Path.join(scenarioDir, step);
       const stepAction = optionalRequire(Path.join(stepDir), { default: {} });
 
@@ -165,7 +163,7 @@ const debug = false;
       const debugLogFile = `fyn-debug-${step}.log`;
       Fs.rmSync(Path.join(cwd, debugLogFile), { recursive: true, force: true });
 
-      const timeout = debug ? 10000000 : (stepAction.timeout || undefined);
+      const timeout = debug ? 10000000 : stepAction.timeout || undefined;
       const testOptions = timeout ? { timeout } : {};
       const testCase = (stepAction.skip ? it.skip : it)(`${step}${stepTitle}`, testOptions, () => {
         if (debug && step === options.debugStep) {
@@ -194,8 +192,8 @@ const debug = false;
                 "dependencies",
                 "devDependencies",
                 "optionalDependencies",
-                "peerDependencies"
-              ].forEach(k => {
+                "peerDependencies",
+              ].forEach((k) => {
                 if (accumulatedPkgJson[k]) {
                   accumulatedPkgJson[k] = sortObjKeys(accumulatedPkgJson[k]);
                 }
@@ -212,7 +210,7 @@ const debug = false;
                 baseArgs: BASE_ARGS,
                 pkgJson: accumulatedPkgJson,
                 pkgJsonFile,
-                debug
+                debug,
               });
             }
 
@@ -228,9 +226,9 @@ const debug = false;
                   .concat(`--sl`, debugLogFile, (debug && ["-q", "debug"]) || []),
                 pkgJson: accumulatedPkgJson,
                 pkgJsonFile,
-                debug
+                debug,
               });
-              if (!args.find(x => x.includes("--cwd"))) {
+              if (!args.find((x) => x.includes("--cwd"))) {
                 args = args.concat(`--cwd=${cwd}`);
               }
             } else {
@@ -246,26 +244,26 @@ const debug = false;
                 stepAction.extraArgs,
                 (debug && ["-q", "debug"]) || [],
                 [`--cwd=${cwd}`, "install", "--no-audit"],
-                stepAction.forceInstall === false ? "" : "--fi"
+                stepAction.forceInstall === false ? "" : "--fi",
               );
             }
 
             if (debug) {
               console.log(
                 "scenario running fyn with args",
-                args.filter(x => x)
+                args.filter((x) => x),
               );
             }
 
-            return fynRun(args.filter(x => x))
-              .catch(err => {
+            return fynRun(args.filter((x) => x))
+              .catch((err) => {
                 if (err.message !== "exit 0") {
                   failError = err;
                 }
                 // Return undefined for "exit 0" to avoid unhandled rejection
                 return undefined;
               })
-              .catch(err => {
+              .catch((err) => {
                 // Catch any errors from the previous catch (shouldn't happen, but just in case)
                 if (err.message !== "exit 0") {
                   failError = err;
@@ -292,17 +290,17 @@ const debug = false;
             // compare against (or regenerate) the parallel short fixture.
             const nmTreeFile = Path.join(
               stepDir,
-              process.env.FYN_SHORT_PKG_DIR ? "nm-tree-short.yaml" : "nm-tree.yaml"
+              process.env.FYN_SHORT_PKG_DIR ? "nm-tree-short.yaml" : "nm-tree.yaml",
             );
             if (process.env.UPDATE_NM_TREE) {
               Fs.writeFileSync(nmTreeFile, Yaml.dump(nmTree, { indent: 2 }));
             } else {
               const expectNmTree = Yaml.load(Fs.readFileSync(nmTreeFile).toString());
-              chaiExpect(nmTree).to.deep.equal(expectNmTree);
+              expect(nmTree).toStrictEqual(expectNmTree);
             }
             verifyLock(cwd, stepDir);
           })
-          .catch(err => {
+          .catch((err) => {
             if (!debug) {
               const msg = `scenario test "${step}${stepTitle}" failed`;
               try {
@@ -336,7 +334,7 @@ const debug = false;
                 .map((e: any) => (e && e.stack) || String(e))
                 .join("\n---\n");
               throw new Error(
-                `${unhandledErrors.length} unhandled rejection(s) during step "${step}":\n${details}`
+                `${unhandledErrors.length} unhandled rejection(s) during step "${step}":\n${details}`,
               );
             }
           })
@@ -344,7 +342,7 @@ const debug = false;
       });
     };
 
-    const files = Fs.readdirSync(scenarioDir).filter(x => x.startsWith("step-"));
+    const files = Fs.readdirSync(scenarioDir).filter((x) => x.startsWith("step-"));
 
     for (const step of files.sort()) {
       makeStep(step);
@@ -362,7 +360,7 @@ const debug = false;
         //  { stopStep: "step-02", debugStep: "step-02" }
         // "auto-deep-resolve": {}
         // "bin-linker": {}
-        "build-local": {}
+        "build-local": {},
         // "fyn-central": {},
         // "fynpo-sample": { stopStep: "step-01" }
         // "fyn-shrinkwrap": {}
@@ -387,18 +385,18 @@ const debug = false;
       }
     : {
         "github-refresh": { skip: true }, // Skipped by default - pushes to real GitHub
-        "remote-url-semver": { skip: false } // Skip this scenario
+        "remote-url-semver": { skip: false }, // Skip this scenario
       };
 
   const saveCwd = process.cwd();
   const scenarioDir = Path.join(__dirname, "../scenarios");
   const scenarios = Fs.readdirSync(scenarioDir)
-    .filter(x => !x.startsWith("."))
-    .filter(x => {
+    .filter((x) => !x.startsWith("."))
+    .filter((x) => {
       const fullPath = Path.join(scenarioDir, x);
       return Fs.statSync(fullPath).isDirectory();
     });
-  scenarios.sort().forEach(s => {
+  scenarios.sort().forEach((s) => {
     // In debug mode: only run scenarios in filter (with .only)
     // In normal mode: run all scenarios, but use filter for configuration (skip, etc.)
     const inFilter = filter.hasOwnProperty(s);
@@ -418,7 +416,7 @@ const debug = false;
         describeFn = describe.skip;
       }
 
-      describeFn(s, function() {
+      describeFn(s, function () {
         const clean = () => {
           Fs.rmSync(Path.join(cwd, "package.json"), { recursive: true, force: true });
           Fs.rmSync(Path.join(cwd, "fyn-lock.yaml"), { recursive: true, force: true });
@@ -429,7 +427,7 @@ const debug = false;
           Fs.rmSync(Path.join(cwd, "node_modules"), { recursive: true, force: true });
           // Steps with pkgDir install into a sub-cwd (e.g. ".ignore-dir", "@scope/pkg-2");
           // clean stale node_modules/fyn-lock there too, but preserve any committed package.json.
-          const stepDirs = Fs.readdirSync(cwd).filter(x => x.startsWith("step-"));
+          const stepDirs = Fs.readdirSync(cwd).filter((x) => x.startsWith("step-"));
           const seen = new Set();
           for (const step of stepDirs) {
             const stepAction = optionalRequire(Path.join(cwd, step), { default: {} });
@@ -457,7 +455,7 @@ const debug = false;
 
               // Copy the entire .fyn directory
               execSync(`cp -r "${prevFynDir}"/* "${currentFynDir}/" 2>/dev/null || true`, {
-                stdio: "pipe"
+                stdio: "pipe",
               });
             }
           }

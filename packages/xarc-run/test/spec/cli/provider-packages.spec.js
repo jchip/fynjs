@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "vitest";
 import Path from "path";
 import { loadProviderPackages } from "../../../cli/provider-packages.js";
 import instance from "../../../lib/xrun-instance.js";
@@ -38,8 +38,8 @@ describe("provider-packages", function() {
       const task2 = xrunTasks.lookup("provider1-build");
 
       // Verify task types
-      expect(task1.item).to.be.a("string");
-      expect(task2.item).to.be.a("function");
+      expect(typeof task1.item).toBe("string");
+      expect(typeof task2.item).toBe("function");
     });
 
     it("should load provider packages from devDependencies and optionalDependencies", function() {
@@ -70,10 +70,10 @@ describe("provider-packages", function() {
       const optDeploy = xrunTasks.lookup("optional-deploy");
 
       // Verify task types
-      expect(devTask.item).to.be.a("string");
-      expect(devTest.item).to.be.a("function");
-      expect(optTask.item).to.be.a("string");
-      expect(optDeploy.item).to.be.a("function");
+      expect(typeof devTask.item).toBe("string");
+      expect(typeof devTest.item).toBe("function");
+      expect(typeof optTask.item).toBe("string");
+      expect(typeof optDeploy.item).toBe("function");
     });
 
     it("should use custom module when specified in xrunProvider config", function() {
@@ -92,10 +92,10 @@ describe("provider-packages", function() {
 
       // Should load from tasks.js, not index.js
       const task1 = xrunTasks.lookup("provider1-task");
-      expect(task1.item).to.be.a("string");
+      expect(typeof task1.item).toBe("string");
 
       // Verify wrong-task is not loaded (would come from index.js)
-      expect(() => xrunTasks.lookup("wrong-task")).to.throw("Task wrong-task not found");
+      expect(() => xrunTasks.lookup("wrong-task")).toThrow("Task wrong-task not found");
     });
 
     it("should use main module when no custom module specified", function() {
@@ -115,8 +115,8 @@ describe("provider-packages", function() {
       // Should load from index.js (main module)
       const task1 = xrunTasks.lookup("provider2-task");
       const task2 = xrunTasks.lookup("provider2-clean");
-      expect(task1.item).to.be.a("string");
-      expect(task2.item).to.be.a("function");
+      expect(typeof task1.item).toBe("string");
+      expect(typeof task2.item).toBe("function");
     });
 
     it("should identify providers by @fynjs/run dependency", function() {
@@ -134,8 +134,8 @@ describe("provider-packages", function() {
       const xrunTasks = instance.xrun._tasks;
       const devTask = xrunTasks.lookup("dev-task");
       const devTest = xrunTasks.lookup("dev-test");
-      expect(devTask.item).to.be.a("string");
-      expect(devTest.item).to.be.a("function");
+      expect(typeof devTask.item).toBe("string");
+      expect(typeof devTest.item).toBe("function");
     });
 
     it("should skip packages without xrunProvider config or @fynjs/run dependency", function() {
@@ -152,7 +152,7 @@ describe("provider-packages", function() {
 
       const xrunTasks = instance.xrun._tasks;
       // Should not load any tasks since it's not a provider
-      expect(xrunTasks.count()).to.equal(0);
+      expect(xrunTasks.count()).toBe(0);
     });
 
     it("should skip providers without loadTasks export", function() {
@@ -169,7 +169,7 @@ describe("provider-packages", function() {
 
       const xrunTasks = instance.xrun._tasks;
       // Should not load any tasks since provider doesn't export loadTasks
-      expect(xrunTasks.count()).to.equal(0);
+      expect(xrunTasks.count()).toBe(0);
     });
 
     it("should handle missing package.json gracefully", function() {
@@ -185,10 +185,10 @@ describe("provider-packages", function() {
       // Should not throw error
       expect(() => {
         loadProviderPackages(userPkg, originalCwd, opts);
-      }).to.not.throw();
+      }).not.toThrow();
 
       const xrunTasks = instance.xrun._tasks;
-      expect(xrunTasks.count()).to.equal(0);
+      expect(xrunTasks.count()).toBe(0);
     });
 
     it("should handle missing provider module gracefully", function() {
@@ -205,10 +205,10 @@ describe("provider-packages", function() {
       // Should not throw error
       expect(() => {
         loadProviderPackages(userPkg, originalCwd, opts);
-      }).to.not.throw();
+      }).not.toThrow();
 
       const xrunTasks = instance.xrun._tasks;
-      expect(xrunTasks.count()).to.equal(0);
+      expect(xrunTasks.count()).toBe(0);
     });
 
     it("should work correctly when saveCwd equals opts.cwd", function() {
@@ -227,8 +227,8 @@ describe("provider-packages", function() {
       const xrunTasks = instance.xrun._tasks;
       const task1 = xrunTasks.lookup("provider1-task");
       const task2 = xrunTasks.lookup("provider1-build");
-      expect(task1.item).to.be.a("string");
-      expect(task2.item).to.be.a("function");
+      expect(typeof task1.item).toBe("string");
+      expect(typeof task2.item).toBe("function");
     });
 
     it("should process multiple valid providers", function() {
@@ -260,15 +260,15 @@ describe("provider-packages", function() {
       const optDeploy = xrunTasks.lookup("optional-deploy");
 
       // Verify task types
-      expect(task1.item).to.be.a("string");
-      expect(task2.item).to.be.a("function");
-      expect(devTask.item).to.be.a("string");
-      expect(devTest.item).to.be.a("function");
-      expect(optTask.item).to.be.a("string");
-      expect(optDeploy.item).to.be.a("function");
+      expect(typeof task1.item).toBe("string");
+      expect(typeof task2.item).toBe("function");
+      expect(typeof devTask.item).toBe("string");
+      expect(typeof devTest.item).toBe("function");
+      expect(typeof optTask.item).toBe("string");
+      expect(typeof optDeploy.item).toBe("function");
 
       // Should have 6 tasks total
-      expect(xrunTasks.count()).to.equal(6);
+      expect(xrunTasks.count()).toBe(6);
     });
 
     it("should handle mixed valid and invalid providers", function() {
@@ -291,11 +291,11 @@ describe("provider-packages", function() {
       // Should only process provider-1 (valid provider with loadTasks)
       const task1 = xrunTasks.lookup("provider1-task");
       const task2 = xrunTasks.lookup("provider1-build");
-      expect(task1.item).to.be.a("string");
-      expect(task2.item).to.be.a("function");
+      expect(typeof task1.item).toBe("string");
+      expect(typeof task2.item).toBe("function");
 
       // Should have only 2 tasks from provider-1
-      expect(xrunTasks.count()).to.equal(2);
+      expect(xrunTasks.count()).toBe(2);
     });
   });
 });

@@ -1,9 +1,9 @@
 import XTaskSpec from "../../lib/xtask-spec.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 
 describe("xtask-spec", function() {
   it("should creeate exec command", () => {
-    expect(new XTaskSpec({ cmd: "hello", flags: { tty: true } }).toString()).to.equal(
+    expect(new XTaskSpec({ cmd: "hello", flags: { tty: true } }).toString()).toBe(
       `exec(tty) 'hello'`
     );
     expect(
@@ -12,17 +12,17 @@ describe("xtask-spec", function() {
         flags: { tty: true },
         execOptions: { env: { foo: "bar" } }
       }).toString()
-    ).to.equal(`exec(tty) {foo=bar} 'hello'`);
+    ).toBe(`exec(tty) {foo=bar} 'hello'`);
   });
 
   it("should handle unknown type in toString", () => {
-    expect(new XTaskSpec({ type: "blah", command: "hello" }).toString()).to.equal(
+    expect(new XTaskSpec({ type: "blah", command: "hello" }).toString()).toBe(
       `XTaskSpec - Unknown type blah`
     );
   });
 
   it("should handle trailing args in toString", () => {
-    expect(new XTaskSpec({ cmd: "hello", type: "exec" }).toString("world")).to.equal(
+    expect(new XTaskSpec({ cmd: "hello", type: "exec" }).toString("world")).toBe(
       `exec 'hello world'`
     );
   });

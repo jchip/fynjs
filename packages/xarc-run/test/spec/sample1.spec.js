@@ -1,6 +1,6 @@
 import XRun from "../../lib/xrun.js";
 import sample1 from "../fixtures/sample1.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import { asyncVerify, expectError } from "run-verify";
 import xstdout from "xstdout";
 
@@ -46,7 +46,7 @@ describe("sample1", function() {
       () => {
         intercept.restore();
         const output = intercept.stdout.sort().map(x => x.trim());
-        expect(output).to.deep.equal(expectOutput.sort());
+        expect(output).toStrictEqual(expectOutput.sort());
       }
     );
   });
@@ -78,9 +78,9 @@ describe("sample1", function() {
       expectError(next => xrun.run("foo2ba", next)),
       err => {
         intercept.restore();
-        expect(err).to.exist;
+        expect(err).toEqual(expect.anything());
         const output = intercept.stdout.sort().map(x => x.trim());
-        expect(output).to.deep.equal(expectOutput.sort());
+        expect(output).toStrictEqual(expectOutput.sort());
         intercept = xstdout.intercept(true);
       },
       next => xrun.waitAllPending(next),
@@ -98,11 +98,11 @@ describe("sample1", function() {
       expectError(next => xrun.run("foo2ba", next)),
       err => {
         intercept.restore();
-        expect(err).to.exist;
-        expect(err.more).to.exist;
-        expect(err.more.length).to.equal(1);
-        expect(err.message).to.equal("xerr");
-        expect(err.more[0].message).to.equal("xerr");
+        expect(err).toEqual(expect.anything());
+        expect(err.more).toEqual(expect.anything());
+        expect(err.more.length).toBe(1);
+        expect(err.message).toBe("xerr");
+        expect(err.more[0].message).toBe("xerr");
         intercept = xstdout.intercept(true);
       },
       next => xrun.waitAllPending(next),

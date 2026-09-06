@@ -3,8 +3,7 @@
 // Precedence: CLI option (when given) > package.json fyn flag > default (ON).
 //
 
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import Fyn from "../../lib/fyn";
 
 /**
@@ -23,28 +22,28 @@ function mkFyn(options, pkg?) {
 
 describe("Fyn.enforceRegistryDeps", function() {
   it("defaults to ON when neither CLI nor package.json set it", () => {
-    expect(mkFyn({}, {}).enforceRegistryDeps).to.equal(true);
+    expect(mkFyn({}, {}).enforceRegistryDeps).toBe(true);
   });
 
   it("defaults to ON when package.json is not loaded yet", () => {
-    expect(mkFyn({}, undefined).enforceRegistryDeps).to.equal(true);
+    expect(mkFyn({}, undefined).enforceRegistryDeps).toBe(true);
   });
 
   it("is OFF when package.json sets fyn.enforceRegistryDeps:false", () => {
-    expect(mkFyn({}, { fyn: { enforceRegistryDeps: false } }).enforceRegistryDeps).to.equal(false);
+    expect(mkFyn({}, { fyn: { enforceRegistryDeps: false } }).enforceRegistryDeps).toBe(false);
   });
 
   it("is ON when package.json sets fyn.enforceRegistryDeps:true", () => {
-    expect(mkFyn({}, { fyn: { enforceRegistryDeps: true } }).enforceRegistryDeps).to.equal(true);
+    expect(mkFyn({}, { fyn: { enforceRegistryDeps: true } }).enforceRegistryDeps).toBe(true);
   });
 
   it("CLI option false overrides package.json true", () => {
     const fyn = mkFyn({ enforceRegistryDeps: false }, { fyn: { enforceRegistryDeps: true } });
-    expect(fyn.enforceRegistryDeps).to.equal(false);
+    expect(fyn.enforceRegistryDeps).toBe(false);
   });
 
   it("CLI option true overrides package.json false", () => {
     const fyn = mkFyn({ enforceRegistryDeps: true }, { fyn: { enforceRegistryDeps: false } });
-    expect(fyn.enforceRegistryDeps).to.equal(true);
+    expect(fyn.enforceRegistryDeps).toBe(true);
   });
 });

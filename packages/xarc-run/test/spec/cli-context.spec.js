@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "vitest";
 import { CliContext } from "../../lib/cli-context.js";
 
 describe("CliContext", function() {
@@ -25,11 +25,11 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.getTasks()).to.deep.equal(["task1", "task2"]);
-      expect(context.getGlobalOptions()).to.deep.equal({ quiet: false, serial: true });
-      expect(context.getRemainingArgs()).to.deep.equal(["extra", "args"]);
-      expect(context.getTaskArgv("task1")).to.deep.equal(["task1", "--opt1", "value1"]);
-      expect(context.getSearchResult()).to.deep.equal({ found: true, dir: "/test" });
+      expect(context.getTasks()).toStrictEqual(["task1", "task2"]);
+      expect(context.getGlobalOptions()).toStrictEqual({ quiet: false, serial: true });
+      expect(context.getRemainingArgs()).toStrictEqual(["extra", "args"]);
+      expect(context.getTaskArgv("task1")).toStrictEqual(["task1", "--opt1", "value1"]);
+      expect(context.getSearchResult()).toStrictEqual({ found: true, dir: "/test" });
     });
 
     it("should handle simplified object for tests", function() {
@@ -45,10 +45,10 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.getTasks()).to.deep.equal(["test"]);
-      expect(context.getGlobalOptions()).to.deep.equal({ quiet: true });
-      expect(context.getRemainingArgs()).to.deep.equal(["remaining"]);
-      expect(context.getTaskArgv("test")).to.deep.equal(["test", "--flag"]);
+      expect(context.getTasks()).toStrictEqual(["test"]);
+      expect(context.getGlobalOptions()).toStrictEqual({ quiet: true });
+      expect(context.getRemainingArgs()).toStrictEqual(["remaining"]);
+      expect(context.getTaskArgv("test")).toStrictEqual(["test", "--flag"]);
     });
 
     it("should handle minimal object with defaults", function() {
@@ -59,10 +59,10 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.getTasks()).to.deep.equal([]);
-      expect(context.getGlobalOptions()).to.deep.equal({});
-      expect(context.getRemainingArgs()).to.deep.equal([]);
-      expect(context.getTaskArgv("nonexistent")).to.deep.equal([]);
+      expect(context.getTasks()).toStrictEqual([]);
+      expect(context.getGlobalOptions()).toStrictEqual({});
+      expect(context.getRemainingArgs()).toStrictEqual([]);
+      expect(context.getTaskArgv("nonexistent")).toStrictEqual([]);
     });
   });
 
@@ -83,7 +83,7 @@ describe("CliContext", function() {
       const context = new CliContext(cmdArgs);
       const taskCmd = context.getTaskCommand("build");
 
-      expect(taskCmd).to.deep.equal({
+      expect(taskCmd).toStrictEqual({
         argv: ["build", "--env", "prod"],
         opts: { env: "prod" }
       });
@@ -97,7 +97,7 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.getTaskCommand("nonexistent")).to.deep.equal({});
+      expect(context.getTaskCommand("nonexistent")).toStrictEqual({});
     });
   });
 
@@ -114,7 +114,7 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.getTaskArgv("test")).to.deep.equal([
+      expect(context.getTaskArgv("test")).toStrictEqual([
         "test",
         "--coverage",
         "--reporter",
@@ -134,7 +134,7 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.getTaskArgv("simple")).to.deep.equal([]);
+      expect(context.getTaskArgv("simple")).toStrictEqual([]);
     });
   });
 
@@ -156,7 +156,7 @@ describe("CliContext", function() {
       const context = new CliContext(cmdArgs);
       const metadata = context.getMetadata();
 
-      expect(metadata).to.deep.equal({
+      expect(metadata).toStrictEqual({
         opts: { quiet: true },
         source: { quiet: "cli" }
       });
@@ -169,7 +169,7 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.getMetadata()).to.deep.equal({});
+      expect(context.getMetadata()).toStrictEqual({});
     });
   });
 
@@ -187,9 +187,9 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.isQuiet()).to.be.true;
-      expect(context.isSerial()).to.be.false;
-      expect(context.getStopOnError()).to.equal("full");
+      expect(context.isQuiet()).toBe(true);
+      expect(context.isSerial()).toBe(false);
+      expect(context.getStopOnError()).toBe("full");
     });
 
     it("should handle undefined options", function() {
@@ -199,9 +199,9 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.isQuiet()).to.be.undefined;
-      expect(context.isSerial()).to.be.undefined;
-      expect(context.getStopOnError()).to.be.undefined;
+      expect(context.isQuiet()).toBeUndefined();
+      expect(context.isSerial()).toBeUndefined();
+      expect(context.getStopOnError()).toBeUndefined();
     });
   });
 
@@ -215,8 +215,8 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.hasRemainingArgs()).to.be.true;
-      expect(context.getRemainingArgs()).to.deep.equal(["--verbose", "arg1", "arg2"]);
+      expect(context.hasRemainingArgs()).toBe(true);
+      expect(context.getRemainingArgs()).toStrictEqual(["--verbose", "arg1", "arg2"]);
     });
 
     it("should handle empty remaining args", function() {
@@ -228,8 +228,8 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.hasRemainingArgs()).to.be.false;
-      expect(context.getRemainingArgs()).to.deep.equal([]);
+      expect(context.hasRemainingArgs()).toBe(false);
+      expect(context.getRemainingArgs()).toStrictEqual([]);
     });
 
     it("should handle missing remaining args", function() {
@@ -239,8 +239,8 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.hasRemainingArgs()).to.be.false;
-      expect(context.getRemainingArgs()).to.deep.equal([]);
+      expect(context.hasRemainingArgs()).toBe(false);
+      expect(context.getRemainingArgs()).toStrictEqual([]);
     });
   });
 
@@ -252,9 +252,9 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.isLastTask("build")).to.be.false;
-      expect(context.isLastTask("test")).to.be.false;
-      expect(context.isLastTask("deploy")).to.be.true;
+      expect(context.isLastTask("build")).toBe(false);
+      expect(context.isLastTask("test")).toBe(false);
+      expect(context.isLastTask("deploy")).toBe(true);
     });
 
     it("should handle single task", function() {
@@ -264,8 +264,8 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.isLastTask("onlytask")).to.be.true;
-      expect(context.isLastTask("othertask")).to.be.false;
+      expect(context.isLastTask("onlytask")).toBe(true);
+      expect(context.isLastTask("othertask")).toBe(false);
     });
 
     it("should handle empty tasks", function() {
@@ -275,7 +275,7 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.isLastTask("anytask")).to.be.false;
+      expect(context.isLastTask("anytask")).toBe(false);
     });
   });
 
@@ -295,7 +295,7 @@ describe("CliContext", function() {
       const context = new CliContext(cmdArgs);
       const taskNames = context.getAllTaskNames();
 
-      expect(taskNames).to.deep.equal(["build", "test", "deploy"]);
+      expect(taskNames).toStrictEqual(["build", "test", "deploy"]);
     });
 
     it("should return empty array when no command nodes", function() {
@@ -305,7 +305,7 @@ describe("CliContext", function() {
         parsed: {}
       });
 
-      expect(context.getAllTaskNames()).to.deep.equal([]);
+      expect(context.getAllTaskNames()).toStrictEqual([]);
     });
   });
 
@@ -319,8 +319,8 @@ describe("CliContext", function() {
 
       const context = new CliContext(cmdArgs);
 
-      expect(context.getRawCmdArgs()).to.equal(cmdArgs);
-      expect(context.getRawParsed()).to.equal(cmdArgs.parsed);
+      expect(context.getRawCmdArgs()).toBe(cmdArgs);
+      expect(context.getRawParsed()).toBe(cmdArgs.parsed);
     });
   });
 
@@ -354,25 +354,25 @@ describe("CliContext", function() {
       const context = new CliContext(cmdArgs);
 
       // Test all functionality together
-      expect(context.getTasks()).to.deep.equal(["build", "test"]);
-      expect(context.isQuiet()).to.be.false;
-      expect(context.isSerial()).to.be.true;
-      expect(context.getStopOnError()).to.equal("soft");
+      expect(context.getTasks()).toStrictEqual(["build", "test"]);
+      expect(context.isQuiet()).toBe(false);
+      expect(context.isSerial()).toBe(true);
+      expect(context.getStopOnError()).toBe("soft");
 
-      expect(context.getTaskArgv("build")).to.deep.equal(["build", "--env", "production"]);
-      expect(context.getTaskArgv("test")).to.deep.equal(["test", "--coverage"]);
+      expect(context.getTaskArgv("build")).toStrictEqual(["build", "--env", "production"]);
+      expect(context.getTaskArgv("test")).toStrictEqual(["test", "--coverage"]);
 
-      expect(context.hasRemainingArgs()).to.be.true;
-      expect(context.getRemainingArgs()).to.deep.equal(["--extra-flag", "value"]);
+      expect(context.hasRemainingArgs()).toBe(true);
+      expect(context.getRemainingArgs()).toStrictEqual(["--extra-flag", "value"]);
 
-      expect(context.isLastTask("build")).to.be.false;
-      expect(context.isLastTask("test")).to.be.true;
+      expect(context.isLastTask("build")).toBe(false);
+      expect(context.isLastTask("test")).toBe(true);
 
-      expect(context.getAllTaskNames()).to.deep.equal(["build", "test"]);
+      expect(context.getAllTaskNames()).toStrictEqual(["build", "test"]);
 
       const metadata = context.getMetadata();
-      expect(metadata.source.quiet).to.equal("cli");
-      expect(metadata.opts.serial).to.be.true;
+      expect(metadata.source.quiet).toBe("cli");
+      expect(metadata.opts.serial).toBe(true);
     });
   });
 });

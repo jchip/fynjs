@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import FynCli from "../../cli/fyn-cli";
 import fyntil from "../../lib/util/fyntil";
 
@@ -27,8 +26,8 @@ describe("FynCli", function () {
           caught = err;
         }
 
-        expect(caught).to.equal(error);
-        expect(exits).to.deep.equal([]);
+        expect(caught).toBe(error);
+        expect(exits).toStrictEqual([]);
       } finally {
         (fyntil as any).exit = savedExit;
       }

@@ -4,8 +4,7 @@
  * Tests cache key generation and storage/retrieval of advisory data.
  */
 
-import { describe, it, beforeAll, afterAll } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeAll, afterAll, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -41,48 +40,48 @@ describe("audit-cache", () => {
       const key1 = generateCacheKey(payload);
       const key2 = generateCacheKey(payload);
 
-      expect(key1).to.equal(key2);
+      expect(key1).toBe(key2);
     });
 
     it("should include the audit cache prefix", () => {
       const payload = { lodash: ["4.17.21"] };
       const key = generateCacheKey(payload);
 
-      expect(key).to.match(new RegExp(`^${AUDIT_CACHE_PREFIX}`));
+      expect(key).toMatch(new RegExp(`^${AUDIT_CACHE_PREFIX}`));
     });
 
     it("should generate different keys for different payloads", () => {
       const key1 = generateCacheKey({ lodash: ["4.17.21"] });
       const key2 = generateCacheKey({ lodash: ["4.17.20"] });
 
-      expect(key1).to.not.equal(key2);
+      expect(key1).not.toBe(key2);
     });
 
     it("should sort packages alphabetically for deterministic keys", () => {
       const payload1 = { zlib: ["1.0.0"], axios: ["1.0.0"] };
       const payload2 = { axios: ["1.0.0"], zlib: ["1.0.0"] };
 
-      expect(generateCacheKey(payload1)).to.equal(generateCacheKey(payload2));
+      expect(generateCacheKey(payload1)).toBe(generateCacheKey(payload2));
     });
 
     it("should sort versions for deterministic keys", () => {
       const payload1 = { lodash: ["4.17.21", "4.17.20"] };
       const payload2 = { lodash: ["4.17.20", "4.17.21"] };
 
-      expect(generateCacheKey(payload1)).to.equal(generateCacheKey(payload2));
+      expect(generateCacheKey(payload1)).toBe(generateCacheKey(payload2));
     });
 
     it("should handle empty payload", () => {
       const key = generateCacheKey({});
-      expect(key).to.match(new RegExp(`^${AUDIT_CACHE_PREFIX}`));
+      expect(key).toMatch(new RegExp(`^${AUDIT_CACHE_PREFIX}`));
     });
 
     it("should handle scoped packages", () => {
       const payload = { "@types/node": ["18.0.0"], "@babel/core": ["7.0.0"] };
       const key = generateCacheKey(payload);
 
-      expect(key).to.match(new RegExp(`^${AUDIT_CACHE_PREFIX}`));
-      expect(key).to.have.length.greaterThan(AUDIT_CACHE_PREFIX.length);
+      expect(key).toMatch(new RegExp(`^${AUDIT_CACHE_PREFIX}`));
+      expect(key.length).toBeGreaterThan(AUDIT_CACHE_PREFIX.length);
     });
   });
 
@@ -97,12 +96,12 @@ describe("audit-cache", () => {
       await cacheAuditResult(testCache, key, result);
       const cached = await getCachedAuditResult(testCache, key);
 
-      expect(cached).to.deep.equal(result);
+      expect(cached).toStrictEqual(result);
     });
 
     it("should return null for cache miss", async () => {
       const cached = await getCachedAuditResult(testCache, "non-existent-key");
-      expect(cached).to.be.null;
+      expect(cached).toBeNull();
     });
 
     it("should handle complex advisory data", async () => {
@@ -125,8 +124,8 @@ describe("audit-cache", () => {
       await cacheAuditResult(testCache, key, result);
       const cached = await getCachedAuditResult(testCache, key);
 
-      expect(cached).to.deep.equal(result);
-      expect(cached.advisories["5678"].severity).to.equal("critical");
+      expect(cached).toStrictEqual(result);
+      expect(cached.advisories["5678"].severity).toBe("critical");
     });
   });
 
@@ -136,12 +135,12 @@ describe("audit-cache", () => {
       await cacheAuditResult(testCache, key, { advisories: {} });
 
       const exists = await hasAuditCache(testCache, key);
-      expect(exists).to.be.true;
+      expect(exists).toBe(true);
     });
 
     it("should return false for non-existent entry", async () => {
       const exists = await hasAuditCache(testCache, "does-not-exist");
-      expect(exists).to.be.false;
+      expect(exists).toBe(false);
     });
   });
 });

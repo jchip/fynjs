@@ -1,6 +1,6 @@
 const Fs = require("fs");
 const Path = require("path");
-const { expect } = require("chai");
+/* global expect */ // vitest global (globals: true); vitest cannot be require()d from CJS
 
 module.exports = {
   title: "should handle a fynpo monorepo",
@@ -16,6 +16,6 @@ module.exports = {
   async verify(cwd, scenarioDir) {
     const fynData = JSON.parse(Fs.readFileSync(Path.join(scenarioDir, ".fynpo-data.json")));
     const eData = JSON.parse(Fs.readFileSync(Path.join(__dirname, "_fynpo-data.json")));
-    expect(fynData.indirects).to.deep.equal(eData.indirects);
+    expect(fynData.indirects).toStrictEqual(eData.indirects);
   }
 };

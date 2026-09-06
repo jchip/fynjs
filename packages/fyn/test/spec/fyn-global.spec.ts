@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach, vi } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, vi, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
@@ -72,11 +71,11 @@ describe("fyn-global", function () {
     // absoluteTarget is required for the global bin dir: it is reached through the
     // `global/bin` -> `v<N>/bin` symlink, where a Windows .cmd's `%~dp0\..` resolves one level
     // short of the version dir. See PkgBinLinkerBase._useAbsoluteTarget.
-    expect(calls).to.deep.include({
+    expect(calls).toContainEqual({
       type: "construct",
       options: { binDir: path.join(globalDir, "v20", "bin"), absoluteTarget: true }
     });
-    expect(calls).to.deep.include({
+    expect(calls).toContainEqual({
       type: "link",
       target,
       binName: "foo",
@@ -97,12 +96,12 @@ describe("fyn-global", function () {
 
     await fynGlobal.unlinkBinsForVersion("foo", "g1");
 
-    expect(calls).to.deep.include({
+    expect(calls).toContainEqual({
       type: "match",
       binName: "foo",
       target: path.join(globalDir, "v20/packages/g1/node_modules/.bin/foo")
     });
-    expect(calls).to.deep.include({ type: "remove", binName: "foo" });
+    expect(calls).toContainEqual({ type: "remove", binName: "foo" });
   });
 
   it("should propagate CLI fynOpts into the Fyn instance it creates", () => {
@@ -115,9 +114,9 @@ describe("fyn-global", function () {
     fynGlobal._createFyn(globalDir, false);
 
     const fynCall = calls.find(c => c.type === "fyn");
-    expect(fynCall).to.exist;
-    expect(fynCall.opts.refreshMeta).to.equal(true);
-    expect(fynCall.opts.production).to.equal(true);
+    expect(fynCall).toEqual(expect.anything());
+    expect(fynCall.opts.refreshMeta).toBe(true);
+    expect(fynCall.opts.production).toBe(true);
   });
 
   it("should override global-install settings even if fynOpts sets them", () => {
@@ -130,8 +129,8 @@ describe("fyn-global", function () {
     fynGlobal._createFyn(globalDir, false);
 
     const fynCall = calls.find(c => c.type === "fyn");
-    expect(fynCall.opts.centralStore).to.equal(true);
-    expect(fynCall.opts.lockfile).to.equal(true);
-    expect(fynCall.opts.layout).to.equal("normal");
+    expect(fynCall.opts.centralStore).toBe(true);
+    expect(fynCall.opts.lockfile).toBe(true);
+    expect(fynCall.opts.layout).toBe("normal");
   });
 });

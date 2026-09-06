@@ -11,8 +11,7 @@
 // decision against the running machine rather than pinning darwin or linux.
 //
 
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { evalLockedOptFailure, OPT_FAILED_PLATFORM } from "../../lib/pkg-opt-resolver";
 
 /** os/cpu that always satisfy the running machine */
@@ -27,13 +26,11 @@ describe("pkg-opt-resolver locked optFailed evaluation", function () {
     // the regression: recorded on a different machine, but usable here
     //
     it("re-checks when the package's os/cpu match this platform", () => {
-      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, thisPlatform)).to.equal("recheck");
+      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, thisPlatform)).toBe("recheck");
     });
 
     it("still skips, quietly, when os/cpu do not match this platform", () => {
-      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, otherPlatform)).to.equal(
-        "platform-mismatch"
-      );
+      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, otherPlatform)).toBe("platform-mismatch");
     });
 
     //
@@ -42,47 +39,45 @@ describe("pkg-opt-resolver locked optFailed evaluation", function () {
     // rather than silently dropping a package this machine may well be able to use.
     //
     it("re-checks when no os/cpu were recorded at all", () => {
-      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, {})).to.equal("recheck");
+      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, {})).toBe("recheck");
     });
   });
 
   describe("non-platform failures stay honored", () => {
     it("honors optFailed = 1 (opt check failed) even where the platform matches", () => {
-      expect(evalLockedOptFailure(1, thisPlatform)).to.equal("honor");
+      expect(evalLockedOptFailure(1, thisPlatform)).toBe("honor");
     });
 
     it("honors optFailed = 2 (install failed) even where the platform matches", () => {
-      expect(evalLockedOptFailure(2, thisPlatform)).to.equal("honor");
+      expect(evalLockedOptFailure(2, thisPlatform)).toBe("honor");
     });
 
     //
     // an incompatible platform outranks the reason: skip quietly, no warning worth showing
     //
     it("reports a platform mismatch ahead of a non-platform failure code", () => {
-      expect(evalLockedOptFailure(1, otherPlatform)).to.equal("platform-mismatch");
-      expect(evalLockedOptFailure(2, otherPlatform)).to.equal("platform-mismatch");
+      expect(evalLockedOptFailure(1, otherPlatform)).toBe("platform-mismatch");
+      expect(evalLockedOptFailure(2, otherPlatform)).toBe("platform-mismatch");
     });
   });
 
   describe("partial os/cpu records", () => {
     it("treats a matching os with no cpu constraint as usable here", () => {
-      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, { os: [process.platform] })).to.equal(
-        "recheck"
-      );
+      expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, { os: [process.platform] })).toBe("recheck");
     });
 
     it("treats a mismatched cpu as unusable even when os matches", () => {
       expect(
         evalLockedOptFailure(OPT_FAILED_PLATFORM, {
           os: [process.platform],
-          cpu: ["!" + process.arch]
-        })
-      ).to.equal("platform-mismatch");
+          cpu: ["!" + process.arch],
+        }),
+      ).toBe("platform-mismatch");
     });
   });
 
   it("has no undefined metaJson crash", () => {
-    expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, undefined)).to.equal("recheck");
-    expect(evalLockedOptFailure(1, undefined)).to.equal("honor");
+    expect(evalLockedOptFailure(OPT_FAILED_PLATFORM, undefined)).toBe("recheck");
+    expect(evalLockedOptFailure(1, undefined)).toBe("honor");
   });
 });

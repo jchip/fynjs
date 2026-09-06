@@ -5,8 +5,7 @@
 // prefetchMeta, so a violating transitive dep never needs to resolve.
 //
 
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import PkgDepResolver from "../../lib/pkg-dep-resolver";
 import DepItem from "../../lib/dep-item";
 
@@ -33,7 +32,7 @@ function mkResolver(enforceRegistryDeps) {
 function mkParent(depth, semver = "^1.0.0") {
   return new DepItem(
     { name: "parent", version: "1.0.0", semver, src: "dep", dsrc: "dep", depth },
-    null
+    null,
   );
 }
 
@@ -41,14 +40,14 @@ function mkParent(depth, semver = "^1.0.0") {
 const pkgWithGitDep = {
   name: "parent",
   version: "1.0.0",
-  dependencies: { "evil-dep": "github:evil/repo" }
+  dependencies: { "evil-dep": "github:evil/repo" },
 };
 
-describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
+describe("pkg-dep-resolver fyn.enforceRegistryDeps", function () {
   it("throws on a transitive (depth>=1) non-registry dep when enabled", () => {
     const resolver = mkResolver(true);
-    expect(() => resolver.makePkgDepItems(pkgWithGitDep, mkParent(1), false, true)).to.throw(
-      /enforceRegistryDeps.*evil-dep.*non-registry source \(github\)/
+    expect(() => resolver.makePkgDepItems(pkgWithGitDep, mkParent(1), false, true)).toThrow(
+      /enforceRegistryDeps.*evil-dep.*non-registry source \(github\)/,
     );
   });
 
@@ -57,8 +56,8 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
     let result;
     expect(() => {
       result = resolver.makePkgDepItems(pkgWithGitDep, mkParent(0), false, true);
-    }).to.not.throw();
-    expect(result.dep.map(it => it.name)).to.include("evil-dep");
+    }).not.toThrow();
+    expect(result.dep.map((it) => it.name)).toContain("evil-dep");
   });
 
   it("does not restrict transitive deps when explicitly disabled", () => {
@@ -66,8 +65,8 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
     let result;
     expect(() => {
       result = resolver.makePkgDepItems(pkgWithGitDep, mkParent(1), false, true);
-    }).to.not.throw();
-    expect(result.dep.map(it => it.name)).to.include("evil-dep");
+    }).not.toThrow();
+    expect(result.dep.map((it) => it.name)).toContain("evil-dep");
   });
 
   it("allows transitive registry deps (valid semver) when enabled", () => {
@@ -76,15 +75,15 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
     let result;
     expect(() => {
       result = resolver.makePkgDepItems(pkg, mkParent(1), false, true);
-    }).to.not.throw();
-    expect(result.dep.map(it => it.name)).to.include("good-dep");
+    }).not.toThrow();
+    expect(result.dep.map((it) => it.name)).toContain("good-dep");
   });
 
   it("throws on a transitive dep with unparseable semver when enabled", () => {
     const resolver = mkResolver(true);
     const pkg = { name: "parent", version: "1.0.0", dependencies: { "bad-sv": "@@@" } };
-    expect(() => resolver.makePkgDepItems(pkg, mkParent(1), false, true)).to.throw(
-      /enforceRegistryDeps.*bad-sv.*invalid\/unparseable/
+    expect(() => resolver.makePkgDepItems(pkg, mkParent(1), false, true)).toThrow(
+      /enforceRegistryDeps.*bad-sv.*invalid\/unparseable/,
     );
   });
 
@@ -92,8 +91,8 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
     const resolver = mkResolver(true);
     const pkg = { name: "parent", version: "1.0.0", dependencies: { payload: "file:./payload" } };
     expect(() =>
-      resolver.makePkgDepItems(pkg, mkParent(1, "github:evil/parent"), false, true)
-    ).to.throw(/enforceRegistryDeps.*payload.*local dependency.*non-registry source \(github\)/);
+      resolver.makePkgDepItems(pkg, mkParent(1, "github:evil/parent"), false, true),
+    ).toThrow(/enforceRegistryDeps.*payload.*local dependency.*non-registry source \(github\)/);
   });
 
   it("rechecks a registry-looking dep after it resolves to local metadata", async () => {
@@ -106,7 +105,7 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
     const remoteParent = mkParent(1, "github:evil/parent");
     const item = new DepItem(
       { name: "payload", semver: "^1.0.0", src: "dep", dsrc: "dep" },
-      remoteParent
+      remoteParent,
     );
     const meta = {
       local: "hard",
@@ -115,9 +114,9 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
           name: "payload",
           version: "1.0.0",
           local: "hard",
-          dist: { fullPath: "/local/payload" }
-        }
-      }
+          dist: { fullPath: "/local/payload" },
+        },
+      },
     };
 
     let error;
@@ -127,9 +126,9 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
       error = err;
     }
 
-    expect(error).to.exist;
-    expect(error.message).to.match(
-      /enforceRegistryDeps.*payload.*local dependency.*non-registry source \(github\)/
+    expect(error).toEqual(expect.anything());
+    expect(error.message).toMatch(
+      /enforceRegistryDeps.*payload.*local dependency.*non-registry source \(github\)/,
     );
   });
 
@@ -145,7 +144,7 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
     const remoteParent = mkParent(1, "github:evil/parent");
     const item = new DepItem(
       { name: "payload", semver: "^1.0.0", src: "opt", dsrc: "opt" },
-      remoteParent
+      remoteParent,
     );
     const meta = {
       local: "hard",
@@ -155,9 +154,9 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
           version: "1.0.0",
           local: "hard",
           scripts: { preinstall: "node payload.js" },
-          dist: { fullPath: "/local/payload" }
-        }
-      }
+          dist: { fullPath: "/local/payload" },
+        },
+      },
     };
 
     let error;
@@ -167,8 +166,8 @@ describe("pkg-dep-resolver fyn.enforceRegistryDeps", function() {
       error = err;
     }
 
-    expect(error).to.exist;
-    expect(error.message).to.match(/enforceRegistryDeps.*payload.*local dependency/);
-    expect(optionalQueued).to.equal(false);
+    expect(error).toEqual(expect.anything());
+    expect(error.message).toMatch(/enforceRegistryDeps.*payload.*local dependency/);
+    expect(optionalQueued).toBe(false);
   });
 });

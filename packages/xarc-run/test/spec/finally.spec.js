@@ -1,7 +1,7 @@
 // testing the finally hook
 
 import XRun from "../../lib/xrun.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import xstdout from "xstdout";
 import { asyncVerify, expectError } from "run-verify";
 
@@ -68,8 +68,8 @@ describe("xrun finally", function() {  let logs = [];
     return asyncVerify(
       expectError(next => xrun.run("fooConcurrent", next)),
       err => {
-        expect(err.message).to.equal("fnFail throwing");
-        expect(logs.sort()).to.deep.equal(
+        expect(err.message).toBe("fnFail throwing");
+        expect(logs.sort()).toStrictEqual(
           [
             "lookup",
             "serial-arr",
@@ -108,12 +108,12 @@ describe("xrun finally", function() {  let logs = [];
       next => xrun.run("shConcurrent", next),
       () => {
         intercept.restore();
-        expect(intercept.stdout.map(x => x.trim())).to.deep.equal([
+        expect(intercept.stdout.map(x => x.trim())).toStrictEqual([
           "sleep 1",
           "hello from foo2",
           "sh finally"
         ]);
-        expect(logs).to.deep.equal([
+        expect(logs).toStrictEqual([
           "lookup",
           "serial-arr",
           "concurrent-arr",
@@ -147,7 +147,7 @@ describe("xrun finally", function() {  let logs = [];
       next => xrun.run(["shFooX", "fnSh"], () => next()),  // Ignore error from callback
       () => {
         intercept.restore();
-        expect(logs).to.deep.equal([
+        expect(logs).toStrictEqual([
           "concurrent-arr",
           "lookup",
           "lookup",
@@ -156,7 +156,7 @@ describe("xrun finally", function() {  let logs = [];
           "shell X",
           "shell X"
         ]);
-        expect(intercept.stdout.map(x => x.trim())).to.deep.equal([
+        expect(intercept.stdout.map(x => x.trim())).toStrictEqual([
           "fhSh err true fail true",
           "err shell cmd 'blah' exit code 127 fail true"
         ]);

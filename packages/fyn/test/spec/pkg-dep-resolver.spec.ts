@@ -1,4 +1,4 @@
-import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi, expect } from "vitest";
 import Fs from "fs";
 import * as Yaml from "js-yaml";
 import Path from "path";
@@ -7,7 +7,6 @@ import PkgDepResolver from "../../lib/pkg-dep-resolver";
 import { LOCK_RSEMVERS } from "../../lib/symbols";
 import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
-import { expect } from "chai";
 import _ from "lodash";
 import logger from "../../lib/logger";
 import chalk from "chalk";
@@ -18,13 +17,13 @@ import chalk from "chalk";
 const tmpName = () =>
   `.tmp_${Date.now()}_${process.pid.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-describe("pkg-dep-resolver", function() {
+describe("pkg-dep-resolver", function () {
   logger.setItemType(false);
   chalk.enabled = false;
   let server;
   let fynDir;
   beforeAll(() => {
-    return mockNpm({ port: 0, logLevel: "warn" }).then(s => (server = s));
+    return mockNpm({ port: 0, logLevel: "warn" }).then((s) => (server = s));
   });
 
   afterAll(() => {
@@ -43,15 +42,12 @@ describe("pkg-dep-resolver", function() {
     Fs.rmSync(fynDir, { recursive: true, force: true });
   });
 
-  const sortSrc = src => {
-    return src
-      .split(";")
-      .sort()
-      .join(";");
+  const sortSrc = (src) => {
+    return src.split(";").sort().join(";");
   };
 
   // Convert old format (versions as direct keys) to new format (versions nested under 'versions' key)
-  const convertToNewFormat = pkgs => {
+  const convertToNewFormat = (pkgs) => {
     const result = {};
     for (const name in pkgs) {
       const pkg = pkgs[name];
@@ -66,18 +62,18 @@ describe("pkg-dep-resolver", function() {
     return result;
   };
 
-  const sortRequests = data => {
-    const sort = pkgs => {
-      _.each(pkgs, pkg => {
+  const sortRequests = (data) => {
+    const sort = (pkgs) => {
+      _.each(pkgs, (pkg) => {
         // pkg is now a KnownPackage with versions property
-        _.each(pkg.versions, v => {
-          v.requests = v.requests.map(r => r.join("!")).sort();
+        _.each(pkg.versions, (v) => {
+          v.requests = v.requests.map((r) => r.join("!")).sort();
           if (v.src) v.src = sortSrc(v.src);
           if (v.dsrc) v.dsrc = sortSrc(v.dsrc);
           delete v.extracted;
           // Remove dynamic source count properties (e.g., dep: 0, opt: 0)
           // These were from the old index signature pattern
-          ["dep", "dev", "opt", "devOpt", "peer"].forEach(key => delete v[key]);
+          ["dep", "dev", "opt", "devOpt", "peer"].forEach((key) => delete v[key]);
           v.dist = Object.assign({}, v.dist, { shasum: "test" });
           // Normalize tarball URLs to use port 4873 (expected port in test fixtures)
           if (v.dist && v.dist.tarball) {
@@ -95,7 +91,7 @@ describe("pkg-dep-resolver", function() {
     return JSON.parse(JSON.stringify(data));
   };
 
-  const cleanData = pkgs => {
+  const cleanData = (pkgs) => {
     for (const name in pkgs) {
       const pkg = pkgs[name];
       // pkg is now a KnownPackage with versions property
@@ -111,10 +107,10 @@ describe("pkg-dep-resolver", function() {
 
   const checkResolvedData = (fyn, file) => {
     const expected = Yaml.load(Fs.readFileSync(file).toString());
-    expect(sortRequests(fyn._data)).to.deep.equal(sortRequests(expected));
+    expect(sortRequests(fyn._data)).toStrictEqual(sortRequests(expected));
   };
 
-  const testPkgAFixture = deepResolve => {
+  const testPkgAFixture = (deepResolve) => {
     /*
      * This test ensures that:
      * - mod-e@2.1.1 (with a successful preinstall script) is correctly resolved and installed
@@ -129,8 +125,8 @@ describe("pkg-dep-resolver", function() {
         cwd: fynDir,
         fynDir,
         ignoreDist: true,
-        deepResolve
-      }
+        deepResolve,
+      },
     });
     const outFname = `fyn-data${deepResolve ? "-dr" : ""}.yaml`;
     const expectOutput = `../fixtures/pkg-a/${outFname}`;
@@ -142,39 +138,55 @@ describe("pkg-dep-resolver", function() {
     });
   };
 
-  it("should resolve dependencies once for pkg-a fixture @deepResolve true", { timeout: 10000 }, () => {
-    return testPkgAFixture(true);
-  });
+  it(
+    "should resolve dependencies once for pkg-a fixture @deepResolve true",
+    { timeout: 10000 },
+    () => {
+      return testPkgAFixture(true);
+    },
+  );
 
-  it("should resolve dependencies repeatedly for pkg-a fixture @deepResolve true", { timeout: 10000 }, () => {
-    return testPkgAFixture(true)
-      .then(() => testPkgAFixture(true))
-      .then(() => {
-        Fs.rmSync(Path.join(fynDir, "xout"), { recursive: true, force: true });
-        return testPkgAFixture(true);
-      })
-      .then(() => {
-        Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
-        return testPkgAFixture(true);
-      });
-  });
+  it(
+    "should resolve dependencies repeatedly for pkg-a fixture @deepResolve true",
+    { timeout: 10000 },
+    () => {
+      return testPkgAFixture(true)
+        .then(() => testPkgAFixture(true))
+        .then(() => {
+          Fs.rmSync(Path.join(fynDir, "xout"), { recursive: true, force: true });
+          return testPkgAFixture(true);
+        })
+        .then(() => {
+          Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
+          return testPkgAFixture(true);
+        });
+    },
+  );
 
-  it("should resolve dependencies once for pkg-a fixture @deepResolve false", { timeout: 10000 }, () => {
-    return testPkgAFixture(false);
-  });
+  it(
+    "should resolve dependencies once for pkg-a fixture @deepResolve false",
+    { timeout: 10000 },
+    () => {
+      return testPkgAFixture(false);
+    },
+  );
 
-  it("should resolve dependencies repeatedly for pkg-a fixture @deepResolve false", { timeout: 10000 }, () => {
-    return testPkgAFixture(false)
-      .then(() => testPkgAFixture(false))
-      .then(() => {
-        Fs.rmSync(Path.join(fynDir, "xout"), { recursive: true, force: true });
-        return testPkgAFixture(false);
-      })
-      .then(() => {
-        Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
-        return testPkgAFixture(false);
-      });
-  });
+  it(
+    "should resolve dependencies repeatedly for pkg-a fixture @deepResolve false",
+    { timeout: 10000 },
+    () => {
+      return testPkgAFixture(false)
+        .then(() => testPkgAFixture(false))
+        .then(() => {
+          Fs.rmSync(Path.join(fynDir, "xout"), { recursive: true, force: true });
+          return testPkgAFixture(false);
+        })
+        .then(() => {
+          Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
+          return testPkgAFixture(false);
+        });
+    },
+  );
 
   it("should fail when semver doesn't resolve", { timeout: 10000 }, () => {
     const fyn = new Fyn({
@@ -185,24 +197,24 @@ describe("pkg-dep-resolver", function() {
           name: "test",
           version: "1.0.0",
           dependencies: {
-            "mod-a": "^14.0.0"
-          }
+            "mod-a": "^14.0.0",
+          },
         },
         fynDir,
-        cwd: fynDir
-      }
+        cwd: fynDir,
+      },
     });
     let error;
     return fyn
       .resolveDependencies()
-      .catch(err => (error = err))
+      .catch((err) => (error = err))
       .then(() => {
-        expect(error).to.exist;
-        expect(error.errors).to.exist;
+        expect(error).toEqual(expect.anything());
+        expect(error.errors).toEqual(expect.anything());
         expect(error.message).includes("Unable to retrieve meta for package mod-a");
-        const message = error.errors.map(e => e.message).join("\n");
+        const message = error.errors.map((e) => e.message).join("\n");
         expect(message).includes(
-          `Unable to find a version from lock data that satisfied semver mod-a@^14.0.0`
+          `Unable to find a version from lock data that satisfied semver mod-a@^14.0.0`,
         );
       });
   });
@@ -216,59 +228,63 @@ describe("pkg-dep-resolver", function() {
           name: "test",
           version: "1.0.0",
           dependencies: {
-            "mod-a": "blah"
-          }
+            "mod-a": "blah",
+          },
         },
         fynDir,
-        cwd: fynDir
-      }
+        cwd: fynDir,
+      },
     });
     let error;
     return fyn
       .resolveDependencies()
-      .catch(err => (error = err))
+      .catch((err) => (error = err))
       .then(() => {
-        expect(error).to.exist;
-        expect(error.errors).to.exist;
+        expect(error).toEqual(expect.anything());
+        expect(error.errors).toEqual(expect.anything());
         expect(error.message).includes("Unable to retrieve meta for package mod-a");
-        const message = error.errors.map(e => e.message).join("\n");
+        const message = error.errors.map((e) => e.message).join("\n");
         expect(message).includes(
-          `Unable to find a version from lock data that satisfied semver mod-a@blah`
+          `Unable to find a version from lock data that satisfied semver mod-a@blah`,
         );
       });
   });
 
-  it("does not abort the install when a devOptDependencies meta fetch fails", { timeout: 10000 }, () => {
-    const fyn = new Fyn({
-      opts: {
-        registry: `http://localhost:${server.info.port}`,
-        pkgFile: false,
-        pkgData: {
-          name: "test",
-          version: "1.0.0",
-          dependencies: {
-            "mod-a": "^1.0.0"
+  it(
+    "does not abort the install when a devOptDependencies meta fetch fails",
+    { timeout: 10000 },
+    () => {
+      const fyn = new Fyn({
+        opts: {
+          registry: `http://localhost:${server.info.port}`,
+          pkgFile: false,
+          pkgData: {
+            name: "test",
+            version: "1.0.0",
+            dependencies: {
+              "mod-a": "^1.0.0",
+            },
+            devOptDependencies: {
+              "no-such-pkg-fyn-test": "^1.0.0",
+            },
           },
-          devOptDependencies: {
-            "no-such-pkg-fyn-test": "^1.0.0"
-          }
+          fynDir,
+          cwd: fynDir,
+          ignoreDist: true,
         },
-        fynDir,
-        cwd: fynDir,
-        ignoreDist: true
-      }
-    });
-    let error;
-    return fyn
-      .resolveDependencies()
-      .catch(err => (error = err))
-      .then(() => {
-        // a failing *optional* (devopt) dep must not reject the whole install
-        expect(error, error && error.message).to.not.exist;
-        // the required dependency still resolved
-        expect(fyn._data.pkgs["mod-a"]).to.exist;
       });
-  });
+      let error;
+      return fyn
+        .resolveDependencies()
+        .catch((err) => (error = err))
+        .then(() => {
+          // a failing *optional* (devopt) dep must not reject the whole install
+          expect(error, error && error.message).toBeUndefined();
+          // the required dependency still resolved
+          expect(fyn._data.pkgs["mod-a"]).toEqual(expect.anything());
+        });
+    },
+  );
 
   it("should resolve with the `latest` tag", () => {});
 
@@ -278,30 +294,32 @@ describe("pkg-dep-resolver", function() {
     // missing the version we need; the resolver must detect the miss and
     // call fetchMeta again with forceRefresh=true to bypass the cache.
     const realFetchMeta = PkgSrcManager.prototype.fetchMeta;
-    const stub = vi
-      .spyOn(PkgSrcManager.prototype, "fetchMeta")
-      .mockImplementation(function(this: any, item: any, forceRefresh?: any) {
-        if (item.name === "mod-a" && !forceRefresh) {
-          // Stale packument: missing the 1.1.x versions the resolver needs.
-          return Promise.resolve({
-            name: "mod-a",
-            "dist-tags": { latest: "1.0.3" },
-            versions: {
-              "0.1.0": {
-                name: "mod-a",
-                version: "0.1.0",
-                dist: { shasum: "x", tarball: "http://example/mod-a-0.1.0.tgz" }
-              },
-              "1.0.3": {
-                name: "mod-a",
-                version: "1.0.3",
-                dist: { shasum: "x", tarball: "http://example/mod-a-1.0.3.tgz" }
-              }
-            }
-          });
-        }
-        return realFetchMeta.call(this, item, forceRefresh);
-      });
+    const stub = vi.spyOn(PkgSrcManager.prototype, "fetchMeta").mockImplementation(function (
+      this: any,
+      item: any,
+      forceRefresh?: any,
+    ) {
+      if (item.name === "mod-a" && !forceRefresh) {
+        // Stale packument: missing the 1.1.x versions the resolver needs.
+        return Promise.resolve({
+          name: "mod-a",
+          "dist-tags": { latest: "1.0.3" },
+          versions: {
+            "0.1.0": {
+              name: "mod-a",
+              version: "0.1.0",
+              dist: { shasum: "x", tarball: "http://example/mod-a-0.1.0.tgz" },
+            },
+            "1.0.3": {
+              name: "mod-a",
+              version: "1.0.3",
+              dist: { shasum: "x", tarball: "http://example/mod-a-1.0.3.tgz" },
+            },
+          },
+        });
+      }
+      return realFetchMeta.call(this, item, forceRefresh);
+    });
 
     const fyn = new Fyn({
       opts: {
@@ -311,30 +329,33 @@ describe("pkg-dep-resolver", function() {
           name: "test",
           version: "1.0.0",
           dependencies: {
-            "mod-a": "^1.1.0"
-          }
+            "mod-a": "^1.1.0",
+          },
         },
         fynDir,
         cwd: fynDir,
-        ignoreDist: true
-      }
+        ignoreDist: true,
+      },
     });
 
     return fyn
       .resolveDependencies()
       .then(() => {
-        const calls = stub.mock.calls.filter(args => args[0] && args[0].name === "mod-a");
-        expect(calls.length).to.be.at.least(2);
-        const refreshed = calls.filter(args => args[1] === true);
-        expect(refreshed.length, "expected a fetchMeta refetch with forceRefresh=true").to.be.at.least(1);
+        const calls = stub.mock.calls.filter((args) => args[0] && args[0].name === "mod-a");
+        expect(calls.length).toBeGreaterThanOrEqual(2);
+        const refreshed = calls.filter((args) => args[1] === true);
+        expect(
+          refreshed.length,
+          "expected a fetchMeta refetch with forceRefresh=true",
+        ).toBeGreaterThanOrEqual(1);
         const resolved = Object.keys((fyn._data.pkgs["mod-a"] || {}).versions || {});
-        const found11x = resolved.some(v => v.startsWith("1.1"));
-        expect(found11x, `expected a 1.1.x version, got ${resolved.join(",")}`).to.equal(true);
+        const found11x = resolved.some((v) => v.startsWith("1.1"));
+        expect(found11x, `expected a 1.1.x version, got ${resolved.join(",")}`).toBe(true);
       })
       .finally(() => stub.mockRestore());
   });
 
-  describe("overrides", function() {
+  describe("overrides", function () {
     it("should apply simple package override", { timeout: 10000 }, async () => {
       const fyn = new Fyn({
         opts: {
@@ -344,21 +365,21 @@ describe("pkg-dep-resolver", function() {
             name: "test",
             version: "1.0.0",
             dependencies: {
-              "mod-a": "^1.0.0"
+              "mod-a": "^1.0.0",
             },
             overrides: {
-              "mod-a": "1.0.0"
-            }
+              "mod-a": "1.0.0",
+            },
           },
           fynDir,
-          cwd: fynDir
-        }
+          cwd: fynDir,
+        },
       });
       await fyn.resolveDependencies();
       // mod-a should be resolved to exactly 1.0.0 due to override
       const modA = fyn._data.pkgs["mod-a"];
-      expect(modA).to.exist;
-      expect(Object.keys(modA.versions)).to.include("1.0.0");
+      expect(modA).toEqual(expect.anything());
+      expect(Object.keys(modA.versions)).toContain("1.0.0");
     });
 
     it("should apply override with version constraint", { timeout: 10000 }, async () => {
@@ -370,54 +391,58 @@ describe("pkg-dep-resolver", function() {
             name: "test",
             version: "1.0.0",
             dependencies: {
-              "mod-a": "^1.0.0"
+              "mod-a": "^1.0.0",
             },
             overrides: {
               // Only override mod-a when requested with ^1.0.0 range
-              "mod-a@^1.0.0": "1.0.0"
-            }
+              "mod-a@^1.0.0": "1.0.0",
+            },
           },
           fynDir,
-          cwd: fynDir
-        }
+          cwd: fynDir,
+        },
       });
       await fyn.resolveDependencies();
       const modA = fyn._data.pkgs["mod-a"];
-      expect(modA).to.exist;
-      expect(Object.keys(modA.versions)).to.include("1.0.0");
+      expect(modA).toEqual(expect.anything());
+      expect(Object.keys(modA.versions)).toContain("1.0.0");
     });
 
-    it("should apply override with $ reference to direct dependency", { timeout: 10000 }, async () => {
-      // mod-b@1.0.0 depends on mod-a@^0.2.0
-      // We have mod-a@1.0.0 as a direct dependency
-      // Using "$mod-a" should override nested mod-a to use 1.0.0
-      const fyn = new Fyn({
-        opts: {
-          registry: `http://localhost:${server.info.port}`,
-          pkgFile: false,
-          pkgData: {
-            name: "test",
-            version: "1.0.0",
-            dependencies: {
-              "mod-a": "1.0.0",
-              "mod-b": "^1.0.0"
+    it(
+      "should apply override with $ reference to direct dependency",
+      { timeout: 10000 },
+      async () => {
+        // mod-b@1.0.0 depends on mod-a@^0.2.0
+        // We have mod-a@1.0.0 as a direct dependency
+        // Using "$mod-a" should override nested mod-a to use 1.0.0
+        const fyn = new Fyn({
+          opts: {
+            registry: `http://localhost:${server.info.port}`,
+            pkgFile: false,
+            pkgData: {
+              name: "test",
+              version: "1.0.0",
+              dependencies: {
+                "mod-a": "1.0.0",
+                "mod-b": "^1.0.0",
+              },
+              overrides: {
+                // Override all nested mod-a to use root's version (1.0.0)
+                "mod-a": "$mod-a",
+              },
             },
-            overrides: {
-              // Override all nested mod-a to use root's version (1.0.0)
-              "mod-a": "$mod-a"
-            }
+            fynDir,
+            cwd: fynDir,
           },
-          fynDir,
-          cwd: fynDir
-        }
-      });
-      await fyn.resolveDependencies();
-      // mod-a should be resolved to 1.0.0 (from $ reference)
-      const modA = fyn._data.pkgs["mod-a"];
-      expect(modA).to.exist;
-      // Should only have version 1.0.0, not the 0.x version that mod-b would have requested
-      expect(Object.keys(modA.versions)).to.include("1.0.0");
-    });
+        });
+        await fyn.resolveDependencies();
+        // mod-a should be resolved to 1.0.0 (from $ reference)
+        const modA = fyn._data.pkgs["mod-a"];
+        expect(modA).toEqual(expect.anything());
+        // Should only have version 1.0.0, not the 0.x version that mod-b would have requested
+        expect(Object.keys(modA.versions)).toContain("1.0.0");
+      },
+    );
 
     it("should apply nested override (parent scoped)", { timeout: 10000 }, async () => {
       const fyn = new Fyn({
@@ -428,18 +453,18 @@ describe("pkg-dep-resolver", function() {
             name: "test",
             version: "1.0.0",
             dependencies: {
-              "mod-a": "^1.0.0"
+              "mod-a": "^1.0.0",
             },
             overrides: {
               // Only override mod-g when it's a dependency of mod-a
               "mod-a": {
-                "mod-g": "0.1.0"
-              }
-            }
+                "mod-g": "0.1.0",
+              },
+            },
           },
           fynDir,
-          cwd: fynDir
-        }
+          cwd: fynDir,
+        },
       });
       await fyn.resolveDependencies();
       // The override for mod-g should only apply under mod-a
@@ -447,36 +472,40 @@ describe("pkg-dep-resolver", function() {
       // If mod-g exists and is under mod-a, it should be 0.1.0
       if (modG) {
         // Check that the override was applied for nested dep
-        expect(modG).to.exist;
+        expect(modG).toEqual(expect.anything());
       }
     });
 
-    it("should not apply override when version constraint doesn't match", { timeout: 10000 }, async () => {
-      const fyn = new Fyn({
-        opts: {
-          registry: `http://localhost:${server.info.port}`,
-          pkgFile: false,
-          pkgData: {
-            name: "test",
-            version: "1.0.0",
-            dependencies: {
-              "mod-a": "^2.0.0"
+    it(
+      "should not apply override when version constraint doesn't match",
+      { timeout: 10000 },
+      async () => {
+        const fyn = new Fyn({
+          opts: {
+            registry: `http://localhost:${server.info.port}`,
+            pkgFile: false,
+            pkgData: {
+              name: "test",
+              version: "1.0.0",
+              dependencies: {
+                "mod-a": "^2.0.0",
+              },
+              overrides: {
+                // This should NOT match because mod-a is requested as ^2.0.0
+                "mod-a@^1.0.0": "1.0.0",
+              },
             },
-            overrides: {
-              // This should NOT match because mod-a is requested as ^2.0.0
-              "mod-a@^1.0.0": "1.0.0"
-            }
+            fynDir,
+            cwd: fynDir,
           },
-          fynDir,
-          cwd: fynDir
-        }
-      });
-      await fyn.resolveDependencies();
-      const modA = fyn._data.pkgs["mod-a"];
-      expect(modA).to.exist;
-      // mod-a should NOT be 1.0.0 because the constraint didn't match
-      expect(Object.keys(modA.versions)).to.not.include("1.0.0");
-    });
+        });
+        await fyn.resolveDependencies();
+        const modA = fyn._data.pkgs["mod-a"];
+        expect(modA).toEqual(expect.anything());
+        // mod-a should NOT be 1.0.0 because the constraint didn't match
+        expect(Object.keys(modA.versions)).not.toContain("1.0.0");
+      },
+    );
 
     it("should work with overrides and resolutions together", { timeout: 10000 }, async () => {
       const fyn = new Fyn({
@@ -488,26 +517,26 @@ describe("pkg-dep-resolver", function() {
             version: "1.0.0",
             dependencies: {
               "mod-a": "^1.0.0",
-              "mod-b": "^3.0.0"
+              "mod-b": "^3.0.0",
             },
             overrides: {
-              "mod-a": "1.0.0"
+              "mod-a": "1.0.0",
             },
             resolutions: {
-              "mod-b": "3.0.0"
-            }
+              "mod-b": "3.0.0",
+            },
           },
           fynDir,
-          cwd: fynDir
-        }
+          cwd: fynDir,
+        },
       });
       await fyn.resolveDependencies();
       const modA = fyn._data.pkgs["mod-a"];
       const modB = fyn._data.pkgs["mod-b"];
-      expect(modA).to.exist;
-      expect(modB).to.exist;
-      expect(Object.keys(modA.versions)).to.include("1.0.0");
-      expect(Object.keys(modB.versions)).to.include("3.0.0");
+      expect(modA).toEqual(expect.anything());
+      expect(modB).toEqual(expect.anything());
+      expect(Object.keys(modA.versions)).toContain("1.0.0");
+      expect(Object.keys(modB.versions)).toContain("3.0.0");
     });
   });
 });
@@ -518,24 +547,23 @@ describe("pkg-dep-resolver", function() {
 // has always taken the first of those; `findVersionFromDistTag` used to hand the array back
 // as if it were a version string (FJM-158).
 //
-describe("findVersionFromDistTag with a multi-version lock entry", function() {
+describe("findVersionFromDistTag with a multi-version lock entry", function () {
   const findVersion = (lockRsemvers, semver) =>
     PkgDepResolver.prototype.findVersionFromDistTag.call(
       Object.create(PkgDepResolver.prototype),
       { versions: {}, [LOCK_RSEMVERS]: lockRsemvers },
-      semver
+      semver,
     );
 
   it("returns the first version when the lock recorded several", () => {
-    expect(findVersion({ latest: ["3.10.1", "3.10.0"] }, "latest")).to.equal("3.10.1");
+    expect(findVersion({ latest: ["3.10.1", "3.10.0"] }, "latest")).toBe("3.10.1");
   });
 
   it("returns the version as-is when the lock recorded one", () => {
-    expect(findVersion({ latest: "3.10.1" }, "latest")).to.equal("3.10.1");
+    expect(findVersion({ latest: "3.10.1" }, "latest")).toBe("3.10.1");
   });
 
   it("ignores the lock map for something that is a valid semver range", () => {
-    expect(findVersion({ "^3.0.0": ["3.10.1"] }, "^3.0.0")).to.equal(undefined);
+    expect(findVersion({ "^3.0.0": ["3.10.1"] }, "^3.0.0")).toBe(undefined);
   });
 });
-

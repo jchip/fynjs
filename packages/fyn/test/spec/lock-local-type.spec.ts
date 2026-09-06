@@ -1,5 +1,4 @@
-import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach, expect } from "vitest";
 import Fs from "fs";
 import Path from "path";
 import Fyn from "../../lib/fyn";
@@ -87,7 +86,7 @@ describe("local link type through the lockfile", function() {
   it("keeps the link type when the dep is declared as a path", async () => {
     const kpkg = await resolveWithLock("./local-mod-a");
 
-    expect(kpkg.versions["1.1.0-fynlocal_h"].local).to.equal("hard");
+    expect(kpkg.versions["1.1.0-fynlocal_h"].local).toBe("hard");
   });
 
   //
@@ -97,7 +96,7 @@ describe("local link type through the lockfile", function() {
   it("ignores a local lock entry for a plain semver range by default", async () => {
     const kpkg = await resolveWithLock("^1.1.0");
 
-    expect(kpkg.versions["1.1.0-fynlocal_h"]).to.equal(undefined);
+    expect(kpkg.versions["1.1.0-fynlocal_h"]).toBe(undefined);
   });
 
   //
@@ -110,7 +109,7 @@ describe("local link type through the lockfile", function() {
   it("recovers the hard link type from the locked version under --prefer-lock (FJM-159)", async () => {
     const kpkg = await resolveWithLock("^1.1.0", { preferLock: true });
 
-    expect(kpkg.versions["1.1.0-fynlocal_h"].local).to.equal("hard");
+    expect(kpkg.versions["1.1.0-fynlocal_h"].local).toBe("hard");
   });
 
   //
@@ -121,7 +120,7 @@ describe("local link type through the lockfile", function() {
   it("reads an untagged locked version as a symlink", async () => {
     const kpkg = await resolveWithLock("^1.1.0", { preferLock: true }, "1.1.0-fynlocal");
 
-    expect(kpkg.versions["1.1.0-fynlocal"].local).to.equal("sym");
+    expect(kpkg.versions["1.1.0-fynlocal"].local).toBe("sym");
   });
 
   //
@@ -142,7 +141,7 @@ describe("local link type through the lockfile", function() {
       ._linkLocalPkg({ name: "mod-a", version: "1.1.0-fynlocal_h", local: true, dir: cwd })
       .catch(e => (err = e));
 
-    expect(err, "expected _linkLocalPkg to reject").to.exist;
-    expect(err.message).to.contain("only hard linking local mode supported");
+    expect(err, "expected _linkLocalPkg to reject").toEqual(expect.anything());
+    expect(err.message).toContain("only hard linking local mode supported");
   });
 });

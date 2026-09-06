@@ -1,38 +1,37 @@
-import { describe, it, beforeEach, afterEach } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import fs from "fs/promises";
 import os from "os";
 import Path from "path";
 import fyntil from "../../../lib/util/fyntil";
 
-describe("fyntil", function() {
-  describe("exit", function() {
+describe("fyntil", function () {
+  describe("exit", function () {
     it("call process.exit", () => {
       const save = process.exit;
       let code;
-      process.exit = c => (code = c);
+      process.exit = (c) => (code = c);
       fyntil.exit();
-      expect(code).to.equal(0);
+      expect(code).toBe(0);
       fyntil.exit(new Error());
-      expect(code).to.equal(1);
+      expect(code).toBe(1);
       process.exit = save;
     });
 
     it("passes through a numeric exit code", () => {
       const save = process.exit;
       let code;
-      process.exit = c => (code = c);
+      process.exit = (c) => (code = c);
       fyntil.exit(0);
-      expect(code).to.equal(0);
+      expect(code).toBe(0);
       fyntil.exit(2);
-      expect(code).to.equal(2);
+      expect(code).toBe(2);
       fyntil.exit(137);
-      expect(code).to.equal(137);
+      expect(code).toBe(137);
       process.exit = save;
     });
   });
 
-  describe("retry", function() {
+  describe("retry", function () {
     it("should retry if checks array contains allowed code", () => {
       let count = 0;
       return fyntil
@@ -47,10 +46,10 @@ describe("fyntil", function() {
           },
           ["test"],
           5,
-          10
+          10,
         )
         .then(() => {
-          expect(count).to.equal(2);
+          expect(count).toBe(2);
         });
     });
 
@@ -70,15 +69,15 @@ describe("fyntil", function() {
           },
           ["blah"],
           5,
-          10
+          10,
         )
-        .catch(err => {
+        .catch((err) => {
           error = err;
         })
         .then(() => {
-          expect(error).to.exist;
-          expect(error.message).to.equal("test");
-          expect(count).to.equal(1);
+          expect(error).toEqual(expect.anything());
+          expect(error.message).toBe("test");
+          expect(count).toBe(1);
         });
     });
 
@@ -89,7 +88,7 @@ describe("fyntil", function() {
           throw new Error("should not retry");
         },
         5,
-        10
+        10,
       );
     });
 
@@ -104,12 +103,12 @@ describe("fyntil", function() {
           },
           () => false,
           5,
-          10
+          10,
         )
-        .catch(err => (error = err))
+        .catch((err) => (error = err))
         .then(() => {
-          expect(error).to.exist;
-          expect(count).to.equal(1);
+          expect(error).toEqual(expect.anything());
+          expect(count).toBe(1);
         });
     });
 
@@ -124,12 +123,12 @@ describe("fyntil", function() {
             return true;
           },
           3,
-          10
+          10,
         )
-        .catch(err => (error = err))
+        .catch((err) => (error = err))
         .then(() => {
-          expect(error).to.exist;
-          expect(error.message).to.equal("test failure");
+          expect(error).toEqual(expect.anything());
+          expect(error.message).toBe("test failure");
         });
     });
   });
@@ -170,13 +169,13 @@ describe("fyntil", function() {
     it("returns dir unchanged when not in a git repo", async () => {
       const dir = Path.join(tmpRoot, "no-git");
       await fs.mkdir(dir, { recursive: true });
-      expect(await fyntil.resolveGitMainWorktreeDir(dir)).to.equal(dir);
+      expect(await fyntil.resolveGitMainWorktreeDir(dir)).toBe(dir);
     });
 
     it("returns dir unchanged for a normal repo with a .git directory", async () => {
       const dir = Path.join(tmpRoot, "normal");
       await fs.mkdir(Path.join(dir, ".git"), { recursive: true });
-      expect(await fyntil.resolveGitMainWorktreeDir(dir)).to.equal(dir);
+      expect(await fyntil.resolveGitMainWorktreeDir(dir)).toBe(dir);
     });
 
     // create a main worktree with a linked worktree pointing back at it
@@ -195,15 +194,15 @@ describe("fyntil", function() {
 
     it("resolves a linked worktree root to the main worktree", async () => {
       const { mainTree, worktree } = await setupWorktree();
-      expect(await fyntil.resolveGitMainWorktreeDir(worktree)).to.equal(mainTree);
+      expect(await fyntil.resolveGitMainWorktreeDir(worktree)).toBe(mainTree);
     });
 
     it("preserves the sub-path when the dir is below the worktree root", async () => {
       const { mainTree, worktree } = await setupWorktree();
       const sub = Path.join(worktree, "packages", "foo");
       await fs.mkdir(sub, { recursive: true });
-      expect(await fyntil.resolveGitMainWorktreeDir(sub)).to.equal(
-        Path.join(mainTree, "packages", "foo")
+      expect(await fyntil.resolveGitMainWorktreeDir(sub)).toBe(
+        Path.join(mainTree, "packages", "foo"),
       );
     });
 
@@ -211,7 +210,7 @@ describe("fyntil", function() {
       const worktree = Path.join(tmpRoot, "bad");
       await fs.mkdir(worktree, { recursive: true });
       await fs.writeFile(Path.join(worktree, ".git"), "not a gitdir line\n");
-      expect(await fyntil.resolveGitMainWorktreeDir(worktree)).to.equal(worktree);
+      expect(await fyntil.resolveGitMainWorktreeDir(worktree)).toBe(worktree);
     });
   });
 
@@ -222,7 +221,7 @@ describe("fyntil", function() {
 
     it("return relative dir", () => {
       expect(fyntil.relativePath("/blah/foo/test/abc", "/blah/foo/test/xyz/123")).equals(
-        "../xyz/123"
+        "../xyz/123",
       );
     });
   });

@@ -2,7 +2,7 @@ import gxrun from "../../lib/index.js";
 import XRun from "../../lib/xrun.js";
 import childProc from "child_process";
 import xrun from "../../lib/index.js";
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import xstdout from "xstdout";
 import chalk from "../../lib/chalk.js";
 import assert from "assert";
@@ -30,8 +30,8 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
-      expect(data.qItem.name).to.equal("foo");
+      expect(data.type).toBe(exeEvents[0]);
+      expect(data.qItem.name).toBe("foo");
       exeEvents.shift();
     });
 
@@ -41,8 +41,8 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(1);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(1);
+        expect(foo).toBe(1);
       }
     );
   });
@@ -60,8 +60,8 @@ describe("xrun", function() {
       runTimeout(500),
       () => xrun.asyncRun("foo --a=50 --bar=60"),
       () => {
-        expect(context).to.be.an("object");
-        expect(context.argOpts).to.deep.equal({ a: 50, bar: 60 });
+        expect(Object.prototype.toString.call(context)).toBe("[object Object]");
+        expect(context.argOpts).toStrictEqual({ a: 50, bar: 60 });
       }
     );
   });
@@ -81,7 +81,7 @@ describe("xrun", function() {
       runTimeout(500),
       () => xrun.asyncRun("foo"),
       () => {
-        expect(callbackCalled).to.be.true;
+        expect(callbackCalled).toBe(true);
       }
     );
   });
@@ -99,7 +99,7 @@ describe("xrun", function() {
       runTimeout(500),
       () => xrun.asyncRun("foo"),
       () => {
-        expect(taskCalled).to.be.true;
+        expect(taskCalled).toBe(true);
       }
     );
   });
@@ -122,7 +122,7 @@ describe("xrun", function() {
       expectError(() => xrun.asyncRun("foo --a=50 --bar=60")),
       error => {
         expect(error.message).equal("Unknown options for task foo: a, bar");
-        expect(context).to.be.undefined;
+        expect(context).toBeUndefined();
       }
     );
   });
@@ -156,13 +156,13 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(receivedContext).to.be.an("object");
+        expect(Object.prototype.toString.call(receivedContext)).toBe("[object Object]");
         expect(receivedContext.argOpts.a).equal(50);
         expect(receivedContext.argOpts.bar).equal(60);
       },
       next => xrun.run("blah", next),
       () => {
-        expect(receivedCtx).to.be.an("object");
+        expect(Object.prototype.toString.call(receivedCtx)).toBe("[object Object]");
         expect(receivedCtx.argOpts.x).equal(500);
         expect(receivedCtx.argOpts.abc).equal(100);
       }
@@ -178,7 +178,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "function", "lookup", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -188,8 +188,8 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(2);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(2);
+        expect(foo).toBe(1);
       }
     );
   });
@@ -213,7 +213,7 @@ describe("xrun", function() {
     ];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -223,9 +223,9 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(4);
-        expect(foo2).to.equal(1);
-        expect(foo3).to.equal(1);
+        expect(doneItem).toBe(4);
+        expect(foo2).toBe(1);
+        expect(foo3).toBe(1);
       }
     );
   });
@@ -238,7 +238,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "function", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -248,8 +248,8 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(2);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(2);
+        expect(foo).toBe(1);
       }
     );
   });
@@ -257,13 +257,13 @@ describe("xrun", function() {
   it("should pass task options as argv", () => {
     const xrun = new XRun({
       foo: function() {
-        expect(this.argv).to.deep.equal([]);
+        expect(this.argv).toStrictEqual([]);
       },
       foo1: function() {
-        expect(this.argv).to.deep.equal(["foo1", "--test"]);
+        expect(this.argv).toStrictEqual(["foo1", "--test"]);
       },
       foo2: function() {
-        expect(this.argv).to.deep.equal(["foo2", "--a", "--b"]);
+        expect(this.argv).toStrictEqual(["foo2", "--a", "--b"]);
       }
     });
 
@@ -281,7 +281,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -291,8 +291,8 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(2);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(2);
+        expect(foo).toBe(1);
       }
     );
   });
@@ -308,7 +308,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -318,9 +318,9 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).to.equal("shell cmd 'exit 1' exit code 1");
-        expect(doneItem).to.equal(1);
-        expect(foo).to.equal(0);
+        expect(err.message).toBe("shell cmd 'exit 1' exit code 1");
+        expect(doneItem).toBe(1);
+        expect(foo).toBe(0);
       }
     );
   });
@@ -332,7 +332,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -342,7 +342,7 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(1);
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -366,7 +366,7 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         intercept.restore();
-        expect(intercept.stdout.join().trim()).to.equal(
+        expect(intercept.stdout.join().trim()).toBe(
           "hello foo     world a b    test  1   2   3"
         );
       },
@@ -383,7 +383,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -396,8 +396,8 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         intercept.restore();
-        expect(doneItem).to.equal(1);
-        expect(intercept.stdout.join().trim()).to.equal("test-flags-array");
+        expect(doneItem).toBe(1);
+        expect(intercept.stdout.join().trim()).toBe("test-flags-array");
       },
       runFinally(() => {
         intercept.restore();
@@ -412,7 +412,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -422,7 +422,7 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(1);
+        expect(doneItem).toBe(1);
       }
     );
   };
@@ -450,7 +450,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "serial-arr", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -460,7 +460,7 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(2);
+        expect(doneItem).toBe(2);
       }
     );
   });
@@ -472,7 +472,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -482,7 +482,7 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(1);
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -495,7 +495,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -505,7 +505,7 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(1);
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -523,7 +523,7 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(process.env[key]).to.equal("TEST123");
+        expect(process.env[key]).toBe("TEST123");
         delete process.env[key];
       }
     );
@@ -534,7 +534,7 @@ describe("xrun", function() {
     delete process.env[key];
     const xrun = new XRun({});
     xrun.updateEnv({ [key]: "hello" });
-    expect(process.env[key]).to.equal("hello");
+    expect(process.env[key]).toBe("hello");
     delete process.env[key];
   });
 
@@ -545,7 +545,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -555,7 +555,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(doneItem).to.equal(0);
+        expect(doneItem).toBe(0);
         expect(err.message).contains("Unknown flag foo in shell task");
       }
     );
@@ -592,7 +592,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -602,8 +602,8 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).to.equal(`cmd "node -e "process.exit(1)"" exit code 1`);
-        expect(doneItem).to.equal(1);
+        expect(err.message).toBe(`cmd "node -e "process.exit(1)"" exit code 1`);
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -613,7 +613,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -623,8 +623,8 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).to.equal(`cmd "node -e "process.exit(1)"" exit code 1`);
-        expect(doneItem).to.equal(1);
+        expect(err.message).toBe(`cmd "node -e "process.exit(1)"" exit code 1`);
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -639,7 +639,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -650,7 +650,7 @@ describe("xrun", function() {
       expectError(next => xrun.run("foo", next)),
       err => {
         expect(err.message).contains(`ETIMEDOUT`);
-        expect(doneItem).to.equal(1);
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -744,7 +744,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -755,7 +755,7 @@ describe("xrun", function() {
       expectError(next => xrun.run("foo", next)),
       err => {
         expect(err.message).contains(`Missing )$ in shell task: ~(spawn,syncsleep 1`);
-        expect(doneItem).to.equal(0);
+        expect(doneItem).toBe(0);
       }
     );
   });
@@ -769,7 +769,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "shell"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -779,8 +779,8 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).to.equal("shell cmd 'exit 1' exit code 1");
-        expect(doneItem).to.equal(1);
+        expect(err.message).toBe("shell cmd 'exit 1' exit code 1");
+        expect(doneItem).toBe(1);
       }
     );
   });
@@ -807,7 +807,7 @@ describe("xrun", function() {
     ];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -817,19 +817,19 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(6);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(6);
+        expect(foo).toBe(1);
       }
     );
   });
 
   it("should count tasks", () => {
     const xrun = new XRun();
-    expect(xrun.countTasks()).to.equal(0);
+    expect(xrun.countTasks()).toBe(0);
     xrun.load({ foo: () => undefined });
-    expect(xrun.countTasks()).to.equal(1);
+    expect(xrun.countTasks()).toBe(1);
     xrun.load("1", { foo: () => undefined, bar: () => undefined });
-    expect(xrun.countTasks()).to.equal(3);
+    expect(xrun.countTasks()).toBe(3);
   });
 
   it("should handle top serial tasks with first dot", () => {
@@ -854,7 +854,7 @@ describe("xrun", function() {
     ];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -864,8 +864,8 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(6);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(6);
+        expect(foo).toBe(1);
       }
     );
   });
@@ -894,7 +894,7 @@ describe("xrun", function() {
     ];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -904,9 +904,9 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(7);
-        expect(foo).to.equal(1);
-        expect(foo2).to.equal(1);
+        expect(doneItem).toBe(7);
+        expect(foo).toBe(1);
+        expect(foo2).toBe(1);
       }
     );
   });
@@ -943,7 +943,7 @@ describe("xrun", function() {
     ];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -953,10 +953,10 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run(["foo", "fooX"], next),
       () => {
-        expect(doneItem).to.equal(9);
-        expect(foo).to.equal(1);
-        expect(foo2).to.equal(1);
-        expect(fooX).to.equal(1);
+        expect(doneItem).toBe(9);
+        expect(foo).toBe(1);
+        expect(foo2).toBe(1);
+        expect(fooX).toBe(1);
       }
     );
   });
@@ -989,7 +989,7 @@ describe("xrun", function() {
     ];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -999,17 +999,17 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.more).to.exist;
-        expect(err.more.length).to.equal(1);
-        expect(err.message).to.equal("a failed");
-        expect(err.more[0].message).to.equal("c failed");
-        expect(doneItem).to.equal(7);
-        expect(foo).to.equal(1);
-        expect(foo2).to.equal(1);
+        expect(err.more).toEqual(expect.anything());
+        expect(err.more.length).toBe(1);
+        expect(err.message).toBe("a failed");
+        expect(err.more[0].message).toBe("c failed");
+        expect(doneItem).toBe(7);
+        expect(foo).toBe(1);
+        expect(foo2).toBe(1);
       },
       next => xrun.waitAllPending(next),
       () => {
-        expect(doneItem).to.equal(7);
+        expect(doneItem).toBe(7);
       }
     );
   });
@@ -1026,7 +1026,7 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "function", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -1036,9 +1036,9 @@ describe("xrun", function() {
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(doneItem).to.equal(2);
-        expect(dep).to.equal(1);
-        expect(foo).to.equal(1);
+        expect(doneItem).toBe(2);
+        expect(dep).toBe(1);
+        expect(foo).toBe(1);
       }
     );
   });
@@ -1056,15 +1056,15 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "serial-arr", "lookup", "function", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(foo).to.equal(1);
-        expect(foo2).to.equal(1);
+        expect(foo).toBe(1);
+        expect(foo2).toBe(1);
       }
     );
   });
@@ -1111,15 +1111,15 @@ describe("xrun", function() {
       "function"
     ];
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(foo2).to.equal(4);
-        expect(foo3).to.equal(2);
+        expect(foo2).toBe(4);
+        expect(foo3).toBe(2);
       }
     );
   });
@@ -1137,15 +1137,15 @@ describe("xrun", function() {
     const exeEvents = ["lookup", "serial-arr", "concurrent-arr", "lookup", "function", "function"];
 
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(foo).to.equal(1);
-        expect(foo2).to.equal(1);
+        expect(foo).toBe(1);
+        expect(foo2).toBe(1);
       }
     );
   });
@@ -1159,14 +1159,14 @@ describe("xrun", function() {
 
     const exeEvents = ["lookup", "function", "lookup", "function"];
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(foo2).to.equal(1);
+        expect(foo2).toBe(1);
       }
     );
   });
@@ -1202,15 +1202,15 @@ describe("xrun", function() {
       "function"
     ];
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
     return asyncVerify(
       next => xrun.run("foo2", next),
       () => {
-        expect(foo).to.equal(1);
-        expect(foo3).to.equal(1);
+        expect(foo).toBe(1);
+        expect(foo3).toBe(1);
       }
     );
   });
@@ -1226,14 +1226,14 @@ describe("xrun", function() {
 
     const exeEvents = ["lookup", "function"];
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
     return asyncVerify(
       next => xrun.run("foo", next),
       () => {
-        expect(foo).to.equal(999);
+        expect(foo).toBe(999);
       }
     );
   });
@@ -1295,7 +1295,7 @@ describe("xrun", function() {
         process.exit = ox;
         intercept.restore();
         expect(intercept.stdout.join()).include("Execution Failed - Errors:");
-        expect(testStatus).to.equal(1);
+        expect(testStatus).toBe(1);
       }
     );
   });
@@ -1326,7 +1326,7 @@ describe("xrun", function() {
         process.exit = ox;
         intercept.restore();
         expect(intercept.stdout.join()).include("Execution Failed - Errors:");
-        expect(testStatus).to.equal("test");
+        expect(testStatus).toBe("test");
       }
     );
   });
@@ -1340,7 +1340,7 @@ describe("xrun", function() {
     const xrun = new XRun();
     xrun._exitOnError();
     process.exit = ox;
-    expect(testStatus).to.equal("test");
+    expect(testStatus).toBe("test");
   });
 
   it("should fail for object task with unknown value type", () => {
@@ -1354,7 +1354,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).to.equal("Task foo2 has unrecognize task value type Boolean");
+        expect(err.message).toBe("Task foo2 has unrecognize task value type Boolean");
       }
     );
   });
@@ -1366,7 +1366,7 @@ describe("xrun", function() {
     return asyncVerify(
       expectError(next => xrun.run("foo", next)),
       err => {
-        expect(err.message).to.equal(
+        expect(err.message).toBe(
           "Unable to process task foo.S because value type Boolean is unknown and no value.item"
         );
       }
@@ -1405,7 +1405,7 @@ describe("xrun", function() {
         xrun.exit = _code => {
           intercept.restore();
           const stdout = intercept.stdout.map(l => stripAnsi(l));
-          expect(stdout[2].trim()).to.equal("Maybe try: foo1, foo2, foo3, moo, xoo");
+          expect(stdout[2].trim()).toBe("Maybe try: foo1, foo2, foo3, moo, xoo");
           next();
         };
         xrun.run("foox");
@@ -1451,13 +1451,13 @@ describe("xrun", function() {
   describe("stopOnError", function() {
     it("should throw if value is invalid", () => {
       const xrun = new XRun();
-      expect(() => (xrun.stopOnError = "blah")).to.throw("stopOnError must be");
+      expect(() => (xrun.stopOnError = "blah")).toThrow("stopOnError must be");
     });
 
     it("should allow to set one of the string values", () => {
       const xrun = new XRun();
       xrun.stopOnError = "full";
-      expect(xrun.stopOnError).to.equal("full");
+      expect(xrun.stopOnError).toBe("full");
     });
 
     it("should watch for failure when stopOnError is full with callback task", () => {
@@ -1482,8 +1482,8 @@ describe("xrun", function() {
       return asyncVerify(
         expectError(next => xrun.run(["task1", "task2"], next)),
         err => {
-          expect(task1Called).to.be.true;
-          expect(err.message).to.include("task1 failed");
+          expect(task1Called).toBe(true);
+          expect(err.message).toContain("task1 failed");
         }
       );
     });
@@ -1516,9 +1516,9 @@ describe("xrun", function() {
       return asyncVerify(
         expectError(next => xrun.run([["task1", "task2"]], next)),
         err => {
-          expect(task1Called).to.be.true;
-          expect(task2Called).to.be.true;
-          expect(err.message).to.include("task1 failed");
+          expect(task1Called).toBe(true);
+          expect(task2Called).toBe(true);
+          expect(err.message).toContain("task1 failed");
           // task2's promise should be cancelled due to stopOnError full
         }
       );
@@ -1544,8 +1544,8 @@ describe("xrun", function() {
     it("should log err if it has no stack", () => {
       xrun._exitOnError("blah test");
       intercept.restore();
-      expect(intercept.stdout.length).to.equal(2);
-      expect(intercept.stdout[1]).to.equal(" 1  blah test\n");
+      expect(intercept.stdout.length).toBe(2);
+      expect(intercept.stdout[1]).toBe(" 1  blah test\n");
     });
 
     it("should not log stack for AssertionError", () => {
@@ -1557,7 +1557,7 @@ describe("xrun", function() {
       }
       xrun._exitOnError([err]);
       intercept.restore();
-      expect(intercept.stdout.length).to.equal(2);
+      expect(intercept.stdout.length).toBe(2);
     });
 
     it("should not log stack if it's empty", () => {
@@ -1567,7 +1567,7 @@ describe("xrun", function() {
       };
       xrun._exitOnError([err]);
       intercept.restore();
-      expect(intercept.stdout.length).to.equal(2);
+      expect(intercept.stdout.length).toBe(2);
     });
 
     it("should not log stack if it's shell exec failed", () => {
@@ -1577,13 +1577,13 @@ describe("xrun", function() {
       };
       xrun._exitOnError([err]);
       intercept.restore();
-      expect(intercept.stdout.length).to.equal(2);
+      expect(intercept.stdout.length).toBe(2);
     });
 
     it("should handle err as non-array", () => {
       xrun._exitOnError(new Error("test 1"));
       intercept.restore();
-      expect(intercept.stdout.length).to.be.above(2);
+      expect(intercept.stdout.length).toBeGreaterThan(2);
       expect(intercept.stdout[1]).include("1  test 1");
       expect(intercept.stdout[2]).include(" at ");
     });
@@ -1597,7 +1597,7 @@ describe("xrun", function() {
     xrun.load({ namespace: "foo", overrides: "blah" }, {});
     xrun.load({ namespace: "blah", overrides: "hello" }, {});
     xrun.load("hello", {});
-    expect(xrun.getNamespaces()).to.deep.equal(["/", "foo", "blah", "test", "hello"]);
+    expect(xrun.getNamespaces()).toStrictEqual(["/", "foo", "blah", "test", "hello"]);
   });
 
   it("should cancel and kill a shell exec on error", () => {
@@ -1619,7 +1619,7 @@ describe("xrun", function() {
       () => xaa.delay(100),
       () => {
         intercept.restore();
-        expect(intercept.stdout).to.deep.equal([]);
+        expect(intercept.stdout).toStrictEqual([]);
       }
     );
   });
@@ -1635,7 +1635,7 @@ describe("xrun", function() {
 
     const exeEvents = ["lookup", "function", "lookup", "function"];
     xrun.on("execute", data => {
-      expect(data.type).to.equal(exeEvents[0]);
+      expect(data.type).toBe(exeEvents[0]);
       exeEvents.shift();
     });
 
@@ -1647,9 +1647,9 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         const end = Date.now();
-        expect(end - start).to.be.above(28);
-        expect(cfoo2).to.equal(0);
-        expect(tasks.foo2Value).to.equal(1);
+        expect(end - start).toBeGreaterThan(28);
+        expect(cfoo2).toBe(0);
+        expect(tasks.foo2Value).toBe(1);
       }
     );
   };
@@ -1770,7 +1770,7 @@ describe("xrun", function() {
       next => xrun.run("foo", next),
       () => {
         // Should complete without error (SIGTERM treated as normal exit)
-        expect(doneItem).to.be.greaterThan(0);
+        expect(doneItem).toBeGreaterThan(0);
       }
     );
   });
@@ -1792,12 +1792,12 @@ describe("xrun", function() {
         x._taskChildren[Symbol("child")] = { pid: 4242 };
 
         x.exit(7);
-        expect(exited, "must not exit before the children are dealt with").to.deep.equal([]);
+        expect(exited, "must not exit before the children are dealt with").toStrictEqual([]);
 
         await new Promise(resolve => setTimeout(resolve, 250));
 
-        expect(killed.map(c => c.pid)).to.deep.equal([4242]);
-        expect(exited).to.deep.equal([7]);
+        expect(killed.map(c => c.pid)).toStrictEqual([4242]);
+        expect(exited).toStrictEqual([7]);
       } finally {
         process.exit = origExit;
       }
@@ -1812,7 +1812,7 @@ describe("xrun", function() {
       try {
         x.stopOnError = "full";
         x.exit(3);
-        expect(exited).to.deep.equal([3]);
+        expect(exited).toStrictEqual([3]);
       } finally {
         process.exit = origExit;
       }

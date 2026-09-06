@@ -1,4 +1,4 @@
-import { expect as expect } from "chai";
+import { expect } from "vitest";
 import Fs from "fs";
 import Path from "path";
 import { spawnSync } from "child_process";
@@ -76,24 +76,24 @@ describe("bin/xrun.js cli resolution", function () {
       );
 
       const res = runTask(tmpDir, "hello");
-      expect(res.status).to.equal(0);
-      expect(res.output).to.contain("hi from a TLA task file");
+      expect(res.status).toBe(0);
+      expect(res.output).toContain("hi from a TLA task file");
     });
 
     it("should say why when the task file throws", () => {
       Fs.writeFileSync(Path.join(tmpDir, "xrun-tasks.js"), `throw new Error("boom in task file");\n`);
 
       const res = runTask(tmpDir, "hello");
-      expect(res.status).to.equal(1);
-      expect(res.output).to.contain("Unable to load");
-      expect(res.output).to.contain("boom in task file");
+      expect(res.status).toBe(1);
+      expect(res.output).toContain("Unable to load");
+      expect(res.output).toContain("boom in task file");
     });
 
     it("should say so when there is no task file at all", () => {
       const res = runTask(tmpDir, "hello");
-      expect(res.status).to.equal(1);
-      expect(res.output).to.contain("No tasks found");
-      expect(res.output).to.contain(`You do not have a "xrun-tasks.js|ts" file`);
+      expect(res.status).toBe(1);
+      expect(res.output).toContain("No tasks found");
+      expect(res.output).toContain(`You do not have a "xrun-tasks.js|ts" file`);
     });
 
     it("should still run a valid ESM task file", () => {
@@ -103,8 +103,8 @@ describe("bin/xrun.js cli resolution", function () {
       );
 
       const res = runTask(tmpDir, "hello");
-      expect(res.status).to.equal(0);
-      expect(res.output).to.contain("hi from task");
+      expect(res.status).toBe(0);
+      expect(res.output).toContain("hi from task");
     });
   });
 
@@ -138,8 +138,8 @@ describe("bin/xrun.js cli resolution", function () {
       it(`should run tasks from ${name}`, () => {
         Fs.writeFileSync(Path.join(tmpDir, name), body);
         const res = runTask(tmpDir, "hello");
-        expect(res.status, res.output).to.equal(0);
-        expect(res.output).to.contain(expected);
+        expect(res.status, res.output).toBe(0);
+        expect(res.output).toContain(expected);
       });
     });
 
@@ -155,16 +155,16 @@ describe("bin/xrun.js cli resolution", function () {
             `export default xrun => { xrun.load({ hello: () => console.log(m) }); };\n`
         );
         const res = runTask(tmpDir, "hello");
-        expect(res.status, res.output).to.equal(0);
-        expect(res.output).to.contain(`tla from ${label}`);
+        expect(res.status, res.output).toBe(0);
+        expect(res.output).toContain(`tla from ${label}`);
       });
     });
   });
 
   it("should load its cli from a cwd with no @fynjs/run installed", () => {
     const res = runBin(tmpDir);
-    expect(res.stderr).to.not.contain("Cannot find module");
-    expect(res.stdout).to.contain(version);
+    expect(res.stderr).not.toContain("Cannot find module");
+    expect(res.stdout).toContain(version);
   });
 
   //
@@ -178,7 +178,7 @@ describe("bin/xrun.js cli resolution", function () {
     Fs.symlinkSync(pkgDir, Path.join(nmDir, "run"), "dir");
 
     const res = runBin(tmpDir);
-    expect(res.stderr).to.not.contain("Cannot find module");
-    expect(res.stdout).to.contain(version);
+    expect(res.stderr).not.toContain("Cannot find module");
+    expect(res.stdout).toContain(version);
   });
 });

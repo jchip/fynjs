@@ -13,8 +13,7 @@
 // decision against the running machine rather than pinning darwin or linux.
 //
 
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { lockedMetaNeedsFetch } from "../../lib/pkg-dep-resolver";
 
 /** os/cpu that always satisfy the running machine */
@@ -29,7 +28,7 @@ describe("pkg-dep-resolver locked _missingJson evaluation", function () {
     // the fix: usable here, so its unknown deps have to be resolved for real
     //
     it("fetches when the package's os/cpu match this platform", () => {
-      expect(lockedMetaNeedsFetch({ _missingJson: true, ...thisPlatform })).to.equal(true);
+      expect(lockedMetaNeedsFetch({ _missingJson: true, ...thisPlatform })).toBe(true);
     });
 
     //
@@ -37,24 +36,24 @@ describe("pkg-dep-resolver locked _missingJson evaluation", function () {
     // lock entry alone is enough - that is what keeps the platform variants free to resolve
     //
     it("does not fetch when os/cpu do not match this platform", () => {
-      expect(lockedMetaNeedsFetch({ _missingJson: true, ...otherPlatform })).to.equal(false);
+      expect(lockedMetaNeedsFetch({ _missingJson: true, ...otherPlatform })).toBe(false);
     });
 
     it("fetches when no os/cpu were recorded, since the package is usable anywhere", () => {
-      expect(lockedMetaNeedsFetch({ _missingJson: true })).to.equal(true);
+      expect(lockedMetaNeedsFetch({ _missingJson: true })).toBe(true);
     });
   });
 
   describe("entry with a package.json recorded", () => {
     it("does not fetch, whatever the platform", () => {
-      expect(lockedMetaNeedsFetch({ dependencies: { foo: "^1.0.0" }, ...thisPlatform })).to.equal(
-        false
+      expect(lockedMetaNeedsFetch({ dependencies: { foo: "^1.0.0" }, ...thisPlatform })).toBe(
+        false,
       );
-      expect(lockedMetaNeedsFetch({ ...otherPlatform })).to.equal(false);
+      expect(lockedMetaNeedsFetch({ ...otherPlatform })).toBe(false);
     });
 
     it("does not fetch for an entry that is simply absent", () => {
-      expect(lockedMetaNeedsFetch(undefined)).to.equal(false);
+      expect(lockedMetaNeedsFetch(undefined)).toBe(false);
     });
   });
 });

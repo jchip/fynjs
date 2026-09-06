@@ -1,6 +1,6 @@
 const Fs = require("fs");
 const Path = require("path");
-const { expect } = require("chai");
+/* global expect */ // vitest global (globals: true); vitest cannot be require()d from CJS
 
 module.exports = {
   title: "should add a package from fynpo monorepo",
@@ -20,6 +20,6 @@ module.exports = {
     expect(
       Fs.existsSync(Path.join(scenarioDir, ".fynpo-data.json")),
       ".fynpo-data.json should not exist"
-    ).equal(false);
+    ).toBe(false);
   }
 };

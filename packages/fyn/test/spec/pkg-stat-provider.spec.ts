@@ -5,8 +5,7 @@
  * multiple times within a single process.
  */
 
-import { describe, it, beforeEach } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, expect } from "vitest";
 
 import PkgStatProvider from "../../lib/pkg-stat-provider";
 
@@ -15,12 +14,12 @@ describe("pkg-stat-provider", () => {
   const createMockFyn = (pkgs = {}, res = {}, pkg = {}) => ({
     _data: {
       pkgs: Object.fromEntries(
-        Object.entries(pkgs).map(([name, versions]) => [name, { versions }])
+        Object.entries(pkgs).map(([name, versions]) => [name, { versions }]),
       ),
-      res
+      res,
     },
     _pkg: pkg,
-    _options: {}
+    _options: {},
   });
 
   describe("findPkgsById()", () => {
@@ -28,29 +27,29 @@ describe("pkg-stat-provider", () => {
       const fyn = createMockFyn({
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true },
-          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false }
-        }
+          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const matches = provider.findPkgsById("lodash");
 
-      expect(matches).to.have.lengthOf(2);
+      expect(matches).toHaveLength(2);
     });
 
     it("should find package by name@version", () => {
       const fyn = createMockFyn({
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true },
-          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false }
-        }
+          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const matches = provider.findPkgsById("lodash@4.17.21");
 
-      expect(matches).to.have.lengthOf(1);
-      expect(matches[0].version).to.equal("4.17.21");
+      expect(matches).toHaveLength(1);
+      expect(matches[0].version).toBe("4.17.21");
     });
 
     it("should find package by name@semver range", () => {
@@ -58,42 +57,42 @@ describe("pkg-stat-provider", () => {
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true },
           "4.17.15": { name: "lodash", version: "4.17.15", promoted: false },
-          "3.10.1": { name: "lodash", version: "3.10.1", promoted: false }
-        }
+          "3.10.1": { name: "lodash", version: "3.10.1", promoted: false },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const matches = provider.findPkgsById("lodash@^4.0.0");
 
-      expect(matches).to.have.lengthOf(2);
-      expect(matches.every(m => m.version.startsWith("4."))).to.be.true;
+      expect(matches).toHaveLength(2);
+      expect(matches.every((m) => m.version.startsWith("4."))).toBe(true);
     });
 
     it("should return empty array for non-existent package", () => {
       const fyn = createMockFyn({
         lodash: {
-          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true }
-        }
+          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const matches = provider.findPkgsById("express");
 
-      expect(matches).to.have.lengthOf(0);
+      expect(matches).toHaveLength(0);
     });
 
     it("should handle scoped packages", () => {
       const fyn = createMockFyn({
         "@types/node": {
-          "18.0.0": { name: "@types/node", version: "18.0.0", promoted: true }
-        }
+          "18.0.0": { name: "@types/node", version: "18.0.0", promoted: true },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const matches = provider.findPkgsById("@types/node@18.0.0");
 
-      expect(matches).to.have.lengthOf(1);
-      expect(matches[0].name).to.equal("@types/node");
+      expect(matches).toHaveLength(1);
+      expect(matches[0].name).toBe("@types/node");
     });
 
     it("should return empty when no data", () => {
@@ -101,7 +100,7 @@ describe("pkg-stat-provider", () => {
       const provider = new PkgStatProvider({ fyn });
       const matches = provider.findPkgsById("lodash");
 
-      expect(matches).to.have.lengthOf(0);
+      expect(matches).toHaveLength(0);
     });
   });
 
@@ -110,18 +109,18 @@ describe("pkg-stat-provider", () => {
       const fyn = createMockFyn({
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true },
-          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false }
-        }
+          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const result = provider.findMatchingVersions("lodash");
 
-      expect(result.searchId).to.equal("lodash");
-      expect(result.versions).to.have.lengthOf(2);
-      expect(result.versions[0]).to.have.property("name", "lodash");
-      expect(result.versions[0]).to.have.property("version");
-      expect(result.versions[0]).to.have.property("promoted");
+      expect(result.searchId).toBe("lodash");
+      expect(result.versions).toHaveLength(2);
+      expect(result.versions[0]).toHaveProperty("name", "lodash");
+      expect(result.versions[0]).toHaveProperty("version");
+      expect(result.versions[0]).toHaveProperty("promoted");
     });
 
     it("should sort versions (newest first)", () => {
@@ -129,18 +128,18 @@ describe("pkg-stat-provider", () => {
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true },
           "4.17.15": { name: "lodash", version: "4.17.15", promoted: false },
-          "4.17.10": { name: "lodash", version: "4.17.10", promoted: false }
-        }
+          "4.17.10": { name: "lodash", version: "4.17.10", promoted: false },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const result = provider.findMatchingVersions("lodash");
 
       // Should be sorted by semver descending (newest first)
-      expect(result.versions.map(v => v.version)).to.deep.equal([
+      expect(result.versions.map((v) => v.version)).toStrictEqual([
         "4.17.21",
         "4.17.15",
-        "4.17.10"
+        "4.17.10",
       ]);
     });
   });
@@ -150,7 +149,7 @@ describe("pkg-stat-provider", () => {
       const fyn = createMockFyn(
         {
           lodash: {
-            "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
+            "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
           },
           express: {
             "4.18.0": {
@@ -159,70 +158,70 @@ describe("pkg-stat-provider", () => {
               promoted: true,
               res: {
                 dep: {
-                  lodash: { semver: "^4.17.0", resolved: "4.17.21" }
-                }
-              }
-            }
-          }
+                  lodash: { semver: "^4.17.0", resolved: "4.17.21" },
+                },
+              },
+            },
+          },
         },
-        {} // res
+        {}, // res
       );
 
       const provider = new PkgStatProvider({ fyn });
       const dependents = provider.findDependents({ name: "lodash", version: "4.17.21" });
 
-      expect(dependents).to.have.lengthOf(1);
-      expect(dependents[0].name).to.equal("express");
+      expect(dependents).toHaveLength(1);
+      expect(dependents[0].name).toBe("express");
     });
 
     it("should return empty array when no dependents", () => {
       const fyn = createMockFyn({
         lodash: {
-          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
-        }
+          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const dependents = provider.findDependents({ name: "lodash", version: "4.17.21" });
 
-      expect(dependents).to.have.lengthOf(0);
+      expect(dependents).toHaveLength(0);
     });
 
     it("should check multiple dependency types", () => {
       const fyn = createMockFyn(
         {
           lodash: {
-            "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
+            "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
           },
           "pkg-a": {
             "1.0.0": {
               name: "pkg-a",
               version: "1.0.0",
-              res: { dep: { lodash: { semver: "^4.0.0", resolved: "4.17.21" } } }
-            }
+              res: { dep: { lodash: { semver: "^4.0.0", resolved: "4.17.21" } } },
+            },
           },
           "pkg-b": {
             "1.0.0": {
               name: "pkg-b",
               version: "1.0.0",
-              res: { opt: { lodash: { semver: "^4.0.0", resolved: "4.17.21" } } }
-            }
+              res: { opt: { lodash: { semver: "^4.0.0", resolved: "4.17.21" } } },
+            },
           },
           "pkg-c": {
             "1.0.0": {
               name: "pkg-c",
               version: "1.0.0",
-              res: { per: { lodash: { semver: "^4.0.0", resolved: "4.17.21" } } }
-            }
-          }
+              res: { per: { lodash: { semver: "^4.0.0", resolved: "4.17.21" } } },
+            },
+          },
         },
-        {}
+        {},
       );
 
       const provider = new PkgStatProvider({ fyn });
       const dependents = provider.findDependents({ name: "lodash", version: "4.17.21" });
 
-      expect(dependents).to.have.lengthOf(3);
+      expect(dependents).toHaveLength(3);
     });
   });
 
@@ -233,14 +232,14 @@ describe("pkg-stat-provider", () => {
 
       const stat = await provider.getPackageStat("lodash", "4.17.21");
 
-      expect(stat).to.be.null;
+      expect(stat).toBeNull();
     });
 
     it("should return stat result with dependents", async () => {
       const fyn = createMockFyn(
         {
           lodash: {
-            "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
+            "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
           },
           express: {
             "4.18.0": {
@@ -249,38 +248,40 @@ describe("pkg-stat-provider", () => {
               promoted: true,
               res: {
                 dep: {
-                  lodash: { semver: "^4.17.0", resolved: "4.17.21" }
-                }
-              }
-            }
-          }
+                  lodash: { semver: "^4.17.0", resolved: "4.17.21" },
+                },
+              },
+            },
+          },
         },
-        {}
+        {},
       );
 
       const provider = new PkgStatProvider({ fyn });
       const stat = await provider.getPackageStat("lodash", "4.17.21");
 
-      expect(stat).to.not.be.null;
-      expect(stat.name).to.equal("lodash");
-      expect(stat.version).to.equal("4.17.21");
-      expect(stat.promoted).to.be.true;
-      expect(stat.dependents).to.have.lengthOf(1);
-      expect(stat.dependents[0].name).to.equal("express");
+      expect(stat).not.toBeNull();
+      expect(stat.name).toBe("lodash");
+      expect(stat.version).toBe("4.17.21");
+      expect(stat.promoted).toBe(true);
+      expect(stat.dependents).toHaveLength(1);
+      expect(stat.dependents[0].name).toBe("express");
     });
 
     it("should include allPaths and significantPaths", async () => {
       const fyn = createMockFyn({
         lodash: {
-          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
-        }
+          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const stat = await provider.getPackageStat("lodash", "4.17.21");
 
-      expect(stat).to.have.property("allPaths").that.is.an("array");
-      expect(stat).to.have.property("significantPaths").that.is.an("array");
+      expect(stat).toHaveProperty("allPaths");
+      expect(Array.isArray(stat.allPaths)).toBe(true);
+      expect(stat).toHaveProperty("significantPaths");
+      expect(Array.isArray(stat.significantPaths)).toBe(true);
     });
 
     //
@@ -297,64 +298,64 @@ describe("pkg-stat-provider", () => {
               "7.2.3": {
                 name: "glob",
                 version: "7.2.3",
-                res: { dep: { minimatch: { semver: "^3.1.1", resolved: "3.1.2" } } }
-              }
+                res: { dep: { minimatch: { semver: "^3.1.1", resolved: "3.1.2" } } },
+              },
             },
             yamljs: {
               "0.3.0": {
                 name: "yamljs",
                 version: "0.3.0",
-                res: { dep: { glob: { semver: "^7.0.0", resolved: "7.2.3" } } }
-              }
+                res: { dep: { glob: { semver: "^7.0.0", resolved: "7.2.3" } } },
+              },
             },
             "@babel/cli": {
               "7.28.6": {
                 name: "@babel/cli",
                 version: "7.28.6",
-                res: { dep: { glob: { semver: "^7.0.0", resolved: "7.2.3" } } }
-              }
-            }
+                res: { dep: { glob: { semver: "^7.0.0", resolved: "7.2.3" } } },
+              },
+            },
           },
           {
             // the app's own resolutions - `makeAppFynRes` flattens dep and dev together, which
             // is exactly why the section has to be read back off the app's package.json
             dep: { yamljs: { resolved: "0.3.0" } },
-            dev: { "@babel/cli": { resolved: "7.28.6" } }
+            dev: { "@babel/cli": { resolved: "7.28.6" } },
           },
           {
             dependencies: { yamljs: "^0.3.0" },
-            devDependencies: { "@babel/cli": "^7.0.0" }
-          }
+            devDependencies: { "@babel/cli": "^7.0.0" },
+          },
         );
 
       it("should keep every path when nothing is omitted", async () => {
         const provider = new PkgStatProvider({ fyn: repro() });
         const stat = await provider.getPackageStat("minimatch", "3.1.2");
 
-        const roots = stat.significantPaths.map(p => p[0]);
-        expect(roots).to.have.members(["yamljs@0.3.0", "@babel/cli@7.28.6"]);
+        const roots = stat.significantPaths.map((p) => p[0]);
+        expect(new Set(roots)).toEqual(new Set(["yamljs@0.3.0", "@babel/cli@7.28.6"]));
       });
 
       it("should drop a path rooted in an omitted section of the app", async () => {
         const provider = new PkgStatProvider({ fyn: repro(), omit: ["dev"] });
         const stat = await provider.getPackageStat("minimatch", "3.1.2");
 
-        const roots = stat.significantPaths.map(p => p[0]);
-        expect(roots).to.deep.equal(["yamljs@0.3.0"]);
-        expect(stat.allPaths.map(p => p[0])).to.deep.equal(["yamljs@0.3.0"]);
+        const roots = stat.significantPaths.map((p) => p[0]);
+        expect(roots).toStrictEqual(["yamljs@0.3.0"]);
+        expect(stat.allPaths.map((p) => p[0])).toStrictEqual(["yamljs@0.3.0"]);
       });
 
       it("should drop a path through an omitted edge between two packages", async () => {
         const fyn = repro();
         // yamljs now reaches glob optionally, so --omit optional leaves nothing behind it
         fyn._data.pkgs.yamljs.versions["0.3.0"].res = {
-          opt: { glob: { semver: "^7.0.0", resolved: "7.2.3" } }
+          opt: { glob: { semver: "^7.0.0", resolved: "7.2.3" } },
         };
 
         const provider = new PkgStatProvider({ fyn, omit: ["dev", "optional"] });
         const stat = await provider.getPackageStat("minimatch", "3.1.2");
 
-        expect(stat.significantPaths).to.have.lengthOf(0);
+        expect(stat.significantPaths).toHaveLength(0);
       });
 
       it("should keep a path whose legs no section declares", async () => {
@@ -364,7 +365,7 @@ describe("pkg-stat-provider", () => {
         const provider = new PkgStatProvider({ fyn, omit: ["dev"] });
         const stat = await provider.getPackageStat("minimatch", "3.1.2");
 
-        expect(stat.significantPaths).to.have.lengthOf(2);
+        expect(stat.significantPaths).toHaveLength(2);
       });
     });
   });
@@ -374,29 +375,29 @@ describe("pkg-stat-provider", () => {
       const fyn = createMockFyn({
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
-          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false, res: {} }
-        }
+          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false, res: {} },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const stats = await provider.getPackageStats("lodash");
 
-      expect(stats).to.have.lengthOf(2);
+      expect(stats).toHaveLength(2);
     });
 
     it("should get stats for specific version", async () => {
       const fyn = createMockFyn({
         lodash: {
           "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
-          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false, res: {} }
-        }
+          "4.17.15": { name: "lodash", version: "4.17.15", promoted: false, res: {} },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
       const stats = await provider.getPackageStats("lodash", "4.17.21");
 
-      expect(stats).to.have.lengthOf(1);
-      expect(stats[0].version).to.equal("4.17.21");
+      expect(stats).toHaveLength(1);
+      expect(stats[0].version).toBe("4.17.21");
     });
   });
 
@@ -408,8 +409,8 @@ describe("pkg-stat-provider", () => {
       const paths = [["a@1.0.0", "b@2.0.0", "c@3.0.0"]];
       const formatted = provider.formatPaths(paths);
 
-      expect(formatted).to.have.lengthOf(1);
-      expect(formatted[0]).to.equal("a@1.0.0 > b@2.0.0 > c@3.0.0");
+      expect(formatted).toHaveLength(1);
+      expect(formatted[0]).toBe("a@1.0.0 > b@2.0.0 > c@3.0.0");
     });
 
     it("should handle empty paths", () => {
@@ -418,7 +419,7 @@ describe("pkg-stat-provider", () => {
 
       const formatted = provider.formatPaths([]);
 
-      expect(formatted).to.have.lengthOf(0);
+      expect(formatted).toHaveLength(0);
     });
   });
 
@@ -426,8 +427,8 @@ describe("pkg-stat-provider", () => {
     it("should clear internal caches", () => {
       const fyn = createMockFyn({
         lodash: {
-          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
-        }
+          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
@@ -440,7 +441,7 @@ describe("pkg-stat-provider", () => {
 
       // Should work again after reset
       const dependents = provider.findDependents({ name: "lodash", version: "4.17.21" });
-      expect(dependents).to.be.an("array");
+      expect(Array.isArray(dependents)).toBe(true);
     });
   });
 
@@ -448,11 +449,11 @@ describe("pkg-stat-provider", () => {
     it("should be reusable for multiple package lookups", async () => {
       const fyn = createMockFyn({
         lodash: {
-          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} }
+          "4.17.21": { name: "lodash", version: "4.17.21", promoted: true, res: {} },
         },
         express: {
-          "4.18.0": { name: "express", version: "4.18.0", promoted: true, res: {} }
-        }
+          "4.18.0": { name: "express", version: "4.18.0", promoted: true, res: {} },
+        },
       });
 
       const provider = new PkgStatProvider({ fyn });
@@ -461,10 +462,10 @@ describe("pkg-stat-provider", () => {
       const stat1 = await provider.getPackageStat("lodash", "4.17.21");
       const stat2 = await provider.getPackageStat("express", "4.18.0");
 
-      expect(stat1).to.not.be.null;
-      expect(stat2).to.not.be.null;
-      expect(stat1.name).to.equal("lodash");
-      expect(stat2.name).to.equal("express");
+      expect(stat1).not.toBeNull();
+      expect(stat2).not.toBeNull();
+      expect(stat1.name).toBe("lodash");
+      expect(stat2.name).toBe("express");
     });
   });
 });

@@ -1,5 +1,4 @@
-import { describe, it } from "vitest";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { initEnv, makeNpmEnv } from "../../lib/util/make-npm-env";
 
 describe("make-npm-env", function () {
@@ -12,58 +11,58 @@ describe("make-npm-env", function () {
         npm_package_name: "bar"
       };
       const env = initEnv(fromEnv, false);
-      expect(env.PATH).to.equal("/usr/bin");
-      expect(env.NORMAL).to.equal("value");
-      expect(env).to.not.have.property("npm_config_foo");
-      expect(env).to.not.have.property("npm_package_name");
+      expect(env.PATH).toBe("/usr/bin");
+      expect(env.NORMAL).toBe("value");
+      expect(env).not.toHaveProperty("npm_config_foo");
+      expect(env).not.toHaveProperty("npm_package_name");
     });
 
     it("should set NODE_ENV to production when production is truthy", () => {
       const env = initEnv({ FOO: "bar" }, true);
-      expect(env.NODE_ENV).to.equal("production");
-      expect(env.FOO).to.equal("bar");
+      expect(env.NODE_ENV).toBe("production");
+      expect(env.FOO).toBe("bar");
     });
 
     it("should not set NODE_ENV to production when production is falsy", () => {
       const env = initEnv({ FOO: "bar" }, false);
-      expect(env.NODE_ENV).to.equal(undefined);
-      expect(env.FOO).to.equal("bar");
+      expect(env.NODE_ENV).toBe(undefined);
+      expect(env.FOO).toBe("bar");
     });
 
     it("should not set NODE_ENV to production when production is undefined", () => {
       const env = initEnv({ FOO: "bar" });
-      expect(env.NODE_ENV).to.equal(undefined);
-      expect(env.FOO).to.equal("bar");
+      expect(env.NODE_ENV).toBe(undefined);
+      expect(env.FOO).toBe("bar");
     });
 
     it("should default to process.env when fromEnv is omitted", () => {
       const env = initEnv();
-      expect(env).to.be.an("object");
+      expect(Object.prototype.toString.call(env)).toBe("[object Object]");
       const npmKeys = Object.keys(env).filter(k => k.match(/^npm_/));
-      expect(npmKeys).to.deep.equal([]);
+      expect(npmKeys).toStrictEqual([]);
     });
   });
 
   describe("makeNpmEnv", () => {
     it("should build env with default opts and prefix", () => {
       const env = makeNpmEnv({ name: "pkg", version: "1.2.3" });
-      expect(env).to.be.an("object");
-      expect(env.npm_package_name).to.equal("pkg");
-      expect(env.npm_package_version).to.equal("1.2.3");
+      expect(Object.prototype.toString.call(env)).toBe("[object Object]");
+      expect(env.npm_package_name).toBe("pkg");
+      expect(env.npm_package_version).toBe("1.2.3");
       const npmKeys = Object.keys(env).filter(
         k => k.match(/^npm_/) && k !== "npm_package_name" && k !== "npm_package_version"
       );
-      expect(npmKeys).to.deep.equal([]);
+      expect(npmKeys).toStrictEqual([]);
     });
 
     it("should use production from opts when creating base env", () => {
       const env = makeNpmEnv({ name: "pkg", version: "1.0.0" }, { production: true });
-      expect(env.NODE_ENV).to.equal("production");
+      expect(env.NODE_ENV).toBe("production");
     });
 
     it("should honor an explicit prefix argument", () => {
       const env = makeNpmEnv({ name: "pkg", version: "1.0.0" }, {}, "custom_prefix_");
-      expect(env.npm_package_name).to.equal("pkg");
+      expect(env.npm_package_name).toBe("pkg");
     });
 
     it("should define non-enumerable _lifecycleEnv on data when env is passed", () => {
@@ -71,15 +70,15 @@ describe("make-npm-env", function () {
       const baseEnv = { PATH: "/bin" };
       const env = makeNpmEnv(data, {}, "npm_package_", baseEnv);
 
-      expect(env).to.equal(baseEnv);
-      expect(env.npm_package_name).to.equal("pkg");
-      expect(env.npm_package_version).to.equal("2.0.0");
+      expect(env).toBe(baseEnv);
+      expect(env.npm_package_name).toBe("pkg");
+      expect(env.npm_package_version).toBe("2.0.0");
 
       const desc = Object.getOwnPropertyDescriptor(data, "_lifecycleEnv");
-      expect(desc).to.exist;
-      expect(desc.enumerable).to.equal(false);
-      expect(desc.value).to.equal(baseEnv);
-      expect(Object.keys(data)).to.not.include("_lifecycleEnv");
+      expect(desc).toEqual(expect.anything());
+      expect(desc.enumerable).toBe(false);
+      expect(desc.value).toBe(baseEnv);
+      expect(Object.keys(data)).not.toContain("_lifecycleEnv");
     });
 
     it("should not redefine _lifecycleEnv when data already has it", () => {
@@ -90,15 +89,15 @@ describe("make-npm-env", function () {
       const secondEnv = { PATH: "/usr/bin" };
       const env = makeNpmEnv(data, {}, "npm_package_", secondEnv);
 
-      expect(env).to.equal(secondEnv);
-      expect(env.npm_package_name).to.equal("pkg");
+      expect(env).toBe(secondEnv);
+      expect(env.npm_package_name).toBe("pkg");
       const desc = Object.getOwnPropertyDescriptor(data, "_lifecycleEnv");
-      expect(desc.value).to.equal(firstEnv);
+      expect(desc.value).toBe(firstEnv);
     });
 
     it("should set NODE_OPTIONS from opts.nodeOptions", () => {
       const env = makeNpmEnv({ name: "pkg", version: "1.0.0" }, { nodeOptions: "--max-old-space-size=512" });
-      expect(env.NODE_OPTIONS).to.equal("--max-old-space-size=512");
+      expect(env.NODE_OPTIONS).toBe("--max-old-space-size=512");
     });
 
     it("should add npm_config_* vars from opts.config with camelCase and snake_case keys", () => {
@@ -111,10 +110,10 @@ describe("make-npm-env", function () {
       };
       const env = makeNpmEnv({ name: "pkg", version: "1.0.0" }, { config });
 
-      expect(env.npm_config_global_prefix).to.equal("/opt");
-      expect(env.npm_config_user_agent).to.equal("npm/11");
-      expect(env.npm_config_cache).to.equal("/home/user/.npm");
-      expect(env).to.not.have.property("npm_config_random_key");
+      expect(env.npm_config_global_prefix).toBe("/opt");
+      expect(env.npm_config_user_agent).toBe("npm/11");
+      expect(env.npm_config_cache).toBe("/home/user/.npm");
+      expect(env).not.toHaveProperty("npm_config_random_key");
     });
 
     it("should coerce non-string config values to strings", () => {
@@ -122,7 +121,7 @@ describe("make-npm-env", function () {
         { name: "pkg", version: "1.0.0" },
         { config: { npmVersion: 11 } }
       );
-      expect(env.npm_config_npm_version).to.equal("11");
+      expect(env.npm_config_npm_version).toBe("11");
     });
 
     it("should skip null, undefined and function config values", () => {
@@ -134,22 +133,22 @@ describe("make-npm-env", function () {
       };
       const env = makeNpmEnv({ name: "pkg", version: "1.0.0" }, { config });
 
-      expect(env).to.not.have.property("npm_config_cache");
-      expect(env).to.not.have.property("npm_config_prefix");
-      expect(env).to.not.have.property("npm_config_node_gyp");
-      expect(env.npm_config_user_agent).to.equal("npm/11");
+      expect(env).not.toHaveProperty("npm_config_cache");
+      expect(env).not.toHaveProperty("npm_config_prefix");
+      expect(env).not.toHaveProperty("npm_config_node_gyp");
+      expect(env.npm_config_user_agent).toBe("npm/11");
     });
 
     it("should set npm_package_name and npm_package_version from data", () => {
       const env = makeNpmEnv({ name: "my-pkg", version: "4.5.6" });
-      expect(env.npm_package_name).to.equal("my-pkg");
-      expect(env.npm_package_version).to.equal("4.5.6");
+      expect(env.npm_package_name).toBe("my-pkg");
+      expect(env.npm_package_version).toBe("4.5.6");
     });
 
     it("should not set npm_package_* when data lacks name and version", () => {
       const env = makeNpmEnv({});
-      expect(env).to.not.have.property("npm_package_name");
-      expect(env).to.not.have.property("npm_package_version");
+      expect(env).not.toHaveProperty("npm_package_name");
+      expect(env).not.toHaveProperty("npm_package_version");
     });
   });
 });

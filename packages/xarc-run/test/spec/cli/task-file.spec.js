@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "vitest";
 import Path from "path";
 import fs from "fs";
 import os from "os";
@@ -99,9 +99,9 @@ describe("task-file", function() {
       const subDir = Path.join(testDir, "subdir");
       fs.mkdirSync(subDir);
       const newCwd = updateCwd(subDir);
-      expect(newCwd).to.equal(subDir);
-      expect(mockProcess.cwd()).to.equal(subDir);
-      expect(env.get(env.xrunCwd)).to.equal(subDir);
+      expect(newCwd).toBe(subDir);
+      expect(mockProcess.cwd()).toBe(subDir);
+      expect(env.get(env.xrunCwd)).toBe(subDir);
     });
 
     it("should handle relative paths", () => {
@@ -109,13 +109,13 @@ describe("task-file", function() {
       fs.mkdirSync(subDir);
       const newCwd = updateCwd(subDir);
       const expectedPath = fs.realpathSync(Path.resolve(testDir, subDir));
-      expect(fs.realpathSync(newCwd)).to.equal(expectedPath);
-      expect(fs.realpathSync(mockProcess.cwd())).to.equal(expectedPath);
+      expect(fs.realpathSync(newCwd)).toBe(expectedPath);
+      expect(fs.realpathSync(mockProcess.cwd())).toBe(expectedPath);
     });
 
     it("should use current directory when no dir provided", () => {
       const newCwd = updateCwd();
-      expect(newCwd).to.equal(testDir);
+      expect(newCwd).toBe(testDir);
     });
   });
 
@@ -123,8 +123,8 @@ describe("task-file", function() {
     it("should find task file in current directory", () => {
       fs.writeFileSync("xrun-tasks.js", "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(testDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(testDir, "xrun-tasks.js"));
     });
 
     it("should find task file in parent directory when search is true", () => {
@@ -132,8 +132,8 @@ describe("task-file", function() {
       fs.mkdirSync(subDir);
       fs.writeFileSync("xrun-tasks.js", "module.exports = {};");
       const result = searchTaskFile(true, { cwd: subDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(testDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(testDir, "xrun-tasks.js"));
     });
 
     it("should not find task file in parent directory when search is false", () => {
@@ -141,7 +141,7 @@ describe("task-file", function() {
       fs.mkdirSync(subDir);
       fs.writeFileSync("xrun-tasks.js", "module.exports = {};");
       const result = searchTaskFile(false, { cwd: subDir });
-      expect(result.found).to.be.false;
+      expect(result.found).toBe(false);
     });
 
     it("should update cwd when task file is found during search", () => {
@@ -152,9 +152,9 @@ describe("task-file", function() {
       mockProcess.chdir(subDir);
       const opts = { cwd: subDir };
       const result = searchTaskFile(true, opts);
-      expect(result.found).to.be.true;
-      expect(result.cwd).to.equal(testDir);
-      expect(mockProcess.cwd()).to.equal(testDir);  // Verify WrapProcess.chdir was called
+      expect(result.found).toBe(true);
+      expect(result.cwd).toBe(testDir);
+      expect(mockProcess.cwd()).toBe(testDir);  // Verify WrapProcess.chdir was called
     });
 
     it("should avoid logging not found message when env.xrunTaskFile is already set to not found", () => {
@@ -170,17 +170,17 @@ describe("task-file", function() {
       try {
         // First call should log the not found message
         searchTaskFile(true, { cwd: subDir });
-        expect(logMessages).to.have.lengthOf(1);
-        expect(stripAnsi(logMessages[0])).to.include("No xrun-tasks.js found");
-        expect(env.get(env.xrunTaskFile)).to.equal("not found");
+        expect(logMessages).toHaveLength(1);
+        expect(stripAnsi(logMessages[0])).toContain("No xrun-tasks.js found");
+        expect(env.get(env.xrunTaskFile)).toBe("not found");
 
         // Reset log messages
         logMessages = [];
 
         // Second call should not log the not found message
         searchTaskFile(true, { cwd: subDir });
-        expect(logMessages).to.have.lengthOf(0);
-        expect(env.get(env.xrunTaskFile)).to.equal("not found");
+        expect(logMessages).toHaveLength(0);
+        expect(env.get(env.xrunTaskFile)).toBe("not found");
       } finally {
         // Restore original logger
         logger.log = originalLog;
@@ -207,9 +207,9 @@ describe("task-file", function() {
         // Verify that:
         // 1. The task file was found (since it exists in project root)
         // 2. The cwd was not changed
-        expect(result.found).to.be.true;
-        expect(result.xrunFile).to.equal(Path.join(projectRoot, "xrun-tasks.js"));
-        expect(mockProcess.cwd()).to.equal(testSubDir);
+        expect(result.found).toBe(true);
+        expect(result.xrunFile).toBe(Path.join(projectRoot, "xrun-tasks.js"));
+        expect(mockProcess.cwd()).toBe(testSubDir);
 
         // Change back to original directory
         mockProcess.chdir(originalCwd);
@@ -226,8 +226,8 @@ describe("task-file", function() {
       fs.mkdirSync(scriptsDir);
       fs.writeFileSync(Path.join(scriptsDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(scriptsDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(scriptsDir, "xrun-tasks.js"));
     });
 
     it("should find task file in tools/ subdirectory", () => {
@@ -235,8 +235,8 @@ describe("task-file", function() {
       fs.mkdirSync(toolsDir);
       fs.writeFileSync(Path.join(toolsDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(toolsDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(toolsDir, "xrun-tasks.js"));
     });
 
     it("should find task file in build/ subdirectory", () => {
@@ -244,8 +244,8 @@ describe("task-file", function() {
       fs.mkdirSync(buildDir);
       fs.writeFileSync(Path.join(buildDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(buildDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(buildDir, "xrun-tasks.js"));
     });
 
     it("should find task file in tasks/ subdirectory", () => {
@@ -253,8 +253,8 @@ describe("task-file", function() {
       fs.mkdirSync(tasksDir);
       fs.writeFileSync(Path.join(tasksDir, "xrun-tasks.js"), "module.exports = {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(tasksDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(tasksDir, "xrun-tasks.js"));
     });
 
     it("should prioritize root directory over subdirectories", () => {
@@ -266,8 +266,8 @@ describe("task-file", function() {
       fs.writeFileSync(Path.join(scriptsDir, "xrun-tasks.js"), "module.exports = { scripts: true };");
 
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(testDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(testDir, "xrun-tasks.js"));
     });
 
     it("should prioritize scripts/ over tools/ subdirectory", () => {
@@ -279,8 +279,8 @@ describe("task-file", function() {
       fs.writeFileSync(Path.join(toolsDir, "xrun-tasks.js"), "module.exports = { tools: true };");
 
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(scriptsDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(scriptsDir, "xrun-tasks.js"));
     });
 
     it("should prioritize tools/ over build/ subdirectory", () => {
@@ -292,8 +292,8 @@ describe("task-file", function() {
       fs.writeFileSync(Path.join(buildDir, "xrun-tasks.js"), "module.exports = { build: true };");
 
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(toolsDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(toolsDir, "xrun-tasks.js"));
     });
 
     it("should prioritize build/ over tasks/ subdirectory", () => {
@@ -305,14 +305,14 @@ describe("task-file", function() {
       fs.writeFileSync(Path.join(tasksDir, "xrun-tasks.js"), "module.exports = { tasks: true };");
 
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(buildDir, "xrun-tasks.js"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(buildDir, "xrun-tasks.js"));
     });
 
     it("should handle missing subdirectories gracefully", () => {
       // No task file anywhere
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.false;
+      expect(result.found).toBe(false);
     });
 
     it("should find task file with different extensions in subdirectories", () => {
@@ -320,8 +320,8 @@ describe("task-file", function() {
       fs.mkdirSync(scriptsDir);
       fs.writeFileSync(Path.join(scriptsDir, "xrun.ts"), "export default {};");
       const result = searchTaskFile(true, { cwd: testDir });
-      expect(result.found).to.be.true;
-      expect(result.xrunFile).to.equal(Path.join(scriptsDir, "xrun.ts"));
+      expect(result.found).toBe(true);
+      expect(result.xrunFile).toBe(Path.join(scriptsDir, "xrun.ts"));
     });
   });
 
@@ -331,12 +331,12 @@ describe("task-file", function() {
       const tasks = await loadTaskFile(Path.join(testDir, "tasks.js"));
       // loading goes through import(), so a CommonJS file arrives as a namespace with its
       // module.exports on .default - the shape processTasks unwraps
-      expect(tasks.default).to.deep.equal({ foo: "bar" });
+      expect(tasks.default).toStrictEqual({ foo: "bar" });
     });
 
     it("should handle non-existent file", async () => {
       const tasks = await loadTaskFile(Path.join(testDir, "non-existent.js"));
-      expect(tasks).to.be.undefined;
+      expect(tasks).toBeUndefined();
     });
 
     // TODO: This test has process.cwd() issues with vitest - test isolation problem
@@ -360,11 +360,11 @@ function export const tasks = {
       intercept.restore();
       
       // Verify the function handles the error gracefully
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
       // Verify that an error was logged (expected behavior)
       const errorOutput = intercept.stdout.join("");
-      expect(errorOutput).to.include("Unable to load");
-      expect(errorOutput).to.include("tasks.ts");
+      expect(errorOutput).toContain("Unable to load");
+      expect(errorOutput).toContain("tasks.ts");
     });
 
     it("should handle ESM TypeScript file", async () => {
@@ -388,11 +388,11 @@ export default tasks;
       intercept.restore();
       
       // Verify the function handles the error gracefully
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
       // Verify that an error was logged (expected behavior)
       const errorOutput = intercept.stdout.join("");
-      expect(errorOutput).to.include("Unable to load");
-      expect(errorOutput).to.include("tasks.ts");
+      expect(errorOutput).toContain("Unable to load");
+      expect(errorOutput).toContain("tasks.ts");
     });
   });
 
@@ -402,7 +402,7 @@ export default tasks;
         xrun.load("test", { foo: "bar" });
       };
       processTasks(tasks, "test tasks");
-      expect(xrun._tasks._tasks["test"].foo).to.equal("bar");
+      expect(xrun._tasks._tasks["test"].foo).toBe("bar");
     });
 
     it("should not log message for function tasks when loadMsg is falsy", () => {
@@ -424,10 +424,10 @@ export default tasks;
         processTasks(tasks, false); // test false
 
         // Verify no messages were logged
-        expect(logMessages).to.have.lengthOf(0);
+        expect(logMessages).toHaveLength(0);
 
         // Verify tasks were still processed
-        expect(xrun._tasks._tasks["test"].foo).to.equal("bar");
+        expect(xrun._tasks._tasks["test"].foo).toBe("bar");
       } finally {
         // Restore original logger
         logger.log = originalLog;
@@ -451,7 +451,7 @@ export default tasks;
         processTasks(tasks, false); // test false
 
         // Verify no messages were logged
-        expect(logMessages).to.have.lengthOf(0);
+        expect(logMessages).toHaveLength(0);
       } finally {
         // Restore original logger
         logger.log = originalLog;
@@ -464,8 +464,8 @@ export default tasks;
         baz: ["qux"]
       };
       processTasks(tasks, "test tasks", "test");
-      expect(xrun._tasks._tasks["test"].foo).to.equal("bar");
-      expect(xrun._tasks._tasks["test"].baz).to.deep.equal(["qux"]);
+      expect(xrun._tasks._tasks["test"].foo).toBe("bar");
+      expect(xrun._tasks._tasks["test"].baz).toStrictEqual(["qux"]);
     });
 
     it("should process default export", () => {
@@ -475,23 +475,23 @@ export default tasks;
         }
       };
       processTasks(tasks, "test tasks", "test");
-      expect(xrun._tasks._tasks["test"].foo).to.equal("bar");
+      expect(xrun._tasks._tasks["test"].foo).toBe("bar");
     });
 
     it("should handle empty object tasks", () => {
       const tasks = {};
       processTasks(tasks, "empty tasks", "test");
       // Verify that the namespace exists but has no tasks
-      // expect(xrun._tasks._tasks["test"]).to.be.an("object");
-      // expect(Object.keys(xrun._tasks._tasks["test"])).to.have.lengthOf(0);
+      // expect(typeof xrun._tasks._tasks["test"]).toBe("object");
+      // expect(Object.keys(xrun._tasks._tasks["test"])).toHaveLength(0);
     });
 
     it("should handle unknown type tasks", () => {
       const tasks = "not valid tasks";
       processTasks(tasks, "invliad tasks", "test");
       // Verify that the namespace exists but has no tasks
-      // expect(xrun._tasks._tasks["test"]).to.be.an("object");
-      // expect(Object.keys(xrun._tasks._tasks["test"])).to.have.lengthOf(0);
+      // expect(typeof xrun._tasks._tasks["test"]).toBe("object");
+      // expect(Object.keys(xrun._tasks._tasks["test"])).toHaveLength(0);
     });
   });
 
@@ -500,15 +500,15 @@ export default tasks;
       fs.writeFileSync("xrun-tasks.js", "module.exports = { foo: 'bar' };");
       const searchResult = { found: true, xrunFile: Path.join(testDir, "xrun-tasks.js") };
       const loaded = await loadTasks({}, searchResult);
-      expect(loaded).to.be.true;
-      expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
+      expect(loaded).toBe(true);
+      expect(xrun._tasks._tasks["xrun"].foo).toBe("bar");
     });
 
     it("should load tasks from required module", async () => {
       fs.writeFileSync("custom-tasks.js", "module.exports = { foo: 'bar' };");
       const loaded = await loadTasks({ require: ["./custom-tasks.js"] }, {});
-      expect(loaded).to.be.true;
-      expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
+      expect(loaded).toBe(true);
+      expect(xrun._tasks._tasks["xrun"].foo).toBe("bar");
     });
 
     it("should report a task file that throws, with its stack", async () => {
@@ -520,11 +520,11 @@ export default tasks;
         const file = Path.join(testDir, "boom-tasks.js");
         fs.writeFileSync(file, `throw new Error("boom in task file");\n`);
 
-        expect(await loadTaskFile(file)).to.be.undefined;
+        expect(await loadTaskFile(file)).toBeUndefined();
 
         const output = stripAnsi(errors.join("\n"));
-        expect(output).to.include("Unable to load");
-        expect(output).to.include("boom in task file");
+        expect(output).toContain("Unable to load");
+        expect(output).toContain("boom in task file");
       } finally {
         logger.error = origError;
       }
@@ -532,7 +532,7 @@ export default tasks;
 
     it("should handle non-existent required module", async () => {
       const loaded = await loadTasks({ require: ["./non-existent.js"] }, {});
-      expect(loaded).to.be.false;
+      expect(loaded).toBe(false);
     });
 
     it("should load both npm scripts and task file", async () => {
@@ -547,8 +547,8 @@ export default tasks;
       fs.writeFileSync("xrun-tasks.js", "module.exports = { foo: 'bar' };");
       const searchResult = { found: true, xrunFile: Path.join(testDir, "xrun-tasks.js") };
       await loadTasks({}, searchResult);
-      expect(xrun._tasks._tasks["npm"].test.cmd).to.equal("mocha");
-      expect(xrun._tasks._tasks["xrun"].foo).to.equal("bar");
+      expect(xrun._tasks._tasks["npm"].test.cmd).toBe("mocha");
+      expect(xrun._tasks._tasks["xrun"].foo).toBe("bar");
     });
   });
 });

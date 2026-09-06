@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach, vi } from "vitest";
-import { expect } from "chai";
+import { describe, it, beforeEach, afterEach, vi, expect } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
@@ -33,13 +32,13 @@ const mkRecord = (over = {}) => ({
 describe("install-scripts", function () {
   describe("parseAllowKey", function () {
     it("splits a plain name and spec", () => {
-      expect(parseAllowKey("sharp@0.34.4")).to.deep.equal({ name: "sharp", spec: "0.34.4" });
-      expect(parseAllowKey("sharp")).to.deep.equal({ name: "sharp", spec: undefined });
+      expect(parseAllowKey("sharp@0.34.4")).toStrictEqual({ name: "sharp", spec: "0.34.4" });
+      expect(parseAllowKey("sharp")).toStrictEqual({ name: "sharp", spec: undefined });
     });
 
     it("does not split a scope off a scoped name", () => {
-      expect(parseAllowKey("@scope/pkg")).to.deep.equal({ name: "@scope/pkg", spec: undefined });
-      expect(parseAllowKey("@scope/pkg@1.0.0")).to.deep.equal({
+      expect(parseAllowKey("@scope/pkg")).toStrictEqual({ name: "@scope/pkg", spec: undefined });
+      expect(parseAllowKey("@scope/pkg@1.0.0")).toStrictEqual({
         name: "@scope/pkg",
         spec: "1.0.0"
       });
@@ -49,50 +48,50 @@ describe("install-scripts", function () {
   describe("approveEntries", function () {
     it("writes one entry per package, scoped to the reviewed release line", () => {
       const { allowScripts, approved } = approveEntries({}, [mkRecord()]);
-      expect(allowScripts).to.deep.equal({
+      expect(allowScripts).toStrictEqual({
         sharp: { semver: "^0.34.4", scripts: ["install"] }
       });
-      expect(approved).to.deep.equal(["sharp"]);
+      expect(approved).toStrictEqual(["sharp"]);
     });
 
     it("covers every version when pinning is off", () => {
       const { allowScripts } = approveEntries({}, [mkRecord()], { pin: false });
-      expect(allowScripts).to.deep.equal({ sharp: { scripts: ["install"] } });
+      expect(allowScripts).toStrictEqual({ sharp: { scripts: ["install"] } });
     });
 
     it("does not undo an existing denial", () => {
       const { allowScripts, approved, skipped } = approveEntries({ sharp: false }, [mkRecord()]);
-      expect(allowScripts).to.deep.equal({ sharp: false });
-      expect(approved).to.deep.equal([]);
-      expect(skipped).to.deep.equal(["sharp"]);
+      expect(allowScripts).toStrictEqual({ sharp: false });
+      expect(approved).toStrictEqual([]);
+      expect(skipped).toStrictEqual(["sharp"]);
     });
 
     it("does not undo a denial written under a ranged key", () => {
       const { approved, skipped } = approveEntries({ "sharp@^0.34.0": false }, [mkRecord()]);
-      expect(approved).to.deep.equal([]);
-      expect(skipped).to.deep.equal(["sharp"]);
+      expect(approved).toStrictEqual([]);
+      expect(skipped).toStrictEqual(["sharp"]);
     });
 
     it("does not approve what the deny list names", () => {
       const { allowScripts, approved, skipped } = approveEntries({}, [mkRecord()], {
         denyScripts: { sharp: {} }
       });
-      expect(allowScripts).to.deep.equal({});
-      expect(approved).to.deep.equal([]);
-      expect(skipped).to.deep.equal(["sharp"]);
+      expect(allowScripts).toStrictEqual({});
+      expect(approved).toStrictEqual([]);
+      expect(skipped).toStrictEqual(["sharp"]);
     });
 
     it("matches a deny-list entry that carries a spec", () => {
       const { approved } = approveEntries({}, [mkRecord()], {
         denyScripts: { "sharp@^0.34.0": {} }
       });
-      expect(approved).to.deep.equal([]);
+      expect(approved).toStrictEqual([]);
     });
 
     it("widens the semver of an entry it already wrote", () => {
       const first = approveEntries({}, [mkRecord()]).allowScripts;
       const { allowScripts } = approveEntries(first, [mkRecord({ version: "1.0.0" })]);
-      expect(allowScripts.sharp).to.deep.equal({
+      expect(allowScripts.sharp).toStrictEqual({
         semver: "^0.34.4 || ^1.0.0",
         scripts: ["install"]
       });
@@ -103,26 +102,26 @@ describe("install-scripts", function () {
         { sharp: { semver: "^0.34.4", scripts: ["postinstall"] } },
         [mkRecord()]
       );
-      expect(allowScripts.sharp.scripts).to.deep.equal(["install", "postinstall"]);
+      expect(allowScripts.sharp.scripts).toStrictEqual(["install", "postinstall"]);
     });
 
     it("merges into an entry written in npm's form", () => {
       const { allowScripts } = approveEntries({ sharp: "0.33.0" }, [mkRecord()]);
-      expect(allowScripts.sharp).to.deep.equal({ semver: "0.33.0 || ^0.34.4" });
+      expect(allowScripts.sharp).toStrictEqual({ semver: "0.33.0 || ^0.34.4" });
     });
 
     it("leaves the input map alone", () => {
       const before = {};
       approveEntries(before, [mkRecord()]);
-      expect(before).to.deep.equal({});
+      expect(before).toStrictEqual({});
     });
   });
 
   describe("denyEntries", function () {
     it("denies against the bare name so it covers every version", () => {
       const { denyScripts, denied } = denyEntries({}, ["malware@1.0.0"]);
-      expect(denyScripts).to.deep.equal({ malware: {} });
-      expect(denied).to.deep.equal(["malware"]);
+      expect(denyScripts).toStrictEqual({ malware: {} });
+      expect(denied).toStrictEqual(["malware"]);
     });
 
     it("keeps one entry per package", () => {
@@ -130,15 +129,15 @@ describe("install-scripts", function () {
         "malware",
         "sketchy"
       ]);
-      expect(denyScripts).to.deep.equal({ malware: {}, sketchy: {} });
-      expect(denied).to.deep.equal(["sketchy"]);
-      expect(already).to.deep.equal(["malware"]);
+      expect(denyScripts).toStrictEqual({ malware: {}, sketchy: {} });
+      expect(denied).toStrictEqual(["sketchy"]);
+      expect(already).toStrictEqual(["malware"]);
     });
 
     it("leaves the input map alone", () => {
       const before = { malware: {} };
       denyEntries(before, ["sketchy"]);
-      expect(before).to.deep.equal({ malware: {} });
+      expect(before).toStrictEqual({ malware: {} });
     });
   });
 
@@ -148,34 +147,34 @@ describe("install-scripts", function () {
         { "sharp@0.34.4": ["install"], "gone@1.0.0": true, "@scope/kept": true },
         ["sharp", "@scope/kept"]
       );
-      expect(allowScripts).to.deep.equal({ "sharp@0.34.4": ["install"], "@scope/kept": true });
-      expect(removed).to.deep.equal(["gone@1.0.0"]);
+      expect(allowScripts).toStrictEqual({ "sharp@0.34.4": ["install"], "@scope/kept": true });
+      expect(removed).toStrictEqual(["gone@1.0.0"]);
     });
 
     it("keeps a denial for an installed package", () => {
       const { removed } = pruneEntries({ malware: false }, ["malware"]);
-      expect(removed).to.deep.equal([]);
+      expect(removed).toStrictEqual([]);
     });
   });
 
   describe("selectRecords", function () {
     it("matches a named package against what the install recorded", () => {
       const { matched, unknown } = selectRecords(["sharp"], [mkRecord()]);
-      expect(matched).to.have.length(1);
-      expect(matched[0].version).to.equal("0.34.4");
-      expect(unknown).to.deep.equal([]);
+      expect(matched).toHaveLength(1);
+      expect(matched[0].version).toBe("0.34.4");
+      expect(unknown).toStrictEqual([]);
     });
 
     it("reports a package no install saw", () => {
       const { matched, unknown } = selectRecords(["ghost"], [mkRecord()]);
-      expect(matched).to.deep.equal([]);
-      expect(unknown).to.deep.equal(["ghost"]);
+      expect(matched).toStrictEqual([]);
+      expect(unknown).toStrictEqual(["ghost"]);
     });
 
     it("takes an explicit version even when no install saw it", () => {
       const { matched, unknown } = selectRecords(["ghost@2.0.0"], []);
-      expect(unknown).to.deep.equal([]);
-      expect(matched[0]).to.include({ name: "ghost", version: "2.0.0" });
+      expect(unknown).toStrictEqual([]);
+      expect(matched[0]).toMatchObject({ name: "ghost", version: "2.0.0" });
     });
   });
 
@@ -215,16 +214,16 @@ describe("install-scripts", function () {
 
     it("defaults to the monorepo's fynpo.json inside a fynpo repo", () => {
       const target = resolveTarget(mkFyn({ _fynpo: { dir } }));
-      expect(target).to.deep.equal({ file: Path.join(dir, "fynpo.json"), fynpo: true });
+      expect(target).toStrictEqual({ file: Path.join(dir, "fynpo.json"), fynpo: true });
     });
 
     it("targets the package's own package.json with --local", () => {
       const target = resolveTarget(mkFyn({ _fynpo: { dir } }), true);
-      expect(target).to.deep.equal({ file: Path.join(dir, "package.json"), fynpo: false });
+      expect(target).toStrictEqual({ file: Path.join(dir, "package.json"), fynpo: false });
     });
 
     it("targets package.json outside a fynpo repo", () => {
-      expect(resolveTarget(mkFyn()).fynpo).to.equal(false);
+      expect(resolveTarget(mkFyn()).fynpo).toBe(false);
     });
 
     it("approve writes the monorepo allowlist under fyn.options", async () => {
@@ -235,15 +234,15 @@ describe("install-scripts", function () {
       const fyn = mkFyn({ _fynpo: { dir }, blockedScripts: [mkRecord()] });
       const cmd = new InstallScripts({ fyn });
 
-      expect(await cmd.approve(["sharp"])).to.deep.equal(["sharp"]);
+      expect(await cmd.approve(["sharp"])).toStrictEqual(["sharp"]);
 
       const written = JSON.parse(Fs.readFileSync(Path.join(dir, "fynpo.json"), "utf8"));
-      expect(written.fyn.options.allowScripts).to.deep.equal({
+      expect(written.fyn.options.allowScripts).toStrictEqual({
         sharp: { semver: "^0.34.4", scripts: ["install"] }
       });
       // the rest of the config is untouched
-      expect(written.fyn.options.layout).to.equal("detail");
-      expect(written.packages).to.deep.equal(["packages/*"]);
+      expect(written.fyn.options.layout).toBe("detail");
+      expect(written.packages).toStrictEqual(["packages/*"]);
     });
 
     it("approve --local writes package.json under fyn.allowScripts", async () => {
@@ -255,10 +254,10 @@ describe("install-scripts", function () {
       await new InstallScripts({ fyn }).approve(["sharp"], { local: true });
 
       const written = JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8"));
-      expect(written.fyn.allowScripts).to.deep.equal({
+      expect(written.fyn.allowScripts).toStrictEqual({
         sharp: { semver: "^0.34.4", scripts: ["install"] }
       });
-      expect(written.name).to.equal("app");
+      expect(written.name).toBe("app");
     });
 
     it("approve --all takes everything awaiting review", async () => {
@@ -268,7 +267,7 @@ describe("install-scripts", function () {
         pendingScripts: [mkRecord({ name: "canvas", version: "5.0.1" })]
       });
       const approved = await new InstallScripts({ fyn }).approve([], { all: true });
-      expect(approved.sort()).to.deep.equal(["canvas", "sharp"]);
+      expect(approved.sort()).toStrictEqual(["canvas", "sharp"]);
     });
 
     it("deny writes fyn.denyScripts and approve then refuses", async () => {
@@ -276,12 +275,12 @@ describe("install-scripts", function () {
       const fyn = mkFyn({ blockedScripts: [mkRecord({ name: "malware", version: "1.0.0" })] });
       const cmd = new InstallScripts({ fyn });
 
-      expect(await cmd.deny(["malware"])).to.deep.equal(["malware"]);
-      expect(readJson("package.json").fyn).to.deep.equal({ denyScripts: { malware: {} } });
+      expect(await cmd.deny(["malware"])).toStrictEqual(["malware"]);
+      expect(readJson("package.json").fyn).toStrictEqual({ denyScripts: { malware: {} } });
 
-      expect(await cmd.approve(["malware"])).to.deep.equal([]);
+      expect(await cmd.approve(["malware"])).toStrictEqual([]);
       // and nothing was written that would look like an approval
-      expect(readJson("package.json").fyn).to.deep.equal({ denyScripts: { malware: {} } });
+      expect(readJson("package.json").fyn).toStrictEqual({ denyScripts: { malware: {} } });
     });
 
     it("deny writes the monorepo blacklist under fyn.options", async () => {
@@ -295,9 +294,9 @@ describe("install-scripts", function () {
 
       const written = readJson("fynpo.json");
       // denied against the bare name, so it covers every version
-      expect(written.fyn.options.denyScripts).to.deep.equal({ malware: {} });
-      expect(written.fyn.options.layout).to.equal("detail");
-      expect(written.packages).to.deep.equal(["packages/*"]);
+      expect(written.fyn.options.denyScripts).toStrictEqual({ malware: {} });
+      expect(written.fyn.options.layout).toBe("detail");
+      expect(written.packages).toStrictEqual(["packages/*"]);
     });
 
     it("deny is idempotent - denying twice is still one entry", async () => {
@@ -305,9 +304,9 @@ describe("install-scripts", function () {
       const cmd = new InstallScripts({ fyn: mkFyn() });
 
       await cmd.deny(["malware"]);
-      expect(await cmd.deny(["malware", "sketchy"])).to.deep.equal(["sketchy"]);
+      expect(await cmd.deny(["malware", "sketchy"])).toStrictEqual(["sketchy"]);
 
-      expect(readJson("package.json").fyn.denyScripts).to.deep.equal({
+      expect(readJson("package.json").fyn.denyScripts).toStrictEqual({
         malware: {},
         sketchy: {}
       });
@@ -320,8 +319,8 @@ describe("install-scripts", function () {
       );
       const fyn = mkFyn({ blockedScripts: [mkRecord({ name: "malware", version: "1.0.0" })] });
 
-      expect(await new InstallScripts({ fyn }).approve(["malware"])).to.deep.equal([]);
-      expect(readJson("package.json").fyn.allowScripts).to.deep.equal({ malware: false });
+      expect(await new InstallScripts({ fyn }).approve(["malware"])).toStrictEqual([]);
+      expect(readJson("package.json").fyn.allowScripts).toStrictEqual({ malware: false });
     });
 
     it("refuses to approve what another scope denied", async () => {
@@ -332,10 +331,10 @@ describe("install-scripts", function () {
         blockedScripts: [mkRecord({ name: "malware", version: "1.0.0" })]
       });
 
-      expect(await new InstallScripts({ fyn }).approve(["malware"], { local: true })).to.deep.equal(
+      expect(await new InstallScripts({ fyn }).approve(["malware"], { local: true })).toStrictEqual(
         []
       );
-      expect(readJson("package.json").fyn).to.equal(undefined);
+      expect(readJson("package.json").fyn).toBe(undefined);
     });
 
     it("prune drops approvals for packages no longer installed", async () => {
@@ -352,10 +351,10 @@ describe("install-scripts", function () {
         })
       );
       const fyn = mkFyn({ loadFvVersions: async () => ({ sharp: ["0.34.4"] }) });
-      expect(await new InstallScripts({ fyn }).prune()).to.deep.equal(["gone@1.0.0"]);
+      expect(await new InstallScripts({ fyn }).prune()).toStrictEqual(["gone@1.0.0"]);
       expect(
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ sharp: { semver: "^0.34.4", scripts: ["install"] } });
+      ).toStrictEqual({ sharp: { semver: "^0.34.4", scripts: ["install"] } });
     });
 
     it("prune refuses when nothing is installed, rather than clearing the list", async () => {
@@ -363,10 +362,10 @@ describe("install-scripts", function () {
         Path.join(dir, "package.json"),
         JSON.stringify({ name: "app", fyn: { allowScripts: { sharp: { semver: "^0.34.4" } } } })
       );
-      expect(await new InstallScripts({ fyn: mkFyn() }).prune()).to.deep.equal([]);
+      expect(await new InstallScripts({ fyn: mkFyn() }).prune()).toStrictEqual([]);
       expect(
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ sharp: { semver: "^0.34.4" } });
+      ).toStrictEqual({ sharp: { semver: "^0.34.4" } });
     });
 
     it("ls lists what the last install blocked and what is pending", async () => {
@@ -375,7 +374,7 @@ describe("install-scripts", function () {
         pendingScripts: [mkRecord({ name: "canvas", version: "5.0.1" })]
       });
       const records = await new InstallScripts({ fyn }).ls();
-      expect(records.map((r: any) => r.name)).to.deep.equal(["canvas", "sharp"]);
+      expect(records.map((r: any) => r.name)).toStrictEqual(["canvas", "sharp"]);
     });
 
     it("does not suggest --allow-scripts-pending when review is already the mode", async () => {
@@ -389,8 +388,8 @@ describe("install-scripts", function () {
       await new InstallScripts({ fyn: mkFyn({ scriptPolicy: "review" }) }).ls();
       spy.mockRestore();
 
-      expect(lines.join("\n")).to.contain("No packages are awaiting install-script review.");
-      expect(lines.join("\n")).to.not.contain("--allow-scripts-pending");
+      expect(lines.join("\n")).toContain("No packages are awaiting install-script review.");
+      expect(lines.join("\n")).not.toContain("--allow-scripts-pending");
     });
 
     it("suggests --allow-scripts-pending from a looser mode", async () => {
@@ -402,7 +401,7 @@ describe("install-scripts", function () {
       await new InstallScripts({ fyn: mkFyn({ scriptPolicy: "source" }) }).ls();
       spy.mockRestore();
 
-      expect(lines.join("\n")).to.contain("--allow-scripts-pending");
+      expect(lines.join("\n")).toContain("--allow-scripts-pending");
     });
 
     it("explains that a monorepo allowlist needs a fynpo.json", async () => {
@@ -411,27 +410,27 @@ describe("install-scripts", function () {
       await new InstallScripts({ fyn }).approve(["sharp"]).catch((err: Error) => {
         caught = err;
       });
-      expect(caught?.message).to.match(/needs a fynpo\.json/);
+      expect(caught?.message).toMatch(/needs a fynpo\.json/);
     });
   
     it("approves nothing when there was nothing blocked", async () => {
-      expect(await new InstallScripts({ fyn: mkFyn() }).review([])).to.deep.equal([]);
+      expect(await new InstallScripts({ fyn: mkFyn() }).review([])).toStrictEqual([]);
     });
 
     it("fails rather than skipping scripts when there is nobody to ask", async () => {
       // vitest is not a terminal, so this is the CI / piped / hook path
-      expect(canPrompt()).to.equal(false);
+      expect(canPrompt()).toBe(false);
 
       let caught: Error | undefined;
       await new InstallScripts({ fyn: mkFyn() }).review([mkRecord()]).catch((err: Error) => {
         caught = err;
       });
 
-      expect(caught?.message).to.match(/need approval to run their install scripts/);
-      expect(caught?.message).to.include("sharp@0.34.4");
+      expect(caught?.message).toMatch(/need approval to run their install scripts/);
+      expect(caught?.message).toContain("sharp@0.34.4");
       // and it names the way out
-      expect(caught?.message).to.include("--script-policy=source");
-      expect(caught?.message).to.include("fyn install-scripts approve");
+      expect(caught?.message).toContain("--script-policy=source");
+      expect(caught?.message).toContain("fyn install-scripts approve");
     });
   
     it("prune keeps approvals for packages hoisted into node_modules", async () => {
@@ -459,10 +458,10 @@ describe("install-scripts", function () {
       );
 
       const fyn = mkFyn({ loadFvVersions: async () => ({ isolated: ["1.0.0"] }) });
-      expect(await new InstallScripts({ fyn }).prune()).to.deep.equal(["gone"]);
+      expect(await new InstallScripts({ fyn }).prune()).toStrictEqual(["gone"]);
 
       const written = JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8"));
-      expect(Object.keys(written.fyn.allowScripts).sort()).to.deep.equal([
+      expect(Object.keys(written.fyn.allowScripts).sort()).toStrictEqual([
         "@scope/scoped",
         "hoisted",
         "isolated"
@@ -478,9 +477,9 @@ describe("install-scripts", function () {
       const fyn = mkFyn({ loadFvVersions: async () => ({ isolated: ["1.0.0"] }) });
       const names = await new InstallScripts({ fyn }).installedPackageNames();
 
-      expect([...names].sort()).to.deep.equal(["@scope/scoped", "hoisted", "isolated"]);
+      expect([...names].sort()).toStrictEqual(["@scope/scoped", "hoisted", "isolated"]);
       // dot dirs are bookkeeping, not packages
-      expect(names.has(".bin")).to.equal(false);
+      expect(names.has(".bin")).toBe(false);
     });
 
     it("prune still refuses when nothing is installed at all", async () => {
@@ -488,10 +487,10 @@ describe("install-scripts", function () {
         Path.join(dir, "package.json"),
         JSON.stringify({ name: "app", fyn: { allowScripts: { sharp: {} } } })
       );
-      expect(await new InstallScripts({ fyn: mkFyn() }).prune()).to.deep.equal([]);
+      expect(await new InstallScripts({ fyn: mkFyn() }).prune()).toStrictEqual([]);
       expect(
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
-      ).to.deep.equal({ sharp: {} });
+      ).toStrictEqual({ sharp: {} });
     });
   });
 });
