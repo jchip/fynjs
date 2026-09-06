@@ -2,6 +2,36 @@
 
 ## Packages
 
+### Directly Updated
+
+-   `fyn@3.1.1` `(3.1.0 => 3.1.1)`
+-   `fynpo@3.1.1` `(3.1.0 => 3.1.1)`
+-   `fynpo-cli@3.1.1` `(3.1.0 => 3.1.1)`
+-   `visual-logger@2.1.1` `(2.1.0 => 2.1.1)`
+
+### Fynpo Updated
+
+-   `item-queue@2.1.1` `(2.1.0 => 2.1.1)`
+-   `visual-exec@1.1.1` `(1.1.0 => 1.1.1)`
+
+## Commits
+
+-   `packages/fynpo`
+
+    -   FPO-61: default-import lodash in publish.ts so source runs work [commit](https://github.com/jchip/fynjs/commit/486cf45803b7d0b33cb8be3d36ae46ad4b0ba890)
+
+-   `packages/visual-logger`
+
+    -   FJM-164: reset the spin index in addItem instead of at the next tick [commit](https://github.com/jchip/fynjs/commit/1ea50376d3d25b56b64b3b9ce206c657f3cda556)
+
+-   `MISC`
+
+    -   FPM-98: use the published fyn and fynpo 3.1.0 at the root [commit](https://github.com/jchip/fynjs/commit/2f1fb81d8f89e51d7411e0ccf16808fe89bfba0a)
+
+# 9/5/2026
+
+## Packages
+
 -   `@fynjs/cli-args@1.1.0` `(1.0.1 => 1.1.0)`
 -   `@fynjs/run@1.1.0` `(1.0.1 => 1.1.0)`
 -   `@fynjs/ts-resolve@1.0.0` `(0.0.1 => 1.0.0)`
