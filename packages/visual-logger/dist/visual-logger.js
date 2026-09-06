@@ -82,10 +82,20 @@ export class VisualLogger {
         const name = options.name;
         if (this._items.indexOf(name) >= 0)
             return this;
+        //
+        // Restart the running spinners here rather than leaving it to the next _nextSpin: a
+        // render can fire between this call and that tick - _renderOutput is throttled and
+        // writes _lines as of fire time - and it would show the new item beside another item's
+        // pre-reset frame. Setting spinIx and its line now makes every frame from this point
+        // on consistent. The tick sequence is unchanged: SPIN_STARTED still sends the next
+        // _nextSpin to frame 0.
+        //
         this._getItemKeys().forEach((k) => {
             const itemOpt = this._itemOptions[k];
             if (itemOpt._spinning) {
                 itemOpt._spinning = SPIN_STARTED;
+                itemOpt.spinIx = 0;
+                this._lines[this._items.indexOf(itemOpt.name)] = this._renderLine(itemOpt);
             }
         });
         const itemOpt = { spinInterval: DEFAULT_SPINNER_INTERVAL, ...options };

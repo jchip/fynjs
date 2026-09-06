@@ -277,12 +277,14 @@ describe("visual-logger", () => {
       visLog.addItem({ name: "R", spinner: "xyz" });
       await delay(100);
       //
-      // The render that first shows R is by definition the one addItem triggered, and T's
-      // spinner has to have reset to frame 0 in it. Picking it by index instead made the test
-      // depend on how many 100ms spin ticks fit in the delay above - CI fit one more and found
-      // a tick's "c T: foo" sitting at index 3.
+      // Every render from addItem on has to show T back at frame 0, whichever render it
+      // is - addItem triggers none of its own, so the first one carrying R is either the
+      // tick after it or a render the previous tick scheduled and left pending, and which
+      // of the two it is turns on how close to a tick the sleep above lands.
       //
-      expect(visList.find(x => x.includes("R:"))).toEqual("TEST_1: \na T: foo\nx R: ");
+      const withR = visList.filter(x => x.includes("R:"));
+      expect(withR.length).toBeGreaterThan(0);
+      expect(withR[0]).toEqual("TEST_1: \na T: foo\nx R: ");
     });
 
     it("should support independent spin timer for different interval", async () => {
