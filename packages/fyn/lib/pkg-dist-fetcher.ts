@@ -58,9 +58,9 @@ interface FynForDistFetcher extends FynForExtractor {
 /** Package source manager interface */
 interface PkgSrcManager {
   /** a thenable of its own making (`TarballFetchResult`), not a Promise */
-  fetchTarball(pkg: FetchPkg): PromiseLike<Readable>;
+  fetchTarball(pkg: FetchPkg): PromiseLike<Readable | string>;
   fetchUrlSemverMeta(depItem: DepItem): Promise<{
-    urlVersions: Record<string, { dist: { fullPath: string } }>;
+    urlVersions?: Record<string, { dist?: { fullPath?: string } }>;
   }>;
 }
 
@@ -212,10 +212,17 @@ class PkgDistFetcher {
     if (!srcDir) {
       // no temp dir with the remote package retrieve, probably loaded from lockfile?
       // fetch manifest with spec info extracted
-      const depItem = new DepItem({ name: pkg.name, semver: info.semver });
+      const depItem = new DepItem({
+        name: pkg.name,
+        semver: info.semver,
+        src: pkg.src || info.urlType || "git",
+        dsrc: pkg.dsrc || "dep"
+      });
       const meta = await this._pkgSrcMgr.fetchUrlSemverMeta(depItem);
-      srcDir = meta.urlVersions[info.semver].dist.fullPath;
+      srcDir = meta.urlVersions?.[info.semver]?.dist?.fullPath;
     }
+
+    if (!srcDir) return false;
 
     const destDir = dir || this._fyn.getInstalledPkgDir(pkg.name, pkg.version, pkg);
 
@@ -225,7 +232,7 @@ class PkgDistFetcher {
     return true;
   }
 
-  async fetchItem(item: string): Promise<{ result?: Readable; pkg?: FetchPkg } | undefined> {
+  async fetchItem(item: string): Promise<{ result?: Readable | string; pkg?: FetchPkg } | undefined> {
     const { pkg } = this._packages[item];
 
     if (pkg.local) return undefined;
@@ -265,11 +272,14 @@ class PkgDistFetcher {
 
     const find = async (promoted: boolean): Promise<boolean> => {
       const existDir = this._fyn.getInstalledPkgDir(name, version, { promoted });
-      const x = { dir: existDir };
+      const x: { dir: string; pkgJson?: Record<string, unknown> } = { dir: existDir };
       result.search.push(x);
 
       try {
-        const pkgJson = await this._fyn.loadJsonForPkg(pkg, existDir);
+        const pkgJson = (await this._fyn.loadJsonForPkg(pkg, existDir)) as Record<string, unknown> & {
+          _invalid?: boolean;
+          name?: string;
+        };
         x.pkgJson = pkgJson;
         if (!pkgJson._invalid) {
           result.existDir = existDir;

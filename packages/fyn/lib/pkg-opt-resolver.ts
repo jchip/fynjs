@@ -75,6 +75,7 @@ interface OptDepData {
   item: OptDepItem;
   meta: PackageMeta;
   err?: Error;
+  runningScript?: boolean;
 }
 
 /** Check result */
@@ -188,7 +189,7 @@ class PkgOptResolver {
   }
 
   start(): void {
-    this._promiseQ._process();
+    (this._promiseQ as any)._process();
   }
 
   //
@@ -288,7 +289,7 @@ class PkgOptResolver {
 
     const logPass = (msg: string, level?: string): void => {
       level = level || "verbose";
-      (logger as Record<string, (...args: unknown[]) => void>)[level](
+      (logger as unknown as Record<string, (...args: unknown[]) => void>)[level](
         chalk.green(`optional dep check passed`),
         displayId,
         chalk.green(`- ${msg}`)
@@ -302,7 +303,7 @@ class PkgOptResolver {
     }
 
     // already check in progress
-    const inflight = this._inflights.get(pkgId);
+    const inflight = this._inflights.get(pkgId) as Promise<CheckResult> | undefined;
     if (inflight) {
       logger.debug("opt check reusing existing inflight for", pkgId);
       return processCheckResult(inflight);
@@ -367,7 +368,7 @@ class PkgOptResolver {
     };
 
     // is it under node_modules/<name> and has the right version?
-    const promise = Promise.try(() => {
+    const promise = Promise.try<any>(() => {
       if (data.err) {
         return "metaFail";
       }
@@ -416,7 +417,7 @@ class PkgOptResolver {
       // .catch(async () => {
       //   return (await linkLocalPackage()) || fetchPkgTarball(fvInstalledPath);
       // })
-      .then(res => {
+      .then((res: any) => {
         if (res === "lockOnlyFail") {
           logFail("lock only but no package tarball");
           return { passed: false };

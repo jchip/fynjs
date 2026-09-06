@@ -12,7 +12,6 @@ export type BinList = string | Record<string, string>;
 export interface DepSection {
   [depName: string]: {
     resolved: string;
-    [key: string]: unknown;
   };
 }
 
@@ -21,18 +20,15 @@ export interface DepInfo {
   name: string;
   version: string;
   top?: boolean;
-  json: {
-    name: string;
+  json?: {
+    name?: string;
     bin?: BinList;
-    [key: string]: unknown;
   };
   res?: {
     dep?: DepSection;
     opt?: DepSection;
-    [key: string]: unknown;
   };
   privateBin?: Record<string, string>;
-  [key: string]: unknown;
 }
 
 /** Linked bin tracking */
@@ -280,7 +276,7 @@ class PkgBinLinkerBase {
 
     let actualBinList = binList;
     if (!actualBinList) {
-      actualBinList = depInfo.json.bin;
+      actualBinList = depInfo.json?.bin;
     }
 
     if (actualBinList) {
@@ -289,7 +285,7 @@ class PkgBinLinkerBase {
           await link((actualBinList as Record<string, string>)[sym], sym);
         }
       } else {
-        await link(actualBinList as string, Path.basename(depInfo.json.name));
+        await link(actualBinList as string, Path.basename(depInfo.json?.name || depInfo.name));
       }
     }
 

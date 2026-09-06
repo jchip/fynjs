@@ -8,6 +8,7 @@ import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
 import type {
   DepInfo,
+  InstallPkgJson,
   ResolutionData,
   ResolutionEntry,
   FynPkgDirs,
@@ -24,10 +25,10 @@ interface PkgInfo {
   version: string;
   promoted?: boolean;
   local?: string;
-  json?: Record<string, unknown>;
+  json?: InstallPkgJson | Record<string, unknown>;
   linkDep?: boolean;
-  res?: ResData;
-  fynLinkData?: { targetPath: string };
+  res?: ResolutionData | ResData;
+  fynLinkData?: Record<string, boolean> | { targetPath?: string };
 }
 
 /** Resolution data structure (extends ResolutionData with peer deps) */

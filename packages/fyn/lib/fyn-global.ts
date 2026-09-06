@@ -274,7 +274,7 @@ class FynGlobal {
         lockfile: true,
         fynlocal,
         sourceMaps: false,
-        registry: this.options.registry || fynOpts.registry || "https://registry.npmjs.org",
+        registry: (this.options.registry || fynOpts.registry || "https://registry.npmjs.org") as string,
         layout: "normal",
         flattenTop: true
       },

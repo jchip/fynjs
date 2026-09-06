@@ -212,7 +212,7 @@ class LifecycleScripts {
     assert(scripts[name], `No npm script ${name} found in package.json in ${this._pkgDir}.`);
 
     const scriptCommand = scripts[name];
-    const pkgName = logFormat.pkgId(this._pkg);
+    const pkgName = logFormat.pkgId(this._pkg as { name: string; version?: string });
     const dimPkgName = chalk.dim(pkgName);
     const scriptName = chalk.magenta(name);
     const script = `"${chalk.cyan(scriptCommand)}"`;
@@ -260,7 +260,7 @@ class LifecycleScripts {
     });
 
     try {
-      return await ve.show(child);
+      return await ve.show(child as any);
     } catch (err: any) {
       // Extract error information from nested errors and output
       const output: any = err?.output;

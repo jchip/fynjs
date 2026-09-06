@@ -38,12 +38,12 @@ import Arborist from "@npmcli/arborist";
 // Import the module object (not a named binding) so execFileSync is resolved at
 // call time — tests stub childProcess.execFileSync on the CJS module object.
 import childProcess from "child_process";
-import type { NativePromise } from "./types";
+import type { NativePromise, PackageRawInfoSymbols, FynpoPackage } from "./types";
 import type { DepItem } from "./dep-item";
 // type-only, so it adds no module cycle: `FynpoData` is declared next to `Fyn` because it
 // carries the whole fynpo.json config shape
 import type { FynpoData } from "./fyn";
-import type { Inflight as InflightType, ItemQueue } from "item-queue";
+import type { Inflight as InflightType, ItemQueue, WatchData } from "item-queue";
 
 /** Options for PkgSrcManager constructor */
 interface PkgSrcManagerOptions {
@@ -116,7 +116,7 @@ interface PkgDist {
 }
 
 /** Package info/manifest */
-interface PkgInfo {
+interface PkgInfo extends PackageRawInfoSymbols {
   name: string;
   version: string;
   dist?: PkgDist;
@@ -383,11 +383,11 @@ class PkgSrcManager {
     });
 
     this._netQ.on("fail", (data: unknown) => logger.error(data));
-    this._netQ.on("watch", (items: unknown) => {
+    this._netQ.on("watch", (items: WatchData<MetaQueueItem>) => {
       longPending.onWatch(items, {
         name: LONG_WAIT_META,
         filter: (x: { item: MetaQueueItem }) => x.item.type === "meta",
-        makeId: (x: { item: MetaQueueItem }) => logFormat.pkgId(x.item),
+        makeId: (x: MetaQueueItem) => logFormat.pkgId(x.item),
         _save: false
       });
     });
@@ -490,7 +490,7 @@ class PkgSrcManager {
 
   getPublishUtil(json: PkgInfo, fullPath: string): PublishUtilConfig | undefined {
     let config: PublishUtilConfig | undefined;
-    let pkgInfo: unknown;
+    let pkgInfo: FynpoPackage | undefined;
     let configFromFynpo: PublishUtilConfig | undefined;
 
     if (this._fyn.isFynpo && (pkgInfo = this._fyn._fynpo!.graph!.getPackageAtDir(fullPath))) {
@@ -516,7 +516,7 @@ class PkgSrcManager {
     return configFromFynpo || config;
   }
 
-  fetchLocalItem(item: FetchItem): false | Promise<LocalMeta> {
+  fetchLocalItem(item: FetchItem): false | NativePromise<LocalMeta> {
     const localPath = item.semverPath;
 
     if (!localPath) {
@@ -893,7 +893,7 @@ class PkgSrcManager {
         packStream.on("prepared", resolve);
         packStream.on("error", reject);
       });
-      pkg = await readPkgJson(dir);
+      pkg = (await readPkgJson(dir)) as PkgInfo;
       logger.debug("gitdep package", pkg.name, "prepared", manifest._resolved);
       //
       // cache tgz (use manifest._resolved as cache key)
@@ -947,7 +947,7 @@ class PkgSrcManager {
         return Promise.resolve(this._meta[pkgKey]);
       }
 
-      const inflight = this._inflights.meta.get<Promise<Packument>>(pkgKey);
+      const inflight = this._inflights.meta.get(pkgKey);
       if (inflight) {
         return inflight;
       }

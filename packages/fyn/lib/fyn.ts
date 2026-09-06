@@ -18,7 +18,7 @@ import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import lockfile from "lockfile";
 import ck from "chalker/chalk";
-import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson, type FynpoGraph } from "./types";
+import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson, type FynpoGraph, type PkgVersionInfo } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
 import { Minimatch } from "minimatch";
@@ -68,6 +68,7 @@ interface FynOptions {
   targetDir: string;
   registry?: string;
   lockfile?: boolean;
+  ignoreLockUrl?: boolean;
   copy?: string[];
   centralStore?: boolean;
   forceCache?: boolean;
@@ -237,7 +238,8 @@ interface FynConstructorOptions {
 
 /** Local package install check result */
 interface LocalPkgInstallResult {
-  changed: boolean;
+  changed?: boolean;
+  install?: boolean;
   [key: string]: unknown;
 }
 
@@ -383,7 +385,7 @@ class Fyn {
 
     this._npmLockData = null;
 
-    this._depLocker = new PkgDepLocker(this.lockOnly, this._options.lockfile, this);
+    this._depLocker = new PkgDepLocker(Boolean(this.lockOnly), Boolean(this._options.lockfile), this);
 
     const foundLock = await this._depLocker.read(Path.join(this._cwd, FYN_LOCK_FILE));
     this.updateConfigInLockfile("layout", this._options.layout);
@@ -643,7 +645,7 @@ class Fyn {
       // rather than partway through an install
       logger.debug("install script policy", this.scriptPolicy);
 
-      let fynpoNpmRun: string | string[] | (string | string[])[] | false | undefined;
+      let fynpoNpmRun: string | string[] | (string | string[])[] | boolean | undefined;
 
       if (this._fynpo?.config) {
         if (this._fynpo.graph?.getPackageAtDir(this._cwd)) {
@@ -656,6 +658,7 @@ class Fyn {
             | string
             | string[]
             | (string | string[])[]
+            | boolean
             | undefined;
           if (_.isArray(fynpoNpmRun) && !_.isEmpty(fynpoNpmRun)) {
             logger.verbose("fynpo monorepo: npm run scripts", fynpoNpmRun);
@@ -1000,7 +1003,7 @@ class Fyn {
       logger.debug("package.json file", pkgFile);
       this._pkgFile = pkgFile;
       try {
-        this._pkg = await fynTil.readPkgJson(pkgFile, true);
+        this._pkg = (await fynTil.readPkgJson(pkgFile, true)) as PackageJson;
       } catch (err) {
         logger.error("failed to read package.json file", pkgFile);
         logger.error((err as Error).message);
@@ -1017,7 +1020,7 @@ class Fyn {
         _.merge(this._pkg, pkgFyn);
       }
     } else {
-      this._pkg = options.pkgData!;
+      this._pkg = options.pkgData as PackageJson;
     }
   }
 
@@ -1413,7 +1416,7 @@ class Fyn {
       majVersions.forEach(maj => {
         if (byMaj[maj].length > 1) {
           const removed = byMaj[maj].filter(ver => {
-            const item = (pkg.versions[ver] as PkgVersion)[DEP_ITEM] as DepItemRef | undefined;
+            const item = (pkg.versions[ver] as PkgVersionInfo)[DEP_ITEM] as DepItemRef | undefined;
             if (item?._resolveByLock || this._npmLockData) {
               deDupe = true;
               this._depLocker.remove(item!, true);
@@ -1673,7 +1676,7 @@ class Fyn {
   }
 
   async moveToFv(dir: string, pkg: PkgInfo, pkgJson: PackageJson): Promise<void> {
-    const toDir = this.getInstalledPkgDir(pkgJson.name, pkgJson.version, {});
+    const toDir = this.getInstalledPkgDir(pkgJson.name, pkgJson.version);
 
     try {
       await Fs.access(toDir);

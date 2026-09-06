@@ -7,7 +7,8 @@ import fyntil from "./util/fyntil";
 import { cloneFile, copyFile } from "./util/hard-link-dir";
 import logger from "./logger";
 import { AggregateError } from "@jchip/error";
-import { filterScanDir } from "filter-scan-dir";
+import { filterScanDir, type ExtrasData } from "filter-scan-dir";
+import type { Stats } from "fs";
 import Crypto from "crypto";
 import * as xaa from "xaa";
 import type { Readable } from "stream";
@@ -225,10 +226,11 @@ class FynCentral {
       const filter = (
         _file: string,
         _path: string,
-        extras: { stat: { mtimeMs: number; size: number }; dirFile: string }
+        extras: ExtrasData
       ): { formatName: string } => {
         const { stat, dirFile } = extras;
-        return { formatName: `${dirFile}-${stat.mtimeMs}-${stat.size}` };
+        const fullStat = stat as Stats;
+        return { formatName: `${dirFile}-${fullStat.mtimeMs}-${fullStat.size}` };
       };
 
       const files = await filterScanDir({

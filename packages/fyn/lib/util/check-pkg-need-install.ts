@@ -48,7 +48,7 @@ async function checkPkgNeedInstall(dir: string, checkCtime: number = 0) {
       logger.debug(
         `package at ${dir} doesn't need local build because it doesn't have build scripts`
       );
-      return { install: false, hasScript, scripts, pkgJson };
+      return { install: false, changed: false, hasScript, scripts, pkgJson };
     }
 
     // fyn is running on existing install, must check a local dep's file times

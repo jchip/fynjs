@@ -2,7 +2,8 @@
 import Fs from "./file-ops";
 import Path from "path";
 import { minimatch as mm } from "minimatch";
-import { filterScanDir } from "filter-scan-dir";
+import { filterScanDir, type ExtrasData } from "filter-scan-dir";
+import type { Stats } from "fs";
 
 async function _scanFileStats(dir: string, ignores: string[], baseDir: string = "") {
   const ignore = (fullPath: string) => ignores.find(pattern => mm(fullPath, pattern, { dot: true }));
@@ -17,11 +18,11 @@ async function _scanFileStats(dir: string, ignores: string[], baseDir: string = 
     }
   };
 
-  const filter = (file: string, path: string, extras: { fullFile: string; stat: { mtimeMs: number } }) => {
+  const filter = (file: string, path: string, extras: ExtrasData) => {
     if (ignore(extras.fullFile)) {
       return false;
     }
-    updateLatest(extras.stat.mtimeMs, extras.fullFile);
+    updateLatest((extras.stat as Stats).mtimeMs, extras.fullFile);
     return true;
   };
 
@@ -30,8 +31,8 @@ async function _scanFileStats(dir: string, ignores: string[], baseDir: string = 
   updateLatest(topDirStat.mtimeMs, fullDir);
 
   await filterScanDir({
-    dir: fullDir,
-    includeRoot: false,
+    cwd: fullDir,
+    prependCwd: false,
     filter,
     filterDir: filter,
     concurrency: 500,

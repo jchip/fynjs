@@ -59,6 +59,8 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   extracted?: string;
   /** Local package path */
   local?: string;
+  /** Local package link type ("hard", "sym", "sym1") */
+  localType?: string;
   /** Installation directory */
   dir?: string;
   /** Cached string representation */

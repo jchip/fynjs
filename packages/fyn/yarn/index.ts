@@ -11,7 +11,7 @@ import parseLockfile from "./src/lockfile/parse";
  * @returns {object} the lockfile as a map of `name@spec` to its resolution
  */
 export function parseYarnLock(str: string, filename?: string): Record<string, unknown> {
-  return parseLockfile(str, filename).object;
+  return parseLockfile(str, filename).object as Record<string, unknown>;
 }
 
 export default { parseYarnLock };

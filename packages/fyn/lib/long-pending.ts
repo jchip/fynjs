@@ -7,26 +7,26 @@ import { LONG_WAIT_PACKAGE } from "./log-items";
 
 const MAX_PENDING_SHOW = 10;
 
-interface WatchItem {
-  item: string | unknown;
+interface WatchItem<T> {
+  item: T;
   time: number;
 }
 
-interface WatchItems {
+interface WatchItems<T> {
   total: number;
-  watched: WatchItem[];
-  still: WatchItem[];
+  watched: WatchItem<T>[];
+  still: WatchItem<T>[];
 }
 
-interface WatchOptions {
+interface WatchOptions<T> {
   name?: string;
   display?: string;
-  filter?: (item: WatchItem) => boolean;
-  makeId?: (item: unknown) => string;
+  filter?: (item: WatchItem<T>) => boolean;
+  makeId?: (item: T) => string;
   _save?: boolean;
 }
 
-export function onWatch(items: WatchItems, options?: WatchOptions): void {
+export function onWatch<T>(items: WatchItems<T>, options?: WatchOptions<T>): void {
   options = options || {};
   const logItemName = options.name || LONG_WAIT_PACKAGE;
 
