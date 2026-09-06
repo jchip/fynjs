@@ -10,9 +10,6 @@ import lockfile from "lockfile";
 import util from "util";
 import semver from "semver";
 import readline from "readline";
-import https from "https";
-import http from "http";
-import type { IncomingMessage } from "http";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -599,26 +596,15 @@ class FynGlobal {
     const url = `${registry}/${encodeURIComponent(packageName).replace("%40", "@")}`;
 
     try {
-      const protocol = url.startsWith("https") ? https : http;
-
-      return new Promise((resolve, reject) => {
-        const req = protocol.get(url, { headers: { Accept: "application/json" } }, res => {
-          let data = "";
-          res.on("data", chunk => (data += chunk));
-          res.on("end", () => {
-            try {
-              const pkg = JSON.parse(data);
-              resolve({
-                latest: pkg["dist-tags"]?.latest,
-                versions: Object.keys(pkg.versions || {})
-              });
-            } catch (err) {
-              reject(err);
-            }
-          });
-        });
-        req.on("error", reject);
-      });
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!res.ok) {
+        return null;
+      }
+      const pkg = (await res.json()) as any;
+      return {
+        latest: pkg["dist-tags"]?.latest,
+        versions: Object.keys(pkg.versions || {})
+      };
     } catch (err) {
       return null;
     }

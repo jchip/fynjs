@@ -728,4 +728,57 @@ describe("fyn-global methods", function() {
       expect(output).not.toContain(path.join(globalDir, "current"));
     });
   });
+
+  describe("fetchLatestVersion", () => {
+    it("returns latest version and version list from registry", async () => {
+      const origFetch = globalThis.fetch;
+      try {
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            "dist-tags": { latest: "2.5.0" },
+            versions: { "1.0.0": {}, "2.0.0": {}, "2.5.0": {} }
+          })
+        });
+
+        const g = makeGlobal({ registry: "https://custom-registry.org" });
+        const res = await g.fetchLatestVersion("@scope/my-pkg");
+
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          "https://custom-registry.org/@scope%2Fmy-pkg",
+          { headers: { Accept: "application/json" } }
+        );
+        expect(res).toEqual({
+          latest: "2.5.0",
+          versions: ["1.0.0", "2.0.0", "2.5.0"]
+        });
+      } finally {
+        globalThis.fetch = origFetch;
+      }
+    });
+
+    it("returns null when registry responds with non-200", async () => {
+      const origFetch = globalThis.fetch;
+      try {
+        globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+        const g = makeGlobal();
+        const res = await g.fetchLatestVersion("non-existent");
+        expect(res).toBeNull();
+      } finally {
+        globalThis.fetch = origFetch;
+      }
+    });
+
+    it("returns null when fetch rejects with network error", async () => {
+      const origFetch = globalThis.fetch;
+      try {
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error("network error"));
+        const g = makeGlobal();
+        const res = await g.fetchLatestVersion("some-pkg");
+        expect(res).toBeNull();
+      } finally {
+        globalThis.fetch = origFetch;
+      }
+    });
+  });
 });
