@@ -3,7 +3,7 @@ import { Commitlint } from "../src/commitlint";
 import path from "path";
 
 describe("fynpo Commitlint", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  const dir = path.join(import.meta.dirname, "../test/sample");
 
   it("should initialize Commitlint class", () => {
     const opts = { cwd: dir };

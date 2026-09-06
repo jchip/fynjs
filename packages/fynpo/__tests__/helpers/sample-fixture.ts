@@ -12,7 +12,7 @@ import Path from "path";
 // Any test that mutates the sample gets its own copy instead.
 //
 
-const SAMPLE_DIR = Path.join(__dirname, "..", "..", "test", "sample");
+const SAMPLE_DIR = Path.join(import.meta.dirname, "..", "..", "test", "sample");
 
 /**
  * Copy `test/sample` to a fresh temp directory.

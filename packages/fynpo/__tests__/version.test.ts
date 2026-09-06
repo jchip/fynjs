@@ -16,11 +16,11 @@ import { FynpoDepGraph } from "@fynpo/base";
 import { logger } from "../src/logger";
 
 describe("fynpo Version", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  const dir = path.join(import.meta.dirname, "../test/sample");
   let graph: FynpoDepGraph;
 
   beforeAll(async () => {
-    graph = new FynpoDepGraph({ cwd: path.join(__dirname, "../test/sample") });
+    graph = new FynpoDepGraph({ cwd: path.join(import.meta.dirname, "../test/sample") });
     await graph.resolve();
   });
 
@@ -44,7 +44,7 @@ describe("fynpo Version", () => {
   });
 
   it("should handle missing changelog file", () => {
-    const tempDir = path.join(__dirname, "../test/temp-version-test");
+    const tempDir = path.join(import.meta.dirname, "../test/temp-version-test");
     const opts = { cwd: tempDir };
     const version = new Version(opts, graph);
 

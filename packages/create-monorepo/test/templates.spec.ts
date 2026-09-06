@@ -5,7 +5,7 @@ import Path from "path";
 
 import { copyTemplate } from "../src/utils.js";
 
-const tmplDir = Path.join(__dirname, "..", "templates");
+const tmplDir = Path.join(import.meta.dirname, "..", "templates");
 
 describe("_npmrc template (FJM-20 regression)", () => {
   const content = Fs.readFileSync(Path.join(tmplDir, "_npmrc"), "utf8");

@@ -58,7 +58,7 @@ describe("fynpo utils", () => {
     });
 
     it("should create default config if none exists", () => {
-      const tempDir = path.join(__dirname, "../test/temp-utils-test");
+      const tempDir = path.join(import.meta.dirname, "../test/temp-utils-test");
       const configPath = path.join(tempDir, "fynpo.json");
       if (fs.existsSync(configPath)) {
         fs.unlinkSync(configPath);
@@ -213,7 +213,7 @@ describe("fynpo utils", () => {
     });
 
     it("should return empty object if no scripts", () => {
-      const tempDir = path.join(__dirname, "../test/temp-scripts-test");
+      const tempDir = path.join(import.meta.dirname, "../test/temp-scripts-test");
       const pkgPath = path.join(tempDir, "package.json");
       
       if (!fs.existsSync(tempDir)) {
@@ -316,7 +316,7 @@ describe("fynpo utils", () => {
     //
     it("should lock fyn, fynpo and fynpo-cli together in this monorepo", () => {
       const fynpoRc = JSON.parse(
-        fs.readFileSync(path.join(__dirname, "..", "..", "..", "fynpo.json"), "utf8")
+        fs.readFileSync(path.join(import.meta.dirname, "..", "..", "..", "fynpo.json"), "utf8")
       );
 
       const groups = (fynpoRc.versionLocks || []).map((group: string[]) => [...group].sort());

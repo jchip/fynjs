@@ -55,7 +55,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": Path.resolve(__dirname, "./lib")
+      "@": Path.resolve(import.meta.dirname, "./lib")
     },
     extensions: [".ts", ".tsx", ".js", ".jsx", ".json"]
   }

@@ -6,7 +6,7 @@ import Path from "path";
 // so it went unnoticed - but it breaks `require("@fynjs/create-monorepo")` and misleads
 // anyone reading the manifest. This package is CLI-only, so `bin` is the entry.
 describe("package.json entry points (FPO-32)", () => {
-  const pkgDir = Path.join(__dirname, "..");
+  const pkgDir = Path.join(import.meta.dirname, "..");
   const pkg = JSON.parse(Fs.readFileSync(Path.join(pkgDir, "package.json"), "utf8"));
 
   it("declares no main, since this is a bin-only package", () => {

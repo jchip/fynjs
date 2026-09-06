@@ -5,7 +5,7 @@ import { FynpoDepGraph } from "@fynpo/base";
 import * as xaa from "xaa";
 
 describe("fynpo bootstrap", () => {
-  const dir = path.join(__dirname, "sample");
+  const dir = path.join(import.meta.dirname, "sample");
   const parsed = {
     name: "bootstrap",
     opts: {
@@ -22,7 +22,7 @@ describe("fynpo bootstrap", () => {
 
   let bootstrap;
   beforeAll(async () => {
-    const graph = new FynpoDepGraph({ cwd: path.join(__dirname, "../test/sample") });
+    const graph = new FynpoDepGraph({ cwd: path.join(import.meta.dirname, "../test/sample") });
     await graph.resolve();
     bootstrap = new Bootstrap(graph, parsed.opts);
   });

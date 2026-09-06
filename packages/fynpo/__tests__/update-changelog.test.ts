@@ -15,7 +15,7 @@ import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
 
 describe("fynpo Changelog.commitChangeLogFile", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  const dir = path.join(import.meta.dirname, "../test/sample");
   let graph: FynpoDepGraph;
 
   beforeAll(async () => {
@@ -56,7 +56,7 @@ describe("fynpo Changelog.commitChangeLogFile", () => {
 });
 
 describe("fynpo Changelog.commitAndTagUpdates", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  const dir = path.join(import.meta.dirname, "../test/sample");
   let graph: FynpoDepGraph;
 
   beforeAll(async () => {

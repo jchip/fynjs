@@ -4,7 +4,7 @@ import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
 
 describe("fynpo topo-runner", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  const dir = path.join(import.meta.dirname, "../test/sample");
   const parsed = {
     name: "test",
     opts: {

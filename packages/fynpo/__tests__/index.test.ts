@@ -149,7 +149,7 @@ describe("cliOptions (FPO-30 regression)", () => {
 // dist/bundle.mjs. Nothing consulted it, so it went unnoticed. fynpo is CLI-only, so
 // `bin` is the entry point and there is no main to keep in sync.
 describe("package.json entry points (FPO-32)", () => {
-  const pkgDir = pathMod.join(__dirname, "..");
+  const pkgDir = pathMod.join(import.meta.dirname, "..");
   const pkg = JSON.parse(fsMod.readFileSync(pathMod.join(pkgDir, "package.json"), "utf8"));
 
   it("declares no main, since this is a bin-only package", () => {

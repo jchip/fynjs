@@ -4,11 +4,11 @@ import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
 
 describe("fynpo Run", () => {
-  const dir = path.join(__dirname, "../test/sample");
+  const dir = path.join(import.meta.dirname, "../test/sample");
   let graph: FynpoDepGraph;
 
   beforeAll(async () => {
-    graph = new FynpoDepGraph({ cwd: path.join(__dirname, "../test/sample") });
+    graph = new FynpoDepGraph({ cwd: path.join(import.meta.dirname, "../test/sample") });
     await graph.resolve();
   });
 
@@ -126,7 +126,7 @@ describe("formatRunSummary (FPO-34)", () => {
 });
 
 describe("Run._executed (FPO-34)", () => {
-  const sampleDir = path.join(__dirname, "../test/sample");
+  const sampleDir = path.join(import.meta.dirname, "../test/sample");
   let sampleGraph: FynpoDepGraph;
 
   beforeAll(async () => {

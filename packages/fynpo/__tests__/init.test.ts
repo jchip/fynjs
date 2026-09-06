@@ -229,7 +229,7 @@ describe("fynpo Init", () => {
 describe("fynpo runs from TypeScript source (FPO-36)", () => {
   it("declares no dependency on chalker", () => {
     const pkg = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8")
+      fs.readFileSync(path.join(import.meta.dirname, "..", "package.json"), "utf8")
     );
 
     expect(pkg.dependencies?.chalker).toBeUndefined();
@@ -237,7 +237,7 @@ describe("fynpo runs from TypeScript source (FPO-36)", () => {
   });
 
   it("has no chalker import left in src", () => {
-    const srcDir = path.join(__dirname, "..", "src");
+    const srcDir = path.join(import.meta.dirname, "..", "src");
     const offenders: string[] = [];
 
     const walk = (dir: string) => {

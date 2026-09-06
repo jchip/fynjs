@@ -61,7 +61,7 @@ describe("loadCk", () => {
 // These run against the compiled CJS in dist, which is the only place the two FPO-29 bugs are
 // observable - a unit test importing src through vitest's ESM transform cannot reproduce either.
 describe("bin entry (FPO-29 regression)", () => {
-  const pkgDir = Path.join(__dirname, "..");
+  const pkgDir = Path.join(import.meta.dirname, "..");
 
   beforeAll(() => {
     if (!existsSync(Path.join(pkgDir, "dist", "index.js"))) {

@@ -4,7 +4,7 @@ import Path from "path";
 
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
-const SAMPLE_DIR = Path.join(__dirname, "..", "test", "sample");
+const SAMPLE_DIR = Path.join(import.meta.dirname, "..", "test", "sample");
 
 describe("makeSampleFixture", () => {
   it("produces a copy that is independent of the shared sample", () => {
@@ -55,12 +55,12 @@ describe("shared test/sample fixture is read-only (FPO-14)", () => {
   it("no test file both references test/sample and writes", () => {
     const offenders: string[] = [];
 
-    for (const name of Fs.readdirSync(__dirname)) {
+    for (const name of Fs.readdirSync(import.meta.dirname)) {
       if (!name.endsWith(".test.ts")) {
         continue;
       }
 
-      const src = Fs.readFileSync(Path.join(__dirname, name), "utf8");
+      const src = Fs.readFileSync(Path.join(import.meta.dirname, name), "utf8");
       // this file names test/sample only to describe the rule
       if (name === "sample-fixture.test.ts") {
         continue;

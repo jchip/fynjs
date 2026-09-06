@@ -16,7 +16,7 @@ describe("getDepSection", function () {
 describe("fynpo dep graph", () => {
   it("should read only packages matching patterns in CWD", async () => {
     const saveDir = process.cwd();
-    process.chdir(path.join(__dirname, "sample"));
+    process.chdir(path.join(import.meta.dirname, "sample"));
     const graph = new FynpoDepGraph({ patterns: ["packages/*"] });
     await graph.resolve();
     process.chdir(saveDir);
@@ -27,7 +27,7 @@ describe("fynpo dep graph", () => {
   it("should read all packages when patterns is empty", async () => {
     const graph1 = new FynpoDepGraph({
       patterns: undefined,
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
     await graph1.resolve(true);
     const topoSorted1 = JSON.stringify(graph1.getTopoSortPackages());
@@ -37,7 +37,7 @@ describe("fynpo dep graph", () => {
 
     const graph2 = new FynpoDepGraph({
       patterns: ["@scope/*", "packages/**", "test1", "tests/**"],
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
 
     await graph2.resolve(true);
@@ -45,7 +45,7 @@ describe("fynpo dep graph", () => {
     const topoSorted3 = JSON.stringify(topo);
     expect(topoSorted3).toEqual(topoSorted2);
 
-    const expectFile = path.join(__dirname, "sample-topo.json");
+    const expectFile = path.join(import.meta.dirname, "sample-topo.json");
 
     // Fs.writeFileSync(expectFile, JSON.stringify(graph1.getTopoSortPackages(), null, 2));
 
@@ -56,7 +56,7 @@ describe("fynpo dep graph", () => {
 
   it("should read packages of the circ1 project", async () => {
     const graph = new FynpoDepGraph({
-      cwd: path.join(__dirname, "circ1"),
+      cwd: path.join(import.meta.dirname, "circ1"),
     });
     await graph.resolve();
     const topo = graph.getTopoSortPackages();
@@ -66,12 +66,12 @@ describe("fynpo dep graph", () => {
 
   it("should read packages of the electrode project", async () => {
     const graph = new FynpoDepGraph({
-      cwd: path.join(__dirname, "electrode"),
+      cwd: path.join(import.meta.dirname, "electrode"),
     });
     await graph.resolve(true);
     const topo = graph.getTopoSortPackages();
 
-    const expectFile = path.join(__dirname, "electrode-topo.json");
+    const expectFile = path.join(import.meta.dirname, "electrode-topo.json");
 
     // Fs.writeFileSync(expectFile, JSON.stringify(graph.getTopoSortPackages(), null, 2));
 
@@ -82,12 +82,12 @@ describe("fynpo dep graph", () => {
 
   it("should resolve local dep without indirects", async () => {
     const graph = new FynpoDepGraph({
-      cwd: path.join(__dirname, "electrode"),
+      cwd: path.join(import.meta.dirname, "electrode"),
     });
     await graph.resolve();
     const topo = graph.getTopoSortPackages();
 
-    const expectFile = path.join(__dirname, "electrode-topo-directs.json");
+    const expectFile = path.join(import.meta.dirname, "electrode-topo-directs.json");
 
     // Fs.writeFileSync(expectFile, JSON.stringify(graph.getTopoSortPackages(), null, 2));
 
@@ -98,7 +98,7 @@ describe("fynpo dep graph", () => {
 
   it("should resolvePackage by name and semver", async () => {
     const graph = new FynpoDepGraph({
-      cwd: path.join(__dirname, "electrode"),
+      cwd: path.join(import.meta.dirname, "electrode"),
     });
     await graph.resolve();
     const r1 = graph.resolvePackage("@xarc/app", "^10.0.0");
@@ -126,7 +126,7 @@ describe("fynpo dep graph", () => {
   it("addDepByPath should add dependency", async () => {
     const graph = new FynpoDepGraph({
       patterns: undefined,
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
     await graph.readPackages();
     await graph.resolve();
@@ -141,7 +141,7 @@ describe("fynpo dep graph", () => {
   it("addDepById should add dependency", async () => {
     const graph = new FynpoDepGraph({
       patterns: undefined,
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
     await graph.readPackages();
     await graph.resolve();
@@ -158,7 +158,7 @@ describe("fynpo dep graph", () => {
   it("addDepByPath/addDepById should handle non-existent path/id", async () => {
     const graph = new FynpoDepGraph({
       patterns: undefined,
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
     await graph.resolve();
     const topoSorted1 = JSON.stringify(graph.getTopoSortPackages());
@@ -178,7 +178,7 @@ describe("fynpo dep graph", () => {
   it("should reject a self dependency", async () => {
     const graph = new FynpoDepGraph({
       patterns: undefined,
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
     await graph.resolve();
     const topoSorted1 = JSON.stringify(graph.getTopoSortPackages());
@@ -214,7 +214,7 @@ describe("fynpo dep graph", () => {
     // First verify cir1 and cir2 have circular dependency without noFynLocal
     const graph1 = new FynpoDepGraph({
       patterns: ["packages/*"],
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
     });
     await graph1.resolve();
     const cir1Data1 = graph1.depMapByPath["packages/cir1"];
@@ -227,7 +227,7 @@ describe("fynpo dep graph", () => {
     // Now use noFynLocal to skip cir2 as local
     const graph2 = new FynpoDepGraph({
       patterns: ["packages/*"],
-      cwd: path.join(__dirname, "sample"),
+      cwd: path.join(import.meta.dirname, "sample"),
       noFynLocal: ["cir2"],
     });
     await graph2.resolve();
@@ -242,7 +242,7 @@ describe("fynpo dep graph", () => {
 
   it("should skip local deps with per-package fyn config", async () => {
     // Create a temporary package.json with fyn.dependencies config
-    const sampleDir = path.join(__dirname, "sample");
+    const sampleDir = path.join(import.meta.dirname, "sample");
     const cir1Dir = path.join(sampleDir, "packages/cir1");
     const cir1PkgPath = path.join(cir1Dir, "package.json");
     const originalPkg = Fs.readFileSync(cir1PkgPath, "utf-8");
@@ -269,7 +269,7 @@ describe("fynpo dep graph", () => {
   });
 
   it("should skip local deps with no-fyn-local string in semver", async () => {
-    const sampleDir = path.join(__dirname, "sample");
+    const sampleDir = path.join(import.meta.dirname, "sample");
     const cir1Dir = path.join(sampleDir, "packages/cir1");
     const cir1PkgPath = path.join(cir1Dir, "package.json");
     const originalPkg = Fs.readFileSync(cir1PkgPath, "utf-8");

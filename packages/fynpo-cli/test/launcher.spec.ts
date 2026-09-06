@@ -8,7 +8,7 @@ import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
 
-const PKG_DIR = Path.join(__dirname, "..");
+const PKG_DIR = Path.join(import.meta.dirname, "..");
 const REPO_ROOT = Path.join(PKG_DIR, "..", "..");
 const BIN = Path.join(PKG_DIR, "dist", "fynpo.js");
 

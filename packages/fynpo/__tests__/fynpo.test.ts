@@ -24,7 +24,7 @@ const execFileAsync = promisify(execFile);
 // links them without touching the network.
 //
 describe("test bootstrap command", () => {
-  const fynpoBin = Path.join(__dirname, "..", "bin", "fynpo.js");
+  const fynpoBin = Path.join(import.meta.dirname, "..", "bin", "fynpo.js");
   let dir: string;
 
   const writePkg = (name: string, pkg: Record<string, unknown>) => {
@@ -53,7 +53,7 @@ describe("test bootstrap command", () => {
 
   it("requires the built bundle - bootstrap runs what ships, not the TS source", () => {
     expect(
-      Fs.existsSync(Path.join(__dirname, "..", "dist", "bundle.mjs")),
+      Fs.existsSync(Path.join(import.meta.dirname, "..", "dist", "bundle.mjs")),
       "dist is not built - run the package build first"
     ).toBe(true);
   });
