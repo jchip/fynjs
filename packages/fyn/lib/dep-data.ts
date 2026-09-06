@@ -9,6 +9,9 @@ import type { KnownPackage, PkgVersionInfo } from "./types";
 
 const RESOLVED_PKGS = Symbol("resolved packages");
 
+/** Resolution order stores package identities, not the full version metadata. */
+type ResolvedPackage = Pick<PkgVersionInfo, "name" | "version">;
+
 export interface DepDataInit {
   pkgs?: Record<string, KnownPackage>;
   res?: Record<string, unknown>;
@@ -37,7 +40,7 @@ export class DepData {
   badPkgs: Record<string, KnownPackage>;
   /** The dependency resolution for top level */
   res: Record<string, unknown>;
-  private [RESOLVED_PKGS]: PkgVersionInfo[];
+  private [RESOLVED_PKGS]: ResolvedPackage[];
 
   constructor(_data?: DepDataInit) {
     const data = _data || {};
@@ -47,11 +50,11 @@ export class DepData {
     this[RESOLVED_PKGS] = [];
   }
 
-  get resolvedPackages(): PkgVersionInfo[] {
+  get resolvedPackages(): ResolvedPackage[] {
     return this[RESOLVED_PKGS];
   }
 
-  addResolved(info: PkgVersionInfo): void {
+  addResolved(info: ResolvedPackage): void {
     this[RESOLVED_PKGS].push(info);
   }
 
@@ -65,7 +68,7 @@ export class DepData {
 
   cleanLinked(): void {
     this.eachVersion(pkg => {
-      (pkg as PkgVersion).linked = 0;
+      pkg.linked = 0;
     });
   }
 

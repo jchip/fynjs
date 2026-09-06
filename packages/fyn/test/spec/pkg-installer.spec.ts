@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach, expect } from "vitest";
+import { describe, it, beforeEach, afterEach, expect, vi } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
@@ -6,6 +6,58 @@ import PkgInstaller from "../../lib/pkg-installer";
 import { SEMVER } from "../../lib/types";
 
 describe("pkg-installer", function () {
+  describe("postinstall central-store mutation checks", () => {
+    const depInfo = () => ({
+      name: "pkg-a",
+      version: "1.0.0",
+      src: "dep",
+      dsrc: "dep",
+      requests: [],
+      priority: 0,
+      dist: { integrity: "sha512-test" },
+      install: [],
+      json: { name: "pkg-a", version: "1.0.0", _fyn: {} }
+    });
+
+    it("runs without a central store", async () => {
+      const fyn: any = { _data: {}, central: false };
+      await expect(new PkgInstaller({ fyn })._runPostInstallScripts(depInfo())).resolves.toBeUndefined();
+    });
+
+    it.each([
+      ["before", false],
+      ["after", true]
+    ] as const)("records whether the content checksum changed to %s", async (after, mutated) => {
+      const central = {
+        allow: vi.fn().mockResolvedValue(true),
+        getMutation: vi.fn().mockResolvedValue(undefined),
+        getContentShasum: vi.fn().mockResolvedValueOnce("before").mockResolvedValueOnce(after),
+        setMutation: vi.fn().mockResolvedValue(undefined)
+      };
+      const fyn: any = { _data: {}, central };
+
+      await new PkgInstaller({ fyn })._runPostInstallScripts(depInfo());
+
+      expect(central.getContentShasum).toHaveBeenCalledTimes(2);
+      expect(central.setMutation).toHaveBeenCalledExactlyOnceWith("sha512-test", mutated);
+    });
+
+    it("does not recheck content with a known mutation status", async () => {
+      const central = {
+        allow: vi.fn().mockResolvedValue(true),
+        getMutation: vi.fn().mockResolvedValue(false),
+        getContentShasum: vi.fn(),
+        setMutation: vi.fn()
+      };
+      const fyn: any = { _data: {}, central };
+
+      await new PkgInstaller({ fyn })._runPostInstallScripts(depInfo());
+
+      expect(central.getContentShasum).not.toHaveBeenCalled();
+      expect(central.setMutation).not.toHaveBeenCalled();
+    });
+  });
+
   describe("_removeFailedOptional", function () {
     it("does not mutate the shared request-path arrays", async () => {
       const fyn: any = {

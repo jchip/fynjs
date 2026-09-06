@@ -10,10 +10,10 @@
  * @param {boolean} production - Whether to set NODE_ENV=production
  * @returns {Object} Filtered environment object
  */
-function initEnv(fromEnv, production) {
+function initEnv(fromEnv?: NodeJS.ProcessEnv, production?: boolean) {
   fromEnv = fromEnv || process.env;
 
-  const env = {};
+  const env: NodeJS.ProcessEnv = {};
   for (const key in fromEnv) {
     if (!key.match(/^npm_/)) {
       env[key] = fromEnv[key];

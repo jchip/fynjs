@@ -36,7 +36,7 @@ const spec = {
 export function fynConfig(override?: Record<string, unknown>): FynConfigSpec & Record<string, unknown> {
   const configKeys = Object.keys(spec);
   const userConfig = _.pick(override, configKeys);
-  const config = xenvConfig(spec, userConfig, { sources: ["option", "env"] });
+  const config = xenvConfig<FynConfigSpec>(spec, userConfig, { sources: ["option", "env"] });
   config.fynCacheDir = Path.join(config.fynDir, "_cacache");
   config.lockfile = true;
 

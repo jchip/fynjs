@@ -13,11 +13,13 @@ import type { DepData, DepItemRef } from "./dep-data";
  * Used to track fetching packages when resolving versions and dependencies.
  */
 
+export type DepSource = "dep" | "dev" | "opt" | "devopt" | "";
+
 export interface DepItemOptions {
   name: string;
   semver: string;
   /** Original top level package.json dep section (dep, dev, per, opt) */
-  src: string;
+  src: DepSource;
   /** Source from the direct parent package */
   dsrc: string;
   resolved?: string;
@@ -30,10 +32,9 @@ export interface DepItemOptions {
 /**
  * Package version data for tracking dependency requests
  *
- * The index signature allows dynamic dependency source counters
- * (e.g., dep: 2, dev: 1, opt: 0) alongside known properties.
+ * Dependency source counters share this object with request metadata.
  */
-interface PkgVersionData {
+interface PkgVersionData extends Partial<Record<DepSource, number>> {
   /** All request paths that led to this package */
   requests: string[][];
   /** Whether any request path is non-optional */
@@ -44,8 +45,6 @@ interface PkgVersionData {
   dsrc: string;
   /** Combined original sources */
   src: string;
-  /** Dynamic counters for each dependency source type */
-  [depSource: string]: string[][] | boolean | number | string | undefined;
 }
 
 export class DepItem implements DepItemRef {
@@ -59,7 +58,7 @@ export class DepItem implements DepItemRef {
   /** read by the dep locker's `makeDep`, so not private (FJM-154) */
   _semver: SemverAnalysis;
   /** Original top level package.json dep section (dep, dev, per, opt) */
-  src: string;
+  src: DepSource;
   /** Source from the direct parent package */
   dsrc: string;
   resolved: string | undefined;

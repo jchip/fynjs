@@ -51,6 +51,8 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   requests: string[][];
   /** Package was promoted to top level */
   promoted?: boolean;
+  /** Number of links created for this version; reset before linking again. */
+  linked?: number;
   /** Package is a direct dependency */
   top?: boolean;
   /** Extraction directory path (set when tarball is extracted) */

@@ -7,6 +7,7 @@ import Semver from "semver";
 import chalk from "chalk";
 import logger from "./logger";
 import DepItem from "./dep-item";
+import type { DepSource } from "./dep-item";
 import PromiseQueue from "./util/promise-queue";
 import logFormat from "./util/log-format";
 import { LONG_WAIT_META } from "./log-items";
@@ -31,7 +32,7 @@ import {
   DEP_ITEM,
   OPT_FAILED_PLATFORM
 } from "./types";
-import type { DepData, PkgVersion } from "./dep-data";
+import type { DepData } from "./dep-data";
 import type {
   SemverAnalysis,
   PackageDist,
@@ -703,7 +704,7 @@ class PkgDepResolver {
       dep: 900000000
     };
 
-    const makeDepItems = (deps: Record<string, string>, dsrc: string): DepItem[] => {
+    const makeDepItems = (deps: Record<string, string>, dsrc: Exclude<DepSource, "">): DepItem[] => {
       const items: DepItem[] = [];
       const src = depItem.src || dsrc;
       const depNames = Object.keys(deps);
@@ -1142,7 +1143,7 @@ class PkgDepResolver {
           );
         }
       }
-      item.addRequestToPkg(pkgV as PkgVersion, firstSeenVersion);
+      item.addRequestToPkg(pkgV, firstSeenVersion);
       item.addResolutionToParent(this._data, firstKnown);
     }
 
@@ -1299,12 +1300,13 @@ class PkgDepResolver {
         meta[SORTED_VERSIONS] = sorted;
       }
 
-      let lockTime: Date | undefined = this._fyn.lockTime;
+      // The configured cutoff is a Date; the cached latest cutoff is milliseconds.
+      let lockTime: Date | number | undefined = this._fyn.lockTime;
       let sortedVersions = meta[SORTED_VERSIONS];
 
       // can't consider any versions newer or later than latest if it satisfies the semver
       if (checkLatestSatisfy()) {
-        if (meta[LATEST_VERSION_TIME] && (!lockTime || lockTime > meta[LATEST_VERSION_TIME])) {
+        if (meta[LATEST_VERSION_TIME] && (!lockTime || Number(lockTime) > meta[LATEST_VERSION_TIME])) {
           // lockTime can't be greater than latest time
           lockTime = meta[LATEST_VERSION_TIME];
         } else if (meta[LATEST_SORTED_VERSIONS]) {
@@ -1334,7 +1336,7 @@ class PkgDepResolver {
           }
 
           const time = new Date(times[v]);
-          if (time > lockTime!) {
+          if (time.getTime() > Number(lockTime)) {
             // logger.debug("times", times);
             logger.verbose(
               item.name,
@@ -1385,7 +1387,7 @@ class PkgDepResolver {
       return (urlVersion && urlVersion.version) || false;
     };
 
-    let resolved =
+    let resolved: string | false | undefined =
       (!noLocal && getLocalVersion()) ||
       getUrlVersion() ||
       getKnownSemver() ||
@@ -1411,7 +1413,8 @@ class PkgDepResolver {
     // logger.debug("resolved to", resolved, "for", item.name, item.semver);
 
     // if resolving according to a meta, then make sure it contains the resolved version
-    return meta.versions ? meta.versions[resolved] && resolved : resolved;
+    // Preserve JavaScript's property-key coercion for unresolved false/undefined values.
+    return meta.versions ? meta.versions[String(resolved)] && resolved : resolved;
   }
 
   _failUnsatisfySemver(item: DepItem): never {
@@ -1728,7 +1731,7 @@ ${item.depPath.join(" > ")}`
     return false;
   }
 
-  processItem(name: string | QueueDepthItem | PromiseItem): Promise<unknown> | void {
+  processItem(name: string | QueueDepthItem | PromiseItem): NativePromise<unknown> | void {
     if (name && (name as PromiseItem).promise) {
       const p = (name as PromiseItem).promise;
       (name as PromiseItem).promise = null;
@@ -1748,7 +1751,7 @@ ${item.depPath.join(" > ")}`
     return undefined;
   }
 
-  resolveItem(item: DepItem & { _semver: SemverAnalysis; _resolveByLock?: boolean }): Promise<void> {
+  resolveItem(item: DepItem & { _semver: SemverAnalysis; _resolveByLock?: boolean }): NativePromise<void | DepItem[]> {
     const tryLocal = (): NativePromise<ResolveResult | false> => {
       return xaa
         .wrap(() => this._pkgSrcMgr.fetchLocalItem(item))
@@ -1778,7 +1781,7 @@ ${item.depPath.join(" > ")}`
     this._applyOverrides(item);
     this._replaceWithResolutionsData(item);
 
-    const promise: Promise<ResolveResult | false> =
+    const promise: NativePromise<ResolveResult | false> =
       !item.semverPath || this._fyn.preferLock
         ? tryLock().then(r => r || (item.semverPath && tryLocal()) || false)
         : tryLocal().then(r => r || tryLock());

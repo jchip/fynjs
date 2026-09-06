@@ -81,6 +81,7 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   _depResolver: {
     resolvePkgPeerDep(pkg: unknown, name: string, data: DepData): void;
     resolvePeerDep(depInfo: DepInfo): void;
+    _logConsolidatedPeerDepWarnings(): void;
   };
   _pkg: PackageJson;
   _depLocker?: PkgDepLocker;
@@ -131,9 +132,9 @@ interface PkgInstallerOptions {
 
 /** Bin linker instance interface */
 interface BinLinkerInstance {
-  linkBin(depInfo: DepInfo): Promise<boolean>;
-  linkDepBin(depInfo: DepInfo): Promise<void>;
-  clearExtras(): Promise<void>;
+  linkBin(depInfo: DepInfo): NativePromise<boolean>;
+  linkDepBin(depInfo: DepInfo): NativePromise<void>;
+  clearExtras(): NativePromise<void>;
 }
 
 class PkgInstaller {
@@ -484,12 +485,13 @@ class PkgInstaller {
 
   async _runPostInstallScripts(depInfo: DepInfo): NativePromise<void> {
     const integrity = fynTil.distIntegrity(depInfo.dist);
+    const central = this._fyn.central;
     const centralBeforeSha =
-      this._fyn.central &&
+      central &&
       integrity &&
-      (await this._fyn.central.allow(integrity)) &&
-      (await this._fyn.central.getMutation(integrity)) === undefined &&
-      (await this._fyn.central.getContentShasum(integrity));
+      (await central.allow(integrity)) &&
+      (await central.getMutation(integrity)) === undefined &&
+      (await central.getContentShasum(integrity));
 
     let runningScript: string | undefined;
     return xaa
@@ -508,16 +510,16 @@ class PkgInstaller {
         });
       })
       .then(async () => {
-        if (centralBeforeSha) {
-          const afterSha = await this._fyn.central.getContentShasum(integrity);
+        if (central && centralBeforeSha) {
+          const afterSha = await central.getContentShasum(integrity);
           const id = logFormat.pkgId(depInfo);
           if (afterSha !== centralBeforeSha) {
             logger.info(
               `package ${id} can't use central store because its post install scripts ${depInfo.install} mutated content, before: ${centralBeforeSha} after: ${afterSha}`
             );
-            await this._fyn.central.setMutation(integrity, true);
+            await central.setMutation(integrity, true);
           } else {
-            await this._fyn.central.setMutation(integrity, false);
+            await central.setMutation(integrity, false);
           }
         }
       })
@@ -925,7 +927,7 @@ class PkgInstaller {
     }
   }
 
-  _cleanBin(): Promise<void> {
+  _cleanBin(): NativePromise<void> {
     logger.updateItem(INSTALL_PACKAGE, "cleaning node_modules/.bin");
     return this._binLinker.clearExtras();
   }

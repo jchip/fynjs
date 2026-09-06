@@ -2,9 +2,45 @@ import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import fs from "fs/promises";
 import os from "os";
 import Path from "path";
+import { Readable, Writable } from "node:stream";
 import fyntil from "../../../lib/util/fyntil";
 
 describe("fyntil", function () {
+  describe("missPipe", () => {
+    it("returns a native promise that waits for the destination to finish", async () => {
+      const chunks: string[] = [];
+      let finished = false;
+      const destination = new Writable({
+        write(chunk, _encoding, done) {
+          chunks.push(chunk.toString());
+          done();
+        },
+        final(done) {
+          setImmediate(() => {
+            finished = true;
+            done();
+          });
+        }
+      });
+      const result = fyntil.missPipe(Readable.from(["hello", "world"]), destination);
+      expect(result).toBeInstanceOf(globalThis.Promise);
+      expect(finished).toBe(false);
+      await result;
+      expect(finished).toBe(true);
+      expect(chunks).toStrictEqual(["hello", "world"]);
+    });
+
+    it("rejects with the destination's error", async () => {
+      const error = new Error("destination failed");
+      const destination = new Writable({
+        write(_chunk, _encoding, done) {
+          done(error);
+        }
+      });
+      await expect(fyntil.missPipe(Readable.from(["data"]), destination)).rejects.toBe(error);
+    });
+  });
+
   describe("exit", function () {
     it("call process.exit", () => {
       const save = process.exit;

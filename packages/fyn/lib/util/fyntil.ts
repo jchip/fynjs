@@ -3,15 +3,21 @@ import Fs from "./file-ops";
 import _ from "lodash";
 import Path from "path";
 import logger from "../logger";
-import Promise from "./aveazul";
+import type { NativePromise } from "../types/native-promise";
+import type { PipelineOptions } from "node:stream";
 import { pipeline } from "stream/promises";
 
 /**
  * Pipe streams together and resolve when the pipeline fully completes.
  * Replaces mississippi.pipe with node:stream/promises pipeline.
  */
-const missPipe = (...streams: [NodeJS.ReadableStream, ...any[]]): Promise<void> =>
-  pipeline(...(streams as [any, any]));
+const missPipe = (
+  ...streams: [
+    NodeJS.ReadableStream,
+    NodeJS.WritableStream,
+    ...(NodeJS.ReadWriteStream | NodeJS.WritableStream | PipelineOptions)[]
+  ]
+): NativePromise<void> => pipeline(...streams);
 import { PACKAGE_RAW_INFO } from "../symbols";
 import { PACKAGE_FYN_JSON } from "../constants";
 import { FynpoConfigManager, FynpoDepGraph } from "@fynpo/base";
