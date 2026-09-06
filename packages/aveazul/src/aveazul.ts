@@ -137,6 +137,27 @@ class AveAzul<T> extends Promise<T> {
    */
 
   /**
+   * The instance-side counterpart to the `declare static` block above, and for the same reason:
+   * `then`/`catch`/`finally` construct through `this` (SpeciesConstructor), so each one really
+   * hands back an AveAzul -- but `Promise`'s lib types say plain `Promise`, so the first link in
+   * any chain loses every bluebird method and callers need `as AveAzulInstance<T>` to get them
+   * back. These are `declare`, so nothing is emitted and no runtime behavior changes.
+   *
+   * `AveAzul<T>` still satisfies `Promise<T>`/`PromiseLike<T>` after this, since the returned
+   * AveAzul is itself a Promise - await and interop are unaffected.
+   */
+  declare then: <TResult1 = T, TResult2 = never>(
+    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  ) => AveAzul<TResult1 | TResult2>;
+
+  declare catch: <TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null
+  ) => AveAzul<T | TResult>;
+
+  declare finally: (onfinally?: (() => void) | undefined | null) => AveAzul<T>;
+
+  /**
    * Bluebird-style tap() method that lets you perform side effects in a chain
    * Similar to Bluebird's Promise.prototype.tap()
    * @param fn - Function to execute with the resolved value

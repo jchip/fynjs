@@ -1,6 +1,5 @@
 import { describe, test, expect } from "vitest";
 import AveAzul from "./promise-lib.ts";
-import type { AveAzulInstance } from "../src/index.ts";
 
 describe("OperationalError", () => {
   test("should be a constructor", () => {
@@ -102,14 +101,14 @@ describe("AveAzul.prototype.error", () => {
   });
 
   test("should work with promise chains", async () => {
-    // `.then()` is typed by the Promise lib as returning a plain Promise, but per
-    // spec it constructs through `this`, so the chain really is an AveAzul.
+    // `.then()` is re-declared to return AveAzul (it constructs through `this` per spec),
+    // so the chain keeps its bluebird methods with no cast - see FPM-121.
     const chained = AveAzul.resolve(1).then((x) => {
       if (x === 1) {
         throw new AveAzul.OperationalError("operational in then");
       }
       return x;
-    }) as AveAzulInstance<number>;
+    });
 
     const result = await chained.error((err) => {
       expect(err).toBeInstanceOf(AveAzul.OperationalError);
