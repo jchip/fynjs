@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { VisualExec, type VisualExecOptions, type ExecOutput, parsers } from "../src/visual-exec.ts";
+import { VisualExec, type VisualExecOptions, parsers } from "../src/visual-exec.ts";
 import Path from "path";
 import fs from "fs";
 import os from "os";
@@ -73,7 +73,7 @@ describe("VisualExec", () => {
       // Suppress output logging for test
       ve.logFinalOutput = vi.fn();
 
-      const result = (await ve.execute()) as ExecOutput;
+      const result = await ve.execute();
       expect(result.stdout).toContain("hello");
     });
 
@@ -85,7 +85,7 @@ describe("VisualExec", () => {
 
       ve.logFinalOutput = vi.fn();
 
-      const result = (await ve.execute()) as ExecOutput;
+      const result = await ve.execute();
       expect(result.stderr).toContain("error output");
     });
 
@@ -98,7 +98,7 @@ describe("VisualExec", () => {
 
       ve.logFinalOutput = vi.fn();
 
-      const result = (await ve.execute()) as ExecOutput;
+      const result = await ve.execute();
       // On macOS, /tmp is a symlink to /private/tmp
       expect(result.stdout.trim()).toMatch(/\/(tmp|private\/tmp)$/);
     });
@@ -122,7 +122,7 @@ describe("VisualExec", () => {
 
       ve.logFinalOutput = vi.fn();
 
-      const result = (await ve.execute("echo override")) as ExecOutput;
+      const result = await ve.execute("echo override");
       expect(result.stdout).toContain("override");
     });
   });
@@ -214,7 +214,7 @@ describe("VisualExec", () => {
       });
       ve.logFinalOutput = vi.fn();
 
-      const result = (await ve.execute()) as ExecOutput;
+      const result = await ve.execute<{ parsed: string }>();
       expect(result).toEqual({ parsed: "hello" });
     });
   });

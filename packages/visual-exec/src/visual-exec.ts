@@ -505,7 +505,14 @@ export class VisualExec {
     this.abort(signal);
   }
 
-  show(child: ChildProcess): Promise<ExecOutput | unknown> {
+  /**
+   * Attach to an already-started child and render its output.
+   *
+   * Resolves with the command's `ExecOutput`, unless an `onComplete` callback returned a
+   * value - that value is passed through instead. `T` names what the caller expects back;
+   * it defaults to `ExecOutput`, which is what a run without an `onComplete` produces.
+   */
+  show<T = ExecOutput>(child: ChildProcess): Promise<T> {
     this._stdoutKey = Symbol("visual-exec-stdout");
     this._stderrKey = Symbol("visual-exec-stderr");
     this._rawChild = child.child;
@@ -552,7 +559,7 @@ export class VisualExec {
 
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const startTime = Date.now();
-    let execPromise: Promise<ExecOutput | unknown> = child.promise
+    let execPromise: Promise<unknown> = child.promise
       .catch((err: VisualExecError) => {
         const output = err.output ?? { stdout: "", stderr: "" };
         const exitCode = err.exitCode ?? err.code ?? 1;
@@ -643,7 +650,9 @@ export class VisualExec {
       execPromise = Promise.race([execPromise, abortPromise]);
     }
 
-    return execPromise.finally(cleanup);
+    // The runtime value is `ExecOutput` unless `onComplete` substituted its own; only the
+    // caller knows which, so the promise is handed back as the `T` they asked for.
+    return execPromise.finally(cleanup) as Promise<T>;
   }
 
   logResult(err: VisualExecError | null, output?: ExecOutput): void {
@@ -710,7 +719,13 @@ export class VisualExec {
     (this._logger.prefix(false) as any)[level](...logs);
   }
 
-  execute(command?: string): Promise<ExecOutput | unknown> {
+  /**
+   * Run the command and render its output.
+   *
+   * Resolves with `ExecOutput`, or with whatever an `onComplete` callback returned in its
+   * place. `T` defaults to `ExecOutput` so the common case needs no cast at the call site.
+   */
+  execute<T = ExecOutput>(command?: string): Promise<T> {
     this._startTime = Date.now();
     this._aborted = false;
 
@@ -766,7 +781,7 @@ export class VisualExec {
       return Promise.reject(enhanceError(err, context));
     });
 
-    return this.show(child);
+    return this.show<T>(child);
   }
 }
 
