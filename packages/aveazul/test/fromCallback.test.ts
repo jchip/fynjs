@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.fromCallback", () => {
   test("should convert callback-based function to promise (success case)", async () => {
@@ -77,7 +76,9 @@ describe("AveAzul.fromCallback", () => {
     }
 
     const promises = [1, 2, 3].map((id) =>
-      AveAzul.fromCallback((callback) => dbOperation(id, callback))
+      AveAzul.fromCallback<{ id: number; data: string }>((callback) =>
+        dbOperation(id, callback)
+      )
     );
 
     const results = await AveAzul.all(promises);

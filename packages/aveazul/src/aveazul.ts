@@ -112,6 +112,24 @@ class AveAzul<T> extends Promise<T> {
   }
 
   /**
+   * `resolve`/`reject`/`all` are inherited from Promise. Per the ECMAScript
+   * spec they construct through `this`, so at runtime they already hand back
+   * AveAzul instances -- but `PromiseConstructor` types them as plain `Promise`,
+   * which drops every AveAzul method (`.spread()`, `.disposer()`, ...). These
+   * ambient re-declarations state the real return types; they add `declare`, so
+   * nothing is emitted and no behavior changes. They match what the exported
+   * `AveAzulClass` interface has always promised.
+   */
+  declare static resolve: {
+    <U>(value: U | PromiseLike<U>): AveAzul<U>;
+    (): AveAzul<void>;
+  };
+  declare static reject: <U = never>(reason?: unknown) => AveAzul<U>;
+  declare static all: <U>(
+    values: Iterable<U | PromiseLike<U>>
+  ) => AveAzul<Awaited<U>[]>;
+
+  /**
    * Note: Per ECMAScript specification, when extending Promise, both .then() and static methods
    * (resolve, reject, all, etc) must return instances of the derived class (AveAzul), so there's
    * no need to explicitly wrap returns in new AveAzul(). This behavior is standard across all
@@ -445,7 +463,16 @@ class AveAzul<T> extends Promise<T> {
    * @param options - Additional options
    * @returns The same promise instance
    */
-  asCallback(cb: ((err: Error | null, value?: T) => void) | undefined | null, options: AsCallbackOptions = {}): AveAzul<T> {
+  asCallback(
+    cb:
+      | ((err: Error | null, value?: T) => void)
+      // With `{ spread: true }` an array result is handed to the callback as
+      // separate arguments, so that form has to be describable too.
+      | ((err: Error | null, ...values: any[]) => void)
+      | undefined
+      | null,
+    options: AsCallbackOptions = {}
+  ): AveAzul<T> {
     if (typeof cb !== "function") {
       return this;
     }
@@ -554,7 +581,11 @@ class AveAzul<T> extends Promise<T> {
    * @returns Promise that resolves with the function's return value
    */
   static try<T>(fn: () => T | PromiseLike<T>): AveAzul<T> {
-    return AveAzul.resolve(xaa.wrap(fn)) as AveAzul<T>;
+    // xaa.wrap() reports the function's declared return type, so a fn returning a
+    // thenable comes back as Promise<T | PromiseLike<T>>; pinning resolve()'s type
+    // argument to that keeps the inference off the narrower outer T. The awaited
+    // value is a T, which is what the cast records.
+    return AveAzul.resolve<T | PromiseLike<T>>(xaa.wrap(fn)) as AveAzul<T>;
   }
 
   /**
@@ -774,7 +805,7 @@ addStaticAny(AveAzul as unknown as AveAzulClass);
 
 // Setup the not implemented methods
 import { setupNotImplemented } from "./not-implemented.js";
-setupNotImplemented(AveAzul as unknown as AveAzulClass);
+setupNotImplemented(AveAzul);
 
 export { AveAzul };
 export default AveAzul;

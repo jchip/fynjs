@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.method", () => {
   test("should convert a synchronous function to a promise-returning function", async () => {

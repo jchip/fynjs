@@ -1,3 +1,4 @@
+import { describe, test, expect } from "vitest";
 // This test file directly imports AveAzul from the dist directory
 // so it always tests the AveAzul implementation, even when running
 // in Bluebird test mode with USE_BLUEBIRD=true
@@ -70,7 +71,9 @@ describe("AveAzul.prototype.asCallback error handling", () => {
 
     // Create a custom error with additional properties
     class CustomError extends Error {
-      constructor(message) {
+      customProperty: string;
+
+      constructor(message: string) {
         super(message);
         this.name = "CustomError";
         this.customProperty = "test";

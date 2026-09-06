@@ -1,4 +1,4 @@
-
+import { describe, test, expect } from "vitest";
 import * as util from "../src/util.ts";
 
 describe("util.isClass", () => {
@@ -159,7 +159,7 @@ describe("util.copyOwnProperties", () => {
       arity: 3,
       prototype: {},
     };
-    const target = {};
+    const target: Partial<typeof source> = {};
 
     util.copyOwnProperties(source, target);
 
@@ -178,7 +178,7 @@ describe("util.copyOwnProperties", () => {
       b: 2,
       c: 3,
     };
-    const target = {};
+    const target: Partial<typeof source> = {};
 
     // Custom filter that only allows 'a' and 'c'
     const customFilter = (prop) => ["a", "c"].includes(prop);
@@ -209,7 +209,7 @@ describe("util.getObjectDataKeys", () => {
 
   test("should exclude keys from excluded prototypes", () => {
     // Create an array with a custom property
-    const arr = ["a", "b", "c"];
+    const arr: string[] & { customProperty?: string } = ["a", "b", "c"];
     arr.customProperty = "test";
 
     const keys = util.getObjectDataKeys(arr);

@@ -1,3 +1,4 @@
+import { describe, test, expect } from "vitest";
 import {
   OperationalError,
   isOperationalError,
@@ -33,7 +34,7 @@ describe("operational-error internal functions", () => {
     });
 
     test("should return true for errors with isOperational property", () => {
-      const error = new Error("test");
+      const error: Error & { isOperational?: boolean } = new Error("test");
       error.isOperational = true;
       expect(isOperationalError(error)).toBe(true);
     });
@@ -58,7 +59,7 @@ describe("operational-error internal functions", () => {
       const error = new OperationalError("test");
       expect(isProgrammerError(error)).toBe(false);
 
-      const error2 = new Error("test");
+      const error2: Error & { isOperational?: boolean } = new Error("test");
       error2.isOperational = true;
       expect(isProgrammerError(error2)).toBe(false);
     });

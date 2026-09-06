@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, it, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("promisify", () => {
   test("should work with callback-style functions", async () => {
@@ -75,9 +74,13 @@ describe("promisify", () => {
   test("should throw on non-function arguments", () => {
     expect(() => AveAzul.promisify(null)).toThrow(TypeError);
     expect(() => AveAzul.promisify(undefined)).toThrow(TypeError);
-    expect(() => AveAzul.promisify(42)).toThrow(TypeError);
-    expect(() => AveAzul.promisify("not a function")).toThrow(TypeError);
-    expect(() => AveAzul.promisify({})).toThrow(TypeError);
+    // Deliberately the wrong types: the runtime check under test is what throws.
+    const notFunctions = [42, "not a function", {}] as unknown as ((
+      ...args: any[]
+    ) => void)[];
+    for (const notAFunction of notFunctions) {
+      expect(() => AveAzul.promisify(notAFunction)).toThrow(TypeError);
+    }
   });
 
   test("should handle context option", async () => {
@@ -100,7 +103,14 @@ describe("promisify", () => {
       prop: "nested value",
     };
 
-    const promisified = AveAzul.promisify(original);
+    // promisify() copies the original function's own properties onto the result;
+    // the Partial<...> half declares the ones this test reads back.
+    const promisified: ((...args: any[]) => Promise<unknown>) &
+      Partial<{
+        someProperty: string;
+        anotherProperty: number;
+        nested: { prop: string };
+      }> = AveAzul.promisify(original);
 
     // Test basic properties
     expect(promisified.someProperty).toBe("value");
@@ -185,7 +195,10 @@ describe("promisify", () => {
     const fn = (cb) => cb(null, "success");
 
     // First promisification
-    const promisified1 = AveAzul.promisify(fn);
+    // promisify() stamps __isPromisified__ on the result; declared here because
+    // this test deletes and redefines it.
+    const promisified1: ((...args: any[]) => Promise<unknown>) &
+      Partial<{ __isPromisified__: boolean }> = AveAzul.promisify(fn);
 
     // Delete the original __isPromisified__ property first
     delete promisified1.__isPromisified__;

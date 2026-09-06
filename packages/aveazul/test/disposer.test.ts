@@ -1,5 +1,6 @@
+import { describe, test, expect, vi } from "vitest";
 import { Disposer } from "../src/disposer.ts";
-import AveAzul from "./promise-lib.js";
+import AveAzul from "./promise-lib.ts";
 
 describe("Disposer", () => {
   test("should be exported as a class", () => {
@@ -8,7 +9,11 @@ describe("Disposer", () => {
 
   test("should throw if disposer function is not a function", () => {
     expect(() => {
-      AveAzul.resolve({}).disposer("not a function");
+      // Deliberately the wrong type: the runtime check under test is what throws.
+      const notAFunction = "not a function" as unknown as (
+        resource: unknown
+      ) => void;
+      AveAzul.resolve({}).disposer(notAFunction);
     }).toThrow(TypeError);
   });
 

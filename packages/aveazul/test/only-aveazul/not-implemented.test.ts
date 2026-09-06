@@ -1,12 +1,30 @@
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   createInstanceNotImplemented,
   createStaticNotImplemented,
-  setupNotImplemented,
 } from "../../src/not-implemented.ts";
 import { AveAzul } from "../../src/index.ts";
 
-// Create a mock class to test with - not extending Promise to avoid constructor issues
+/** A stub the not-implemented helpers attach their throwing methods to. */
+type Stub = (...args: unknown[]) => unknown;
+
+// Create a mock class to test with - not extending Promise to avoid constructor issues.
+// The optional members are the ones the helpers under test attach at runtime.
 class MockClass {
+  value: string;
+
+  // `declare` so these stay type-only: a real field declaration would emit an
+  // `undefined` own property that shadows whatever the helpers attach.
+  declare spread?: Stub;
+  declare bind?: Stub;
+  declare tap?: Stub;
+
+  declare static join?: Stub;
+  declare static try?: Stub;
+  declare static method?: Stub;
+  declare static all?: Stub;
+  declare static any?: Stub;
+
   constructor() {
     this.value = "test";
   }

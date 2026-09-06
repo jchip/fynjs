@@ -1,6 +1,7 @@
+import { describe, test, expect } from "vitest";
 import { addStaticAny } from "../src/any.ts";
 import { AveAzul } from "../src/index.ts";
-import TestPromise from "./promise-lib.js";
+import TestPromise from "./promise-lib.ts";
 
 if (TestPromise === AveAzul) {
   addStaticAny(AveAzul, true);
@@ -45,12 +46,9 @@ describe("AveAzul.prototype.any", () => {
       TestPromise.reject(new Error("error 3")),
     ];
 
-    try {
-      await TestPromise.resolve(promises).any();
-      fail("Expected promise to reject");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-    }
+    await expect(TestPromise.resolve(promises).any()).rejects.toBeInstanceOf(
+      Error
+    );
   });
 
   test("should resolve with value even if some promises reject", async () => {
@@ -65,7 +63,11 @@ describe("AveAzul.prototype.any", () => {
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
-    await expect(TestPromise.resolve(123).any()).rejects.toThrow(TypeError);
+    // Deliberately invalid input: the runtime check under test is what rejects it.
+    const notIterable = 123 as unknown as Iterable<unknown>;
+    await expect(TestPromise.resolve(notIterable).any()).rejects.toThrow(
+      TypeError
+    );
     await expect(TestPromise.resolve(null).any()).rejects.toThrow(TypeError);
     await expect(TestPromise.resolve(undefined).any()).rejects.toThrow(
       TypeError
@@ -73,12 +75,7 @@ describe("AveAzul.prototype.any", () => {
   });
 
   test("should reject empty array with an error", async () => {
-    try {
-      await TestPromise.resolve([]).any();
-      fail("Expected promise to reject");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-    }
+    await expect(TestPromise.resolve([]).any()).rejects.toBeInstanceOf(Error);
   });
 });
 
@@ -121,12 +118,7 @@ describe("AveAzul.any", () => {
       TestPromise.reject(new Error("error 3")),
     ];
 
-    try {
-      await TestPromise.any(promises);
-      fail("Expected promise to reject");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-    }
+    await expect(TestPromise.any(promises)).rejects.toBeInstanceOf(Error);
   });
 
   test("should resolve with value even if some promises reject", async () => {
@@ -141,17 +133,15 @@ describe("AveAzul.any", () => {
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
-    await expect(TestPromise.any(123)).rejects.toThrow(TypeError);
+    // Deliberately invalid input: the runtime check under test is what rejects it.
+    await expect(
+      TestPromise.any(123 as unknown as Iterable<unknown>)
+    ).rejects.toThrow(TypeError);
     await expect(TestPromise.any(null)).rejects.toThrow(TypeError);
     await expect(TestPromise.any(undefined)).rejects.toThrow(TypeError);
   });
 
   test("should reject empty array with an error", async () => {
-    try {
-      await TestPromise.any([]);
-      fail("Expected promise to reject");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-    }
+    await expect(TestPromise.any([])).rejects.toBeInstanceOf(Error);
   });
 });

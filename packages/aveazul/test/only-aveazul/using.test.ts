@@ -1,3 +1,4 @@
+import { describe, test, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AveAzul } from "../../src/index.ts";
 import { AggregateError } from "@jchip/error";
 import Bluebird from "bluebird";
@@ -63,7 +64,11 @@ describe("AveAzul.using", () => {
   });
 
   test("should throw for invalid or missing arguments", async () => {
-    expect(() => AveAzul.using()).toThrow(
+    // Called with no arguments on purpose, to exercise the runtime guard. The
+    // signature requires at least one argument, so the call goes through a
+    // deliberately widened view of the static.
+    const usingUnchecked = AveAzul.using as (...args: unknown[]) => unknown;
+    expect(() => usingUnchecked()).toThrow(
       "resrouces and handler function required"
     );
     expect(() => AveAzul.using([])).toThrow(

@@ -1,5 +1,6 @@
+import { describe, test, expect } from "vitest";
 import { asyncVerify, expectError } from "run-verify";
-import AveAzul from "./promise-lib.js";
+import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.prototype.asCallback", () => {
   test("should call callback with value when promise resolves", () => {
@@ -35,7 +36,7 @@ describe("AveAzul.prototype.asCallback", () => {
   });
 
   test("should spread array values with spread option", () => {
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       AveAzul.resolve([1, 2, 3]).asCallback(
         (err, a, b, c) => {
           expect(err).toBeNull();
@@ -62,7 +63,7 @@ describe("AveAzul.prototype.asCallback", () => {
   test("should work with delay", () => {
     let callbackCalled = false;
 
-    const promise = new Promise((resolve) => {
+    const promise = new Promise<void>((resolve) => {
       AveAzul.delay(50, "delayed value").asCallback((err, value) => {
         callbackCalled = true;
         expect(err).toBeNull();

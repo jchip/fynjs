@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect, vi } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.join", () => {
   test("should wait for all promises and pass their values to the handler", async () => {

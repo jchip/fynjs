@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.prototype.all", () => {
   test("should resolve an array of promises", async () => {

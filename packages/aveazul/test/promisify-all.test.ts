@@ -1,15 +1,45 @@
+import { describe, test, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
+import fsModule from "node:fs";
+import type { Dir, Dirent, Stats } from "node:fs";
+import path from "node:path";
 
+/** The shape of the node-style callback the fixtures below hand to promisifyAll. */
+type NodeCallback = (err: Error | null, ...values: unknown[]) => void;
 
-import AveAzul from "./promise-lib.js";
-import { createRequire } from "node:module";
+/** The members promisifyAll() adds to a copy of `fs`. */
+type FsAsync = {
+  readFileAsync(file: string, encoding: string): Promise<string>;
+  writeFileAsync(file: string, data: string): Promise<void>;
+  statAsync(file: string): Promise<Stats>;
+  opendirAsync(dir: string): Promise<PromisifiedDir>;
+};
 
-const require = createRequire(import.meta.url);
-const fs = require("fs");
-const path = require("path");
+/** The members promisifyAll() adds to an `fs.Dir`. */
+type PromisifiedDir = Dir &
+  Partial<{
+    readAsync(): Promise<Dirent | null>;
+    closeAsync(): Promise<void>;
+  }>;
+
+// Declares the members promisifyAll() would add, all optional, so the test can
+// assert that the untouched module object never gained them.
+const fs: typeof fsModule & Partial<FsAsync> = fsModule;
 
 describe("AveAzul.promisifyAll", () => {
   test("should promisify all methods of an object", async () => {
-    const obj = {
+    // The `Partial<...>` half declares what promisifyAll() adds at runtime; it is
+    // optional so the plain literal still assigns, and so the tests below can also
+    // assert that a member was *not* added.
+    const obj: {
+      method1(cb: NodeCallback): void;
+      method2(a: number, b: number, cb: NodeCallback): void;
+      _privateMethod(cb: NodeCallback): void;
+    } & Partial<{
+      method1Async(): Promise<string>;
+      method2Async(a: number, b: number): Promise<number>;
+      _privateMethodAsync(): Promise<string>;
+    }> = {
       method1(cb) {
         cb(null, "result1");
       },
@@ -33,18 +63,23 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should promisify all methods of a class prototype", async () => {
     class MyClass {
-      method1(cb) {
+      method1(cb: NodeCallback) {
         cb(null, "result1");
       }
-      method2(a, b, cb) {
+      method2(a: number, b: number, cb: NodeCallback) {
         cb(null, a + b);
       }
-      _privateMethod(cb) {
+      _privateMethod(cb: NodeCallback) {
         cb(null, "private");
       }
     }
 
-    const instance = new MyClass();
+    const instance: MyClass &
+      Partial<{
+        method1Async(): Promise<string>;
+        method2Async(a: number, b: number): Promise<number>;
+        _privateMethodAsync(): Promise<string>;
+      }> = new MyClass();
     AveAzul.promisifyAll(instance);
     const result1 = await instance.method1Async();
     const result2 = await instance.method2Async(1, 2);
@@ -55,7 +90,12 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should respect custom suffix option", async () => {
-    const obj = {
+    const obj: {
+      method(cb: NodeCallback): void;
+    } & Partial<{
+      methodPromise(): Promise<string>;
+      methodAsync(): Promise<string>;
+    }> = {
       method(cb) {
         cb(null, "result");
       },
@@ -69,7 +109,13 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should respect custom filter option", async () => {
-    const obj = {
+    const obj: {
+      method1(cb: NodeCallback): void;
+      method2(cb: NodeCallback): void;
+    } & Partial<{
+      method1Async(): Promise<string>;
+      method2Async(): Promise<string>;
+    }> = {
       method1(cb) {
         cb(null, "result1");
       },
@@ -88,7 +134,9 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should handle multiArgs option", async () => {
-    const obj = {
+    const obj: {
+      method(cb: NodeCallback): void;
+    } & Partial<{ methodAsync(): Promise<string[]> }> = {
       method(cb) {
         cb(null, "result1", "result2");
       },
@@ -104,15 +152,18 @@ describe("AveAzul.promisifyAll", () => {
   test("should throw on invalid target", () => {
     // expect(() => AveAzul.promisifyAll(null)).toThrow(TypeError);
     expect(() => AveAzul.promisifyAll(undefined)).toThrow(TypeError);
-    expect(() => AveAzul.promisifyAll(42)).toThrow(TypeError);
+    // Deliberately the wrong type: the runtime check under test is what throws.
+    expect(() => AveAzul.promisifyAll(42 as unknown as object)).toThrow(
+      TypeError
+    );
   });
 
   test("should throw when methods end in Async", () => {
     const obj = {
-      method(cb) {
+      method(cb: NodeCallback) {
         cb(null, "result");
       },
-      methodAsync(cb) {
+      methodAsync(cb: NodeCallback) {
         cb(null, "result");
       },
     };
@@ -122,7 +173,15 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should not promisify invalid JavaScript identifiers", () => {
-    const obj = {
+    const obj: {
+      "123method"(cb: NodeCallback): void;
+      "method-name"(cb: NodeCallback): void;
+      "method.name"(cb: NodeCallback): void;
+    } & Partial<{
+      "123methodAsync"(): Promise<string>;
+      "method-nameAsync"(): Promise<string>;
+      "method.nameAsync"(): Promise<string>;
+    }> = {
       "123method"(cb) {
         cb(null, "result");
       },
@@ -140,7 +199,9 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should support custom promisifier", async () => {
-    const obj = {
+    const obj: {
+      method(a: number, b: number, cb: NodeCallback): void;
+    } & Partial<{ methodAsync(a: number, b: number): Promise<number> }> = {
       method(a, b, cb) {
         cb(null, a + b);
       },
@@ -164,7 +225,9 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should return AveAzul instances", async () => {
-    const obj = {
+    const obj: {
+      method(cb: NodeCallback): void;
+    } & Partial<{ methodAsync(): Promise<string[]> }> = {
       method(cb) {
         cb(null, "result1", "result2");
       },
@@ -182,7 +245,9 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should handle multiArgs option with error", async () => {
     const error = new Error("test error");
-    const obj = {
+    const obj: {
+      method(cb: NodeCallback): void;
+    } & Partial<{ methodAsync(): Promise<string[]> }> = {
       method(cb) {
         cb(error);
       },
@@ -195,7 +260,9 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should handle multiArgs option with custom promisifier", async () => {
-    const obj = {
+    const obj: {
+      method(cb: NodeCallback): void;
+    } & Partial<{ methodAsync(): Promise<string[]> }> = {
       method(cb) {
         cb(null, "result1", "result2", "result3");
       },
@@ -224,7 +291,7 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should throw RangeError when suffix is not a valid identifier", () => {
     const obj = {
-      method(cb) {
+      method(cb: NodeCallback) {
         cb(null, "result");
       },
     };
@@ -236,7 +303,10 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should handle methods in standard prototypes like Array", () => {
     // Try to promisify an array
-    const arr = [1, 2, 3];
+    const arr: number[] &
+      Partial<
+        Record<"mapAsync" | "filterAsync" | "forEachAsync" | "reduceAsync", unknown>
+      > = [1, 2, 3];
     AveAzul.promisifyAll(arr);
 
     // Array's standard methods should not have Async versions
@@ -246,7 +316,10 @@ describe("AveAzul.promisifyAll", () => {
     expect(arr.reduceAsync).toBeUndefined();
 
     // Create a custom object with an Array property
-    const objWithArrayProp = {
+    const objWithArrayProp: {
+      myArray: number[];
+      arrayMethod(cb: NodeCallback): void;
+    } & Partial<{ arrayMethodAsync(): Promise<number[]> }> = {
       myArray: arr,
       arrayMethod(cb) {
         cb(null, this.myArray);
@@ -264,13 +337,18 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should not promisify methods of a class that extends Array", () => {
     // Create a class that extends Array
-    class MyArray extends Array {
-      myCustomMethod(cb) {
+    class MyArray extends Array<number> {
+      myCustomMethod(cb: NodeCallback) {
         cb(null, this.length);
       }
     }
 
-    const myArr = new MyArray(1, 2, 3);
+    // Built via push rather than `new MyArray(1, 2, 3)`: the inherited Array
+    // construct signature takes a length, not elements.
+    const myArr: MyArray &
+      Partial<Record<"mapAsync" | "filterAsync" | "myCustomMethodAsync", unknown>> =
+      new MyArray();
+    myArr.push(1, 2, 3);
     AveAzul.promisifyAll(myArr);
 
     // The standard Array methods should not have Async versions
@@ -282,7 +360,13 @@ describe("AveAzul.promisifyAll", () => {
   });
 
   test("should have no effect when called multiple times on the same object", async () => {
-    const obj = {
+    const obj: {
+      method(cb: NodeCallback): void;
+      otherMethod(a: number, cb: NodeCallback): void;
+    } & Partial<{
+      methodAsync(): Promise<string>;
+      otherMethodAsync(a: number): Promise<number>;
+    }> = {
       method(cb) {
         cb(null, "result");
       },
@@ -320,7 +404,20 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should preserve 'this' binding in promisified methods", async () => {
     // Object with methods that use 'this'
-    const obj = {
+    const obj: {
+      name: string;
+      value: number;
+      getName(cb: NodeCallback): void;
+      getValue(cb: NodeCallback): void;
+      setValues(newName: string, newValue: number, cb: NodeCallback): void;
+    } & Partial<{
+      getNameAsync(): Promise<string>;
+      getValueAsync(): Promise<number>;
+      setValuesAsync(
+        newName: string,
+        newValue: number
+      ): Promise<{ name: string; value: number }>;
+    }> = {
       name: "test-object",
       value: 42,
 
@@ -358,7 +455,7 @@ describe("AveAzul.promisifyAll", () => {
 
   test("should promisify fs object methods", async () => {
     // Create a copy of fs to avoid modifying the original
-    const fsCopy = { ...fs };
+    const fsCopy: typeof fsModule & Partial<FsAsync> = { ...fsModule };
 
     // Promisify all fs methods
     AveAzul.promisifyAll(fsCopy);

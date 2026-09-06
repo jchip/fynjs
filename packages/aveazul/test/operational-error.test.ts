@@ -1,6 +1,6 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
+import type { AveAzulInstance } from "../src/index.ts";
 
 describe("OperationalError", () => {
   test("should be a constructor", () => {
@@ -41,7 +41,9 @@ describe("AveAzul.prototype.error", () => {
   });
 
   test("should catch errors marked as operational", async () => {
-    const error = new Error("marked as operational");
+    const error: Error & { isOperational?: boolean } = new Error(
+      "marked as operational"
+    );
     error.isOperational = true;
 
     const promise = AveAzul.reject(error);
@@ -49,7 +51,10 @@ describe("AveAzul.prototype.error", () => {
     const result = await promise
       .error((err) => {
         expect(err).toBeInstanceOf(Error);
-        expect(err.isOperational).toBe(true);
+        // error() hands back a plain Error; isOperational is the ad-hoc marker
+        // this test set on it.
+        const marked = err as Error & { isOperational?: boolean };
+        expect(marked.isOperational).toBe(true);
         expect(err.message).toBe("marked as operational");
         return "handled";
       })
@@ -97,18 +102,20 @@ describe("AveAzul.prototype.error", () => {
   });
 
   test("should work with promise chains", async () => {
-    const result = await AveAzul.resolve(1)
-      .then((x) => {
-        if (x === 1) {
-          throw new AveAzul.OperationalError("operational in then");
-        }
-        return x;
-      })
-      .error((err) => {
-        expect(err).toBeInstanceOf(AveAzul.OperationalError);
-        expect(err.message).toBe("operational in then");
-        return "handled in chain";
-      });
+    // `.then()` is typed by the Promise lib as returning a plain Promise, but per
+    // spec it constructs through `this`, so the chain really is an AveAzul.
+    const chained = AveAzul.resolve(1).then((x) => {
+      if (x === 1) {
+        throw new AveAzul.OperationalError("operational in then");
+      }
+      return x;
+    }) as AveAzulInstance<number>;
+
+    const result = await chained.error((err) => {
+      expect(err).toBeInstanceOf(AveAzul.OperationalError);
+      expect(err.message).toBe("operational in then");
+      return "handled in chain";
+    });
 
     expect(result).toBe("handled in chain");
   });

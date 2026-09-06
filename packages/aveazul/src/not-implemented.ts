@@ -1,4 +1,9 @@
-import type { AveAzulClass } from "./aveazul.js";
+/**
+ * What these helpers actually need from their target: they only read/assign the
+ * target's `prototype` members and its own static keys, so any constructor will
+ * do — the real AveAzul class, or a stand-in in tests.
+ */
+export type NotImplementedTarget = { prototype: object };
 
 function createNotImplemented(name: string): () => never {
   return function (): never {
@@ -8,7 +13,7 @@ function createNotImplemented(name: string): () => never {
   };
 }
 
-export function createInstanceNotImplemented(AveAzul: AveAzulClass): string[] {
+export function createInstanceNotImplemented(AveAzul: NotImplementedTarget): string[] {
   const methods = [
     "then",
     "spread",
@@ -59,7 +64,7 @@ export function createInstanceNotImplemented(AveAzul: AveAzulClass): string[] {
   return ret;
 }
 
-export function createStaticNotImplemented(AveAzul: AveAzulClass): string[] {
+export function createStaticNotImplemented(AveAzul: NotImplementedTarget): string[] {
   const methods = [
     "join",
     "try",
@@ -97,7 +102,7 @@ export function createStaticNotImplemented(AveAzul: AveAzulClass): string[] {
   return ret;
 }
 
-export function setupNotImplemented(AveAzul: AveAzulClass): void {
+export function setupNotImplemented(AveAzul: NotImplementedTarget): void {
   const instanceMethods = createInstanceNotImplemented(AveAzul);
   const staticMethods = createStaticNotImplemented(AveAzul);
   (AveAzul as unknown as Record<string, string[]>).__notImplementedInstance =

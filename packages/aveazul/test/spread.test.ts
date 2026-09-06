@@ -1,3 +1,4 @@
+import { describe, test, expect } from "vitest";
 import { AveAzul } from "../src/index.ts";
 
 describe("AveAzul.prototype.spread", () => {
@@ -38,8 +39,13 @@ describe("AveAzul.prototype.spread", () => {
   });
 
   test("should throw if not given a function", async () => {
+    // Deliberately the wrong type: the runtime check under test is what rejects
+    // a non-function handler, and the signature already forbids one.
+    const notAFunction = "not a function" as unknown as (
+      ...args: unknown[]
+    ) => unknown;
     await expect(() =>
-      AveAzul.resolve([1, 2, 3]).spread("not a function")
+      AveAzul.resolve([1, 2, 3]).spread(notAFunction)
     ).rejects.toThrow("expecting a function but");
   });
 

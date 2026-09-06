@@ -1,9 +1,6 @@
-
-
-import AveAzul from "./promise-lib.js";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import AveAzul from "./promise-lib.ts";
+import Bluebird from "bluebird";
 
 describe("AveAzul.using", () => {
   beforeEach(() => {
@@ -69,16 +66,16 @@ describe("AveAzul.using", () => {
   });
 
   function setupCleanupOrderTest() {
-    const cleanupOrder = [];
+    const cleanupOrder: number[] = [];
 
     const resource1 = { id: 1 };
     const resource2 = { id: 2 };
     const resource3 = { id: 3 };
 
     const disposer1 = AveAzul.resolve(resource1).disposer(() => {
-      return AveAzul.delay(Math.random() * 200).then(() =>
-        cleanupOrder.push(1)
-      );
+      return AveAzul.delay(Math.random() * 200).then(() => {
+        cleanupOrder.push(1);
+      });
     });
 
     const disposer2 = AveAzul.resolve(resource2).disposer(() => {
@@ -86,9 +83,9 @@ describe("AveAzul.using", () => {
     });
 
     const disposer3 = AveAzul.resolve(resource3).disposer(() => {
-      return AveAzul.delay(Math.random() * 200).then(() =>
-        cleanupOrder.push(3)
-      );
+      return AveAzul.delay(Math.random() * 200).then(() => {
+        cleanupOrder.push(3);
+      });
     });
     return { cleanupOrder, disposer1, disposer2, disposer3 };
   }
@@ -309,7 +306,7 @@ describe("AveAzul.using", () => {
     const resource = { value: "test" };
 
     // Use a different approach to ensure the async cleanup completes
-    const cleanupPromise = new Promise((resolve) => {
+    const cleanupPromise = new Promise<void>((resolve) => {
       const disposer = AveAzul.resolve(resource).disposer(async () => {
         await new Promise((r) => setTimeout(r, 10));
         disposed = true;
@@ -478,11 +475,12 @@ describe("AveAzul.using", () => {
   });
 
   test("should handle a promise that resolves to a disposer", async () => {
-    const Promise = require("bluebird");
-
     // A simple resource class for testing
     class Resource {
-      constructor(name) {
+      name: string;
+      disposed: boolean;
+
+      constructor(name: string) {
         this.name = name;
         this.disposed = false;
       }
@@ -496,7 +494,7 @@ describe("AveAzul.using", () => {
       }
 
       bluebirdDisposer() {
-        return Promise.resolve(this).disposer((r) => r.dispose());
+        return Bluebird.resolve(this).disposer((r) => r.dispose());
       }
     }
 
@@ -518,10 +516,10 @@ describe("AveAzul.using", () => {
     const bluebirdResource = new Resource("Bluebird");
     // Create a function that returns a promise resolving to a disposer
     const getBluebirdPromiseToDisposer = () => {
-      return Promise.resolve(bluebirdResource.bluebirdDisposer());
+      return Bluebird.resolve(bluebirdResource.bluebirdDisposer());
     };
 
-    await Promise.using(getBluebirdPromiseToDisposer(), (resource) => {
+    await Bluebird.using(getBluebirdPromiseToDisposer(), (resource) => {
       expect(resource.name).toBe("Bluebird");
       expect(resource.disposed).toBe(false);
     });
@@ -530,17 +528,19 @@ describe("AveAzul.using", () => {
   });
 
   test("should compare direct disposer vs promise-to-disposer behavior", async () => {
-    const Promise = require("bluebird");
-
     // A simple resource class for testing
     class Resource {
-      constructor(name) {
+      name: string;
+      disposed: boolean;
+      usedIn: string[];
+
+      constructor(name: string) {
         this.name = name;
         this.disposed = false;
         this.usedIn = [];
       }
 
-      use(context) {
+      use(context: string) {
         this.usedIn.push(context);
       }
 
@@ -553,7 +553,7 @@ describe("AveAzul.using", () => {
       }
 
       bluebirdDisposer() {
-        return Promise.resolve(this).disposer((r) => r.dispose());
+        return Bluebird.resolve(this).disposer((r) => r.dispose());
       }
     }
 
@@ -579,9 +579,9 @@ describe("AveAzul.using", () => {
     const bbDirectDisposer = bbResource1.bluebirdDisposer();
 
     const bbResource2 = new Resource("Bluebird-Promised");
-    const bbPromiseToDisposer = Promise.resolve(bbResource2.bluebirdDisposer());
+    const bbPromiseToDisposer = Bluebird.resolve(bbResource2.bluebirdDisposer());
 
-    await Promise.using(bbDirectDisposer, bbPromiseToDisposer, (r1, r2) => {
+    await Bluebird.using(bbDirectDisposer, bbPromiseToDisposer, (r1, r2) => {
       r1.use("direct");
       r2.use("promised");
     });

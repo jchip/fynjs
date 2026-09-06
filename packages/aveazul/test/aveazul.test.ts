@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect, vi } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("static methods", () => {
   test("reduce() should handle empty array without initial value and return undefined", async () => {
@@ -117,7 +116,7 @@ describe("static methods", () => {
     expect(result).toBe(15); // 1+2+3+4+5 = 15
 
     // Test without initial value
-    const result2 = await AveAzul.reduce(array, (acc, val) => {
+    const result2 = await AveAzul.reduce<number, number>(array, (acc, val) => {
       // Verify the promises are resolved
       expect(typeof val).toBe("number");
       expect(typeof acc).toBe("number");

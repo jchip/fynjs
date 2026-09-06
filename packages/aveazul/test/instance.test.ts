@@ -1,5 +1,5 @@
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect, vi } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("instance methods", () => {
   test("tap() should execute side effects and return original value", async () => {
@@ -161,7 +161,7 @@ describe("instance methods", () => {
   });
 
   test("throw() should return rejected promise", async () => {
-    const promise = new AveAzul((resolve) => resolve()).throw(
+    const promise = new AveAzul<void>((resolve) => resolve()).throw(
       new Error("test")
     );
 
@@ -185,19 +185,25 @@ describe("instance methods", () => {
   });
 
   test("get() should retrieve property value", async () => {
-    const result = await new AveAzul((resolve) => resolve({ a: 42 })).get("a");
+    const result = await new AveAzul<{ a: number }>((resolve) =>
+      resolve({ a: 42 })
+    ).get("a");
 
     expect(result).toBe(42);
   });
 
   test("get() should retrieve property value", async () => {
-    const result = await new AveAzul((resolve) => resolve({ a: 42 })).get("a");
+    const result = await new AveAzul<{ a: number }>((resolve) =>
+      resolve({ a: 42 })
+    ).get("a");
 
     expect(result).toBe(42);
   });
 
   test("get() should retrieve property value", async () => {
-    const result = await new AveAzul((resolve) => resolve([1, 2, 3])).get(1);
+    const result = await new AveAzul<number[]>((resolve) =>
+      resolve([1, 2, 3])
+    ).get(1);
 
     expect(result).toBe(2);
   });

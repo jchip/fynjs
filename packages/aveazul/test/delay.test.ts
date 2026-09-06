@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect, vi, beforeEach } from "vitest";
+import AveAzul from "./promise-lib.ts";
 
 describe("delay", () => {
   beforeEach(() => {

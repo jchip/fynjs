@@ -1,24 +1,30 @@
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { triggerUncaughtException } from "../src/util.ts";
 
 describe("triggerUncaughtException", () => {
-  // Save original setTimeout
-  let originalSetTimeout;
+  let setTimeoutMock: ReturnType<typeof vi.fn>;
+  // The callback the mock captured, kept here rather than stashed on the mock
+  // function itself so it stays typed.
+  let capturedCallback: () => void;
 
   beforeEach(() => {
-    // Save the original setTimeout
-    originalSetTimeout = global.setTimeout;
+    capturedCallback = undefined;
 
     // Mock setTimeout to capture callbacks instead of executing them
-    global.setTimeout = vi.fn((callback) => {
-      // Store the callback for testing, but don't execute it
-      global.setTimeout._callback = callback;
+    setTimeoutMock = vi.fn((callback: () => void) => {
+      capturedCallback = callback;
       return 123; // Return a timeout ID
     });
+
+    // Installed through vi.stubGlobal() rather than by assigning
+    // `global.setTimeout`: @types/node's setTimeout carries a `__promisify__`
+    // property that no plain mock function can satisfy.
+    vi.stubGlobal("setTimeout", setTimeoutMock);
   });
 
   afterEach(() => {
     // Restore original setTimeout
-    global.setTimeout = originalSetTimeout;
+    vi.unstubAllGlobals();
   });
 
   test("should schedule a setTimeout with 0ms delay", () => {
@@ -27,8 +33,8 @@ describe("triggerUncaughtException", () => {
     triggerUncaughtException(error);
 
     // Verify setTimeout was called with a function and 0ms delay
-    expect(global.setTimeout).toHaveBeenCalledTimes(1);
-    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 0);
+    expect(setTimeoutMock).toHaveBeenCalledTimes(1);
+    expect(setTimeoutMock).toHaveBeenCalledWith(expect.any(Function), 0);
   });
 
   test("should wrap the error in an Error object if it is not an Error", () => {
@@ -37,10 +43,10 @@ describe("triggerUncaughtException", () => {
     triggerUncaughtException(nonError);
 
     // Verify setTimeout was called
-    expect(global.setTimeout).toHaveBeenCalledTimes(1);
+    expect(setTimeoutMock).toHaveBeenCalledTimes(1);
 
     // The callback should throw an Error, not the original string
-    const callback = global.setTimeout._callback;
+    const callback = capturedCallback;
     expect(() => callback()).toThrow(Error);
     expect(() => callback()).toThrow("Test error string");
   });
@@ -51,10 +57,10 @@ describe("triggerUncaughtException", () => {
     triggerUncaughtException(originalError);
 
     // Verify setTimeout was called
-    expect(global.setTimeout).toHaveBeenCalledTimes(1);
+    expect(setTimeoutMock).toHaveBeenCalledTimes(1);
 
     // The callback should throw the original Error
-    const callback = global.setTimeout._callback;
+    const callback = capturedCallback;
     expect(() => callback()).toThrow(originalError);
   });
 
@@ -65,6 +71,6 @@ describe("triggerUncaughtException", () => {
 
     // The callback should not have been executed yet
     // (because we mocked setTimeout to not actually execute it)
-    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 0);
+    expect(setTimeoutMock).toHaveBeenCalledWith(expect.any(Function), 0);
   });
 });

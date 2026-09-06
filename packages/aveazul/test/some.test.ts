@@ -1,6 +1,5 @@
-
-
-import AveAzul from "./promise-lib.js";
+import { describe, test, expect } from "vitest";
+import AveAzul from "./promise-lib.ts";
 const isBluebird = process.env.USE_BLUEBIRD === "true";
 
 describe("AveAzul.some", () => {
@@ -55,7 +54,8 @@ describe("AveAzul.some", () => {
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
     // Test with a non-iterable object
-    const nonIterable = { foo: "bar" };
+    // Deliberately not iterable: the runtime check under test is what rejects it.
+    const nonIterable = { foo: "bar" } as unknown as Iterable<unknown>;
 
     // Should throw a TypeError
     await expect(AveAzul.some(nonIterable, 2)).rejects.toThrow(TypeError);
