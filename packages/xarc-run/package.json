@@ -20,7 +20,7 @@
     "test": "vitest run",
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "ci:check": "vitest run --coverage",
+    "ci:check": "tsc --noEmit -p tsconfig.json && vitest run --coverage",
     "test:watch": "vitest",
     "test:debug": "vitest --inspect-brk",
     "coveralls": "cat coverage/lcov.info | coveralls",
