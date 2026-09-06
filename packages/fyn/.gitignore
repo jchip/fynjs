@@ -1,20 +1,10 @@
-node_modules
-/.vscode
-/coverage
-/.nyc*
-/*.swp
-/*.log*
-/tmp
-.tgz
-/.cache
-/xout
-.tmp*
-/*.tgz
-/dist
+# Fyn runtime and internal cache
 .fyn
 package-fyn.*
-fyn-debug*.log
 package-lock.*
+/xout
+
+# Test fixtures and runtime directories
 /test/.fyn-global
 /test/.fyn-global-methods
 /test/.cache-util-test

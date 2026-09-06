@@ -1,9 +1,2 @@
-node_modules
-*.tgz
-*-lock.*
+# Extraction directory created during pack/publish tests
 package
-.nyc_output
-coverage
-.vscode
-dist-cjs
-dist-esm

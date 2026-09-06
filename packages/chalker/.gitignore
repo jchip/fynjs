@@ -1,9 +1,0 @@
-node_modules
-.vscode
-.nyc_output
-coverage
-*-lock.*
-*.log
-dist
-dist-*
-*.tsbuildinfo

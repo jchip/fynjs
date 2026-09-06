@@ -1,6 +1,0 @@
-dist
-dist-*
-node_modules
-coverage
-*.tsbuildinfo
-fyn-lock.yaml
