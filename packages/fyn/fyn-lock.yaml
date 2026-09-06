@@ -136,10 +136,10 @@ $pkg:
    unwrap-npm-cmd: ^2.0.0
    xsh: ^1.0.1
 '@fynjs/ts-resolve':
- _latest: 1.0.0-fynlocal_h
+ _latest: 0.0.1-fynlocal_h
  _:
-  ../ts-resolve: 1.0.0-fynlocal_h
- 1.0.0-fynlocal_h:
+  ../ts-resolve: 0.0.1-fynlocal_h
+ 0.0.1-fynlocal_h:
   top: 1
   $: local
   _: ../ts-resolve
