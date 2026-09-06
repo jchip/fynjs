@@ -64,7 +64,7 @@ export interface FynpoGraph {
  * reads, and that is more useful there than the widened `unknown` these three share.
  */
 export interface FynPkgDirs {
-  getInstalledPkgDir(name: string, version: string, info?: unknown): string;
+  getInstalledPkgDir(name?: string, version?: string, info?: unknown): string;
   createSubNodeModulesDir(pkgDir: string): Promise<string>;
 }
 

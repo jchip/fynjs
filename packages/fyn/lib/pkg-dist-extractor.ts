@@ -34,7 +34,7 @@ export interface FynForExtractor {
   getInstalledPkgDir(name: string, version: string, opts?: { promoted?: boolean }): string;
   getExtraDir(name?: string): string;
   getFvDir(version: string): string;
-  ensureProperPkgDir(pkg: ExtractPkg, fullOutDir: string): Promise<unknown>;
+  ensureProperPkgDir(pkg: ExtractPkg, fullOutDir?: string): Promise<unknown>;
   createPkgOutDir(dir: string): Promise<void>;
   loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<unknown>;
   isNormalLayout: boolean;

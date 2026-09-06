@@ -28,7 +28,7 @@ import ci from "ci-info";
  * @param {*} srcStat
  * @returns
  */
-async function linkFile(srcFp, destFp, srcStat) {
+async function linkFile(srcFp, destFp, srcStat?) {
   try {
     return await Fs.link(srcFp, destFp);
   } catch (e) {

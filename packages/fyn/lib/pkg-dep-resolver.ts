@@ -118,7 +118,7 @@ interface FynForDepResolver {
 /** Package source manager interface */
 interface PkgSrcManager {
   hasMeta(item: DepItem): boolean;
-  fetchMeta(item: DepItem): Promise<PackageMeta>;
+  fetchMeta(item: DepItem, forceRefresh?: boolean): Promise<PackageMeta>;
   /** `false` when the item is not a local package at all */
   fetchLocalItem(item: DepItem): false | Promise<PackageMeta | undefined>;
   getLocalPackageMeta(item: DepItem, version: string): PackageMeta | undefined;

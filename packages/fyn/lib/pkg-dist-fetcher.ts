@@ -269,7 +269,7 @@ class PkgDistFetcher {
       result.search.push(x);
 
       try {
-        const pkgJson = await this._fyn.loadJsonForPkg(pkg, existDir, true);
+        const pkgJson = await this._fyn.loadJsonForPkg(pkg, existDir);
         x.pkgJson = pkgJson;
         if (!pkgJson._invalid) {
           result.existDir = existDir;

@@ -213,7 +213,7 @@ const fyntil = {
     return process.exit(err ? 1 : 0);
   },
 
-  async readJson(file, defaultData) {
+  async readJson(file, defaultData?) {
     try {
       const data = await Fs.readFile(file, "utf8");
       return JSON.parse(data);
@@ -240,7 +240,7 @@ const fyntil = {
     return shouldPosixify ? posixify(rel) : rel;
   },
 
-  async readPkgJson(dirOrFile, keepRaw, packageFyn = false) {
+  async readPkgJson(dirOrFile, keepRaw = false, packageFyn = false) {
     const isDir = !dirOrFile.endsWith(".json");
     const dir = isDir ? dirOrFile : Path.dirname(dirOrFile);
     const files = ["package.json", packageFyn && PACKAGE_FYN_JSON].filter(x => x);
