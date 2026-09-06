@@ -25,15 +25,14 @@ const dir = Path.dirname(fileURLToPath(import.meta.url));
 const baselineFile = Path.join(dir, "tsc-baseline.txt");
 const update = process.argv.includes("--update");
 
-const tsc = Path.join(dir, "node_modules", ".bin", "tsc");
-const result = spawnSync(tsc, ["--noEmit", "-p", "tsconfig.json"], {
+const result = spawnSync("nvx", ["tsc", "--noEmit", "-p", "tsconfig.json"], {
   cwd: dir,
   encoding: "utf8",
   shell: process.platform === "win32"
 });
 
 if (result.error) {
-  console.error(`typecheck-gate: could not run ${tsc}:`, result.error.message);
+  console.error("typecheck-gate: could not run nvx tsc:", result.error.message);
   process.exit(2);
 }
 
