@@ -2153,10 +2153,10 @@ istanbul-reports:
    html-escaper: ^2.0.0
    istanbul-lib-report: ^3.0.0
 item-queue:
- _latest: 2.1.0-fynlocal_h
+ _latest: 2.1.1-fynlocal_h
  _:
-  ../item-queue: 2.1.0-fynlocal_h
- 2.1.0-fynlocal_h:
+  ../item-queue: 2.1.1-fynlocal_h
+ 2.1.1-fynlocal_h:
   top: 1
   $: local
   _: ../item-queue
@@ -3785,10 +3785,10 @@ validate-npm-package-name:
   $: sha512-SCv6OOV6Xj2/3cXy3dGmADluJTNcL3o7hZAglNPTe+WYuEuvxgJzxPrSDLZhF+CwyQOubqgecjMmTJGMVLWjYQ==
   _: 'https://registry.npmjs.org/validate-npm-package-name/-/validate-npm-package-name-8.0.0.tgz'
 visual-exec:
- _latest: 1.1.0-fynlocal_h
+ _latest: 1.1.1-fynlocal_h
  _:
-  ../visual-exec: 1.1.0-fynlocal_h
- 1.1.0-fynlocal_h:
+  ../visual-exec: 1.1.1-fynlocal_h
+ 1.1.1-fynlocal_h:
   top: 1
   $: local
   _: ../visual-exec
@@ -3797,13 +3797,13 @@ visual-exec:
    ci-info: ^4.4.0
    has-ansi: ^6.0.2
    strip-ansi: ^7.2.0
-   visual-logger: ^2.1.0
+   visual-logger: ^2.1.1
    xsh: ^1.1.0
 visual-logger:
- _latest: 2.1.0-fynlocal_h
+ _latest: 2.1.1-fynlocal_h
  _:
-  ../visual-logger: 2.1.0-fynlocal_h
- 2.1.0-fynlocal_h:
+  ../visual-logger: 2.1.1-fynlocal_h
+ 2.1.1-fynlocal_h:
   top: 1
   $: local
   _: ../visual-logger
