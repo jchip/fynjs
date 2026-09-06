@@ -141,9 +141,25 @@ async function prepDestDir(dest) {
   return destFiles;
 }
 
-async function cleanExtraDest(dest, destFiles) {
+//
+// Files at the root of a linked package that must never be removed as "extra", no matter what
+// the pack list said. Losing package.json leaves a directory node's ESM resolver cannot classify
+// at all - it falls back to legacyMainResolve, looks for index.js, and every import of the
+// package fails with ERR_MODULE_NOT_FOUND (FPM-124). A stale file is recoverable; a missing
+// manifest is a silently broken install.
+//
+const NEVER_CLEAN_AT_ROOT = ["package.json"];
+
+async function cleanExtraDest(dest, destFiles, isRoot = false) {
   for (const k in destFiles) {
     if (destFiles[k] === false) {
+      if (isRoot && NEVER_CLEAN_AT_ROOT.includes(k)) {
+        logger.warn(
+          `local link of ${dest} did not include ${k} - refusing to remove it. This means the
+  pack list was generated from an unreadable package.json; the installed copy may be stale.`
+        );
+        continue;
+      }
       logger.debug(`removing extra local link file ${k}`);
       await Fs.$.rimraf(Path.join(dest, k));
     }
@@ -184,6 +200,21 @@ async function generatePackTree(path, _logger = logger) {
     } else {
       throw err;
     }
+  }
+
+  //
+  // npm-packlist always includes package.json - `npm pack` cannot produce a tarball without a
+  // manifest. So a list that lacks it is never a valid answer; it means the manifest could not
+  // be read at that instant, in which case npm-packlist does not throw but silently returns a
+  // different list that also ignores `files`. Treating that as valid is what let FPM-124 delete
+  // package.json out of an installed copy and still exit 0.
+  //
+  if (!files.includes("package.json")) {
+    throw new Error(
+      `fyn: pack list for local package at ${path} has no package.json (${files.length} files).
+  This means its package.json could not be read. Refusing to link a copy that would be missing
+  its manifest.`
+    );
   }
 
   _logger.debug(
@@ -375,7 +406,7 @@ async function handleSourceMap({ file, destFiles, src, dest, srcFp, destFp, sour
  * @param {*} dest
  * @param {*} sym1
  */
-async function linkPackTree({ tree, src, dest, sym1, sourceMaps }) {
+async function linkPackTree({ tree, src, dest, sym1, sourceMaps, isRoot = false }) {
   const files = tree[SYM_FILES];
 
   const destFiles = await prepDestDir(dest);
@@ -435,23 +466,24 @@ async function linkPackTree({ tree, src, dest, sym1, sourceMaps }) {
   logger.debug(`linkPackTree src: ${src} dest: ${dest} - destFiles ${JSON.stringify(destFiles)}`);
 
   // any file exist in dest but not in src are removed
-  await cleanExtraDest(dest, destFiles);
+  await cleanExtraDest(dest, destFiles, isRoot);
 }
 
 async function link(src, dest, { sourceMaps = true } = {}) {
   const tree = await generatePackTree(src);
 
-  return await linkPackTree({ tree, src, dest, sourceMaps });
+  return await linkPackTree({ tree, src, dest, sourceMaps, isRoot: true });
 }
 
 async function linkSym1(src, dest) {
   const tree = await generatePackTree(src);
 
-  return await linkPackTree({ tree, src, dest, sym1: true });
+  return await linkPackTree({ tree, src, dest, sym1: true, isRoot: true });
 }
 
 export {
   link,
+  cleanExtraDest,
   linkFile,
   cloneFile,
   copyFile,
