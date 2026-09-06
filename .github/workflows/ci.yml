@@ -11,8 +11,8 @@ jobs:
       matrix:
         node: ["22.22.2", "24.15", "26"]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       # fynpo.json declares _w/* as monorepo packages. These jchip forks carry changes fyn
