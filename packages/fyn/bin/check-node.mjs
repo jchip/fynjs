@@ -6,7 +6,7 @@
 // import graph before evaluating any of it - a check sitting above a static import of the
 // bundle would never get to run on the versions it exists for.
 //
-const MIN_NODE = "22.18.0";
+const MIN_NODE = "22.22.2";
 
 const parts = version => version.split("-")[0].split(".").map(n => parseInt(n, 10));
 

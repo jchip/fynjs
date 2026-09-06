@@ -123,11 +123,11 @@ export default defineConfig({
   // its default of `esnext`, so the target the config claimed was never actually applied.
   //
   // Keep this in lockstep with three things that must agree: package.json engines
-  // (>=22.18.0), bin/check-node.mjs MIN_NODE, and the lowest leg of the CI matrix. Lowering it
+  // (floor 22.22.2), bin/check-node.mjs MIN_NODE, and the lowest leg of the CI matrix. Lowering it
   // below the floor ships syntax fyn claims not to need; raising it above ships syntax that
   // check-node.mjs would wave straight through into a parse error.
   transform: {
-    target: "node22.18"
+    target: "node22.22"
   },
   output: {
     file: "dist/fyn.mjs",

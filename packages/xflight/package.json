@@ -3,7 +3,7 @@
   "version": "3.1.0",
   "description": "Handle inflight promise to avoid async duplication",
   "engines": {
-    "node": ">=22.18.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "type": "module",
   "types": "./dist/index.d.ts",

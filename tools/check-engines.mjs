@@ -11,10 +11,12 @@
 //
 // The check is therefore about *declared* support, not about whether today's CI is green.
 //
-// Rather than a full `semver.subset`, which is too strict to be useful here - our floors are
-// open-ended (`>=22.18.0` admits node 23 and 25, which almost no modern package claims to
-// support) - this samples the versions that actually matter: the floor itself, and the lowest
-// version of each additional major line the CI matrix exercises.
+// Rather than a full `semver.subset`, this samples the versions that actually matter: the
+// package's own floor, and the lowest version of each additional major line the CI matrix
+// exercises. subset() is the tempting implementation and a brittle one - it is exact about
+// range shape, so a dep expressing the same support a different way reads as a violation, and
+// any open-ended floor (`>=22.22.2` admits node 23 and 25, which almost nothing claims to
+// support) fails against every modern dep while telling you nothing actionable.
 //
 // Engines are read from the *installed* copy under node_modules rather than the registry, so
 // the check is offline, deterministic, and describes the tree you actually have.

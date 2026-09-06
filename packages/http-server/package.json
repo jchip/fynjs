@@ -4,7 +4,7 @@
   "private": true,
   "description": "A configurable Fastify web server, mirroring electrode-server's surface",
   "engines": {
-    "node": ">=22.18.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "type": "module",
   "types": "./dist/index.d.ts",
