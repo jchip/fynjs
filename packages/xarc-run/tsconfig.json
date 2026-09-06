@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    // @fynjs/run ships lib/ and cli/ as source - `main` is lib/index.js and there is no build
+    // step - so tsc's only job here is checking. Nothing is emitted and the published layout is
+    // unchanged. Renaming the sources to .ts is a separate, publish-visible phase (FJM-51).
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+
+    // Off to match every other package in the monorepo rather than silently holding this one to
+    // a different bar. Turning it on repo-wide is FJM-156.
+    "strict": false,
+
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": ["lib", "cli"]
+}

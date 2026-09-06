@@ -76,8 +76,8 @@ class Logger {
     }
   }
 
-  log() {
-    const msg = Array.prototype.join.call(arguments, " ");
+  log(...args) {
+    const msg = args.join(" ");
     const output = `${this._ts()} ${msg}`;
 
     if (this._buf) {
