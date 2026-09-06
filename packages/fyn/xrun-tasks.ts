@@ -1,10 +1,8 @@
-"use strict";
+import Fs from "fs/promises";
+import Path from "path";
+import which from "which";
 
-const Fs = require("fs/promises");
-const Path = require("path");
-const which = require("which");
-
-const xrun = require("@fynjs/run");
+import xrun from "@fynjs/run";
 
 xrun.load("fyn", {
   // rolldown emits an ESM bundle (dist/fyn.mjs). ESM is required, not preferred: chalker uses
