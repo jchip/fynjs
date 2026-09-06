@@ -161,8 +161,7 @@ export default defineConfig({
       "./parser-markdown.js": stub("parser-flow.cjs"),
       "./parser-meriyah.js": stub("parser-flow.cjs"),
       "./parser-postcss.js": stub("parser-flow.cjs"),
-      "./parser-yaml.js": stub("parser-flow.cjs"),
-      "util/types": stub("util-types.cjs")
+      "./parser-yaml.js": stub("parser-flow.cjs")
     }
   },
   // Syntax lowering target. This belongs on `transform`, not `output` - rolldown rejects

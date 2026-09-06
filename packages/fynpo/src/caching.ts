@@ -6,7 +6,7 @@ import { isCI } from "ci-info";
 import npmPacklist from "npm-packlist";
 import type { FynpoPackageInfo, PackageDepData } from "@fynpo/base";
 import envPaths from "env-paths";
-import { request, stream } from "undici";
+import { pipeline as streamPipeline } from "stream/promises";
 import { caching } from "@fynpo/base";
 import * as xaa from "xaa";
 import { detailedDiff } from "deep-object-diff";
@@ -318,9 +318,9 @@ export class PkgBuildCache {
     } catch {
       if (!warnRemoteFailure && this.opts.server) {
         try {
-          const remote = await request(this.getRemoteCacheUrl(this.input.hash, ".json"));
-          if (remote.statusCode === 200) {
-            this.output = await remote.body.json();
+          const res = await fetch(this.getRemoteCacheUrl(this.input.hash, ".json"));
+          if (res.status === 200) {
+            this.output = (await res.json()) as any;
             this.output.files = Object.keys(this.output.data.fileHashes);
             this.exist = "remote";
           }
@@ -564,9 +564,11 @@ export class PkgBuildCache {
       async (file: string) => {
         const hash = output.data.fileHashes[file];
 
-        await request(this.getRemoteCacheUrl(hash, Path.extname(file)), {
-          body: Fs.createReadStream(Path.join(pkgDir, file)),
-        });
+        await fetch(this.getRemoteCacheUrl(hash, Path.extname(file)), {
+          method: "PUT",
+          body: Fs.createReadStream(Path.join(pkgDir, file)) as any,
+          duplex: "half",
+        } as RequestInit);
       },
       { concurrency: 10 }
     );
@@ -590,7 +592,9 @@ export class PkgBuildCache {
 
     try {
       if (this.exist !== "remote") {
-        await request(this.getRemoteCacheUrl(this.input.hash, ".json"), {
+        await fetch(this.getRemoteCacheUrl(this.input.hash, ".json"), {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
           body: this.stringifyOutputMeta(),
         });
         await this.uploadFilesToRemote();
@@ -629,9 +633,14 @@ export class PkgBuildCache {
             .catch(() => false))
         ) {
           // download from server as uncompressed version
-          await stream(this.getRemoteCacheUrl(hash, ext), { method: "GET" }, () =>
-            Fs.createWriteStream(file1)
-          );
+          const res = await fetch(this.getRemoteCacheUrl(hash, ext));
+          if (res.ok && res.body) {
+            await streamPipeline(res.body as any, Fs.createWriteStream(file1));
+          } else {
+            throw new Error(
+              `failed to download ${this.getRemoteCacheUrl(hash, ext)}: ${res.status} ${res.statusText}`
+            );
+          }
         }
       },
       { concurrency: 10 }
