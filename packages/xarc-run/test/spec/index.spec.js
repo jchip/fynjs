@@ -1,3 +1,4 @@
+import fs from "fs";
 import xrun from "../../lib/index.js";
 import { expect } from "vitest";
 
@@ -71,5 +72,13 @@ describe("index", function() {
       `exec(tty) 'hello'`
     );
     expect(() => xrun.exec(1).toString()).toThrow("unknown spec type number");
+  });
+
+  it("should have prepare and prepublishOnly scripts to ensure dist is built before publish (FJM-190)", async () => {
+    const pkg = JSON.parse(
+      await fs.promises.readFile(new URL("../../package.json", import.meta.url), "utf8")
+    );
+    expect(pkg.scripts.prepare).toBe("npm run build");
+    expect(pkg.scripts.prepublishOnly).toBe("npm run build");
   });
 });

@@ -28,6 +28,8 @@
     "check": "fyn run coverage && fyn run coveralls",
     "format": "prettier --write --print-width 100 lib/*.js test/**/*.js",
     "xfoo2": "echo xfoo2 from npm scripts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
