@@ -23,7 +23,6 @@ import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from
 import { parseYarnLock } from "../yarn";
 import { Minimatch } from "minimatch";
 import npmConfigEnv from "./util/npm-config-env";
-import { writeJson, writeJsonSync, readJson } from "@fynpo/base";
 import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
 import pathUpEach from "./util/path-up-each";
@@ -609,7 +608,7 @@ class Fyn {
       // to get the central store config used.
       const filename = this.getInstallConfigFile();
       try {
-        const fynInstallConfig = (await readJson(filename)) as InstallConfig;
+        const fynInstallConfig = JSON.parse(await Fs.readFile(filename, "utf8")) as InstallConfig;
         logger.debug("loaded fynInstallConfig", fynInstallConfig);
         const { layout } = fynInstallConfig;
         if (layout && layout !== this._options.layout) {
@@ -841,7 +840,7 @@ class Fyn {
         );
         fynpoData.indirects[path] = indirects!;
         fynpoData.__timestamp = Date.now();
-        await writeJson(dataFile, fynpoData);
+        await Fs.writeFile(dataFile, `${JSON.stringify(fynpoData, null, 2)}\n`);
       }
     } finally {
       await Fs.$.releaseLock(lockFile);
@@ -935,7 +934,7 @@ class Fyn {
         // in fynpo config.  and fyn should look into those when detected a fynpo.
         // runNpm: this._runNpm
       };
-      await writeJson(filename, outputConfig);
+      await Fs.writeFile(filename, `${JSON.stringify(outputConfig, null, 2)}\n`);
     } catch (err) {
       logger.debug(`saving install config file failed`, err);
     }
@@ -952,7 +951,10 @@ class Fyn {
     pkg = !_.isEmpty(pkg) ? pkg : this._pkgFyn;
     if (!_.isEmpty(pkg)) {
       await xaa.try(() =>
-        writeJson(Path.resolve(this._cwd, PACKAGE_FYN_JSON), pkg || this._pkgFyn)
+        Fs.writeFile(
+          Path.resolve(this._cwd, PACKAGE_FYN_JSON),
+          `${JSON.stringify(pkg || this._pkgFyn, null, 2)}\n`
+        )
       );
     }
   }
@@ -1025,7 +1027,7 @@ class Fyn {
   }
 
   savePkg(): void {
-    writeJsonSync(this._pkgFile, this._pkg);
+    Fs.writeFileSync(this._pkgFile, `${JSON.stringify(this._pkg, null, 2)}\n`);
   }
 
   get npmConfigEnv(): Record<string, string> {
@@ -1669,7 +1671,7 @@ class Fyn {
 
   async readJson<T = Record<string, unknown>>(file: string, fallback?: T): Promise<T> {
     try {
-      return (await readJson(file)) as T;
+      return JSON.parse(await Fs.readFile(file, "utf8")) as T;
     } catch (e) {
       return (fallback !== undefined ? fallback : {}) as T;
     }

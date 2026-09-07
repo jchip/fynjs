@@ -45,6 +45,7 @@ vi.mock("../../lib/fyn", () => {
 });
 
 import FynGlobal from "../../lib/fyn-global";
+import Fs from "../../lib/util/file-ops";
 
 describe("fyn-global methods", function() {
   const globalDir = path.join(__dirname, "../.fyn-global-methods");
@@ -154,6 +155,30 @@ describe("fyn-global methods", function() {
     it("readInstalledJson returns an empty registry when the file is absent", async () => {
       const g = makeGlobal();
       expect(await g.readInstalledJson()).toStrictEqual({ packages: {} });
+    });
+
+    it("readInstalledJson rethrows non-ENOENT errors such as EPERM to avoid wiping registry", async () => {
+      const g = makeGlobal();
+      const registry = { packages: { foo: { versions: [{ version: "1.0.0", dir: "g1" }] } } };
+      await g.writeInstalledJson(registry);
+
+      const epermError = Object.assign(new Error("operation not permitted"), { code: "EPERM" });
+      const spy = vi.spyOn(Fs, "readFile").mockRejectedValueOnce(epermError);
+
+      await expect(g.readInstalledJson()).rejects.toMatchObject({ code: "EPERM" });
+      spy.mockRestore();
+
+      // Ensure the actual file on disk was NOT affected or erased
+      expect(await g.readInstalledJson()).toStrictEqual(registry);
+    });
+
+    it("readInstalledJson rethrows EACCES errors", async () => {
+      const g = makeGlobal();
+      const eaccesError = Object.assign(new Error("permission denied"), { code: "EACCES" });
+      const spy = vi.spyOn(Fs, "readFile").mockRejectedValueOnce(eaccesError);
+
+      await expect(g.readInstalledJson()).rejects.toMatchObject({ code: "EACCES" });
+      spy.mockRestore();
     });
 
     it("writeInstalledJson creates the version dir and round-trips", async () => {
