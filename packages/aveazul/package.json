@@ -86,7 +86,7 @@
   },
   "devDependencies": {
     "@fynjs/ts-resolve": "^1.0.0",
-    "@types/node": "^22.15.30",
+    "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "bluebird": "^3.7.2",
     "publish-util": "^3.1.0",

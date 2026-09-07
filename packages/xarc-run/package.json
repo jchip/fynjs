@@ -100,7 +100,7 @@
   },
   "devDependencies": {
     "@fynjs/ts-resolve": "^1.0.0",
-    "@types/node": "^22.15.30",
+    "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "munchy": "^1.0.7",
     "prettier": "^3.5.3",

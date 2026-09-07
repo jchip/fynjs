@@ -51,7 +51,7 @@
     "xflight": "^3.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.30",
+    "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "aveazul": "^2.1.0",
     "chalk": "^6.0.0",
