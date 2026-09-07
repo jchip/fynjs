@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { Munchy } from "../../src/index.ts";
 import fs from "node:fs";
 import Path from "node:path";
-import { PassThrough, Readable } from "node:stream";
+import { PassThrough, Readable, Writable } from "node:stream";
+import { EventEmitter } from "node:events";
 
 describe("munchy", function () {
   const drainIt = (munchy: Munchy) => {
@@ -383,14 +384,16 @@ describe("munchy", function () {
     expect(received).to.deep.equal([{ item: 1 }, { item: 2 }, { item: 3 }]);
   });
 
-  it("should handle backpressure when pushing handleStreamError result", () => {
+  it("should handle backpressure when pushing handleStreamError result", async () => {
     const munchy = new Munchy({
       highWaterMark: 64,
       handleStreamError: () => ({ result: Buffer.alloc(1024), remit: false })
     });
     munchy._started = true;
-    (munchy as any)._handleStreamErr(new Error("err with big result"));
+    const pending = (munchy as any)._handleStreamErr(new Error("err with big result"));
     expect(munchy._canPush).to.equal(false);
+    munchy.destroy();
+    expect(await pending).to.equal(false);
   });
 
   it("should remit error when handleStreamError returns falsy value", async () => {
@@ -438,6 +441,207 @@ describe("munchy", function () {
     });
     (munchy as any)._handleStreamErr();
     expect(emittedErr.message).toContain("source stream emitted error");
+  });
+
+  describe("regressions", function () {
+    it("should emit end and finish the destination when the consumer is slow", async () => {
+      const parts = ["a", "b", "c", "d"].map(c => Buffer.from(c.repeat(64)));
+      const munchy = new Munchy({ highWaterMark: 16 });
+      munchy.munch(...parts, null);
+
+      let ended = false;
+      munchy.on("end", () => {
+        ended = true;
+      });
+
+      const received: Buffer[] = [];
+      const slow = new Writable({
+        highWaterMark: 16,
+        write(chunk, _enc, cb) {
+          received.push(chunk);
+          setTimeout(cb, 5);
+        }
+      });
+
+      await new Promise<void>(resolve => {
+        slow.on("finish", resolve);
+        munchy.pipe(slow);
+      });
+
+      expect(ended).to.equal(true);
+      expect(Buffer.concat(received).toString()).to.equal(Buffer.concat(parts).toString());
+    });
+
+    it("should unwind the read loop and release the source when destroyed while backpressured", async () => {
+      const p = new PassThrough();
+      const munchy = new Munchy({ highWaterMark: 64 }, p);
+      munchy._read();
+      p.write(Buffer.alloc(1024));
+
+      await new Promise(r => setTimeout(r, 10));
+      munchy.destroy();
+      await new Promise(r => setTimeout(r, 20));
+
+      expect(munchy.destroyed).to.equal(true);
+      expect(munchy._reading).to.equal(false);
+      expect((munchy as any)._running).to.equal(false);
+      expect(p.listenerCount("data")).to.equal(0);
+      expect(p.listenerCount("end")).to.equal(0);
+      expect(p.listenerCount("error")).to.equal(0);
+    });
+
+    it("should pick up sources munched from within a munched handler", async () => {
+      const munchy = new Munchy();
+      const { data } = drainIt(munchy);
+
+      munchy.once("munched", () => {
+        munchy.munch("second", null);
+      });
+      munchy.munch("first");
+
+      await new Promise<void>(resolve => munchy.on("end", resolve));
+      expect(data.map(x => x.toString()).join("")).to.equal("firstsecond");
+    });
+
+    it("should treat null opts as absent options, not an end source", async () => {
+      const munchy = new Munchy(null, "a", "b", null);
+      const { data } = drainIt(munchy);
+
+      await new Promise<void>(resolve => munchy.on("end", resolve));
+      expect(data.map(x => x.toString()).join("")).to.equal("ab");
+    });
+
+    it("should emit drained after recovering from a source stream error", async () => {
+      const munchy = new Munchy({
+        handleStreamError: err => ({ result: err.message, remit: false })
+      });
+      const p = new PassThrough();
+      const { data } = drainIt(munchy);
+
+      const drained: any[] = [];
+      munchy.on("drained", x => drained.push(x));
+      munchy.munch(p, null);
+
+      await new Promise<void>(resolve => {
+        munchy.on("end", resolve);
+        munchy.on("draining", () => {
+          process.nextTick(() => {
+            p.push("oops");
+            p.emit("error", new Error("test"));
+          });
+        });
+      });
+
+      expect(drained).to.deep.equal([{ stream: p }]);
+      expect(data.map(x => x.toString()).join("-")).to.equal("oops-test");
+    });
+
+    it("should not consume more sources while backpressured on a handleStreamError result", async () => {
+      const big = () => Buffer.alloc(4096);
+      const p = new PassThrough();
+      const munchy = new Munchy(
+        {
+          highWaterMark: 16,
+          handleStreamError: () => ({ result: big(), remit: false })
+        },
+        p,
+        big(),
+        big(),
+        big(),
+        null
+      );
+
+      munchy.on("draining", () => {
+        process.nextTick(() => p.emit("error", new Error("boom")));
+      });
+      munchy._read(); // start the loop with nothing consuming
+
+      await new Promise(r => setTimeout(r, 30));
+
+      expect(munchy._canPush).to.equal(false);
+      expect(munchy._moreSources()).to.equal(true);
+      expect(munchy.readableLength).to.equal(4096);
+      munchy.destroy();
+    });
+
+    it("should pause a Readable source while backpressured", async () => {
+      let emitted = 0;
+      const src = new Readable({
+        highWaterMark: 1024,
+        read() {
+          if (emitted >= 20) {
+            this.push(null);
+          } else {
+            emitted++;
+            this.push(Buffer.alloc(1024));
+          }
+        }
+      });
+
+      const munchy = new Munchy({ highWaterMark: 64 }, src);
+      munchy._read(); // start the loop with nothing consuming
+
+      await new Promise(r => setTimeout(r, 30));
+
+      expect(emitted).to.be.lessThan(20);
+      munchy.destroy();
+    });
+
+    it("should not error on a no-op munch after the stream ended", async () => {
+      const munchy = new Munchy({}, "hello", null);
+      drainIt(munchy);
+      await new Promise<void>(resolve => munchy.on("end", resolve));
+
+      const errors: any[] = [];
+      munchy.on("error", err => errors.push(err));
+      munchy.munch();
+
+      await new Promise(r => setTimeout(r, 10));
+      expect(errors).to.deep.equal([]);
+    });
+
+    it("should continue after recovering from a rejected promise source", async () => {
+      const munchy = new Munchy(
+        { handleStreamError: err => ({ result: `[${err.message}]`, remit: false }) },
+        Promise.reject(new Error("nope")),
+        "after",
+        null
+      );
+      const { data } = drainIt(munchy);
+
+      await new Promise<void>(resolve => munchy.on("end", resolve));
+      expect(data.map(x => x.toString()).join("")).to.equal("[nope]after");
+    });
+
+    it("should drain a legacy stream with no pause/resume", async () => {
+      const legacy: any = new EventEmitter();
+      legacy.pipe = () => {};
+      const munchy = new Munchy({}, legacy, "tail", null);
+      const { data } = drainIt(munchy);
+
+      setTimeout(() => {
+        legacy.emit("data", "L1");
+        legacy.emit("data", "L2");
+        legacy.emit("end");
+      }, 5);
+
+      await new Promise<void>(resolve => munchy.on("end", resolve));
+      expect(data.map(x => x.toString()).join("-")).to.equal("L1-L2-tail");
+    });
+
+    it("should error on a legacy stream that emits error w/o an Error object", async () => {
+      const legacy: any = new EventEmitter();
+      legacy.pipe = () => {};
+      const munchy = new Munchy({}, legacy);
+      drainIt(munchy);
+
+      const err = await new Promise<Error>(resolve => {
+        munchy.on("error", resolve);
+        setTimeout(() => legacy.emit("error"), 5);
+      });
+
+      expect(err.message).toContain("source stream emitted error");
+    });
   });
 });
 

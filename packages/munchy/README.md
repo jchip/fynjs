@@ -2,6 +2,8 @@
 
 A producer Node stream for draining different data, including Readable streams.
 
+This is an ESM only package.
+
 ```bash
 $ npm i --save munchy
 ```
@@ -9,7 +11,9 @@ $ npm i --save munchy
 examples:
 
 ```js
-const Munchy = require("munchy");
+import fs from "node:fs";
+import { Munchy } from "munchy";
+
 const munchy = new Munchy();
 munchy.munch("hello world", fs.createReadStream("blah"), "bye bye");
 munchy.munch(null); // null terminates it
@@ -17,7 +21,9 @@ munchy.pipe(process.stdout);
 ```
 
 ```js
-const Munchy = require("munchy");
+import fs from "node:fs";
+import Munchy from "munchy"; // default export works too
+
 const munchy = new Munchy({}, fs.createReadStream("foo"), fs.createReadStream("bar"));
 munchy.munch(fs.createReadStream("blah"), "bye bye", null); // null terminates it
 munchy.pipe(process.stdout);
@@ -31,10 +37,30 @@ munchy.pipe(process.stdout);
 Munchy(opts, ...sources);
 ```
 
-| name      | description                         |
-| --------- | ----------------------------------- |
-| `opts`    | [options for Node Readable stream]  |
-| `sources` | variadic params of sources to munch |
+| name      | description                                       |
+| --------- | ------------------------------------------------- |
+| `opts`    | [options for Node Readable stream], or `null`     |
+| `sources` | variadic params of sources to munch               |
+
+`opts` may be `null` or omitted entirely, in which case every argument is
+treated as a source.
+
+## sources
+
+A source can be any of:
+
+| type                             | behavior                                          |
+| -------------------------------- | ------------------------------------------------- |
+| `string` / `Buffer` / `Uint8Array` | pushed as is                                     |
+| Node `Readable`                  | drained, with backpressure applied to the source  |
+| Web `ReadableStream`             | converted with `Readable.fromWeb` and drained     |
+| `AsyncIterable`                  | drained one value at a time                       |
+| `Iterable`                       | each value pushed                                 |
+| `Promise`                        | awaited, then handled as the resolved value       |
+| `null`                           | ends the stream                                   |
+| anything else                    | pushed as is (useful with `objectMode`)           |
+
+A rejected `Promise` or a stream error goes through `handleStreamError` below.
 
 Munchy specific options:
 
@@ -86,7 +112,7 @@ Munchy emits the following custom events:
 | name       | description                          | payload      |
 | ---------- | ------------------------------------ | ------------ |
 | `draining` | starting to drain a stream source.   | `{ stream }` |
-| `drained`  | done draining a stream source.       | `{ stream }` |
+| `drained`  | done with a stream source, including one recovered by `handleStreamError`. | `{ stream }` |
 | `munched`  | all sources munched, ready for more. |              |
 
 ie:
