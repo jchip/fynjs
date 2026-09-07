@@ -1,5 +1,0 @@
-node_modules
-*-lock*
-coverage
-.nyc_output
-.vscode

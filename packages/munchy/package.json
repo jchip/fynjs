@@ -2,10 +2,38 @@
   "name": "munchy",
   "version": "1.0.9",
   "description": "A producer Node stream for draining different data, including Readable streams",
-  "main": "lib/index.js",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/munchy",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/munchy"
+  },
   "scripts": {
-    "test": "xrun xarc/test-only",
-    "coverage": "xrun xarc/test-cov"
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "ci:check": "tsc --noEmit -p tsconfig.json && vitest run --coverage",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run build",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
   },
   "keywords": [
     "node",
@@ -22,65 +50,23 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "files": [
-    "lib"
+    "dist"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jchip/munchy.git"
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com/"
   },
+  "dependencies": {},
   "devDependencies": {
-    "@types/chai": "^4.2.11",
-    "@types/mocha": "^7.0.2",
-    "@types/sinon": "^9.0.0",
-    "@types/sinon-chai": "^3.2.4",
-    "@xarc/module-dev": "^2.2.5",
-    "chai": "^4.2.0",
-    "mocha": "^7.1.0",
-    "nyc": "^15.0.0",
-    "run-verify": "^1.2.5",
-    "sinon": "^7.2.6",
-    "sinon-chai": "^3.3.0"
-  },
-  "nyc": {
-    "all": true,
-    "reporter": [
-      "lcov",
-      "text",
-      "text-summary"
-    ],
-    "exclude": [
-      "*clap.js",
-      "*clap.ts",
-      "coverage",
-      "dist",
-      "docs",
-      "gulpfile.js",
-      "test",
-      "xrun*.js",
-      "xrun*.ts"
-    ],
-    "check-coverage": true,
-    "statements": 100,
-    "branches": 100,
-    "functions": 100,
-    "lines": 100,
-    "cache": true,
-    "extends": []
+    "@types/node": "^26.4.1",
+    "@vitest/coverage-v8": "^5.0.0",
+    "publish-util": "^3.1.0",
+    "run-verify": "^2.1.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
   },
   "prettier": {
     "printWidth": 100,
-    "arrowParens": "avoid",
     "trailingComma": "none"
-  },
-  "mocha": {
-    "require": [
-      "@xarc/module-dev/config/test/setup.js"
-    ],
-    "recursive": true
-  },
-  "@xarc/module-dev": {
-    "features": [
-      "mocha"
-    ]
   }
 }
