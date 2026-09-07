@@ -372,6 +372,9 @@ async function xrunMain(argv, offset, xrunPath = "", done = null) {
   // Find and load runner module
   const { runner, foundPath } = findRunnerModule(xrunPath);
   const rawCmdArgs = await parseCmdArgs.parseArgs(argv, offset);
+  if (rawCmdArgs.parsed?.errorNodes?.length > 0) {
+    return handleExitOrDone(1, done);
+  }
 
   // Create CliContext as the primary interface
   const cliContext = new CliContext(rawCmdArgs);

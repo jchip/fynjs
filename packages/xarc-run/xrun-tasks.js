@@ -140,7 +140,7 @@ const tasks = {
   ".arg-opts": {
     desc: "test @fynjs/cli-args parsing args",
     argOpts: {
-      foo: { require: true, type: "string", alias: "f" }
+      foo: { required: true, args: "<val string>", alias: "f" }
     },
     task: context => {
       console.log(context.argOpts);

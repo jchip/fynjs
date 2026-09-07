@@ -8,6 +8,7 @@ import parseArray from "./util/parse-array.js";
 import childProc from "child_process";
 import updateEnv from "./util/update-env.js";
 import { NixClap } from "@fynjs/cli-args";
+import { getTaskOptionSpec } from "./util/task-options.js";
 
 //
 // Kept lazy rather than a static import: a static import is hoisted to module load, which is
@@ -634,37 +635,45 @@ because value type ${vtype} is unknown and no value.item`)
       const cliContext = this._xrun.getCliContext();
       let cliCmd = cliContext.getTaskCommand(qItem.name);
 
-      const cliParser = task.item?.cliParser || task.cliParser || {};
+      const { options, commands, allowUnknownOption } = getTaskOptionSpec(task);
       const itemArgv = qItem.argv;
       const cliArgv = cliCmd.argv || [];
+      const hasOptionSpec = Object.keys(options).length > 0 || Object.keys(commands).length > 0;
 
-      if (itemArgv.length > 1 || (cliParser && cliArgv.length > 1)) {
+      if (hasOptionSpec || itemArgv.length > 1 || cliArgv.length > 1) {
         const argv = [qItem.name].concat(itemArgv.slice(1), cliArgv.slice(1));
         const config = {
           name: qItem.name,
-          allowUnknownOption:
-            cliParser.allowUnknownOption !== undefined ? cliParser.allowUnknownOption : true,
+          allowUnknownOption: allowUnknownOption !== undefined ? allowUnknownOption : true,
           allowUnknownCommand: false,
           noDefaultHandlers: true
         };
 
         const argp = new NixClap(config)
-          .init(cliParser.options || {}, cliParser.commands || {})
+          .init(options, commands)
           .parse(argv, 1);
 
         if (argp.errorNodes.length > 0) {
-          const unknownOptions = argp.errorNodes.reduce((acc, node) => {
-            acc.push(
-              ...node.errors
-                .filter(e => e.message.includes("unknown CLI option"))
-                .map((e: any) => e.data.name)
-            );
-            return acc;
-          }, []);
+          const unknownOptions: string[] = [];
+          const otherErrors: string[] = [];
+          for (const node of argp.errorNodes) {
+            for (const e of node.errors) {
+              if (e.message.includes("unknown CLI option")) {
+                unknownOptions.push((e as any).data?.name);
+              } else {
+                otherErrors.push(e.message);
+              }
+            }
+          }
 
           if (unknownOptions.length > 0) {
             return done(
               new Error(`Unknown options for task ${qItem.name}: ${unknownOptions.join(", ")}`)
+            );
+          }
+          if (otherErrors.length > 0) {
+            return done(
+              new Error(`Error parsing options for task ${qItem.name}: ${otherErrors.join("; ")}`)
             );
           }
         }

@@ -48,6 +48,25 @@ describe("parse-cmd-args", function() {
       expect(result.tasks).toStrictEqual(["task1", "task2"]);
       expect(result.parsed.command.subCmdNodes.task1.opts.taskOpt).toBe("value");
     });
+
+    it("maps task option alias and consumes value without task leakage (FJM-131)", async () => {
+      const args = ["node", "xrun", ".arg-opts", "-f", "world"];
+      const result = await parseArgs(args, 2);
+      expect(result.tasks).toStrictEqual([".arg-opts"]);
+      expect(result.parsed.command.subCmdNodes[".arg-opts"].opts.foo).toBe("world");
+      expect(result.parsed.command.subCmdNodes[".arg-opts"].opts.f).toBe("world");
+    });
+
+    it("fails when required task option is omitted (FJM-131)", async () => {
+      let exitCode;
+      WrapProcess.exit = code => {
+        exitCode = code;
+      };
+      const args = ["node", "xrun", ".arg-opts"];
+      const result = await parseArgs(args, 2);
+      expect(exitCode).toBe(1);
+      expect(result.parsed.errorNodes.length).toBeGreaterThan(0);
+    });
   });
 
   describe("env option parsing", () => {

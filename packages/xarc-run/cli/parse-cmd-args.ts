@@ -35,6 +35,8 @@ import fs from "fs";
 import { updateCwd, searchTaskFile, loadTaskFile, processTasks, loadTasks } from "./task-file.js";
 import { loadProviderPackages } from "./provider-packages.js";
 import WrapProcess from "./wrap-process.js";
+import ownInstance from "../lib/xrun-instance.js";
+import { getTaskOptionSpec } from "../lib/util/task-options.js";
 
 /**
  * Read and parse package.json from a directory
@@ -61,6 +63,10 @@ async function parseArgs(argv, start) {
   const nc = new NixClap({
     allowUnknownCommand: true, // Allow task names as commands
     allowUnknownOption: true, // Allow task-specific options
+    /* istanbul ignore next */
+    exit: code => {
+      WrapProcess.exit(code);
+    },
     handlers: {
       /* istanbul ignore next */
       exit: code => {
@@ -76,8 +82,8 @@ async function parseArgs(argv, start) {
     );
 
   // Parse all arguments at once - @fynjs/cli-args handles command/option separation
-  const parsed = nc.parse(argv, start);
-  const opts = parsed.command.opts;
+  let parsed = nc.parse(argv, start);
+  let opts = parsed.command.opts;
 
   const myDir = xsh.pathCwd.replace(Path.dirname(import.meta.dirname), ".");
 
@@ -124,13 +130,68 @@ async function parseArgs(argv, start) {
 
   const loaded = await loadTasks(opts, searchResult);
 
-  // Extract tasks from commands
-  const tasks = Object.keys(parsed.command.subCmdNodes);
-
   // user has no tasks or explicitly enable searching for provider modules
   if (loaded === false || pkgConfig.loadProviderModules) {
     loadProviderPackages(Pkg, saveCwd, opts);
   }
+
+  // Register loaded tasks into subcommand definitions for proper argument & option parsing
+  const subCommands: Record<string, any> = {};
+  if (ownInstance.xrun?._tasks) {
+    const names = ownInstance.xrun._tasks.names();
+    const fullNames = ownInstance.xrun._tasks.fullNames();
+    const allTaskNames = new Set([...names, ...fullNames]);
+
+    for (const name of allTaskNames) {
+      try {
+        const lookupRes = ownInstance.xrun._tasks.lookup(name);
+        const taskSpec = getTaskOptionSpec(lookupRes?.item);
+        if (
+          Object.keys(taskSpec.options).length > 0 ||
+          Object.keys(taskSpec.commands).length > 0
+        ) {
+          subCommands[name] = {
+            desc: lookupRes?.item?.desc || "",
+            options: taskSpec.options,
+            commands: taskSpec.commands,
+            ...(taskSpec.allowUnknownOption !== undefined
+              ? { allowUnknownOption: taskSpec.allowUnknownOption }
+              : {})
+          };
+        }
+      } catch {
+        // ignore lookup errors for invalid task names
+      }
+    }
+  }
+
+  if (Object.keys(subCommands).length > 0) {
+    const nc2 = new NixClap({
+      allowUnknownCommand: true,
+      allowUnknownOption: true,
+      /* istanbul ignore next */
+      exit: code => {
+        WrapProcess.exit(code);
+      },
+      handlers: {
+        /* istanbul ignore next */
+        exit: code => {
+          WrapProcess.exit(code);
+        }
+      }
+    })
+      .version(myPkg.version)
+      .usage(usage)
+      .init(cliOptions, subCommands);
+
+    parsed = nc2.parse(argv, start);
+    const savedCwd = opts.cwd;
+    opts = parsed.command.opts;
+    opts.cwd = savedCwd;
+  }
+
+  // Extract tasks from commands
+  const tasks = Object.keys(parsed.command.subCmdNodes);
 
   return {
     opts,

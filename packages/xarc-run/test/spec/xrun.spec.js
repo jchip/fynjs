@@ -127,6 +127,74 @@ describe("xrun", function() {
     );
   });
 
+  it("should parse task argOpts with aliases and values (FJM-131)", () => {
+    let context;
+    const xrun = new XRun({
+      foo: {
+        argOpts: {
+          name: { required: true, args: "<val string>", alias: "n" }
+        },
+        task(ctx) {
+          context = ctx;
+        }
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(500),
+      () => xrun.asyncRun("foo -n world"),
+      () => {
+        expect(context.argOpts.name).toBe("world");
+        expect(context.argOpts.n).toBe("world");
+      }
+    );
+  });
+
+  it("should fail when required task argOpts is missing (FJM-131)", () => {
+    let context;
+    const xrun = new XRun({
+      foo: {
+        argOpts: {
+          name: { required: true, args: "<val string>", alias: "n" }
+        },
+        task(ctx) {
+          context = ctx;
+        }
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(500),
+      expectError(() => xrun.asyncRun("foo")),
+      error => {
+        expect(error.message).toContain("missing these required options name");
+        expect(context).toBeUndefined();
+      }
+    );
+  });
+
+  it("should support legacy require: true and type: 'string' in argOpts (FJM-131)", () => {
+    let context;
+    const xrun = new XRun({
+      foo: {
+        argOpts: {
+          name: { require: true, type: "string", alias: "n" }
+        },
+        task(ctx) {
+          context = ctx;
+        }
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(500),
+      () => xrun.asyncRun("foo -n legacy"),
+      () => {
+        expect(context.argOpts.name).toBe("legacy");
+      }
+    );
+  });
+
   it("should pass context to function that take a single param named ctx/context", () => {
     let receivedContext;
     let receivedCtx;
