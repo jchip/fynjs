@@ -3,7 +3,7 @@ import Path from "path";
 import Fs from "./util/file-ops";
 import fynTil from "./util/fyntil";
 import { getUrlType } from "./util/lifecycle-script-policy";
-import { posixify } from "@fynpo/base";
+import { posixify, readJson, writeJson } from "@fynpo/base";
 
 const DEFAULT_ROOT_DIR = "_fyn";
 const MANIFEST_FILE = ".fyn-local-exports.json";
@@ -174,7 +174,7 @@ const isInside = (root, child) => {
 const readOwnedManifest = async (cwd, root) => {
   const marker = Path.join(cwd, root, MANIFEST_FILE);
   try {
-    const value = JSON.parse(await Fs.readFile(marker, "utf8"));
+    const value = await readJson(marker);
     return normalizeManifest(value);
   } catch (err) {
     if (err.code === "ENOENT" || err.code === "ENOTDIR") {
@@ -362,10 +362,7 @@ async function reconcileOneRoot(cwd, root, exportsForRoot) {
       await Fs.$.mkdirp(Path.dirname(stagedTarget));
       await fynTil.symlinkDir(stagedTarget, source, !fynTil.isWin32);
     }
-    await Fs.writeFile(
-      Path.join(staging, MANIFEST_FILE),
-      `${JSON.stringify(desiredRootManifest, null, 2)}\n`
-    );
+    await writeJson(Path.join(staging, MANIFEST_FILE), desiredRootManifest);
 
     if (owned) {
       await Fs.$.rimraf(backup);

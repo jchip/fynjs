@@ -11,6 +11,7 @@ import util from "util";
 import semver from "semver";
 import readline from "readline";
 import { fynFetch } from "@fynjs/fetch";
+import { readJson, writeJson, readPkgJson } from "@fynpo/base";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -308,8 +309,7 @@ class FynGlobal {
    */
   async readInstalledJson(): Promise<InstalledRegistry> {
     try {
-      const data = await Fs.readFile(this.installedJsonPath);
-      return JSON.parse(data);
+      return (await readJson(this.installedJsonPath)) as InstalledRegistry;
     } catch (err) {
       // Return empty registry if file doesn't exist
       return { packages: {} };
@@ -321,7 +321,7 @@ class FynGlobal {
    */
   async writeInstalledJson(registry: InstalledRegistry): Promise<void> {
     await Fs.$.mkdirp(this.versionDir);
-    await Fs.writeFile(this.installedJsonPath, JSON.stringify(registry, null, 2) + "\n");
+    await writeJson(this.installedJsonPath, registry);
   }
 
   /**
@@ -725,9 +725,8 @@ class FynGlobal {
    * Read the actual installed version from node_modules
    */
   async getInstalledVersion(pkgDir: string, packageName: string): Promise<string | null> {
-    const installedPkgJson = Path.join(pkgDir, "node_modules", packageName, "package.json");
     try {
-      const pkgJson = JSON.parse(await Fs.readFile(installedPkgJson));
+      const pkgJson = await readPkgJson(Path.join(pkgDir, "node_modules", packageName));
       return pkgJson.version;
     } catch (err) {
       return null;
@@ -840,7 +839,7 @@ class FynGlobal {
         }
       };
 
-      await Fs.writeFile(Path.join(tempDir, "package.json"), JSON.stringify(pkgJson, null, 2) + "\n");
+      await writeJson(Path.join(tempDir, "package.json"), pkgJson);
 
       // Create Fyn instance for this package directory
       logger.info(`Installing ${packageName}${depVersion !== "latest" ? "@" + depVersion : ""} globally...`);
@@ -860,9 +859,9 @@ class FynGlobal {
       // Record the actual installed version in package.json (keep original semver spec)
       if (installedVersion) {
         const finalPkgJsonPath = Path.join(tempDir, "package.json");
-        const finalPkgJson = JSON.parse(await Fs.readFile(finalPkgJsonPath));
+        const finalPkgJson = await readJson(finalPkgJsonPath);
         finalPkgJson.__installedVersion = installedVersion;
-        await Fs.writeFile(finalPkgJsonPath, JSON.stringify(finalPkgJson, null, 2) + "\n");
+        await writeJson(finalPkgJsonPath, finalPkgJson);
       }
 
       // Install succeeded - move temp dir to final location
@@ -1413,9 +1412,9 @@ class FynGlobal {
     } else {
       // For registry packages, update using original semver spec
       const pkgJsonPath = Path.join(pkgDir, "package.json");
-      const pkgJson = JSON.parse(await Fs.readFile(pkgJsonPath));
+      const pkgJson = await readJson(pkgJsonPath);
       pkgJson.dependencies[targetPackageName] = targetVersion.semver || "latest";
-      await Fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + "\n");
+      await writeJson(pkgJsonPath, pkgJson);
     }
 
     // Remove old fyn-lock to force fresh resolution

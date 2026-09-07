@@ -2,6 +2,7 @@ import { scanFileStats } from "./stat-dir";
 import Fs from "./file-ops";
 import Path from "path";
 import logger from "../logger";
+import { readPkgJson } from "@fynpo/base";
 
 /**
  * Go into a local dep pkg's dir and see if it has one of these npm scripts:
@@ -34,7 +35,7 @@ const installScripts = ["preinstall", "install", "postinstall", "prepare", "buil
 
 async function checkPkgNeedInstall(dir: string, checkCtime: number = 0) {
   try {
-    const pkgJson = JSON.parse(await Fs.readFile(Path.join(dir, "package.json")));
+    const pkgJson = await readPkgJson(dir);
     const scripts = Object.keys(pkgJson.scripts || {});
     const hasScript = scripts.find(s => installScripts.includes(s));
 

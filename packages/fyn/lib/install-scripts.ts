@@ -12,6 +12,7 @@ import {
   mergeAllowEntry,
   blockedReasonText
 } from "./util/script-policy-report";
+import { readJson, writeJson } from "@fynpo/base";
 
 //
 // `fyn install-scripts` - reviewing and recording which packages may run their
@@ -274,7 +275,7 @@ export class InstallScripts {
     let json = {};
 
     try {
-      json = JSON.parse(await Fs.readFile(target.file));
+      json = await readJson(target.file);
     } catch (err) {
       if (target.fynpo) {
         throw new Error(
@@ -305,7 +306,7 @@ export class InstallScripts {
     for (const key of Object.keys(values)) {
       _.set(read.json, targetOptionPath(target, key), values[key]);
     }
-    await Fs.writeFile(target.file, `${JSON.stringify(read.json, null, 2)}\n`);
+    await writeJson(target.file, read.json);
     logger.info(`updated ${chalk.cyan(target.file)}`);
   }
 
