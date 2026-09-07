@@ -3,10 +3,9 @@ const pFs = Fs.promises;
 import Path from "path";
 import { logger } from "./logger.ts";
 import * as _ from "lodash-es";
-import { cosmiconfigSync } from "cosmiconfig";
 import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
-import { FynpoDepGraph, type FynpoPackageInfo, type PackageBasicInfo, PackageRef, resolvePackagesConfig, makeGitignoreMatcher, writeJsonSync, readJsonSync } from "@fynpo/base";
+import { FynpoConfigManager, FynpoDepGraph, type FynpoPackageInfo, type PackageBasicInfo, PackageRef, resolvePackagesConfig, makeGitignoreMatcher, writeJsonSync, readJsonSync } from "@fynpo/base";
 import os from "os";
 import { createRequire } from "node:module";
 import { startMetaMemoizer } from "./meta-memoizer.ts";
@@ -289,15 +288,16 @@ export const locateGlobalFyn = async (globalNmDir = null) => {
 };
 
 export const loadFynpoConfig = (cwd: string = process.cwd(), configPath?: string) => {
-  const explorer = cosmiconfigSync("fynpo", {
-    searchPlaces: ["fynpo.config.js", "fynpo.json", "lerna.json"],
-  });
-  const explicitPath = configPath ? Path.resolve(cwd, configPath) : undefined;
-  const explore = explicitPath ? explorer.load : explorer.search;
-  const searchPath = explicitPath ? explicitPath : cwd;
-  const config = explore(searchPath);
-
-  return config ? config : null;
+  const mgr = new FynpoConfigManager({ cwd, configPath, allowLernaWithoutFynpo: true });
+  mgr.loadSync();
+  if (mgr.config) {
+    return {
+      config: mgr.config,
+      filepath: mgr.filePath,
+      isEmpty: _.isEmpty(mgr.config),
+    };
+  }
+  return null;
 };
 
 export const loadConfig = (cwd = process.cwd(), commitlint = false) => {

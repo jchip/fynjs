@@ -85,4 +85,45 @@ describe("FynpoConfigManager", () => {
 
     expect(await new FynpoConfigManager({ cwd }).load()).toBe(undefined);
   });
+
+  describe("loadSync", () => {
+    it("should load fynpo.json synchronously", async () => {
+      const cwd = await dirWith({ "fynpo.json": `{ "packages": ["sync-pkgs"] }` });
+      const mgr = new FynpoConfigManager({ cwd });
+
+      expect(mgr.loadSync()).toEqual({ packages: ["sync-pkgs"] });
+      expect(mgr.fileName).toBe("fynpo.json");
+      expect(mgr.filePath).toBe(Path.join(cwd, "fynpo.json"));
+      expect(mgr.topDir).toBe(cwd);
+      expect(mgr.repoType).toBe("fynpo monorepo");
+    });
+
+    it("should load CJS fynpo.config.js synchronously", async () => {
+      const cwd = await dirWith({
+        "fynpo.config.js": `module.exports = { packages: ["cjs-sync"] };`,
+      });
+      const mgr = new FynpoConfigManager({ cwd });
+
+      expect(mgr.loadSync()).toEqual({ packages: ["cjs-sync"] });
+      expect(mgr.fileName).toBe("fynpo.config.js");
+      expect(mgr.topDir).toBe(cwd);
+    });
+
+    it("should load lerna.json with allowLernaWithoutFynpo", async () => {
+      const cwd = await dirWith({ "lerna.json": `{ "version": "1.0.0" }` });
+      const mgr = new FynpoConfigManager({ cwd, allowLernaWithoutFynpo: true });
+
+      expect(mgr.loadSync()).toEqual({ version: "1.0.0" });
+      expect(mgr.fileName).toBe("lerna.json");
+      expect(mgr.repoType).toBe("lerna monorepo");
+    });
+
+    it("should load explicit configPath synchronously", async () => {
+      const cwd = await dirWith({ "custom-config.json": `{ "packages": ["custom"] }` });
+      const mgr = new FynpoConfigManager({ cwd, configPath: "custom-config.json" });
+
+      expect(mgr.loadSync()).toEqual({ packages: ["custom"] });
+      expect(mgr.fileName).toBe("custom-config.json");
+    });
+  });
 });

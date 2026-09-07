@@ -1,14 +1,17 @@
 import Fs from "fs";
 import Path from "path";
-import { readJson } from "./util.js";
+import { createRequire } from "node:module";
+import { readJson, readJsonSync } from "./util.js";
 
 import { makeOptionalImport } from "optional-import";
 
 const optionalImport = makeOptionalImport(import.meta);
+const xrequire = createRequire(import.meta.url);
 
-
-type ConfigOptions = {
+export type ConfigOptions = {
   cwd?: string;
+  configPath?: string;
+  allowLernaWithoutFynpo?: boolean;
 };
 
 /**
@@ -16,19 +19,39 @@ type ConfigOptions = {
  */
 export class FynpoConfigManager {
   private options: ConfigOptions;
-  private _topDir: string;
+  private _topDir: string | undefined;
   private _config: any;
-  private _type: string;
+  private _type: string | undefined;
+  private _fileName: string | undefined;
+  private _filePath: string | undefined;
 
   constructor(opts: ConfigOptions = {}) {
     this.options = { cwd: process.cwd(), ...opts };
     this._topDir = undefined;
     this._config = undefined;
+    this._type = undefined;
+    this._fileName = undefined;
+    this._filePath = undefined;
   }
 
   async load() {
     if (!this._config) {
-      await this.search();
+      if (this.options.configPath) {
+        await this.loadExplicit(this.options.configPath);
+      } else {
+        await this.search();
+      }
+    }
+    return this._config;
+  }
+
+  loadSync() {
+    if (!this._config) {
+      if (this.options.configPath) {
+        this.loadExplicitSync(this.options.configPath);
+      } else {
+        this.searchSync();
+      }
     }
     return this._config;
   }
@@ -44,6 +67,7 @@ export class FynpoConfigManager {
    * Get the description of the monorepo detected
    * - "fynpo monorepo"
    * - "lerna monorepo with fynpo"
+   * - "lerna monorepo"
    */
   get repoType() {
     return this._type;
@@ -64,10 +88,24 @@ export class FynpoConfigManager {
     return this._topDir;
   }
 
+  /**
+   * file name of the loaded config (e.g. "fynpo.config.js", "fynpo.json", "lerna.json")
+   */
+  get fileName() {
+    return this._fileName;
+  }
+
+  /**
+   * absolute path to the loaded config file
+   */
+  get filePath() {
+    return this._filePath;
+  }
+
   private async readJson(file: string) {
     try {
       return await readJson(file);
-    } catch (err) {
+    } catch (err: any) {
       if (err.code !== "ENOENT") {
         const msg = `Failed to read JSON file ${file} - ${err.message}`;
         throw new Error(msg);
@@ -77,8 +115,63 @@ export class FynpoConfigManager {
     }
   }
 
+  private readJsonSync(file: string) {
+    try {
+      return readJsonSync(file);
+    } catch (err: any) {
+      if (err.code !== "ENOENT") {
+        const msg = `Failed to read JSON file ${file} - ${err.message}`;
+        throw new Error(msg);
+      }
+
+      throw err;
+    }
+  }
+
+  private async loadExplicit(configPath: string) {
+    const fullPath = Path.resolve(this.options.cwd || "", configPath);
+    this._filePath = fullPath;
+    this._fileName = Path.basename(fullPath);
+    this._topDir = Path.dirname(fullPath);
+
+    if (fullPath.endsWith(".js") || fullPath.endsWith(".cjs") || fullPath.endsWith(".mjs")) {
+      const configMod = await optionalImport(fullPath, {
+        default: undefined,
+      });
+      if (configMod) {
+        this._config = configMod.default ?? configMod;
+        this._type = "fynpo monorepo";
+      }
+    } else {
+      this._config = await this.readJson(fullPath);
+      this._type = this._fileName === "lerna.json" ? "lerna monorepo" : "fynpo monorepo";
+    }
+  }
+
+  private loadExplicitSync(configPath: string) {
+    const fullPath = Path.resolve(this.options.cwd || "", configPath);
+    this._filePath = fullPath;
+    this._fileName = Path.basename(fullPath);
+    this._topDir = Path.dirname(fullPath);
+
+    if (fullPath.endsWith(".js") || fullPath.endsWith(".cjs") || fullPath.endsWith(".mjs")) {
+      if (Fs.existsSync(fullPath)) {
+        try {
+          const configMod = xrequire(fullPath);
+          this._config = configMod?.default ?? configMod;
+          this._type = "fynpo monorepo";
+        } catch (err: any) {
+          throw new Error(`Failed to load ${fullPath} - ${err.message}`);
+        }
+      }
+    } else {
+      this._config = this.readJsonSync(fullPath);
+      this._type = this._fileName === "lerna.json" ? "lerna monorepo" : "fynpo monorepo";
+    }
+  }
+
   private async search() {
-    let dir = this.options.cwd;
+    let dir = this.options.cwd || process.cwd();
     let prevDir = dir;
     let count = 0;
 
@@ -88,36 +181,36 @@ export class FynpoConfigManager {
         break;
       }
 
-      //
-      // `fynpo.config.js` loads as a module: an absent file falls back, while one that exists
-      // but throws still surfaces as an error rather than being mistaken for absent.
-      //
-      // `fynpo.config.json` is NOT loaded as a module - `import()` of JSON needs an import
-      // attribute (`ERR_IMPORT_ATTRIBUTE_MISSING` without one), and reading it as JSON is what
-      // it is anyway. `readJson` already reports a malformed file and swallows only ENOENT.
-      //
-      const configMod = await optionalImport(Path.join(dir, "fynpo.config.js"), {
+      const jsPath = Path.join(dir, "fynpo.config.js");
+      const configMod = await optionalImport(jsPath, {
         default: undefined,
       });
 
       if (configMod) {
         // a CJS config's `module.exports`, or an ESM config's `export default`, is on `.default`
         this._config = configMod.default ?? configMod;
+        this._fileName = "fynpo.config.js";
+        this._filePath = jsPath;
+        this._type = "fynpo monorepo";
+        break;
       } else {
         try {
-          this._config = await this.readJson(Path.join(dir, "fynpo.config.json"));
+          const cfgJson = Path.join(dir, "fynpo.config.json");
+          this._config = await this.readJson(cfgJson);
+          this._fileName = "fynpo.config.json";
+          this._filePath = cfgJson;
+          this._type = "fynpo monorepo";
+          break;
         } catch (_e) {
           //
         }
       }
 
-      if (this._config) {
-        this._type = "fynpo monorepo";
-        break;
-      }
-
       try {
-        this._config = await this.readJson(Path.join(dir, "fynpo.json"));
+        const fynpoJson = Path.join(dir, "fynpo.json");
+        this._config = await this.readJson(fynpoJson);
+        this._fileName = "fynpo.json";
+        this._filePath = fynpoJson;
         this._type = "fynpo monorepo";
         break;
       } catch (_e) {
@@ -125,10 +218,13 @@ export class FynpoConfigManager {
       }
 
       try {
-        const lerna = await this.readJson(Path.join(dir, "lerna.json"));
-        if (lerna.fynpo) {
-          this._type = "lerna monorepo with fynpo";
+        const lernaJson = Path.join(dir, "lerna.json");
+        const lerna = await this.readJson(lernaJson);
+        if (lerna.fynpo || this.options.allowLernaWithoutFynpo) {
+          this._type = lerna.fynpo ? "lerna monorepo with fynpo" : "lerna monorepo";
           this._config = lerna;
+          this._fileName = "lerna.json";
+          this._filePath = lernaJson;
           break;
         }
       } catch (_e) {
@@ -139,12 +235,79 @@ export class FynpoConfigManager {
       dir = Path.dirname(dir);
     } while (++count < 50 && dir !== prevDir);
 
-    //
-    // No `patterns` alias any more - see the matching note in fynpo/src/utils.ts loadConfig.
-    // `patterns` bypasses auto-search, while `include` is meant to filter what auto-search
-    // found. The raw `packages` config is carried through and resolved downstream. FPO-17.
-    //
+    this._topDir = this._config ? dir : undefined;
+  }
 
-    this._topDir = dir;
+  private searchSync() {
+    let dir = this.options.cwd || process.cwd();
+    let prevDir = dir;
+    let count = 0;
+
+    do {
+      if (Fs.existsSync(Path.join(dir, ".no-fynpo"))) {
+        break;
+      }
+
+      const jsPath = Path.join(dir, "fynpo.config.js");
+      if (Fs.existsSync(jsPath)) {
+        try {
+          const configMod = xrequire(jsPath);
+          this._config = configMod?.default ?? configMod;
+          this._fileName = "fynpo.config.js";
+          this._filePath = jsPath;
+          this._type = "fynpo monorepo";
+          break;
+        } catch (err: any) {
+          throw new Error(`Failed to load ${jsPath} - ${err.message}`);
+        }
+      } else {
+        const cfgJson = Path.join(dir, "fynpo.config.json");
+        if (Fs.existsSync(cfgJson)) {
+          try {
+            this._config = this.readJsonSync(cfgJson);
+            this._fileName = "fynpo.config.json";
+            this._filePath = cfgJson;
+            this._type = "fynpo monorepo";
+            break;
+          } catch (_e) {
+            //
+          }
+        }
+      }
+
+      const fynpoJson = Path.join(dir, "fynpo.json");
+      if (Fs.existsSync(fynpoJson)) {
+        try {
+          this._config = this.readJsonSync(fynpoJson);
+          this._fileName = "fynpo.json";
+          this._filePath = fynpoJson;
+          this._type = "fynpo monorepo";
+          break;
+        } catch (_e) {
+          //
+        }
+      }
+
+      const lernaJson = Path.join(dir, "lerna.json");
+      if (Fs.existsSync(lernaJson)) {
+        try {
+          const lerna = this.readJsonSync(lernaJson);
+          if (lerna.fynpo || this.options.allowLernaWithoutFynpo) {
+            this._type = lerna.fynpo ? "lerna monorepo with fynpo" : "lerna monorepo";
+            this._config = lerna;
+            this._fileName = "lerna.json";
+            this._filePath = lernaJson;
+            break;
+          }
+        } catch (_e) {
+          //
+        }
+      }
+
+      prevDir = dir;
+      dir = Path.dirname(dir);
+    } while (++count < 50 && dir !== prevDir);
+
+    this._topDir = this._config ? dir : undefined;
   }
 }

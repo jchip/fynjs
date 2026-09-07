@@ -46,3 +46,10 @@ export function readJsonSync<T = any>(file: string): T {
 export async function readPkgJson(dir: string): Promise<Record<string, any>> {
   return readJson(Path.join(dir, "package.json"));
 }
+
+/**
+ * Read and parse `package.json` from a directory — synchronous.
+ */
+export function readPkgJsonSync(dir: string): Record<string, any> {
+  return readJsonSync(Path.join(dir, "package.json"));
+}
