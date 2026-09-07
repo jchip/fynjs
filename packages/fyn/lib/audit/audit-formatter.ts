@@ -12,7 +12,7 @@ import { SEMVER } from "../symbols";
 import type { AuditResult, Advisory } from "./audit-cache";
 import type { Vulnerability } from "./audit-report";
 
-type SeverityLevel = "critical" | "high" | "moderate" | "low" | "info";
+export type SeverityLevel = "critical" | "high" | "moderate" | "low" | "info";
 
 /** Stat info for a package version */
 interface PackageStat {

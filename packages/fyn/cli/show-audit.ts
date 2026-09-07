@@ -13,18 +13,15 @@ import Path from "path";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
 import AuditReport from "../lib/audit/audit-report";
-import AuditFormatter from "../lib/audit/audit-formatter";
+import AuditFormatter, { type SeverityLevel } from "../lib/audit/audit-formatter";
 import PkgStatProvider from "../lib/pkg-stat-provider";
 import { FETCH_META } from "../lib/log-items";
-
-/** Dependency data structure */
-interface DepData {
-  pkgs: Record<string, unknown>;
-}
+import type DepData from "../lib/dep-data";
 
 /** Fyn instance interface for ShowAudit */
 interface FynForAudit {
-  _options: { buildLocal: boolean; colors?: boolean };
+  fynDir: string;
+  _options: { buildLocal?: boolean; colors?: boolean };
   _data?: DepData;
   _cwd?: string;
   resolveDependencies(): Promise<void>;
@@ -33,8 +30,9 @@ interface FynForAudit {
 /** CLI options for audit command */
 interface AuditOptions {
   json?: boolean;
+  colors?: boolean;
   omit?: string[];
-  auditLevel?: string;
+  auditLevel?: SeverityLevel;
   noCache?: boolean;
   summary?: boolean;
   auditFile?: string;

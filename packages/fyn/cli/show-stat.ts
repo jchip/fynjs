@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
-import Promise from "aveazul";
+import AveAzul from "aveazul";
 import logFormat from "../lib/util/log-format";
 import PkgStatProvider from "../lib/pkg-stat-provider";
 import { FETCH_META } from "../lib/log-items";
@@ -27,7 +27,7 @@ interface PkgStat {
 
 /** Fyn instance interface for ShowStat */
 interface FynForStat {
-  _options: { buildLocal: boolean };
+  _options: { buildLocal?: boolean };
   resolveDependencies(): Promise<void>;
 }
 
@@ -50,7 +50,7 @@ class ShowStat {
   }
 
   _show(pkgIds: string[]): Promise<void> {
-    return Promise.each(pkgIds, async (pkgId: string) => {
+    return AveAzul.each(pkgIds, async (pkgId: string) => {
       const matches = this._statProvider.findMatchingVersions(pkgId);
 
       if (matches.versions.length === 0) {

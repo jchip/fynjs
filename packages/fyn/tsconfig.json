@@ -26,5 +26,5 @@
     "types": ["node"]
   },
   // `yarn/` is a vendored copy of yarn 1's lockfile parser, reached from lib/fyn.ts.
-  "include": ["lib"]
+  "include": ["lib", "cli"]
 }

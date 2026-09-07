@@ -9,7 +9,7 @@ import chalk from "chalk";
 // `enabled`, which gated output but never raised the level.
 //
 const autoColorLevel = chalk.level;
-import FynCli from "./fyn-cli";
+import FynCli, { type FynCliConfig, type FynCliOpts } from "./fyn-cli";
 import _ from "lodash";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
@@ -51,15 +51,13 @@ interface FynpoConfig {
     };
     [key: string]: unknown;
   };
+  [key: string]: unknown;
 }
 
 /** Options picked from command */
-interface PickedOptions {
-  opts: Record<string, unknown>;
+interface PickedOptions extends FynCliConfig {
   rcData: RcData;
   _cliSource: Record<string, unknown>;
-  _fynpo: FynpoConfig;
-  noStartupInfo?: boolean;
 }
 
 /** Script execution error from @npmcli/run-script */
@@ -81,7 +79,7 @@ function setLogLevel(ll: string | undefined): void {
     const real = _.find(levels, l => l.startsWith(ll));
     const x = real ? CliLogger.Levels[real as keyof typeof CliLogger.Levels] : undefined;
     if (x !== undefined) {
-      logger._logLevel = x;
+      (logger as any)._logLevel = x;
     } else {
       logger.error(`Invalid log level "${ll}".  Supported levels are: ${levels.join(", ")}`);
       fynTil.exit(1);
@@ -142,7 +140,7 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
     }
   }
 
-  const rcData: RcData = loadRc(allOpts.rcfile === false ? false : cwd, fynpo.dir);
+  const rcData: RcData = loadRc(allOpts.rcfile === false ? false : cwd, fynpo.dir) as unknown as RcData;
 
   const rc = rcData.all || defaultRc;
 
@@ -181,7 +179,7 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
   setLogLevel(allOpts.logLevel as string | undefined);
   if (allOpts.progress) logger.setItemType(allOpts.progress as string);
 
-  return { opts: allOpts, rcData, _cliSource: meta.source, _fynpo: fynpo };
+  return { opts: allOpts as FynCliOpts, rcData, _cliSource: meta.source, _fynpo: fynpo };
 };
 
 // Build a FynGlobal using the same fully-merged options (root flags + command
@@ -419,7 +417,7 @@ const commands: Record<string, CommandSpec> = {
       audit: {
         desc: "run security audit after install (use --no-audit to skip)",
         args: "<flag boolean>",
-        default: true
+        argDefault: "true"
       },
       "audit-file": {
         desc: "write audit report JSON to a file after install",
@@ -453,7 +451,7 @@ const commands: Record<string, CommandSpec> = {
         config.noStartupInfo = true;
         logger.info("installing...");
         fynTil.resetFynpo();
-        return new FynCli(config).install({ opts: { audit: meta.opts.audit } });
+        return new FynCli(config).install({ opts: { audit: Boolean(meta.opts.audit) } });
       });
     },
     options: {
@@ -484,7 +482,7 @@ const commands: Record<string, CommandSpec> = {
       audit: {
         desc: "run security audit after install (use --no-audit to skip)",
         args: "<flag boolean>",
-        default: true
+        argDefault: "true"
       }
     }
   },
@@ -510,7 +508,7 @@ const commands: Record<string, CommandSpec> = {
         pickOpts.noStartupInfo = true;
         fynTil.resetFynpo();
         logger.info("installing...");
-        return await new FynCli(pickOpts).install({ opts: { audit: meta.opts.audit } });
+        return await new FynCli(pickOpts).install({ opts: { audit: Boolean(meta.opts.audit) } });
       }
     },
     options: {
@@ -522,7 +520,7 @@ const commands: Record<string, CommandSpec> = {
       audit: {
         desc: "run security audit after install (use --no-audit to skip)",
         args: "<flag boolean>",
-        default: true
+        argDefault: "true"
       }
     }
   },
@@ -552,7 +550,7 @@ const commands: Record<string, CommandSpec> = {
       "audit-level": {
         args: "<level string>",
         desc: "Minimum severity level to report (info, low, moderate, high, critical)",
-        default: "info"
+        argDefault: "info"
       },
       "no-cache": {
         args: "<flag boolean>",
@@ -598,7 +596,7 @@ const commands: Record<string, CommandSpec> = {
           // Generic error
           logger.error(chalk.red("Script execution failed:"));
           logger.error(err.message || err.toString());
-          if (err.stack && logger._logLevel <= CliLogger.Levels.debug) {
+          if (err.stack && (logger as any)._logLevel <= CliLogger.Levels.debug) {
             logger.debug(err.stack);
           }
         }

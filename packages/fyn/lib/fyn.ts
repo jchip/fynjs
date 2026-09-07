@@ -233,7 +233,7 @@ interface YarnLockData {
 interface FynConstructorOptions {
   opts?: Partial<FynOptions>;
   _cliSource?: CliSource;
-  _fynpo?: boolean;
+  _fynpo?: boolean | FynpoData | Record<string, unknown>;
 }
 
 /** Local package install check result */
@@ -285,12 +285,12 @@ class Fyn {
   private _central?: FynCentral | false;
   private _npmLockData?: NpmLockData | null;
   private _yarnLock?: YarnLockData;
-  private _runNpm?: string[];
+  _runNpm?: any;
   _resolutions?: Record<string, string>;
   _resolutionsMatchers?: ResolutionMatcher[];
   private _overrides?: Record<string, string | Record<string, string>>;
   _overridesMatchers?: OverrideMatcher[];
-  private _changeProdMode?: string;
+  _changeProdMode?: string;
   private _layout?: string;
   private _localPkgInstall?: Record<string, LocalPkgInstallResult>;
   _localPkgBuilder?: LocalPkgBuilder;
@@ -333,6 +333,8 @@ class Fyn {
     this._shortPkgDir = Boolean(process.env.FYN_SHORT_PKG_DIR);
     if (!_fynpo) {
       this._fynpo = {};
+    } else if (typeof _fynpo === "object") {
+      this._fynpo = _fynpo as FynpoData;
     }
   }
 

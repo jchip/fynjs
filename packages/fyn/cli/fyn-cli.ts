@@ -1,7 +1,7 @@
 import Fs from "../lib/util/file-ops";
 import Os from "os";
 import Path from "path";
-import Promise from "aveazul";
+import AveAzul from "aveazul";
 import Fyn from "../lib/fyn";
 import _ from "lodash";
 import PkgInstaller from "../lib/pkg-installer";
@@ -39,7 +39,7 @@ import {
 import { syncLocalExports, localExportsScanIgnores } from "../lib/local-exports";
 
 /** Fyn CLI options */
-interface FynCliOpts {
+export interface FynCliOpts {
   cwd: string;
   concurrency?: number;
   saveLogs?: string;
@@ -47,13 +47,14 @@ interface FynCliOpts {
 }
 
 /** Fynpo configuration */
-interface FynpoConfig {
+export interface FynpoConfig {
   config?: Record<string, unknown>;
   dir?: string;
+  [key: string]: unknown;
 }
 
 /** FynCli configuration */
-interface FynCliConfig {
+export interface FynCliConfig {
   opts: FynCliOpts;
   noStartupInfo?: boolean;
   _fynpo: FynpoConfig;
@@ -127,7 +128,7 @@ interface AddItem {
   semverPath?: string;
   localType?: string;
   section: string;
-  parent: Record<string, unknown>;
+  parent?: any;
   found?: string;
   fullPath?: string;
   version?: string;
@@ -136,7 +137,7 @@ interface AddItem {
 /** Package.json with optional fields for partial loading */
 type CliPackageJson = Partial<FynPackageJson>;
 
-function checkNewVersion(npmConfig: Record<string, unknown>): void {
+function checkNewVersion(npmConfig: any): void {
   checkPkgNewVersionEngine({
     pkg: _.pick(myPkg, ["name", "version"]),
     npmConfig,
@@ -170,7 +171,7 @@ class FynCli {
 
   get fyn(): Fyn {
     if (!this._fyn) {
-      this._fyn = new Fyn(this._config);
+      this._fyn = new Fyn(this._config as any);
     }
     return this._fyn;
   }
@@ -381,8 +382,9 @@ class FynCli {
         });
 
         Object.keys(sections).forEach((sec: string) => {
-          if (added[sec].length > 0 && (pkg as Record<string, unknown>)[sec]) {
-            (pkg as Record<string, Record<string, string>>)[sec] = sortObjKeys((pkg as Record<string, Record<string, string>>)[sec]);
+          const pkgAny = pkg as Record<string, any>;
+          if (added[sec].length > 0 && pkgAny[sec]) {
+            pkgAny[sec] = sortObjKeys(pkgAny[sec]);
             if (_.get(pkgFyn, ["fyn", sec])) {
               pkgFyn.fyn![sec] = sortObjKeys(pkgFyn.fyn![sec]);
             }
@@ -392,7 +394,7 @@ class FynCli {
 
         await this.fyn.savePkg();
         if (argv.pkgFyn) {
-          await this.fyn.savePkgFyn(pkgFyn);
+          await this.fyn.savePkgFyn(pkgFyn as any);
         }
         return true;
       });
@@ -482,7 +484,7 @@ class FynCli {
       for (const vdir in localPkgLinks) {
         const tgtDir = Path.join(this.fyn._cwd, vdir);
         const srcDir = Path.join(this.fyn._cwd, localPkgLinks[vdir].srcDir);
-        await hardLinkDir.link(srcDir, tgtDir, { sourceMaps: localPkgLinks[vdir].sourceMaps });
+        await hardLinkDir.link(srcDir, tgtDir, { sourceMaps: Boolean(localPkgLinks[vdir].sourceMaps) });
       }
       refreshed = true;
     }
@@ -505,13 +507,13 @@ class FynCli {
    * 3. postinstall
    * 4. prepare
    */
-  install(argv: InstallArgv = {}): Promise<Error | undefined> {
+  install(argv: InstallArgv = {}): Promise<void | Error | undefined> {
     let failure: Error | undefined;
     let installLocked: boolean | undefined;
     const start = Date.now();
     const runAudit = argv.opts?.audit !== false;
     const auditFile = argv.opts?.auditFile;
-    return Promise.try(() => this.fyn._initializePkg())
+    return AveAzul.try(() => this.fyn._initializePkg())
       .then(async () => {
         checkNewVersion(this.fyn._options);
 
@@ -715,11 +717,11 @@ class FynCli {
     }
   }
 
-  audit(argv: AuditArgv): Promise<number> {
+  audit(argv: AuditArgv): Promise<void> {
     const opts = {
       json: argv.opts?.json || false,
       omit: argv.opts?.omit || [],
-      auditLevel: argv.opts?.auditLevel || "info",
+      auditLevel: (argv.opts?.auditLevel as any) || "info",
       noCache: argv.opts?.noCache || false
     };
     return showAudit(this.fyn, opts).finally(() => {
@@ -772,7 +774,7 @@ class FynCli {
     }
 
     const pkg = Object.assign({}, this.fyn._pkg) as PackageJson;
-    pkg._id = `${pkg.name}@${pkg.version}`;
+    (pkg as any)._id = `${pkg.name}@${pkg.version}`;
 
     const _scripts: string[] = ([] as string[]).concat(
       ...scripts.map((s: string) => {
@@ -784,7 +786,7 @@ class FynCli {
       })
     );
 
-    const env = makeNpmEnv(pkg, {
+    const env = (makeNpmEnv as any)(pkg, {
       config: this.fyn.allrc,
       production: this.fyn.production
     });
@@ -806,7 +808,7 @@ class FynCli {
 
     // Only pass args to the main script, not pre/post scripts
     const mainScript = scripts[scripts.length - 1];
-    return Promise.each(
+    await AveAzul.each(
       _scripts,
       (s: string) => {
         if (_.get(pkg, ["scripts", s])) {
