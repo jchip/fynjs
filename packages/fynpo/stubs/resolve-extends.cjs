@@ -19,27 +19,40 @@ var __importDefault =
   };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = __importDefault(require("path"));
-require("resolve-global");
+const { resolveGlobalSilent: resolveGlobalSilentMod } = require("resolve-global");
 const resolve_from_1 = __importDefault(require("resolve-from"));
-const merge_1 = __importDefault(require("lodash/merge"));
-const mergeWith_1 = __importDefault(require("lodash/mergeWith"));
-const importFresh = require("import-fresh");
 const xrequire = eval("require");
-function resolveExtends(config = {}, context = {}) {
+
+function isObject(val) {
+  return val && typeof val === "object" && !Array.isArray(val);
+}
+
+function mergeObjects(target, ...sources) {
+  for (const src of sources) {
+    if (isObject(src)) {
+      for (const key of Object.keys(src)) {
+        if (isObject(src[key])) {
+          target[key] = mergeObjects(isObject(target[key]) ? target[key] : {}, src[key]);
+        } else {
+          target[key] = src[key];
+        }
+      }
+    }
+  }
+  return target;
+}
+
+async function resolveExtends(config = {}, context = {}) {
   const { extends: e } = config;
   const extended = loadExtends(config, context).reduce(
     (r, _a) => {
       var { extends: _ } = _a,
         c = __rest(_a, ["extends"]);
-      return mergeWith_1.default(r, c, (objValue, srcValue) => {
-        if (Array.isArray(objValue)) {
-          return srcValue;
-        }
-      });
+      return mergeObjects(r, c);
     },
     e ? { extends: e } : {}
   );
-  return merge_1.default({}, extended, config);
+  return mergeObjects({}, extended, config);
 }
 exports.default = resolveExtends;
 function loadExtends(config = {}, context = {}) {
@@ -50,7 +63,7 @@ function loadExtends(config = {}, context = {}) {
     const resolved = resolveConfig(raw, context);
     const c = load(resolved);
     const cwd = path_1.default.dirname(resolved);
-    const ctx = merge_1.default({}, context, { cwd });
+    const ctx = mergeObjects({}, context, { cwd });
     // Resolve parser preset if none was present before
     if (!context.parserPreset && typeof c === "object" && typeof c.parserPreset === "string") {
       const resolvedParserPreset = resolve_from_1.default(cwd, c.parserPreset);
@@ -113,8 +126,7 @@ function resolveFromSilent(cwd, id) {
 }
 function resolveGlobalSilent(id) {
   try {
-    const resolveGlobal = importFresh("resolve-global");
-    return resolveGlobal(id);
+    return resolveGlobalSilentMod(id);
   } catch (err) {}
 }
 //# sourceMappingURL=index.js.map

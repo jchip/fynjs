@@ -138,6 +138,7 @@ export default defineConfig({
     extensions: [".tsx", ".ts", ".js"],
     symlinks: true,
     alias: {
+      "@commitlint/resolve-extends": stub("resolve-extends.cjs"),
       xml2js: stub("xml2js.cjs"),
       "iconv-lite": stub("iconv-lite.cjs"),
       "./iconv-loader": stub("iconv-loader.cjs"),
@@ -148,7 +149,6 @@ export default defineConfig({
       // dedupe to the top-level optional-require 2.x: older nested copies still have
       // eval("require"), which breaks the ESM bundle the same way
       "optional-require": fileURLToPath(import.meta.resolve("optional-require")),
-      "@commitlint/resolve-extends": stub("resolve-extends.cjs"),
       "./parser-flow.js": stub("parser-flow.cjs"),
       "./parser-typescript.js": stub("parser-typescript.cjs"),
       "./third-party.js": stub("parser-typescript.cjs"),

@@ -6,7 +6,7 @@ import Path from "path";
 import { logger } from "./logger.ts";
 import * as _ from "lodash-es";
 import resolveFrom from "resolve-from";
-import resolveGlobal from "resolve-global";
+import { resolveGlobalSilent } from "resolve-global";
 import resolveExtends from "@commitlint/resolve-extends";
 import executeRule from "@commitlint/execute-rule";
 import lint from "@commitlint/lint";
@@ -106,7 +106,7 @@ export class Commitlint {
     const modulePath =
       resolveFrom.silent(import.meta.dirname, moduleName) ||
       resolveFrom.silent(options.cwd, moduleName) ||
-      resolveGlobal.silent(moduleName);
+      resolveGlobalSilent(moduleName);
 
     if (modulePath) {
       const moduleInstance = xrequire(modulePath);
@@ -158,7 +158,7 @@ export class Commitlint {
     }
 
     // Resolve extends key
-    const extended = resolveExtends(opts, {
+    const extended = await resolveExtends(opts, {
       prefix: "commitlint-config",
       cwd: base,
       parserPreset: config.parserPreset,
