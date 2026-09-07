@@ -3,6 +3,7 @@ import taskOptionsModule, {
   getTaskOptionSpec
 } from "../../../lib/util/task-options.js";
 import XTaskSpec from "../../../lib/xtask-spec.js";
+import { NixClap } from "@fynjs/cli-args";
 import { expect, describe, it } from "vitest";
 
 describe("task-options utility", () => {
@@ -28,11 +29,19 @@ describe("task-options utility", () => {
   it("should normalize legacy require and type", () => {
     const raw = {
       opt1: { require: true, type: "string", alias: "o" },
-      opt2: { require: false, type: "number" }
+      opt2: { require: false, type: "number" },
+      opt3: { type: "array", alias: "a" },
+      opt4: { require: true, type: "array" },
+      opt5: { type: "count", alias: "c" },
+      opt6: { type: "count", counting: 5 }
     };
     expect(normalizeTaskOptions(raw)).toStrictEqual({
       opt1: { required: true, args: "<val string>", alias: "o" },
-      opt2: { required: false, args: "<val number>" }
+      opt2: { required: false, args: "<val number>" },
+      opt3: { args: "[val string..]", alias: "a" },
+      opt4: { required: true, args: "<val string..>" },
+      opt5: { counting: Infinity, alias: "c" },
+      opt6: { counting: 5 }
     });
   });
 
@@ -42,6 +51,7 @@ describe("task-options utility", () => {
       num: { args: "[number]" },
       bool: { args: "<boolean>" },
       arr: { args: "[array]" },
+      arrReq: { args: "<array>" },
       custom: { args: "<custom>" },
       customOpt: { args: "[customOpt]" },
       named: { args: "<foo string>" }
@@ -50,11 +60,48 @@ describe("task-options utility", () => {
       str: { args: "<val string>" },
       num: { args: "[val number]" },
       bool: { args: "<val boolean>" },
-      arr: { args: "[val array]" },
+      arr: { args: "[val string..]" },
+      arrReq: { args: "<val string..>" },
       custom: { args: "<custom>" },
       customOpt: { args: "[customOpt]" },
       named: { args: "<foo string>" }
     });
+  });
+
+  it("should produce valid NixClap specs for array and count options (FJM-194)", () => {
+    const raw = {
+      arr: { type: "array" },
+      arrReq: { require: true, type: "array" },
+      count: { type: "count", alias: "c" },
+      bracketArr: { args: "[array]" },
+      bracketArrReq: { args: "<array>" }
+    };
+    const options = normalizeTaskOptions(raw);
+    const nc = new NixClap().init(options);
+    const parsed = nc.parse(
+      [
+        "node",
+        "test",
+        "--arr",
+        "foo",
+        "bar",
+        "--arrReq",
+        "req1",
+        "req2",
+        "-ccc",
+        "--bracketArr",
+        "baz",
+        "--bracketArrReq",
+        "qux"
+      ],
+      2
+    );
+    expect(parsed.command.opts.arr).toStrictEqual(["foo", "bar"]);
+    expect(parsed.command.opts.arrReq).toStrictEqual(["req1", "req2"]);
+    expect(parsed.command.opts.count).toBe(3);
+    expect(parsed.command.opts.c).toBe(3);
+    expect(parsed.command.opts.bracketArr).toStrictEqual(["baz"]);
+    expect(parsed.command.opts.bracketArrReq).toStrictEqual(["qux"]);
   });
 
   it("should extract task option spec from various shapes", () => {

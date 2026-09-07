@@ -214,6 +214,31 @@ describe("xrun", function() {
     );
   });
 
+  it("should parse task with array and count options (FJM-194)", () => {
+    let context;
+    const xrun = new XRun({
+      foo: {
+        argOpts: {
+          files: { type: "array" },
+          verbose: { type: "count", alias: "v" }
+        },
+        task(ctx) {
+          context = ctx;
+        }
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(1000),
+      () => xrun.asyncRun("foo --files a b -vvv"),
+      () => {
+        expect(context.argOpts.files).toStrictEqual(["a", "b"]);
+        expect(context.argOpts.verbose).toBe(3);
+        expect(context.argOpts.v).toBe(3);
+      }
+    );
+  });
+
   it("should pass context to function that take a single param named ctx/context", () => {
     let receivedContext;
     let receivedCtx;

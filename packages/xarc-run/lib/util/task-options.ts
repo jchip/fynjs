@@ -1,4 +1,4 @@
-const TYPE_NAMES = new Set(["string", "number", "boolean", "array"]);
+const TYPE_NAMES = new Set(["string", "number", "boolean", "float", "int", "integer"]);
 
 /**
  * Normalize task option specifications into @fynjs/cli-args compatible OptionSpec.
@@ -6,6 +6,8 @@ const TYPE_NAMES = new Set(["string", "number", "boolean", "array"]);
  * - Native @fynjs/cli-args spec: { required: true, args: "<val string>", alias: "f" }
  * - Shorthand args without value name: { args: "<string>" } -> { args: "<val string>" }
  * - Legacy format: { require: true, type: "string", alias: "f" }
+ * - Legacy array format: { type: "array" } -> { args: "[val string..]" }
+ * - Legacy count format: { type: "count" } -> { counting: Infinity }
  *
  * @param {Record<string, any>} rawOpts - Raw options dictionary
  * @returns {Record<string, any>} Normalized options dictionary
@@ -25,20 +27,32 @@ export function normalizeTaskOptions(rawOpts?: Record<string, any>): Record<stri
       opt.required = Boolean(opt.require);
       delete opt.require;
     }
-    // Support legacy `type: "string"`
+    // Support legacy `type: "string"` / `type: "array"` / `type: "count"`
     if (opt.type !== undefined && typeof opt.type === "string" && opt.args === undefined) {
-      opt.args = `<val ${opt.type}>`;
+      if (opt.type === "count") {
+        opt.counting = opt.counting !== undefined ? opt.counting : Infinity;
+      } else if (opt.type === "array") {
+        opt.args = opt.required ? "<val string..>" : "[val string..]";
+      } else {
+        opt.args = `<val ${opt.type}>`;
+      }
       delete opt.type;
     }
-    // Normalize type-only angle or square brackets: `<string>` -> `<val string>`
+    // Normalize type-only angle or square brackets: `<string>` -> `<val string>`, `<array>` -> `<val string..>`
     if (typeof opt.args === "string") {
       opt.args = opt.args
-        .replace(/^<([a-zA-Z]+)>$/, (_m, type) =>
-          TYPE_NAMES.has(type) ? `<val ${type}>` : `<${type}>`
-        )
-        .replace(/^\[([a-zA-Z]+)\]$/, (_m, type) =>
-          TYPE_NAMES.has(type) ? `[val ${type}]` : `[${type}]`
-        );
+        .replace(/^<([a-zA-Z]+)>$/, (_m, type) => {
+          if (type === "array") {
+            return "<val string..>";
+          }
+          return TYPE_NAMES.has(type) ? `<val ${type}>` : `<${type}>`;
+        })
+        .replace(/^\[([a-zA-Z]+)\]$/, (_m, type) => {
+          if (type === "array") {
+            return "[val string..]";
+          }
+          return TYPE_NAMES.has(type) ? `[val ${type}]` : `[${type}]`;
+        });
     }
     normalized[name] = opt;
   }
