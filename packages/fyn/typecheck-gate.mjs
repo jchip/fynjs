@@ -25,14 +25,39 @@ const dir = Path.dirname(fileURLToPath(import.meta.url));
 const baselineFile = Path.join(dir, "tsc-baseline.txt");
 const update = process.argv.includes("--update");
 
-const result = spawnSync("nvx", ["tsc", "--noEmit", "-p", "tsconfig.json"], {
+function findTsc() {
+  if (process.env.PATH) {
+    const paths = process.env.PATH.split(Path.delimiter);
+    for (const p of paths) {
+      const ext = process.platform === "win32" ? ".cmd" : "";
+      if (Fs.existsSync(Path.join(p, `nvx${ext}`))) {
+        return { cmd: "nvx", args: ["tsc"] };
+      }
+    }
+  }
+
+  const localTsc = Path.join(dir, "node_modules", ".bin", process.platform === "win32" ? "tsc.cmd" : "tsc");
+  if (Fs.existsSync(localTsc)) {
+    return { cmd: localTsc, args: [] };
+  }
+
+  const rootTsc = Path.join(dir, "..", "..", "node_modules", ".bin", process.platform === "win32" ? "tsc.cmd" : "tsc");
+  if (Fs.existsSync(rootTsc)) {
+    return { cmd: rootTsc, args: [] };
+  }
+
+  return { cmd: process.platform === "win32" ? "tsc.cmd" : "tsc", args: [] };
+}
+
+const { cmd: tscCmd, args: tscPrefix } = findTsc();
+const result = spawnSync(tscCmd, [...tscPrefix, "--noEmit", "-p", "tsconfig.json"], {
   cwd: dir,
   encoding: "utf8",
   shell: process.platform === "win32"
 });
 
 if (result.error) {
-  console.error("typecheck-gate: could not run nvx tsc:", result.error.message);
+  console.error(`typecheck-gate: could not run ${tscCmd}:`, result.error.message);
   process.exit(2);
 }
 
