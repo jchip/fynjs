@@ -264,6 +264,18 @@ describe("visual-logger", () => {
       ]);
     });
 
+    it("should freeze/unfreeze symbol-named items and restart their spinners", () => {
+      const sym = Symbol("test-symbol-item");
+      visLog.addItem({ name: sym, spinner: "abc" });
+      expect((visLog as any)._itemOptions[sym]._spinning).toBeGreaterThan(0);
+
+      visLog.freezeItems();
+      expect((visLog as any)._itemOptions[sym]._spinning).toBe(0);
+
+      visLog.unfreezeItems();
+      expect((visLog as any)._itemOptions[sym]._spinning).toBeGreaterThan(0);
+    });
+
     it("should reset item spin index to 0 in addItem", async () => {
       visList = [];
       visLog.addItem({ name: "T", spinner: "abc", color: "blue" });

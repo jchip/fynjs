@@ -294,9 +294,9 @@ export class VisualLogger {
         if (this._backupItemType) {
             this._itemType = this._backupItemType;
             this._backupItemType = undefined;
-            for (const name in this._itemOptions) {
-                this._startItemSpinner(this._itemOptions[name]);
-            }
+            this._getItemKeys().forEach((k) => {
+                this._startItemSpinner(this._itemOptions[k]);
+            });
         }
         return this;
     }
