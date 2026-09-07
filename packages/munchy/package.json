@@ -1,0 +1,86 @@
+{
+  "name": "munchy",
+  "version": "1.0.9",
+  "description": "A producer Node stream for draining different data, including Readable streams",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "xrun xarc/test-only",
+    "coverage": "xrun xarc/test-cov"
+  },
+  "keywords": [
+    "node",
+    "stream",
+    "producer",
+    "drain",
+    "draining",
+    "multiple",
+    "different",
+    "data",
+    "buffer",
+    "string"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jchip/munchy.git"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
+    "@types/sinon": "^9.0.0",
+    "@types/sinon-chai": "^3.2.4",
+    "@xarc/module-dev": "^2.2.5",
+    "chai": "^4.2.0",
+    "mocha": "^7.1.0",
+    "nyc": "^15.0.0",
+    "run-verify": "^1.2.5",
+    "sinon": "^7.2.6",
+    "sinon-chai": "^3.3.0"
+  },
+  "nyc": {
+    "all": true,
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "exclude": [
+      "*clap.js",
+      "*clap.ts",
+      "coverage",
+      "dist",
+      "docs",
+      "gulpfile.js",
+      "test",
+      "xrun*.js",
+      "xrun*.ts"
+    ],
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100,
+    "cache": true,
+    "extends": []
+  },
+  "prettier": {
+    "printWidth": 100,
+    "arrowParens": "avoid",
+    "trailingComma": "none"
+  },
+  "mocha": {
+    "require": [
+      "@xarc/module-dev/config/test/setup.js"
+    ],
+    "recursive": true
+  },
+  "@xarc/module-dev": {
+    "features": [
+      "mocha"
+    ]
+  }
+}
