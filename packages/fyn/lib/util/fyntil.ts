@@ -1,6 +1,6 @@
 
 import Fs from "./file-ops";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import Path from "path";
 import logger from "../logger";
 import type { NativePromise } from "../types/native-promise";

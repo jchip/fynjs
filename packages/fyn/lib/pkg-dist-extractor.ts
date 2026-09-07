@@ -6,7 +6,7 @@ import logFormat from "./util/log-format";
 import { LOAD_PACKAGE } from "./log-items";
 import fyntil from "./util/fyntil";
 import Fs from "./util/file-ops";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import Path from "path";
 import xaa from "./util/xaa";
 import type { Readable } from "stream";

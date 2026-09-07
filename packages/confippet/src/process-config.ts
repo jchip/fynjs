@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { getPath } from "./util.js";
+import { defaults, forEach, get, isEmpty } from "lodash-es";
 
 /** a config reference the templates asked for but the context could not supply */
 export type MissingRef = { path: string; value: any; tmpl: string };
@@ -10,16 +10,12 @@ const MAX_RUN = 20;
 function processObj(obj: any, data: any): void {
   const depthPath = data.depth.join(".");
 
-  const entries: [string | number, any][] = Array.isArray(obj)
-    ? obj.map((v, k) => [k, v])
-    : Object.entries(obj);
-
-  for (const [k, v] of entries) {
+  forEach(obj, (v: any, k: any) => {
     if (v !== null && typeof v === "object") {
       data.depth.push(k);
       processObj(v, data);
       data.depth.pop();
-      continue;
+      return;
     }
 
     /**
@@ -36,7 +32,7 @@ function processObj(obj: any, data: any): void {
         return path.slice(1);
       }
 
-      const x = getPath(data.context, path);
+      const x = get(data.context, path);
 
       if (typeof x === "function") {
         return x({
@@ -66,7 +62,7 @@ function processObj(obj: any, data: any): void {
         return newV;
       });
     }
-  }
+  });
 }
 
 /**
@@ -81,7 +77,7 @@ function processObj(obj: any, data: any): void {
  * @returns the references that could not be resolved
  */
 export function processConfig(config?: any, options?: any): MissingRef[] {
-  if (!config || (typeof config === "object" && Object.keys(config).length === 0)) {
+  if (isEmpty(config)) {
     return [];
   }
 
@@ -120,13 +116,7 @@ export function processConfig(config?: any, options?: any): MissingRef[] {
     }
   };
 
-  if (options.context) {
-    for (const k of Object.keys(options.context)) {
-      if (context[k] === undefined) {
-        context[k] = options.context[k];
-      }
-    }
-  }
+  defaults(context, options.context);
 
   const data = { config, context, options, more: 1, missing: [] as MissingRef[], depth: ["config"] };
 

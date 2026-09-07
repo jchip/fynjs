@@ -1,7 +1,7 @@
 
 import Fs from "fs";
 import Path from "path";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { execShell } from "./utils/exec-shell.ts";
 import { logger } from "./logger.ts";
 import { readChangelogVersions } from "./read-changelog-versions.ts";

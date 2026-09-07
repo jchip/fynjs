@@ -95,7 +95,7 @@
     "get-stdin": "^10.0.0",
     "import-fresh": "3.3.0",
     "item-queue": "^2.1.1",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.18.1",
     "minimatch": "^10.0.3",
     "npm-packlist": "^11.3.0",
     "optional-require": "^2.1.1",

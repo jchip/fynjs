@@ -6,7 +6,7 @@
  * to format the output as needed.
  */
 
-import _ from "lodash";
+import _ from "lodash-es";
 import * as semverUtil from "./util/semver";
 import PkgDepLinker from "./pkg-dep-linker";
 import { SEMVER } from "./types";

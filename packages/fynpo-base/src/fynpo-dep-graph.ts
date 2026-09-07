@@ -4,9 +4,10 @@ import { promises as Fs } from "fs";
 import { filterScanDir } from "filter-scan-dir";
 import type { ExtrasData } from "filter-scan-dir";
 import { Minimatch } from "minimatch";
+import { first, isEmpty, pick } from "lodash-es";
 import Semver from "semver";
 import { groupMM, type MMGroups } from "./minimatch-group.js";
-import { posixify, pick } from "./util.js";
+import { posixify } from "./util.js";
 import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";
 
@@ -369,7 +370,7 @@ export class FynpoDepGraph {
    * @param indirects - set true to resolve indirect deps also
    */
   async resolve(indirects = false) {
-    if (Object.keys(this.packages.byName).length === 0) {
+    if (isEmpty(this.packages.byName)) {
       await this.readPackages();
     }
     this.resolveDirectDeps();
@@ -522,10 +523,10 @@ export class FynpoDepGraph {
     // the constructor still win, for callers that already decided.
     //
     const pkgConfig = resolvePackagesConfig(this._options.packages);
-    const resolved = !patterns?.length ? scanPatterns(pkgConfig) : patterns;
+    const resolved = isEmpty(patterns) ? scanPatterns(pkgConfig) : patterns;
 
     // `include` filters what the scan found - it does not replace the scan (FPO-17)
-    const includeMms = (!patterns?.length ? includeFilter(pkgConfig) : []).map(
+    const includeMms = (isEmpty(patterns) ? includeFilter(pkgConfig) : []).map(
       (p) => new Minimatch(p)
     );
     const isIncluded = (path: string) =>
@@ -867,7 +868,7 @@ export class FynpoDepGraph {
       return true;
     }
 
-    return Boolean(dataDep.pathOfCirculars?.length);
+    return !isEmpty(dataDep.pathOfCirculars);
   }
 
   /**
@@ -952,7 +953,7 @@ export class FynpoDepGraph {
    * @returns
    */
   getPackageByName(name: string): FynpoPackageInfo {
-    return this.packages.byName[name]?.[0];
+    return first(this.packages.byName[name]);
   }
 
   /**

@@ -2,7 +2,7 @@
 import Path from "path";
 import Fs from "fs";
 import semver from "semver";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { makePublishFilter } from "../utils.ts";
 import { createRequire } from "node:module";
 

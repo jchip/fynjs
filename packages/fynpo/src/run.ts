@@ -5,7 +5,7 @@ import Fs from "fs";
 import { execShell } from "./utils/exec-shell.ts";
 import { logger } from "./logger.ts";
 import * as utils from "./utils.ts";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { npmRunScriptStreaming, npmRunScript } from "./npm-run-script.ts";
 import boxen from "boxen";
 import chalk from "chalk";

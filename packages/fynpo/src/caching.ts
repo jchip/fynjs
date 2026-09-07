@@ -1,6 +1,6 @@
 import Fs from "fs";
 import Path from "path";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { logger } from "./logger.ts";
 import { isCI } from "ci-info";
 import npmPacklist from "npm-packlist";

@@ -11,7 +11,7 @@ import PromiseQueue from "./util/promise-queue";
 import { VisualExec } from "visual-exec";
 import * as xaa from "xaa";
 import Fs from "./util/file-ops";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import chalk from "chalk";
 import { runNpmScript } from "./util/run-npm-script";
 import { AggregateError } from "@jchip/error";

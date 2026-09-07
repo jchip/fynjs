@@ -5,7 +5,7 @@ import Fs from "fs";
 import AveAzul from "aveazul";
 import { logger } from "./logger.ts";
 import * as utils from "./utils.ts";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import fyn from "fyn/bin/index.mjs";
 import shell from "shelljs";
 import { FynpoDepGraph, type FynpoPackageInfo } from "@fynpo/base";

@@ -7,7 +7,6 @@ import {
   outOfScopePackages,
   packageScope,
 } from "../src/packages-config.js";
-import { pick } from "../src/util.js";
 
 describe("resolvePackagesConfig", () => {
   it("defaults to auto-search on, respectGitignore off, nothing else set", () => {
@@ -194,24 +193,6 @@ describe("packageScope", () => {
   it("tolerates empty input", () => {
     expect(packageScope("")).toBeUndefined();
     expect(packageScope(undefined as any)).toBeUndefined();
-  });
-});
-
-describe("pick", () => {
-  it("should pick properties by array of keys", () => {
-    const obj = { a: 1, b: 2, c: 3 };
-    expect(pick(obj, ["a", "c", "d"])).toEqual({ a: 1, c: 3 });
-  });
-
-  it("should pick properties by single string key", () => {
-    const obj = { foo: "bar", test: 123 };
-    expect(pick(obj, "foo")).toEqual({ foo: "bar" });
-  });
-
-  it("should handle null or undefined obj or keys safely", () => {
-    expect(pick(null, ["a"])).toEqual({});
-    expect(pick(undefined, ["a"])).toEqual({});
-    expect(pick({ a: 1 }, undefined)).toEqual({});
   });
 });
 

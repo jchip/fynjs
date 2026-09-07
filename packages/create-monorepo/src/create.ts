@@ -1,6 +1,7 @@
 import Path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { merge } from "lodash-es";
 import type { CommandExecFunc } from "@fynjs/cli-args";
 
 // @fynjs/cli-args does not export its CommandNode class type directly - derive the exec
@@ -12,7 +13,7 @@ type ExecCommand = Parameters<CommandExecFunc>[0];
 const cjsRequire = createRequire(import.meta.url);
 
 import { loadCk } from "./ck.js";
-import { copyTemplate, sortPackageDeps, getCommitLintSetting, merge } from "./utils.js";
+import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils.js";
 import { prepareFynpoDir, checkDir } from "./prep-fynpo-dir.js";
 import type { ParsedOpts } from "./interfaces.js";
 import { isGitInitialized, initializeGitRepo } from "./initialize-git.js";

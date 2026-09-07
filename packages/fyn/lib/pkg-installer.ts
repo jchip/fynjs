@@ -1,6 +1,6 @@
 import Path from "path";
 import Promise from "./util/aveazul";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import chalk from "chalk";
 import Fs from "./util/file-ops";
 import PkgDepLinker, { type FynForDepLinker } from "./pkg-dep-linker";

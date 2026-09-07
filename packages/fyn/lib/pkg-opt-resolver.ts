@@ -1,7 +1,7 @@
 
 import assert from "assert";
 import xsh from "xsh";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import Promise from "./util/aveazul";
 import PromiseQueue from "./util/promise-queue";
 import logger from "./logger";

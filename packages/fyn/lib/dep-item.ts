@@ -1,7 +1,7 @@
 import Fs from "./util/file-ops";
 import Path from "path";
 import * as semverUtil from "./util/semver";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import type { SemverAnalysis, ShrinkwrapData, ShrinkwrapDependency, NestedResolution, ResolutionData, PackageMeta } from "./types";
 import type { DepData, DepItemRef } from "./dep-data";
 

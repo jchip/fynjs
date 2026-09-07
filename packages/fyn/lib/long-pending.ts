@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import logFormat from "./util/log-format";
 import logger from "./logger";
-import _ from "lodash";
+import _ from "lodash-es";
 import { LONG_WAIT_PACKAGE } from "./log-items";
 
 const MAX_PENDING_SHOW = 10;

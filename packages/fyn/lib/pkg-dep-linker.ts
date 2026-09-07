@@ -2,7 +2,7 @@
 import Crypto from "crypto";
 import Path from "path";
 import Fs from "./util/file-ops";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";

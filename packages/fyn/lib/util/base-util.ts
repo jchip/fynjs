@@ -1,5 +1,5 @@
 
-import _ from "lodash";
+import * as _ from "lodash-es";
 import * as xaa from "xaa";
 import Promise from "./aveazul";
 

@@ -22,7 +22,7 @@ import Path from "path";
 import Promise from "aveazul";
 xsh.Promise = Promise;
 xsh.envPath.addToFront(Path.join(import.meta.dirname, "../node_modules/.bin"));
-import _ from "lodash";
+import * as _ from "lodash-es";
 import * as utils from "./utils.ts";
 import { logger } from "./logger.ts";
 import {

@@ -2,7 +2,7 @@
 import * as utils from "./utils.ts";
 import { logger } from "./logger.ts";
 import { getUpdatedPackages } from "./utils/get-updated-packages.ts";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { FynpoDepGraph } from "@fynpo/base";
 
 export class Updated {

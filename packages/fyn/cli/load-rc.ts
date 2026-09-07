@@ -2,7 +2,7 @@ import os from "os";
 import Fs from "fs";
 import Path from "path";
 import Ini from "ini";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import logger from "../lib/logger";
 import defaultRc from "./default-rc";
 import fynTil from "../lib/util/fyntil";

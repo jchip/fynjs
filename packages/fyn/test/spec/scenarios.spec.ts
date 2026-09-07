@@ -14,7 +14,7 @@
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach, vi, expect } from "vitest";
 import Fs from "fs";
 import Path from "path";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import * as Yaml from "js-yaml";
 import Promise from "aveazul";
 import { make as dirTree } from "../dir-tree";

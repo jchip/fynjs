@@ -7,7 +7,7 @@ import PkgDepResolver from "../../lib/pkg-dep-resolver";
 import { LOCK_RSEMVERS } from "../../lib/symbols";
 import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import logger from "../../lib/logger";
 import chalk from "chalk";
 

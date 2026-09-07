@@ -1,5 +1,5 @@
 
-import _ from "lodash";
+import * as _ from "lodash-es";
 import Fs from "./util/file-ops";
 import logger from "./logger";
 import PkgDistExtractor, { type FynForExtractor } from "./pkg-dist-extractor";

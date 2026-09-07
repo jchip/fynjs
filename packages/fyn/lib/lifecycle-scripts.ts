@@ -15,7 +15,7 @@ import { makeOptionalRequire } from "optional-require";
 import assert from "assert";
 import xsh from "xsh";
 import chalk from "chalk";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import { VisualExec } from "visual-exec";

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractFromObj, removeFromObj, renameFromObj, getPath, setPath, unsetPath } from "../src/utils.js";
+import { extractFromObj, removeFromObj, renameFromObj } from "../src/utils.js";
 
 describe("utils", () => {
   describe("extractFromObj", () => {
@@ -106,33 +106,4 @@ describe("utils", () => {
     });
   });
 
-  describe("getPath, setPath, unsetPath", () => {
-    it("should get nested properties with dot and array paths", () => {
-      const obj = { a: { b: { c: 42 } } };
-      expect(getPath(obj, "a.b.c")).toBe(42);
-      expect(getPath(obj, ["a", "b", "c"])).toBe(42);
-      expect(getPath(obj, "a.b.nonexistent")).toBeUndefined();
-      expect(getPath(null, "a.b")).toBeUndefined();
-    });
-
-    it("should set nested properties and guard against prototype pollution", () => {
-      const obj: Record<string, any> = {};
-      setPath(obj, "a.b.c", 123);
-      expect(obj.a.b.c).toBe(123);
-
-      setPath(obj, "__proto__.polluted", "bad");
-      expect(({} as any).polluted).toBeUndefined();
-
-      setPath(obj, "constructor.prototype.polluted", "bad");
-      expect(({} as any).polluted).toBeUndefined();
-    });
-
-    it("should unset nested properties", () => {
-      const obj: Record<string, any> = { a: { b: { c: 1, d: 2 } } };
-      unsetPath(obj, "a.b.c");
-      expect(obj).toEqual({ a: { b: { d: 2 } } });
-      unsetPath(obj, ["a", "b", "d"]);
-      expect(obj).toEqual({ a: { b: {} } });
-    });
-  });
 });

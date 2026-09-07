@@ -4,7 +4,7 @@ import LifecycleScripts from "../lifecycle-scripts";
 import chalk from "chalk";
 import logFormat from "./log-format";
 import logger from "../logger";
-import _ from "lodash";
+import * as _ from "lodash-es";
 
 import { INSTALL_PACKAGE } from "../log-items";
 

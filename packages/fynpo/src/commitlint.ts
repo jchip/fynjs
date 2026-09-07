@@ -4,7 +4,7 @@ import stdin from "get-stdin";
 import * as utils from "./utils.ts";
 import Path from "path";
 import { logger } from "./logger.ts";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import resolveFrom from "resolve-from";
 import resolveGlobal from "resolve-global";
 import resolveExtends from "@commitlint/resolve-extends";

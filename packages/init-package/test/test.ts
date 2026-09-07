@@ -1,32 +1,9 @@
-import { runInitPackage, safeDeepMerge, generateNpmPackage } from "../src/index.js";
+import { runInitPackage, generateNpmPackage } from "../src/index.js";
 import { describe, it, expect } from "vitest";
 
 describe("init-package", function () {
   it("should have runInitPackage", () => {
     expect(runInitPackage).toBeInstanceOf(Function);
-  });
-
-  describe("safeDeepMerge", () => {
-    it("should merge nested objects and replace arrays", () => {
-      const target = { a: { b: 1, arr: [1, 2] }, c: "keep" };
-      const source = { a: { b: 2, arr: [3] }, d: "new" };
-      const result = safeDeepMerge(target, source);
-
-      expect(result).toEqual({
-        a: { b: 2, arr: [3] },
-        c: "keep",
-        d: "new",
-      });
-      // Ensure target was mutated
-      expect(result).toBe(target);
-    });
-
-    it("should guard against prototype pollution", () => {
-      const target: any = {};
-      const payload = JSON.parse('{"__proto__":{"polluted":"yes"},"constructor":{"prototype":{"polluted":"yes"}}}');
-      safeDeepMerge(target, payload);
-      expect(({} as any).polluted).toBeUndefined();
-    });
   });
 
   describe("generateNpmPackage", () => {

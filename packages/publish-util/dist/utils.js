@@ -2,6 +2,7 @@ import * as Fs from "fs/promises";
 import * as Os from "os";
 import * as Path from "path";
 import { findUp } from "find-up";
+import { get, set, unset } from "lodash-es";
 export async function getInfo(cwd = process.env.INIT_CWD || process.cwd()) {
     const pkgFile = await findUp("package.json", { cwd });
     if (!pkgFile) {
@@ -162,65 +163,13 @@ function deleteFields(f, obj) {
     }
     delete obj[f];
 }
-export function getPath(obj, path) {
-    if (obj == null)
-        return undefined;
-    const parts = typeof path === "string" ? path.split(".") : path;
-    let curr = obj;
-    for (const part of parts) {
-        if (curr == null)
-            return undefined;
-        curr = curr[part];
-    }
-    return curr;
-}
-export function setPath(obj, path, value) {
-    if (obj == null)
-        return;
-    const parts = typeof path === "string" ? path.split(".") : path;
-    if (parts.length === 0)
-        return;
-    let curr = obj;
-    for (let i = 0; i < parts.length - 1; i++) {
-        const part = parts[i];
-        if (part === "__proto__" || part === "constructor" || part === "prototype") {
-            return;
-        }
-        if (curr[part] == null || typeof curr[part] !== "object") {
-            curr[part] = {};
-        }
-        curr = curr[part];
-    }
-    const lastPart = parts[parts.length - 1];
-    if (lastPart !== "__proto__" && lastPart !== "constructor" && lastPart !== "prototype") {
-        curr[lastPart] = value;
-    }
-}
-export function unsetPath(obj, path) {
-    if (obj == null)
-        return;
-    const parts = typeof path === "string" ? path.split(".") : path;
-    if (parts.length === 0)
-        return;
-    let curr = obj;
-    for (let i = 0; i < parts.length - 1; i++) {
-        const part = parts[i];
-        if (curr == null || typeof curr !== "object") {
-            return;
-        }
-        curr = curr[part];
-    }
-    if (curr != null && typeof curr === "object") {
-        delete curr[parts[parts.length - 1]];
-    }
-}
 export function renameFromObj(obj, rename) {
     if (rename) {
         for (const key in rename) {
-            const data = getPath(obj, key);
+            const data = get(obj, key);
             if (data !== undefined && rename[key]) {
-                unsetPath(obj, key);
-                setPath(obj, rename[key], data);
+                unset(obj, key);
+                set(obj, rename[key], data);
             }
         }
     }

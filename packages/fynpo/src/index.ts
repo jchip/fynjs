@@ -18,7 +18,7 @@ import {
 import { logger } from "./logger.ts";
 import * as utils from "./utils.ts";
 import Fs from "fs";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { createRequire } from "node:module";
 
 const xrequire = createRequire(import.meta.url);

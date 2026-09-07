@@ -1,7 +1,7 @@
 
 import Fs from "./util/file-ops";
 import Path from "path";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import logger from "./logger";
 import type { FynPkgDirs, FynPkgsData } from "./types";
 

@@ -1,7 +1,7 @@
 import Path from "path";
 import VisualExec from "visual-exec";
 import { isCI } from "ci-info";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { logger } from "./logger.ts";
 import type { FynpoPackageInfo } from "@fynpo/base";
 import { getFynExecutable, startFynMetaMemoizer } from "./utils.ts";

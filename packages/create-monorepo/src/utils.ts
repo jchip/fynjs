@@ -1,32 +1,13 @@
 import Fs, { mkdirSync } from "node:fs";
 import Path from "node:path";
 import { fileURLToPath } from "node:url";
+import { fromPairs, sortBy, toPairs } from "lodash-es";
 import shell from "shelljs";
 
 const dirname = Path.dirname(fileURLToPath(import.meta.url));
 
-export const sortObjKeys = <T extends Record<string, any>>(obj: T): T => {
-  return Object.fromEntries(
-    Object.entries(obj).sort(([a], [b]) => a.localeCompare(b))
-  ) as T;
-};
-
-export const merge = (target: any, ...sources: any[]): any => {
-  for (const src of sources) {
-    if (!src || typeof src !== "object") continue;
-    for (const [k, v] of Object.entries(src)) {
-      if (v && typeof v === "object" && !Array.isArray(v)) {
-        if (!target[k] || typeof target[k] !== "object" || Array.isArray(target[k])) {
-          target[k] = {};
-        }
-        merge(target[k], v);
-      } else {
-        target[k] = v;
-      }
-    }
-  }
-  return target;
-};
+export const sortObjKeys = <T extends Record<string, any>>(obj: T): T =>
+  fromPairs(sortBy(toPairs(obj), 0)) as T;
 
 export const sortPackageDeps = (pkg) => {
   ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"].forEach((x) => {

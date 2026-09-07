@@ -10,7 +10,7 @@ import chalk from "chalk";
 //
 const autoColorLevel = chalk.level;
 import FynCli, { type FynCliConfig, type FynCliOpts } from "./fyn-cli";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
 import {

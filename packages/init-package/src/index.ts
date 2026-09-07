@@ -1,4 +1,5 @@
 import Enquirer from "enquirer";
+import { mergeWith, pick } from "lodash-es";
 import Fs from "fs";
 import Path from "path";
 import semver from "semver";
@@ -13,27 +14,10 @@ function sortObj(obj: any) {
   return out;
 }
 
-export function safeDeepMerge<T extends Record<string, any>>(target: T, ...sources: any[]): T {
-  for (const source of sources) {
-    if (!source || typeof source !== "object") continue;
-    for (const key of Object.keys(source)) {
-      if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
-      const srcVal = source[key];
-      const tgtVal = target[key];
-      if (Array.isArray(srcVal)) {
-        target[key as keyof T] = [...srcVal] as any;
-      } else if (srcVal && typeof srcVal === "object") {
-        if (tgtVal && typeof tgtVal === "object" && !Array.isArray(tgtVal)) {
-          safeDeepMerge(tgtVal, srcVal);
-        } else {
-          target[key as keyof T] = safeDeepMerge({}, srcVal) as any;
-        }
-      } else if (srcVal !== undefined) {
-        target[key as keyof T] = srcVal;
-      }
-    }
+function mergeReplaceArray(objValue: any, srcValue: any) {
+  if (Array.isArray(objValue)) {
+    return srcValue;
   }
-  return target;
 }
 
 /**
@@ -256,13 +240,13 @@ export async function generateNpmPackage(
   template: any = initialTemplate,
   exist: any = {}
 ) {
-  const base = safeDeepMerge({}, template, exist);
+  const base = mergeWith({}, template, exist, mergeReplaceArray);
 
   let answers: any;
   if (!yes) {
     answers = await enquireAnswers(base);
   } else {
-    answers = safeDeepMerge({}, template, exist);
+    answers = mergeWith({}, template, exist, mergeReplaceArray);
   }
 
   if (!answers.private) {
@@ -280,13 +264,10 @@ export async function generateNpmPackage(
   if (!answers.name?.startsWith("@")) {
     delete answers.publishConfig;
   } else if (exist?.publishConfig) {
-    const allowed = new Set(Object.keys(exist.publishConfig));
-    answers.publishConfig = Object.fromEntries(
-      Object.entries(answers.publishConfig || {}).filter(([k]) => allowed.has(k))
-    );
+    answers.publishConfig = pick(answers.publishConfig, Object.keys(exist.publishConfig));
   }
 
-  const finalData = safeDeepMerge({}, exist, answers);
+  const finalData = mergeWith({}, exist, answers, mergeReplaceArray);
 
   //
   // ensure order for basic fields

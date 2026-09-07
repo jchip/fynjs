@@ -3,7 +3,7 @@ import Os from "os";
 import Path from "path";
 import AveAzul from "aveazul";
 import Fyn from "../lib/fyn";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import PkgInstaller from "../lib/pkg-installer";
 import semver from "semver";
 import chalk from "chalk";

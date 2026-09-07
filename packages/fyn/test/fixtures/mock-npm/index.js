@@ -9,7 +9,7 @@ const Path = require("path");
 const chalk = require("chalk").default;
 const Crypto = require("crypto");
 const { createRequire } = require("module");
-const _ = require("lodash");
+const _ = require("lodash-es");
 const createTgz = require("./create-tgz");
 
 // Use createRequire to handle TypeScript files in vitest context

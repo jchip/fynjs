@@ -1,16 +1,6 @@
 import { describe, it, expect } from "vitest";
 import xenvConfig from "../../src/index.js";
-const merge = (target: any, ...sources: any[]): any => {
-  for (const src of sources) {
-    for (const [k, v] of Object.entries(src || {})) {
-      target[k] =
-        v && typeof v === "object" && !Array.isArray(v) && target[k] && typeof target[k] === "object"
-          ? merge(target[k], v)
-          : v;
-    }
-  }
-  return target;
-};
+import { merge } from "lodash-es";
 
 describe("xenv-config", function() {
   describe("from env", function() {

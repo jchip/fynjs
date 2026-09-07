@@ -1,7 +1,7 @@
 
 import Fs from "fs";
 import Path from "path";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import type { ItemQueueResult } from "item-queue";
 import { logger } from "./logger.ts";
 import chalk from "chalk";

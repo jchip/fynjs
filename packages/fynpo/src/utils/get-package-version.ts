@@ -1,5 +1,5 @@
 
-import _ from "lodash";
+import * as _ from "lodash-es";
 import * as utils from "../utils.ts";
 import semver from "semver";
 import { logger } from "../logger.ts";

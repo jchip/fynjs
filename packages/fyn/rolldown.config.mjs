@@ -112,9 +112,6 @@ export default defineConfig({
       // chalker/chalk imports it too - without this, chalker resolves the chalk 6 in its own
       // node_modules and the bundle carries two chalks with independent color-support state.
       chalk: fileURLToPath(import.meta.resolve("chalk")),
-      // fyn imports lodash sub-paths, but other modules pull it in whole - override with the
-      // minified copy when bundling, same as the webpack build did.
-      lodash: require.resolve("lodash/lodash.min.js"),
       "resolve-from": Path.resolve("stubs/resolve-from.js")
     }
   },

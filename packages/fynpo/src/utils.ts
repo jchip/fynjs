@@ -2,7 +2,7 @@ import Fs from "fs";
 const pFs = Fs.promises;
 import Path from "path";
 import { logger } from "./logger.ts";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { cosmiconfigSync } from "cosmiconfig";
 import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sortObjKeys, sortPackageDeps, merge } from "../src/utils.js";
+import { sortObjKeys, sortPackageDeps } from "../src/utils.js";
 
 describe("utils", () => {
   describe("sortObjKeys", () => {
@@ -37,42 +37,4 @@ describe("utils", () => {
     });
   });
 
-  describe("merge", () => {
-    it("should shallow merge simple objects", () => {
-      const target = { a: 1, b: 2 };
-      const source = { b: 3, c: 4 };
-      const result = merge(target, source);
-      expect(result).toEqual({ a: 1, b: 3, c: 4 });
-      expect(result).toBe(target);
-    });
-
-    it("should deep merge nested objects", () => {
-      const target = { scripts: { test: "run test", build: "run build" }, num: 1 };
-      const source = { scripts: { prepare: "husky install", test: "vitest" }, extra: "yes" };
-      const result = merge(target, source);
-      expect(result).toEqual({
-        scripts: { test: "vitest", build: "run build", prepare: "husky install" },
-        num: 1,
-        extra: "yes",
-      });
-    });
-
-    it("should merge multiple sources in order", () => {
-      const base = { a: { x: 1 }, b: 2 };
-      const s1 = { a: { y: 2 }, c: 3 };
-      const s2 = { a: { z: 3, x: 10 }, d: 4 };
-      const result = merge({}, base, s1, s2);
-      expect(result).toEqual({
-        a: { x: 10, y: 2, z: 3 },
-        b: 2,
-        c: 3,
-        d: 4,
-      });
-    });
-
-    it("should ignore null and non-object sources", () => {
-      const target = { a: 1 };
-      expect(merge(target, null, undefined, "str", 123)).toEqual({ a: 1 });
-    });
-  });
 });

@@ -4,7 +4,7 @@ import { execSync } from "../child-process.ts";
 import { minimatch } from "minimatch";
 import Path from "path";
 import slash from "slash";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { FynpoDepGraph } from "@fynpo/base";
 
 import {

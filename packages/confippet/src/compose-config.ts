@@ -1,5 +1,6 @@
 import * as Path from "path";
 import * as fs from "fs";
+import { isEmpty } from "lodash-es";
 import assert from "assert";
 import defaultOpts from "./default-compose-opts.js";
 import providerTypes from "./provider-types.js";
@@ -30,7 +31,7 @@ function composeConfigDir(dir: string, data: any, options: any): any {
       })
       .filter(x => x);
 
-    if (found.length === 0) {
+    if (isEmpty(found)) {
       const msg =
         `Config provider ${key}: no file ${provider.name} of ` +
         `extensions ${exts} found in ${dir}`;

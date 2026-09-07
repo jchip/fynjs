@@ -12,7 +12,7 @@ import cacache from "cacache";
 import { refreshCacheEntry, getCacheInfoWithRefreshTime } from "./cacache-util";
 import os from "os";
 import pacote from "pacote";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import chalk from "chalk";
 import { PassThrough, Readable } from "stream";
 import Fs from "./util/file-ops";

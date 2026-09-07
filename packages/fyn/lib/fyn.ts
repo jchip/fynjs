@@ -2,7 +2,7 @@ import Path from "path";
 import util from "util";
 import assert from "assert";
 import semver from "semver";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import logger from "./logger";
 import PkgDepResolver from "./pkg-dep-resolver";
 import PkgDistFetcher from "./pkg-dist-fetcher";

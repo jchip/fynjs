@@ -5,7 +5,7 @@
 
 
 import Promise from "aveazul";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import { ItemQueue, type ItemQueueResult } from "item-queue";
 import { type FynpoTopoPackages, type PackageDepData, pkgInfoId } from "@fynpo/base";
 

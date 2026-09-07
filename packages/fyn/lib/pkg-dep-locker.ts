@@ -3,7 +3,7 @@ import Path from "path";
 import crypto from "crypto";
 import assert from "assert";
 import Fs from "./util/file-ops";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import chalk from "chalk";
 import { simpleCompare as simpleSemverCompare, isLocalHard, unlocalify } from "./util/semver";
 import Semver from "semver";

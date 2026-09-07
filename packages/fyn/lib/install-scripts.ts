@@ -3,7 +3,7 @@ import Path from "path";
 import readline from "readline";
 import chalk from "chalk";
 import ci from "ci-info";
-import _ from "lodash";
+import * as _ from "lodash-es";
 import Fs from "./util/file-ops";
 import logger from "./logger";
 import {
