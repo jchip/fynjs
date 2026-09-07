@@ -6,10 +6,6 @@
         "@npmcli/template-oss": {
           "semver": "^5.0.0",
           "scripts": ["postinstall"]
-        },
-        "esbuild": {
-          "semver": ">=0.25.12 <1",
-          "scripts": ["postinstall"]
         }
       }
     }
