@@ -115,6 +115,15 @@ export class FynpoConfigManager {
     }
   }
 
+  /**
+   * A config file that's simply absent means "keep searching". Anything else - a JSON syntax
+   * error above all - must surface, or a broken config gets reported as no config found and
+   * callers go on to create/overwrite one.
+   */
+  private isNotFound(err: any) {
+    return err?.code === "ENOENT";
+  }
+
   private readJsonSync(file: string) {
     try {
       return readJsonSync(file);
@@ -201,8 +210,10 @@ export class FynpoConfigManager {
           this._filePath = cfgJson;
           this._type = "fynpo monorepo";
           break;
-        } catch (_e) {
-          //
+        } catch (err: any) {
+          if (!this.isNotFound(err)) {
+            throw err;
+          }
         }
       }
 
@@ -213,8 +224,10 @@ export class FynpoConfigManager {
         this._filePath = fynpoJson;
         this._type = "fynpo monorepo";
         break;
-      } catch (_e) {
-        //
+      } catch (err: any) {
+        if (!this.isNotFound(err)) {
+          throw err;
+        }
       }
 
       try {
@@ -227,8 +240,10 @@ export class FynpoConfigManager {
           this._filePath = lernaJson;
           break;
         }
-      } catch (_e) {
-        //
+      } catch (err: any) {
+        if (!this.isNotFound(err)) {
+          throw err;
+        }
       }
 
       prevDir = dir;
@@ -269,8 +284,10 @@ export class FynpoConfigManager {
             this._filePath = cfgJson;
             this._type = "fynpo monorepo";
             break;
-          } catch (_e) {
-            //
+          } catch (err: any) {
+            if (!this.isNotFound(err)) {
+              throw err;
+            }
           }
         }
       }
@@ -283,8 +300,10 @@ export class FynpoConfigManager {
           this._filePath = fynpoJson;
           this._type = "fynpo monorepo";
           break;
-        } catch (_e) {
-          //
+        } catch (err: any) {
+          if (!this.isNotFound(err)) {
+            throw err;
+          }
         }
       }
 
@@ -299,8 +318,10 @@ export class FynpoConfigManager {
             this._filePath = lernaJson;
             break;
           }
-        } catch (_e) {
-          //
+        } catch (err: any) {
+          if (!this.isNotFound(err)) {
+            throw err;
+          }
         }
       }
 

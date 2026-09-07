@@ -307,7 +307,7 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
 
   const data = loadFynpoConfig(cwd);
 
-  if (data && !data.isEmpty) {
+  if (data) {
     fileName = data.filepath ? Path.basename(data.filepath) : "";
     dir = data.filepath ? Path.dirname(data.filepath) : cwd;
     if (fileName === "lerna.json" && !data.config.fynpo) {
@@ -321,8 +321,16 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
     fileName = commitlint ? "fynpo.config.js" : "fynpo.json";
     dir = cwd;
 
-    logger.info(`creating ${fileName} at ${cwd}.`);
     const dest = Path.join(cwd, fileName);
+
+    // no config was loaded, but the file is there - it's unreadable, not absent. Creating the
+    // default here would overwrite whatever the user has in it.
+    if (Fs.existsSync(dest)) {
+      logger.error(`${dest} exists but no config could be loaded from it.`);
+      throw new Error(`Unable to load fynpo config from existing file ${dest}`);
+    }
+
+    logger.info(`creating ${fileName} at ${cwd}.`);
 
     if (commitlint) {
       // src/ and dist/bundle.mjs both sit one level under the package root, so the same

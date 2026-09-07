@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll, beforeEach, vi } from "vitest";
+import { describe, it, expect, afterAll, afterEach, beforeEach, vi } from "vitest";
 
 // Mock logger before importing utils
 vi.mock("../src/logger", () => ({
@@ -14,6 +14,7 @@ import * as utils from "../src/utils";
 import { logger } from "../src/logger";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import shell from "shelljs";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
@@ -73,6 +74,74 @@ describe("fynpo utils", () => {
       if (fs.existsSync(configPath)) {
         fs.unlinkSync(configPath);
       }
+    });
+
+    //
+    // loadConfig used to write its default fynpo.json with no existence check on the
+    // destination, so any config it failed to load - a syntax error, or a legal `{}` - was
+    // silently replaced by the defaults, destroying the user's file. - B4
+    //
+    describe("existing config files", () => {
+      const tmpDirs: string[] = [];
+
+      const tmpDirWith = (files: Record<string, string>) => {
+        const d = fs.mkdtempSync(path.join(os.tmpdir(), "fynpo-loadconfig-"));
+        tmpDirs.push(d);
+        for (const [name, content] of Object.entries(files)) {
+          fs.writeFileSync(path.join(d, name), content);
+        }
+        return d;
+      };
+
+      afterEach(() => {
+        for (const d of tmpDirs.splice(0)) {
+          fs.rmSync(d, { recursive: true, force: true });
+        }
+      });
+
+      it("should fail on a malformed fynpo.json and leave it untouched", () => {
+        const bad = `{ "packages": ["packages/*"], }`;
+        const cwd = tmpDirWith({ "fynpo.json": bad });
+
+        expect(() => utils.loadConfig(cwd)).toThrow(/fynpo\.json/);
+        expect(fs.readFileSync(path.join(cwd, "fynpo.json"), "utf8")).toBe(bad);
+      });
+
+      it("should not overwrite an existing fynpo.json that loaded", () => {
+        const good = `{ "packages": ["libs/*"] }`;
+        const cwd = tmpDirWith({ "fynpo.json": good });
+
+        const config: any = utils.loadConfig(cwd);
+        expect(config.fynpoRc).toEqual({ packages: ["libs/*"] });
+        expect(fs.readFileSync(path.join(cwd, "fynpo.json"), "utf8")).toBe(good);
+      });
+
+      it("should honor an empty fynpo.json instead of replacing it with defaults", () => {
+        const cwd = tmpDirWith({ "fynpo.json": `{}` });
+
+        const config: any = utils.loadConfig(cwd);
+        expect(config.fynpoRc).toEqual({});
+        expect(config.fileName).toEqual("fynpo.json");
+        expect(fs.readFileSync(path.join(cwd, "fynpo.json"), "utf8")).toBe(`{}`);
+      });
+
+      it("should not overwrite a config it was told to skip with .no-fynpo", () => {
+        const good = `{ "packages": ["libs/*"] }`;
+        const cwd = tmpDirWith({ ".no-fynpo": "", "fynpo.json": good });
+
+        expect(() => utils.loadConfig(cwd)).toThrow(/fynpo\.json/);
+        expect(fs.readFileSync(path.join(cwd, "fynpo.json"), "utf8")).toBe(good);
+      });
+
+      it("should create the default fynpo.json when there is none", () => {
+        const cwd = tmpDirWith({ ".no-fynpo": "" });
+
+        const config: any = utils.loadConfig(cwd);
+        expect(config.fynpoRc.changeLogMarkers).toEqual(["## Packages", "## Commits"]);
+        expect(JSON.parse(fs.readFileSync(path.join(cwd, "fynpo.json"), "utf8"))).toEqual(
+          config.fynpoRc
+        );
+      });
     });
 
     // FPO-17: `patterns` bypasses auto-search and scans by glob directly, but `include` is

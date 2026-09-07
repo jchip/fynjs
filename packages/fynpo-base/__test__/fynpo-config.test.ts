@@ -77,6 +77,53 @@ describe("FynpoConfigManager", () => {
     await expect(new FynpoConfigManager({ cwd }).load()).rejects.toThrow("bad config");
   });
 
+  //
+  // A config file that exists but doesn't parse used to be swallowed and reported as "no
+  // config found", which let callers go on to create a default over the user's file. It has
+  // to surface as an error instead, and the file must be left alone. - B4
+  //
+  describe("malformed config files", () => {
+    const badJson = `{ "packages": ["a"], }`;
+
+    it("should surface a malformed fynpo.json instead of reporting no config", async () => {
+      const cwd = await dirWith({ "fynpo.json": badJson });
+      const file = Path.join(cwd, "fynpo.json");
+
+      await expect(new FynpoConfigManager({ cwd }).load()).rejects.toThrow(/fynpo\.json/);
+      expect(() => new FynpoConfigManager({ cwd }).loadSync()).toThrow(/fynpo\.json/);
+      expect(await Fs.readFile(file, "utf8")).toBe(badJson);
+    });
+
+    it("should surface a malformed fynpo.config.json", async () => {
+      const cwd = await dirWith({ "fynpo.config.json": badJson });
+
+      await expect(new FynpoConfigManager({ cwd }).load()).rejects.toThrow(/fynpo\.config\.json/);
+      expect(() => new FynpoConfigManager({ cwd }).loadSync()).toThrow(/fynpo\.config\.json/);
+    });
+
+    it("should surface a malformed lerna.json", async () => {
+      const cwd = await dirWith({ "lerna.json": badJson });
+      const opts = { cwd, allowLernaWithoutFynpo: true };
+
+      await expect(new FynpoConfigManager(opts).load()).rejects.toThrow(/lerna\.json/);
+      expect(() => new FynpoConfigManager(opts).loadSync()).toThrow(/lerna\.json/);
+    });
+
+    it("should still report no config when the files are simply absent", async () => {
+      const cwd = await dirWith({ "package.json": `{ "name": "no-config" }` });
+
+      expect(await new FynpoConfigManager({ cwd }).load()).toBe(undefined);
+      expect(new FynpoConfigManager({ cwd }).loadSync()).toBe(undefined);
+    });
+
+    it("should load an empty fynpo.json as an empty config", async () => {
+      const cwd = await dirWith({ "fynpo.json": `{}` });
+
+      expect(await new FynpoConfigManager({ cwd }).load()).toEqual({});
+      expect(new FynpoConfigManager({ cwd }).loadSync()).toEqual({});
+    });
+  });
+
   it("should stop searching at a .no-fynpo marker", async () => {
     const cwd = await dirWith({
       ".no-fynpo": "",
