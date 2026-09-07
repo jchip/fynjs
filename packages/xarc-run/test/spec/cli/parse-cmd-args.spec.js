@@ -122,6 +122,47 @@ describe("parse-cmd-args", function() {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
     });
+
+    it("registers and parses task subcommands via NixClap (FJM-196)", async () => {
+      const tempDir = Path.join(import.meta.dirname, "../../../.temp", `task-subcmd-${Date.now()}`);
+      fs.mkdirSync(tempDir, { recursive: true });
+      const pkgPath = Path.join(tempDir, "package.json");
+      fs.writeFileSync(pkgPath, JSON.stringify({ name: "test-subcmd", version: "1.0.0" }));
+      const taskPath = Path.join(tempDir, "xrun-tasks.mjs");
+      fs.writeFileSync(
+        taskPath,
+        `export default xrun => {
+          xrun.load({
+            parent: {
+              cliParser: {
+                commands: {
+                  child: {
+                    desc: "child subcommand",
+                    options: {
+                      flag: { type: "string" }
+                    }
+                  }
+                }
+              },
+              task: () => {}
+            }
+          });
+        };\n`
+      );
+      try {
+        const args = ["node", "xrun", "--cwd", tempDir, "parent", "child", "--flag", "hello"];
+        const result = await parseArgs(args, 2);
+        expect(result.tasks).toStrictEqual(["parent"]);
+        const parentNode = result.parsed.command.subCmdNodes.parent;
+        expect(parentNode).toBeDefined();
+        const childNode = parentNode.subCmdNodes.child;
+        expect(childNode).toBeDefined();
+        expect(childNode.opts.flag).toBe("hello");
+      } finally {
+        process.chdir(originalCwd);
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
   });
 
   describe("env option parsing", () => {

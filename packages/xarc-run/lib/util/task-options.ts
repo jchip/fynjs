@@ -60,6 +60,36 @@ export function normalizeTaskOptions(rawOpts?: Record<string, any>): Record<stri
 }
 
 /**
+ * Normalize subcommand definitions so nested options and commands are properly structured.
+ *
+ * @param {Record<string, any>} rawCmds - Raw commands dictionary
+ * @returns {Record<string, any>} Normalized commands dictionary
+ */
+export function normalizeTaskCommands(rawCmds?: Record<string, any>): Record<string, any> {
+  if (!rawCmds) {
+    return {};
+  }
+  const normalized: Record<string, any> = {};
+  for (const [cmdName, cmdSpec] of Object.entries(rawCmds)) {
+    if (cmdSpec && typeof cmdSpec === "object") {
+      const sub = cmdSpec.subCommands || cmdSpec.commands;
+      const copy: Record<string, any> = { ...cmdSpec };
+      delete copy.commands;
+      if (copy.options) {
+        copy.options = normalizeTaskOptions(copy.options);
+      }
+      if (sub) {
+        copy.subCommands = normalizeTaskCommands(sub);
+      }
+      normalized[cmdName] = copy;
+    } else {
+      normalized[cmdName] = cmdSpec;
+    }
+  }
+  return normalized;
+}
+
+/**
  * Extract and normalize option specifications for a given task definition.
  *
  * @param {any} task - Task item or task object
@@ -74,7 +104,7 @@ export function getTaskOptionSpec(task: any): {
   const cliParser = item.cliParser || task?.cliParser || {};
   const rawOpts = item.argOpts || cliParser.options || task?.argOpts;
   const options = normalizeTaskOptions(rawOpts);
-  const commands = cliParser.commands || {};
+  const commands = normalizeTaskCommands(cliParser.subCommands || cliParser.commands);
   const allowUnknownOption =
     cliParser.allowUnknownOption !== undefined
       ? cliParser.allowUnknownOption
@@ -87,5 +117,6 @@ export function getTaskOptionSpec(task: any): {
 
 export default {
   normalizeTaskOptions,
+  normalizeTaskCommands,
   getTaskOptionSpec
 };

@@ -1,5 +1,6 @@
 import taskOptionsModule, {
   normalizeTaskOptions,
+  normalizeTaskCommands,
   getTaskOptionSpec
 } from "../../../lib/util/task-options.js";
 import XTaskSpec from "../../../lib/xtask-spec.js";
@@ -147,6 +148,80 @@ describe("task-options utility", () => {
       options: {},
       commands: {},
       allowUnknownOption: undefined
+    });
+  });
+
+  describe("normalizeTaskCommands", () => {
+    it("should handle falsy or empty rawCmds", () => {
+      expect(normalizeTaskCommands()).toStrictEqual({});
+      expect(normalizeTaskCommands(null)).toStrictEqual({});
+      expect(taskOptionsModule.normalizeTaskCommands(null)).toStrictEqual({});
+    });
+
+    it("should normalize subcommand options and nested subcommands", () => {
+      const raw = {
+        deploy: {
+          desc: "deploy task",
+          options: {
+            env: { type: "string" }
+          },
+          commands: {
+            stage: {
+              desc: "deploy to stage",
+              options: {
+                tag: { type: "string" }
+              }
+            }
+          }
+        },
+        primitive: "not an object"
+      };
+
+      expect(normalizeTaskCommands(raw)).toStrictEqual({
+        deploy: {
+          desc: "deploy task",
+          options: {
+            env: { args: "<val string>" }
+          },
+          subCommands: {
+            stage: {
+              desc: "deploy to stage",
+              options: {
+                tag: { args: "<val string>" }
+              }
+            }
+          }
+        },
+        primitive: "not an object"
+      });
+    });
+
+    it("should accept cliParser with subCommands (FJM-196)", () => {
+      const taskWithSubCommands = {
+        cliParser: {
+          subCommands: {
+            child: {
+              desc: "child subcommand",
+              options: {
+                flag: { type: "string" }
+              }
+            }
+          }
+        }
+      };
+
+      expect(getTaskOptionSpec(taskWithSubCommands)).toStrictEqual({
+        options: {},
+        commands: {
+          child: {
+            desc: "child subcommand",
+            options: {
+              flag: { args: "<val string>" }
+            }
+          }
+        },
+        allowUnknownOption: undefined
+      });
     });
   });
 });

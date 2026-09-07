@@ -153,6 +153,7 @@ async function parseArgs(argv, start) {
           subCommands[name] = {
             desc: lookupRes?.item?.desc || "",
             options: taskSpec.options,
+            subCommands: taskSpec.commands,
             commands: taskSpec.commands,
             ...(taskSpec.allowUnknownOption !== undefined
               ? { allowUnknownOption: taskSpec.allowUnknownOption }
