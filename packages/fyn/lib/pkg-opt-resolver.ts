@@ -162,14 +162,16 @@ class PkgOptResolver {
       watchTime: 2000,
       processItem: (x: OptDepData) => this.optCheck(x)
     });
+    const isRunningScript = (x: { item: OptDepData }) =>
+      Boolean(x?.item?.runningScript || x?.item?.item?.runningScript);
     this._promiseQ.on("watch", items => {
-      items.watched = items.watched.filter((x: { item: OptDepData }) => !x.item.item?.runningScript);
-      items.still = items.still.filter((x: { item: OptDepData }) => !x.item.item?.runningScript);
+      items.watched = items.watched.filter((x: { item: OptDepData }) => !isRunningScript(x));
+      items.still = items.still.filter((x: { item: OptDepData }) => !isRunningScript(x));
       items.total = items.watched.length + items.still.length;
       longPending.onWatch(items, {
-        makeId: (item: { item: OptDepData }) => {
-          const depItem = item.item.item;
-          return chalk.magenta(`${depItem.name}@${depItem.resolved}`);
+        makeId: (x: any) => {
+          const depItem = x?.item?.item || x?.item || x;
+          return chalk.magenta(`${depItem?.name || "unknown"}@${depItem?.resolved || ""}`);
         }
       });
     });
@@ -457,6 +459,9 @@ class PkgOptResolver {
             return { passed: true };
           }
           data.runningScript = true;
+          if (data.item) {
+            data.item.runningScript = true;
+          }
           logger.updateItem(OPTIONAL_RESOLVER, `running preinstall for ${displayId}`);
           const ls = new LifecycleScripts({
             appDir: this._fyn.cwd,
