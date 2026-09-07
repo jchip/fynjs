@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import Fs from "fs";
 import Path from "path";
 import { spawnSync } from "child_process";
+import stripAnsi from "strip-ansi";
 
 const pkgDir = Path.join(import.meta.dirname, "../../..");
 const binFile = Path.join(pkgDir, "bin/xrun.js");
@@ -196,8 +197,8 @@ describe("bin/xrun.js cli resolution", function () {
       expect(quiet.output).toContain("hi from qrun");
 
       // xrun announces itself; qrun must not
-      expect(loud.output).toContain("@fynjs/run version");
-      expect(quiet.output).not.toContain("@fynjs/run version");
+      expect(stripAnsi(loud.output)).toContain("@fynjs/run version");
+      expect(stripAnsi(quiet.output)).not.toContain("@fynjs/run version");
       expect(quiet.output.trim().split("\n")).toHaveLength(1);
     });
   });

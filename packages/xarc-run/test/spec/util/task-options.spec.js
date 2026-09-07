@@ -2,6 +2,7 @@ import taskOptionsModule, {
   normalizeTaskOptions,
   getTaskOptionSpec
 } from "../../../lib/util/task-options.js";
+import XTaskSpec from "../../../lib/xtask-spec.js";
 import { expect, describe, it } from "vitest";
 
 describe("task-options utility", () => {
@@ -92,6 +93,13 @@ describe("task-options utility", () => {
       options: { bar: { args: "<val string>" } },
       commands: {},
       allowUnknownOption: true
+    });
+
+    const spec = new XTaskSpec({ cmd: "echo $FOO", env: { FOO: "bar" } });
+    expect(getTaskOptionSpec({ item: spec })).toStrictEqual({
+      options: {},
+      commands: {},
+      allowUnknownOption: undefined
     });
   });
 });

@@ -181,13 +181,26 @@ async function parseArgs(argv, start) {
       }
     })
       .version(myPkg.version)
-      .usage(usage)
-      .init(cliOptions, subCommands);
-
-    parsed = nc2.parse(argv, start);
-    const savedCwd = opts.cwd;
-    opts = parsed.command.opts;
-    opts.cwd = savedCwd;
+      .usage(usage);
+    try {
+      nc2.init(cliOptions, subCommands);
+      parsed = nc2.parse(argv, start);
+      const savedCwd = opts.cwd;
+      opts = parsed.command.opts;
+      opts.cwd = savedCwd;
+    } catch (err: any) {
+      logger.log(ck`<red>ERROR</>: ${err.message}`);
+      WrapProcess.exit(1);
+      return {
+        opts,
+        tasks: [],
+        parsed: {
+          command: { opts, subCmdNodes: {} },
+          errorNodes: [{ errors: [err] }]
+        } as any,
+        searchResult
+      };
+    }
   }
 
   // Extract tasks from commands

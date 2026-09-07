@@ -103,6 +103,7 @@ const tasks = {
     }
   },
 
+  foo5_top: xrun.exec("echo $FOO", { env: { FOO: "bar" } }),
   foo5a: xrun.exec(["env | grep foo"], {}, { env: { foo: "bar" } }),
   foo5b: [xrun.exec(`echo abc "${process.cwd()}/blah"`), xrun.exec("echo 123", { tty: true })],
   foo5c: `~(noenv)$env`,

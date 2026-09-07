@@ -7,14 +7,17 @@ import env from "../../../cli/env.js";
 import logger from "../../../lib/logger.js";
 import WrapProcess from "../../../cli/wrap-process.js";
 import { updateCwd, searchTaskFile } from "../../../cli/task-file.js";
+import ownInstance from "../../../lib/xrun-instance.js";
 
 // Suppress logging during tests
 logger.quiet(true);
 
 describe("parse-cmd-args", function() {
   let originalWrapProcess;
+  let originalCwd;
 
   beforeEach(() => {
+    originalCwd = process.cwd();
     // Save original WrapProcess
     originalWrapProcess = Object.assign({}, WrapProcess);
 
@@ -27,6 +30,12 @@ describe("parse-cmd-args", function() {
   });
 
   afterEach(() => {
+    try {
+      process.chdir(originalCwd);
+    } catch {
+      // ignore if already deleted
+    }
+    ownInstance.reset();
     // Restore original WrapProcess
     Object.assign(WrapProcess, originalWrapProcess);
   });
@@ -66,6 +75,52 @@ describe("parse-cmd-args", function() {
       const result = await parseArgs(args, 2);
       expect(exitCode).toBe(1);
       expect(result.parsed.errorNodes.length).toBeGreaterThan(0);
+    });
+
+    it("does not register exec options as CLI options (FJM-191)", async () => {
+      const tempDir = Path.join(import.meta.dirname, "../../../.temp", `task-exec-opts-${Date.now()}`);
+      fs.mkdirSync(tempDir, { recursive: true });
+      const pkgPath = Path.join(tempDir, "package.json");
+      fs.writeFileSync(pkgPath, JSON.stringify({ name: "test-exec-opts", version: "1.0.0" }));
+      const taskPath = Path.join(tempDir, "xrun-tasks.mjs");
+      fs.writeFileSync(
+        taskPath,
+        `export default xrun => { xrun.load({ hello: xrun.exec("echo $FOO", { env: { FOO: "bar" } }) }); };\n`
+      );
+      try {
+        const args = ["node", "xrun", "--cwd", tempDir, "hello"];
+        const result = await parseArgs(args, 2);
+        expect(result.tasks).toStrictEqual(["hello"]);
+      } finally {
+        process.chdir(originalCwd);
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it("surfaces subcommand registration errors as a clean CLI error (FJM-191)", async () => {
+      let exitCode;
+      WrapProcess.exit = code => {
+        exitCode = code;
+      };
+      const tempDir = Path.join(import.meta.dirname, "../../../.temp", `task-dup-opt-${Date.now()}`);
+      fs.mkdirSync(tempDir, { recursive: true });
+      const pkgPath = Path.join(tempDir, "package.json");
+      fs.writeFileSync(pkgPath, JSON.stringify({ name: "test-dup-opt", version: "1.0.0" }));
+      const taskPath = Path.join(tempDir, "xrun-tasks.mjs");
+      fs.writeFileSync(
+        taskPath,
+        `export default xrun => { xrun.load({ bad: { argOpts: { env: { args: "<val string>" } }, task: () => {} } }); };\n`
+      );
+      try {
+        const args = ["node", "xrun", "--cwd", tempDir, "bad"];
+        const result = await parseArgs(args, 2);
+        expect(exitCode).toBe(1);
+        expect(result.parsed.errorNodes.length).toBeGreaterThan(0);
+        expect(result.parsed.errorNodes[0].errors[0].message).toContain("already used by parent");
+      } finally {
+        process.chdir(originalCwd);
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
 

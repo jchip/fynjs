@@ -195,6 +195,25 @@ describe("xrun", function() {
     );
   });
 
+  it("should run a top-level exec task with env options without leaking env to argOpts (FJM-191)", () => {
+    let context;
+    const xrun = new XRun();
+    xrun.load({
+      foo: xrun.exec("echo $FOO", { env: { FOO: "bar" } }),
+      check(ctx) {
+        context = ctx;
+      }
+    });
+
+    return asyncVerify(
+      runTimeout(1000),
+      () => xrun.asyncRun(xrun.serial("foo", "check")),
+      () => {
+        expect(context.argOpts).toBeUndefined();
+      }
+    );
+  });
+
   it("should pass context to function that take a single param named ctx/context", () => {
     let receivedContext;
     let receivedCtx;

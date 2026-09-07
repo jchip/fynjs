@@ -58,8 +58,7 @@ export function getTaskOptionSpec(task: any): {
 } {
   const item = task?.item || task || {};
   const cliParser = item.cliParser || task?.cliParser || {};
-  const rawOpts =
-    item.argOpts || item.options || cliParser.options || task?.argOpts || task?.options;
+  const rawOpts = item.argOpts || cliParser.options || task?.argOpts;
   const options = normalizeTaskOptions(rawOpts);
   const commands = cliParser.commands || {};
   const allowUnknownOption =
