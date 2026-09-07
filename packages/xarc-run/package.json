@@ -93,7 +93,6 @@
     "@fynjs/cli-args": "^1.1.0",
     "optional-require": "^2.1.0",
     "read-package-up": "^12.0.0",
-    "require-at": "^1.0.6",
     "string-array": "^2.1.0",
     "unwrap-npm-cmd": "^2.1.0",
     "xsh": "^1.1.0"

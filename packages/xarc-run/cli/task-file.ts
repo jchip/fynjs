@@ -7,8 +7,8 @@ import config from "./config.js";
 import ck from "./ck.js";
 import { searchUpTaskFile } from "./search-up-task-file.js";
 import WrapProcess from "./wrap-process.js";
+import { createRequire } from "node:module";
 import npmLoader from "./npm-loader.js";
-import requireAt from "require-at";
 import instance from "../lib/xrun-instance.js";
 import TsRunner from "./ts-runner.js";
 
@@ -155,7 +155,7 @@ async function loadTasks(opts, searchResult) {
     for (const xmod of opts.require) {
       let file;
       try {
-        file = requireAt(WrapProcess.cwd()).resolve(xmod);
+        file = createRequire(Path.join(WrapProcess.cwd(), "package.json")).resolve(xmod);
       } catch (err) {
         logger.log(
           ck`<red>ERROR:</> <yellow>Unable to require module</> <cyan>'${xmod}'</> - <red>${err.message}</>`
