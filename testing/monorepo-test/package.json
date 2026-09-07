@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@fynjs/cli-args": "../../packages/cli-args",
+    "@fynjs/fetch": "../../packages/fetch",
     "@fynpo/base": "../../packages/fynpo-base",
     "fyn": "../../packages/fyn",
     "fynpo": "../../packages/fynpo",
