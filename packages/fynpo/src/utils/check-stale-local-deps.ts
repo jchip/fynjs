@@ -29,10 +29,10 @@ import { readJsonSync } from "@fynpo/base";
  * Manifest fields a consumer actually resolves against.
  *
  * Deliberately not a full manifest diff. fyn writes a *reduced* manifest for installed packages:
- * `devDependencies`, `prettier` and `publishUtil` are dropped, `scripts` is trimmed to lifecycle
- * entries, and `dist`/`_fyn`/`_from`/`_id` are added. Comparing everything reports those
- * normalizations as differences and buries the real signal - measured on this monorepo, a full
- * compare flagged ~100 of 114 pairs.
+ * `prettier` and `publishUtil` are dropped, `scripts` is trimmed to lifecycle entries, and
+ * `dist`/`_fyn`/`_from`/`_id` are added. Comparing everything reports those normalizations as
+ * differences and buries the real signal - measured on this monorepo, a full compare flagged
+ * ~100 of 114 pairs.
  */
 export const RESOLUTION_FIELDS = [
   "version",
