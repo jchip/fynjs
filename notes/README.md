@@ -17,6 +17,7 @@ own `README.md`. Stale documents move to `notes/archive/`.
 | [release-modernization-review.md](release-modernization-review.md) | Review of the release pipeline, and the home of the **ESM-only policy** — §11 is the dated decision, §12 the 2026-09-05 correction with the current per-package state and remaining exceptions |
 | [stale-local-manifest-detection.md](stale-local-manifest-detection.md) | Why an installed `package.json` goes stale by design, and how `fynpo run` warns instead of hanging (FJM-64) |
 | [fyn-install-script-allowlist.md](fyn-install-script-allowlist.md) | Install-script allowlist — design and what shipped: npm 12 parity, the fynpo-wide allowlist, and why workspace-local packages are exempt (FPM-82) |
+| [fynjs-fetch-design.md](fynjs-fetch-design.md) | Design & architecture for `@fynjs/fetch` — zero-dependency hardened HTTP client on Node core fetch, failure modes, socket leak protection, retries, and consumer integration |
 
 ## Conventions
 

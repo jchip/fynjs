@@ -20,6 +20,7 @@ import runScript from "@npmcli/run-script";
 import xaa from "../lib/util/xaa";
 import { scanFileStats } from "../lib/util/stat-dir";
 import { checkPkgNewVersionEngine } from "check-pkg-new-version-engine";
+import { fynFetch } from "@fynjs/fetch";
 import myPkg from "./mypkg";
 import { cleanErrorStack } from "@jchip/error";
 import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
@@ -148,8 +149,7 @@ function checkNewVersion(npmConfig: Record<string, unknown>): void {
       return { isNewer, version: distTags[tag] };
     },
     fetchJSON: async (url: string, options: Record<string, unknown>): Promise<unknown> => {
-      const res = await fetch(url, options);
-      return await res.json();
+      return await fynFetch.json(url, { timeout: 10_000, ...options });
     }
   });
 }

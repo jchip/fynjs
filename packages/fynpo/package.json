@@ -79,6 +79,7 @@
     "@commitlint/read": "^18.6.1",
     "@commitlint/resolve-extends": "^18.6.1",
     "@fynjs/cli-args": "^1.1.0",
+    "@fynjs/fetch": "^0.0.1",
     "@fynpo/base": "^2.1.0",
     "@jchip/error": "^2.1.0",
     "aveazul": "^2.1.0",

@@ -6,7 +6,7 @@ import { isCI } from "ci-info";
 import npmPacklist from "npm-packlist";
 import type { FynpoPackageInfo, PackageDepData } from "@fynpo/base";
 import envPaths from "env-paths";
-import { pipeline as streamPipeline } from "stream/promises";
+import { fynFetch } from "@fynjs/fetch";
 import { caching } from "@fynpo/base";
 import * as xaa from "xaa";
 import { detailedDiff } from "deep-object-diff";
@@ -318,11 +318,15 @@ export class PkgBuildCache {
     } catch {
       if (!warnRemoteFailure && this.opts.server) {
         try {
-          const res = await fetch(this.getRemoteCacheUrl(this.input.hash, ".json"));
+          const res = await fynFetch(this.getRemoteCacheUrl(this.input.hash, ".json"), {
+            timeout: 10_000,
+          });
           if (res.status === 200) {
             this.output = (await res.json()) as any;
             this.output.files = Object.keys(this.output.data.fileHashes);
             this.exist = "remote";
+          } else {
+            await fynFetch.drain(res);
           }
         } catch (err) {
           this.warnRemoteCacheFailure(err, `checkCache(${this.input.hash})`);
@@ -563,12 +567,30 @@ export class PkgBuildCache {
       files,
       async (file: string) => {
         const hash = output.data.fileHashes[file];
+        const filePath = Path.join(pkgDir, file);
+        const url = this.getRemoteCacheUrl(hash, Path.extname(file));
 
-        await fetch(this.getRemoteCacheUrl(hash, Path.extname(file)), {
+        let res = await fynFetch(url, {
           method: "PUT",
-          body: Fs.createReadStream(Path.join(pkgDir, file)) as any,
-          duplex: "half",
-        } as RequestInit);
+          body: Fs.createReadStream(filePath) as any,
+          timeout: 15_000,
+        });
+
+        // Wire fallback: if server returns 405 Method Not Allowed on PUT, retry with POST
+        if (res.status === 405) {
+          await fynFetch.drain(res);
+          res = await fynFetch(url, {
+            method: "POST",
+            body: Fs.createReadStream(filePath) as any,
+            timeout: 15_000,
+          });
+        }
+
+        await fynFetch.drain(res);
+
+        if (!res.ok) {
+          throw new Error(`upload failed for ${file} to ${url}: ${res.status} ${res.statusText}`);
+        }
       },
       { concurrency: 10 }
     );
@@ -592,11 +614,32 @@ export class PkgBuildCache {
 
     try {
       if (this.exist !== "remote") {
-        await fetch(this.getRemoteCacheUrl(this.input.hash, ".json"), {
+        const metaUrl = this.getRemoteCacheUrl(this.input.hash, ".json");
+        const metaBody = this.stringifyOutputMeta();
+
+        let res = await fynFetch(metaUrl, {
           method: "PUT",
           headers: { "content-type": "application/json" },
-          body: this.stringifyOutputMeta(),
+          body: metaBody,
+          timeout: 15_000,
         });
+
+        if (res.status === 405) {
+          await fynFetch.drain(res);
+          res = await fynFetch(metaUrl, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: metaBody,
+            timeout: 15_000,
+          });
+        }
+
+        await fynFetch.drain(res);
+
+        if (!res.ok) {
+          throw new Error(`upload meta failed for ${metaUrl}: ${res.status} ${res.statusText}`);
+        }
+
         await this.uploadFilesToRemote();
       }
     } catch (err) {
@@ -633,13 +676,14 @@ export class PkgBuildCache {
             .catch(() => false))
         ) {
           // download from server as uncompressed version
-          const res = await fetch(this.getRemoteCacheUrl(hash, ext));
-          if (res.ok && res.body) {
-            await streamPipeline(res.body as any, Fs.createWriteStream(file1));
-          } else {
-            throw new Error(
-              `failed to download ${this.getRemoteCacheUrl(hash, ext)}: ${res.status} ${res.statusText}`
-            );
+          const writeStream = Fs.createWriteStream(file1);
+          try {
+            await fynFetch.stream(this.getRemoteCacheUrl(hash, ext), writeStream, {
+              timeout: 30_000,
+            });
+          } catch (err) {
+            await Fs.promises.unlink(file1).catch(() => {});
+            throw err;
           }
         }
       },

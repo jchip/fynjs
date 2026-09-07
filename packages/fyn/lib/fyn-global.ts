@@ -10,6 +10,7 @@ import lockfile from "lockfile";
 import util from "util";
 import semver from "semver";
 import readline from "readline";
+import { fynFetch } from "@fynjs/fetch";
 
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
@@ -596,16 +597,15 @@ class FynGlobal {
     const url = `${registry}/${encodeURIComponent(packageName).replace("%40", "@")}`;
 
     try {
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
-      if (!res.ok) {
-        return null;
-      }
-      const pkg = (await res.json()) as any;
+      const pkg = await fynFetch.json<any>(url, {
+        timeout: 10_000,
+        headers: { Accept: "application/json" }
+      });
       return {
         latest: pkg["dist-tags"]?.latest,
         versions: Object.keys(pkg.versions || {})
       };
-    } catch (err) {
+    } catch {
       return null;
     }
   }

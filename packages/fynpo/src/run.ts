@@ -273,14 +273,24 @@ path: ${pkg.path}`;
       await cached.checkCache(depData);
     }
 
+    let restoredFromCache = false;
     if (cached?.exist) {
-      if (cached.exist === "remote") {
-        await cached.downloadCacheFromRemote();
+      try {
+        if (cached.exist === "remote") {
+          await cached.downloadCacheFromRemote();
+        }
+        await cached.restoreFromCache();
+        runData.output = { stderr: "", stdout: "" };
+        this._logRunResult(runData, chalk.cyan(` (${cached.exist} cached) `));
+        restoredFromCache = true;
+      } catch (err: any) {
+        logger.warn(
+          `Failed restore from cache for ${pkgInfo.name} in ${pkgInfo.path} - running script ${this._script}`
+        );
       }
-      await cached.restoreFromCache();
-      runData.output = { stderr: "", stdout: "" };
-      this._logRunResult(runData, chalk.cyan(` (${cached.exist} cached) `));
-    } else {
+    }
+
+    if (!restoredFromCache) {
       if (cached?.enable) {
         await cached.saveCacheMissDetails();
       }

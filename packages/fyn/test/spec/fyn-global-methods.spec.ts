@@ -746,8 +746,13 @@ describe("fyn-global methods", function() {
 
         expect(globalThis.fetch).toHaveBeenCalledWith(
           "https://custom-registry.org/@scope%2Fmy-pkg",
-          { headers: { Accept: "application/json" } }
+          expect.objectContaining({
+            signal: expect.any(AbortSignal)
+          })
         );
+        const calledHeaders = (globalThis.fetch as any).mock.calls[0][1].headers;
+        const accept = typeof calledHeaders.get === "function" ? calledHeaders.get("accept") : calledHeaders.accept;
+        expect(accept).toBe("application/json");
         expect(res).toEqual({
           latest: "2.5.0",
           versions: ["1.0.0", "2.0.0", "2.5.0"]

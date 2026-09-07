@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Run, formatRunSummary, selectPackagesToRun } from "../src/run";
+import { PkgBuildCache } from "../src/caching";
 import path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
 
@@ -94,6 +95,44 @@ describe("fynpo Run", () => {
     // Verify the class was initialized correctly
     expect(run._script).toBe("test");
     expect(run._cwd).toBe(dir);
+  });
+
+  it("falls back to running script when cache restore throws error", async () => {
+    const opts = { cwd: dir, cache: true, lifecycleCache: { default: { input: {} } } };
+    const run = new Run(opts, { script: "build" }, graph);
+
+    let scriptExecuted = false;
+    run.installDeps = async () => false;
+    run.getRunner = () => async () => {
+      scriptExecuted = true;
+      return { stdout: "build ok", stderr: "" };
+    };
+
+    const depData: any = {
+      pkgInfo: { name: "pkg-a", path: "packages/pkg-a" },
+    };
+
+    const results: any[] = [];
+    const errors: any[] = [];
+
+    const origCheck = PkgBuildCache.prototype.checkCache;
+    const origDownload = PkgBuildCache.prototype.downloadCacheFromRemote;
+    PkgBuildCache.prototype.checkCache = async function () {
+      this.exist = "remote";
+    };
+    PkgBuildCache.prototype.downloadCacheFromRemote = async function () {
+      throw new Error("Simulated remote 500 error");
+    };
+
+    try {
+      await run.runPackage(depData, results, errors);
+      expect(scriptExecuted).toBe(true);
+      expect(errors.length).toBe(0);
+      expect(results.length).toBe(1);
+    } finally {
+      PkgBuildCache.prototype.checkCache = origCheck;
+      PkgBuildCache.prototype.downloadCacheFromRemote = origDownload;
+    }
   });
 });
 

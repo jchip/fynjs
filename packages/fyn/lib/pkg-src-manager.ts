@@ -37,6 +37,7 @@ import Arborist from "@npmcli/arborist";
 // Import the module object (not a named binding) so execFileSync is resolved at
 // call time — tests stub childProcess.execFileSync on the CJS module object.
 import childProcess from "child_process";
+import { fynFetch, drain } from "@fynjs/fetch";
 import type { NativePromise, PackageRawInfoSymbols, FynpoPackage } from "./types";
 import type { DepItem } from "./dep-item";
 // type-only, so it adds no module cycle: `FynpoData` is declared next to `Fyn` because it
@@ -1140,9 +1141,16 @@ class PkgSrcManager {
           const checkMemoizedCache = async () => {
             for (const key of cacheKeys) {
               const encKey = encodeURIComponent(key);
-              const res = await fetch(`${metaMemoizeUrl}?key=${encKey}`);
-              if (res.status === 200) {
-                return true;
+              try {
+                const res = await fynFetch(`${metaMemoizeUrl}?key=${encKey}`, {
+                  timeout: 3000
+                });
+                await drain(res);
+                if (res.status === 200) {
+                  return true;
+                }
+              } catch {
+                // ignore memoize check failure
               }
             }
             return false;
@@ -1189,8 +1197,12 @@ class PkgSrcManager {
         this._meta[pkgKey] = meta;
         if (!cacheMemoized && metaMemoizeUrl) {
           const encKey = encodeURIComponent(cacheKey);
-          fetch(`${metaMemoizeUrl}?key=${encKey}`, { method: "POST", body: "" }).then(
-            _.noop,
+          fynFetch(`${metaMemoizeUrl}?key=${encKey}`, {
+            method: "POST",
+            body: "",
+            timeout: 3000
+          }).then(
+            res => drain(res),
             _.noop
           );
         }
