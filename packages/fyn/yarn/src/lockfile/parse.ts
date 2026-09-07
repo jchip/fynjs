@@ -42,7 +42,7 @@ const TOKEN_TYPES = {
 
 const VALID_PROP_VALUE_TOKENS = [TOKEN_TYPES.boolean, TOKEN_TYPES.string, TOKEN_TYPES.number];
 
-function isValidPropValueToken(token): boolean {
+function isValidPropValueToken(token: Token): boolean {
   return VALID_PROP_VALUE_TOKENS.indexOf(token.type) >= 0;
 }
 
@@ -51,7 +51,7 @@ function* tokenise(input: string): Generator<Token> {
   let line = 1;
   let col = 0;
 
-  function buildToken(type, value): Token {
+  function buildToken(type: string, value?: boolean | number | string): Token {
     return { line, col, type, value };
   }
 
@@ -179,7 +179,7 @@ class Parser {
     const value = token.value;
     invariant(typeof value === "string", "expected token value to be a string");
 
-    const comment = value.trim();
+    const comment = (value as string).trim();
 
     const versionMatch = comment.match(VERSION_REGEX);
     if (versionMatch) {
@@ -266,10 +266,10 @@ class Parser {
         break;
       } else if (propToken.type === TOKEN_TYPES.string) {
         // property key
-        const key = propToken.value;
+        const key = propToken.value as string;
         invariant(key, "Expected a key");
 
-        const keys = [key];
+        const keys: string[] = [key];
         this.next();
 
         // support multiple keys
@@ -281,7 +281,7 @@ class Parser {
             this.unexpected("Expected string");
           }
 
-          const key = keyToken.value;
+          const key = keyToken.value as string;
           invariant(key, "Expected a key");
           keys.push(key);
           this.next();
