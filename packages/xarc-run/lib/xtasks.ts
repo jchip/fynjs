@@ -74,7 +74,7 @@ class XTasks {
     // If there's a prefix ? then the execution is optional
     if (name.startsWith("?")) {
       optional = true;
-      name = name.substr(1).trim();
+      name = name.substring(1).trim();
     }
     assert(name, invalidName);
     let res: any = { name };
@@ -85,7 +85,7 @@ class XTasks {
     } else {
       if (nsSepIdx === 0) {
         res.ns = defaults.NAMESPACE;
-        res.name = name.substr(1);
+        res.name = name.substring(1);
       } else {
         res.ns = name.substring(0, nsSepIdx).trim();
         assert(res.ns, `Invalid namespace in task name ${name}`);

@@ -36,12 +36,12 @@ export const collectSelectiveBaselines = (
   const excluded: Record<string, Set<string>> = {};
   const ids = commitLines.map((line) => {
     const idx = line.indexOf(" ");
-    return idx < 0 ? line : line.substr(0, idx);
+    return idx < 0 ? line : line.substring(0, idx);
   });
 
   commitLines.forEach((line, i) => {
     const idx = line.indexOf(" ");
-    const subject = idx < 0 ? "" : line.substr(idx + 1);
+    const subject = idx < 0 ? "" : line.substring(idx + 1);
 
     if (!subject.startsWith(selectivePublishSubject)) {
       return;
@@ -85,9 +85,9 @@ export const getNewCommits = (opts, changed) => {
   const commitIds = commits.reduce(
     (a, x) => {
       const idx = x.indexOf(" ");
-      const id = x.substr(0, idx);
+      const id = x.substring(0, idx);
       a.ids.push(id);
-      a[id] = x.substr(idx + 1);
+      a[id] = x.substring(idx + 1);
       return a;
     },
     { ids: [] }

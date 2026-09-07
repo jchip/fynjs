@@ -457,7 +457,7 @@ export class VisualExec {
     if (msgs.length === 0) {
       item.buf = lines[lines.length - 1] || "";
       if (item.buf.length > 120) {
-        item.buf = stripLines[stripLines.length - 1].substr(0, 100);
+        item.buf = stripLines[stripLines.length - 1].substring(0, 100);
       }
       msgs = [item.buf];
     } else {

@@ -195,14 +195,14 @@ because value type ${vtype} is unknown and no value.item`)
           } catch (err) {
             error = err;
           }
-          cmd = value.substr(ix + closeSig.length);
+          cmd = value.substring(ix + closeSig.length);
         } else {
           error = new Error(
             `Missing ${defaults.ANON_SHELL_OPT_CLOSE_SIG[0]} in shell task: ${value}`
           );
         }
       } else {
-        cmd = value.substr(sig.length);
+        cmd = value.substring(sig.length);
       }
     }
 
@@ -215,7 +215,7 @@ because value type ${vtype} is unknown and no value.item`)
 
   _parseStrArray(value) {
     if (this._isStrArray(value)) {
-      return parseArray(value.substr(defaults.STR_ARRAY_SIG.length - 1));
+      return parseArray(value.substring(defaults.STR_ARRAY_SIG.length - 1));
     }
     return undefined;
   }

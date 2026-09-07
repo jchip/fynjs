@@ -204,7 +204,7 @@ class PkgDistFetcher {
     if (dist.integrity || !tarball.startsWith(MARK_URL_SPEC)) return false;
 
     // extract info from tarball string
-    const info = JSON.parse(tarball.substr(MARK_URL_SPEC.length));
+    const info = JSON.parse(tarball.substring(MARK_URL_SPEC.length));
     if (!info.urlType.startsWith("git")) return false;
 
     let srcDir = dist.fullPath;

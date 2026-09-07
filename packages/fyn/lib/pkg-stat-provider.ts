@@ -86,7 +86,7 @@ class PkgStatProvider {
   private _splitPkgId(pkgId: string): { name: string; version: string } {
     const ix = pkgId.indexOf("@", 1);
     const sx = ix > 0 ? ix : pkgId.length;
-    return { name: pkgId.substr(0, sx), version: pkgId.substr(sx + 1) };
+    return { name: pkgId.substring(0, sx), version: pkgId.substring(sx + 1) };
   }
 
   /** the sections of the app's own package.json that declare `name` */

@@ -26,7 +26,7 @@ export function pkgPath(name: string, path: string): string {
     const ixNm = posixPath.lastIndexOf(nm, ixName);
     const dirName = posixPath.substring(ixNm >= 0 ? ixNm : 0, ixName);
     return (
-      chalk.blue(`${dirName}`) + chalk.magenta(name) + posixPath.substr(ixName + name.length)
+      chalk.blue(`${dirName}`) + chalk.magenta(name) + posixPath.substring(ixName + name.length)
     );
   } else {
     return chalk.blue(posixPath);

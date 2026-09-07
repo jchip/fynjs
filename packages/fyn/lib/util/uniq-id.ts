@@ -7,7 +7,7 @@ export function uniqId(): string {
   return (
     Math.random()
       .toString(36)
-      .substr(2, 10) +
+      .substring(2, 12) +
     "_" +
     Date.now().toString(36)
   );

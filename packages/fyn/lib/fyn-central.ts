@@ -127,9 +127,9 @@ class FynCentral {
     const segLen = 2;
     const contentPath = Path.join(
       ...[this._centralDir, algorithm].concat(
-        hex.substr(0, segLen),
-        hex.substr(segLen, segLen),
-        hex.substr(segLen * 2)
+        hex.substring(0, segLen),
+        hex.substring(segLen, segLen * 2),
+        hex.substring(segLen * 2)
       )
     );
 

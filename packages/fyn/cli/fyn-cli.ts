@@ -265,8 +265,8 @@ class FynCli {
         const atX = posixPath.lastIndexOf("@");
         return {
           $: posixPath,
-          name: atX > 0 ? posixPath.substr(0, atX) : posixPath,
-          semver: atX > 0 ? posixPath.substr(atX + 1) : "latest",
+          name: atX > 0 ? posixPath.substring(0, atX) : posixPath,
+          semver: atX > 0 ? posixPath.substring(atX + 1) : "latest",
           section,
           parent: {}
         };

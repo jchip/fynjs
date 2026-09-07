@@ -36,7 +36,7 @@ export function makePublishTag(tmpl: string, { date = undefined, gitHash = "" } 
     "{DD}": _.padStart(`${d.getDate()}`, 2, "0"),
     "{MM}": _.padStart(`${d.getMonth() + 1}`, 2, "0"),
     "{YYYY}": _.padStart(`${d.getFullYear()}`, 4, "0"),
-    "{COMMIT}": gitHash.substr(0, 8),
+    "{COMMIT}": gitHash.substring(0, 8),
     "{hh}": `${d.getHours()}`.padStart(2, "0"),
     "{mm}": `${d.getMinutes()}`.padStart(2, "0"),
     "{ss}": `${d.getSeconds()}`.padStart(2, "0"),

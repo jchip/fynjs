@@ -48,7 +48,7 @@ function deQuote(str: string, marker: string): string {
   if (q === `'` || q === `"` || q === "`") {
     // remove enclosing quotes ', ", or ` if they are present
     assert(str.endsWith(q), `chalk ${marker} param must be enclosed with matching quote ${q}`);
-    str = str.substr(1, str.length - 2);
+    str = str.slice(1, -1);
   }
 
   return str;

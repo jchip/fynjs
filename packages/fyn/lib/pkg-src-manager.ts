@@ -467,11 +467,11 @@ class PkgSrcManager {
 
   getSemverAsFilepath(semver: string): string | false {
     if (semver.startsWith("file:")) {
-      return semver.substr(5);
+      return semver.substring(5);
     } else if (semver.startsWith("/") || semver.startsWith("./") || semver.startsWith("../")) {
       return semver;
     } else if (semver.startsWith("~/")) {
-      return Path.join(os.homedir(), semver.substr(1));
+      return Path.join(os.homedir(), semver.substring(1));
     }
     return false;
   }

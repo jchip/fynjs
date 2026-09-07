@@ -22,7 +22,7 @@ export interface SemverAnalysis {
 function split(v: string, sep: string, index: number = 0): [string] | [string, string] {
   const x = v.indexOf(sep, index);
   if (x >= index) {
-    return [v.substr(0, x), v.substr(x + 1)];
+    return [v.substring(0, x), v.substring(x + 1)];
   }
 
   return [v];
@@ -117,13 +117,13 @@ export function localifyHard(v: string, hash: string = ""): string {
 
 export function unlocalify(v: string): string {
   const x = v.indexOf(FYN_LOCAL_TAG);
-  return x > 0 ? v.substr(0, x) : v;
+  return x > 0 ? v.substring(0, x) : v;
 }
 
 function localSplit(v: string): [string] | [string, string] {
   const x = v.indexOf(FYN_LOCAL_TAG);
   if (x > 0) {
-    return [v.substr(0, x), v.substr(x)];
+    return [v.substring(0, x), v.substring(x)];
   }
 
   return [v];
@@ -132,7 +132,7 @@ function localSplit(v: string): [string] | [string, string] {
 // https://docs.npmjs.com/files/package.json#dependencies
 export function getAsFilepath(semver: string): string | false {
   if (semver.startsWith("file:") || semver.startsWith("link:")) {
-    return semver.substr(5);
+    return semver.substring(5);
   }
 
   const a = semver[0];
@@ -149,7 +149,7 @@ export function getAsFilepath(semver: string): string | false {
   } else if (a === "\\" || a === "/") {
     return semver;
   } else if (semver.startsWith("~/")) {
-    return Path.join(os.homedir(), semver.substr(1));
+    return Path.join(os.homedir(), semver.substring(1));
   }
 
   return false;
@@ -174,7 +174,7 @@ export function checkUrl(semver: string): string | false {
   // check for anything that's <protocol>:
   const ix = semver.indexOf(":");
   if (ix > 0) {
-    return semver.substr(0, ix);
+    return semver.substring(0, ix);
   }
 
   // check for github simple form
@@ -227,13 +227,13 @@ export function analyze(semver: string): SemverAnalysis {
 
   if (urlType) {
     if (urlType === "sym") {
-      sv.path = semver.substr(4);
+      sv.path = semver.substring(4);
       sv.localType = "sym";
     } else if (urlType === "sym1") {
-      sv.path = semver.substr(5);
+      sv.path = semver.substring(5);
       sv.localType = "sym1";
     } else if (urlType === "file" || urlType === "link") {
-      setHardLocal(semver.substr(5));
+      setHardLocal(semver.substring(5));
     } else {
       sv.urlType = urlType;
     }
