@@ -94,7 +94,7 @@ export function aggregateErrorStack(error: AggregateError): string {
  * AggregateError
  * - https://tc39.es/ecma262/multipage/fundamental-objects.html#sec-aggregate-error-objects
  */
-export class AggregateError extends Error {
+export class AggregateError extends globalThis.AggregateError {
   /** "AggregateError" */
   readonly name: string;
   /** errors collected */
@@ -107,7 +107,7 @@ export class AggregateError extends Error {
     if (!errors || !(errors[Symbol.iterator] instanceof Function)) {
       throw new TypeError(`input errors must be iterable but it's ${typeof errors}`);
     }
-    super(msg);
+    super(errors, msg);
 
     // Using defineProperty to replicate behavior of Object.keys(new Error()) returns []
     Object.defineProperty(this, "name", { value: "AggregateError" });

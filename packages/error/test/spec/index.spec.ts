@@ -98,6 +98,13 @@ describe("AggregateError", () => {
     const x = new AggregateError(errors, "test");
     expect(x.errors).toEqual(errors);
   });
+
+  it("should be an instance of globalThis.AggregateError and Error", () => {
+    const x = new AggregateError([], "test");
+    expect(x).toBeInstanceOf(globalThis.AggregateError);
+    expect(x).toBeInstanceOf(Error);
+    expect(x).toBeInstanceOf(AggregateError);
+  });
 });
 
 describe("aggregateErrorStack", () => {
