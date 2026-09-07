@@ -49,9 +49,10 @@ interface LifecycleScriptsOptions {
 type EnvVars = Record<string, string | undefined>;
 
 const readPkgJson = (dir: string): Promise<Partial<PackageJson>> => {
-  return fyntil.readPkgJson(dir).catch(() => {
-    return {};
-  });
+  return fyntil.readPkgJson(dir).then(
+    (data) => data as Partial<PackageJson>,
+    () => ({})
+  );
 };
 
 //

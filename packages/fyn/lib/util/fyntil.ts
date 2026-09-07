@@ -6,39 +6,71 @@ import logger from "../logger";
 import type { NativePromise } from "../types/native-promise";
 import type { PipelineOptions } from "node:stream";
 import { pipeline } from "stream/promises";
+import { PACKAGE_RAW_INFO } from "../symbols";
+import { PACKAGE_FYN_JSON } from "../constants";
+import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
+import { isWin32, retry } from "./base-util";
+
+export interface FynpoConfigData {
+  config?: any;
+  dir?: string;
+  graph?: FynpoDepGraph;
+  indirects?: any[];
+  [key: string]: any;
+}
+
+export interface RawPkgInfo {
+  dir: string;
+  str: string;
+}
+
+export type PkgJsonData = Record<string, any> & {
+  [PACKAGE_RAW_INFO]?: RawPkgInfo;
+};
+
+export interface DistInfo {
+  integrity?: string;
+  shasum?: string;
+  [key: string]: any;
+}
+
+export interface PkgOsCpu {
+  os?: string | readonly string[];
+  cpu?: string | readonly string[];
+  [key: string]: any;
+}
 
 /**
  * Pipe streams together and resolve when the pipeline fully completes.
  * Replaces mississippi.pipe with node:stream/promises pipeline.
  */
-const missPipe = (
+export const missPipe = (
   ...streams: [
     NodeJS.ReadableStream,
     NodeJS.WritableStream,
     ...(NodeJS.ReadWriteStream | NodeJS.WritableStream | PipelineOptions)[]
   ]
 ): NativePromise<void> => pipeline(...streams);
-import { PACKAGE_RAW_INFO } from "../symbols";
-import { PACKAGE_FYN_JSON } from "../constants";
-import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
 
-
-import { isWin32, retry } from "./base-util";
-
-const DIR_SYMLINK_TYPE = isWin32 ? "junction" : "dir";
+const DIR_SYMLINK_TYPE: "junction" | "dir" = isWin32 ? "junction" : "dir";
 
 /**
- * Check if a value satisfy a list of rules.
+ * Check if a value satisfies a list of rules.
  *
  * Mainly to check package.json os and cpu per https://docs.npmjs.com/cli/v6/configuring-npm/package-json#os
  *
- * @param {*} rules the rules
- * @param {*} userValue value to check
+ * @param inRules the rules (string, array of strings, or null/undefined)
+ * @param userValue value to check
  *
  * @returns true|false
  */
-const checkValueSatisfyRules = (inRules, userValue) => {
-  const rules = [].concat(inRules).filter(x => x);
+export const checkValueSatisfyRules = (
+  inRules?: string | readonly string[] | null,
+  userValue?: string
+): boolean => {
+  const rules: string[] = inRules
+    ? (Array.isArray(inRules) ? Array.from(inRules) : [inRules]).filter(Boolean)
+    : [];
 
   // no rules means satisfied
   if (!rules || rules.length === 0) {
@@ -63,7 +95,7 @@ const checkValueSatisfyRules = (inRules, userValue) => {
   }
 
   // explicitly accept value immediately satisfies
-  if (rules.indexOf(userValue) >= 0) {
+  if (rules.indexOf(userValue as string) >= 0) {
     return true;
   }
 
@@ -71,7 +103,35 @@ const checkValueSatisfyRules = (inRules, userValue) => {
   return false;
 };
 
-const fyntil = {
+export interface Fyntil {
+  isWin32: boolean;
+  missPipe: typeof missPipe;
+  retry: typeof retry;
+  fynpoConfig: FynpoConfigData | Record<string, never> | undefined;
+  resetFynpo(): void;
+  loadFynpo(cwd?: string): Promise<FynpoConfigData | Record<string, never>>;
+  resolveGitMainWorktreeDir(dir: string): Promise<string>;
+  removeAuthInfo(rcObj: Record<string, any>): Record<string, any>;
+  exit(err?: number | Error | string | boolean | null): never;
+  readJson<T = any>(file: string, defaultData?: T): Promise<T>;
+  relativePath(from: string, to: string, shouldPosixify?: boolean): string;
+  readPkgJson(dirOrFile: string, keepRaw?: boolean, packageFyn?: boolean): Promise<PkgJsonData>;
+  symlinkDir(linkName: string, targetName: string, relative?: boolean): Promise<void>;
+  symlinkFile(linkName: string, targetName: string): Promise<void>;
+  validateExistSymlink(linkName: string, targetPath: string, relative?: boolean): Promise<boolean>;
+  checkValueSatisfyRules: typeof checkValueSatisfyRules;
+  shaToIntegrity(ss?: string | number | null): string | undefined;
+  distIntegrity(dist?: DistInfo): string | undefined;
+  checkPkgOsCpu(pkg?: PkgOsCpu): true | string;
+  strToBool(v: unknown): boolean;
+  isTrueStr(v: unknown): boolean;
+  posixify: typeof posixify;
+  unSlashNpmScope(npmDepPath: string, replacer?: string): string;
+  getGlobalNodeModules(): string;
+  fynDir: string;
+}
+
+const fyntil: Fyntil = {
   isWin32,
 
   missPipe,
@@ -80,11 +140,11 @@ const fyntil = {
 
   fynpoConfig: undefined,
 
-  resetFynpo() {
+  resetFynpo(): void {
     fyntil.fynpoConfig = undefined;
   },
 
-  async loadFynpo(cwd = process.cwd()) {
+  async loadFynpo(cwd: string = process.cwd()): Promise<FynpoConfigData | Record<string, never>> {
     if (fyntil.fynpoConfig) {
       return fyntil.fynpoConfig;
     }
@@ -129,20 +189,20 @@ const fyntil = {
    * @returns the equivalent directory in the main worktree, or `dir` unchanged
    *          when it's not in a git repo or already in the main worktree.
    */
-  async resolveGitMainWorktreeDir(dir) {
+  async resolveGitMainWorktreeDir(dir: string): Promise<string> {
     const startDir = Path.resolve(dir);
 
     // walk up to locate the .git entry for the tree containing `dir`
     let treeTop = startDir;
-    let gitPath;
-    let gitStat;
+    let gitPath: string | undefined;
+    let gitStat: any;
     for (;;) {
       try {
         const p = Path.join(treeTop, ".git");
         gitStat = await Fs.stat(p);
         gitPath = p;
         break;
-      } catch (err) {
+      } catch (err: any) {
         if (err.code !== "ENOENT") {
           throw err;
         }
@@ -187,14 +247,14 @@ const fyntil = {
       // preserve dir's position relative to its own worktree root
       const rel = Path.relative(treeTop, startDir);
       return Path.join(mainTreeTop, rel);
-    } catch (err) {
+    } catch (err: any) {
       logger.debug(`resolveGitMainWorktreeDir failed for ${dir}: ${err.message}`);
       return dir;
     }
   },
 
-  removeAuthInfo(rcObj) {
-    const rmObj = {};
+  removeAuthInfo(rcObj: Record<string, any>): Record<string, any> {
+    const rmObj: Record<string, any> = {};
     for (const key in rcObj) {
       const lower = key.toLowerCase();
       if (!lower.includes("auth") && !lower.includes("password") && !lower.includes("otp")) {
@@ -205,7 +265,7 @@ const fyntil = {
     return rmObj;
   },
 
-  exit(err) {
+  exit(err?: number | Error | string | boolean | null): never {
     // a numeric arg is an explicit exit code (e.g. a script's exit code) and is
     // passed through as-is; otherwise treat a truthy arg as an error (exit 1).
     if (typeof err === "number") {
@@ -214,11 +274,11 @@ const fyntil = {
     return process.exit(err ? 1 : 0);
   },
 
-  async readJson(file, defaultData?) {
+  async readJson<T = any>(file: string, defaultData?: T): Promise<T> {
     try {
       const data = await Fs.readFile(file, "utf8");
       return JSON.parse(data);
-    } catch (err) {
+    } catch (err: any) {
       if (err.code !== "ENOENT") {
         const msg = `Failed to read JSON file ${file} - ${err.message}`;
         logger.error(msg);
@@ -233,7 +293,7 @@ const fyntil = {
     }
   },
 
-  relativePath(from, to, shouldPosixify = false) {
+  relativePath(from: string, to: string, shouldPosixify: boolean = false): string {
     const rel = Path.relative(from, to);
     if (!Path.isAbsolute(rel) && !rel.startsWith(".")) {
       return `.${Path.sep}${rel}`;
@@ -241,11 +301,11 @@ const fyntil = {
     return shouldPosixify ? posixify(rel) : rel;
   },
 
-  async readPkgJson(dirOrFile, keepRaw = false, packageFyn = false) {
+  async readPkgJson(dirOrFile: string, keepRaw: boolean = false, packageFyn: boolean = false): Promise<PkgJsonData> {
     const isDir = !dirOrFile.endsWith(".json");
     const dir = isDir ? dirOrFile : Path.dirname(dirOrFile);
-    const files = ["package.json", packageFyn && PACKAGE_FYN_JSON].filter(x => x);
-    const finalJson = {};
+    const files = ["package.json", packageFyn && PACKAGE_FYN_JSON].filter(Boolean) as string[];
+    const finalJson: PkgJsonData = {};
     for (const fname of files) {
       const file = Path.join(dir, fname);
       try {
@@ -255,7 +315,7 @@ const fyntil = {
         if (keepRaw && fname !== PACKAGE_FYN_JSON) {
           finalJson[PACKAGE_RAW_INFO] = { dir, str };
         }
-      } catch (err) {
+      } catch (err: any) {
         if (fname !== PACKAGE_FYN_JSON || err.code !== "ENOENT") {
           throw new Error(`Failed Reading ${file}: ${err.message}`);
         }
@@ -264,7 +324,7 @@ const fyntil = {
     return finalJson;
   },
 
-  symlinkDir: async (linkName, targetName, relative = false) => {
+  symlinkDir: async (linkName: string, targetName: string, relative: boolean = false): Promise<void> => {
     await Fs.symlink(
       relative && Path.isAbsolute(targetName)
         ? Path.relative(Path.dirname(linkName), targetName)
@@ -274,7 +334,7 @@ const fyntil = {
     );
   },
 
-  symlinkFile: async (linkName, targetName) => {
+  symlinkFile: async (linkName: string, targetName: string): Promise<void> => {
     if (isWin32) {
       // Windows symlink require admin permission
       // And Junction is only for directories
@@ -291,9 +351,9 @@ const fyntil = {
   // - if not, remove it, return false
   // - finally return true
   //
-  validateExistSymlink: async (linkName, targetPath, relative = false) => {
-    let actualTarget;
-    let existTarget;
+  validateExistSymlink: async (linkName: string, targetPath: string, relative: boolean = false): Promise<boolean> => {
+    let actualTarget: string | undefined;
+    let existTarget: boolean | string | undefined;
     //
     // Check if the dir already exist and try to read it as a symlink
     //
@@ -308,7 +368,7 @@ const fyntil = {
             ? Path.relative(Path.dirname(linkName), targetPath)
             : targetPath;
       }
-    } catch (e) {
+    } catch (e: any) {
       existTarget = e.code !== "ENOENT";
     }
 
@@ -320,7 +380,7 @@ const fyntil = {
       try {
         // try to unlink it as a symlink/file first
         await Fs.unlink(linkName);
-      } catch (e) {
+      } catch (e: any) {
         // else remove the directory
         await Fs.$.rimraf(linkName);
       }
@@ -328,12 +388,12 @@ const fyntil = {
       logger.debug("local link existTarget", existTarget, "match new target", actualTarget);
     }
 
-    return existTarget;
+    return Boolean(existTarget);
   },
 
   checkValueSatisfyRules,
 
-  shaToIntegrity(ss) {
+  shaToIntegrity(ss?: string | null): string | undefined {
     if (!ss) {
       return undefined;
     }
@@ -343,14 +403,14 @@ const fyntil = {
     return `sha1-${Buffer.from(ss, "hex").toString("base64")}`;
   },
 
-  distIntegrity(dist) {
+  distIntegrity(dist: DistInfo = {}): string | undefined {
     if (dist.integrity) {
       return dist.integrity;
     }
     return fyntil.shaToIntegrity(dist.shasum);
   },
 
-  checkPkgOsCpu: pkg => {
+  checkPkgOsCpu: (pkg: PkgOsCpu = {}): true | string => {
     if (pkg.hasOwnProperty("os") && !checkValueSatisfyRules(pkg.os, process.platform)) {
       return `your platform ${process.platform} doesn't satisfy required os ${pkg.os}`;
     }
@@ -363,17 +423,17 @@ const fyntil = {
   },
 
   /**
-   * Convert a string to a bool value.  Considering 0, off, false, no to be `false`, else true.
+   * Convert a string to a bool value. Considering 0, off, false, no to be `false`, else true.
    *
-   * @param {*} v
+   * @param v value to check
    * @returns true or false
    */
-  strToBool: v => {
+  strToBool: (v: unknown): boolean => {
     if (!v) {
       return false;
     }
 
-    const lv = v.toLowerCase();
+    const lv = String(v).toLowerCase();
 
     if (lv === "0" || lv === "off" || lv === "false" || lv === "no") {
       return false;
@@ -385,15 +445,15 @@ const fyntil = {
   /**
    * Check if a string looks like a true bool value, considering 1, on, true, yes to be `true`, else `false`
    *
-   * @param {*} v
+   * @param v value to check
    * @returns true or false
    */
-  isTrueStr: v => {
+  isTrueStr: (v: unknown): boolean => {
     if (!v) {
       return false;
     }
 
-    const lv = v.toLowerCase();
+    const lv = String(v).toLowerCase();
 
     if (lv === "1" || lv === "on" || lv === "true" || lv === "yes") {
       return true;
@@ -407,16 +467,15 @@ const fyntil = {
   /**
    * Take a npm dependency path separated by / and replace the / that's meant for a npm scope with '+'
    *
-   * @param {*} npmDepPath
-   * @param {string} replacer string to replace the slash with
+   * @param npmDepPath dep path
+   * @param replacer string to replace the slash with
    * @returns dep path where npm scope's / replaced with '+'
    */
-
-  unSlashNpmScope(npmDepPath, replacer = "+") {
+  unSlashNpmScope(npmDepPath: string, replacer: string = "+"): string {
     return npmDepPath.replace(/(\@[^\/]+)\//g, (_a, b) => `${b}${replacer}`);
   },
 
-  getGlobalNodeModules() {
+  getGlobalNodeModules(): string {
     const nodeDir = Path.dirname(process.execPath);
     if (process.platform === "win32") {
       // windows put node binary under <installed_dir>/node.exe
@@ -428,8 +487,10 @@ const fyntil = {
       return Path.join(Path.dirname(nodeDir), "lib/node_modules");
     }
   },
+
   fynDir:
-    Path.basename(__dirname) === "util" ? Path.join(__dirname, "../..") : Path.join(__dirname, "..")
+    Path.basename(__dirname) === "util" ? Path.join(__dirname, "../..") : Path.join(__dirname, ".."),
 };
 
+export { fyntil };
 export default fyntil;
