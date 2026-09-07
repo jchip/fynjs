@@ -1100,24 +1100,438 @@ describe("@fynjs/fetch", () => {
         await expect(drain(res)).resolves.toBeUndefined();
       });
 
-      it("disarms timeout when response headers arrive so streaming body reads are not aborted", async () => {
+      it("keeps the timeout armed across the body read so a slow body aborts", async () => {
         requestHandler = (_req, res) => {
           res.writeHead(200, { "content-type": "text/plain" });
           res.write("part1-");
           setTimeout(() => {
             res.end("part2");
-          }, 120);
+          }, 200);
         };
 
-        // Timeout is 50ms - headers arrive within ~5ms, but stream ends at ~120ms
+        // Timeout is 50ms - headers arrive within ~5ms, but the body stalls to ~200ms
         const res = await fynFetch(`${serverUrl}/slow-stream`, {
           timeout: 50,
         });
         expect(res.ok).toBe(true);
 
-        const text = await res.text();
-        expect(text).toBe("part1-part2");
+        // timeout is a total budget, so the pending body read rejects
+        await expect(res.text()).rejects.toThrow(TimeoutError);
       });
+
+      it("does not abort a body that completes within the timeout", async () => {
+        requestHandler = (_req, res) => {
+          res.writeHead(200, { "content-type": "text/plain" });
+          res.write("part1-");
+          setTimeout(() => {
+            res.end("part2");
+          }, 20);
+        };
+
+        const res = await fynFetch(`${serverUrl}/quick-stream`, { timeout: 500 });
+        expect(await res.text()).toBe("part1-part2");
+      });
+
+      it("bounds fynFetch.stream by the timeout", async () => {
+        requestHandler = (_req, res) => {
+          res.writeHead(200, { "content-type": "application/octet-stream" });
+          res.write("chunk-");
+          setTimeout(() => res.end("tail"), 300);
+        };
+
+        const chunks: Buffer[] = [];
+        const sink = new Writable({
+          write(chunk, _enc, cb) {
+            chunks.push(Buffer.from(chunk));
+            cb();
+          },
+        });
+
+        await expect(
+          stream(`${serverUrl}/stalled-download`, sink, { timeout: 60 })
+        ).rejects.toThrow();
+      });
+    });
+  });
+
+  describe("second review findings fixes", () => {
+    it("overrides same-named searchParams instead of accumulating them", async () => {
+      let seen = "";
+      requestHandler = (req, res) => {
+        seen = req.url!;
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      const client = fynFetch.create({
+        prefixUrl: serverUrl,
+        searchParams: { page: 1, size: 10 },
+      });
+
+      // overridden keys move to the end; what matters is page appears once
+      await client.extend({ searchParams: { page: 2 } })("search");
+      expect(seen).toBe("/search?size=10&page=2");
+
+      await client("search", { searchParams: { size: 99 } });
+      expect(seen).toBe("/search?page=1&size=99");
+    });
+
+    it("overrides a same-named param already present in the URL string", async () => {
+      let seen = "";
+      requestHandler = (req, res) => {
+        seen = req.url!;
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      await fynFetch(`${serverUrl}/search?page=1&keep=yes`, {
+        searchParams: { page: 2 },
+      });
+      expect(seen).toBe("/search?keep=yes&page=2");
+    });
+
+    it("runs afterResponse and throwOnHttpError for a beforeRequest short-circuit", async () => {
+      let serverHit = false;
+      let afterRan = false;
+      requestHandler = (_req, res) => {
+        serverHit = true;
+        res.writeHead(200);
+        res.end("should not hit");
+      };
+
+      await expect(
+        fynFetch(`${serverUrl}/cached-error`, {
+          throwOnHttpError: true,
+          hooks: {
+            beforeRequest: [() => new Response("cached failure", { status: 503 })],
+            afterResponse: [
+              (response) => {
+                afterRan = true;
+                return response;
+              },
+            ],
+          },
+        })
+      ).rejects.toThrow(HttpError);
+
+      expect(serverHit).toBe(false);
+      expect(afterRan).toBe(true);
+    });
+
+    it("passes the fully resolved URL to beforeRequest hooks", async () => {
+      requestHandler = (_req, res) => {
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      const seen: string[] = [];
+      await fynFetch("users", {
+        prefixUrl: `${serverUrl}/api/v1`,
+        searchParams: { q: "z" },
+        hooks: { beforeRequest: [(_opts, url) => void seen.push(url)] },
+      });
+
+      expect(seen).toEqual([`${serverUrl}/api/v1/users?q=z`]);
+    });
+
+    it("rejects non-integer or negative retries", async () => {
+      requestHandler = (_req, res) => {
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      for (const retries of [-1, 0.5, NaN]) {
+        await expect(
+          fynFetch(`${serverUrl}/bad-retries`, { retry: { retries } })
+        ).rejects.toThrow(TypeError);
+      }
+      await expect(fynFetch(`${serverUrl}/bad-retries`, { retry: -1 })).rejects.toThrow(
+        TypeError
+      );
+    });
+
+    it("drains the response body when an afterResponse hook throws", async () => {
+      requestHandler = (_req, res) => {
+        res.writeHead(200, { "content-type": "text/plain" });
+        res.end("payload");
+      };
+
+      let captured: Response | null = null;
+      await expect(
+        fynFetch(`${serverUrl}/hook-throws`, {
+          hooks: {
+            afterResponse: [
+              (response) => {
+                captured = response;
+                throw new Error("hook exploded");
+              },
+            ],
+          },
+        })
+      ).rejects.toThrow("hook exploded");
+
+      expect(captured).not.toBeNull();
+      expect(captured!.bodyUsed || captured!.body === null).toBe(true);
+    });
+
+    it("does not retry POST on 500 by default but honors an explicit retryOn", async () => {
+      let attempts = 0;
+      requestHandler = (_req, res) => {
+        attempts++;
+        res.writeHead(500);
+        res.end("boom");
+      };
+
+      const res = await fynFetch(`${serverUrl}/post-retry`, {
+        method: "POST",
+        body: "data",
+        retry: { retries: 2, minTimeout: 10 },
+      });
+      expect(res.status).toBe(500);
+      expect(attempts).toBe(1);
+      await drain(res);
+
+      attempts = 0;
+      const forced = await fynFetch(`${serverUrl}/post-retry`, {
+        method: "POST",
+        body: "data",
+        retry: { retries: 2, minTimeout: 10, retryOn: (_err, r) => !!r && r.status === 500 },
+      });
+      expect(forced.status).toBe(500);
+      expect(attempts).toBe(3);
+      await drain(forced);
+    });
+
+    it("honors Retry-After when computing backoff", async () => {
+      const hits: number[] = [];
+      requestHandler = (_req, res) => {
+        hits.push(Date.now());
+        if (hits.length === 1) {
+          res.writeHead(503, { "retry-after": "1" });
+          res.end("later");
+        } else {
+          res.writeHead(200);
+          res.end("ok");
+        }
+      };
+
+      const res = await fynFetch(`${serverUrl}/retry-after`, {
+        // minTimeout alone would wait ~10ms; Retry-After: 1 asks for ~1000ms
+        retry: { retries: 1, minTimeout: 10, maxTimeout: 5000 },
+      });
+
+      expect(res.status).toBe(200);
+      expect(hits[1] - hits[0]).toBeGreaterThanOrEqual(950);
+    });
+
+    it("caps Retry-After at maxTimeout", async () => {
+      const hits: number[] = [];
+      requestHandler = (_req, res) => {
+        hits.push(Date.now());
+        if (hits.length === 1) {
+          res.writeHead(503, { "retry-after": "600" });
+          res.end("later");
+        } else {
+          res.writeHead(200);
+          res.end("ok");
+        }
+      };
+
+      const res = await fynFetch(`${serverUrl}/retry-after-huge`, {
+        retry: { retries: 1, minTimeout: 10, maxTimeout: 40 },
+      });
+
+      expect(res.status).toBe(200);
+      expect(hits[1] - hits[0]).toBeLessThan(400);
+    });
+
+    it("respects an instance default of throwOnHttpError: false in body helpers", async () => {
+      requestHandler = (_req, res) => {
+        res.writeHead(404, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "nope" }));
+      };
+
+      const lenient = fynFetch.create({ throwOnHttpError: false });
+      await expect(lenient.json(`${serverUrl}/missing`)).resolves.toEqual({ error: "nope" });
+
+      // per-call still wins over the instance default
+      await expect(
+        lenient.json(`${serverUrl}/missing`, { throwOnHttpError: true })
+      ).rejects.toThrow(HttpError);
+
+      // and the plain default is still throw-on-error
+      await expect(fynFetch.json(`${serverUrl}/missing`)).rejects.toThrow(HttpError);
+    });
+
+    it("drops undefined and null header values instead of sending 'undefined'", async () => {
+      let received: http.IncomingHttpHeaders = {};
+      requestHandler = (req, res) => {
+        received = req.headers;
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      await fynFetch(`${serverUrl}/headers`, {
+        headers: {
+          "x-present": "yes",
+          "x-missing": undefined as any,
+          "x-nullish": null as any,
+        },
+      });
+
+      expect(received["x-present"]).toBe("yes");
+      expect(received["x-missing"]).toBeUndefined();
+      expect(received["x-nullish"]).toBeUndefined();
+    });
+
+    it("does not let a beforeRetry hook mutating options.retry poison instance defaults", async () => {
+      let attempts = 0;
+      requestHandler = (_req, res) => {
+        attempts++;
+        if (attempts < 2) {
+          res.writeHead(503);
+          res.end("flaky");
+        } else {
+          res.writeHead(200);
+          res.end("ok");
+        }
+      };
+
+      const client = fynFetch.create({ retry: { retries: 1, minTimeout: 10 } });
+      await client(`${serverUrl}/mutating-hook`, {
+        hooks: {
+          beforeRetry: [
+            ({ options }) => {
+              (options.retry as any).retries = 99;
+            },
+          ],
+        },
+      });
+
+      expect((client.defaults.retry as any).retries).toBe(1);
+    });
+
+    it("treats host:port as a relative path against prefixUrl", async () => {
+      let seen = "";
+      requestHandler = (req, res) => {
+        seen = req.url!;
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      await fynFetch("localhost:8080/thing", { prefixUrl: `${serverUrl}/api` });
+      expect(seen).toBe("/api/localhost:8080/thing");
+    });
+
+    it("keeps prefixUrl query params attached to the end of the joined URL", async () => {
+      let seen = "";
+      requestHandler = (req, res) => {
+        seen = req.url!;
+        res.writeHead(200);
+        res.end("ok");
+      };
+
+      await fynFetch("users", { prefixUrl: `${serverUrl}/api?v=1` });
+      expect(seen).toBe("/api/users?v=1");
+    });
+
+    it("auto-applies duplex and rejects unretryable async-iterable bodies", async () => {
+      requestHandler = (req, res) => {
+        const chunks: Buffer[] = [];
+        req.on("data", (c) => chunks.push(c));
+        req.on("end", () => {
+          res.writeHead(200);
+          res.end(Buffer.concat(chunks).toString());
+        });
+      };
+
+      async function* body() {
+        yield "iter-";
+        yield "payload";
+      }
+
+      // duplex: "half" is inferred, so undici accepts the async iterable
+      const res = await fynFetch(`${serverUrl}/async-iter`, {
+        method: "PUT",
+        body: body() as any,
+      });
+      expect(await res.text()).toBe("iter-payload");
+
+      // and a one-shot async iterable cannot be retried without a bodyFactory
+      await expect(
+        fynFetch(`${serverUrl}/async-iter`, {
+          method: "PUT",
+          body: body() as any,
+          retry: { retries: 1 },
+        })
+      ).rejects.toThrow(TypeError);
+    });
+
+    it("strips stale entity headers from the buffered HttpError response", async () => {
+      requestHandler = (_req, res) => {
+        const payload = JSON.stringify({ bad: "news" });
+        res.writeHead(500, {
+          "content-type": "application/json",
+          "content-encoding": "identity",
+          "content-length": String(Buffer.byteLength(payload)),
+        });
+        res.end(payload);
+      };
+
+      const err: HttpError = await fynFetch(`${serverUrl}/error-headers`, {
+        throwOnHttpError: true,
+      }).then(
+        () => {
+          throw new Error("expected HttpError");
+        },
+        (e) => e as HttpError
+      );
+
+      expect(err).toBeInstanceOf(HttpError);
+      expect(err.response.headers.get("content-encoding")).toBeNull();
+      expect(err.response.headers.get("content-length")).toBeNull();
+      expect(err.response.headers.get("content-type")).toBe("application/json");
+      expect(await err.response.text()).toBe(JSON.stringify({ bad: "news" }));
+      expect(await err.response.clone().json()).toEqual({ bad: "news" });
+    });
+
+    it("fails fast on a caller abort rather than relying on sleep to reject", async () => {
+      let attempts = 0;
+      requestHandler = (_req, res) => {
+        attempts++;
+        res.writeHead(500);
+        res.end("boom");
+      };
+
+      // sleep() also rejects on an aborted signal, so asserting only that the
+      // call rejects would pass even without the abort guard. Assert instead
+      // that the retry path was never entered at all.
+      const retryHookCalls: number[] = [];
+      const controller = new AbortController();
+      const promise = fynFetch(`${serverUrl}/abort-guard`, {
+        signal: controller.signal,
+        retry: { retries: 2, minTimeout: 5, retryOn: () => true },
+        hooks: { beforeRetry: [({ attempt }) => void retryHookCalls.push(attempt)] },
+      });
+      controller.abort();
+
+      await expect(promise).rejects.toThrow();
+      expect(retryHookCalls).toEqual([]);
+      expect(attempts).toBeLessThanOrEqual(1);
+    });
+
+    it("returns a readable body from the last response after retries are exhausted", async () => {
+      requestHandler = (_req, res) => {
+        res.writeHead(503);
+        res.end("still down");
+      };
+
+      const res = await fynFetch(`${serverUrl}/exhausted`, {
+        retry: { retries: 1, minTimeout: 10 },
+      });
+
+      expect(res.status).toBe(503);
+      expect(await res.text()).toBe("still down");
     });
   });
 });

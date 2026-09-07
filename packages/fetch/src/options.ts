@@ -3,27 +3,46 @@ import { appendSearchParams, buildUrl } from "./url.js";
 
 export function isStream(body: any): boolean {
   if (!body || typeof body !== "object") return false;
-  return typeof body.pipe === "function" || typeof body.getReader === "function";
+  if (typeof body.pipe === "function" || typeof body.getReader === "function") return true;
+  // Async iterables are valid undici bodies but are also one-shot.
+  return typeof body[Symbol.asyncIterator] === "function";
+}
+
+/**
+ * Normalizes a headers init into a plain lowercase-keyed record, dropping
+ * `undefined` / `null` values instead of stringifying them into the header.
+ */
+export function normalizeHeaders(init?: RequestInit["headers"]): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!init) return out;
+
+  const source =
+    init instanceof Headers || Array.isArray(init)
+      ? init
+      : Object.fromEntries(
+          Object.entries(init as Record<string, any>)
+            .filter(([, val]) => val !== undefined && val !== null)
+            .map(([key, val]) => [key, String(val)])
+        );
+
+  new Headers(source as any).forEach((val, key) => {
+    out[key] = val;
+  });
+  return out;
 }
 
 export function mergeHeaders(
   base?: RequestInit["headers"],
   override?: RequestInit["headers"]
 ): Record<string, string> {
-  const merged: Record<string, string> = {};
-  if (base) {
-    new Headers(base).forEach((val, key) => {
-      merged[key] = val;
-    });
-  }
-  if (override) {
-    new Headers(override).forEach((val, key) => {
-      merged[key] = val;
-    });
-  }
-  return merged;
+  return { ...normalizeHeaders(base), ...normalizeHeaders(override) };
 }
 
+/**
+ * Merges search params by key: params present in `override` replace the
+ * same-named params from `base` rather than accumulating alongside them.
+ * Repeated keys within a single init are preserved.
+ */
 export function mergeSearchParams(
   base?: SearchParamsInit,
   override?: SearchParamsInit
@@ -31,7 +50,14 @@ export function mergeSearchParams(
   if (!base && !override) return undefined;
   const sp = new URLSearchParams();
   if (base) appendSearchParams(sp, base);
-  if (override) appendSearchParams(sp, override);
+  if (override) {
+    const ov = new URLSearchParams();
+    appendSearchParams(ov, override);
+    for (const key of new Set(ov.keys())) {
+      sp.delete(key);
+    }
+    ov.forEach((val, key) => sp.append(key, val));
+  }
   return sp;
 }
 
@@ -78,15 +104,18 @@ export function mergeOptions(
     result.cookies = { ...base.cookies, ...override.cookies };
   }
 
+  // Always clone object retry config so a hook mutating `options.retry` cannot
+  // write back into the instance defaults it was inherited from.
   if (base.retry !== undefined || override.retry !== undefined) {
     if (override.retry !== undefined) {
       if (typeof override.retry === "object" && typeof base.retry === "object") {
         result.retry = { ...base.retry, ...override.retry };
       } else {
-        result.retry = override.retry;
+        result.retry =
+          typeof override.retry === "object" ? { ...override.retry } : override.retry;
       }
     } else {
-      result.retry = base.retry;
+      result.retry = typeof base.retry === "object" ? { ...base.retry } : base.retry;
     }
   }
 
@@ -122,7 +151,7 @@ export function prepareRequest(
   } = options;
 
   const targetUrl = buildUrl(url, prefixUrl, searchParams);
-  const headers = new Headers(restInit.headers);
+  const headers = new Headers(normalizeHeaders(restInit.headers));
   let body = restInit.body;
 
   // 1. Basic Auth

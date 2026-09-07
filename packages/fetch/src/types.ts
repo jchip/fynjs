@@ -1,6 +1,7 @@
 export interface RetryOptions {
   /**
-   * Number of retry attempts (default: 0, no retry)
+   * Number of retry attempts (default: 0, no retry).
+   * Must be a non-negative integer; anything else throws a `TypeError`.
    */
   retries?: number;
   /**
@@ -18,11 +19,18 @@ export interface RetryOptions {
   /**
    * HTTP status codes that trigger a retry.
    * Default: [408, 429, 500, 502, 503, 504]
+   *
+   * Only applies to idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS,
+   * TRACE). POST and PATCH are never retried by the default policy; use
+   * `retryOn` to opt them in.
    */
   statusCodes?: number[];
   /**
    * Custom predicate to determine whether to retry.
    * Returns true to retry, false to stop.
+   *
+   * Replaces the default policy entirely, including both the `statusCodes`
+   * check and the idempotent-method restriction.
    */
   retryOn?: (err: Error | null, res: Response | null) => boolean;
 }
@@ -70,7 +78,12 @@ export interface FynFetchOptions extends Omit<RequestInit, "body"> {
    */
   duplex?: "half";
   /**
-   * Timeout in milliseconds. Merged with any caller-supplied `signal`.
+   * Total timeout in milliseconds, covering both the response headers and the
+   * body read (including `stream()` pipelines). Merged with any caller-supplied
+   * `signal`. Applied per attempt, so N retries can take up to N x timeout.
+   *
+   * Exceeding it aborts the request with a `TimeoutError`; if the deadline
+   * lands mid-body, the pending body read rejects with that same error.
    */
   timeout?: number;
   /**

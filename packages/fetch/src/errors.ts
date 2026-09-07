@@ -37,31 +37,44 @@ export class HttpError extends Error {
       }
     }
 
+    // The buffered body is already decoded, so entity headers describing the
+    // original transfer encoding / length no longer apply to it.
+    const headers = new Headers(response.headers);
+    headers.delete("content-encoding");
+    headers.delete("content-length");
+
+    const readBody = async () => bodyText;
+    const readJson = async () =>
+      data !== undefined && typeof data === "object" ? data : JSON.parse(bodyText);
+
     let usableResponse: Response;
     try {
       const isNullBodyStatus = [204, 205, 304].includes(response.status);
-      usableResponse = new Response(isNullBodyStatus ? null : bodyText, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
-      Object.defineProperty(usableResponse, "url", { value: response.url });
-      (usableResponse as any).text = async () => bodyText;
-      (usableResponse as any).json = async () =>
-        data !== undefined && typeof data === "object" ? data : JSON.parse(bodyText);
-      (usableResponse as any).clone = () => {
-        const cloned = new Response(isNullBodyStatus ? null : bodyText, {
+      const build = () => {
+        const built = new Response(isNullBodyStatus ? null : bodyText, {
           status: response.status,
           statusText: response.statusText,
-          headers: response.headers,
+          headers,
         });
-        Object.defineProperty(cloned, "url", { value: response.url });
-        (cloned as any).text = (usableResponse as any).text;
-        (cloned as any).json = (usableResponse as any).json;
+        Object.defineProperty(built, "url", { value: response.url });
+        (built as any).text = readBody;
+        (built as any).json = readJson;
+        return built;
+      };
+      usableResponse = build();
+      (usableResponse as any).clone = () => {
+        const cloned = build();
+        (cloned as any).clone = (usableResponse as any).clone;
         return cloned;
       };
     } catch {
+      // `new Response` rejects statuses outside 200-599. Fall back to the
+      // original response, whose body is already consumed, so patch the
+      // readers onto it to keep err.response.text()/json() usable.
       usableResponse = response;
+      (usableResponse as any).text = readBody;
+      (usableResponse as any).json = readJson;
+      (usableResponse as any).clone = () => usableResponse;
     }
 
     return new HttpError(usableResponse, message, data);

@@ -23,6 +23,43 @@ export function appendSearchParams(
 }
 
 /**
+ * Joins a relative path onto `prefixUrl`, keeping any query/hash carried by the
+ * prefix attached to the end of the resulting URL rather than stranded mid-path.
+ */
+function joinPrefix(base: string, relative: string): string {
+  const rel = relative.replace(/^\/+/, "");
+  if (!rel) return base;
+
+  try {
+    // Assign the path explicitly rather than using `new URL(rel, base)`, which
+    // would treat a relative path like `localhost:8080/x` as an absolute URL.
+    const joined = new URL(base);
+    const basePath = joined.pathname.replace(/\/+$/, "");
+
+    const hashAt = rel.indexOf("#");
+    const relHash = hashAt >= 0 ? rel.slice(hashAt) : "";
+    const relNoHash = hashAt >= 0 ? rel.slice(0, hashAt) : rel;
+    const queryAt = relNoHash.indexOf("?");
+    const relPath = queryAt >= 0 ? relNoHash.slice(0, queryAt) : relNoHash;
+    const relQuery = queryAt >= 0 ? relNoHash.slice(queryAt + 1) : "";
+
+    joined.pathname = `${basePath}/${relPath}`;
+    // Prefix query params stay attached; params on the path are appended.
+    if (relQuery) {
+      new URLSearchParams(relQuery).forEach((val, key) => {
+        joined.searchParams.append(key, val);
+      });
+    }
+    if (relHash) {
+      joined.hash = relHash;
+    }
+    return joined.toString();
+  } catch {
+    return `${base.replace(/\/+$/, "")}/${rel}`;
+  }
+}
+
+/**
  * Resolves full URL by applying `prefixUrl` to relative paths and merging `searchParams`.
  */
 export function buildUrl(
@@ -35,12 +72,12 @@ export function buildUrl(
   if (inputUrl instanceof URL) {
     finalUrlStr = inputUrl.toString();
   } else {
-    const isAbsolute = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(inputUrl);
+    // Require `//` after the scheme so `localhost:8080/x` is treated as a
+    // relative path rather than a URL with a `localhost:` scheme.
+    const isAbsolute = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(inputUrl);
 
     if (prefixUrl && !isAbsolute) {
-      const base = prefixUrl.toString().replace(/\/+$/, "");
-      const rel = inputUrl.replace(/^\/+/, "");
-      finalUrlStr = rel ? `${base}/${rel}` : base;
+      finalUrlStr = joinPrefix(prefixUrl.toString(), inputUrl);
     } else {
       finalUrlStr = inputUrl;
     }
@@ -49,7 +86,13 @@ export function buildUrl(
   if (searchParams) {
     try {
       const parsed = new URL(finalUrlStr);
-      appendSearchParams(parsed.searchParams, searchParams);
+      // Explicit searchParams override same-named params already in the URL.
+      const explicit = new URLSearchParams();
+      appendSearchParams(explicit, searchParams);
+      for (const key of new Set(explicit.keys())) {
+        parsed.searchParams.delete(key);
+      }
+      explicit.forEach((val, key) => parsed.searchParams.append(key, val));
       return parsed.toString();
     } catch {
       const sp = new URLSearchParams();
