@@ -4,10 +4,9 @@ import { promises as Fs } from "fs";
 import { filterScanDir } from "filter-scan-dir";
 import type { ExtrasData } from "filter-scan-dir";
 import { Minimatch } from "minimatch";
-import _ from "lodash";
 import Semver from "semver";
 import { groupMM, type MMGroups } from "./minimatch-group.js";
-import { posixify } from "./util.js";
+import { posixify, pick } from "./util.js";
 import { resolvePackagesConfig, scanPatterns, includeFilter } from "./packages-config.js";
 import { makeGitignoreMatcher } from "./gitignore.js";
 
@@ -370,7 +369,7 @@ export class FynpoDepGraph {
    * @param indirects - set true to resolve indirect deps also
    */
   async resolve(indirects = false) {
-    if (_.isEmpty(this.packages.byName)) {
+    if (Object.keys(this.packages.byName).length === 0) {
       await this.readPackages();
     }
     this.resolveDirectDeps();
@@ -523,10 +522,10 @@ export class FynpoDepGraph {
     // the constructor still win, for callers that already decided.
     //
     const pkgConfig = resolvePackagesConfig(this._options.packages);
-    const resolved = _.isEmpty(patterns) ? scanPatterns(pkgConfig) : patterns;
+    const resolved = !patterns?.length ? scanPatterns(pkgConfig) : patterns;
 
     // `include` filters what the scan found - it does not replace the scan (FPO-17)
-    const includeMms = (_.isEmpty(patterns) ? includeFilter(pkgConfig) : []).map(
+    const includeMms = (!patterns?.length ? includeFilter(pkgConfig) : []).map(
       (p) => new Minimatch(p)
     );
     const isIncluded = (path: string) =>
@@ -654,7 +653,7 @@ export class FynpoDepGraph {
       version: pkgJson.version,
       path: pkgPath,
       pkgDir,
-      ..._.pick(pkgJson, [
+      ...pick(pkgJson, [
         "private",
         "dependencies",
         "devDependencies",
@@ -663,7 +662,7 @@ export class FynpoDepGraph {
       ]),
       pkgStr,
       pkgJson,
-    };
+    } as FynpoPackageInfo;
 
     // hide the original raw data
     Object.defineProperties(pkgInfo, {
@@ -769,16 +768,16 @@ export class FynpoDepGraph {
     ) => {
       const { pkgInfo } = depData;
 
-      _.each(deps, (semver: string, name: string) => {
+      for (const [name, semver] of Object.entries(deps || {})) {
         // dep is not a local package in the monorepo, nothing to do
         /* istanbul ignore if */
         if (!byName[name]) {
-          return;
+          continue;
         }
 
         // check if this dep should not be resolved as local package
         if (this.checkNoFynLocal(pkgInfo, name)) {
-          return;
+          continue;
         }
 
         const semId = pkgId(name, semver);
@@ -790,7 +789,7 @@ export class FynpoDepGraph {
         }
 
         this.addDep(pkgInfo, depPkg, section);
-      });
+      }
     };
 
     for (const path in byPath) {
@@ -868,7 +867,7 @@ export class FynpoDepGraph {
       return true;
     }
 
-    return !_.isEmpty(dataDep.pathOfCirculars);
+    return Boolean(dataDep.pathOfCirculars?.length);
   }
 
   /**
@@ -953,7 +952,7 @@ export class FynpoDepGraph {
    * @returns
    */
   getPackageByName(name: string): FynpoPackageInfo {
-    return _.first(this.packages.byName[name]);
+    return this.packages.byName[name]?.[0];
   }
 
   /**
@@ -974,13 +973,13 @@ export class FynpoDepGraph {
     ) => {
       const { pkgInfo } = dataPkg;
       // go through all found deps
-      _.each(localDeps, (depRef: PackageDepRef) => {
+      for (const depRef of Object.values(localDeps || {})) {
         const sec = section || depRef.depSection;
         const depInfo = byPath[depRef.path];
         const dataDep = depMapByPath[depRef.path];
         // check circular
         if (this.checkCircular(pkgInfo, depInfo)) {
-          return;
+          continue;
         }
 
         const stepsCopy = [].concat(steps);
@@ -1001,7 +1000,7 @@ export class FynpoDepGraph {
           stepsCopy.concat(makeDepStep(depRef.name, depRef.version, depRef.depSection)),
           sec
         );
-      });
+      }
     };
 
     for (const path in depMapByPath) {

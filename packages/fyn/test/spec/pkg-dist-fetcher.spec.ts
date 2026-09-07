@@ -4,7 +4,6 @@ import * as Yaml from "js-yaml";
 import Path from "path";
 import Fyn from "../../lib/fyn";
 import mockNpm from "../fixtures/mock-npm";
-import _ from "lodash";
 import PkgDepLinker from "../../lib/pkg-dep-linker";
 import xsh from "xsh";
 import logger from "../../lib/logger";

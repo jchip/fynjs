@@ -1,7 +1,6 @@
-import _ from "lodash";
 import processConfig from "./process-config.js";
 import composeConfig from "./compose-config.js";
-import util from "./util.js";
+import util, { defaultsDeep, getPath } from "./util.js";
 
 function hideProperties(obj: any, props: string[]): void {
   props.forEach(prop => {
@@ -33,7 +32,7 @@ export class Config {
 
   /** fill in values the store does not already have */
   defaults(data: any): void {
-    _.defaultsDeep(this.store, _.clone(data));
+    defaultsDeep(this.store, { ...data });
   }
 
   /** compose config partials from disk and merge them in */
@@ -56,7 +55,7 @@ export class Config {
 }
 
 function $get(this: any, p: any) {
-  return _.get(this, p);
+  return getPath(this, p);
 }
 
 /**

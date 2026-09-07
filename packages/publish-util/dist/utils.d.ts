@@ -73,6 +73,9 @@ export declare function getPackInfo(cwd?: string): Promise<PackageInfo>;
  * @returns true if the file was written, false if it already had this content
  */
 export declare function writePkgFile(file: string, content: string | Buffer): Promise<boolean>;
+export declare function getPath(obj: unknown, path: string | readonly string[]): unknown;
+export declare function setPath(obj: Record<string, unknown>, path: string | readonly string[], value: unknown): void;
+export declare function unsetPath(obj: Record<string, unknown>, path: string | readonly string[]): void;
 export type RenameSpec = Record<string, string | string[]>;
 export declare function renameFromObj(obj: Record<string, unknown>, rename?: RenameSpec): void;
 export type RemoveSpec = (string | Record<string, RemoveSpec>)[];

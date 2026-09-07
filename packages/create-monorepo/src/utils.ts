@@ -1,13 +1,31 @@
 import Fs, { mkdirSync } from "node:fs";
 import Path from "node:path";
 import { fileURLToPath } from "node:url";
-import _ from "lodash";
 import shell from "shelljs";
 
 const dirname = Path.dirname(fileURLToPath(import.meta.url));
 
-export const sortObjKeys = (obj) => {
-  return _(obj).toPairs().sortBy(0).fromPairs().value();
+export const sortObjKeys = <T extends Record<string, any>>(obj: T): T => {
+  return Object.fromEntries(
+    Object.entries(obj).sort(([a], [b]) => a.localeCompare(b))
+  ) as T;
+};
+
+export const merge = (target: any, ...sources: any[]): any => {
+  for (const src of sources) {
+    if (!src || typeof src !== "object") continue;
+    for (const [k, v] of Object.entries(src)) {
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        if (!target[k] || typeof target[k] !== "object" || Array.isArray(target[k])) {
+          target[k] = {};
+        }
+        merge(target[k], v);
+      } else {
+        target[k] = v;
+      }
+    }
+  }
+  return target;
 };
 
 export const sortPackageDeps = (pkg) => {

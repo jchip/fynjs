@@ -1,5 +1,4 @@
 import { getInfo, writePkgFile } from "./utils.js";
-import _ from "lodash";
 
 async function postInstall(): Promise<void> {
   // can't use process.cwd() because that's this package's installed dir
@@ -15,12 +14,13 @@ async function postInstall(): Promise<void> {
 
   const addScript = (name: string): void => {
     const script = `publish-util-${name.toLowerCase()}`;
-    const exist = _.get(pkg, `scripts.${name}`) as string | undefined;
+    const scripts = (pkg.scripts || (pkg.scripts = {})) as Record<string, string>;
+    const exist = scripts[name];
     if (!exist) {
       console.log(
         `adding ${name} script to your package.json with '${script}'`
       );
-      _.set(pkg, `scripts.${name}`, script);
+      scripts[name] = script;
     } else if (!exist.includes(script)) {
       console.warn(
         `You already have npm script '${name}' in your package.json, please add '${script}' to it.`

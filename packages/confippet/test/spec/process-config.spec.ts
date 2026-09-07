@@ -1,4 +1,3 @@
-import _ from "lodash";
 import fs from "fs";
 import { describe, it, expect, afterEach } from "vitest";
 import Confippet from "../../src/index.js";
@@ -31,7 +30,7 @@ describe("processConfig", () => {
       }
     };
 
-    const save = _.cloneDeep(config);
+    const save = structuredClone(config);
     Confippet.processConfig(config);
     expect(config).toEqual(save);
   });
@@ -119,9 +118,10 @@ describe("processConfig", () => {
   });
 
   it("should take extra context from options", () => {
-    const config = { greeting: "{{who}} says hi" };
-    Confippet.processConfig(config, { context: { who: "confippet" } });
+    const config = { greeting: "{{who}} says hi", where: "{{cwd}}" };
+    Confippet.processConfig(config, { context: { who: "confippet", cwd: process.cwd() } });
     expect(config.greeting).toBe("confippet says hi");
+    expect(config.where).toBe(process.cwd());
   });
 
   it("should throw error if readFile missing filename", () => {

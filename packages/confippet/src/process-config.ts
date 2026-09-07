@@ -1,5 +1,5 @@
-import _ from "lodash";
 import * as fs from "fs";
+import { getPath } from "./util.js";
 
 /** a config reference the templates asked for but the context could not supply */
 export type MissingRef = { path: string; value: any; tmpl: string };
@@ -10,12 +10,16 @@ const MAX_RUN = 20;
 function processObj(obj: any, data: any): void {
   const depthPath = data.depth.join(".");
 
-  _.each(obj, (v: any, k: any) => {
-    if (_.isObjectLike(v)) {
+  const entries: [string | number, any][] = Array.isArray(obj)
+    ? obj.map((v, k) => [k, v])
+    : Object.entries(obj);
+
+  for (const [k, v] of entries) {
+    if (v !== null && typeof v === "object") {
       data.depth.push(k);
       processObj(v, data);
       data.depth.pop();
-      return;
+      continue;
     }
 
     /**
@@ -29,12 +33,12 @@ function processObj(obj: any, data: any): void {
       const path = refs[0];
 
       if (path.startsWith("-")) {
-        return path.substr(1);
+        return path.slice(1);
       }
 
-      const x = _.get(data.context, path);
+      const x = getPath(data.context, path);
 
-      if (_.isFunction(x)) {
+      if (typeof x === "function") {
         return x({
           context: data.context,
           config: data.config,
@@ -42,27 +46,27 @@ function processObj(obj: any, data: any): void {
           key: k,
           value: v,
           tmpl,
-          params: _.drop(refs),
+          params: refs.slice(1),
           depthPath
         });
-      } else if (_.isUndefined(x)) {
+      } else if (x === undefined) {
         data.missing.push({ path: `${depthPath}.${k}`, value: v, tmpl });
         return "";
       } else {
-        const extras = _(refs).drop().map(resolve).value().join("");
+        const extras = refs.slice(1).map(resolve).join("");
         return `${x}${extras}`;
       }
     };
 
-    if (_.isString(v) && _.includes(v, "{{")) {
+    if (typeof v === "string" && v.includes("{{")) {
       obj[k] = v.replace(/\{\{([^}]+)}}/g, (_match: string, tmpl: string) => {
         const newV = resolve(tmpl);
         // a substitution that itself contains a template needs another pass
-        data.more += _.includes(newV, "{{") ? 1 : 0;
+        data.more += typeof newV === "string" && newV.includes("{{") ? 1 : 0;
         return newV;
       });
     }
-  });
+  }
 }
 
 /**
@@ -77,7 +81,7 @@ function processObj(obj: any, data: any): void {
  * @returns the references that could not be resolved
  */
 export function processConfig(config?: any, options?: any): MissingRef[] {
-  if (_.isEmpty(config)) {
+  if (!config || (typeof config === "object" && Object.keys(config).length === 0)) {
     return [];
   }
 
@@ -116,7 +120,13 @@ export function processConfig(config?: any, options?: any): MissingRef[] {
     }
   };
 
-  _.defaults(context, options.context);
+  if (options.context) {
+    for (const k of Object.keys(options.context)) {
+      if (context[k] === undefined) {
+        context[k] = options.context[k];
+      }
+    }
+  }
 
   const data = { config, context, options, more: 1, missing: [] as MissingRef[], depth: ["config"] };
 
@@ -132,3 +142,4 @@ export function processConfig(config?: any, options?: any): MissingRef[] {
 }
 
 export default processConfig;
+

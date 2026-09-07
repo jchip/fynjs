@@ -11,7 +11,26 @@ import {
   type RemoveSpec,
   type RenameSpec,
 } from "./utils.js";
-import _ from "lodash";
+function deepMerge<T extends Record<string, unknown>>(target: T, source: Record<string, unknown>): T {
+  for (const key of Object.keys(source)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+    const sVal = source[key];
+    const tVal = target[key];
+    if (
+      sVal &&
+      typeof sVal === "object" &&
+      !Array.isArray(sVal) &&
+      tVal &&
+      typeof tVal === "object" &&
+      !Array.isArray(tVal)
+    ) {
+      deepMerge(tVal as Record<string, unknown>, sVal as Record<string, unknown>);
+    } else {
+      target[key as keyof T] = sVal as any;
+    }
+  }
+  return target;
+}
 
 export interface PrePackConfig {
   rename?: RenameSpec;
@@ -37,7 +56,7 @@ export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig =
     const removed = Object.keys(pkg).filter(
       (k) => !keepStandardFields.includes(k)
     );
-    if (!_.isEmpty(removed)) {
+    if (removed.length > 0) {
       if (!config.silent) {
         console.log(
           "removed non-standard fields:",
@@ -50,13 +69,16 @@ export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig =
   }
 
   const scripts = pkg.scripts as Record<string, string> | undefined;
-  if (!_.get(pkg, "scripts.postpack") && config.autoPostPack !== false) {
+  if (!scripts?.postpack && config.autoPostPack !== false) {
     if (!config.silent) {
       console.log(
         "scripts.postpack missing, adding it.\n To skip this, set publishUtil.autoPostPack to false"
       );
     }
-    _.set(pkg, "scripts.postpack", "publish-util-postpack");
+    if (!pkg.scripts) {
+      pkg.scripts = {};
+    }
+    (pkg.scripts as Record<string, string>).postpack = "publish-util-postpack";
   }
 
   if (scripts?.prepack === "publish-util-prepack") {
@@ -64,7 +86,7 @@ export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig =
   }
 
   if (keepObj) {
-    _.merge(pkg, keepObj);
+    deepMerge(pkg, keepObj);
   }
 }
 

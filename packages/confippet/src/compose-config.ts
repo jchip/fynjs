@@ -1,6 +1,5 @@
 import * as Path from "path";
 import * as fs from "fs";
-import _ from "lodash";
 import assert from "assert";
 import defaultOpts from "./default-compose-opts.js";
 import providerTypes from "./provider-types.js";
@@ -31,7 +30,7 @@ function composeConfigDir(dir: string, data: any, options: any): any {
       })
       .filter(x => x);
 
-    if (_.isEmpty(found)) {
+    if (found.length === 0) {
       const msg =
         `Config provider ${key}: no file ${provider.name} of ` +
         `extensions ${exts} found in ${dir}`;
@@ -51,7 +50,7 @@ function composeConfigDir(dir: string, data: any, options: any): any {
   const filterOff = (filter: any) => {
     // if it's an array any element of the array is falsy => filtered off
     // otherwise if itself is falsy => filtered off
-    return _.isArray(filter) ? _.find(filter, x => !x) !== undefined : !filter;
+    return Array.isArray(filter) ? filter.some(x => !x) : !filter;
   };
 
   const isEnable = (p: any) => {
@@ -64,7 +63,7 @@ function composeConfigDir(dir: string, data: any, options: any): any {
     );
   };
 
-  const num = (x: any) => (_.isString(x) ? parseInt(x, 10) : x);
+  const num = (x: any) => (typeof x === "string" ? parseInt(x, 10) : x);
   // a provider with no usable order runs first
   const checkNaN = (x: any) => (isNaN(x) ? -1 : x);
   const order = (p: any) => checkNaN(num(p.order));

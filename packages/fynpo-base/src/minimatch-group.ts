@@ -1,5 +1,4 @@
 import { Minimatch, GLOBSTAR, type ParseReturnFiltered } from "minimatch";
-import _ from "lodash";
 
 /**
  * Remember the minimatch group info from a pattern
@@ -107,7 +106,7 @@ export function checkMmMatch(fullPath: string, patterns: Minimatch[]): false | M
   // other case v3's match of "dir/" is equivalent to matching "dir", so strip the trailing
   // slash to keep the v3 semantics.
   const path = fullPath.length > 1 && fullPath.endsWith("/") ? fullPath.slice(0, -1) : fullPath;
-  return !_.isEmpty(patterns) && patterns.find((patternMm) => patternMm.match(path));
+  return (patterns?.length ? patterns.find((patternMm) => patternMm.match(path)) : undefined) || false;
 }
 
 /**

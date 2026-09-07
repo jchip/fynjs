@@ -1,10 +1,10 @@
 import { filterScanDir, type ExtrasData } from "filter-scan-dir";
 import { Minimatch } from "minimatch";
-import _ from "lodash";
 import Fs from "fs";
 import Path from "path";
 import Crypto from "crypto";
 import { checkMmMatch, deconstructMM, unrollMmMatch } from "./minimatch-group.js";
+import { pick } from "./util.js";
 
 /**
  *
@@ -238,10 +238,10 @@ export async function processInput(
   const fileHashes = await hashFiles(cwd, files);
 
   const data = {
-    env: _.pick(process.env, input.includeEnv),
-    versions: _.pick(process.versions, input.includeVersions),
-    npmScripts: _.pick(
-      _.get(packageJson || (await readPackageJson(cwd)), "scripts"),
+    env: pick(process.env, input.includeEnv),
+    versions: pick(process.versions, input.includeVersions),
+    npmScripts: pick(
+      ((packageJson || (await readPackageJson(cwd))) as any)?.scripts,
       input.npmScripts
     ),
     fileHashes,
@@ -271,9 +271,9 @@ export async function processLifecycleInput(
   } = { input: {} }
 ) {
   packageJson = packageJson || (await readPackageJson(cwd));
-  const npmScripts = _.pick(_.get(packageJson, "scripts"), input.npmScripts);
+  const npmScripts = pick((packageJson as any)?.scripts, input.npmScripts);
 
-  if (_.isEmpty(npmScripts)) {
+  if (Object.keys(npmScripts).length === 0) {
     return {};
   }
 
@@ -323,7 +323,7 @@ export async function processOutput(
 
   let hash = "";
   let fileHashes = {};
-  const allFiles = _.uniq(files.concat(preFiles)).sort();
+  const allFiles = Array.from(new Set(files.concat(preFiles))).sort();
   let data = { inputHash, fileHashes };
 
   //

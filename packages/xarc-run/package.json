@@ -90,7 +90,6 @@
     "chalker": "^2.1.0",
     "insync": "^2.1.1",
     "jaro-winkler": "^0.2.8",
-    "lodash.foreach": "^4.5.0",
     "@fynjs/cli-args": "^1.1.0",
     "optional-require": "^2.1.0",
     "read-pkg-up": "^7.0.1",

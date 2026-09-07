@@ -3,7 +3,6 @@ import { processInput, processOutput } from "../src/caching.js";
 import npmPacklist from "npm-packlist";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";
-import _ from "lodash";
 
 describe("caching", function () {
   const getInput = async () => {
@@ -28,7 +27,7 @@ describe("caching", function () {
     const res = await getInput();
     const e = Date.now();
 
-    const r = _.uniq(res.files.map((f) => f.split("/")[0])).sort();
+    const r = Array.from(new Set(res.files.map((f) => f.split("/")[0]))).sort();
     expect(r).toStrictEqual(["package.json", "src"]);
 
     // console.log(res, "\n", e - b);
@@ -60,9 +59,11 @@ describe("caching", function () {
     });
     const e = Date.now();
     // console.log("output", output, "\n", e - b);
-    const outputFiles = _.groupBy(output.files, (x: string) =>
-      input.data.fileHashes[x] ? "both" : "output"
-    );
+    const outputFiles = output.files.reduce((acc: Record<string, string[]>, x: string) => {
+      const key = input.data.fileHashes[x] ? "both" : "output";
+      (acc[key] = acc[key] || []).push(x);
+      return acc;
+    }, {});
     // console.log("outputFiles", outputFiles);
   });
 });

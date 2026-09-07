@@ -1,12 +1,11 @@
 import Enquirer from "enquirer";
-import _ from "lodash";
 import Fs from "fs";
 import Path from "path";
 import semver from "semver";
 
 function sortObj(obj: any) {
-  const out = {};
-  const sortedKeys = Object.keys(obj)
+  const out: Record<string, any> = {};
+  Object.keys(obj)
     .sort()
     .forEach((x) => {
       out[x] = obj[x];
@@ -14,10 +13,27 @@ function sortObj(obj: any) {
   return out;
 }
 
-function mergeReplaceArray(objValue, srcValue) {
-  if (_.isArray(objValue)) {
-    return srcValue;
+export function safeDeepMerge<T extends Record<string, any>>(target: T, ...sources: any[]): T {
+  for (const source of sources) {
+    if (!source || typeof source !== "object") continue;
+    for (const key of Object.keys(source)) {
+      if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
+      const srcVal = source[key];
+      const tgtVal = target[key];
+      if (Array.isArray(srcVal)) {
+        target[key as keyof T] = [...srcVal] as any;
+      } else if (srcVal && typeof srcVal === "object") {
+        if (tgtVal && typeof tgtVal === "object" && !Array.isArray(tgtVal)) {
+          safeDeepMerge(tgtVal, srcVal);
+        } else {
+          target[key as keyof T] = safeDeepMerge({}, srcVal) as any;
+        }
+      } else if (srcVal !== undefined) {
+        target[key as keyof T] = srcVal;
+      }
+    }
   }
+  return target;
 }
 
 /**
@@ -136,7 +152,7 @@ async function enquireAnswers(base: any) {
       name: "main",
       initial: base.main,
       message: "main entry:",
-      skip: Boolean(_.get(base, "exports")),
+      skip: Boolean(base?.exports),
     },
 
     {
@@ -149,21 +165,21 @@ async function enquireAnswers(base: any) {
     {
       type: "input",
       name: "scripts.test",
-      initial: _.get(base, "scripts.test"),
+      initial: base?.scripts?.test,
       skip: true,
     },
 
     {
       type: "input",
       name: "repository.type",
-      initial: _.get(base, "repository.type"),
+      initial: base?.repository?.type,
       skip: true,
     },
 
     {
       type: "input",
       name: "repository.url",
-      initial: _.get(base, "repository.url"),
+      initial: base?.repository?.url,
       message: "git repository url:",
     },
 
@@ -206,7 +222,7 @@ async function enquireAnswers(base: any) {
       type: "sauto",
       name: "publishConfig.access",
       choices: ["public", "restricted"],
-      initial: _.get(base, "publishConfig.access"),
+      initial: base?.publishConfig?.access,
       message: "publish access",
       skip: () => {
         return !name.startsWith("@");
@@ -240,34 +256,37 @@ export async function generateNpmPackage(
   template: any = initialTemplate,
   exist: any = {}
 ) {
-  const base = _.mergeWith({}, template, exist, mergeReplaceArray);
+  const base = safeDeepMerge({}, template, exist);
 
   let answers: any;
   if (!yes) {
     answers = await enquireAnswers(base);
   } else {
-    answers = _.mergeWith({}, template, exist, mergeReplaceArray);
+    answers = safeDeepMerge({}, template, exist);
   }
 
   if (!answers.private) {
     delete answers.private;
   }
 
-  if (_.get(exist, "scripts")) {
+  if (exist?.scripts) {
     delete answers.scripts;
   }
 
-  if (_.get(exist, "exports")) {
+  if (exist?.exports) {
     delete answers.main;
   }
 
-  if (!answers.name.startsWith("@")) {
+  if (!answers.name?.startsWith("@")) {
     delete answers.publishConfig;
-  } else if (_.get(exist, "publishConfig")) {
-    answers.publishConfig = _.pick(answers.publishConfig, Object.keys(exist.publishConfig));
+  } else if (exist?.publishConfig) {
+    const allowed = new Set(Object.keys(exist.publishConfig));
+    answers.publishConfig = Object.fromEntries(
+      Object.entries(answers.publishConfig || {}).filter(([k]) => allowed.has(k))
+    );
   }
 
-  const finalData = _.mergeWith({}, exist, answers, mergeReplaceArray);
+  const finalData = safeDeepMerge({}, exist, answers);
 
   //
   // ensure order for basic fields

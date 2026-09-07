@@ -1,6 +1,25 @@
 import * as Path from "path";
 import { getPackInfo, metaFileOf, extractFromObj, removeFromObj, keepStandardFields, renameFromObj, writePkgFile, } from "./utils.js";
-import _ from "lodash";
+function deepMerge(target, source) {
+    for (const key of Object.keys(source)) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype")
+            continue;
+        const sVal = source[key];
+        const tVal = target[key];
+        if (sVal &&
+            typeof sVal === "object" &&
+            !Array.isArray(sVal) &&
+            tVal &&
+            typeof tVal === "object" &&
+            !Array.isArray(tVal)) {
+            deepMerge(tVal, sVal);
+        }
+        else {
+            target[key] = sVal;
+        }
+    }
+    return target;
+}
 export function prePackObj(pkg, config = {}) {
     renameFromObj(pkg, config.rename);
     const keepObj = config.keep && extractFromObj(pkg, config.keep);
@@ -10,7 +29,7 @@ export function prePackObj(pkg, config = {}) {
     delete pkg.publishUtil;
     if (config.removeExtraKeys !== false) {
         const removed = Object.keys(pkg).filter((k) => !keepStandardFields.includes(k));
-        if (!_.isEmpty(removed)) {
+        if (removed.length > 0) {
             if (!config.silent) {
                 console.log("removed non-standard fields:", removed.join(", "), "\n  To skip this, set publishUtil.removeExtraKeys to false");
             }
@@ -18,17 +37,20 @@ export function prePackObj(pkg, config = {}) {
         }
     }
     const scripts = pkg.scripts;
-    if (!_.get(pkg, "scripts.postpack") && config.autoPostPack !== false) {
+    if (!(scripts === null || scripts === void 0 ? void 0 : scripts.postpack) && config.autoPostPack !== false) {
         if (!config.silent) {
             console.log("scripts.postpack missing, adding it.\n To skip this, set publishUtil.autoPostPack to false");
         }
-        _.set(pkg, "scripts.postpack", "publish-util-postpack");
+        if (!pkg.scripts) {
+            pkg.scripts = {};
+        }
+        pkg.scripts.postpack = "publish-util-postpack";
     }
     if ((scripts === null || scripts === void 0 ? void 0 : scripts.prepack) === "publish-util-prepack") {
         delete scripts.prepack;
     }
     if (keepObj) {
-        _.merge(pkg, keepObj);
+        deepMerge(pkg, keepObj);
     }
 }
 export async function prePack() {

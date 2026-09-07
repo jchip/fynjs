@@ -1,4 +1,3 @@
-import each from "lodash.foreach";
 import assert from "assert";
 
 class NSOrder {
@@ -37,22 +36,24 @@ class NSOrder {
     overrideMap.others = overrideMap.others.concat(overrides);
 
     // do a first level circular check
-    each(this._overrides, (ov, ns) => {
-      if (ns !== name && overrideMap.others.indexOf(ns) >= 0 && ov.others.indexOf(name) >= 0) {
+    for (const [ns, ov] of Object.entries(this._overrides)) {
+      if (ns !== name && overrideMap.others.indexOf(ns) >= 0 && (ov as any).others.indexOf(name) >= 0) {
         throw new Error(`circular namespace override between '${name}' and '${ns}'`);
       }
-    });
+    }
 
     // reset all values
-    each(this._overrides, v => (v.value = v.initValue));
+    for (const v of Object.values<any>(this._overrides)) {
+      v.value = v.initValue;
+    }
 
     // assign value base on override map
     let done;
     let n = 0;
     do {
       done = true;
-      each(this._overrides, ov => {
-        if (ov.others.length === 0) return;
+      for (const ov of Object.values<any>(this._overrides)) {
+        if (ov.others.length === 0) continue;
         const max = ov.others.reduce(
           (max, oname) =>
             Math.max((this._overrides[oname] && this._overrides[oname].value) || 0, max),
@@ -62,7 +63,7 @@ class NSOrder {
           done = false;
           ov.value = 1 + max;
         }
-      });
+      }
       n++;
       assert(
         n < 10,

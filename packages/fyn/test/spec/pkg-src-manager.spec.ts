@@ -3,7 +3,6 @@ import Fs from "fs";
 import Http from "http";
 import * as Yaml from "js-yaml";
 import Path from "path";
-import _ from "lodash";
 import xsh from "xsh";
 import cacache from "cacache";
 import Fyn from "../../lib/fyn";

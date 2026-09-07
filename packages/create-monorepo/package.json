@@ -43,7 +43,6 @@
   },
   "dependencies": {
     "chalker": "^2.1.0",
-    "lodash": "^4.17.21",
     "@fynjs/cli-args": "^1.1.0",
     "prompts": "^2.4.1",
     "shelljs": "^0.10.0",

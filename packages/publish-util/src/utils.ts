@@ -2,7 +2,6 @@ import * as Fs from "fs/promises";
 import * as Os from "os";
 import * as Path from "path";
 import { findUp } from "find-up";
-import _ from "lodash";
 
 export interface PackageInfo {
   pkgDir: string;
@@ -216,15 +215,68 @@ function deleteFields(f: string, obj: Record<string, unknown>): void {
   delete obj[f];
 }
 
+export function getPath(obj: unknown, path: string | readonly string[]): unknown {
+  if (obj == null) return undefined;
+  const parts = typeof path === "string" ? path.split(".") : path;
+  let curr: any = obj;
+  for (const part of parts) {
+    if (curr == null) return undefined;
+    curr = curr[part];
+  }
+  return curr;
+}
+
+export function setPath(
+  obj: Record<string, unknown>,
+  path: string | readonly string[],
+  value: unknown
+): void {
+  if (obj == null) return;
+  const parts = typeof path === "string" ? path.split(".") : path;
+  if (parts.length === 0) return;
+  let curr: any = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (part === "__proto__" || part === "constructor" || part === "prototype") {
+      return;
+    }
+    if (curr[part] == null || typeof curr[part] !== "object") {
+      curr[part] = {};
+    }
+    curr = curr[part];
+  }
+  const lastPart = parts[parts.length - 1];
+  if (lastPart !== "__proto__" && lastPart !== "constructor" && lastPart !== "prototype") {
+    curr[lastPart] = value;
+  }
+}
+
+export function unsetPath(obj: Record<string, unknown>, path: string | readonly string[]): void {
+  if (obj == null) return;
+  const parts = typeof path === "string" ? path.split(".") : path;
+  if (parts.length === 0) return;
+  let curr: any = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (curr == null || typeof curr !== "object") {
+      return;
+    }
+    curr = curr[part];
+  }
+  if (curr != null && typeof curr === "object") {
+    delete curr[parts[parts.length - 1]];
+  }
+}
+
 export type RenameSpec = Record<string, string | string[]>;
 
 export function renameFromObj(obj: Record<string, unknown>, rename?: RenameSpec): void {
   if (rename) {
     for (const key in rename) {
-      const data = _.get(obj, key);
+      const data = getPath(obj, key);
       if (data !== undefined && rename[key]) {
-        _.unset(obj, key);
-        _.set(obj, rename[key], data);
+        unsetPath(obj, key);
+        setPath(obj, rename[key], data);
       }
     }
   }

@@ -1,4 +1,3 @@
-import _ from "lodash";
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from "vitest";
 import presetConfig from "../../src/preset-config.js";
 import Confippet from "../../src/index.js";
@@ -95,7 +94,7 @@ describe("preset-config", () => {
     process.env.NODE_APP_INSTANCE = "0";
     process.env.NODE_ENV = "production";
     presetConfig.autoLoad(config);
-    const prodResult: any = _.cloneDeep(result);
+    const prodResult: any = structuredClone(result);
     prodResult.deployment = "prod";
     prodResult.arr = ["prod", 1, "2"];
     expect({ ...config }).toEqual(prodResult);
@@ -108,7 +107,7 @@ describe("preset-config", () => {
     process.env.NODE_APP_INSTANCE = "0";
     process.env.NODE_ENV = "production";
     presetConfig.autoLoad(config);
-    const prodResult: any = _.cloneDeep(result);
+    const prodResult: any = structuredClone(result);
     prodResult.default1 = "json";
     prodResult.deployment = "prod";
     prodResult.deployment1 = "production";
