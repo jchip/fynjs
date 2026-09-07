@@ -23,8 +23,8 @@ describe("munchy", function () {
   });
 
   it("should drain fs read stream, string, and buffer", async () => {
-    const fooPath = Path.resolve(__dirname, "../fixtures/foo.txt");
-    const barPath = Path.resolve(__dirname, "../fixtures/bar.txt");
+    const fooPath = Path.resolve(import.meta.dirname, "../fixtures/foo.txt");
+    const barPath = Path.resolve(import.meta.dirname, "../fixtures/bar.txt");
 
     const munchy = new Munchy(
       {},
@@ -119,8 +119,8 @@ describe("munchy", function () {
   });
 
   it("should reset sources if they are all drained", async () => {
-    const fooPath = Path.resolve(__dirname, "../fixtures/foo.txt");
-    const barPath = Path.resolve(__dirname, "../fixtures/bar.txt");
+    const fooPath = Path.resolve(import.meta.dirname, "../fixtures/foo.txt");
+    const barPath = Path.resolve(import.meta.dirname, "../fixtures/bar.txt");
 
     const foo = fs.createReadStream(fooPath);
     const bar = fs.createReadStream(barPath);

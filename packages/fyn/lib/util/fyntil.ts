@@ -4,8 +4,7 @@ import * as _ from "lodash-es";
 import Path from "path";
 import logger from "../logger";
 import type { NativePromise } from "../types/native-promise";
-import type { PipelineOptions } from "node:stream";
-import { pipeline } from "stream/promises";
+import { pipeline, type PipelineOptions } from "stream/promises";
 import { PACKAGE_RAW_INFO } from "../symbols";
 import { PACKAGE_FYN_JSON } from "../constants";
 import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
@@ -50,7 +49,7 @@ export const missPipe = (
     NodeJS.WritableStream,
     ...(NodeJS.ReadWriteStream | NodeJS.WritableStream | PipelineOptions)[]
   ]
-): NativePromise<void> => pipeline(...streams);
+): NativePromise<void> => (pipeline as any)(...streams);
 
 const DIR_SYMLINK_TYPE: "junction" | "dir" = isWin32 ? "junction" : "dir";
 
