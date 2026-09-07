@@ -1,12 +1,12 @@
 import logger from "../lib/logger.js";
 import chalk from "../lib/chalk.js";
-import readPkgUp from "read-pkg-up";
+import { readPackageUpSync } from "read-package-up";
 import myPkg from "../lib/my-pkg.js";
 import config from "./config.js";
 import env from "./env.js";
 
 export default (xrun, options) => {
-  const readPkg = readPkgUp.sync();
+  const readPkg = readPackageUpSync();
 
   if (!readPkg) {
     return;

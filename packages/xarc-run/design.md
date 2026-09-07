@@ -488,7 +488,7 @@ load({
 - **unwrap-npm-cmd**: npm command processing and normalization
 - **chalk/chalker**: Terminal output formatting and colors
 - **optional-require**: Safe module loading for provider packages
-- **read-pkg-up**: Package.json discovery and parsing
+- **read-package-up**: Package.json discovery and parsing
 
 ### Supported Environments
 
