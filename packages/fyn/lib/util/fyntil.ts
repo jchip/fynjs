@@ -20,7 +20,7 @@ const missPipe = (
 ): NativePromise<void> => pipeline(...streams);
 import { PACKAGE_RAW_INFO } from "../symbols";
 import { PACKAGE_FYN_JSON } from "../constants";
-import { FynpoConfigManager, FynpoDepGraph } from "@fynpo/base";
+import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
 
 
 import { isWin32, retry } from "./base-util";
@@ -70,11 +70,6 @@ const checkValueSatisfyRules = (inRules, userValue) => {
   // finally not satisfies
   return false;
 };
-
-/**
- * If system path sep is not /, then convert a path to use /.
- */
-const posixify = Path.sep === "/" ? x => x : x => x.replace(/\\/g, "/");
 
 const fyntil = {
   isWin32,

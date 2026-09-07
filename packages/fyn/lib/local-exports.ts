@@ -3,14 +3,12 @@ import Path from "path";
 import Fs from "./util/file-ops";
 import fynTil from "./util/fyntil";
 import { getUrlType } from "./util/lifecycle-script-policy";
-
+import { posixify } from "@fynpo/base";
 
 const DEFAULT_ROOT_DIR = "_fyn";
 const MANIFEST_FILE = ".fyn-local-exports.json";
 const MANIFEST_VERSION = 1;
 const SAFE_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
-
-const posixify = value => value.split(Path.sep).join("/");
 
 const rootOfEntry = entry => entry.root || DEFAULT_ROOT_DIR;
 
