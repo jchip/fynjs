@@ -5,6 +5,7 @@ import { spawnSync } from "child_process";
 
 const pkgDir = Path.join(import.meta.dirname, "../../..");
 const binFile = Path.join(pkgDir, "bin/xrun.js");
+const qbinFile = Path.join(pkgDir, "bin/qrun.js");
 import { version as version } from "../../../package.json" with { type: "json" };
 
 //
@@ -158,6 +159,46 @@ describe("bin/xrun.js cli resolution", function () {
         expect(res.status, res.output).toBe(0);
         expect(res.output).toContain(`tla from ${label}`);
       });
+    });
+  });
+
+  //
+  // qrun sets XRUN_QUIET and then loads xrun. A static import would be hoisted above the
+  // assignment and xrun's top-level await would have already run, leaving qrun no quieter than
+  // xrun - which is exactly what shipped in 1.1.0. Only a real process shows the difference.
+  //
+  describe("bin/qrun.js", () => {
+    const runQuiet = (cwd, task) => {
+      const res = spawnSync(process.execPath, [qbinFile, task], {
+        cwd,
+        encoding: "utf8",
+        env: cleanEnv()
+      });
+      return { ...res, output: `${res.stdout}${res.stderr}` };
+    };
+
+    beforeEach(() => {
+      Fs.writeFileSync(
+        Path.join(tmpDir, "package.json"),
+        JSON.stringify({ name: "qrun-fixture", version: "1.0.0" })
+      );
+      Fs.writeFileSync(
+        Path.join(tmpDir, "xrun-tasks.mjs"),
+        `export default xrun => { xrun.load({ hello: () => console.log("hi from qrun") }); };\n`
+      );
+    });
+
+    it("should suppress the logs xrun emits, but still run the task", () => {
+      const loud = runTask(tmpDir, "hello");
+      const quiet = runQuiet(tmpDir, "hello");
+
+      expect(quiet.status, quiet.output).toBe(0);
+      expect(quiet.output).toContain("hi from qrun");
+
+      // xrun announces itself; qrun must not
+      expect(loud.output).toContain("@fynjs/run version");
+      expect(quiet.output).not.toContain("@fynjs/run version");
+      expect(quiet.output.trim().split("\n")).toHaveLength(1);
     });
   });
 
