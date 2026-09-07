@@ -53,6 +53,8 @@ Your `package.json` published:
 }
 ```
 
+`devDependencies` is gone here only because `publishUtil.remove` asks for it - by default it's kept.
+
 ## Usage
 
 Just install this to your module:
@@ -61,7 +63,7 @@ Just install this to your module:
 
 It will automatically add `prepack` and `postpack` scripts to your package.json for you.
 
-Out of the box it will clean up non-standard fields plus `workspaces` and `devDependencies` from your `package.json`. To keep `devDependencies`, see [details below](#removing-non-standard-fields)
+Out of the box it will clean up non-standard fields plus `workspaces` from your `package.json`. The dependency fields, including `devDependencies`, are kept because npmjs.com uses them to show what your package depends on. To remove `devDependencies`, see [details below](#removing-non-standard-fields)
 
 ## Publishing
 
@@ -140,7 +142,7 @@ For example, to reach `pkg.key1.key2`, and `pkg.key1.xyz*`:
 
 These top level fields are considered standard fields:
 
-- all top level fields defined at [npm package.json](https://docs.npmjs.com/cli/v7/configuring-npm/package-json), except `workspaces` and `devDependencies`
+- all top level fields defined at [npm package.json](https://docs.npmjs.com/cli/v7/configuring-npm/package-json), except `workspaces`
 - And these fields: `module`
 
 Any extra top level fields not in the standard fields are automatically removed.
@@ -148,12 +150,12 @@ Any extra top level fields not in the standard fields are automatically removed.
 - To skip this automatic removal, set `publishUtil.removeExtraKeys` to `false`.
 - You can also add fields to `publishUtil.keep` to avoid them being removed.
 
-For example, to keep `devDependencies`:
+`devDependencies` is a standard field so it's kept. To drop it from your published `package.json`, list it in `publishUtil.remove`:
 
 ```json
 {
   "publishUtil": {
-    "keep": ["devDependencies"]
+    "remove": ["devDependencies"]
   }
 }
 ```

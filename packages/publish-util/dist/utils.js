@@ -239,7 +239,8 @@ export const keepStandardFields = [
     "scripts",
     "config",
     "dependencies",
-    // "devDependencies",
+    // kept so npmjs.com can show what the package depends on for development
+    "devDependencies",
     "peerDependencies",
     "peerDependenciesMeta",
     "bundledDependencies",
