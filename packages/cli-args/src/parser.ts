@@ -3,7 +3,6 @@ import { NixClap } from "./nix-clap.js";
 import { ClapNodeGenerator } from "./node-generator.js";
 import { CommandNode } from "./command-node.js";
 import { CommandBase } from "./command-base.js";
-import { _NEXT, _PREV } from "./symbols.js";
 
 
 /**
@@ -45,14 +44,6 @@ export class Parser {
    * @private
    */
   private _argv: string[];
-  /**
-   * A private array of ClapNode objects that represents the list of nodes
-   * managed by the parser.
-   *
-   * @private
-   * @type {ClapNode[]}
-   */
-  private _nodeList: ClapNode[];
 
   /**
    * Creates an instance of the parser.
@@ -61,7 +52,6 @@ export class Parser {
    */
   constructor(nc: NixClap) {
     this._nc = nc;
-    this._nodeList = [];
   }
 
   /**
@@ -69,33 +59,6 @@ export class Parser {
    * This stack helps in managing nested command structures and ensures that the correct hierarchy is maintained.
    */
   private _builderStack: ClapNodeGenerator[];
-
-  /**
-   * Adds a node to the list of nodes. If the list is not empty, it sets the
-   * previous node's `_next` property to the current node and the current node's
-   * `_prev` property to the previous node.
-   *
-   * @param node - The node to be added to the list.
-   */
-  private _addNodeToList(node: ClapNode) {
-    if (this._nodeList.length > 0) {
-      const l = this._nodeList.at(-1);
-      Object.defineProperty(node, _PREV, {
-        value: l,
-        configurable: true,
-        enumerable: false,
-        writable: true
-      });
-      Object.defineProperty(l, _NEXT, {
-        value: node,
-        configurable: true,
-        enumerable: false,
-        writable: true
-      });
-    }
-
-    this._nodeList.push(node);
-  }
 
   /**
    * Consumes the next argument and processes it using the current builder.
@@ -124,11 +87,8 @@ export class Parser {
         if (this._builderStack.length > 1) {
           this._builderStack.pop();
         }
-      } else {
-        this._addNodeToList(_builder.node);
-        if (!_builder.isComplete) {
-          this._builderStack.push(_builder);
-        }
+      } else if (!_builder.isComplete) {
+        this._builderStack.push(_builder);
       }
     }
   }
@@ -231,8 +191,6 @@ export class Parser {
         this._nc._rootCommand
       );
 
-    this._addNodeToList(rootNode);
-
     let _index = start;
 
     // Preprocess: check if there are any non-option arguments
@@ -289,7 +247,6 @@ export class Parser {
         const defaultCmdNode = new CommandNode(matched.name, matched.alias, matched.cmd);
         defaultCmdNode.applyDefaults();
         rootNode.addCommandNode(defaultCmdNode);
-        this._addNodeToList(defaultCmdNode);
         // Start parsing under the default command, with root as parent
         // This allows root options to be checked when they don't match default command
         const rootBuilder = new ClapNodeGenerator(rootNode);

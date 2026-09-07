@@ -127,11 +127,9 @@ export class TopoRunner {
         },
         done: () => {
           this._totalTime = Date.now() - start;
-          // return this.restorePkgJson();
         },
         failItem: (data) => {
           this._errors.push(data);
-          // this.restorePkgJson();
         },
       },
     });

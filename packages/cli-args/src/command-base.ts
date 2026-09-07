@@ -120,18 +120,15 @@ export class CommandBase extends CliBase<CommandSpec> {
     this.ncConfig = ncConfig;
 
     specCopy.alias = [].concat(specCopy.alias || []);
-    specCopy.desc = specCopy.desc;
     this.options = new Options(specCopy.options, this);
     this.needArgs = 0;
     this.expectArgs = 0;
     this.processArgs();
-    // let count = 0;
     if (specCopy.subCommands) {
       for (const subName in specCopy.subCommands) {
         const subSpec = specCopy.subCommands[subName];
         this.subCmdCount++;
         this.subCmdsBase[subName] = new CommandBase(subName, subSpec, this.ncConfig, this);
-        // count++;
         if (subSpec.exec) {
           this.execCount++;
         }

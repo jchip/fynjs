@@ -1,20 +1,6 @@
 import { type BaseSpec, CliBase } from "./base.js";
 import { dup, prefixOption } from "./xtil.js";
 
-export const SUPPORT_TYPES = ["count", "string", "number", "float", "boolean"];
-export const OPTION_FIELDS = {
-  alias: ["string", "array"],
-  type: ["string"],
-  desc: ["string", "function"],
-  describe: ["string", "function"],
-  description: ["string", "function"],
-  default: [],
-  require: ["boolean"],
-  requireArg: ["boolean"],
-  allowCmd: ["array"],
-  customTypes: ["object"]
-};
-
 /**
  * Option Spec
  */
@@ -29,16 +15,6 @@ export interface OptionSpec extends BaseSpec {
   // shortFlag?: string;
   // longFlag?: string;
 }
-
-/**
- *
- */
-// export type OptionData = {
-//   name: string;
-//   value: string;
-//   verbatim: string;
-//   dashes: number;
-// };
 
 /**
  * The class to represent an CLI Option from the specification of an option

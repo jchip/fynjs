@@ -1795,21 +1795,10 @@ class Fyn {
 
   async createSubNodeModulesDir(dir: string): Promise<string> {
     const nmDir = Path.join(dir, "node_modules");
-    // const fynIgnoreFile = Path.join(nmDir, FYN_IGNORE_FILE);
-
-    // let ignoreExist = false;
 
     if (!(await Fs.exists(nmDir))) {
       await Fs.$.mkdirp(nmDir);
-    } else {
-      // ignoreExist = await Fs.exists(fynIgnoreFile);
     }
-
-    // if (ignoreExist && !this.flatMeta) {
-    //   await Fs.unlink(fynIgnoreFile);
-    // } else if (!ignoreExist && this.flatMeta) {
-    //   await Fs.writeFile(fynIgnoreFile, "");
-    // }
 
     return nmDir;
   }

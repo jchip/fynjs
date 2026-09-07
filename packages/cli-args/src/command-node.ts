@@ -234,10 +234,6 @@ export class CommandNode extends ClapNode {
    *
    */
   applyDefaults(): void {
-    for (const optName in this.optNodes) {
-      this.optNodes[optName].applyDefaults();
-    }
-
     const options = this.cmdBase.options._options;
     // for any option that was not specified in command line or config, if it has argDefault then add it
     for (const optName in options) {

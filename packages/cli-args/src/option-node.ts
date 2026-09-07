@@ -30,11 +30,4 @@ export class OptionNode extends ClapNode {
     }
     this.option = data.option || optUnknown;
   }
-
-  applyDefaults(): void {
-    const spec = this.option.spec;
-    if (!spec.argDefault) {
-      return;
-    }
-  }
 }

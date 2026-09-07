@@ -325,12 +325,7 @@ export class ClapNodeGenerator {
      * 1a. A valid subcommand for a parent
      * 2. A valid argument for a node (either command or option)
      * 3. Unknown command and invalid argument
-     *
      */
-    // does current node want sub command?
-    // if (this.commandContext) {
-    //   const cmd = this.commandContext[CMD];
-    // }
 
     if (this.cmdNode) {
       if (this.cmdNode.isGreedy) {
@@ -627,26 +622,10 @@ export class ClapNodeGenerator {
     }
   }
 
-  /**
-   *
-   */
-  completeOpt() {}
-
-  /**
-   *
-   */
-  completeCmd() {}
-
   complete() {
     this.endArgGathering();
     if (this.status !== BUILDER_STATUS_COMPLETE) {
       this.status = BUILDER_STATUS_COMPLETE;
-      if (this.cmdNode) {
-        // this is a command node
-        this.completeCmd();
-      } else {
-        this.completeOpt();
-      }
     }
   }
 
