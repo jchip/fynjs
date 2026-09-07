@@ -6,7 +6,7 @@ import * as _ from "lodash-es";
 import { cosmiconfigSync } from "cosmiconfig";
 import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
-import { FynpoDepGraph, type FynpoPackageInfo, type PackageBasicInfo, PackageRef, resolvePackagesConfig, makeGitignoreMatcher } from "@fynpo/base";
+import { FynpoDepGraph, type FynpoPackageInfo, type PackageBasicInfo, PackageRef, resolvePackagesConfig, makeGitignoreMatcher, writeJsonSync, readJsonSync } from "@fynpo/base";
 import os from "os";
 import { createRequire } from "node:module";
 import { startMetaMemoizer } from "./meta-memoizer.ts";
@@ -313,7 +313,7 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
     if (fileName === "lerna.json" && !data.config.fynpo) {
       logger.info("found lerna.json at", dir, "adding fynpo signature");
       fynpoRc = { ...data.config, fynpo: true };
-      Fs.writeFileSync(Path.join(dir, "lerna.json"), JSON.stringify(fynpoRc, null, 2) + "\n");
+      writeJsonSync(Path.join(dir, "lerna.json"), fynpoRc);
     } else {
       fynpoRc = data.config;
     }
@@ -338,7 +338,7 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
         changeLogMarkers: ["## Packages", "## Commits"],
         command: { publish: { tags: {}, versionTagging: {} } },
       };
-      Fs.writeFileSync(dest, `${JSON.stringify(fynpoRc, null, 2)}\n`);
+      writeJsonSync(dest, fynpoRc);
     }
   }
 
@@ -354,7 +354,7 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
 };
 
 export const getRootScripts = (cwd = process.cwd()) => {
-  const config = JSON.parse(Fs.readFileSync(Path.join(cwd, "package.json")).toString());
+  const config = readJsonSync<Record<string, any>>(Path.join(cwd, "package.json"));
   return config.scripts || {};
 };
 

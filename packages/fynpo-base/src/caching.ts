@@ -5,6 +5,7 @@ import Fs from "fs";
 import Path from "path";
 import Crypto from "crypto";
 import { checkMmMatch, deconstructMM, unrollMmMatch } from "./minimatch-group.js";
+import { readPkgJson } from "./util.js";
 
 /**
  *
@@ -142,14 +143,7 @@ async function hashFiles(
   return result;
 }
 
-/**
- *
- * @param cwd
- * @returns
- */
-async function readPackageJson(cwd: string) {
-  return JSON.parse(await Fs.promises.readFile(Path.join(cwd, "package.json"), "utf-8"));
-}
+
 
 /**
  * Convert minimatch string patterns to Minimatch instances
@@ -241,7 +235,7 @@ export async function processInput(
     env: pick(process.env, input.includeEnv),
     versions: pick(process.versions, input.includeVersions),
     npmScripts: pick(
-      get(packageJson || (await readPackageJson(cwd)), "scripts"),
+      get(packageJson || (await readPkgJson(cwd)), "scripts"),
       input.npmScripts
     ),
     fileHashes,
@@ -270,7 +264,7 @@ export async function processLifecycleInput(
     packageJson?: Record<string, string | unknown>;
   } = { input: {} }
 ) {
-  packageJson = packageJson || (await readPackageJson(cwd));
+  packageJson = packageJson || (await readPkgJson(cwd));
   const npmScripts = pick(get(packageJson, "scripts"), input.npmScripts);
 
   if (isEmpty(npmScripts)) {

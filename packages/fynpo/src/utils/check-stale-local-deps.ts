@@ -23,6 +23,7 @@
 import Fs from "fs";
 import Path from "path";
 import type { PackageDepData } from "@fynpo/base";
+import { readJsonSync } from "@fynpo/base";
 
 /**
  * Manifest fields a consumer actually resolves against.
@@ -241,7 +242,7 @@ export function diffInstalledFiles(srcDir: string, copyDir: string, limit = 3): 
 
 const readJson = (file: string): Record<string, any> | undefined => {
   try {
-    return JSON.parse(Fs.readFileSync(file, "utf8"));
+    return readJsonSync(file);
   } catch {
     // an unreadable or half-written manifest is not something to fail a run over - this is a
     // diagnostic, so stay quiet and let the real command report whatever goes wrong downstream

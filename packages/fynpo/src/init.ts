@@ -7,6 +7,7 @@ import * as utils from "./utils.ts";
 import * as _ from "lodash-es";
 import chalk from "chalk";
 import { optionalRequire } from "optional-require";
+import { writeJsonSync } from "@fynpo/base";
 
 export class Init {
   _cwd;
@@ -79,10 +80,7 @@ export class Init {
         };
       }
 
-      fs.writeFileSync(
-        Path.join(this._cwd, "package.json"),
-        `${JSON.stringify(rootPkg, null, 2)}\n`
-      );
+      writeJsonSync(Path.join(this._cwd, "package.json"), rootPkg);
       logger.info(`Updated package.json at ${this._cwd}. Please commit it.`);
     }
   };

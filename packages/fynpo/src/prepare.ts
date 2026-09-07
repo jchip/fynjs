@@ -1,5 +1,6 @@
 
 import Fs from "fs";
+import { writeJsonSync } from "@fynpo/base";
 import Path from "path";
 import * as _ from "lodash-es";
 import { execShell } from "./utils/exec-shell.ts";
@@ -237,10 +238,7 @@ export class Prepare {
     // all updated, write to disk. FynpoPackageInfo carries no `pkgFile`, so compose it from
     // `path` the same way utils/update-package-versions.ts does (FJM-25).
     _.each(this._packages, (pkg) => {
-      Fs.writeFileSync(
-        Path.join(this._cwd, pkg.path, "package.json"),
-        `${JSON.stringify(pkg.pkgJson, null, 2)}\n`
-      );
+      writeJsonSync(Path.join(this._cwd, pkg.path, "package.json"), pkg.pkgJson);
     });
 
     const { committed, tagged } = await this.commitAndTagUpdates(packages);

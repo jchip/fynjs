@@ -1,6 +1,7 @@
 import * as _ from "lodash-es";
 import Path from "path";
 import Fs from "fs";
+import { writeJsonSync } from "@fynpo/base";
 import Chalk from "chalk";
 import assert from "assert";
 import semver from "semver";
@@ -176,10 +177,7 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
 
   // all updated, write to disk
   updated.forEach((pkg) => {
-    Fs.writeFileSync(
-      Path.join(cwd, pkg.path, "package.json"),
-      `${JSON.stringify(pkg.pkgJson, null, 2)}\n`
-    );
+    writeJsonSync(Path.join(cwd, pkg.path, "package.json"), pkg.pkgJson);
   });
 
   return Promise.resolve({ packages, tags });

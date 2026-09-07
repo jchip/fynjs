@@ -11,17 +11,17 @@ vi.mock("../src/logger", () => ({
 }));
 
 import { updatePackageVersions } from "../src/utils/update-package-versions";
-import { FynpoDepGraph } from "@fynpo/base";
+import { FynpoDepGraph, writeJsonSync, readJsonSync } from "@fynpo/base";
 import path from "path";
 import fs from "fs";
 import os from "os";
 
 const writeJson = (file: string, obj: any) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, `${JSON.stringify(obj, null, 2)}\n`);
+  writeJsonSync(file, obj);
 };
 
-const readJson = (file: string) => JSON.parse(fs.readFileSync(file, "utf-8"));
+const readJson = (file: string) => readJsonSync<Record<string, any>>(file);
 
 describe("updatePackageVersions", () => {
   let cwd: string;

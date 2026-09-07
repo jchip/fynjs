@@ -1,5 +1,6 @@
 import Fs from "fs";
 import Path from "path";
+import { readJson } from "./util.js";
 
 import { makeOptionalImport } from "optional-import";
 
@@ -65,8 +66,7 @@ export class FynpoConfigManager {
 
   private async readJson(file: string) {
     try {
-      const data = await Fs.promises.readFile(file, "utf8");
-      return JSON.parse(data);
+      return await readJson(file);
     } catch (err) {
       if (err.code !== "ENOENT") {
         const msg = `Failed to read JSON file ${file} - ${err.message}`;

@@ -8,7 +8,7 @@ import * as utils from "./utils.ts";
 import * as _ from "lodash-es";
 import fyn from "fyn/bin/index.mjs";
 import shell from "shelljs";
-import { FynpoDepGraph, type FynpoPackageInfo } from "@fynpo/base";
+import { FynpoDepGraph, type FynpoPackageInfo, readPkgJson } from "@fynpo/base";
 import { TopoRunner } from "./topo-runner.ts";
 import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps.ts";
 import {
@@ -400,9 +400,7 @@ export default class Publish {
     this.checkStaleLocalDeps();
 
     try {
-      const fynpoPkgJson = JSON.parse(
-        await Fs.promises.readFile(Path.join(this._cwd, "package.json"), "utf-8")
-      );
+      const fynpoPkgJson = await readPkgJson(this._cwd);
       await this.runScript(
         {
           name: fynpoPkgJson.name,
