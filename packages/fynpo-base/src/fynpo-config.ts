@@ -124,6 +124,27 @@ export class FynpoConfigManager {
     return err?.code === "ENOENT";
   }
 
+  /**
+   * A JS config is code, so it can fail two ways: it isn't there (keep searching) or it ran and
+   * threw (the user's bug, in their file). `optionalImport` already tells these apart by
+   * returning the fallback for the first, so anything thrown here is the second.
+   */
+  private async importJsConfig(file: string) {
+    try {
+      return await optionalImport(file, { default: undefined });
+    } catch (err: any) {
+      throw new FynpoConfigError(file, err.message, err);
+    }
+  }
+
+  private importJsConfigSync(file: string) {
+    try {
+      return xrequire(file);
+    } catch (err: any) {
+      throw new FynpoConfigError(file, err.message, err);
+    }
+  }
+
   private readJsonSync(file: string) {
     try {
       return readJsonSync(file);
@@ -143,9 +164,7 @@ export class FynpoConfigManager {
     this._topDir = Path.dirname(fullPath);
 
     if (fullPath.endsWith(".js") || fullPath.endsWith(".cjs") || fullPath.endsWith(".mjs")) {
-      const configMod = await optionalImport(fullPath, {
-        default: undefined,
-      });
+      const configMod = await this.importJsConfig(fullPath);
       if (configMod) {
         this._config = configMod.default ?? configMod;
         this._type = "fynpo monorepo";
@@ -164,13 +183,9 @@ export class FynpoConfigManager {
 
     if (fullPath.endsWith(".js") || fullPath.endsWith(".cjs") || fullPath.endsWith(".mjs")) {
       if (Fs.existsSync(fullPath)) {
-        try {
-          const configMod = xrequire(fullPath);
-          this._config = configMod?.default ?? configMod;
-          this._type = "fynpo monorepo";
-        } catch (err: any) {
-          throw new Error(`Failed to load ${fullPath} - ${err.message}`);
-        }
+        const configMod = this.importJsConfigSync(fullPath);
+        this._config = configMod?.default ?? configMod;
+        this._type = "fynpo monorepo";
       }
     } else {
       this._config = this.readJsonSync(fullPath);
@@ -190,9 +205,7 @@ export class FynpoConfigManager {
       }
 
       const jsPath = Path.join(dir, "fynpo.config.js");
-      const configMod = await optionalImport(jsPath, {
-        default: undefined,
-      });
+      const configMod = await this.importJsConfig(jsPath);
 
       if (configMod) {
         // a CJS config's `module.exports`, or an ESM config's `export default`, is on `.default`
@@ -264,16 +277,12 @@ export class FynpoConfigManager {
 
       const jsPath = Path.join(dir, "fynpo.config.js");
       if (Fs.existsSync(jsPath)) {
-        try {
-          const configMod = xrequire(jsPath);
-          this._config = configMod?.default ?? configMod;
-          this._fileName = "fynpo.config.js";
-          this._filePath = jsPath;
-          this._type = "fynpo monorepo";
-          break;
-        } catch (err: any) {
-          throw new Error(`Failed to load ${jsPath} - ${err.message}`);
-        }
+        const configMod = this.importJsConfigSync(jsPath);
+        this._config = configMod?.default ?? configMod;
+        this._fileName = "fynpo.config.js";
+        this._filePath = jsPath;
+        this._type = "fynpo monorepo";
+        break;
       } else {
         const cfgJson = Path.join(dir, "fynpo.config.json");
         if (Fs.existsSync(cfgJson)) {

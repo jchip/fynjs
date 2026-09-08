@@ -18,14 +18,26 @@ export class FynpoConfigError extends Error {
   /** the config file that failed to parse */
   readonly filePath: string;
 
-  /** the underlying parse failure, without the `Failed to read ...` framing */
+  /** the underlying failure, without the `Failed to ...` framing */
   readonly reason: string;
 
-  constructor(filePath: string, reason: string) {
-    super(`Failed to read JSON file ${filePath} - ${reason}`);
+  /**
+   * Set when the config file is code that ran and threw - a `fynpo.config.js`. The user still
+   * needs the stack to find the throw inside their own config, so the banner keeps it. A JSON
+   * file has no code to blame and leaves this undefined, so its banner stays stack-free.
+   */
+  readonly cause?: Error;
+
+  constructor(filePath: string, reason: string, cause?: Error) {
+    super(
+      cause
+        ? `Failed to load ${filePath} - ${reason}`
+        : `Failed to read JSON file ${filePath} - ${reason}`
+    );
     this.name = "FynpoConfigError";
     this.filePath = filePath;
     this.reason = reason;
+    this.cause = cause;
   }
 }
 
@@ -40,20 +52,30 @@ export function isFynpoConfigError(err: unknown): err is FynpoConfigError {
 export function formatFynpoConfigError(err: FynpoConfigError, cmdName: string): string {
   const bar = "=".repeat(72);
 
-  return [
+  const head = [
     "",
     bar,
-    "  INVALID CONFIG FILE",
+    err.cause ? "  CONFIG FILE FAILED TO LOAD" : "  INVALID CONFIG FILE",
     "",
     `    file: ${err.filePath}`,
     `   error: ${err.reason}`,
     "",
-    `  ${cmdName} found this file while searching for a monorepo root, but it is`,
-    "  not valid JSON, so it cannot be used.",
-    "",
-    "  Fix the JSON, or remove the file if this directory is not meant to be a",
-    "  fynpo monorepo.",
-    bar,
-    "",
-  ].join("\n");
+  ];
+
+  const body = err.cause
+    ? [
+        `  ${cmdName} found this file while searching for a monorepo root, but running`,
+        "  it threw. The stack below points into the config itself.",
+        "",
+        ...(err.cause.stack || String(err.cause)).split("\n").map(line => `  ${line}`),
+      ]
+    : [
+        `  ${cmdName} found this file while searching for a monorepo root, but it is`,
+        "  not valid JSON, so it cannot be used.",
+        "",
+        "  Fix the JSON, or remove the file if this directory is not meant to be a",
+        "  fynpo monorepo.",
+      ];
+
+  return [...head, ...body, bar, ""].join("\n");
 }

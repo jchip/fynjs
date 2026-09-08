@@ -39,6 +39,26 @@ describe("reportFynpoConfigError", () => {
     expect(exit).toHaveBeenCalledWith(1);
   });
 
+  //
+  // A throwing fynpo.config.js still exits gracefully, but keeps the stack - it points into
+  // the user's own config file. - FJM-198
+  //
+  it("keeps the config's own stack when the config ran and threw", () => {
+    const cause = new Error("boom in config");
+    const err = new FynpoConfigError("/repo/fynpo.config.js", cause.message, cause);
+
+    reportFynpoConfigError(err);
+
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    const msg = warn.mock.calls[0][0];
+    expect(msg).toContain("CONFIG FILE FAILED TO LOAD");
+    expect(msg).toContain("fynpo found this file");
+    expect(msg).toContain(cause.stack.split("\n")[1].trim());
+
+    expect(exit).toHaveBeenCalledWith(1);
+  });
+
   it("rethrows anything else so bin/fynpo.js still reports it with a stack", () => {
     const err = new Error("something actually broke");
 

@@ -18,6 +18,14 @@ describe("FynpoConfigError", () => {
     expect(err).toBeInstanceOf(Error);
   });
 
+  it("should frame a config that ran and threw as a load failure, keeping the cause", () => {
+    const cause = new Error("boom in config");
+    const err = new FynpoConfigError("/repo/fynpo.config.js", cause.message, cause);
+
+    expect(err.cause).toBe(cause);
+    expect(err.message).toBe("Failed to load /repo/fynpo.config.js - boom in config");
+  });
+
   describe("isFynpoConfigError", () => {
     it("should identify the error by code, not instanceof", () => {
       // fyn and fynpo each bundle their own copy of this module, so an error crossing between
@@ -52,6 +60,39 @@ describe("FynpoConfigError", () => {
 
     it("should carry no stack trace", () => {
       expect(formatFynpoConfigError(err, "fyn")).not.toContain("at ");
+    });
+
+    //
+    // A JSON file has no code to blame, so its stack would only point into fyn. A config that
+    // ran and threw does - the user needs it to find the throw in their own file. - FJM-198
+    //
+    describe("when the config ran and threw", () => {
+      const cause = new Error("boom in config");
+      const loadErr = new FynpoConfigError("/repo/fynpo.config.js", cause.message, cause);
+
+      it("should show the cause's stack under a load-failure heading", () => {
+        const msg = formatFynpoConfigError(loadErr, "fyn");
+
+        expect(msg).toContain("CONFIG FILE FAILED TO LOAD");
+        expect(msg).not.toContain("INVALID CONFIG FILE");
+        expect(msg).toContain("/repo/fynpo.config.js");
+        expect(msg).toContain("boom in config");
+        expect(msg).toContain("config-error.test.ts");
+        expect(msg).toContain("The stack below points into the config itself");
+      });
+
+      it("should not tell the user to fix JSON", () => {
+        expect(formatFynpoConfigError(loadErr, "fyn")).not.toContain("not valid JSON");
+      });
+
+      it("should fall back to the cause's text when it has no stack", () => {
+        const bare = new FynpoConfigError("/repo/fynpo.config.js", "nope", {
+          message: "nope",
+          toString: () => "Error: nope",
+        } as Error);
+
+        expect(formatFynpoConfigError(bare, "fyn")).toContain("Error: nope");
+      });
     });
   });
 });

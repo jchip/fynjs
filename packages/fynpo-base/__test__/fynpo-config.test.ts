@@ -83,6 +83,40 @@ describe("FynpoConfigManager", () => {
   });
 
   //
+  // A throwing JS config is still the user's own mistake, so the CLIs report it the same
+  // graceful way - but it keeps its stack, since the throw is inside their file. - FJM-198
+  //
+  it("should throw a FynpoConfigError carrying the cause when fynpo.config.js throws", async () => {
+    const cwd = await dirWith({ "fynpo.config.js": `throw new Error("bad config");` });
+    const file = Path.join(cwd, "fynpo.config.js");
+
+    const err = await new FynpoConfigManager({ cwd }).load().then(
+      () => undefined,
+      (e: unknown) => e
+    );
+
+    expect(isFynpoConfigError(err)).toBe(true);
+    expect((err as FynpoConfigError).filePath).toBe(file);
+    expect((err as FynpoConfigError).cause).toBeInstanceOf(Error);
+    expect((err as FynpoConfigError).cause?.stack).toContain("fynpo.config.js");
+  });
+
+  it("should throw a FynpoConfigError carrying the cause from loadSync too", async () => {
+    const cwd = await dirWith({ "fynpo.config.js": `throw new Error("bad config");` });
+
+    let caught: unknown;
+    try {
+      new FynpoConfigManager({ cwd }).loadSync();
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(isFynpoConfigError(caught)).toBe(true);
+    expect((caught as FynpoConfigError).filePath).toBe(Path.join(cwd, "fynpo.config.js"));
+    expect((caught as FynpoConfigError).cause).toBeInstanceOf(Error);
+  });
+
+  //
   // A config file that exists but doesn't parse used to be swallowed and reported as "no
   // config found", which let callers go on to create a default over the user's file. It has
   // to surface as an error instead, and the file must be left alone. - B4
