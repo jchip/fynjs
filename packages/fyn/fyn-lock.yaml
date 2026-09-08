@@ -55,7 +55,7 @@ $pkg:
   vite: ^8.2.2
   vitest: ^5.0.0
   which: ^6.0.1
-  xstdout: ^0.1.1
+  xstdout: ../xstdout
 '@babel/code-frame':
  _latest: 8.0.0
  _:
@@ -3785,13 +3785,13 @@ xsh:
   dependencies:
    shelljs: ^0.10.0
 xstdout:
- _latest: 0.1.1
+ _latest: 1.0.0-fynlocal_h
  _:
-  ^0.1.1: 0.1.1
- 0.1.1:
+  ../xstdout: 1.0.0-fynlocal_h
+ 1.0.0-fynlocal_h:
   top: 1
-  $: sha512-LVXVwRTZUCQ3hqTL31T8+qKISGoH1Vv4G9VQiDtO49VEMODbUmYeZcw76MPK+Cgy+uRt+SIgFQz2FrrrVDUDCQ==
-  _: 'https://registry.npmjs.org/xstdout/-/xstdout-0.1.1.tgz'
+  $: local
+  _: ../xstdout
 yallist:
  _latest: 5.0.0
  _:

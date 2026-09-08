@@ -141,7 +141,7 @@
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
     "which": "^6.0.1",
-    "xstdout": "^0.1.1"
+    "xstdout": "^1.0.0"
   },
   "nyc": {
     "all": true,
