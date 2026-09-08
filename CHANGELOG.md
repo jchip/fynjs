@@ -1,3 +1,459 @@
+# 9/7/2026
+
+## Packages
+
+-   `@fynjs/cli-args@1.1.1` `(1.1.0 => 1.1.1)`
+-   `@fynjs/fetch@1.0.0` `(0.0.1 => 1.0.0)`
+-   `@fynjs/run@1.1.1` `(1.1.0 => 1.1.1)`
+-   `@fynjs/ts-resolve@1.0.1` `(1.0.0 => 1.0.1)`
+-   `@fynpo/base@2.1.1` `(2.1.0 => 2.1.1)`
+-   `@jchip/error@2.1.1` `(2.1.0 => 2.1.1)`
+-   `aveazul@2.1.1` `(2.1.0 => 2.1.1)`
+-   `chalker@2.1.1` `(2.1.0 => 2.1.1)`
+-   `check-pkg-new-version@1.1.1` `(1.1.0 => 1.1.1)`
+-   `check-pkg-new-version-engine@2.1.1` `(2.1.0 => 2.1.1)`
+-   `filter-scan-dir@2.1.1` `(2.1.0 => 2.1.1)`
+-   `fyn@3.1.2` `(3.1.1 => 3.1.2)`
+-   `fynpo@3.1.2` `(3.1.1 => 3.1.2)`
+-   `fynpo-cli@3.1.2` `(3.1.1 => 3.1.2)`
+-   `item-queue@2.1.2` `(2.1.1 => 2.1.2)`
+-   `munchy@2.0.0` `(1.0.9 => 2.0.0)`
+-   `optional-import@1.1.1` `(1.1.0 => 1.1.1)`
+-   `pkg-preper@0.3.1` `(0.3.0 => 0.3.1)`
+-   `publish-util@3.1.1` `(3.1.0 => 3.1.1)`
+-   `run-verify@2.1.1` `(2.1.0 => 2.1.1)`
+-   `string-array@2.1.1` `(2.1.0 => 2.1.1)`
+-   `unwrap-npm-cmd@2.1.1` `(2.1.0 => 2.1.1)`
+-   `visual-exec@1.1.2` `(1.1.1 => 1.1.2)`
+-   `visual-logger@2.1.2` `(2.1.1 => 2.1.2)`
+-   `xaa@3.1.1` `(3.1.0 => 3.1.1)`
+-   `xenv-config@2.1.1` `(2.1.0 => 2.1.1)`
+-   `xflight@3.1.1` `(3.1.0 => 3.1.1)`
+-   `xsh@1.1.1` `(1.1.0 => 1.1.1)`
+
+## Commits
+
+-   `packages/cli-args`
+
+    -   FJM-170: Bump fynpo runtime dependencies (@commitlint 21, resolve-global 2, color-convert 3) [commit](https://github.com/jchip/fynjs/commit/32887383cf932c57ad1287f8f6dc1fc8ed420e3e)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-47: remove dead code across check-pkg-new-version-engine, cli-args, fyn, and fynpo [commit](https://github.com/jchip/fynjs/commit/579d6f226c8be2c73a718432809dd2699698f019)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/confippet`
+
+    -   Add Apache-2.0 LICENSE to packages missing one [commit](https://github.com/jchip/fynjs/commit/f0f57745904338176ba1b0ac723edf79b8234f60)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/create-monorepo`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FPM-120: add CJS-in-ESM check and clear the violations it found [commit](https://github.com/jchip/fynjs/commit/7b1bbf76626e1d47c35230847ba35c9bc8f632f6)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/dual-mode-template`
+
+    -   Add Apache-2.0 LICENSE to packages missing one [commit](https://github.com/jchip/fynjs/commit/f0f57745904338176ba1b0ac723edf79b8234f60)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/fetch`
+
+    -   FFT-30: [maj] Add repository, homepage, bugs and keywords for the first @fynjs/fetch publish [commit](https://github.com/jchip/fynjs/commit/c7ef073b54178975557ac2dd17abeeff4d2a901d)
+    -   Use fyn build for @fynjs/fetch prepublishOnly so publish does not need a global xrun [commit](https://github.com/jchip/fynjs/commit/7652150718a1c950fba18760d25923ec581b9b2f)
+    -   FJM-187: Add publishConfig.access public to @fynjs/fetch [commit](https://github.com/jchip/fynjs/commit/5e1e280a5ff487ec0ee05c8733cc735ee338a98c)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FFT-13: total timeout budget, idempotent-only retries, hook lifecycle, and merge/URL fixes [commit](https://github.com/jchip/fynjs/commit/7e57787f01b2b77aa825f2342473e0af6ecb437b)
+    -   FFT-1: implement @fynjs/fetch package and integrate into fyn and fynpo [commit](https://github.com/jchip/fynjs/commit/bfc1996ec5d72a49de5b2371dee0fd7f9e50ed99)
+
+-   `packages/http-server`
+
+    -   Add Apache-2.0 LICENSE to packages missing one [commit](https://github.com/jchip/fynjs/commit/f0f57745904338176ba1b0ac723edf79b8234f60)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/xarc-run`
+
+    -   FJM-196: Emit subCommands in parse-cmd-args so cli-args parses task subcommands [commit](https://github.com/jchip/fynjs/commit/0e97dc719161e0c9d8fa0e9381fafc852a181e50)
+    -   FJM-194: Fix task-options normalization for array and count types [commit](https://github.com/jchip/fynjs/commit/cb01daee5864d36a4d09936804ef4543b6cbcee0)
+    -   FJM-190: Add prepare and prepublishOnly scripts to @fynjs/run [commit](https://github.com/jchip/fynjs/commit/65a86857dde128506a9364c516faabc5328ccbaa)
+    -   FJM-191: Fix crash when tasks use exec with env options [commit](https://github.com/jchip/fynjs/commit/e1d3375175bdd976e8faf5b185622f3b744b51c0)
+    -   FJM-188: Fix qrun quiet mode inert from hoisted static import of xrun [commit](https://github.com/jchip/fynjs/commit/62a54be3d2602bbde2311bb6108527d25c092e2c)
+    -   FJM-131: Fix xrun task argOpts alias mapping, value consumption, and require enforcement [commit](https://github.com/jchip/fynjs/commit/861df3d2a5788a8c76e67d0c7acc5cc0bdba61d9)
+    -   FJM-182: Replace require-at with node:module createRequire in xarc-run [commit](https://github.com/jchip/fynjs/commit/48d9ff2f6a4341694d168df9308aa32b29517457)
+    -   FJM-168: Migrate @fynjs/run from read-pkg-up to read-package-up [commit](https://github.com/jchip/fynjs/commit/036bf5bad1f7b15db27025630b33dc51f92a40e0)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-39: replace deprecated .substr() with .substring() and .slice() monorepo-wide [commit](https://github.com/jchip/fynjs/commit/05e87e6ccf66012a73f8be085494d9ecaae0736f)
+    -   FJM-163: remove obsolete esbuild entry from fynpo.json allowScripts [commit](https://github.com/jchip/fynjs/commit/13c3c9a4ab6333b4556704557f5ea956478d90c5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-52: replace chai assertions with vitest expect [commit](https://github.com/jchip/fynjs/commit/f955761290789919ecd2070568656ff8c38a0a34)
+    -   FJM-176: gate xarc-runs typecheck in ci:check [commit](https://github.com/jchip/fynjs/commit/8eacd1e44070bfb37d719618d4b755d9df1b5706)
+    -   FJM-51: rename xarc-run sources to TypeScript and build to dist [commit](https://github.com/jchip/fynjs/commit/9660077d428324f87733ceb7558972bb85c89c35)
+    -   FJM-51: add type checking to xarc-run and fix logger.log signature [commit](https://github.com/jchip/fynjs/commit/8e8eeb3b60f7b2d04f435719612b715fdf9032f2)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+    -   FJM-166: bump @fynjs/run strip-ansi devDep to ^7.2.0 [commit](https://github.com/jchip/fynjs/commit/1e636788ca4606809c8d1778407d5c4478a3ec7b)
+
+-   `packages/ts-resolve`
+
+    -   Add Apache-2.0 LICENSE to packages missing one [commit](https://github.com/jchip/fynjs/commit/f0f57745904338176ba1b0ac723edf79b8234f60)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/fynpo-base`
+
+    -   FJM-198: Report a throwing fynpo.config.js gracefully, keeping its stack [commit](https://github.com/jchip/fynjs/commit/52b78d5749d4093579f19ae8f1b9e2397d2d2f0e)
+    -   FJM-197: Warn and exit gracefully on a malformed fynpo.json or lerna.json [commit](https://github.com/jchip/fynjs/commit/b4a2b7b3a74398bca69ac44d015ddc79febefe44)
+    -   FJM-189: Stop fynpo from overwriting an existing fynpo.json with defaults [commit](https://github.com/jchip/fynjs/commit/58fbcd03ef134f45b26661783409d7c02bf3c8d9)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-42: Consolidate config loading between @fynpo/base and fynpo [commit](https://github.com/jchip/fynjs/commit/1d3379b34e4135d8437f067d272cd234dab6ea56)
+    -   FPO-64: Create shared writeJson and readPkgJson utilities in @fynpo/base [commit](https://github.com/jchip/fynjs/commit/886f5a76b70322bae536deed7aed5c39acd77502)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FPM-120: add CJS-in-ESM check and clear the violations it found [commit](https://github.com/jchip/fynjs/commit/7b1bbf76626e1d47c35230847ba35c9bc8f632f6)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/error`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-40: inherit custom AggregateError from native globalThis.AggregateError [commit](https://github.com/jchip/fynjs/commit/423a7f94b85996851e3e5280acdd06f51d190083)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/aveazul`
+
+    -   FJM-199: Measure the async work in the aveazul join timing test [commit](https://github.com/jchip/fynjs/commit/7b7317a619532d363a08fc1a17e03ddc605106fe)
+    -   Refresh fyn-lock.yaml stale after @types/node, agentkeepalive and read-package-up updates [commit](https://github.com/jchip/fynjs/commit/d585c93bfc88de7ff707e2fc6016dbbec05f35ab)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FPM-127: make the bluebird-parity suite green and gate it in ci:check [commit](https://github.com/jchip/fynjs/commit/81a12357cc52bcd94896e355ae7c89a47e942aec)
+    -   FPM-121: re-declare then/catch/finally to return AveAzul [commit](https://github.com/jchip/fynjs/commit/0c3efa118ca8539fe927c0511930a54044703daa)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/bluebird`
+
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/chalker`
+
+    -   FJM-170: Bump fynpo runtime dependencies (@commitlint 21, resolve-global 2, color-convert 3) [commit](https://github.com/jchip/fynjs/commit/32887383cf932c57ad1287f8f6dc1fc8ed420e3e)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-39: replace deprecated .substr() with .substring() and .slice() monorepo-wide [commit](https://github.com/jchip/fynjs/commit/05e87e6ccf66012a73f8be085494d9ecaae0736f)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/check-pkg-new-version`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+    -   FJM-171: drop got from check-pkg-new-version in favor of built-in fetch [commit](https://github.com/jchip/fynjs/commit/fbf1dee1f775e41f54137b86e322f1942529495c)
+
+-   `packages/check-pkg-new-version-engine`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-56: add process.on and console.log assertions to notify-new-version test [commit](https://github.com/jchip/fynjs/commit/be0939f9a932c2d243cd0d3656b6b05e74567848)
+    -   FJM-47: remove dead code across check-pkg-new-version-engine, cli-args, fyn, and fynpo [commit](https://github.com/jchip/fynjs/commit/579d6f226c8be2c73a718432809dd2699698f019)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/filter-scan-dir`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/fyn`
+
+    -   FJM-198: Report a throwing fynpo.config.js gracefully, keeping its stack [commit](https://github.com/jchip/fynjs/commit/52b78d5749d4093579f19ae8f1b9e2397d2d2f0e)
+    -   FJM-197: Warn and exit gracefully on a malformed fynpo.json or lerna.json [commit](https://github.com/jchip/fynjs/commit/b4a2b7b3a74398bca69ac44d015ddc79febefe44)
+    -   Refresh fyn-lock.yaml stale after @types/node, agentkeepalive and read-package-up updates [commit](https://github.com/jchip/fynjs/commit/d585c93bfc88de7ff707e2fc6016dbbec05f35ab)
+    -   FJM-195: Restore fyn Fs file-ops with Windows retry and protect global registry [commit](https://github.com/jchip/fynjs/commit/99871bd7ec5ccd1e55e0a7bb26284bfd53cfbc60)
+    -   FJM-184: Fix PipelineOptions in fyn and check-cjs-in-esm in munchy [commit](https://github.com/jchip/fynjs/commit/0d6e4fb9bf427a7637b3eff2673d96b921b78347)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-32: Migrate fyn JSON file I/O to @fynpo/base shared utilities [commit](https://github.com/jchip/fynjs/commit/16214c4a0f890de6d9250fc2cf9e5d60311ea876)
+    -   FPM-140: Align optional resolver script-running marker with pending watcher [commit](https://github.com/jchip/fynjs/commit/e27e6227a3389cd4c9afcd68e17cd6e2c12bee9e)
+    -   FJM-38: add TypeScript types to fyntil.ts [commit](https://github.com/jchip/fynjs/commit/e8c39f73f82f01f7a60168c12dd95ac8bd85436e)
+    -   FJM-39: replace deprecated .substr() with .substring() and .slice() monorepo-wide [commit](https://github.com/jchip/fynjs/commit/05e87e6ccf66012a73f8be085494d9ecaae0736f)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-34: deduplicate posixify between fyn and fynpo-base [commit](https://github.com/jchip/fynjs/commit/6a28060114f34905f23e984e94100497ce3d6bf6)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-47: remove dead code across check-pkg-new-version-engine, cli-args, fyn, and fynpo [commit](https://github.com/jchip/fynjs/commit/579d6f226c8be2c73a718432809dd2699698f019)
+    -   FPM-139: include cli in fyn tsconfig and resolve all CLI type errors [commit](https://github.com/jchip/fynjs/commit/d5cbbd29d923034ac2dcec2c0bf48f4fb60c2fe0)
+    -   FPM-138: resolve remaining 12 type errors in yarn lockfile parser [commit](https://github.com/jchip/fynjs/commit/ff999e6f6becf9779a71c4cf7988819ce9bd89f4)
+    -   FPM-137: resolve tsc from node_modules or PATH when nvx is unavailable [commit](https://github.com/jchip/fynjs/commit/e1be51db2de0ca196c67ecbfcbb71cdd436374a5)
+    -   FFT-1: implement @fynjs/fetch package and integrate into fyn and fynpo [commit](https://github.com/jchip/fynjs/commit/bfc1996ec5d72a49de5b2371dee0fd7f9e50ed99)
+    -   FPM-133: remove node-fetch-npm and use native fetch in fyn [commit](https://github.com/jchip/fynjs/commit/7bdab6ab13b6559e39a1a256da5982fbe7a82d46)
+    -   FPM-132: switch fyn-global fetchLatestVersion to native fetch [commit](https://github.com/jchip/fynjs/commit/0f91d701325610beebff0cf8998679bcae2d7c5f)
+    -   FPM-131: use nvx tsc instead of node_modules/.bin/tsc in typecheck-gate [commit](https://github.com/jchip/fynjs/commit/fd1bc7bf74f7d7ed7a017ada38d37dcf38fc95a2)
+    -   FJM-160: reduce fyn type errors from 51 to 12 (all fyn-owned errors resolved) [commit](https://github.com/jchip/fynjs/commit/e5e3ec18904213372b6a0ac45dbeeec193c6eb41)
+    -   FJM-160: reduce fyn type errors from 68 to 51 [commit](https://github.com/jchip/fynjs/commit/b0e47c05a63c11993e47dcdc5b171da82ea092c7)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-160: widen stale signatures and drop a dead argument (TS2554) [commit](https://github.com/jchip/fynjs/commit/c77010ea2ed852036bed421129d8b9f69b0256b6)
+    -   FJM-160: clear 86 mechanical type errors from fyns baseline [commit](https://github.com/jchip/fynjs/commit/4d1cfa406959db4b6e7193004ce324afa764ed63)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-52: replace chai assertions with vitest expect [commit](https://github.com/jchip/fynjs/commit/f955761290789919ecd2070568656ff8c38a0a34)
+    -   FPM-128: refresh fyn tsc baseline after aveazul promise re-typing [commit](https://github.com/jchip/fynjs/commit/a8e77265b7cec5c7eeb03f68306df8402c8fef3c)
+    -   FPM-120: add CJS-in-ESM check and clear the violations it found [commit](https://github.com/jchip/fynjs/commit/7b1bbf76626e1d47c35230847ba35c9bc8f632f6)
+    -   FPM-124: refuse to link a local package copy without its package.json [commit](https://github.com/jchip/fynjs/commit/c0b4b4de7facf6f2ac0f1dc3692ba4fefdf644e4)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+    -   FPM-126: align rolldown target and check-node MIN_NODE with the engines floor [commit](https://github.com/jchip/fynjs/commit/bd53e493fbd37095321e9d1b7de1534aecc20c9c)
+    -   FJM-174: declare type module for fyn [commit](https://github.com/jchip/fynjs/commit/88528e5ca50d7454e9d3cb7effef4302ab7de063)
+    -   FJM-173: update fyn lock for which ^6.0.1 [commit](https://github.com/jchip/fynjs/commit/6ddc98304469302ab6e59a3a6d701c59964d6e14)
+    -   FJM-173: bump fyn which devDep to ^6.0.1 [commit](https://github.com/jchip/fynjs/commit/b5575f0dc8064e1bf2cf0f4ddb8c5480f4252c1f)
+    -   Lower fyn typecheck baseline to 174 errors [commit](https://github.com/jchip/fynjs/commit/fbfe6d52f225419eb8aefbc8fb52596ff6cc904e)
+    -   FPM-125: apply install-script approvals to the run that asked for them [commit](https://github.com/jchip/fynjs/commit/7f2816f71dc9d82066e8daadfdf0329b59fa8a2d)
+
+-   `packages/fynpo`
+
+    -   FJM-198: Report a throwing fynpo.config.js gracefully, keeping its stack [commit](https://github.com/jchip/fynjs/commit/52b78d5749d4093579f19ae8f1b9e2397d2d2f0e)
+    -   FJM-197: Warn and exit gracefully on a malformed fynpo.json or lerna.json [commit](https://github.com/jchip/fynjs/commit/b4a2b7b3a74398bca69ac44d015ddc79febefe44)
+    -   FJM-193: Correct check-stale-local-deps docblock now that devDependencies is kept [commit](https://github.com/jchip/fynjs/commit/061e4e16aac497220f60bbb6c7d64144f02c9c9b)
+    -   FJM-189: Stop fynpo from overwriting an existing fynpo.json with defaults [commit](https://github.com/jchip/fynjs/commit/58fbcd03ef134f45b26661783409d7c02bf3c8d9)
+    -   FJM-170: Bump fynpo runtime dependencies (@commitlint 21, resolve-global 2, color-convert 3) [commit](https://github.com/jchip/fynjs/commit/32887383cf932c57ad1287f8f6dc1fc8ed420e3e)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-42: Consolidate config loading between @fynpo/base and fynpo [commit](https://github.com/jchip/fynjs/commit/1d3379b34e4135d8437f067d272cd234dab6ea56)
+    -   FPO-64: Create shared writeJson and readPkgJson utilities in @fynpo/base [commit](https://github.com/jchip/fynjs/commit/886f5a76b70322bae536deed7aed5c39acd77502)
+    -   FJM-39: replace deprecated .substr() with .substring() and .slice() monorepo-wide [commit](https://github.com/jchip/fynjs/commit/05e87e6ccf66012a73f8be085494d9ecaae0736f)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-47: remove dead code across check-pkg-new-version-engine, cli-args, fyn, and fynpo [commit](https://github.com/jchip/fynjs/commit/579d6f226c8be2c73a718432809dd2699698f019)
+    -   FFT-1: implement @fynjs/fetch package and integrate into fyn and fynpo [commit](https://github.com/jchip/fynjs/commit/bfc1996ec5d72a49de5b2371dee0fd7f9e50ed99)
+    -   FPO-62: remove undici and rely on Node core fetch in fynpo [commit](https://github.com/jchip/fynjs/commit/0de87fa2bc3b2601c4d3765198d535f0b1721ca1)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-35: replace fynpos hand-rolled CI detection with ci-info [commit](https://github.com/jchip/fynjs/commit/ed80eefca43174a0f36e1ff5321e5bde65dff0d0)
+    -   FPM-120: add CJS-in-ESM check and clear the violations it found [commit](https://github.com/jchip/fynjs/commit/7b1bbf76626e1d47c35230847ba35c9bc8f632f6)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/fynpo-cli`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FPM-120: add CJS-in-ESM check and clear the violations it found [commit](https://github.com/jchip/fynjs/commit/7b1bbf76626e1d47c35230847ba35c9bc8f632f6)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/init-package`
+
+    -   Add Apache-2.0 LICENSE to packages missing one [commit](https://github.com/jchip/fynjs/commit/f0f57745904338176ba1b0ac723edf79b8234f60)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/item-queue`
+
+    -   Refresh fyn-lock.yaml stale after @types/node, agentkeepalive and read-package-up updates [commit](https://github.com/jchip/fynjs/commit/d585c93bfc88de7ff707e2fc6016dbbec05f35ab)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/munchy`
+
+    -   Add Apache-2.0 LICENSE to packages missing one [commit](https://github.com/jchip/fynjs/commit/f0f57745904338176ba1b0ac723edf79b8234f60)
+    -   FJM-186: Fix munchy end/destroy race, lost wake-ups, and source backpressure [commit](https://github.com/jchip/fynjs/commit/edc1b0c2ee392edf5d6dde700fc474d1a029940e)
+    -   FJM-184: Fix PipelineOptions in fyn and check-cjs-in-esm in munchy [commit](https://github.com/jchip/fynjs/commit/0d6e4fb9bf427a7637b3eff2673d96b921b78347)
+    -   FJM-183: [maj] Modernize munchy to ESM, TypeScript, Node 22+ stream constructs, and Vitest [commit](https://github.com/jchip/fynjs/commit/dd3f555d965bf13091d8f606596a4d8fea5c3eb0)
+
+-   `packages/optional-import`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/pkg-preper`
+
+    -   Refresh fyn-lock.yaml stale after @types/node, agentkeepalive and read-package-up updates [commit](https://github.com/jchip/fynjs/commit/d585c93bfc88de7ff707e2fc6016dbbec05f35ab)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/publish-util`
+
+    -   FJM-192: Keep devDependencies in the published package.json [commit](https://github.com/jchip/fynjs/commit/a19e7e1ae44b6b3ddefdf02fabdd2639b9b7e913)
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/run-verify`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/string-array`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+    -   FJM-167: pin unwrap-npm-cmd which to ^6.0.1 so its engines cover our node floor [commit](https://github.com/jchip/fynjs/commit/6203ea811ae4bbaa906fa2fac3bf60e48df7041c)
+
+-   `packages/visual-exec`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-39: replace deprecated .substr() with .substring() and .slice() monorepo-wide [commit](https://github.com/jchip/fynjs/commit/05e87e6ccf66012a73f8be085494d9ecaae0736f)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/visual-logger`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-146: Fix unfreezeItems to restart spinners on symbol-named items [commit](https://github.com/jchip/fynjs/commit/3b68f29dfa081e5a379688be3bbb5f27523c9b43)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/xaa`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/xenv-config`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-181: migrate to lodash-es across the monorepo [commit](https://github.com/jchip/fynjs/commit/fd68ca7ef296a5ead3f094f8fd821ef42717aad5)
+    -   FJM-48: remove lodash from confippet, create-monorepo, fynpo-base, init-package, publish-util, xarc-run, and xenv-config [commit](https://github.com/jchip/fynjs/commit/8afbcab5c846f804c865708aed34bb2c6f528eda)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/xflight`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-179: cover xflight keys that collide with Object.prototype [commit](https://github.com/jchip/fynjs/commit/b004a87a3bcc48a5ca4db53be0e42ebc38d0e64c)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `packages/xsh`
+
+    -   FJM-180: Bump @types/node to 26, @types/shelljs to 0.10, and agentkeepalive to 4 [commit](https://github.com/jchip/fynjs/commit/6ca69c677548cf24cc59db04b5eae4459e136cd2)
+    -   FJM-169: bump vitest 4 -> 5 (+coverage-v8, ui) with new vite peer dep [commit](https://github.com/jchip/fynjs/commit/93047f1d30209d4652b2d5f1884a679ae36d86b5)
+    -   FJS-1: consolidate and reconcile subpackage gitignore files into root gitignore [commit](https://github.com/jchip/fynjs/commit/07a37710f924602b13955ae3a52fbd4857edb30a)
+    -   FJM-52: convert remaining chai-style assertions to vitest matchers [commit](https://github.com/jchip/fynjs/commit/955962e7467e6aaab63b4f99dff98bddff3bf50b)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `.github`
+
+    -   FJM-185: Bump actions/checkout and actions/setup-node to v7 in CI workflow [commit](https://github.com/jchip/fynjs/commit/74fb25e623b891311de1b6b80912db979b614730)
+    -   FJM-178: bump CI actions checkout and setup-node to v4 [commit](https://github.com/jchip/fynjs/commit/af41d1f03b8de09dd20480ba72a7e68dd7e383b9)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+
+-   `lib`
+
+    -   update for node.js 14 [commit](https://github.com/jchip/fynjs/commit/6dfb1d4e5064906a415ee4ca540cdf606e485135)
+    -   unref souce data after using it [commit](https://github.com/jchip/fynjs/commit/ef3877235395ea1ec801ba1995802171629416b2)
+    -   add handleStreamError option [commit](https://github.com/jchip/fynjs/commit/81df036ee979cc6531173a9f62c4994a5a7d0c25)
+    -   rewrite according to nodejs doc on readable stream [commit](https://github.com/jchip/fynjs/commit/dbbcf4c64dd16522b40cf05009a20532c63b5c1a)
+    -   only reset non empty sources [commit](https://github.com/jchip/fynjs/commit/fdb0b5c401571de97b8a5e1e0ea9d0c5337038a8)
+    -   add drained and munched events [commit](https://github.com/jchip/fynjs/commit/74a8d84ad7a2bfaf35a2686a1443190b8b76faee)
+    -   check for undefined err in onError [commit](https://github.com/jchip/fynjs/commit/a3222862df5214ee0e0026127e90922e2db8194c)
+    -   refactoring and add draining event [commit](https://github.com/jchip/fynjs/commit/d54cae719e886d8ac1dcfc0072d198f5c34e740d)
+    -   minor refactor [commit](https://github.com/jchip/fynjs/commit/f9087eb821b9c972703c23664b5d77f23899f887)
+    -   return self in munch for chaining [commit](https://github.com/jchip/fynjs/commit/195cf5b132771d889d707577530de2cfbda0a2b1)
+    -   1 [commit](https://github.com/jchip/fynjs/commit/7b5fd4967f054c17ee891b70fa9e6bb2723e699b)
+
+-   `notes`
+
+    -   FFT-1: implement @fynjs/fetch package and integrate into fyn and fynpo [commit](https://github.com/jchip/fynjs/commit/bfc1996ec5d72a49de5b2371dee0fd7f9e50ed99)
+
+-   `test`
+
+    -   update for node.js 14 [commit](https://github.com/jchip/fynjs/commit/6dfb1d4e5064906a415ee4ca540cdf606e485135)
+    -   add handleStreamError option [commit](https://github.com/jchip/fynjs/commit/81df036ee979cc6531173a9f62c4994a5a7d0c25)
+    -   rewrite according to nodejs doc on readable stream [commit](https://github.com/jchip/fynjs/commit/dbbcf4c64dd16522b40cf05009a20532c63b5c1a)
+    -   only reset non empty sources [commit](https://github.com/jchip/fynjs/commit/fdb0b5c401571de97b8a5e1e0ea9d0c5337038a8)
+    -   add drained and munched events [commit](https://github.com/jchip/fynjs/commit/74a8d84ad7a2bfaf35a2686a1443190b8b76faee)
+    -   check for undefined err in onError [commit](https://github.com/jchip/fynjs/commit/a3222862df5214ee0e0026127e90922e2db8194c)
+    -   refactoring and add draining event [commit](https://github.com/jchip/fynjs/commit/d54cae719e886d8ac1dcfc0072d198f5c34e740d)
+    -   proper test verifications [commit](https://github.com/jchip/fynjs/commit/02e5b5bd840bd97540580e2b988a8de595546e27)
+    -   update dep [commit](https://github.com/jchip/fynjs/commit/64efe867e2233cfa24cde9de4b692384fedd2232)
+    -   1 [commit](https://github.com/jchip/fynjs/commit/7b5fd4967f054c17ee891b70fa9e6bb2723e699b)
+
+-   `testing`
+
+    -   FPM-136: add @fynjs/fetch local path dependency to monorepo-test to fix CI [commit](https://github.com/jchip/fynjs/commit/caf7071774c93ae80df00cc02b233f6faba8d2a1)
+
+-   `tools`
+
+    -   FPM-120: add CJS-in-ESM check and clear the violations it found [commit](https://github.com/jchip/fynjs/commit/7b1bbf76626e1d47c35230847ba35c9bc8f632f6)
+    -   FJM-175: raise the node floor to 22.22.2 and match the ecosystem range [commit](https://github.com/jchip/fynjs/commit/9aa878b69a9f745d6be4d77b4ca14ea952b67611)
+    -   FJM-172: add repo-wide engines consistency check [commit](https://github.com/jchip/fynjs/commit/346331def36de9b854c676f08fb83905fb604754)
+
+-   `MISC`
+
+    -   FJS-1: restore fyn-lock.yaml ignore rule dropped during consolidation [commit](https://github.com/jchip/fynjs/commit/ca264c4a8a89b337791c12b0a26ab3faff1aa86e)
+    -   FPM-123: use the published fyn and fynpo 3.1.1 at the root [commit](https://github.com/jchip/fynjs/commit/1f19fc8767c99e17941cd7856d09659aaf486985)
+    -   1.0.9 [commit](https://github.com/jchip/fynjs/commit/2be72bc79bf315db6f5f79e926423d8b0b6a5b3c)
+    -   update deps [commit](https://github.com/jchip/fynjs/commit/a30c4add8f8509bdd0382ed48faa727e2c83ef6e)
+    -   1.0.8 [commit](https://github.com/jchip/fynjs/commit/b1cc1a70170f439f9ccb69c4b9e44bc6efbff2a8)
+    -   1.0.7 [commit](https://github.com/jchip/fynjs/commit/c6988b771b68d54fe38fe268fe9bb7f4b33f89b0)
+    -   1.0.6 [commit](https://github.com/jchip/fynjs/commit/4153a986ada59b4a4b209d6a7659d54b69db9139)
+    -   1.0.5 [commit](https://github.com/jchip/fynjs/commit/98e4d4d77908f193ec8c9433ff78cfc009e83497)
+    -   1.0.4 [commit](https://github.com/jchip/fynjs/commit/a417d78aedd3a9591aedc61aef4bddff655b17d4)
+    -   1.0.3 [commit](https://github.com/jchip/fynjs/commit/a1ff74e4d079c15c04139fecee43c512c66ab706)
+    -   1.0.2 [commit](https://github.com/jchip/fynjs/commit/5b2b2b6a0329302dcd9e1838bbae942060d707ca)
+    -   1.0.1 [commit](https://github.com/jchip/fynjs/commit/a8b5292ba881eae0afaa5009d1aed17d7c52e52b)
+    -   update node versions for ci [commit](https://github.com/jchip/fynjs/commit/16ae9fa136aeb9106ed9f19670f5a745fb980efb)
+    -   update README [commit](https://github.com/jchip/fynjs/commit/a46faf1dbe3d6d6626163f3aeb007ced15bd5bdd)
+    -   add more samples [commit](https://github.com/jchip/fynjs/commit/63941e046612773a7269b11b27bea2700f34d54e)
+
 # 9/5/2026
 
 ## Packages
