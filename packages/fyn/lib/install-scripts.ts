@@ -242,6 +242,35 @@ export function ask(question) {
 }
 
 /**
+ * Format JSON preserving compact single-line representation for simple arrays
+ * (e.g. versionLocks tuples, packages lists, scripts lists) to avoid formatting diff noise.
+ */
+export function formatCompactJson(json) {
+  let str = JSON.stringify(json, null, 2);
+  str = str.replace(
+    /\[\s*\n\s+("[^"\n]+"|\d+|true|false)(?:,\s*\n\s+("[^"\n]+"|\d+|true|false))*\s*\n\s*\]/g,
+    match => {
+      try {
+        const parsed = JSON.parse(match);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every(
+            x => typeof x === "string" || typeof x === "number" || typeof x === "boolean"
+          )
+        ) {
+          const compact = `[${parsed.map(x => JSON.stringify(x)).join(", ")}]`;
+          if (compact.length <= 100) {
+            return compact;
+          }
+        }
+      } catch {}
+      return match;
+    }
+  );
+  return `${str}\n`;
+}
+
+/**
  * `fyn install-scripts` - list, approve, deny and prune install-script
  * approvals.
  */
@@ -262,6 +291,41 @@ export class InstallScripts {
    */
   get records() {
     return dedupeBlockedRecords([...this._fyn.blockedScripts, ...this._fyn.pendingScripts]);
+  }
+
+  /**
+   * Load blocked and pending records across the monorepo if inside a fynpo monorepo,
+   * or from the current package otherwise.
+   *
+   * @returns {Promise<object[]>} deduplicated records
+   */
+  async loadRecords() {
+    const records = [...this._fyn.blockedScripts, ...this._fyn.pendingScripts];
+    const fynpo = this._fyn._fynpo;
+    if (fynpo && fynpo.dir) {
+      // Check root node_modules/.f/fyn-install-config.json
+      const rootConfigPath = Path.join(fynpo.dir, "node_modules", ".f", "fyn-install-config.json");
+      try {
+        const data = JSON.parse(await Fs.readFile(rootConfigPath, "utf8"));
+        if (data.blockedScripts) records.push(...data.blockedScripts);
+        if (data.pendingScripts) records.push(...data.pendingScripts);
+      } catch {}
+
+      // Check all workspace packages in graph
+      if (fynpo.graph && fynpo.graph.packages && fynpo.graph.packages.byName) {
+        for (const pkgName of Object.keys(fynpo.graph.packages.byName)) {
+          const pkgInfo = fynpo.graph.packages.byName[pkgName];
+          const pkgDir = pkgInfo.dir || Path.join(fynpo.dir, pkgInfo.path);
+          const configPath = Path.join(pkgDir, "node_modules", ".f", "fyn-install-config.json");
+          try {
+            const data = JSON.parse(await Fs.readFile(configPath, "utf8"));
+            if (data.blockedScripts) records.push(...data.blockedScripts);
+            if (data.pendingScripts) records.push(...data.pendingScripts);
+          } catch {}
+        }
+      }
+    }
+    return dedupeBlockedRecords(records);
   }
 
   /**
@@ -295,20 +359,20 @@ export class InstallScripts {
     };
   }
 
-  /**
-   * Write script-policy lists back to their file. Only the keys named in
-   * `values` are touched, so approving does not rewrite the deny list.
-   *
-   * @param {object} target from {@link resolveTarget}
-   * @param {object} read result of {@link readTarget}
-   * @param {object} values the option values to write, keyed by option name
-   * @returns {Promise<void>} nothing
-   */
+/**
+ * Write script-policy lists back to their file. Only the keys named in
+ * `values` are touched, so approving does not rewrite the deny list.
+ *
+ * @param {object} target from {@link resolveTarget}
+ * @param {object} read result of {@link readTarget}
+ * @param {object} values the option values to write, keyed by option name
+ * @returns {Promise<void>} nothing
+ */
   async writeTarget(target, read, values) {
     for (const key of Object.keys(values)) {
       _.set(read.json, targetOptionPath(target, key), values[key]);
     }
-    await Fs.writeFile(target.file, `${JSON.stringify(read.json, null, 2)}\n`);
+    await Fs.writeFile(target.file, formatCompactJson(read.json));
     logger.info(`updated ${chalk.cyan(target.file)}`);
   }
 
@@ -320,7 +384,7 @@ export class InstallScripts {
    * @returns {Promise<object[]>} the records listed
    */
   async ls({ json = false } = {}) {
-    const records = this.records;
+    const records = await this.loadRecords();
 
     if (json) {
       // stdout, not the logger: this is data for a pipe
@@ -376,13 +440,15 @@ export class InstallScripts {
     const pin = this._fyn.allowScriptsPin;
     let toApprove;
 
+    const records = await this.loadRecords();
+
     if (all) {
-      toApprove = this.records;
+      toApprove = records;
     } else {
       if (names.length === 0) {
         throw new Error("no packages named to approve");
       }
-      const { matched, unknown, ambiguous } = selectRecords(names, this.records);
+      const { matched, unknown, ambiguous } = selectRecords(names, records);
       if (ambiguous && ambiguous.length > 0) {
         const details = ambiguous.map(a => `${a.name} (${a.versions.join(", ")})`).join("; ");
         throw new Error(

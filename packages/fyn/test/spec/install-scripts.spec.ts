@@ -533,5 +533,49 @@ describe("install-scripts", function () {
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
       ).toStrictEqual({ sharp: {} });
     });
+
+    it("writeTarget formats compact arrays in fynpo.json", async () => {
+      const fynpoJson = {
+        packages: ["packages/*", "_w/*"],
+        versionLocks: [["fynpo", "fyn", "fynpo-cli"]],
+        fyn: { options: {} }
+      };
+      Fs.writeFileSync(Path.join(dir, "fynpo.json"), JSON.stringify(fynpoJson, null, 2));
+      const fyn = mkFyn({ _fynpo: { dir }, blockedScripts: [mkRecord()] });
+      await new InstallScripts({ fyn }).approve(["sharp"]);
+
+      const content = Fs.readFileSync(Path.join(dir, "fynpo.json"), "utf8");
+      expect(content).toContain('["packages/*", "_w/*"]');
+      expect(content).toContain('["fynpo", "fyn", "fynpo-cli"]');
+    });
+
+    it("loadRecords aggregates records across monorepo workspaces", async () => {
+      const pkgDir = Path.join(dir, "packages", "pkg-a");
+      Fs.mkdirSync(Path.join(pkgDir, "node_modules", ".f"), { recursive: true });
+      Fs.writeFileSync(
+        Path.join(pkgDir, "node_modules", ".f", "fyn-install-config.json"),
+        JSON.stringify({
+          blockedScripts: [mkRecord({ name: "workspace-dep", version: "1.2.3" })]
+        })
+      );
+
+      const fyn = mkFyn({
+        _fynpo: {
+          dir,
+          graph: {
+            packages: {
+              byName: {
+                "pkg-a": { dir: pkgDir, path: "packages/pkg-a" }
+              }
+            }
+          }
+        },
+        blockedScripts: [mkRecord({ name: "root-dep", version: "2.0.0" })]
+      });
+
+      const records = await new InstallScripts({ fyn }).loadRecords();
+      const names = records.map(r => r.name).sort();
+      expect(names).toStrictEqual(["root-dep", "workspace-dep"]);
+    });
   });
 });

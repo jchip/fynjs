@@ -110,6 +110,7 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   getFvDir(x?: string): string;
   // NativePromise: `Promise` here is aveazul's (FPO-41), Fyn's method returns the global one
   loadFvVersions(): NativePromise<FvVersions>;
+  saveInstallConfig(): NativePromise<void>;
   setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
 }
 

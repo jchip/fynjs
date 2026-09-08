@@ -525,6 +525,10 @@ class Fyn {
     return false;
   }
 
+  get pkgFile(): string {
+    return this._pkgFile;
+  }
+
   /**
    * Options a fynpo config must never supply. `cwd`/`initCwd` are where fyn was
    * invoked; a monorepo config that relocated the install would be changing

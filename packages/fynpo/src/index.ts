@@ -206,12 +206,17 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
 
   let secondRun = false;
   try {
-    await bootstrap.exec({
+    const execRes = await bootstrap.exec({
       build: meta.opts.build,
       fynOpts: meta.opts.fynOpts,
       concurrency: meta.opts.concurrency,
       skip: meta.opts.skip,
     });
+
+    if (execRes && typeof execRes === "object" && execRes.rerun) {
+      secondRun = true;
+      return await execBootstrap(cmd, parsed, bootstrap.elapsedTime);
+    }
 
     if (!firstRunTime) {
       const fynpoDataEnd = await readFynpoData(bootstrap.cwd);
