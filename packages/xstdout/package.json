@@ -1,25 +1,67 @@
 {
   "name": "xstdout",
-  "version": "0.1.1",
-  "description": "capture stdout",
-  "main": "lib/xstdout.js",
-  "scripts": {
-    "test": "mocha test/spec",
-    "format": "prettier --write --print-width 100 lib/*.js test/spec/*.js",
-    "coverage": "nyc --all --reporter=lcov --reporter=text --reporter=text-summary npm test"
+  "version": "1.0.0",
+  "description": "Intercept and capture stdout and stderr stream outputs",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xstdout",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/xstdout.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/xstdout"
   },
-  "homepage": "https://github.com/jchip/xstdout",
-  "keywords": [],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "ci:check": "tsc --noEmit -p tsconfig.json && vitest run --coverage",
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "xrun build",
+    "prepack": "publish-util-prepack",
+    "postpack": "publish-util-postpack"
+  },
+  "keywords": [
+    "stdout",
+    "stderr",
+    "intercept",
+    "capture",
+    "console",
+    "stream"
+  ],
   "author": "Joel Chen <joel123@gmail.com>",
   "license": "Apache-2.0",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.com/"
+  },
+  "dependencies": {},
   "devDependencies": {
-    "chai": "^4.0.2",
-    "mocha": "^3.4.2",
-    "nyc": "^11.0.2",
-    "prettier": "^1.4.4"
+    "@types/node": "^26.4.1",
+    "@vitest/coverage-v8": "^5.0.0",
+    "publish-util": "^3.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "none"
   }
 }

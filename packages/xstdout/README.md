@@ -1,60 +1,66 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url]
-[![Dependency Status][daviddm-image]][daviddm-url] [![devDependency Status][daviddm-dev-image]][daviddm-dev-url]
-
 # xstdout
 
-capture stdout
+Intercept and capture stdout and stderr stream outputs.
 
-# Usage
+## Installation
 
-Example:
+```bash
+fyn add xstdout
+# or
+npm install xstdout
+```
 
-```js
-const xstdout = require("xstdout");
+## Usage
 
-const intercept = xstdout.intercept(true);
+```ts
+import xstdout, { intercept } from "xstdout";
+
+const captured = intercept(true);
 
 console.log("hello, world");
 
-intercept.restore();
+captured.restore();
 
-expect(intercept.stdout[0]).to.equal("hello, world\n");
+console.log(captured.stdout[0]); // "hello, world\n"
 ```
 
 ## APIs
 
-### `xstdout.intercept(silent, [silentErr])`
+### `intercept(silent?: boolean, silentErr?: boolean): InterceptResult`
 
-Returns an object:
+Captures `process.stdout` and `process.stderr` streams into arrays.
 
-```js
+Returns:
+```ts
 {
-  restore,
-  stdout,
-  stderr
+  restore: () => void;
+  stdout: string[];
+  stderr: string[];
 }
 ```
 
--   `stdout`/`stderr` are arrays of strings that captured stdout/stderr
--   `restore` is a function that restores the original stdout/stderr
+- `stdout` / `stderr`: Arrays of strings captured from the respective streams.
+- `restore`: Function that unhooks the interceptors and restores the original streams.
+- `silent`: If `true`, suppresses output to actual terminal. Default is `false`.
+- `silentErr`: If specified, independently controls output suppression for stderr. Defaults to `silent`.
 
-#### Params
+### `interceptStdout(stdoutCb, stderrCb?): () => void`
 
--   `silent` - if `true`, then omit actual output to console and only capture
--   `silentErr` - if not `undefined`, then independently controls output of stderr to console
+Intercepts `process.stdout` (and optionally `process.stderr`) with custom callbacks.
 
-[travis-image]: https://travis-ci.org/jchip/xstdout.svg?branch=master
+Callback signature: `(msg: string) => boolean | string | undefined | void`
+- Return `false` to suppress printing the output to the stream.
+- Return a string to replace the output being printed.
+- Return `undefined` to allow original output.
 
-[travis-url]: https://travis-ci.org/jchip/xstdout
+Returns an `unhook` function.
 
-[npm-image]: https://badge.fury.io/js/xstdout.svg
+### `interceptStdouterr(stdoutCb, stderrCb?): () => void`
 
-[npm-url]: https://npmjs.org/package/xstdout
+Intercepts both `process.stdout` and `process.stderr` with custom callbacks. If `stderrCb` is not provided, `stdoutCb` handles both streams.
 
-[daviddm-image]: https://david-dm.org/jchip/xstdout/status.svg
+Returns an `unhook` function.
 
-[daviddm-url]: https://david-dm.org/jchip/xstdout
+## License
 
-[daviddm-dev-image]: https://david-dm.org/jchip/xstdout/dev-status.svg
-
-[daviddm-dev-url]: https://david-dm.org/jchip/xstdout?type=dev
+Apache-2.0
