@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { FynpoDepGraph, getDepSection } from "../src/index.js";
 import path from "path";
 import Fs from "fs";
+import os from "os";
 
 describe("getDepSection", function () {
   it("should return dep for dependencies", () => {
@@ -293,5 +294,70 @@ describe("fynpo dep graph", () => {
       // Restore original package.json
       Fs.writeFileSync(cir1PkgPath, originalPkg);
     }
+  });
+
+  describe("nested package discovery", () => {
+    let tmpDir: string;
+
+    beforeEach(() => {
+      tmpDir = Fs.mkdtempSync(path.join(os.tmpdir(), "fynpo-nested-"));
+      // Create packages/pkg1/package.json
+      Fs.mkdirSync(path.join(tmpDir, "packages/pkg1"), { recursive: true });
+      Fs.writeFileSync(
+        path.join(tmpDir, "packages/pkg1/package.json"),
+        JSON.stringify({ name: "pkg1", version: "1.0.0" })
+      );
+      // Create nested examples in pkg1
+      Fs.mkdirSync(path.join(tmpDir, "packages/pkg1/examples/ex1"), { recursive: true });
+      Fs.writeFileSync(
+        path.join(tmpDir, "packages/pkg1/examples/ex1/package.json"),
+        JSON.stringify({ name: "ex1", version: "1.0.0", private: true })
+      );
+      Fs.mkdirSync(path.join(tmpDir, "packages/pkg1/examples/ex2"), { recursive: true });
+      Fs.writeFileSync(
+        path.join(tmpDir, "packages/pkg1/examples/ex2/package.json"),
+        JSON.stringify({ name: "ex2", version: "1.0.0", private: true })
+      );
+      // Create pkg2
+      Fs.mkdirSync(path.join(tmpDir, "packages/pkg2"), { recursive: true });
+      Fs.writeFileSync(
+        path.join(tmpDir, "packages/pkg2/package.json"),
+        JSON.stringify({ name: "pkg2", version: "1.0.0" })
+      );
+    });
+
+    afterEach(() => {
+      Fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it("should prune nested packages when not explicitly included", async () => {
+      const graph = new FynpoDepGraph({
+        cwd: tmpDir,
+        packages: ["packages/*"],
+      });
+      await graph.resolve();
+      expect(Object.keys(graph.packages.byName).sort()).toEqual(["pkg1", "pkg2"]);
+    });
+
+    it("should discover nested packages when explicitly included in packages array", async () => {
+      const graph = new FynpoDepGraph({
+        cwd: tmpDir,
+        packages: ["packages/*", "packages/*/examples/*"],
+      });
+      await graph.resolve();
+      expect(Object.keys(graph.packages.byName).sort()).toEqual(["ex1", "ex2", "pkg1", "pkg2"]);
+    });
+
+    it("should discover nested packages with autoSearch false and explicit include", async () => {
+      const graph = new FynpoDepGraph({
+        cwd: tmpDir,
+        packages: {
+          autoSearch: false,
+          include: ["packages/*", "packages/*/examples/*"],
+        },
+      });
+      await graph.resolve();
+      expect(Object.keys(graph.packages.byName).sort()).toEqual(["ex1", "ex2", "pkg1", "pkg2"]);
+    });
   });
 });
