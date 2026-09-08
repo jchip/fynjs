@@ -12,6 +12,7 @@ import {
   mergeAllowEntry,
   blockedReasonText
 } from "./util/script-policy-report";
+import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
 
 //
 // `fyn install-scripts` - reviewing and recording which packages may run their
@@ -300,15 +301,15 @@ export class InstallScripts {
    * @returns {Promise<object[]>} deduplicated records
    */
   async loadRecords() {
-    const records = [...this._fyn.blockedScripts, ...this._fyn.pendingScripts];
+    const rawRecords = [...this._fyn.blockedScripts, ...this._fyn.pendingScripts];
     const fynpo = this._fyn._fynpo;
     if (fynpo && fynpo.dir) {
       // Check root node_modules/.f/fyn-install-config.json
       const rootConfigPath = Path.join(fynpo.dir, "node_modules", ".f", "fyn-install-config.json");
       try {
         const data = JSON.parse(await Fs.readFile(rootConfigPath, "utf8"));
-        if (data.blockedScripts) records.push(...data.blockedScripts);
-        if (data.pendingScripts) records.push(...data.pendingScripts);
+        if (data.blockedScripts) rawRecords.push(...data.blockedScripts);
+        if (data.pendingScripts) rawRecords.push(...data.pendingScripts);
       } catch {}
 
       // Check all workspace packages in graph
@@ -319,13 +320,36 @@ export class InstallScripts {
           const configPath = Path.join(pkgDir, "node_modules", ".f", "fyn-install-config.json");
           try {
             const data = JSON.parse(await Fs.readFile(configPath, "utf8"));
-            if (data.blockedScripts) records.push(...data.blockedScripts);
-            if (data.pendingScripts) records.push(...data.pendingScripts);
+            if (data.blockedScripts) rawRecords.push(...data.blockedScripts);
+            if (data.pendingScripts) rawRecords.push(...data.pendingScripts);
           } catch {}
         }
       }
     }
-    return dedupeBlockedRecords(records);
+    const deduped = dedupeBlockedRecords(rawRecords);
+
+    // Read active allowScripts from target (fynpo.json or package.json) + fyn instance
+    let targetAllow = {};
+    let targetDeny = {};
+    try {
+      const target = resolveTarget(this._fyn, false);
+      const read = await this.readTarget(target);
+      targetAllow = read.allowScripts || {};
+      targetDeny = read.denyScripts || {};
+    } catch {}
+
+    const allowScripts = { ...(this._fyn.allowScripts || {}), ...targetAllow };
+    const denyScripts = { ...(this._fyn.denyScripts || {}), ...targetDeny };
+
+    return deduped.filter(record => {
+      const policy = evaluateScriptPolicy(record, allowScripts, {
+        mode: "review",
+        denyScripts
+      });
+      const scripts = record.scripts && record.scripts.length > 0 ? record.scripts : ["install"];
+      const allAllowed = scripts.every(s => isScriptAllowed(policy, s));
+      return !allAllowed;
+    });
   }
 
   /**

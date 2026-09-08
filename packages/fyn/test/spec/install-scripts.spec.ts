@@ -577,5 +577,21 @@ describe("install-scripts", function () {
       const names = records.map(r => r.name).sort();
       expect(names).toStrictEqual(["root-dep", "workspace-dep"]);
     });
+
+    it("ls and loadRecords filter out packages that are already approved", async () => {
+      Fs.writeFileSync(
+        Path.join(dir, "package.json"),
+        JSON.stringify({ name: "app", fyn: { allowScripts: { sharp: { semver: "^0.34.0" } } } })
+      );
+      const fyn = mkFyn({
+        blockedScripts: [mkRecord({ name: "sharp", version: "0.34.4" })],
+        pendingScripts: [mkRecord({ name: "canvas", version: "5.0.1" })]
+      });
+      const cmd = new InstallScripts({ fyn });
+      const records = await cmd.loadRecords();
+      expect(records.map(r => r.name)).toStrictEqual(["canvas"]);
+      const listed = await cmd.ls();
+      expect(listed.map(r => r.name)).toStrictEqual(["canvas"]);
+    });
   });
 });
