@@ -467,7 +467,25 @@ const commands: Record<string, CommandSpec> = {
         config.noStartupInfo = true;
         logger.info("installing...");
         fynTil.resetFynpo();
-        return new FynCli(config).install({ opts: { audit: Boolean(meta.opts.audit) } });
+        if ((cli as any)._opts?._rollback) {
+          (config as any)._rollback = (cli as any)._opts._rollback;
+        }
+        const onSignal = () => {
+          if ((config as any)._rollback) {
+            (config as any)._rollback();
+            (config as any)._rollback = undefined;
+          }
+          process.exit(130);
+        };
+        process.once("SIGINT", onSignal);
+        process.once("SIGTERM", onSignal);
+        const cleanup = () => {
+          process.removeListener("SIGINT", onSignal);
+          process.removeListener("SIGTERM", onSignal);
+        };
+        return new FynCli(config)
+          .install({ opts: { audit: Boolean(meta.opts.audit) } })
+          .finally(cleanup);
       });
     },
     options: {
@@ -524,7 +542,25 @@ const commands: Record<string, CommandSpec> = {
         pickOpts.noStartupInfo = true;
         fynTil.resetFynpo();
         logger.info("installing...");
-        return await new FynCli(pickOpts).install({ opts: { audit: Boolean(meta.opts.audit) } });
+        if ((cli as any)._opts?._rollback) {
+          (pickOpts as any)._rollback = (cli as any)._opts._rollback;
+        }
+        const onSignal = () => {
+          if ((pickOpts as any)._rollback) {
+            (pickOpts as any)._rollback();
+            (pickOpts as any)._rollback = undefined;
+          }
+          process.exit(130);
+        };
+        process.once("SIGINT", onSignal);
+        process.once("SIGTERM", onSignal);
+        const cleanup = () => {
+          process.removeListener("SIGINT", onSignal);
+          process.removeListener("SIGTERM", onSignal);
+        };
+        return await new FynCli(pickOpts)
+          .install({ opts: { audit: Boolean(meta.opts.audit) } })
+          .finally(cleanup);
       }
     },
     options: {
