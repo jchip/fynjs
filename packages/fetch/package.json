@@ -15,6 +15,15 @@
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fetch",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/fetch"
+  },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
@@ -24,6 +33,13 @@
   },
   "files": [
     "dist"
+  ],
+  "keywords": [
+    "fetch",
+    "http",
+    "https",
+    "client",
+    "retry"
   ],
   "publishConfig": {
     "access": "public"
