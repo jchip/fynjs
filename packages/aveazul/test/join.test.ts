@@ -246,6 +246,12 @@ describe("AveAzul.join", () => {
   });
 
   test("should handle deeply nested join calls with multiple inner joins", async () => {
+    // Each delayedResolve() below starts its timer the moment the promise is constructed, so
+    // the clock has to start here. Capturing it after construction measured only the residual
+    // wait, which shrinks as construction slows - on a loaded CI runner that landed on exactly
+    // 20ms and failed a `> 20` assertion the setup never guaranteed. - FJM-199
+    const startTime = Date.now();
+
     // Helper function to create a promise with random delay
     const delayedResolve = (value) => {
       const delay = Math.floor(Math.random() * 21) + 10; // Random delay between 10-30ms
@@ -300,9 +306,6 @@ describe("AveAzul.join", () => {
 
     // Fifth promise: Regular value (still needs to be wrapped in promise for consistency)
     const regularValue = delayedResolve({ type: "constant", value: 42 });
-
-    // Record start time to measure total execution
-    const startTime = Date.now();
 
     // Final join combining all five promises with varying depths of nesting
     const result = await AveAzul.join(
@@ -364,8 +367,9 @@ describe("AveAzul.join", () => {
     // Even with deeply nested joins, the library should handle parallelization
     expect(result.combined.metaData.totalExecutionTime).toBeLessThan(1500);
 
-    // Execution time should be non-zero and reasonable for async operations
-    expect(result.combined.metaData.totalExecutionTime).toBeGreaterThan(20);
+    // Now that the clock covers the async work, the floor is the shortest delay any of these
+    // promises can draw (10ms) - not the 30ms ceiling, which nothing guarantees.
+    expect(result.combined.metaData.totalExecutionTime).toBeGreaterThanOrEqual(10);
 
     // Only log execution time when DEBUG environment variable is set
     if (process.env.DEBUG) {
