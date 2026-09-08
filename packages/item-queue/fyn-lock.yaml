@@ -56,10 +56,10 @@ $pkg:
   $: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==
   _: 'https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-1.0.2.tgz'
 '@jchip/error':
- _latest: 2.1.0-fynlocal_h
+ _latest: 2.1.1-fynlocal_h
  _:
-  ../error: 2.1.0-fynlocal_h
- 2.1.0-fynlocal_h:
+  ../error: 2.1.1-fynlocal_h
+ 2.1.1-fynlocal_h:
   $: local
   _: ../error
 '@jridgewell/resolve-uri':
@@ -619,16 +619,16 @@ ast-v8-to-istanbul:
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
 aveazul:
- _latest: 2.1.0-fynlocal_h
+ _latest: 2.1.1-fynlocal_h
  _:
-  ../aveazul: 2.1.0-fynlocal_h
- 2.1.0-fynlocal_h:
+  ../aveazul: 2.1.1-fynlocal_h
+ 2.1.1-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
   dependencies:
-   '@jchip/error': ^2.1.0
-   xaa: ^3.1.0
+   '@jchip/error': ^2.1.1
+   xaa: ^3.1.1
 chai:
  _latest: 6.2.2
  _:
@@ -1016,10 +1016,10 @@ prettier:
   $: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==
   _: 'https://registry.npmjs.org/prettier/-/prettier-3.9.6.tgz'
 publish-util:
- _latest: 3.1.0-fynlocal_h
+ _latest: 3.1.1-fynlocal_h
  _:
-  ../publish-util: 3.1.0-fynlocal_h
- 3.1.0-fynlocal_h:
+  ../publish-util: 3.1.1-fynlocal_h
+ 3.1.1-fynlocal_h:
   top: 1
   hasI: 1
   $: local
@@ -1202,10 +1202,10 @@ unicorn-magic:
   $: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==
   _: 'https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.3.0.tgz'
 visual-logger:
- _latest: 2.1.1-fynlocal_h
+ _latest: 2.1.2-fynlocal_h
  _:
-  ../visual-logger: 2.1.1-fynlocal_h
- 2.1.1-fynlocal_h:
+  ../visual-logger: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../visual-logger
@@ -1297,17 +1297,17 @@ wrap-ansi:
    ansi-styles: ^6.2.3
    string-width: ^8.2.0
 xaa:
- _latest: 3.1.0-fynlocal_h
+ _latest: 3.1.1-fynlocal_h
  _:
-  ../xaa: 3.1.0-fynlocal_h
- 3.1.0-fynlocal_h:
+  ../xaa: 3.1.1-fynlocal_h
+ 3.1.1-fynlocal_h:
   $: local
   _: ../xaa
 xflight:
- _latest: 3.1.0-fynlocal_h
+ _latest: 3.1.1-fynlocal_h
  _:
-  ../xflight: 3.1.0-fynlocal_h
- 3.1.0-fynlocal_h:
+  ../xflight: 3.1.1-fynlocal_h
+ 3.1.1-fynlocal_h:
   top: 1
   $: local
   _: ../xflight

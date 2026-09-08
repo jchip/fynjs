@@ -1112,10 +1112,10 @@ proc-log:
   $: sha512-FYgfaA69XZ93zaXLoMNQ+ViDXGGBgR8aLh03txzcFhV+9xOXx7+8DLCULrKKpR9+GsH9ZfHm82aSUPpozX0Ztg==
   _: 'https://registry.npmjs.org/proc-log/-/proc-log-7.0.0.tgz'
 publish-util:
- _latest: 3.1.0-fynlocal_h
+ _latest: 3.1.1-fynlocal_h
  _:
-  ../publish-util: 3.1.0-fynlocal_h
- 3.1.0-fynlocal_h:
+  ../publish-util: 3.1.1-fynlocal_h
+ 3.1.1-fynlocal_h:
   top: 1
   hasI: 1
   $: local

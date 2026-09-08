@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/fetch",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Hardened, zero-dependency HTTP client based on Node core fetch",
   "type": "module",
   "types": "./dist/index.d.ts",
