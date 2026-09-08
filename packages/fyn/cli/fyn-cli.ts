@@ -370,7 +370,7 @@ class FynCli {
           return false;
         }
 
-        const pkgFile = this.fyn._pkgFile;
+        const pkgFile = this.fyn.pkgFile;
         const origPkgStr = await Fs.readFile(pkgFile, "utf8");
         const pkgFynFile = Path.resolve(this.fyn.cwd, PACKAGE_FYN_JSON);
         const origPkgFynStr = (await Fs.exists(pkgFynFile))
@@ -447,7 +447,7 @@ class FynCli {
       fyntil.exit(1);
     }
 
-    const pkgFile = this.fyn._pkgFile;
+    const pkgFile = this.fyn.pkgFile;
     const origPkgStr = Fs.readFileSync(pkgFile, "utf8");
     const pkgFynFile = Path.resolve(this.fyn.cwd, PACKAGE_FYN_JSON);
     const origPkgFynStr = Fs.existsSync(pkgFynFile) ? Fs.readFileSync(pkgFynFile, "utf8") : null;
