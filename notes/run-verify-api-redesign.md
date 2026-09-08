@@ -1,7 +1,9 @@
 # run-verify API redesign
 
-Date: 2026-09-07  
-Tracking: FRV-3; follows the README work in FRV-1 and FRV-2.  
+Date: 2026-09-07
+
+Tracking: FRV-3; follows the README work in FRV-1 and FRV-2.
+
 Status: design proposal. Names, signatures, and stricter behavior below are not
 implemented or approved migration decisions.
 
