@@ -7,7 +7,7 @@ $pkg:
   xaa: ../xaa
  dev:
   '@fynjs/ts-resolve': ../ts-resolve
-  '@types/node': ^22.15.30
+  '@types/node': ^26.4.1
   '@vitest/coverage-v8': ^5.0.0
   bluebird: ^3.7.2
   publish-util: ../publish-util
@@ -299,15 +299,15 @@ $pkg:
   $: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==
   _: 'https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz'
 '@types/node':
- _latest: 26.4.1
+ _latest: 26.5.0
  _:
-  ^22.15.30: 22.20.1
- 22.20.1:
+  ^26.4.1: 26.5.0
+ 26.5.0:
   top: 1
-  $: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==
-  _: 'https://registry.npmjs.org/@types/node/-/node-22.20.1.tgz'
+  $: sha512-dVSGpriSoCgz8WnDNTuSSuSv1PC/ALXihO4ulRZt7Md8k9mlbdin3lGOcDE8SnWOgf513ByWlXd7BK4azmyg/A==
+  _: 'https://registry.npmjs.org/@types/node/-/node-26.5.0.tgz'
   dependencies:
-   undici-types: ~6.21.0
+   undici-types: ~8.9.0
 '@typescript/typescript-aix-ppc64':
  _latest: 7.0.2
  _:
@@ -1057,10 +1057,10 @@ typescript:
 undici-types:
  _latest: 8.10.2
  _:
-  ~6.21.0: 6.21.0
- 6.21.0:
-  $: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
-  _: 'https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz'
+  ~8.9.0: 8.9.0
+ 8.9.0:
+  $: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==
+  _: 'https://registry.npmjs.org/undici-types/-/undici-types-8.9.0.tgz'
 unicorn-magic:
  _latest: 0.4.0
  _:

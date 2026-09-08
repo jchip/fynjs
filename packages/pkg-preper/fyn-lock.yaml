@@ -8,7 +8,7 @@ $pkg:
   tar: ^7.5.22
  dev:
   '@types/cacache': ^20.0.1
-  '@types/node': ^22.15.30
+  '@types/node': ^26.4.1
   '@vitest/coverage-v8': ^5.0.0
   prettier: ^3.5.3
   publish-util: ../publish-util
@@ -312,11 +312,17 @@ $pkg:
   $: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==
   _: 'https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz'
 '@types/node':
- _latest: 26.4.1
+ _latest: 26.5.0
  _:
-  '*,^22.15.30': 22.20.1
- 22.20.1:
+  '*': 22.20.1
+  ^26.4.1: 26.5.0
+ 26.5.0:
   top: 1
+  $: sha512-dVSGpriSoCgz8WnDNTuSSuSv1PC/ALXihO4ulRZt7Md8k9mlbdin3lGOcDE8SnWOgf513ByWlXd7BK4azmyg/A==
+  _: 'https://registry.npmjs.org/@types/node/-/node-26.5.0.tgz'
+  dependencies:
+   undici-types: ~8.9.0
+ 22.20.1:
   $: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==
   _: 'https://registry.npmjs.org/@types/node/-/node-22.20.1.tgz'
   dependencies:
@@ -912,13 +918,13 @@ locate-path:
   _: 'https://registry.npmjs.org/locate-path/-/locate-path-8.0.0.tgz'
   dependencies:
    p-locate: ^6.0.0
-lodash:
+lodash-es:
  _latest: 4.18.1
  _:
-  ^4.17.21: 4.18.1
+  ^4.18.1: 4.18.1
  4.18.1:
-  $: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==
-  _: 'https://registry.npmjs.org/lodash/-/lodash-4.18.1.tgz'
+  $: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==
+  _: 'https://registry.npmjs.org/lodash-es/-/lodash-es-4.18.1.tgz'
 lru-cache:
  _latest: 11.5.2
  _:
@@ -1116,7 +1122,7 @@ publish-util:
   _: ../publish-util
   dependencies:
    find-up: ^8.0.0
-   lodash: ^4.17.21
+   lodash-es: ^4.18.1
 rolldown:
  _latest: 1.2.7
  _:
@@ -1265,6 +1271,10 @@ undici-types:
  _latest: 8.10.2
  _:
   ~6.21.0: 6.21.0
+  ~8.9.0: 8.9.0
+ 8.9.0:
+  $: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==
+  _: 'https://registry.npmjs.org/undici-types/-/undici-types-8.9.0.tgz'
  6.21.0:
   $: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
   _: 'https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz'
