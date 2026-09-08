@@ -49,8 +49,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.com/",
-    "tag": "v3"
+    "registry": "https://registry.npmjs.com/"
   },
   "publishUtil": {
     "fynIgnore": true,
