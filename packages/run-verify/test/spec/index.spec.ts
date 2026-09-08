@@ -634,6 +634,63 @@ describe("runDefer", () => {
     );
   });
 
+  //
+  // Handlers are typed `(value) => void`, but an author can still hand one an async
+  // arrow. The rejection used to escape as an unhandled rejection and the test passed -
+  // a verifier that failed, reported as success. - FRV-5
+  //
+  it("should fail if an async onResolve rejects", () => {
+    const defer = runDefer();
+    return asyncVerify(
+      expectError(() =>
+        asyncVerify(
+          defer,
+          runTimeout(20),
+          () => {
+            defer.resolve("hello");
+          },
+          defer.onResolve(async () => {
+            throw new Error("async fail resolve");
+          })
+        )
+      ),
+      (r: any) => {
+        expect(r).toBeInstanceOf(Error);
+        expect(r.message).toBe("async fail resolve");
+      }
+    );
+  });
+
+  it("should fail if an async onReject rejects", () => {
+    const defer = runDefer();
+    return asyncVerify(
+      expectError(() =>
+        asyncVerify(
+          defer,
+          runTimeout(20),
+          () => {
+            defer.reject(new Error("hello"));
+          },
+          defer.onReject(async () => {
+            throw new Error("async onReject error");
+          })
+        )
+      ),
+      (r: any) => {
+        expect(r).toBeInstanceOf(Error);
+        expect(r.message).toBe("async onReject error");
+      }
+    );
+  });
+
+  //
+  // Not covered here: `defer.wait()` does not block on a still-running async handler that
+  // is going to FULFILL. wait() calls setAwait with its own resolve/reject (index.ts:573)
+  // and never routes through onDefer, so handlers have no bearing on it. Gating it would
+  // change completion ownership for every caller - see "Let the scope own completion" in
+  // notes/run-verify-api-redesign.md. Only the rejecting case is fixed by FRV-5.
+  //
+
   it("should invoke onReject handlers", () => {
     const defer = runDefer();
     return asyncVerify(

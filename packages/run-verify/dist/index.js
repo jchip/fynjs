@@ -101,10 +101,23 @@ function _runVerify(args, errorFromCall) {
         let checkFunc = checkFuncs[index];
         const addDefer = (defer) => {
             defers.push(defer);
+            //
+            // Handlers are typed `(value) => void`, but an author can still pass an async
+            // arrow, and it returns a promise regardless of the type. Dropping that promise
+            // let a rejected verifier escape as an unhandled rejection while the run reported
+            // success - a verifier that failed, counted as evidence it passed (FRV-5).
+            //
+            // Stay synchronous unless a handler actually returns a thenable, so handlers that
+            // honor the declared type keep the exact timing they have today.
+            //
             const invokeDeferHandlers = (handlers, value) => {
+                const pending = [];
                 for (const h of handlers) {
                     try {
-                        h(value);
+                        const returned = h(value);
+                        if (returned && typeof returned.then === "function") {
+                            pending.push(returned);
+                        }
                     }
                     catch (err) {
                         defer.failed = true;
@@ -112,30 +125,42 @@ function _runVerify(args, errorFromCall) {
                         break;
                     }
                 }
-                return undefined;
+                if (pending.length === 0) {
+                    return undefined;
+                }
+                // Overwrite unconditionally, exactly as the synchronous catch above does: on the
+                // reject path `defer.error` already holds the original rejection, and it is the
+                // handler's failure - not the value it was handed - that the test needs to see.
+                return Promise.all(pending).then(() => undefined, (err) => {
+                    defer.failed = true;
+                    defer.error = err;
+                });
             };
             const onDefer = (err, r) => {
                 if (!failError && !defer.invoked) {
                     defer.invoked = true;
-                    if (!err) {
-                        invokeDeferHandlers(defer.handlers.resolve, r);
-                    }
-                    else {
-                        invokeDeferHandlers(defer.handlers.reject, err);
-                    }
-                    const errors = defers.map((x) => x.error).filter((x) => x);
-                    if (errors.length > 0) {
-                        if (!defer[DEFER_WAIT]) {
-                            return invokeFinally(errors[0]);
+                    const handlersDone = !err
+                        ? invokeDeferHandlers(defer.handlers.resolve, r)
+                        : invokeDeferHandlers(defer.handlers.reject, err);
+                    // Completion can only be judged once the handlers are done - an async verifier
+                    // that has not settled yet has not yet supplied its evidence.
+                    const finish = () => {
+                        const errors = defers.map((x) => x.error).filter((x) => x);
+                        if (errors.length > 0) {
+                            if (!defer[DEFER_WAIT]) {
+                                return invokeFinally(errors[0]);
+                            }
+                            else {
+                                return undefined;
+                            }
                         }
-                        else {
-                            return undefined;
+                        if (!defer._waiting && defers.every((x) => x.invoked) && index >= lastIx) {
+                            const results = defers.map((x) => x.result);
+                            return invokeFinally(undefined, results.length === 1 ? results[0] : results);
                         }
-                    }
-                    if (!defer._waiting && defers.every((x) => x.invoked) && index >= lastIx) {
-                        const results = defers.map((x) => x.result);
-                        return invokeFinally(undefined, results.length === 1 ? results[0] : results);
-                    }
+                        return undefined;
+                    };
+                    return handlersDone ? handlersDone.then(finish) : finish();
                 }
                 return undefined;
             };
