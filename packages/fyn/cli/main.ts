@@ -26,6 +26,7 @@ import myPkg from "./mypkg";
 import loadRc from "./load-rc";
 import defaultRc from "./default-rc";
 import fynTil from "../lib/util/fyntil";
+import { isFynpoConfigError, formatFynpoConfigError } from "@fynpo/base";
 import { runInitPackage } from "init-package";
 import FynGlobal from "../lib/fyn-global";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
@@ -112,6 +113,22 @@ const setLockfile = (config: PickedOptions, lockfile: unknown): unknown => {
   return previous;
 };
 
+/**
+ * A monorepo config file that doesn't parse is the user's typo, not a fyn bug, and fyn walks
+ * up the whole tree to find one - so an unrelated broken lerna.json two directories up would
+ * otherwise greet them with a stack trace. Warn with the file and the parse error, and stop.
+ * Anything else still gets its stack, since that is a real failure worth reporting.
+ */
+const reportFynpoLoadError = (err: unknown): never => {
+  if (isFynpoConfigError(err)) {
+    logger.warn(formatFynpoConfigError(err, "fyn"));
+  } else {
+    logger.error((err as Error).stack);
+  }
+
+  return fynTil.exit(1);
+};
+
 const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedOptions> => {
   const meta = cmd.jsonMeta;
   // Global options (like --cwd) are stored in cmd.rootCmd.opts
@@ -135,8 +152,7 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
     try {
       fynpo = await fynTil.loadFynpo(cwd);
     } catch (err) {
-      logger.error((err as Error).stack);
-      process.exit(1);
+      reportFynpoLoadError(err);
     }
   }
 
@@ -986,5 +1002,5 @@ const nodeGyp = (): void => {
   import("node-gyp/bin/node-gyp");
 };
 
-export { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir };
-export default { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir };
+export { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir, reportFynpoLoadError };
+export default { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir, reportFynpoLoadError };

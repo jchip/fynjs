@@ -14,6 +14,8 @@ import { Version } from "./version.ts";
 import {
   FynpoDepGraph,
   outOfScopePackages,
+  isFynpoConfigError,
+  formatFynpoConfigError,
 } from "@fynpo/base";
 import { logger } from "./logger.ts";
 import * as utils from "./utils.ts";
@@ -423,6 +425,21 @@ export const cliOptions = {
   },
 };
 
+/**
+ * fynpo searches up the tree for its config the same way fyn does, so the same typo in a
+ * fynpo.json or lerna.json reaches it. Report the file and the parse error as a warning and
+ * exit; rethrow everything else so bin/fynpo.js still prints a stack for real failures.
+ */
+export const reportFynpoConfigError = (err: unknown): never => {
+  if (!isFynpoConfigError(err)) {
+    throw err;
+  }
+
+  logger.warn(formatFynpoConfigError(err, "fynpo"));
+
+  return process.exit(1);
+};
+
 export const fynpoMain = () => {
   const nixClap = new NixClap({
     name: myPkg.name,
@@ -598,5 +615,5 @@ export const fynpoMain = () => {
     subCommands
   });
 
-  return nixClap.parseAsync();
+  return nixClap.parseAsync().catch(reportFynpoConfigError);
 };

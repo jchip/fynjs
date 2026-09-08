@@ -2,6 +2,7 @@ import Fs from "fs";
 import Path from "path";
 import { createRequire } from "node:module";
 import { readJson, readJsonSync } from "./util.js";
+import { FynpoConfigError } from "./config-error.js";
 
 import { makeOptionalImport } from "optional-import";
 
@@ -107,8 +108,7 @@ export class FynpoConfigManager {
       return await readJson(file);
     } catch (err: any) {
       if (err.code !== "ENOENT") {
-        const msg = `Failed to read JSON file ${file} - ${err.message}`;
-        throw new Error(msg);
+        throw new FynpoConfigError(file, err.message);
       }
 
       throw err;
@@ -129,8 +129,7 @@ export class FynpoConfigManager {
       return readJsonSync(file);
     } catch (err: any) {
       if (err.code !== "ENOENT") {
-        const msg = `Failed to read JSON file ${file} - ${err.message}`;
-        throw new Error(msg);
+        throw new FynpoConfigError(file, err.message);
       }
 
       throw err;

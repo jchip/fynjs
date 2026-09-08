@@ -11,6 +11,8 @@ export * from "./fynpo-dep-graph.js";
 
 export * from "./fynpo-config.js";
 
+export * from "./config-error.js";
+
 export * from "./packages-config.js";
 
 export * from "./gitignore.js";

@@ -3,6 +3,11 @@ import os from "node:os";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";
 import { FynpoConfigManager } from "../src/fynpo-config.js";
+import {
+  FynpoConfigError,
+  isFynpoConfigError,
+  formatFynpoConfigError,
+} from "../src/config-error.js";
 
 /**
  * Each case gets its own mkdtemp directory: `import()` caches by URL, so reusing a path would
@@ -107,6 +112,42 @@ describe("FynpoConfigManager", () => {
 
       await expect(new FynpoConfigManager(opts).load()).rejects.toThrow(/lerna\.json/);
       expect(() => new FynpoConfigManager(opts).loadSync()).toThrow(/lerna\.json/);
+    });
+
+    //
+    // The CLIs turn a bad config into a warning and a clean exit instead of a stack trace,
+    // which they can only do if the error is identifiable. - FJM-197
+    //
+    it("should throw a FynpoConfigError carrying the file and the parse error", async () => {
+      const cwd = await dirWith({ "fynpo.json": badJson });
+      const file = Path.join(cwd, "fynpo.json");
+
+      const err = await new FynpoConfigManager({ cwd }).load().then(
+        () => undefined,
+        (e: unknown) => e
+      );
+
+      expect(isFynpoConfigError(err)).toBe(true);
+      expect((err as FynpoConfigError).filePath).toBe(file);
+      expect((err as FynpoConfigError).code).toBe("FYNPO_BAD_CONFIG");
+      // the raw parse failure, kept apart from the "Failed to read ..." framing so the CLI
+      // banner can show it on its own line
+      expect((err as FynpoConfigError).reason).toMatch(/JSON/);
+      expect((err as FynpoConfigError).message).toContain(file);
+    });
+
+    it("should throw a FynpoConfigError from loadSync too", async () => {
+      const cwd = await dirWith({ "lerna.json": badJson });
+
+      let caught: unknown;
+      try {
+        new FynpoConfigManager({ cwd, allowLernaWithoutFynpo: true }).loadSync();
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isFynpoConfigError(caught)).toBe(true);
+      expect((caught as FynpoConfigError).filePath).toBe(Path.join(cwd, "lerna.json"));
     });
 
     it("should still report no config when the files are simply absent", async () => {
