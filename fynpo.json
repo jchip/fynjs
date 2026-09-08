@@ -11,17 +11,7 @@
     }
   },
   "command": {
-    "publish": {
-      "tags": {
-        "v3": {
-          "enabled": true,
-          "packages": {
-            "fynpo": true,
-            "fyn": true
-          }
-        }
-      }
-    }
+    "publish": {}
   },
   "caching": {
     "enable": false,
