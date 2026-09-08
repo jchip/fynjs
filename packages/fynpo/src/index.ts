@@ -192,7 +192,9 @@ const makeBootstrap = async (cmd, parsed) => {
   return new Bootstrap(graph, opts);
 };
 
-const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
+const MAX_BOOTSTRAP_RERUNS = 3;
+
+const execBootstrap = async (cmd, parsed, firstRunTime = 0, rerunCount = 0) => {
   const bootstrap = await makeBootstrap(cmd, parsed);
   const fynpoDataStart = await readFynpoData(bootstrap.cwd);
   let statusCode = 0;
@@ -214,8 +216,14 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
     });
 
     if (execRes && typeof execRes === "object" && execRes.rerun) {
-      secondRun = true;
-      return await execBootstrap(cmd, parsed, bootstrap.elapsedTime);
+      if (rerunCount >= MAX_BOOTSTRAP_RERUNS) {
+        logger.error(
+          `Exceeded maximum bootstrap reruns (${MAX_BOOTSTRAP_RERUNS}) for install-script approval.`
+        );
+      } else {
+        secondRun = true;
+        return await execBootstrap(cmd, parsed, bootstrap.elapsedTime + firstRunTime, rerunCount + 1);
+      }
     }
 
     if (!firstRunTime) {
@@ -225,7 +233,7 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
           "=== fynpo data changed - running bootstrap again - fynpo recommends that you commit the .fynpo-data.json file ==="
         );
         secondRun = true;
-        return await execBootstrap(cmd, parsed, bootstrap.elapsedTime);
+        return await execBootstrap(cmd, parsed, bootstrap.elapsedTime + firstRunTime, rerunCount + 1);
       }
     }
 
