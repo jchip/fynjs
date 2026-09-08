@@ -22,6 +22,24 @@ This is the negative-confirmation philosophy discussed in the package README:
 missing or incorrect required behavior must make the test fail. It applies to
 success-path tests as well as tests of errors.
 
+### A false pass from this monorepo
+
+The premise is not hypothetical here. FJM-199 (fixed 2026-09-07) was an aveazul
+test asserting `totalExecutionTime > 20` on a `join` of promises with random
+10–30 ms delays. Every timer started when its promise was constructed, but the
+clock started *after* construction, so the assertion measured only the residual
+wait rather than the async work it named. It passed on developer machines for as
+long as it existed, and failed CI on node 22.22.2 at exactly 20 ms.
+
+Nothing threw. The test ran, asserted, and reported success while measuring the
+wrong interval — a false pass of exactly the kind the evaluation below proposes
+to measure. Note also what a verification obligation would and would not have
+caught: naming the behavior and binding a verifier does not by itself validate
+that the verifier measures the right quantity. What the incident supports is the
+narrower claim that "no exception was raised" is weak evidence, and that
+red-case execution and mutation checks are the separate evidence a TDD helper
+cannot supply on its own.
+
 The proposed primary API unit is a **verification obligation**:
 
 - A name identifying the behavior under test.
@@ -306,6 +324,22 @@ boundaries are fully specified.
 An additive explicit surface is a candidate strategy, not an approved migration.
 Do not silently change `expectError` channel acceptance, callback inference,
 timeout defaults, defer reuse, or cleanup behavior in existing callers.
+
+### Release mechanics
+
+`run-verify@2.1.1` was published on 2026-09-07 (tag `fynpo-rel-20260907-91ad3c2c`).
+Versions in this monorepo come from CHANGELOG.md, and the bump level is derived
+from commit subjects: `packages/fynpo/src/utils/get-package-version.ts:38` matches
+`[maj` anywhere in the subject, and applies that level to every package the commit
+touched.
+
+So an additive surface ships as a patch or minor with no special handling. But any
+change to established behavior — tightening `expectError`'s channel acceptance,
+awaiting handlers that currently run synchronously, changing timeout defaults or
+defer reuse — is breaking, and needs a `[maj]` commit touching
+`packages/run-verify`. Keep such a commit scoped to that package alone: the marker
+majors everything else it touches. `munchy@2.0.0` in the same release is the
+worked example.
 
 Before implementation, discuss migration with the user as required by AGENTS.md.
 Decisions include public names and exports, coexistence with the old runner,
