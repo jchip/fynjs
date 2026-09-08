@@ -151,33 +151,36 @@ export function selectRecords(names, records) {
   const byName = new Map();
   for (const record of records) {
     if (!byName.has(record.name)) {
-      byName.set(record.name, record);
+      byName.set(record.name, []);
     }
+    byName.get(record.name).push(record);
   }
 
   const matched = [];
   const unknown = [];
+  const ambiguous = [];
 
   for (const arg of names) {
     const { name, spec } = parseAllowKey(arg);
-    const record = byName.get(name);
+    const existing = byName.get(name) || [];
 
     if (spec) {
-      // an explicit version is the user's call - it does not need to have been
-      // seen by an install
+      const found = existing.find(r => r.version === spec);
       matched.push({
         name,
         version: spec,
-        scripts: record ? record.scripts : ["preinstall", "install", "postinstall"]
+        scripts: found ? found.scripts : ["preinstall", "install", "postinstall"]
       });
-    } else if (record) {
-      matched.push(record);
+    } else if (existing.length === 1) {
+      matched.push(existing[0]);
+    } else if (existing.length > 1) {
+      ambiguous.push({ name, versions: existing.map(r => r.version) });
     } else {
       unknown.push(arg);
     }
   }
 
-  return { matched, unknown };
+  return { matched, unknown, ambiguous };
 }
 
 /**
@@ -376,13 +379,21 @@ export class InstallScripts {
     if (all) {
       toApprove = this.records;
     } else {
-      const { matched, unknown } = selectRecords(names, this.records);
+      if (names.length === 0) {
+        throw new Error("no packages named to approve");
+      }
+      const { matched, unknown, ambiguous } = selectRecords(names, this.records);
+      if (ambiguous && ambiguous.length > 0) {
+        const details = ambiguous.map(a => `${a.name} (${a.versions.join(", ")})`).join("; ");
+        throw new Error(
+          `multiple versions awaiting review for: ${details} - name an explicit version (e.g. name@version)`
+        );
+      }
       if (unknown.length > 0) {
-        logger.error(
+        throw new Error(
           `not awaiting review: ${unknown.join(", ")} - run ` +
             `${chalk.cyan("fyn install-scripts ls")} to see what is, or name an explicit version`
         );
-        return [];
       }
       toApprove = matched;
     }
@@ -436,8 +447,7 @@ export class InstallScripts {
    */
   async deny(names = [], { local = false } = {}) {
     if (names.length === 0) {
-      logger.error("no packages named to deny");
-      return [];
+      throw new Error("no packages named to deny");
     }
 
     const target = resolveTarget(this._fyn, local);

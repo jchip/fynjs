@@ -651,6 +651,12 @@ class FynCli {
           await this.fyn.removeInstallLock();
         }
 
+        if (this.fyn.blockedScripts.length > 0 || this.fyn.pendingScripts.length > 0) {
+          try {
+            await this.fyn.saveInstallConfig();
+          } catch {}
+        }
+
         if (failure) {
           await this.fail(chalk.red("install failed:"), failure);
           return failure;
@@ -694,13 +700,25 @@ class FynCli {
       switch (action) {
         case "ls":
           return await cmd.ls({ json: Boolean(opts.json) });
-        case "approve":
-          return await cmd.approve(packages, {
+        case "approve": {
+          if (!opts.all && packages.length === 0) {
+            throw new Error("no packages named to approve");
+          }
+          const res = (await cmd.approve(packages, {
             all: Boolean(opts.all),
             local: Boolean(opts.local)
-          });
-        case "deny":
+          })) as string[];
+          if (packages.length > 0 && Array.isArray(res) && res.length === 0) {
+            fyntil.exit(1);
+          }
+          return res;
+        }
+        case "deny": {
+          if (packages.length === 0) {
+            throw new Error("no packages named to deny");
+          }
           return await cmd.deny(packages, { local: Boolean(opts.local) });
+        }
         case "prune":
           return await cmd.prune({ local: Boolean(opts.local) });
         default:

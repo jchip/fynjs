@@ -800,6 +800,11 @@ class PkgInstaller {
       return;
     }
 
+    this._fyn.setBlockedScripts(this.blockedScripts, this.pendingScripts);
+    try {
+      await this._fyn.saveInstallConfig();
+    } catch {}
+
     const approved = await new InstallScripts({ fyn: this._fyn }).review(pending);
 
     if (approved.length === 0) {

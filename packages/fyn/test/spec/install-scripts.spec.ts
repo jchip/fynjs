@@ -176,6 +176,16 @@ describe("install-scripts", function () {
       expect(unknown).toStrictEqual([]);
       expect(matched[0]).toMatchObject({ name: "ghost", version: "2.0.0" });
     });
+
+    it("detects ambiguous bare name when multiple versions are pending", () => {
+      const { matched, unknown, ambiguous } = selectRecords(["sharp"], [
+        mkRecord({ name: "sharp", version: "0.34.1" }),
+        mkRecord({ name: "sharp", version: "0.34.4" })
+      ]);
+      expect(matched).toStrictEqual([]);
+      expect(unknown).toStrictEqual([]);
+      expect(ambiguous).toStrictEqual([{ name: "sharp", versions: ["0.34.1", "0.34.4"] }]);
+    });
   });
 
   describe("resolveTarget / write", function () {
@@ -268,6 +278,37 @@ describe("install-scripts", function () {
       });
       const approved = await new InstallScripts({ fyn }).approve([], { all: true });
       expect(approved.sort()).toStrictEqual(["canvas", "sharp"]);
+    });
+
+    it("approve throws when a named package is not awaiting review", async () => {
+      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
+      const fyn = mkFyn({ blockedScripts: [] });
+      const cmd = new InstallScripts({ fyn });
+      await expect(cmd.approve(["ghost"])).rejects.toThrow("not awaiting review: ghost");
+    });
+
+    it("approve throws when a bare name is ambiguous", async () => {
+      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
+      const fyn = mkFyn({
+        blockedScripts: [
+          mkRecord({ name: "sharp", version: "0.34.1" }),
+          mkRecord({ name: "sharp", version: "0.34.4" })
+        ]
+      });
+      const cmd = new InstallScripts({ fyn });
+      await expect(cmd.approve(["sharp"])).rejects.toThrow("multiple versions awaiting review for: sharp (0.34.1, 0.34.4)");
+    });
+
+    it("approve throws when no packages are named and all is false", async () => {
+      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
+      const cmd = new InstallScripts({ fyn: mkFyn() });
+      await expect(cmd.approve([])).rejects.toThrow("no packages named to approve");
+    });
+
+    it("deny throws when no packages are named", async () => {
+      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
+      const cmd = new InstallScripts({ fyn: mkFyn() });
+      await expect(cmd.deny([])).rejects.toThrow("no packages named to deny");
     });
 
     it("deny writes fyn.denyScripts and approve then refuses", async () => {
