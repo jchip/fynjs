@@ -20,7 +20,7 @@
     "test": "vitest run",
     "ci:check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && vitest run",
     "coverage": "vitest run --coverage",
-    "prepublishOnly": "xrun build"
+    "prepublishOnly": "fyn build"
   },
   "files": [
     "dist"
