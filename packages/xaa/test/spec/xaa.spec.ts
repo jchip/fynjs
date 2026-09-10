@@ -90,7 +90,7 @@ describe("xaa", () => {
           too.cancel();
           return promise;
         })
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("operation cancelled");
           expect(too.isDone()).toBe(true);
         });
@@ -120,7 +120,7 @@ describe("xaa", () => {
           too.cancel("cancelling test");
           return promise;
         })
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toEqual("cancelling test");
         });
     });
