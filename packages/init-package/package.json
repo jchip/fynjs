@@ -24,7 +24,7 @@
     "coverage": "vitest run --coverage"
   },
   "private": true,
-  "author": "",
+  "author": "Joel Chen",
   "files": [
     "dist"
   ],

@@ -40,7 +40,7 @@
     "batch",
     "windows"
   ],
-  "author": "Joel Chen <joel123@gmail.com>",
+  "author": "Joel Chen",
   "license": "Apache-2.0",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/unwrap-npm-cmd",
   "bugs": {

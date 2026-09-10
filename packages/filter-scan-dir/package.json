@@ -55,7 +55,7 @@
     "fast",
     "glob"
   ],
-  "author": "Joel Chen <joel123@gmail.com>",
+  "author": "Joel Chen",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"

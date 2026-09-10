@@ -34,11 +34,10 @@
     "fyn": "./bin/fyn.mjs",
     "fun": "./bin/fun.mjs"
   },
-  "author": "Walmart GTP.js Team and Contributors",
+  "author": "Joel Chen",
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.com/",
-    "tag": "v3"
+    "registry": "https://registry.npmjs.com/"
   },
   "files": [
     "bin",
@@ -85,7 +84,8 @@
   "contributors": [
     "Joel Chen",
     "Dat Vong",
-    "Divya Karippath"
+    "Divya Karippath",
+    "Walmart GTP.js Team and Contributors"
   ],
   "dependencies": {
     "@fynpo/base": "^2.1.2",

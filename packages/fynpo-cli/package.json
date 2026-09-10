@@ -30,10 +30,11 @@
     "mono",
     "monorepo"
   ],
-  "author": "Walmart GTP.js Team and Contributors",
+  "author": "Joel Chen",
   "contributors": [
     "Joel Chen",
-    "Divya Vannilaparambath"
+    "Divya Vannilaparambath",
+    "Walmart GTP.js Team and Contributors"
   ],
   "license": "Apache-2.0",
   "bugs": {

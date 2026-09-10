@@ -30,10 +30,11 @@
     "dist",
     "templates"
   ],
-  "author": "Walmart GTP.js Team and Contributors",
+  "author": "Joel Chen",
   "contributors": [
     "Joel Chen",
-    "Divya Vannilaparambath"
+    "Divya Vannilaparambath",
+    "Walmart GTP.js Team and Contributors"
   ],
   "license": "Apache-2.0",
   "bugs": {
@@ -49,8 +50,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.com/",
-    "tag": "v3"
+    "registry": "https://registry.npmjs.com/"
   },
   "publishUtil": {
     "fynIgnore": true,

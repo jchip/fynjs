@@ -41,7 +41,7 @@
     "configuration",
     "dotenv"
   ],
-  "author": "Joel Chen <joel123@gmail.com>",
+  "author": "Joel Chen",
   "license": "Apache-2.0",
   "files": [
     "dist"

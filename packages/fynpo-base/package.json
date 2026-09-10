@@ -40,10 +40,11 @@
     "topo",
     "workspace"
   ],
-  "author": "Walmart GTP.js Team and Contributors",
+  "author": "Joel Chen",
   "contributors": [
     "Divya Vannilaparambath",
-    "Joel Chen"
+    "Joel Chen",
+    "Walmart GTP.js Team and Contributors"
   ],
   "publishConfig": {
     "access": "public",

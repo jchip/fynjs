@@ -22,9 +22,10 @@
     "create-fynpo": "bin/create-monorepo.js"
   },
   "keywords": [],
-  "author": "Walmart GTP.js Team and Contributors",
+  "author": "Joel Chen",
   "contributors": [
-    "Divya Vannilaparambath"
+    "Divya Vannilaparambath",
+    "Walmart GTP.js Team and Contributors"
   ],
   "license": "Apache-2.0",
   "repository": {
