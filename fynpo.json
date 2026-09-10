@@ -12,6 +12,7 @@
   },
   "command": {
     "publish": {
+      "gitTagTemplate": "fynjs-rel-{YYYY}{MM}{DD}-{COMMIT}",
       "tags": {
         "v3": {
           "enabled": true,
