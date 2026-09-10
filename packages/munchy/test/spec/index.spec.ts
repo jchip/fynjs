@@ -3,7 +3,8 @@ import { Munchy } from "../../src/index.ts";
 import fs from "node:fs";
 import Path from "node:path";
 import { PassThrough, Readable, Writable } from "node:stream";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
+import { verify } from "run-verify";
 
 describe("munchy", function () {
   const drainIt = (munchy: Munchy) => {
@@ -23,7 +24,7 @@ describe("munchy", function () {
     expect(munchy._triggered).to.equal(false);
   });
 
-  it("should drain fs read stream, string, and buffer", async () => {
+  it("should drain fs read stream, string, and buffer", () => {
     const fooPath = Path.resolve(import.meta.dirname, "../fixtures/foo.txt");
     const barPath = Path.resolve(import.meta.dirname, "../fixtures/bar.txt");
 
@@ -48,14 +49,14 @@ describe("munchy", function () {
       drained++;
     });
 
-    await new Promise<void>(resolve => {
-      munchy.on("close", resolve);
-    });
-
-    expect(end).to.be.true;
-    const output = data.map(x => x.toString());
-    expect(output).to.deep.equal(["hello world\n", "foo\n", "blah", "bar\n"]);
-    expect(drained).to.equal(2);
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "close"))
+      .step(() => {
+        expect(end).to.be.true;
+        const output = data.map(x => x.toString());
+        expect(output).to.deep.equal(["hello world\n", "foo\n", "blah", "bar\n"]);
+        expect(drained).to.equal(2);
+      });
   });
 
   it("should stop pushing if push returns false (backpressure)", async () => {
@@ -119,7 +120,7 @@ describe("munchy", function () {
     expect(reset).to.equal(false);
   });
 
-  it("should reset sources if they are all drained", async () => {
+  it("should reset sources if they are all drained", () => {
     const fooPath = Path.resolve(import.meta.dirname, "../fixtures/foo.txt");
     const barPath = Path.resolve(import.meta.dirname, "../fixtures/bar.txt");
 
@@ -133,20 +134,24 @@ describe("munchy", function () {
     });
     const { data } = drainIt(munchy);
 
-    await new Promise<void>(resolve => foo.on("end", resolve));
-    munchy.munch(fs.createReadStream(fooPath), bar);
-    await new Promise<void>(resolve => bar.on("end", resolve));
-
-    await new Promise(r => setTimeout(r, 25));
-    expect(munched).to.equal(true);
-
-    munchy.munch(null);
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-
-    expect(data.map(x => x.toString().trim()).join("")).to.equal("helloworldfoofoobar");
+    return verify({ timeout: 500 })
+      .step(() => once(foo, "end"))
+      .step(() => {
+        munchy.munch(fs.createReadStream(fooPath), bar);
+        return once(bar, "end");
+      })
+      .step(() => new Promise(r => setTimeout(r, 25)))
+      .step(() => {
+        expect(munched).to.equal(true);
+        munchy.munch(null);
+        return once(munchy, "end");
+      })
+      .step(() => {
+        expect(data.map(x => x.toString().trim()).join("")).to.equal("helloworldfoofoobar");
+      });
   });
 
-  it("should handle munch a bunch of non-streams and then null", async () => {
+  it("should handle munch a bunch of non-streams and then null", () => {
     const munchy = new Munchy();
 
     let munched = false;
@@ -156,46 +161,53 @@ describe("munchy", function () {
 
     const { data } = drainIt(munchy);
     munchy.munch("a", "b");
-    await new Promise(r => setTimeout(r, 20));
 
-    munchy.munch(null);
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-
-    expect(munched).to.equal(true);
-    expect(data.map(x => x.toString()).join("")).to.equal("ab");
+    return verify({ timeout: 500 })
+      .step(() => new Promise(r => setTimeout(r, 20)))
+      .step(() => {
+        munchy.munch(null);
+        return once(munchy, "end");
+      })
+      .step(() => {
+        expect(munched).to.equal(true);
+        expect(data.map(x => x.toString()).join("")).to.equal("ab");
+      });
   });
 
-  it("should throw if trying to read after destroy", async () => {
+  it("should throw if trying to read after destroy", () => {
     const munchy = new Munchy({}, "hello", "world", null);
     drainIt(munchy);
 
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-      setTimeout(() => munchy.munch("test"), 10);
-    });
-
-    expect(err.message).toContain("_read called after destroy");
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        setTimeout(() => munchy.munch("test"), 10);
+        return once(munchy, "error");
+      })
+      .step(([err]: [Error]) => {
+        expect(err.message).toContain("_read called after destroy");
+      });
   });
 
-  it("should error if a source stream error", async () => {
+  it("should error if a source stream error", () => {
     const munchy = new Munchy();
     const p = new PassThrough();
     drainIt(munchy);
     munchy.munch(p);
 
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-      munchy.on("draining", () => {
-        process.nextTick(() => p.emit("error", new Error("test")));
+    return verify({ timeout: 500 })
+      .step(() => {
+        munchy.on("draining", () => {
+          process.nextTick(() => p.emit("error", new Error("test")));
+        });
+        return once(munchy, "error");
+      })
+      .step(([err]: [Error]) => {
+        expect(err.message).to.equal("test");
       });
-    });
-
-    expect(err.message).to.equal("test");
   });
 
-  it("should use handle stream error if a source stream error", async () => {
+  it("should use handle stream error if a source stream error", () => {
     const munchy = new Munchy({
       handleStreamError: err => {
         return { result: err.message, remit: false };
@@ -206,33 +218,37 @@ describe("munchy", function () {
     const output = drainIt(munchy);
     munchy.munch(p, null);
 
-    await new Promise<void>(resolve => {
-      munchy.on("end", resolve);
-      munchy.on("draining", () => {
-        process.nextTick(() => {
-          p.push("oops");
-          p.emit("error", new Error("test"));
+    return verify({ timeout: 500 })
+      .step(() => {
+        munchy.on("draining", () => {
+          process.nextTick(() => {
+            p.push("oops");
+            p.emit("error", new Error("test"));
+          });
         });
+        return once(munchy, "end");
+      })
+      .step(() => {
+        expect(output.data.map(x => x.toString()).join("-")).to.equal("oops-test");
       });
-    });
-
-    expect(output.data.map(x => x.toString()).join("-")).to.equal("oops-test");
   });
 
-  it("should error if a source stream emit error w/o Error object", async () => {
+  it("should error if a source stream emit error w/o Error object", () => {
     const munchy = new Munchy();
     const p = new PassThrough();
     drainIt(munchy);
     munchy.munch(p);
 
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-      munchy.on("draining", () => {
-        process.nextTick(() => p.emit("error"));
+    return verify({ timeout: 500 })
+      .step(() => {
+        munchy.on("draining", () => {
+          process.nextTick(() => p.emit("error"));
+        });
+        return once(munchy, "error");
+      })
+      .step(([err]: [Error]) => {
+        expect(err.message).toContain("source stream emitted error");
       });
-    });
-
-    expect(err.message).toContain("source stream emitted error");
   });
 
   it("should clear sources when destroy", () => {
@@ -241,7 +257,7 @@ describe("munchy", function () {
     expect(munchy._sources.length).to.equal(0);
   });
 
-  it("should handle Promise and async generator sources", async () => {
+  it("should handle Promise and async generator sources", () => {
     async function* asyncGen() {
       yield "gen1";
       yield "gen2";
@@ -252,20 +268,26 @@ describe("munchy", function () {
     const munchy = new Munchy({}, "start", promiseSource, asyncGen(), null);
     const { data } = drainIt(munchy);
 
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(data.map(x => x.toString()).join("-")).to.equal("start-prom1-gen1-gen2");
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(data.map(x => x.toString()).join("-")).to.equal("start-prom1-gen1-gen2");
+      });
   });
 
-  it("should handle sync Iterable sources", async () => {
+  it("should handle sync Iterable sources", () => {
     const set = new Set(["item1", "item2"]);
     const munchy = new Munchy({}, set, null);
     const { data } = drainIt(munchy);
 
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(data.map(x => x.toString()).join("-")).to.equal("item1-item2");
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(data.map(x => x.toString()).join("-")).to.equal("item1-item2");
+      });
   });
 
-  it("should handle Web Streams (ReadableStream)", async () => {
+  it("should handle Web Streams (ReadableStream)", () => {
     const webStream = new ReadableStream({
       start(controller) {
         controller.enqueue("web1");
@@ -277,11 +299,14 @@ describe("munchy", function () {
     const munchy = new Munchy({}, "prefix", webStream, null);
     const { data } = drainIt(munchy);
 
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(data.map(x => x.toString()).join("-")).to.equal("prefix-web1-web2");
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(data.map(x => x.toString()).join("-")).to.equal("prefix-web1-web2");
+      });
   });
 
-  it("should remit error when handleStreamError does not set remit to false", async () => {
+  it("should remit error when handleStreamError does not set remit to false", () => {
     const munchy = new Munchy({
       handleStreamError: err => ({ result: "failed", remit: true })
     });
@@ -289,60 +314,67 @@ describe("munchy", function () {
     drainIt(munchy);
     munchy.munch(p);
 
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-      munchy.on("draining", () => {
-        process.nextTick(() => p.emit("error", new Error("fatal stream error")));
+    return verify({ timeout: 500 })
+      .step(() => {
+        munchy.on("draining", () => {
+          process.nextTick(() => p.emit("error", new Error("fatal stream error")));
+        });
+        return once(munchy, "error");
+      })
+      .step(([err]: [Error]) => {
+        expect(err.message).to.equal("fatal stream error");
       });
-    });
-
-    expect(err.message).to.equal("fatal stream error");
   });
 
-  it("should handle sync iterable backpressure", async () => {
+  it("should handle sync iterable backpressure", () => {
     const bigArray = [Buffer.alloc(1024), Buffer.alloc(1024), Buffer.alloc(1024)];
     const munchy = new Munchy({ highWaterMark: 64 }, bigArray, null);
     const { data } = drainIt(munchy);
 
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(data.length).to.equal(3);
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(data.length).to.equal(3);
+      });
   });
 
-  it("should handle objectMode and arbitrary object fallback", async () => {
+  it("should handle objectMode and arbitrary object fallback", () => {
     const obj1 = { hello: "world" };
     const obj2 = { foo: "bar" };
     const munchy = new Munchy({ objectMode: true }, obj1, obj2, null);
     const received: any[] = [];
     munchy.on("data", x => received.push(x));
 
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(received).to.deep.equal([obj1, obj2]);
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(received).to.deep.equal([obj1, obj2]);
+      });
   });
 
-  it("should handle promise rejection in sources", async () => {
+  it("should handle promise rejection in sources", () => {
     const rejectedPromise = Promise.reject(new Error("promise rejected"));
     const munchy = new Munchy({}, rejectedPromise, null);
     drainIt(munchy);
 
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-    });
-    expect(err.message).to.equal("promise rejected");
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "error"))
+      .step(([err]: [Error]) => {
+        expect(err.message).to.equal("promise rejected");
+      });
   });
 
-  it("should cleanly destroy when an active stream is currently draining", async () => {
+  it("should cleanly destroy when an active stream is currently draining", () => {
     const p = new PassThrough();
     const munchy = new Munchy({}, p);
     drainIt(munchy);
 
-    await new Promise<void>(resolve => {
-      munchy.on("draining", () => {
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "draining"))
+      .step(() => {
         munchy.destroy();
-        resolve();
+        expect(munchy.destroyed).to.be.true;
       });
-    });
-
-    expect(munchy.destroyed).to.be.true;
   });
 
   it("should cleanup _resumePush when destroy is called during backpressure", async () => {
@@ -353,35 +385,47 @@ describe("munchy", function () {
     expect(munchy.destroyed).to.be.true;
   });
 
-  it("should catch unexpected error from _run and emit error", async () => {
+  it("should catch unexpected error from _run and emit error", () => {
     const munchy = new Munchy();
     (munchy as any)._run = async () => {
       throw new Error("unexpected run failure");
     };
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-      munchy._read();
-    });
-    expect(err.message).to.equal("unexpected run failure");
+
+    return verify({ timeout: 500 })
+      .step(() => {
+        munchy._read();
+        return once(munchy, "error");
+      })
+      .step(([err]: [Error]) => {
+        expect(err.message).to.equal("unexpected run failure");
+      });
   });
 
-  it("should handle backpressure from a resolved Promise", async () => {
+  it("should handle backpressure from a resolved Promise", () => {
     const p = Promise.resolve(Buffer.alloc(1024));
     const munchy = new Munchy({ highWaterMark: 64 }, p, "tail", null);
     const { data } = drainIt(munchy);
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(data.length).toBeGreaterThan(0);
+
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(data.length).toBeGreaterThan(0);
+      });
   });
 
-  it("should handle backpressure for arbitrary object in objectMode", async () => {
+  it("should handle backpressure for arbitrary object in objectMode", () => {
     const munchy = new Munchy({ objectMode: true, highWaterMark: 1 });
     munchy.munch({ item: 1 }, { item: 2 }, { item: 3 }, null);
     const received: any[] = [];
     munchy.on("data", chunk => {
       received.push(chunk);
     });
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(received).to.deep.equal([{ item: 1 }, { item: 2 }, { item: 3 }]);
+
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(received).to.deep.equal([{ item: 1 }, { item: 2 }, { item: 3 }]);
+      });
   });
 
   it("should handle backpressure when pushing handleStreamError result", async () => {
@@ -396,7 +440,7 @@ describe("munchy", function () {
     expect(await pending).to.equal(false);
   });
 
-  it("should remit error when handleStreamError returns falsy value", async () => {
+  it("should remit error when handleStreamError returns falsy value", () => {
     const munchy = new Munchy({
       handleStreamError: () => undefined
     });
@@ -404,23 +448,29 @@ describe("munchy", function () {
     drainIt(munchy);
     munchy.munch(p);
 
-    const err = await new Promise<Error>(resolve => {
-      munchy.on("error", resolve);
-      munchy.on("draining", () => {
-        process.nextTick(() => p.emit("error", new Error("falsy return error")));
+    return verify({ timeout: 500 })
+      .step(() => {
+        munchy.on("draining", () => {
+          process.nextTick(() => p.emit("error", new Error("falsy return error")));
+        });
+        return once(munchy, "error");
+      })
+      .step(([err]: [Error]) => {
+        expect(err.message).to.equal("falsy return error");
       });
-    });
-
-    expect(err.message).to.equal("falsy return error");
   });
 
-  it("should drain an empty stream that ends asynchronously", async () => {
+  it("should drain an empty stream that ends asynchronously", () => {
     const p = new PassThrough();
     const munchy = new Munchy({}, p, "after", null);
     const { data } = drainIt(munchy);
     setTimeout(() => p.end(), 10);
-    await new Promise<void>(resolve => munchy.on("end", resolve));
-    expect(data.map(x => x.toString()).join("")).to.equal("after");
+
+    return verify({ timeout: 500 })
+      .step(() => once(munchy, "end"))
+      .step(() => {
+        expect(data.map(x => x.toString()).join("")).to.equal("after");
+      });
   });
 
   it("should break when destroyed while a sub-stream is paused on backpressure", async () => {
@@ -444,7 +494,7 @@ describe("munchy", function () {
   });
 
   describe("regressions", function () {
-    it("should emit end and finish the destination when the consumer is slow", async () => {
+    it("should emit end and finish the destination when the consumer is slow", () => {
       const parts = ["a", "b", "c", "d"].map(c => Buffer.from(c.repeat(64)));
       const munchy = new Munchy({ highWaterMark: 16 });
       munchy.munch(...parts, null);
@@ -463,13 +513,15 @@ describe("munchy", function () {
         }
       });
 
-      await new Promise<void>(resolve => {
-        slow.on("finish", resolve);
-        munchy.pipe(slow);
-      });
-
-      expect(ended).to.equal(true);
-      expect(Buffer.concat(received).toString()).to.equal(Buffer.concat(parts).toString());
+      return verify({ timeout: 500 })
+        .step(() => {
+          munchy.pipe(slow);
+          return once(slow, "finish");
+        })
+        .step(() => {
+          expect(ended).to.equal(true);
+          expect(Buffer.concat(received).toString()).to.equal(Buffer.concat(parts).toString());
+        });
     });
 
     it("should unwind the read loop and release the source when destroyed while backpressured", async () => {
@@ -490,7 +542,7 @@ describe("munchy", function () {
       expect(p.listenerCount("error")).to.equal(0);
     });
 
-    it("should pick up sources munched from within a munched handler", async () => {
+    it("should pick up sources munched from within a munched handler", () => {
       const munchy = new Munchy();
       const { data } = drainIt(munchy);
 
@@ -499,19 +551,25 @@ describe("munchy", function () {
       });
       munchy.munch("first");
 
-      await new Promise<void>(resolve => munchy.on("end", resolve));
-      expect(data.map(x => x.toString()).join("")).to.equal("firstsecond");
+      return verify({ timeout: 500 })
+        .step(() => once(munchy, "end"))
+        .step(() => {
+          expect(data.map(x => x.toString()).join("")).to.equal("firstsecond");
+        });
     });
 
-    it("should treat null opts as absent options, not an end source", async () => {
+    it("should treat null opts as absent options, not an end source", () => {
       const munchy = new Munchy(null, "a", "b", null);
       const { data } = drainIt(munchy);
 
-      await new Promise<void>(resolve => munchy.on("end", resolve));
-      expect(data.map(x => x.toString()).join("")).to.equal("ab");
+      return verify({ timeout: 500 })
+        .step(() => once(munchy, "end"))
+        .step(() => {
+          expect(data.map(x => x.toString()).join("")).to.equal("ab");
+        });
     });
 
-    it("should emit drained after recovering from a source stream error", async () => {
+    it("should emit drained after recovering from a source stream error", () => {
       const munchy = new Munchy({
         handleStreamError: err => ({ result: err.message, remit: false })
       });
@@ -522,18 +580,20 @@ describe("munchy", function () {
       munchy.on("drained", x => drained.push(x));
       munchy.munch(p, null);
 
-      await new Promise<void>(resolve => {
-        munchy.on("end", resolve);
-        munchy.on("draining", () => {
-          process.nextTick(() => {
-            p.push("oops");
-            p.emit("error", new Error("test"));
+      return verify({ timeout: 500 })
+        .step(() => {
+          munchy.on("draining", () => {
+            process.nextTick(() => {
+              p.push("oops");
+              p.emit("error", new Error("test"));
+            });
           });
+          return once(munchy, "end");
+        })
+        .step(() => {
+          expect(drained).to.deep.equal([{ stream: p }]);
+          expect(data.map(x => x.toString()).join("-")).to.equal("oops-test");
         });
-      });
-
-      expect(drained).to.deep.equal([{ stream: p }]);
-      expect(data.map(x => x.toString()).join("-")).to.equal("oops-test");
     });
 
     it("should not consume more sources while backpressured on a handleStreamError result", async () => {
@@ -587,20 +647,24 @@ describe("munchy", function () {
       munchy.destroy();
     });
 
-    it("should not error on a no-op munch after the stream ended", async () => {
+    it("should not error on a no-op munch after the stream ended", () => {
       const munchy = new Munchy({}, "hello", null);
       drainIt(munchy);
-      await new Promise<void>(resolve => munchy.on("end", resolve));
-
       const errors: any[] = [];
-      munchy.on("error", err => errors.push(err));
-      munchy.munch();
 
-      await new Promise(r => setTimeout(r, 10));
-      expect(errors).to.deep.equal([]);
+      return verify({ timeout: 500 })
+        .step(() => once(munchy, "end"))
+        .step(() => {
+          munchy.on("error", err => errors.push(err));
+          munchy.munch();
+          return new Promise(r => setTimeout(r, 10));
+        })
+        .step(() => {
+          expect(errors).to.deep.equal([]);
+        });
     });
 
-    it("should continue after recovering from a rejected promise source", async () => {
+    it("should continue after recovering from a rejected promise source", () => {
       const munchy = new Munchy(
         { handleStreamError: err => ({ result: `[${err.message}]`, remit: false }) },
         Promise.reject(new Error("nope")),
@@ -609,11 +673,14 @@ describe("munchy", function () {
       );
       const { data } = drainIt(munchy);
 
-      await new Promise<void>(resolve => munchy.on("end", resolve));
-      expect(data.map(x => x.toString()).join("")).to.equal("[nope]after");
+      return verify({ timeout: 500 })
+        .step(() => once(munchy, "end"))
+        .step(() => {
+          expect(data.map(x => x.toString()).join("")).to.equal("[nope]after");
+        });
     });
 
-    it("should drain a legacy stream with no pause/resume", async () => {
+    it("should drain a legacy stream with no pause/resume", () => {
       const legacy: any = new EventEmitter();
       legacy.pipe = () => {};
       const munchy = new Munchy({}, legacy, "tail", null);
@@ -625,23 +692,27 @@ describe("munchy", function () {
         legacy.emit("end");
       }, 5);
 
-      await new Promise<void>(resolve => munchy.on("end", resolve));
-      expect(data.map(x => x.toString()).join("-")).to.equal("L1-L2-tail");
+      return verify({ timeout: 500 })
+        .step(() => once(munchy, "end"))
+        .step(() => {
+          expect(data.map(x => x.toString()).join("-")).to.equal("L1-L2-tail");
+        });
     });
 
-    it("should error on a legacy stream that emits error w/o an Error object", async () => {
+    it("should error on a legacy stream that emits error w/o an Error object", () => {
       const legacy: any = new EventEmitter();
       legacy.pipe = () => {};
       const munchy = new Munchy({}, legacy);
       drainIt(munchy);
 
-      const err = await new Promise<Error>(resolve => {
-        munchy.on("error", resolve);
-        setTimeout(() => legacy.emit("error"), 5);
-      });
-
-      expect(err.message).toContain("source stream emitted error");
+      return verify({ timeout: 500 })
+        .step(() => {
+          setTimeout(() => legacy.emit("error"), 5);
+          return once(munchy, "error");
+        })
+        .step(([err]: [Error]) => {
+          expect(err.message).toContain("source stream emitted error");
+        });
     });
   });
 });
-
