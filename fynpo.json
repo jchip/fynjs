@@ -17,8 +17,8 @@
         "v3": {
           "enabled": true,
           "packages": {
-            "fynpo": true,
-            "fyn": true
+            "fynpo": false,
+            "fyn": false
           }
         }
       }
