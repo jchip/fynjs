@@ -34,7 +34,7 @@ module.exports = {
     },
     footer: {
       style: "dark",
-      copyright: `Copyright © 2017-2021 Walmart`,
+      copyright: `Copyright © 2022-2026 Joel Chen`,
     },
   },
   presets: [

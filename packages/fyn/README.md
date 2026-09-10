@@ -469,7 +469,7 @@ Other than benefiting from the massive package ecosystem and all the documents f
 
 ## License
 
-Copyright (c) 2015-2021, WalmartLabs
+Copyright (c) 2022-2026 Joel Chen
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
