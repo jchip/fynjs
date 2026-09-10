@@ -124,10 +124,10 @@ $pkg:
   $: local
   _: ../fetch
 '@fynjs/run':
- _latest: 1.1.1-fynlocal_h
+ _latest: 1.1.2-fynlocal_h
  _:
-  ../xarc-run: 1.1.1-fynlocal_h
- 1.1.1-fynlocal_h:
+  ../xarc-run: 1.1.2-fynlocal_h
+ 1.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../xarc-run
@@ -141,7 +141,7 @@ $pkg:
    read-package-up: ^12.0.0
    string-array: ^2.1.1
    unwrap-npm-cmd: ^2.1.1
-   xsh: ^1.1.1
+   xsh: ^1.1.2
 '@fynjs/ts-resolve':
  _latest: 1.0.1-fynlocal_h
  _:
@@ -151,15 +151,15 @@ $pkg:
   $: local
   _: ../ts-resolve
 '@fynpo/base':
- _latest: 2.1.1-fynlocal_h
+ _latest: 2.1.2-fynlocal_h
  _:
-  ../fynpo-base: 2.1.1-fynlocal_h
- 2.1.1-fynlocal_h:
+  ../fynpo-base: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../fynpo-base
   dependencies:
-   filter-scan-dir: ^2.1.1
+   filter-scan-dir: ^2.1.2
    ignore: ^7.0.6
    lodash-es: ^4.18.1
    minimatch: ^10.0.3
@@ -1153,10 +1153,10 @@ ast-v8-to-istanbul:
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
 aveazul:
- _latest: 2.1.1-fynlocal_h
+ _latest: 2.1.2-fynlocal_h
  _:
-  ../aveazul: 2.1.1-fynlocal_h
- 2.1.1-fynlocal_h:
+  ../aveazul: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
@@ -1605,10 +1605,10 @@ fill-range:
   dependencies:
    to-regex-range: ^5.0.1
 filter-scan-dir:
- _latest: 2.1.1-fynlocal_h
+ _latest: 2.1.2-fynlocal_h
  _:
-  ../filter-scan-dir: 2.1.1-fynlocal_h
- 2.1.1-fynlocal_h:
+  ../filter-scan-dir: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../filter-scan-dir
@@ -2076,15 +2076,15 @@ isexe:
   $: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==
   _: 'https://registry.npmjs.org/isexe/-/isexe-2.0.0.tgz'
 item-queue:
- _latest: 2.1.2-fynlocal_h
+ _latest: 2.1.3-fynlocal_h
  _:
-  ../item-queue: 2.1.2-fynlocal_h
- 2.1.2-fynlocal_h:
+  ../item-queue: 2.1.3-fynlocal_h
+ 2.1.3-fynlocal_h:
   top: 1
   $: local
   _: ../item-queue
   dependencies:
-   xflight: ^3.1.1
+   xflight: ^3.1.2
 jaro-winkler:
  _latest: 0.2.8
  _:
@@ -3597,10 +3597,10 @@ validate-npm-package-name:
   $: sha512-SCv6OOV6Xj2/3cXy3dGmADluJTNcL3o7hZAglNPTe+WYuEuvxgJzxPrSDLZhF+CwyQOubqgecjMmTJGMVLWjYQ==
   _: 'https://registry.npmjs.org/validate-npm-package-name/-/validate-npm-package-name-8.0.0.tgz'
 visual-exec:
- _latest: 1.1.2-fynlocal_h
+ _latest: 1.1.3-fynlocal_h
  _:
-  ../visual-exec: 1.1.2-fynlocal_h
- 1.1.2-fynlocal_h:
+  ../visual-exec: 1.1.3-fynlocal_h
+ 1.1.3-fynlocal_h:
   top: 1
   $: local
   _: ../visual-exec
@@ -3610,7 +3610,7 @@ visual-exec:
    has-ansi: ^6.0.2
    strip-ansi: ^7.2.0
    visual-logger: ^2.1.2
-   xsh: ^1.1.1
+   xsh: ^1.1.2
 visual-logger:
  _latest: 2.1.2-fynlocal_h
  _:
@@ -3768,17 +3768,17 @@ xenv-config:
   $: local
   _: ../xenv-config
 xflight:
- _latest: 3.1.1-fynlocal_h
+ _latest: 3.1.2-fynlocal_h
  _:
-  ../xflight: 3.1.1-fynlocal_h
- 3.1.1-fynlocal_h:
+  ../xflight: 3.1.2-fynlocal_h
+ 3.1.2-fynlocal_h:
   $: local
   _: ../xflight
 xsh:
- _latest: 1.1.1-fynlocal_h
+ _latest: 1.1.2-fynlocal_h
  _:
-  ../xsh: 1.1.1-fynlocal_h
- 1.1.1-fynlocal_h:
+  ../xsh: 1.1.2-fynlocal_h
+ 1.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../xsh

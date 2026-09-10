@@ -620,10 +620,10 @@ ast-v8-to-istanbul:
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
 aveazul:
- _latest: 2.1.1-fynlocal_h
+ _latest: 2.1.2-fynlocal_h
  _:
-  ../aveazul: 2.1.1-fynlocal_h
- 2.1.1-fynlocal_h:
+  ../aveazul: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
@@ -1065,10 +1065,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.1-fynlocal_h
+ _latest: 2.1.2-fynlocal_h
  _:
-  ../run-verify: 2.1.1-fynlocal_h
- 2.1.1-fynlocal_h:
+  ../run-verify: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../run-verify
@@ -1313,10 +1313,10 @@ xaa:
   $: local
   _: ../xaa
 xflight:
- _latest: 3.1.1-fynlocal_h
+ _latest: 3.1.2-fynlocal_h
  _:
-  ../xflight: 3.1.1-fynlocal_h
- 3.1.1-fynlocal_h:
+  ../xflight: 3.1.2-fynlocal_h
+ 3.1.2-fynlocal_h:
   top: 1
   $: local
   _: ../xflight
