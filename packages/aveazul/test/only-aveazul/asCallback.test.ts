@@ -49,7 +49,7 @@ describe("AveAzul.prototype.asCallback error handling", () => {
           throw callbackError;
         });
       })
-      .awaiting("thrown")
+      .awaiting(captured.thrown)
       .step((err) => {
         expect(captured.callCount()).toBe(1);
         expect(err).toBe(callbackError);
@@ -70,7 +70,7 @@ describe("AveAzul.prototype.asCallback error handling", () => {
           throw callbackError;
         });
       })
-      .awaiting("thrown")
+      .awaiting(captured.thrown)
       .step((err) => {
         expect(captured.callCount()).toBe(1);
         expect(err).toBe(callbackError);
@@ -103,7 +103,7 @@ describe("AveAzul.prototype.asCallback error handling", () => {
           throw callbackError;
         });
       })
-      .awaiting("thrown")
+      .awaiting(captured.thrown)
       .step((err) => {
         expect(captured.callCount()).toBe(1);
         expect(err).toBe(callbackError);

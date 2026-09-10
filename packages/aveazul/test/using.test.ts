@@ -310,7 +310,7 @@ describe("AveAzul.using", () => {
 
         usingPromise = AveAzul.using([disposer], () => "success");
       })
-      .awaiting("cleanup")
+      .awaiting(cleanup)
       .step(() => usingPromise)
       .step(() => {
         expect(disposed).toBe(true);

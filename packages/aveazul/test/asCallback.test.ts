@@ -47,7 +47,7 @@ describe("AveAzul.prototype.asCallback", () => {
           { spread: true }
         );
       })
-      .awaiting("spread")
+      .awaiting(spread)
       .step((values) => {
         expect(values).toEqual([1, 2, 3]);
       });
@@ -81,7 +81,7 @@ describe("AveAzul.prototype.asCallback", () => {
       .keep.step(() => {
         expect(callbackCalled).toBe(false);
       })
-      .awaiting("delayed")
+      .awaiting(delayed)
       .step((value) => {
         expect(value).toBe("delayed value");
       });
