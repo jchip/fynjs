@@ -1,3 +1,104 @@
+# 9/10/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/run@1.1.2` `(1.1.1 => 1.1.2)`
+-   `@fynpo/base@2.1.2` `(2.1.1 => 2.1.2)`
+-   `aveazul@2.1.2` `(2.1.1 => 2.1.2)`
+-   `fyn@3.1.3` `(3.1.2 => 3.1.3)`
+-   `fynpo@3.1.3` `(3.1.2 => 3.1.3)`
+-   `fynpo-cli@3.1.3` `(3.1.2 => 3.1.3)`
+-   `item-queue@2.1.3` `(2.1.2 => 2.1.3)`
+-   `munchy@2.0.1` `(2.0.0 => 2.0.1)`
+-   `run-verify@2.1.2` `(2.1.1 => 2.1.2)`
+-   `xsh@1.1.2` `(1.1.1 => 1.1.2)`
+
+### Fynpo Updated
+
+-   `filter-scan-dir@2.1.2` `(2.1.1 => 2.1.2)`
+-   `visual-exec@1.1.3` `(1.1.2 => 1.1.3)`
+-   `xflight@3.1.2` `(3.1.1 => 3.1.2)`
+
+## Commits
+
+-   `packages/xarc-run`
+
+    -   FRV-3: convert logger, print-tasks, and task-file specs to the verify chain [commit](https://github.com/jchip/fynjs/commit/b15af17fcf16e6d75873766acd1ae8fbabe6124f)
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+    -   XST-4: Link packages/xstdout and update monorepo dependencies [commit](https://github.com/jchip/fynjs/commit/bb8df2a2f68e30ba1bc4b784ad96e81c71bdd066)
+
+-   `packages/fynpo-base`
+
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+    -   FPO-65: allow explicit include patterns to discover nested packages in fynpo [commit](https://github.com/jchip/fynjs/commit/00c116e9dbea24a9c08093680f4762b9e7c297f0)
+
+-   `packages/aveazul`
+
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+
+-   `packages/fyn`
+
+    -   chore: normalize quoting in mock-npm meta fixtures [commit](https://github.com/jchip/fynjs/commit/55f2d9061c665930ef2301a358b5bcb944385316)
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+    -   FJS-4: update fyn and fynpo npm tag to latest for next publish [commit](https://github.com/jchip/fynjs/commit/e746b3590a8864fd373af34c643f86c4ebec1d74)
+    -   XST-4: Link packages/xstdout and update monorepo dependencies [commit](https://github.com/jchip/fynjs/commit/bb8df2a2f68e30ba1bc4b784ad96e81c71bdd066)
+    -   FPM-145: filter already approved packages in install-scripts ls and loadRecords [commit](https://github.com/jchip/fynjs/commit/f7c4b52f81d96fb9c6d05a39fb00c9ef44ed92fc)
+    -   FPM-144: monorepo workflow and formatting preservation for install-script gate [commit](https://github.com/jchip/fynjs/commit/a3b93287a30d0cea12c7a7371f8765bfeeb26795)
+    -   FPM-143: rollback package.json when install fails during fyn add or remove [commit](https://github.com/jchip/fynjs/commit/f8bf955c98a06ca47595d84b76e19f9ecbe2d901)
+    -   FPM-142: fail when install-scripts approve has no match and support unambiguous bare names [commit](https://github.com/jchip/fynjs/commit/6f475a4de79694dd8d7887dbb128d72fb8c4a27d)
+
+-   `packages/fynpo`
+
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+    -   FJS-4: update fyn and fynpo npm tag to latest for next publish [commit](https://github.com/jchip/fynjs/commit/e746b3590a8864fd373af34c643f86c4ebec1d74)
+    -   FPM-147: add recursion depth bound for bootstrap rerun on script gate approval [commit](https://github.com/jchip/fynjs/commit/e4364a4bf8ded9b1a314023e28fdfd8fdba9ec2f)
+    -   FPM-144: monorepo workflow and formatting preservation for install-script gate [commit](https://github.com/jchip/fynjs/commit/a3b93287a30d0cea12c7a7371f8765bfeeb26795)
+
+-   `packages/item-queue`
+
+    -   FRV-3: migrate item-queues spec to the verify chain, fixing two unguarded assertions [commit](https://github.com/jchip/fynjs/commit/e8585caaff4c6fc3348103b1ef8767ba1a7e53d9)
+
+-   `packages/munchy`
+
+    -   FRV-3: convert munchys event-wait tests to the verify chain [commit](https://github.com/jchip/fynjs/commit/eadc8bcd113c5d2093a947397935602cd65447c7)
+
+-   `packages/run-verify`
+
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+
+-   `packages/xsh`
+
+    -   FRV-3: migrate xshs exec spec to the verify chain [commit](https://github.com/jchip/fynjs/commit/63421880b7b9480e4329a8ddff4abfa0f735101c)
+
+-   `lib`
+
+    -   catch error [commit](https://github.com/jchip/fynjs/commit/25b4aef5f991e9c454217930d56dbaed32108585)
+    -   first commit [commit](https://github.com/jchip/fynjs/commit/359c4530a402bdfca906a41fffb2e85c2b2f0bee)
+
+-   `notes`
+
+    -   FRV-3: document anti-patterns found while migrating packages to run-verify [commit](https://github.com/jchip/fynjs/commit/6800551b7b9d1807aeef4fbe3c9c03ceb05cd996)
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+
+-   `packages`
+
+    -   FRV-3: add verify(), a typed explicit step chain, and migrate specs to it [commit](https://github.com/jchip/fynjs/commit/2329d0f17c88dbd78caf39dd80a327f0ea617a2a)
+    -   XST-3: Modernize xstdout to TypeScript, ESM, and Vitest [commit](https://github.com/jchip/fynjs/commit/0c3fef3195a6c3a61572649d05dd07f7a3ed1cec)
+
+-   `test`
+
+    -   catch error [commit](https://github.com/jchip/fynjs/commit/25b4aef5f991e9c454217930d56dbaed32108585)
+    -   first commit [commit](https://github.com/jchip/fynjs/commit/359c4530a402bdfca906a41fffb2e85c2b2f0bee)
+
+-   `MISC`
+
+    -   FJM-200: use the published fyn and fynpo 3.1.2 at the root [commit](https://github.com/jchip/fynjs/commit/525755533627160860f57ae55655c9b6ceeed017)
+    -   0.1.1 [commit](https://github.com/jchip/fynjs/commit/339e736df6867a6452a2b3c48ed2cc601cf93855)
+    -   add badges and CI [commit](https://github.com/jchip/fynjs/commit/764588057e1045eeae94e4ab5ab993390be9ea8b)
+    -   Initial commit [commit](https://github.com/jchip/fynjs/commit/09b899a78923c75f81d2c0b5f0c16214e616b2bf)
+
 # 9/7/2026
 
 ## Packages
