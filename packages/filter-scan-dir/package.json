@@ -1,6 +1,6 @@
 {
   "name": "filter-scan-dir",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Recursively scan and filter directory for a flat array of files",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -63,7 +63,7 @@
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir",
   "dependencies": {},
   "devDependencies": {
-    "@fynjs/run": "^1.1.1",
+    "@fynjs/run": "^1.1.2",
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "@vitest/ui": "^5.0.0",

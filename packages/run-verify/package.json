@@ -1,6 +1,6 @@
 {
   "name": "run-verify",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/run-verify",
   "description": "Proper test verifications",
   "type": "module",

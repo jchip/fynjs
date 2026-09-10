@@ -1,6 +1,6 @@
 {
   "name": "xsh",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Some random NodeJS helper functions for shell execution",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -53,9 +53,9 @@
     "@types/node": "^26.4.1",
     "@types/shelljs": "^0.10.0",
     "@vitest/coverage-v8": "^5.0.0",
-    "aveazul": "^2.1.1",
+    "aveazul": "^2.1.2",
     "publish-util": "^3.1.1",
-    "run-verify": "^2.1.1",
+    "run-verify": "^2.1.2",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

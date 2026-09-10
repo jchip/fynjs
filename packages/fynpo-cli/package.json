@@ -1,6 +1,6 @@
 {
   "name": "fynpo-cli",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "description": "npm install globally to provide the fynpo command",
   "type": "module",
   "preferGlobal": true,
@@ -46,7 +46,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@fynjs/run": "^1.1.1",
+    "@fynjs/run": "^1.1.2",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/node": "^26.4.1",
     "prettier": "^3.5.3",

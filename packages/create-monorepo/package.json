@@ -32,7 +32,7 @@
     "url": "https://github.com/jchip/fynjs.git"
   },
   "devDependencies": {
-    "@fynjs/run": "^1.1.1",
+    "@fynjs/run": "^1.1.2",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^26.4.1",
     "@types/shelljs": "^0.10.0",
@@ -48,7 +48,7 @@
     "@fynjs/cli-args": "^1.1.1",
     "prompts": "^2.4.1",
     "shelljs": "^0.10.0",
-    "xsh": "^1.1.1"
+    "xsh": "^1.1.2"
   },
   "files": [
     "bin",

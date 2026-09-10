@@ -1,6 +1,6 @@
 {
   "name": "xflight",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "Handle inflight promise to avoid async duplication",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
@@ -44,7 +44,7 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@fynjs/run": "^1.1.1",
+    "@fynjs/run": "^1.1.2",
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "publish-util": "^3.1.1",

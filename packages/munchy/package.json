@@ -1,6 +1,6 @@
 {
   "name": "munchy",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A producer Node stream for draining different data, including Readable streams",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -61,7 +61,7 @@
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "publish-util": "^3.1.1",
-    "run-verify": "^2.1.1",
+    "run-verify": "^2.1.2",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   },
