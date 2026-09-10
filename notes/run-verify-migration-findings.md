@@ -5,7 +5,7 @@ test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, disti
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
 `xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted),
-and `pkg-preper` (its integration spec).
+`pkg-preper` (its integration spec), and `@fynjs/fetch` (its callback-observation subset).
 `aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
 flows are covered, while simple promise-result tests remain native.
 
@@ -219,6 +219,19 @@ the multi-stage pack/list/assert flow uses `.step()`, and two hand-written strea
 use `callbackStep()`. Their repeated `try/finally` directory removal is now a chain cleanup
 backstop; stream tests also destroy the owned stream before removing their temporary
 directories if a run stops early. The five synchronous API-shape tests remain native.
+
+## @fynjs/fetch
+
+`test/spec/fetch.spec.ts`. Thirteen tests asserted request methods, URLs, headers, or bodies
+inside raw Node HTTP server or request `"end"` callbacks. A failed assertion there could
+escape the Promise awaited by the test; when it ran before `res.end()`, it could also leave
+the client request hanging. The handlers now only capture observations and finish their
+responses. Bounded `.step()` chains await the client operation and make all assertions
+downstream, where a throw becomes the test's ordinary rejection.
+
+The shared server listen/close Promise adapters remain native because they contain no
+assertions and already propagate completion correctly. Ordinary request/result tests and
+hooks whose returned Promises already carry thrown assertions also remain unchanged.
 
 ## http-server
 

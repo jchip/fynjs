@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { verify } from "run-verify";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -62,10 +63,11 @@ describe("@fynjs/fetch", () => {
       expect(text).toBe("ping-pong");
     });
 
-    it("automatically sets duplex: 'half' for stream body uploads", async () => {
+    it("automatically sets duplex: 'half' for stream body uploads", () => {
       let received = "";
+      let method: string | undefined;
       requestHandler = (req, res) => {
-        expect(req.method).toBe("PUT");
+        method = req.method;
         req.on("data", (chunk) => {
           received += chunk.toString();
         });
@@ -76,19 +78,25 @@ describe("@fynjs/fetch", () => {
       };
 
       const bodyStream = Readable.from(["chunk1-", "chunk2-", "chunk3"]);
-      const res = await fynFetch(`${serverUrl}/upload`, {
-        method: "PUT",
-        body: bodyStream as any,
-      });
-
-      expect(res.ok).toBe(true);
-      expect(received).toBe("chunk1-chunk2-chunk3");
+      return verify({ timeout: 1000 })
+        .step(() =>
+          fynFetch(`${serverUrl}/upload`, {
+            method: "PUT",
+            body: bodyStream as any,
+          })
+        )
+        .step((res) => {
+          expect(res.ok).toBe(true);
+          expect(method).toBe("PUT");
+          expect(received).toBe("chunk1-chunk2-chunk3");
+        });
     });
 
-    it("uploads raw string body", async () => {
+    it("uploads raw string body", () => {
       let received = "";
+      let method: string | undefined;
       requestHandler = (req, res) => {
-        expect(req.method).toBe("POST");
+        method = req.method;
         req.on("data", (chunk) => (received += chunk.toString()));
         req.on("end", () => {
           res.writeHead(200);
@@ -96,18 +104,25 @@ describe("@fynjs/fetch", () => {
         });
       };
 
-      const res = await fynFetch(`${serverUrl}/string-upload`, {
-        method: "POST",
-        body: "raw string payload",
-      });
-      expect(res.ok).toBe(true);
-      expect(received).toBe("raw string payload");
+      return verify({ timeout: 1000 })
+        .step(() =>
+          fynFetch(`${serverUrl}/string-upload`, {
+            method: "POST",
+            body: "raw string payload",
+          })
+        )
+        .step((res) => {
+          expect(res.ok).toBe(true);
+          expect(method).toBe("POST");
+          expect(received).toBe("raw string payload");
+        });
     });
 
-    it("uploads Buffer body", async () => {
+    it("uploads Buffer body", () => {
       let received = Buffer.alloc(0);
+      let method: string | undefined;
       requestHandler = (req, res) => {
-        expect(req.method).toBe("PUT");
+        method = req.method;
         req.on("data", (chunk) => (received = Buffer.concat([received, chunk])));
         req.on("end", () => {
           res.writeHead(200);
@@ -116,12 +131,18 @@ describe("@fynjs/fetch", () => {
       };
 
       const payload = Buffer.from([0xaa, 0xbb, 0xcc]);
-      const res = await fynFetch(`${serverUrl}/buffer-upload`, {
-        method: "PUT",
-        body: payload,
-      });
-      expect(res.ok).toBe(true);
-      expect(Buffer.compare(received, payload)).toBe(0);
+      return verify({ timeout: 1000 })
+        .step(() =>
+          fynFetch(`${serverUrl}/buffer-upload`, {
+            method: "PUT",
+            body: payload,
+          })
+        )
+        .step((res) => {
+          expect(res.ok).toBe(true);
+          expect(method).toBe("PUT");
+          expect(Buffer.compare(received, payload)).toBe(0);
+        });
     });
   });
 
@@ -562,66 +583,101 @@ describe("@fynjs/fetch", () => {
 
   describe("ky & needle features", () => {
     describe("prefixUrl and searchParams", () => {
-      it("resolves prefixUrl with relative paths", async () => {
+      it("resolves prefixUrl with relative paths", () => {
+        const urls: Array<string | undefined> = [];
         requestHandler = (req, res) => {
-          expect(req.url).toBe("/api/v1/users");
+          urls.push(req.url);
           res.writeHead(200);
           res.end("ok");
         };
 
-        const res1 = await fynFetch("users", { prefixUrl: `${serverUrl}/api/v1` });
-        expect(res1.ok).toBe(true);
-
-        const res2 = await fynFetch("/users", { prefixUrl: `${serverUrl}/api/v1/` });
-        expect(res2.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() => fynFetch("users", { prefixUrl: `${serverUrl}/api/v1` }))
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            return fynFetch("/users", { prefixUrl: `${serverUrl}/api/v1/` });
+          })
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(urls).toEqual(["/api/v1/users", "/api/v1/users"]);
+          });
       });
 
-      it("appends searchParams object to URL", async () => {
+      it("appends searchParams object to URL", () => {
+        let requestUrl: string | undefined;
         requestHandler = (req, res) => {
-          expect(req.url).toBe("/search?filter=active&page=2&enabled=true");
+          requestUrl = req.url;
           res.writeHead(200);
           res.end("search ok");
         };
 
-        const res = await fynFetch(`${serverUrl}/search`, {
-          searchParams: { filter: "active", page: 2, enabled: true, ignored: undefined, nullish: null },
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/search`, {
+              searchParams: {
+                filter: "active",
+                page: 2,
+                enabled: true,
+                ignored: undefined,
+                nullish: null,
+              },
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(requestUrl).toBe("/search?filter=active&page=2&enabled=true");
+          });
       });
 
-      it("merges searchParams with existing query string in URL", async () => {
+      it("merges searchParams with existing query string in URL", () => {
+        let requestUrl: string | undefined;
         requestHandler = (req, res) => {
-          expect(req.url).toBe("/search?existing=1&extra=2");
+          requestUrl = req.url;
           res.writeHead(200);
           res.end("merged");
         };
 
-        const res = await fynFetch(`${serverUrl}/search?existing=1`, {
-          searchParams: "extra=2",
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/search?existing=1`, {
+              searchParams: "extra=2",
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(requestUrl).toBe("/search?existing=1&extra=2");
+          });
       });
     });
 
     describe("json option", () => {
-      it("serializes json and automatically sets Content-Type and Accept headers", async () => {
+      it("serializes json and automatically sets Content-Type and Accept headers", () => {
+        let contentType: string | undefined;
+        let accept: string | undefined;
+        let data = "";
         requestHandler = (req, res) => {
-          expect(req.headers["content-type"]).toBe("application/json");
-          expect(req.headers["accept"]).toBe("application/json");
-          let data = "";
+          contentType = req.headers["content-type"];
+          accept = req.headers["accept"];
           req.on("data", (chunk) => (data += chunk));
           req.on("end", () => {
-            expect(JSON.parse(data)).toEqual({ foo: "bar", count: 42 });
             res.writeHead(200);
             res.end("received");
           });
         };
 
-        const res = await fynFetch(`${serverUrl}/json-test`, {
-          method: "POST",
-          json: { foo: "bar", count: 42 },
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/json-test`, {
+              method: "POST",
+              json: { foo: "bar", count: 42 },
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(contentType).toBe("application/json");
+            expect(accept).toBe("application/json");
+            expect(JSON.parse(data)).toEqual({ foo: "bar", count: 42 });
+          });
       });
 
       it("throws TypeError if both json and body are provided", async () => {
@@ -635,71 +691,98 @@ describe("@fynjs/fetch", () => {
     });
 
     describe("form option", () => {
-      it("serializes form object and sets application/x-www-form-urlencoded", async () => {
+      it("serializes form object and sets application/x-www-form-urlencoded", () => {
+        let contentType: string | undefined;
+        let data = "";
         requestHandler = (req, res) => {
-          expect(req.headers["content-type"]).toBe("application/x-www-form-urlencoded");
-          let data = "";
+          contentType = req.headers["content-type"];
           req.on("data", (chunk) => (data += chunk));
           req.on("end", () => {
-            expect(data).toBe("username=john&role=admin");
             res.writeHead(200);
             res.end("form ok");
           });
         };
 
-        const res = await fynFetch(`${serverUrl}/form-test`, {
-          method: "POST",
-          form: { username: "john", role: "admin", empty: undefined },
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/form-test`, {
+              method: "POST",
+              form: { username: "john", role: "admin", empty: undefined },
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(contentType).toBe("application/x-www-form-urlencoded");
+            expect(data).toBe("username=john&role=admin");
+          });
       });
 
-      it("accepts URLSearchParams instance as form", async () => {
+      it("accepts URLSearchParams instance as form", () => {
+        let data = "";
         requestHandler = (req, res) => {
-          let data = "";
           req.on("data", (chunk) => (data += chunk));
           req.on("end", () => {
-            expect(data).toBe("key=val");
             res.writeHead(200);
             res.end("ok");
           });
         };
 
-        const res = await fynFetch(`${serverUrl}/form-sp`, {
-          method: "POST",
-          form: new URLSearchParams({ key: "val" }),
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/form-sp`, {
+              method: "POST",
+              form: new URLSearchParams({ key: "val" }),
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(data).toBe("key=val");
+          });
       });
     });
 
     describe("basic auth and cookies", () => {
-      it("sets basic authorization header from username and password", async () => {
+      it("sets basic authorization header from username and password", () => {
+        let authorization: string | undefined;
         requestHandler = (req, res) => {
-          const auth = req.headers["authorization"];
-          expect(auth).toBe(`Basic ${Buffer.from("alice:secret123").toString("base64")}`);
+          authorization = req.headers["authorization"];
           res.writeHead(200);
           res.end("authenticated");
         };
 
-        const res = await fynFetch(`${serverUrl}/auth`, {
-          username: "alice",
-          password: "secret123",
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/auth`, {
+              username: "alice",
+              password: "secret123",
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(authorization).toBe(
+              `Basic ${Buffer.from("alice:secret123").toString("base64")}`
+            );
+          });
       });
 
-      it("sets Cookie header from cookies option", async () => {
+      it("sets Cookie header from cookies option", () => {
+        let cookie: string | undefined;
         requestHandler = (req, res) => {
-          expect(req.headers["cookie"]).toBe("session=abc; token=123");
+          cookie = req.headers["cookie"];
           res.writeHead(200);
           res.end("cookie ok");
         };
 
-        const res = await fynFetch(`${serverUrl}/cookies`, {
-          cookies: { session: "abc", token: "123" },
-        });
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/cookies`, {
+              cookies: { session: "abc", token: "123" },
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(cookie).toBe("session=abc; token=123");
+          });
       });
     });
 
@@ -761,11 +844,14 @@ describe("@fynjs/fetch", () => {
     });
 
     describe("instance creation and extension", () => {
-      it("creates a client instance with default options and extends it", async () => {
+      it("creates a client instance with default options and extends it", () => {
+        let requestUrl: string | undefined;
+        let customApi: string | undefined;
+        let extended: string | undefined;
         requestHandler = (req, res) => {
-          expect(req.url).toBe("/v1/items?env=test");
-          expect(req.headers["x-custom-api"]).toBe("fynjs");
-          expect(req.headers["x-extended"]).toBe("true");
+          requestUrl = req.url;
+          customApi = req.headers["x-custom-api"] as string | undefined;
+          extended = req.headers["x-extended"] as string | undefined;
           res.writeHead(200);
           res.end("client ok");
         };
@@ -780,29 +866,42 @@ describe("@fynjs/fetch", () => {
           headers: { "x-extended": "true" },
         });
 
-        const res = await extendedClient.get("items");
-        expect(res.ok).toBe(true);
+        return verify({ timeout: 1000 })
+          .step(() => extendedClient.get("items"))
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(requestUrl).toBe("/v1/items?env=test");
+            expect(customApi).toBe("fynjs");
+            expect(extended).toBe("true");
+          });
       });
     });
 
     describe("hooks", () => {
-      it("runs beforeRequest hook and allows mutating options", async () => {
+      it("runs beforeRequest hook and allows mutating options", () => {
+        let hooked: string | undefined;
         requestHandler = (req, res) => {
-          expect(req.headers["x-hooked"]).toBe("applied");
+          hooked = req.headers["x-hooked"] as string | undefined;
           res.writeHead(200);
           res.end("hook ok");
         };
 
-        const res = await fynFetch(`${serverUrl}/hook`, {
-          hooks: {
-            beforeRequest: [
-              (opts) => {
-                opts.headers = { ...opts.headers, "x-hooked": "applied" };
+        return verify({ timeout: 1000 })
+          .step(() =>
+            fynFetch(`${serverUrl}/hook`, {
+              hooks: {
+                beforeRequest: [
+                  (opts) => {
+                    opts.headers = { ...opts.headers, "x-hooked": "applied" };
+                  },
+                ],
               },
-            ],
-          },
-        });
-        expect(res.ok).toBe(true);
+            })
+          )
+          .step((res) => {
+            expect(res.ok).toBe(true);
+            expect(hooked).toBe("applied");
+          });
       });
 
       it("allows beforeRequest hook to short-circuit with a Response", async () => {
@@ -1535,4 +1634,3 @@ describe("@fynjs/fetch", () => {
     });
   });
 });
-
