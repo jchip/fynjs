@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 import * as xaa from "../../src/index.js";
 
 describe("xaa", () => {
@@ -78,38 +79,50 @@ describe("xaa", () => {
       }
     });
 
-    it("should cancel run", async () => {
+    it("should cancel run", () => {
       const too = xaa.timeout(50, "foo");
-      try {
-        const promise = too.run(xaa.delay(150));
-        too.cancel();
-        await promise;
-        throw new Error("should have thrown");
-      } catch (err: any) {
-        expect(err.message).toContain("operation cancelled");
-        expect(too.isDone()).toBe(true);
-      }
+
+      // `{ promise }` is a plain value, not a thenable, so this step does not adopt it -
+      // the chain must not await the run before `cancel()` gets a chance to run.
+      return verify()
+        .step(() => ({ promise: too.run(xaa.delay(150)) }))
+        .expectError.step(({ promise }) => {
+          too.cancel();
+          return promise;
+        })
+        .step(err => {
+          expect(err.message).toContain("operation cancelled");
+          expect(too.isDone()).toBe(true);
+        });
     });
 
-    it("should ignore cancel if already resolved", async () => {
+    it("should ignore cancel if already resolved", () => {
       const too = xaa.timeout(150, "foo");
-      const promise = too.run(Promise.resolve("good"));
-      await xaa.delay(1);
-      too.cancel();
-      const message = await promise;
-      expect(message).toEqual("good");
+
+      return verify()
+        .step(() => ({ promise: too.run(Promise.resolve("good")) }))
+        .step(async ({ promise }) => {
+          await xaa.delay(1);
+          too.cancel();
+          return promise;
+        })
+        .step(message => {
+          expect(message).toEqual("good");
+        });
     });
 
-    it("should cancel run with custom message", async () => {
+    it("should cancel run with custom message", () => {
       const too = xaa.timeout(50, "foo");
-      try {
-        const promise = too.run(xaa.delay(150));
-        too.cancel("cancelling test");
-        await promise;
-        throw new Error("should have thrown");
-      } catch (err: any) {
-        expect(err.message).toEqual("cancelling test");
-      }
+
+      return verify()
+        .step(() => ({ promise: too.run(xaa.delay(150)) }))
+        .expectError.step(({ promise }) => {
+          too.cancel("cancelling test");
+          return promise;
+        })
+        .step(err => {
+          expect(err.message).toEqual("cancelling test");
+        });
     });
 
     it("should timeout run with default msg", async () => {
@@ -632,41 +645,29 @@ describe("xaa", () => {
   });
 
   describe("wrap", function () {
-    it("should wrap direct throws into async", () => {
-      let error: Error | undefined;
-      return xaa
-        .wrap(() => {
-          throw new Error("blah");
-        })
-        .then(() => {
-          throw new Error("expecting error");
-        })
-        .catch(err => {
-          error = err;
-        })
-        .then(() => {
+    it("should wrap direct throws into async", () =>
+      verify()
+        .expectError.step(() =>
+          xaa.wrap(() => {
+            throw new Error("blah");
+          })
+        )
+        .step(error => {
           expect(error).toBeInstanceOf(Error);
-          expect(error!.message).toEqual("blah");
-        });
-    });
+          expect((error as Error).message).toEqual("blah");
+        }));
 
-    it("should wrap async error", () => {
-      let error: Error | undefined;
-      return xaa
-        .wrap(() => {
-          return Promise.reject(new Error("blah"));
-        })
-        .then(() => {
-          throw new Error("expecting error");
-        })
-        .catch(err => {
-          error = err;
-        })
-        .then(() => {
+    it("should wrap async error", () =>
+      verify()
+        .expectError.step(() =>
+          xaa.wrap(() => {
+            return Promise.reject(new Error("blah"));
+          })
+        )
+        .step(error => {
           expect(error).toBeInstanceOf(Error);
-          expect(error!.message).toEqual("blah");
-        });
-    });
+          expect((error as Error).message).toEqual("blah");
+        }));
 
     it("should call with args", () => {
       return xaa
