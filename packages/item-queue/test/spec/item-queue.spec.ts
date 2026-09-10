@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
+import { verify, signal } from "run-verify";
 import { ItemQueue } from "../../src/index.js";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("item-queue", () => {
-  const testConcurrency = async (concurrency: number | undefined, expected: number) => {
+  const testConcurrency = (concurrency: number | undefined, expected: number) => {
     let save: Array<() => void> = [];
     const process = () => {
       return new Promise<void>((resolve) => {
@@ -12,30 +13,33 @@ describe("item-queue", () => {
       });
     };
 
-    return new Promise<void>((done) => {
-      const pq = new ItemQueue({
-        concurrency,
-        processItem: (x) => process(),
-        handlers: {
-          done: () => done(),
-        },
-      });
-      for (let x = 0; x <= expected; x++) {
-        pq.addItem(x, true);
-      }
-      expect(pq.count).toBe(expected + 1);
-      (pq as any)._process();
-      expect(save.length).toBe(expected);
-      const tmpSave = save;
-      save = [];
-      for (let x = 0; x < expected; x++) {
-        tmpSave[x]();
-      }
-      setTimeout(() => {
+    const done = signal();
+    const pq = new ItemQueue({
+      concurrency,
+      processItem: (x) => process(),
+      handlers: {
+        done: () => done.resolve(undefined),
+      },
+    });
+    for (let x = 0; x <= expected; x++) {
+      pq.addItem(x, true);
+    }
+    expect(pq.count).toBe(expected + 1);
+    (pq as any)._process();
+    expect(save.length).toBe(expected);
+    const tmpSave = save;
+    save = [];
+    for (let x = 0; x < expected; x++) {
+      tmpSave[x]();
+    }
+
+    return verify({ timeout: 500, signals: { done } })
+      .step(() => new Promise((r) => setTimeout(r, 10)))
+      .step(() => {
         expect(save.length).toBe(1);
         save[0]();
-      }, 10);
-    });
+      })
+      .awaiting(done);
   };
 
   it("should handle optional concurrency", () => testConcurrency(3, 3));
@@ -74,7 +78,7 @@ describe("item-queue", () => {
     expect(failed).toBeTruthy();
   });
 
-  it("should stop on error", async () => {
+  it("should stop on error", () => {
     let n = 0;
     const process = () => {
       return new Promise<void>((resolve, reject) => {
@@ -104,11 +108,12 @@ describe("item-queue", () => {
     pq.on("failItem", (data) => {
       failed = data.error;
     });
-    try {
-      await pq.wait();
-    } catch (err) {
-      expect(err).toBeTruthy();
-    }
+
+    return verify({ timeout: 500 })
+      .expectError.step(() => pq.wait())
+      .step((err) => {
+        expect(err).toBeTruthy();
+      });
   });
 
   it("should emit doneItem event", async () => {
@@ -150,25 +155,22 @@ describe("item-queue", () => {
     expect(result).toBe(undefined);
   });
 
-  it("should reject in wait if Q failed", async () => {
-    let error: Error | undefined;
-    try {
-      await new ItemQueue({
-        stopOnError: true,
-        processItem: () => {
-          throw new Error("test");
-        },
-      })
-        .setItemQ([1])
-        .wait();
-    } catch (err) {
-      error = err as Error;
-    }
-    expect(error).toBeTruthy();
+  it("should reject in wait if Q failed", () => {
+    const q = new ItemQueue({
+      stopOnError: true,
+      processItem: () => {
+        throw new Error("test");
+      },
+    }).setItemQ([1]);
+
+    return verify({ timeout: 500 })
+      .expectError.step(() => q.wait())
+      .step((error) => {
+        expect(error).toBeTruthy();
+      });
   });
 
-  it("should reject in subsequent wait if Q failed", async () => {
-    let error: Error | undefined;
+  it("should reject in subsequent wait if Q failed", () => {
     const q = new ItemQueue({
       stopOnError: true,
       processItem: () => {
@@ -176,20 +178,15 @@ describe("item-queue", () => {
       },
     }).setItemQ([1, 2, 3]);
 
-    try {
-      await q.wait();
-    } catch (err) {
-      error = err as Error;
-    }
-    expect(error).toBeTruthy();
-
-    error = undefined;
-    try {
-      await q.wait();
-    } catch (err) {
-      error = err as Error;
-    }
-    expect(error).toBeTruthy();
+    return verify({ timeout: 500 })
+      .expectError.step(() => q.wait())
+      .step((error) => {
+        expect(error).toBeTruthy();
+      })
+      .expectError.step(() => q.wait())
+      .step((error) => {
+        expect(error).toBeTruthy();
+      });
   });
 
   it("should addItems as an array", async () => {
