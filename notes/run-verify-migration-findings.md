@@ -4,7 +4,8 @@ Log of concrete defects and anti-patterns turned up while migrating existing pac
 test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, distinct from
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
-`xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted).
+`xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted),
+and `pkg-preper` (its integration spec).
 `aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
 flows are covered, while simple promise-result tests remain native.
 
@@ -210,6 +211,14 @@ and subsequently awaits that operation Promise before asserting the cleanup stat
 Left alone: synchronous tests, single-operation `await` tests, Vitest
 `.resolves`/`.rejects` assertions, and delay Promises used as test inputs. Wrapping those
 would add a second Promise API without making the test sequence clearer.
+
+## pkg-preper
+
+`test/index.spec.ts`. No bugs found. The three integration tests now use bounded chains:
+the multi-stage pack/list/assert flow uses `.step()`, and two hand-written stream Promises
+use `callbackStep()`. Their repeated `try/finally` directory removal is now a chain cleanup
+backstop; stream tests also destroy the owned stream before removing their temporary
+directories if a run stops early. The five synchronous API-shape tests remain native.
 
 ## http-server
 
