@@ -22,6 +22,7 @@ own `README.md`. Stale documents move to `notes/archive/`.
 | [run-verify-frv5-audit-2026-09-08.md](run-verify-frv5-audit-2026-09-08.md) | Retro for the withdrawn FRV-3/4/5 work: disposition, the evidence table for future runtime changes, verification runs, and two defects found in callback inference |
 | [run-verify-assessment.md](run-verify-assessment.md) | Independent review: what the library is worth against modern Node, the source-text inference flaw, ranked API improvements, why a frontier model misread the API, and measured results from a chain-typing prototype |
 | [run-verify-explicit-api-proposal.md](run-verify-explicit-api-proposal.md) | Proposed explicit `.step` chain API built as a facade over the positional runtime: design constraints, verified prototype results, coexistence instead of migration, the `xrun.spec.js` trial, and rejected alternatives |
+| [run-verify-migration-findings.md](run-verify-migration-findings.md) | What converting existing packages' tests to run-verify found — the anti-pattern catalog (assert-inside-callback, catch-only assertions, unguarded intercept cleanup) and real defects vs. style-parity churn, per package: `xarc-run`, `munchy`, `xsh`, `item-queue` |
 
 ## Conventions
 
