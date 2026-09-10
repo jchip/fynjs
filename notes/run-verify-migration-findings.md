@@ -5,7 +5,8 @@ test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, disti
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
 `xsh`, `item-queue`, `fyn` (one spec), `http-server` (one spec), `xaa` (fully converted).
-`aveazul` is partially converted (3 of ~26 test files) from earlier work.
+`aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
+flows are covered, while simple promise-result tests remain native.
 
 The point of this log is to separate **real defects found** from **style-parity churn** —
 not every conversion is equally justified, and the anti-pattern catalog below is what to
@@ -185,6 +186,24 @@ Left alone: `map`/`each`/`filter`/`tryCatch`/`delay`/`wrap` tests with no error 
 (nothing to bound), and `"should return defer object that can reject"`, which already uses
 vitest's own `expect(...).rejects.toThrow()` - already the best-practice idiom, nothing to
 gain by wrapping it further.
+
+## aveazul
+
+Continued the earlier partial conversion in `test/promisify.test.ts`,
+`test/operational-error.test.ts`, and `test/using.test.ts`. The expected-error cases now
+use `.expectError.step(...)`, and multi-stage success flows use bounded `.step()` chains.
+The old assertions were already safe, so these are structural-legibility changes rather
+than bug fixes.
+
+One real gap was fixed in `"should handle async disposer functions"`: the old hand-rolled
+Promise resolved when the disposer finished but discarded the Promise returned by
+`AveAzul.using(...)`. The test could therefore pass without observing an unexpected
+rejection from the operation under test. The new `signal()`/`.awaiting()` sequence retains
+and subsequently awaits that operation Promise before asserting the cleanup state.
+
+Left alone: synchronous tests, single-operation `await` tests, Vitest
+`.resolves`/`.rejects` assertions, and delay Promises used as test inputs. Wrapping those
+would add a second Promise API without making the test sequence clearer.
 
 ## http-server
 

@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vitest";
+import { verify } from "run-verify";
 import AveAzul from "./promise-lib.ts";
 
 describe("OperationalError", () => {
@@ -23,23 +24,25 @@ describe("OperationalError", () => {
 });
 
 describe("AveAzul.prototype.error", () => {
-  test("should catch operational errors", async () => {
+  test("should catch operational errors", () => {
     const promise = AveAzul.reject(
       new AveAzul.OperationalError("test operational error")
     );
 
-    const result = await promise
-      .error((err) => {
-        expect(err).toBeInstanceOf(AveAzul.OperationalError);
-        expect(err.message).toBe("test operational error");
-        return "handled";
-      })
-      .catch(() => "should not reach here");
-
-    expect(result).toBe("handled");
+    return verify({ timeout: 500 })
+      .step(() =>
+        promise.error((err) => {
+          expect(err).toBeInstanceOf(AveAzul.OperationalError);
+          expect(err.message).toBe("test operational error");
+          return "handled";
+        })
+      )
+      .step((result) => {
+        expect(result).toBe("handled");
+      });
   });
 
-  test("should catch errors marked as operational", async () => {
+  test("should catch errors marked as operational", () => {
     const error: Error & { isOperational?: boolean } = new Error(
       "marked as operational"
     );
@@ -47,60 +50,60 @@ describe("AveAzul.prototype.error", () => {
 
     const promise = AveAzul.reject(error);
 
-    const result = await promise
-      .error((err) => {
-        expect(err).toBeInstanceOf(Error);
-        // error() hands back a plain Error; isOperational is the ad-hoc marker
-        // this test set on it.
-        const marked = err as Error & { isOperational?: boolean };
-        expect(marked.isOperational).toBe(true);
-        expect(err.message).toBe("marked as operational");
-        return "handled";
-      })
-      .catch(() => "should not reach here");
-
-    expect(result).toBe("handled");
+    return verify({ timeout: 500 })
+      .step(() =>
+        promise.error((err) => {
+          expect(err).toBeInstanceOf(Error);
+          // error() hands back a plain Error; isOperational is the ad-hoc marker
+          // this test set on it.
+          const marked = err as Error & { isOperational?: boolean };
+          expect(marked.isOperational).toBe(true);
+          expect(err.message).toBe("marked as operational");
+          return "handled";
+        })
+      )
+      .step((result) => {
+        expect(result).toBe("handled");
+      });
   });
 
-  test("should not catch programmer errors", async () => {
+  test("should not catch programmer errors", () => {
     const promise = AveAzul.reject(new TypeError("programmer error"));
 
-    const result = await promise
-      .error(() => "should not reach here")
-      .catch((err) => {
+    return verify({ timeout: 500 })
+      .expectError.step(() => promise.error(() => "should not reach here"))
+      .step((err) => {
         expect(err).toBeInstanceOf(TypeError);
-        expect(err.message).toBe("programmer error");
-        return "caught programmer error";
+        expect((err as Error).message).toBe("programmer error");
       });
-
-    expect(result).toBe("caught programmer error");
   });
 
-  test("should propagate errors from handler", async () => {
+  test("should propagate errors from handler", () => {
     const promise = AveAzul.reject(new AveAzul.OperationalError("test error"));
 
-    const result = await promise
-      .error(() => {
-        throw new Error("error from handler");
-      })
-      .catch((err) => {
+    return verify({ timeout: 500 })
+      .expectError.step(() =>
+        promise.error(() => {
+          throw new Error("error from handler");
+        })
+      )
+      .step((err) => {
         expect(err).toBeInstanceOf(Error);
-        expect(err.message).toBe("error from handler");
-        return "caught handler error";
+        expect((err as Error).message).toBe("error from handler");
       });
-
-    expect(result).toBe("caught handler error");
   });
 
-  test("should work with resolved promises", async () => {
+  test("should work with resolved promises", () => {
     const promise = AveAzul.resolve("success");
 
-    const result = await promise.error(() => "should not reach here");
-
-    expect(result).toBe("success");
+    return verify({ timeout: 500 })
+      .step(() => promise.error(() => "should not reach here"))
+      .step((result) => {
+        expect(result).toBe("success");
+      });
   });
 
-  test("should work with promise chains", async () => {
+  test("should work with promise chains", () => {
     // `.then()` is re-declared to return AveAzul (it constructs through `this` per spec),
     // so the chain keeps its bluebird methods with no cast - see FPM-121.
     const chained = AveAzul.resolve(1).then((x) => {
@@ -110,12 +113,16 @@ describe("AveAzul.prototype.error", () => {
       return x;
     });
 
-    const result = await chained.error((err) => {
-      expect(err).toBeInstanceOf(AveAzul.OperationalError);
-      expect(err.message).toBe("operational in then");
-      return "handled in chain";
-    });
-
-    expect(result).toBe("handled in chain");
+    return verify({ timeout: 500 })
+      .step(() =>
+        chained.error((err) => {
+          expect(err).toBeInstanceOf(AveAzul.OperationalError);
+          expect(err.message).toBe("operational in then");
+          return "handled in chain";
+        })
+      )
+      .step((result) => {
+        expect(result).toBe("handled in chain");
+      });
   });
 });

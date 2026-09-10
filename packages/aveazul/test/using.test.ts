@@ -1,4 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { signal, verify } from "run-verify";
 import AveAzul from "./promise-lib.ts";
 import Bluebird from "bluebird";
 
@@ -171,7 +172,7 @@ describe("AveAzul.using", () => {
     expect(secondResource.disposed).toBe(true);
   });
 
-  test("should clean up acquired resources even a later promise resource rejects", async () => {
+  test("should clean up acquired resources even a later promise resource rejects", () => {
     let disposed = false;
     const resource = { value: "test resource" };
 
@@ -190,20 +191,16 @@ describe("AveAzul.using", () => {
     // Now create an array with our disposer followed by a rejected promise
     const disposers = [disposer, reject1(), reject2()];
 
-    let err1;
-
-    // Catch the error here to prevent test failure
-    const res = await AveAzul.using(disposers, () => "success").catch((err) => {
-      err1 = err;
-    });
-
-    expect(res).toBeUndefined();
-    // Now verify that cleanup happened
-    expect(disposed).toBe(true);
-    expect(err1).toBeInstanceOf(Error);
+    return verify({ timeout: 500 })
+      .expectError.step(() => AveAzul.using(disposers, () => "success"))
+      .step((err) => {
+        // Now verify that cleanup happened
+        expect(disposed).toBe(true);
+        expect(err).toBeInstanceOf(Error);
+      });
   });
 
-  test("should clean up acquired resources even an earlier promise resource rejects", async () => {
+  test("should clean up acquired resources even an earlier promise resource rejects", () => {
     let disposed = false;
     const resource = { value: "test resource" };
 
@@ -222,17 +219,13 @@ describe("AveAzul.using", () => {
     // Now create an array with our disposer followed by a rejected promise
     const disposers = [reject1(), disposer, reject2()];
 
-    let err1;
-
-    // Catch the error here to prevent test failure
-    const res = await AveAzul.using(disposers, () => "success").catch((err) => {
-      err1 = err;
-    });
-
-    expect(res).toBeUndefined();
-    // Now verify that cleanup happened
-    expect(disposed).toBe(true);
-    expect(err1).toBeInstanceOf(Error);
+    return verify({ timeout: 500 })
+      .expectError.step(() => AveAzul.using(disposers, () => "success"))
+      .step((err) => {
+        // Now verify that cleanup happened
+        expect(disposed).toBe(true);
+        expect(err).toBeInstanceOf(Error);
+      });
   });
 
   test("should work with non-promise values", async () => {
@@ -301,24 +294,27 @@ describe("AveAzul.using", () => {
     expect(resources[1].disposed).toBe(true);
   });
 
-  test("should handle async disposer functions", async () => {
+  test("should handle async disposer functions", () => {
     let disposed = false;
     const resource = { value: "test" };
+    const cleanup = signal<void>();
+    let usingPromise: PromiseLike<unknown>;
 
-    // Use a different approach to ensure the async cleanup completes
-    const cleanupPromise = new Promise<void>((resolve) => {
-      const disposer = AveAzul.resolve(resource).disposer(async () => {
-        await new Promise((r) => setTimeout(r, 10));
-        disposed = true;
-        resolve(); // Signal that cleanup is done
+    return verify({ timeout: 500, signals: { cleanup } })
+      .step(() => {
+        const disposer = AveAzul.resolve(resource).disposer(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          disposed = true;
+          cleanup.resolve(undefined);
+        });
+
+        usingPromise = AveAzul.using([disposer], () => "success");
+      })
+      .awaiting("cleanup")
+      .step(() => usingPromise)
+      .step(() => {
+        expect(disposed).toBe(true);
       });
-
-      AveAzul.using([disposer], () => "success");
-    });
-
-    // Wait for cleanup to complete
-    await cleanupPromise;
-    expect(disposed).toBe(true);
   });
 
   test("should pass the resource to the cleanup function", async () => {

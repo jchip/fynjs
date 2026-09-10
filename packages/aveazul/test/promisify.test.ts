@@ -10,17 +10,16 @@ describe("promisify", () => {
     expect(result).toBe("success");
   });
 
-  test("should handle errors in callback-style functions", async () => {
+  test("should handle errors in callback-style functions", () => {
     const error = new Error("test error");
     const fn = (cb) => cb(error);
     const promisified = AveAzul.promisify(fn);
-    try {
-      await promisified();
-      throw new Error("error expected but not thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(Error);
-      expect(err.message).toBe("test error");
-    }
+    return verify({ timeout: 500 })
+      .expectError.step(() => promisified())
+      .step((err) => {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe("test error");
+      });
   });
 
   test("should handle functions with multiple arguments", async () => {
@@ -186,9 +185,11 @@ describe("promisify", () => {
     expect(doublePromisifiedFn).toBe(promisifiedFn);
 
     // Should still work correctly
-    return doublePromisifiedFn("test").then((result) => {
-      expect(result).toBe("test");
-    });
+    return verify({ timeout: 500 })
+      .step(() => doublePromisifiedFn("test"))
+      .step((result) => {
+        expect(result).toBe("test");
+      });
   });
 
   it("should promisify multiple times when __isPromisified__ throws", () => {
@@ -227,21 +228,25 @@ describe("promisify", () => {
       });
   });
 
-  it("should handle multiArgs option correctly", async () => {
+  it("should handle multiArgs option correctly", () => {
     // Create a function that returns multiple results through callback
     const fn = (cb) => cb(null, "result1", "result2", "result3");
 
     // Promisify with multiArgs: false (default)
     const defaultPromisified = AveAzul.promisify(fn);
-    const defaultResult = await defaultPromisified();
-    // Should only return the first result
-    expect(defaultResult).toBe("result1");
-
-    // Promisify with multiArgs: true
     const multiArgsPromisified = AveAzul.promisify(fn, { multiArgs: true });
-    const multiArgsResult = await multiArgsPromisified();
-    // Should return all results as an array
-    expect(Array.isArray(multiArgsResult)).toBe(true);
-    expect(multiArgsResult).toEqual(["result1", "result2", "result3"]);
+
+    return verify({ timeout: 500 })
+      .step(() => defaultPromisified())
+      .step((defaultResult) => {
+        // Should only return the first result
+        expect(defaultResult).toBe("result1");
+        return multiArgsPromisified();
+      })
+      .step((multiArgsResult) => {
+        // Should return all results as an array
+        expect(Array.isArray(multiArgsResult)).toBe(true);
+        expect(multiArgsResult).toEqual(["result1", "result2", "result3"]);
+      });
   });
 });
