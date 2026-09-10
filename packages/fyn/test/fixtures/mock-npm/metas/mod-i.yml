@@ -9,7 +9,7 @@ versions:
       mod-g: ^3.0.0
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-i/-/mod-i-1.0.0.tgz'
+      tarball: http://localhost:4873/mod-i/-/mod-i-1.0.0.tgz
 dist-tags:
   latest: 1.0.0
 _rev: 9-f5a60b1743717bf9

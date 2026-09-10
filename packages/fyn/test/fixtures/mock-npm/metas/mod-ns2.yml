@@ -11,7 +11,7 @@ versions:
       mod-a: ^1.0.0
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-ns2/-/mod-ns2-1.0.0.tgz'
+      tarball: http://localhost:4873/mod-ns2/-/mod-ns2-1.0.0.tgz
 dist-tags:
   latest: 1.0.0
 _rev: 9-f5a60b1743717bf9

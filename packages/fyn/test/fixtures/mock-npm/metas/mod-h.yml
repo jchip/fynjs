@@ -11,7 +11,7 @@ versions:
     dependencies: {}
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-h/-/mod-h-1.0.0.tgz'
+      tarball: http://localhost:4873/mod-h/-/mod-h-1.0.0.tgz
   2.0.0:
     name: mod-h
     description: test fixture mod-h
@@ -24,7 +24,7 @@ versions:
           version: 1.0.1
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-h/-/mod-h-2.0.0.tgz'
+      tarball: http://localhost:4873/mod-h/-/mod-h-2.0.0.tgz
   3.0.0:
     name: mod-h
     description: test fixture mod-h
@@ -35,7 +35,7 @@ versions:
     dependencies: {}
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-h/-/mod-h-3.0.0.tgz'
+      tarball: http://localhost:4873/mod-h/-/mod-h-3.0.0.tgz
   3.0.11:
     name: mod-h
     description: test fixture mod-h
@@ -43,7 +43,7 @@ versions:
     dependencies: {}
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-h/-/mod-h-3.0.11.tgz'
+      tarball: http://localhost:4873/mod-h/-/mod-h-3.0.11.tgz
   4.0.0:
     name: mod-h
     description: test fixture mod-h
@@ -54,7 +54,7 @@ versions:
     dependencies: {}
     dist:
       shasum: ''
-      tarball: 'http://localhost:4873/mod-h/-/mod-h-4.0.0.tgz'
+      tarball: http://localhost:4873/mod-h/-/mod-h-4.0.0.tgz
 dist-tags:
   latest: 3.0.11
 _rev: 9-f5a60b1743717bf9
