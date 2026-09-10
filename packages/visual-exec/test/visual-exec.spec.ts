@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { verify } from "run-verify";
 import { VisualExec, type VisualExecOptions, parsers } from "../src/visual-exec.js";
 import Path from "path";
 import fs from "fs";
@@ -262,30 +263,30 @@ describe("VisualExec", () => {
   });
 
   describe("error context", () => {
-    it("should include context on failure", async () => {
+    it("should include context on failure", () => {
       const ve = new VisualExec({
         command: `${process.execPath} -e "console.error('stderr msg'); process.exit(1)"`,
         outputLevel: "debug"
       });
       ve.logFinalOutput = vi.fn();
 
-      try {
-        await ve.execute();
-      } catch (err: any) {
-        expect(err.exitCode).toBe(1);
-        expect(err.command).toBeDefined();
-        expect(err.cwd).toBeDefined();
-        expect(err.duration).toBeDefined();
-        expect(err.lastLines).toBeDefined();
-        expect(err.context).toBeDefined();
-        expect(err.stdout).toBeDefined();
-        expect(err.stderr).toContain("stderr msg");
-      }
+      return verify({ timeout: 2000 })
+        .expectError.step(() => ve.execute())
+        .step((err: any) => {
+          expect(err.exitCode).toBe(1);
+          expect(err.command).toBeDefined();
+          expect(err.cwd).toBeDefined();
+          expect(err.duration).toBeDefined();
+          expect(err.lastLines).toBeDefined();
+          expect(err.context).toBeDefined();
+          expect(err.stdout).toBeDefined();
+          expect(err.stderr).toContain("stderr msg");
+        });
     });
   });
 
   describe("outputFile", () => {
-    it("should stream output to file", async () => {
+    it("should stream output to file", () => {
       const tmpDir = os.tmpdir();
       const outFile = Path.join(tmpDir, `visual-exec-test-${Date.now()}.log`);
 
@@ -296,11 +297,17 @@ describe("VisualExec", () => {
       });
       ve.logFinalOutput = vi.fn();
 
-      await ve.execute();
-
-      const content = fs.readFileSync(outFile, "utf8");
-      expect(content).toContain("hello");
-      fs.unlinkSync(outFile);
+      return verify({
+        timeout: 2000,
+        cleanup: () => {
+          if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
+        }
+      })
+        .step(() => ve.execute())
+        .step(() => {
+          const content = fs.readFileSync(outFile, "utf8");
+          expect(content).toContain("hello");
+        });
     });
   });
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { verify } from "run-verify";
 import Path from "path";
 import os from "os";
 import fs from "fs";
@@ -42,7 +43,7 @@ vi.mock("fs", async (importOriginal) => {
 import { VisualExec } from "../src/visual-exec.js";
 
 describe("outputFile flushing", () => {
-  it("does not resolve until the output file is closed", async () => {
+  it("does not resolve until the output file is closed", () => {
     const outFile = Path.join(os.tmpdir(), `visual-exec-close-${Date.now()}.log`);
     state.closed = false;
 
@@ -53,13 +54,16 @@ describe("outputFile flushing", () => {
     });
     ve.logFinalOutput = vi.fn();
 
-    try {
-      await ve.execute();
-
-      expect(state.closed).toBe(true);
-      expect(fs.readFileSync(outFile, "utf8")).toContain("hello");
-    } finally {
-      if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
-    }
+    return verify({
+      timeout: 2000,
+      cleanup: () => {
+        if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
+      }
+    })
+      .step(() => ve.execute())
+      .step(() => {
+        expect(state.closed).toBe(true);
+        expect(fs.readFileSync(outFile, "utf8")).toContain("hello");
+      });
   });
 });

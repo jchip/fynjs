@@ -5,7 +5,8 @@ test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, disti
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
 `xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted),
-`pkg-preper` (its integration spec), and `@fynjs/fetch` (its callback-observation subset).
+`pkg-preper` (its integration spec), `@fynjs/fetch` (its callback-observation subset),
+and `visual-exec` (its error-context and output-file tests).
 `aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
 flows are covered, while simple promise-result tests remain native.
 
@@ -232,6 +233,19 @@ downstream, where a throw becomes the test's ordinary rejection.
 The shared server listen/close Promise adapters remain native because they contain no
 assertions and already propagate completion correctly. Ordinary request/result tests and
 hooks whose returned Promises already carry thrown assertions also remain unchanged.
+
+## visual-exec
+
+`test/visual-exec.spec.ts` and `test/output-file-flush.spec.ts`. The error-context test had
+a real false-pass gap: every assertion was inside `catch`, with no guard if `execute()`
+unexpectedly succeeded. It now uses `.expectError.step(...)`, which requires the failure
+before inspecting its context.
+
+The main output-file test removed its temporary file only after successful assertions, so
+an execution or assertion failure could leak the file. It and the existing flush-regression
+test now use chain cleanup backstops around bounded execute/read/assert steps. Other direct
+`await` and Vitest `.rejects` tests remain native because they already carry failures and
+have no multi-stage resource lifecycle.
 
 ## http-server
 
