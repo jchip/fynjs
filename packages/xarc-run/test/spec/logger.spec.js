@@ -1,6 +1,7 @@
 import logger from "../../lib/logger.js";
 import xstdout from "xstdout";
 import { expect } from "vitest";
+import { verify } from "run-verify";
 
 describe("logger", function() {
   beforeEach(() => {
@@ -13,45 +14,42 @@ describe("logger", function() {
   it("should log to stdout in coloring off", () => {
     const intercept = xstdout.intercept(true);
 
-    try {
+    return verify({ cleanup: () => intercept.restore() }).step(() => {
       logger.coloring(false);
       logger.log("test", "hello", 1, "world");
-    } finally {
       intercept.restore();
-    }
 
-    expect(intercept.stdout.join("")).toContain("test hello 1 world");
+      expect(intercept.stdout.join("")).toContain("test hello 1 world");
+    });
   });
 
   it("should not log to stdout when buffering in coloring off", () => {
     const intercept = xstdout.intercept(true);
 
-    try {
+    return verify({ cleanup: () => intercept.restore() }).step(() => {
       logger.coloring(false);
       logger.buffering(true);
       logger.log("test", "hello", 1, "world");
-    } finally {
       intercept.restore();
-    }
 
-    expect(intercept.stdout.join("")).not.toContain("test hello 1 world");
-    expect(logger.buffer.join("")).toContain("test hello 1 world");
+      expect(intercept.stdout.join("")).not.toContain("test hello 1 world");
+      expect(logger.buffer.join("")).toContain("test hello 1 world");
+    });
   });
 
   it("should log to stdout in coloring on", () => {
     const intercept = xstdout.intercept(true);
 
-    try {
+    return verify({ cleanup: () => intercept.restore() }).step(() => {
       logger.coloring(true);
       logger.log("test", "hello", 1, "world");
       // second call to coloring with same value should have no effect
       logger.coloring(true);
-    } finally {
       intercept.restore();
-    }
 
-    expect(intercept.stdout.join("")).toContain("test hello 1 world");
-    expect(intercept.stdout.join("")).toContain("test hello 1 world");
+      expect(intercept.stdout.join("")).toContain("test hello 1 world");
+      expect(intercept.stdout.join("")).toContain("test hello 1 world");
+    });
   });
 
   it("should pad2 1 to 01", () => {
@@ -81,30 +79,28 @@ describe("logger", function() {
     logger.quiet(true);
     const intercept = xstdout.intercept(true);
 
-    try {
+    return verify({ cleanup: () => intercept.restore() }).step(() => {
       logger.log("test");
-    } finally {
       intercept.restore();
-    }
 
-    expect(logger.buffer).toStrictEqual([]);
-    expect(intercept.stdout).toHaveLength(0);
-    expect(intercept.stderr).toHaveLength(0);
-    logger.quiet(false);
+      expect(logger.buffer).toStrictEqual([]);
+      expect(intercept.stdout).toHaveLength(0);
+      expect(intercept.stderr).toHaveLength(0);
+      logger.quiet(false);
+    });
   });
 
   it("should log error even in quiet mode", () => {
     logger.quiet(true);
     const intercept = xstdout.intercept(true);
 
-    try {
+    return verify({ cleanup: () => intercept.restore() }).step(() => {
       logger.error("test");
-    } finally {
       intercept.restore();
-    }
 
-    expect(intercept.stdout.join("")).toContain("test");
-    logger.quiet(false);
+      expect(intercept.stdout.join("")).toContain("test");
+      logger.quiet(false);
+    });
   });
 
   it("should save to buffer in quiet mode", () => {
@@ -113,7 +109,7 @@ describe("logger", function() {
 
     const intercept = xstdout.intercept(true);
 
-    try {
+    return verify({ cleanup: () => intercept.restore() }).step(() => {
       logger.log("test", 1, "hello", "world");
       logger.log("test", 2, "hello", "world");
       logger.log("test", 3, "hello", "world");
@@ -121,22 +117,21 @@ describe("logger", function() {
 
       // test second calls
       logger.buffering(true);
-    } finally {
       intercept.restore();
-    }
 
-    expect(intercept.stdout).toHaveLength(0);
-    expect(intercept.stderr).toHaveLength(0);
+      expect(intercept.stdout).toHaveLength(0);
+      expect(intercept.stderr).toHaveLength(0);
 
-    const buf = logger.buffer;
-    for (let i = 1; i <= 4; i++) {
-      expect(buf[i - 1]).toContain(`test ${i} hello world`);
-    }
+      const buf = logger.buffer;
+      for (let i = 1; i <= 4; i++) {
+        expect(buf[i - 1]).toContain(`test ${i} hello world`);
+      }
 
-    logger.resetBuffer();
-    expect(logger.buffer).toStrictEqual([]);
+      logger.resetBuffer();
+      expect(logger.buffer).toStrictEqual([]);
 
-    logger.quiet(false);
+      logger.quiet(false);
+    });
   });
 
   it("should flush buffer when reset", () => {
@@ -145,36 +140,35 @@ describe("logger", function() {
 
     let intercept = xstdout.intercept(true);
 
-    try {
-      logger.log("test", 1, "hello", "world");
-      logger.log("test", 2, "hello", "world");
-      logger.log("test", 3, "hello", "world");
-      logger.log("test", 4, "hello", "world");
-    } finally {
-      intercept.restore();
-    }
-
-    expect(intercept.stdout).toHaveLength(0);
-    expect(intercept.stderr).toHaveLength(0);
-
-    const verify = buf => {
+    const checkBuf = buf => {
       for (let i = 1; i <= 4; i++) {
         expect(buf[i - 1]).toContain(`test ${i} hello world`);
       }
     };
-    verify(logger.buffer);
 
-    intercept = xstdout.intercept(true);
-    try {
-      logger.quiet(false);
-      logger.resetBuffer(true);
-    } finally {
-      intercept.restore();
-    }
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() => {
+        logger.log("test", 1, "hello", "world");
+        logger.log("test", 2, "hello", "world");
+        logger.log("test", 3, "hello", "world");
+        logger.log("test", 4, "hello", "world");
+        intercept.restore();
 
-    expect(logger.buffer).toStrictEqual([]);
-    verify(intercept.stdout);
+        expect(intercept.stdout).toHaveLength(0);
+        expect(intercept.stderr).toHaveLength(0);
+        checkBuf(logger.buffer);
 
-    logger.quiet(false);
+        intercept = xstdout.intercept(true);
+      })
+      .step(() => {
+        logger.quiet(false);
+        logger.resetBuffer(true);
+        intercept.restore();
+
+        expect(logger.buffer).toStrictEqual([]);
+        checkBuf(intercept.stdout);
+
+        logger.quiet(false);
+      });
   });
 });

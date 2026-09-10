@@ -15,6 +15,7 @@ import logger from "../../../lib/logger.js";
 import stripAnsi from "strip-ansi";
 import WrapProcess from "../../../cli/wrap-process.js";
 import xstdout from "xstdout";
+import { verify } from "run-verify";
 
 logger.quiet(true);
 
@@ -340,7 +341,7 @@ describe("task-file", function() {
     });
 
     // TODO: This test has process.cwd() issues with vitest - test isolation problem
-    it("should handle TypeScript file load error", async () => {
+    it("should handle TypeScript file load error", () => {
       const tsFile = Path.join(testDir, "tasks.ts");
       // Write invalid TypeScript that will cause a syntax error
       fs.writeFileSync(
@@ -354,20 +355,22 @@ function export const tasks = {
 
       // Intercept error output to keep it within the test
       const intercept = xstdout.intercept(true);
-      
-      const result = await loadTaskFile(tsFile);
-      
-      intercept.restore();
-      
-      // Verify the function handles the error gracefully
-      expect(result).toBeUndefined();
-      // Verify that an error was logged (expected behavior)
-      const errorOutput = intercept.stdout.join("");
-      expect(errorOutput).toContain("Unable to load");
-      expect(errorOutput).toContain("tasks.ts");
+
+      return verify({ cleanup: () => intercept.restore() })
+        .step(() => loadTaskFile(tsFile))
+        .step(result => {
+          intercept.restore();
+
+          // Verify the function handles the error gracefully
+          expect(result).toBeUndefined();
+          // Verify that an error was logged (expected behavior)
+          const errorOutput = intercept.stdout.join("");
+          expect(errorOutput).toContain("Unable to load");
+          expect(errorOutput).toContain("tasks.ts");
+        });
     });
 
-    it("should handle ESM TypeScript file", async () => {
+    it("should handle ESM TypeScript file", () => {
       const tsFile = Path.join(testDir, "tasks.ts");
       // Write TypeScript using ESM syntax (with invalid syntax)
       fs.writeFileSync(
@@ -382,17 +385,19 @@ export default tasks;
 
       // Intercept error output to keep it within the test
       const intercept = xstdout.intercept(true);
-      
-      const result = await loadTaskFile(tsFile);
-      
-      intercept.restore();
-      
-      // Verify the function handles the error gracefully
-      expect(result).toBeUndefined();
-      // Verify that an error was logged (expected behavior)
-      const errorOutput = intercept.stdout.join("");
-      expect(errorOutput).toContain("Unable to load");
-      expect(errorOutput).toContain("tasks.ts");
+
+      return verify({ cleanup: () => intercept.restore() })
+        .step(() => loadTaskFile(tsFile))
+        .step(result => {
+          intercept.restore();
+
+          // Verify the function handles the error gracefully
+          expect(result).toBeUndefined();
+          // Verify that an error was logged (expected behavior)
+          const errorOutput = intercept.stdout.join("");
+          expect(errorOutput).toContain("Unable to load");
+          expect(errorOutput).toContain("tasks.ts");
+        });
     });
   });
 
