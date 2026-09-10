@@ -1,5 +1,6 @@
 import Path from "path";
 import { describe, it, expect, afterEach } from "vitest";
+import { verify } from "run-verify";
 import { httpServer, electrodeServer } from "../../src/http-server.js";
 import type { FynHttpServerInstance } from "../../src/types.js";
 
@@ -187,34 +188,42 @@ describe("httpServer", () => {
       expect(serverAtCreated).toBe(server);
     });
 
-    it("fails startup with XEVENT_FAILED when a handler errors", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        listener: (emitter: any) => {
-          emitter.on("config-composed", (ctx: any, next: any) => next(new Error("handler boom")));
-        }
-      }).catch(e => e);
+    it("fails startup with XEVENT_FAILED when a handler errors", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            listener: (emitter: any) => {
+              emitter.on("config-composed", (ctx: any, next: any) =>
+                next(new Error("handler boom"))
+              );
+            }
+          })
+        )
+        .step(err => {
+          expect(err.code).toBe("XEVENT_FAILED");
+          expect(err.event).toBe("config-composed");
+          expect(err.message).toContain("handler boom");
+          expect(err.moreInfo.reason).toContain("config-composed");
+        }));
 
-      expect(err.code).toBe("XEVENT_FAILED");
-      expect(err.event).toBe("config-composed");
-      expect(err.message).toContain("handler boom");
-      expect(err.moreInfo.reason).toContain("config-composed");
-    });
-
-    it("fails startup with XEVENT_TIMEOUT when a handler never completes", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        electrode: { eventTimeout: 50 },
-        listener: (emitter: any) => {
-          emitter.on("config-composed", () => undefined);
-        }
-      }).catch(e => e);
-
-      expect(err.code).toBe("XEVENT_TIMEOUT");
-      expect(err.event).toBe("config-composed");
-      expect(err.timeout).toBe(50);
-      expect(err.message).toContain("timeout waiting for event");
-    });
+    it("fails startup with XEVENT_TIMEOUT when a handler never completes", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            electrode: { eventTimeout: 50 },
+            listener: (emitter: any) => {
+              emitter.on("config-composed", () => undefined);
+            }
+          })
+        )
+        .step(err => {
+          expect(err.code).toBe("XEVENT_TIMEOUT");
+          expect(err.event).toBe("config-composed");
+          expect(err.timeout).toBe(50);
+          expect(err.message).toContain("timeout waiting for event");
+        }));
 
     it("does not time out when eventTimeout is zero", async () => {
       await start({
@@ -389,79 +398,100 @@ describe("httpServer", () => {
       expect((server as any).fromPluginField).toBe(true);
     });
 
-    it("fails when a plugin module cannot be loaded", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: { missing: { module: "./no-such-module.cjs", requireFromPath: FIXTURES } }
-      }).catch(e => e);
+    it("fails when a plugin module cannot be loaded", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: { missing: { module: "./no-such-module.cjs", requireFromPath: FIXTURES } }
+          })
+        )
+        .step(err => {
+          expect(err.message).toContain("Failed loading module ./no-such-module.cjs");
+        }));
 
-      expect(err.message).toContain("Failed loading module ./no-such-module.cjs");
-    });
-
-    it("fails when a plugin's register is not a function", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: {
-          bad: { module: "./plugin-not-a-function.cjs", requireFromPath: FIXTURES }
-        }
-      }).catch(e => e);
-
-      expect(err.message).toContain("register of plugin is not a function");
-    });
-
-    it("fails when module is false and no register is given", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: { orphan: { module: false } }
-      }).catch(e => e);
-
-      expect(err.message).toContain("disable 'module' but has no 'register' field");
-    });
-
-    it("fails when a module object has no name", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: { nameless: { module: {} } }
-      } as any).catch(e => e);
-
-      expect(err.message).toContain("'module' must have 'name' field");
-    });
-
-    it("fails when module.requireFromPath is not a string", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: { bad: { module: { name: "x", requireFromPath: 123 } } }
-      } as any).catch(e => e);
-
-      expect(err.message).toContain("'module.requireFromPath' must be a string");
-    });
-
-    it("fails when plugins.requireFromPath is not a string", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: { requireFromPath: 123 }
-      } as any).catch(e => e);
-
-      expect(err.message).toContain("config.plugins.requireFromPath must be a string");
-    });
-
-    it("reports XPLUGIN_FAILED when a plugin's register throws", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: {
-          exploding: {
-            register: () => {
-              throw new Error("plugin boom");
+    it("fails when a plugin's register is not a function", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: {
+              bad: { module: "./plugin-not-a-function.cjs", requireFromPath: FIXTURES }
             }
-          }
-        }
-      }).catch(e => e);
+          })
+        )
+        .step(err => {
+          expect(err.message).toContain("register of plugin is not a function");
+        }));
 
-      expect(err.code).toBe("XPLUGIN_FAILED");
-      expect(err.plugin.__name).toBe("exploding");
-      expect(err.method).toBe("with register function");
-      expect(err.message).toContain("plugin boom");
-    });
+    it("fails when module is false and no register is given", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: { orphan: { module: false } }
+          })
+        )
+        .step(err => {
+          expect(err.message).toContain("disable 'module' but has no 'register' field");
+        }));
+
+    it("fails when a module object has no name", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: { nameless: { module: {} } }
+          } as any)
+        )
+        .step(err => {
+          expect(err.message).toContain("'module' must have 'name' field");
+        }));
+
+    it("fails when module.requireFromPath is not a string", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: { bad: { module: { name: "x", requireFromPath: 123 } } }
+          } as any)
+        )
+        .step(err => {
+          expect(err.message).toContain("'module.requireFromPath' must be a string");
+        }));
+
+    it("fails when plugins.requireFromPath is not a string", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: { requireFromPath: 123 }
+          } as any)
+        )
+        .step(err => {
+          expect(err.message).toContain("config.plugins.requireFromPath must be a string");
+        }));
+
+    it("reports XPLUGIN_FAILED when a plugin's register throws", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: {
+              exploding: {
+                register: () => {
+                  throw new Error("plugin boom");
+                }
+              }
+            }
+          })
+        )
+        .step(err => {
+          expect(err.code).toBe("XPLUGIN_FAILED");
+          expect(err.plugin.__name).toBe("exploding");
+          expect(err.method).toBe("with register function");
+          expect(err.message).toContain("plugin boom");
+        }));
 
     it("supports an async plugin that returns a promise instead of calling next", async () => {
       await start({
@@ -477,55 +507,64 @@ describe("httpServer", () => {
       expect((server as any).fromAsyncPlugin).toBe(true);
     });
 
-    it("attributes a rejection from an async plugin", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: {
-          asyncBoom: {
-            register: async () => {
-              throw new Error("async plugin boom");
+    it("attributes a rejection from an async plugin", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: {
+              asyncBoom: {
+                register: async () => {
+                  throw new Error("async plugin boom");
+                }
+              }
             }
-          }
-        }
-      }).catch(e => e);
+          })
+        )
+        .step(err => {
+          expect(err.code).toBe("XPLUGIN_FAILED");
+          expect(err.plugin.__name).toBe("asyncBoom");
+          expect(err.message).toContain("async plugin boom");
+        }));
 
-      expect(err.code).toBe("XPLUGIN_FAILED");
-      expect(err.plugin.__name).toBe("asyncBoom");
-      expect(err.message).toContain("async plugin boom");
-    });
+    it("attributes a plugin that never finishes", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            server: { pluginTimeout: 100 },
+            plugins: {
+              neverFinishes: {
+                // arity 3 puts it on the callback path, and it never calls done
+                register: (s: any, o: any, done: any) => undefined
+              }
+            }
+          })
+        )
+        .step(err => {
+          expect(err.code).toBe("XPLUGIN_FAILED");
+          expect(err.plugin.__name).toBe("neverFinishes");
+          expect(err.method).toBe("with register function");
+        }));
 
-    it("attributes a plugin that never finishes", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        server: { pluginTimeout: 100 },
-        plugins: {
-          neverFinishes: {
-            // arity 3 puts it on the callback path, and it never calls done
-            register: (s: any, o: any, done: any) => undefined
-          }
-        }
-      }).catch(e => e);
-
-      expect(err.code).toBe("XPLUGIN_FAILED");
-      expect(err.plugin.__name).toBe("neverFinishes");
-      expect(err.method).toBe("with register function");
-    });
-
-    it("names the module in the failure message for a module plugin", async () => {
-      const err = await httpServer({
-        connection: { port: 0 },
-        plugins: {
-          exploding: {
-            module: "./plugin-plugin-field.cjs",
-            requireFromPath: FIXTURES,
-            register: (s: any, o: any, next: any) => next(new Error("module plugin boom"))
-          }
-        }
-      }).catch(e => e);
-
-      expect(err.code).toBe("XPLUGIN_FAILED");
-      expect(err.method).toContain("with module '\"./plugin-plugin-field.cjs\"'");
-    });
+    it("names the module in the failure message for a module plugin", () =>
+      verify()
+        .expectError.step(() =>
+          httpServer({
+            connection: { port: 0 },
+            plugins: {
+              exploding: {
+                module: "./plugin-plugin-field.cjs",
+                requireFromPath: FIXTURES,
+                register: (s: any, o: any, next: any) => next(new Error("module plugin boom"))
+              }
+            }
+          })
+        )
+        .step(err => {
+          expect(err.code).toBe("XPLUGIN_FAILED");
+          expect(err.method).toContain("with module '\"./plugin-plugin-field.cjs\"'");
+        }));
   });
 
   describe("start failures", () => {
@@ -533,11 +572,13 @@ describe("httpServer", () => {
       await start();
       const port = server!.info.port;
 
-      const err = await httpServer({ connection: { port } }).catch(e => e);
-
-      expect(err.code).toBe("EADDRINUSE");
-      expect(err.message).toContain("already in use");
-      expect(err.moreInfo.resolution).toContain(`lsof -i :${port}`);
+      return verify()
+        .expectError.step(() => httpServer({ connection: { port } }))
+        .step(err => {
+          expect(err.code).toBe("EADDRINUSE");
+          expect(err.message).toContain("already in use");
+          expect(err.moreInfo.resolution).toContain(`lsof -i :${port}`);
+        });
     });
   });
 });
