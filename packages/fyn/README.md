@@ -4,9 +4,7 @@
 [![Apache 2.0 License][apache-2.0-blue-image]][apache-2.0-url]
 [![Build Status][build-image]][build-url]
 
-**fyn** is a node.js package manager, and supports [fynpo], a zero setup monorepo manager for node.js.
-
-It treats your disk as a registry so you can develop, publish, and test all your packages using local copies directly.
+**fyn** is a fast package manager for Node.js. It treats your disk as a registry, so you can develop and test packages using local copies. It uses hardlinks and a shared store to save disk space and speed up installs. It can link live source folders between packages, so changes show up right away. It reads your existing `.npmrc` and lockfiles, and it powers [fynpo], a zero-setup monorepo tool.
 
 ## Quick Start
 
