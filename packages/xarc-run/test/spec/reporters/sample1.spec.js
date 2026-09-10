@@ -4,7 +4,7 @@ import { expect } from "vitest";
 import xstdout from "xstdout";
 import chalk from "../../../lib/chalk.js";
 import logger from "../../../lib/logger.js";
-import { expectError, runTimeout, asyncVerify, runFinally } from "run-verify";
+import { verify } from "run-verify";
 
 describe("sample1 console report", function() {  let saveLevel = chalk.level;
   beforeAll(() => {
@@ -99,9 +99,9 @@ Done Process x1/x1foo serial array ["?woofoo",["foo2","foo4"],"foo5a","foo6","fo
       x1foo: ["?woofoo", ["foo2", "foo4"], "foo5a", "foo6", "foo7"]
     });
 
-    return asyncVerify(
-      next => xrun.run("x1foo", next),
-      () => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => xrun.run("x1foo", next))
+      .step(() => {
         intercept.restore();
         // drop tasks output and keep reporter activities only
         const output = intercept.stdout
@@ -115,9 +115,7 @@ Done Process x1/x1foo serial array ["?woofoo",["foo2","foo4"],"foo5a","foo6","fo
           .map(x => x.replace(/^\[[^\]]+\] /, ""))
           .join("");
         expect(output).toBe(expectOutput);
-      },
-      runFinally(() => intercept.restore())
-    );
+      });
   });
 
   it("should log failure report to console", () => {
@@ -171,23 +169,21 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
     let eventReceived;
     let waitedPending;
 
-    return asyncVerify(
-      runTimeout(5000),
-      runFinally(() => intercept.restore()),
-      expectError(next => {
+    return verify({ timeout: 5000, cleanup: () => intercept.restore() })
+      .expectError.callbackStep(next => {
         xrun.once("spawn-async", _a => {
           xrun.waitAllPending(() => (waitedPending = true));
           eventReceived = true;
         });
         xrun.run("foo2ba", next);
-      }),
-      error => {
+      })
+      .step(error => {
         expect(error.message).toBe("xerr");
         expect(error.more).toEqual(expect.anything());
         expect(error.more.length).toBe(1);
         expect(error.more[0].message).toBe("xerr");
-      },
-      next => {
+      })
+      .callbackStep(next => {
         const wait = () => {
           if (eventReceived && waitedPending) {
             return next();
@@ -195,8 +191,8 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
           setTimeout(wait, 10);
         };
         wait();
-      },
-      () => {
+      })
+      .step(() => {
         intercept.restore();
         const output = intercept.stdout
           .filter(x => x.match(/^\[/))
@@ -209,7 +205,6 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
           .map(x => x.replace(/^\[[^\]]+\] /, ""))
           .join("");
         expect(output).toBe(expectOutput);
-      }
-    );
+      });
   });
 });

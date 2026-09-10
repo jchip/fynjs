@@ -8,8 +8,6 @@ import chalk from "chalk";
 import { isCI } from "ci-info";
 import { FynpoDepGraph, type FynpoPackageInfo, type FynpoTopoPackages, type PackageDepData, pkgInfoId } from "@fynpo/base";
 
-import readline from "readline";
-import semver from "semver";
 import { TopoRunner } from "./topo-runner.ts";
 import { PkgBuildCache } from "./caching.ts";
 import * as xaa from "xaa";
@@ -21,73 +19,12 @@ type PackageInstallInfo = {
   status?: string;
 };
 
-/**
- * Format JSON preserving compact single-line representation for simple arrays
- * (e.g. versionLocks tuples, packages lists, scripts lists) to avoid formatting diff noise.
- */
-export function formatCompactJson(json: any): string {
-  let str = JSON.stringify(json, null, 2);
-  str = str.replace(
-    /\[\s*\n\s+("[^"\n]+"|\d+|true|false)(?:,\s*\n\s+("[^"\n]+"|\d+|true|false))*\s*\n\s*\]/g,
-    match => {
-      try {
-        const parsed = JSON.parse(match);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            x => typeof x === "string" || typeof x === "number" || typeof x === "boolean"
-          )
-        ) {
-          const compact = `[${parsed.map(x => JSON.stringify(x)).join(", ")}]`;
-          if (compact.length <= 100) {
-            return compact;
-          }
-        }
-      } catch {}
-      return match;
-    }
-  );
-  return `${str}\n`;
-}
-
-export function caretRange(version: string): string {
-  const clean = String(version).trim();
-  return semver.validRange(`^${clean}`) ? `^${clean}` : clean;
-}
-
-export function splitRange(range: string): string[] {
-  return String(range)
-    .split(/\s*\|\|\s*|\s*\|\s*/)
-    .map(p => p.trim())
-    .filter(Boolean);
-}
-
-export function addVersionToRange(range: string, version: string): string {
-  const parts = splitRange(range);
-  const added = caretRange(version);
-  if (parts.includes(added) || parts.some(part => semver.satisfies(version, part))) {
-    return parts.join(" || ");
-  }
-  return [...parts, added].join(" || ");
-}
-
-export function ask(question: string): Promise<string> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => {
-    rl.question(question, answer => {
-      rl.close();
-      resolve(String(answer).trim().toLowerCase());
-    });
-  });
-}
-
 export class Bootstrap {
   _opts;
   graph: FynpoDepGraph;
   topoPkgs: FynpoTopoPackages;
   installInfo: Record<string, PackageInstallInfo>;
   _topoRunner: TopoRunner;
-  _scriptErrorsHandled: boolean = false;
 
   constructor(graph: FynpoDepGraph, opts) {
     this._opts = opts;
@@ -109,17 +46,7 @@ export class Bootstrap {
   }
 
   logErrors() {
-    const errorsToLog = this._topoRunner._errors.filter(
-      (data: ItemQueueResult<PackageInstallInfo>) => {
-        if (!this._scriptErrorsHandled) return true;
-        const error: any = data.error;
-        const output: any = error?.output;
-        const text = `${output?.stderr || ""} ${output?.stdout || ""} ${error?.message || ""}`;
-        return !text.includes("need approval to run their install scripts");
-      }
-    );
-
-    _.each(errorsToLog, (data: ItemQueueResult<PackageInstallInfo>) => {
+    _.each(this._topoRunner._errors, (data: ItemQueueResult<PackageInstallInfo>) => {
       const pkgInfo = data.item?.depData?.pkgInfo;
       const name = pkgInfo?.name;
       const path = pkgInfo?.path;
@@ -428,231 +355,14 @@ export class Bootstrap {
     }
   }
 
-  async aggregateScriptReview(): Promise<{
-    records: Array<{ name: string; version: string; scripts: string[] }>;
-    byPackage: Record<string, string[]>;
-    hasPolicyErrors: boolean;
-  }> {
-    const rawRecords: Array<{ name: string; version: string; scripts: string[] }> = [];
-    const byPackage: Record<string, string[]> = {};
-
-    const scanConfig = async (configPath: string, pkgLabel: string) => {
-      try {
-        const content = await Fs.promises.readFile(configPath, "utf8");
-        const data = JSON.parse(content);
-        const list = [...(data.blockedScripts || []), ...(data.pendingScripts || [])];
-        for (const item of list) {
-          if (!item || !item.name) continue;
-          rawRecords.push(item);
-          if (!byPackage[item.name]) {
-            byPackage[item.name] = [];
-          }
-          if (pkgLabel && !byPackage[item.name].includes(pkgLabel)) {
-            byPackage[item.name].push(pkgLabel);
-          }
-        }
-      } catch {}
-    };
-
-    // Root node_modules/.f/fyn-install-config.json
-    await scanConfig(Path.join(this.cwd, "node_modules", ".f", "fyn-install-config.json"), "");
-
-    // Workspace packages
-    for (const depData of this.topoPkgs.sorted) {
-      const pkgInfo = depData.pkgInfo;
-      const configPath = Path.join(
-        this.cwd,
-        pkgInfo.path,
-        "node_modules",
-        ".f",
-        "fyn-install-config.json"
-      );
-      await scanConfig(configPath, pkgInfo.name || pkgInfo.path);
-    }
-
-    // Check if any error in topoRunner was a script-policy error
-    let hasPolicyErrors = false;
-    for (const errData of this._topoRunner._errors || []) {
-      const error: any = errData.error;
-      const output = error?.output;
-      const text = `${output?.stderr || ""} ${output?.stdout || ""} ${error?.message || ""}`;
-      if (
-        text.includes("need approval to run their install scripts") ||
-        text.includes("awaiting install-script review")
-      ) {
-        hasPolicyErrors = true;
-        break;
-      }
-    }
-
-    // Deduplicate records by name@version
-    const seen = new Set<string>();
-    const dedupe: Array<{ name: string; version: string; scripts: string[] }> = [];
-    for (const r of rawRecords) {
-      const key = `${r.name}@${r.version || ""}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        dedupe.push({
-          name: r.name,
-          version: r.version,
-          scripts: r.scripts || ["install"]
-        });
-      }
-    }
-
-    // Read root fynpo.json to filter out already approved packages
-    let rootAllowScripts: Record<string, any> = {};
-    try {
-      const fynpoJson = JSON.parse(
-        await Fs.promises.readFile(Path.join(this.cwd, "fynpo.json"), "utf8")
-      );
-      rootAllowScripts = _.get(fynpoJson, ["fyn", "options", "allowScripts"]) || {};
-    } catch {}
-
-    const pendingRecords = dedupe.filter(r => {
-      const existing = rootAllowScripts[r.name];
-      if (!existing) return true;
-      if (existing === false) return false; // explicit denial
-      if (typeof existing === "object" && existing.semver) {
-        if (semver.satisfies(r.version, existing.semver)) {
-          return false; // already satisfied
-        }
-      }
-      return true;
-    });
-
-    return { records: pendingRecords, byPackage, hasPolicyErrors };
-  }
-
-  async promptAndApproveScripts(
-    records: Array<{ name: string; version: string; scripts: string[] }>,
-    byPackage: Record<string, string[]>
-  ): Promise<boolean> {
-    if (records.length === 0) return false;
-
-    logger.info(
-      `${chalk.cyan(records.length)} package${records.length > 1 ? "s" : ""} want to run install scripts that have not been approved:`
-    );
-
-    const width = records.reduce((w, r) => Math.max(w, `${r.name}@${r.version}`.length), 0);
-    for (const r of records) {
-      const inPkgs = byPackage[r.name]?.length
-        ? ` ${chalk.dim(`(in ${byPackage[r.name].join(", ")})`)}`
-        : "";
-      logger.info(
-        `  ${chalk.cyan(`${r.name}@${r.version}`.padEnd(width))}  ${chalk.yellow(r.scripts.join(", "))}${inPkgs}`
-      );
-    }
-
-    const answer = await ask(
-      `Approve for monorepo? ${chalk.cyan("[a]")}ll / ${chalk.cyan("[s]")}elect / ${chalk.cyan("[n]")}one (default) `
-    );
-
-    let toApprove: Array<{ name: string; version: string; scripts: string[] }> = [];
-
-    if (answer === "a" || answer === "all" || answer === "y" || answer === "yes") {
-      toApprove = records;
-    } else if (answer === "s" || answer === "select") {
-      for (const r of records) {
-        const yn = await ask(
-          `  ${r.name}@${r.version} (${r.scripts.join(", ")})? [y/N] `
-        );
-        if (yn === "y" || yn === "yes") {
-          toApprove.push(r);
-        }
-      }
-    }
-
-    if (toApprove.length === 0) {
-      logger.info("no approvals recorded - install scripts will not run");
-      return false;
-    }
-
-    const fynpoJsonPath = Path.join(this.cwd, "fynpo.json");
-    let json: any = {};
-    try {
-      json = JSON.parse(await Fs.promises.readFile(fynpoJsonPath, "utf8"));
-    } catch (err) {
-      logger.error(`Failed to read ${fynpoJsonPath} to record approvals: ${(err as Error).message}`);
-      return false;
-    }
-
-    const currentAllow = _.get(json, ["fyn", "options", "allowScripts"]) || {};
-    const approvedNames: string[] = [];
-
-    for (const r of toApprove) {
-      const existing = currentAllow[r.name];
-      if (existing === false) {
-        logger.warn(`denied, not approved: ${r.name}`);
-        continue;
-      }
-      const entry: any = existing && typeof existing === "object" ? { ...existing } : {};
-      if (entry.semver) {
-        entry.semver = addVersionToRange(entry.semver, r.version);
-      } else {
-        entry.semver = `^${r.version}`;
-      }
-      if (r.scripts && r.scripts.length > 0 && r.scripts[0] !== "*") {
-        entry.scripts = r.scripts;
-      }
-      currentAllow[r.name] = entry;
-      approvedNames.push(r.name);
-    }
-
-    _.set(json, ["fyn", "options", "allowScripts"], currentAllow);
-
-    await Fs.promises.writeFile(fynpoJsonPath, formatCompactJson(json));
-    logger.info(`updated ${chalk.cyan(fynpoJsonPath)}`);
-    logger.info(`approved ${chalk.cyan(approvedNames.join(", "))}`);
-    logger.info(`Re-running bootstrap with approved install scripts...`);
-
-    return true;
-  }
-
-  reportScriptGate(
-    records: Array<{ name: string; version: string; scripts: string[] }>,
-    byPackage: Record<string, string[]>
-  ) {
-    logger.prefix("").error(chalk.red("=".repeat(80)));
-    logger.prefix("").error(
-      `${chalk.red("✗")} ${chalk.bold(`${records.length} package(s) need approval to run their install scripts across the monorepo:`)}`
-    );
-    for (const r of records) {
-      const inPkgs = byPackage[r.name]?.length
-        ? ` (${chalk.dim("in " + byPackage[r.name].join(", "))})`
-        : "";
-      logger.prefix("").error(
-        `  ${chalk.cyan(`${r.name}@${r.version}`)}  ${chalk.yellow(r.scripts.join(", "))}${inPkgs}`
-      );
-    }
-    logger.prefix("").error("");
-    logger.prefix("").error(`  Approve them with:`);
-    logger.prefix("").error(`    ${chalk.cyan("fyn install-scripts approve <package>")} (or --all)`);
-    logger.prefix("").error(
-      `  Or record the approvals in your ${chalk.cyan("fynpo.json")} before installing.`
-    );
-    logger.prefix("").error(chalk.red("=".repeat(80)));
-  }
-
   async exec({
     build = true,
     fynOpts = [],
     concurrency = 6,
     skip = [],
-  }): Promise<{ rerun?: boolean } | void> {
+  }) {
     const installDeps = new InstallDeps(this.cwd, fynOpts);
     await checkGlobalFynVersion();
-
-    const canPrompt = !isCI && Boolean(process.stdin.isTTY && process.stdout.isTTY);
-
-    // Pre-install check: surface gate before installing if pending approvals already exist
-    const preReview = await this.aggregateScriptReview();
-    if (preReview.records.length > 0 && canPrompt) {
-      const approved = await this.promptAndApproveScripts(preReview.records, preReview.byPackage);
-      if (approved) {
-        return { rerun: true };
-      }
-    }
 
     const dispCmd = chalk.cyan([`fyn`].concat(installDeps.fynOptArgs).join(" "));
     logger.info(`bootstrap command: ${dispCmd}`);
@@ -714,25 +424,9 @@ export class Bootstrap {
           });
         }
       },
-      stopOnError: false,
+      stopOnError: true,
     });
 
     await this.aggregateAuditResults();
-
-    // Post-install check: aggregate script approvals across the whole monorepo
-    const postReview = await this.aggregateScriptReview();
-    if (postReview.records.length > 0 || postReview.hasPolicyErrors) {
-      if (postReview.records.length > 0 && canPrompt) {
-        const approved = await this.promptAndApproveScripts(postReview.records, postReview.byPackage);
-        if (approved) {
-          return { rerun: true };
-        }
-      }
-
-      if (postReview.records.length > 0) {
-        this.reportScriptGate(postReview.records, postReview.byPackage);
-        this._scriptErrorsHandled = true;
-      }
-    }
   }
 }

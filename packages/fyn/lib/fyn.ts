@@ -525,10 +525,6 @@ class Fyn {
     return false;
   }
 
-  get pkgFile(): string {
-    return this._pkgFile;
-  }
-
   /**
    * Options a fynpo config must never supply. `cwd`/`initCwd` are where fyn was
    * invoked; a monorepo config that relocated the install would be changing
@@ -916,8 +912,11 @@ class Fyn {
     const centralDir = _.get(this, "_central._centralDir", false) as string | false;
     const filename = this.getInstallConfigFile();
 
+    if (!(await Fs.exists(outputDir))) {
+      return;
+    }
+
     try {
-      await this.createDir(Path.dirname(filename));
       const outputConfig: InstallConfig = {
         ...this._installConfig,
         // add 5ms to ensure it's newer than fyn-lock.yaml, which was just saved
@@ -929,6 +928,11 @@ class Fyn {
         shortPkgDir: this._shortPkgDir,
         blockedScripts: this._blockedScripts || this._installConfig.blockedScripts || [],
         pendingScripts: this._pendingScripts || this._installConfig.pendingScripts || []
+        // not a good idea to save --run-npm options to install config because
+        // future fyn install will automatically run them and would be unexpected.
+        // if fynpo bootstrap should run certain npm scripts, user should set those
+        // in fynpo config.  and fyn should look into those when detected a fynpo.
+        // runNpm: this._runNpm
       };
       await Fs.writeFile(filename, `${JSON.stringify(outputConfig, null, 2)}\n`);
     } catch (err) {

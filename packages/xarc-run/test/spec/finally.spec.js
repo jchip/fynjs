@@ -3,7 +3,7 @@
 import XRun from "../../lib/xrun.js";
 import { expect } from "vitest";
 import xstdout from "xstdout";
-import { asyncVerify, expectError } from "run-verify";
+import { verify } from "run-verify";
 
 describe("xrun finally", function() {  let logs = [];
   const tasks = {
@@ -65,9 +65,9 @@ describe("xrun finally", function() {  let logs = [];
       const fin = data.qItem.isFinally ? " X" : "";
       logs.push(`${data.type}${fin}`);
     });
-    return asyncVerify(
-      expectError(next => xrun.run("fooConcurrent", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("fooConcurrent", next))
+      .step(err => {
         expect(err.message).toBe("fnFail throwing");
         expect(logs.sort()).toStrictEqual(
           [
@@ -92,8 +92,7 @@ describe("xrun finally", function() {  let logs = [];
             "woop finally undefined Error: fnFail throwing"
           ].sort()
         );
-      }
-    );
+      });
   });
 
   it("should invoke simple shell hook", () => {
@@ -104,9 +103,13 @@ describe("xrun finally", function() {  let logs = [];
       logs.push(`${data.type}${fin}`);
     });
     const intercept = xstdout.intercept(true);
-    return asyncVerify(
-      next => xrun.run("shConcurrent", next),
-      () => {
+    // restore() is idempotent, so keeping the inline call below (which must run
+    // before the assertions, or their output would be intercepted too) and also
+    // registering it here is safe. Without this, a failed run leaves stdout
+    // intercepted for every later test.
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => xrun.run("shConcurrent", next))
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.map(x => x.trim())).toStrictEqual([
           "sleep 1",
@@ -131,8 +134,7 @@ describe("xrun finally", function() {  let logs = [];
           "woop finally undefined null",
           "shell X"
         ]);
-      }
-    );
+      });
   });
 
   it("should invoke shell hook with errors", () => {
@@ -143,9 +145,10 @@ describe("xrun finally", function() {  let logs = [];
       logs.push(`${data.type}${fin}`);
     });
     const intercept = xstdout.intercept(true);
-    return asyncVerify(
-      next => xrun.run(["shFooX", "fnSh"], () => next()),  // Ignore error from callback
-      () => {
+    return verify({ cleanup: () => intercept.restore() })
+      // the callback swallows the error deliberately
+      .callbackStep(next => xrun.run(["shFooX", "fnSh"], () => next()))
+      .step(() => {
         intercept.restore();
         expect(logs).toStrictEqual([
           "concurrent-arr",
@@ -160,7 +163,6 @@ describe("xrun finally", function() {  let logs = [];
           "fhSh err true fail true",
           "err shell cmd 'blah' exit code 127 fail true"
         ]);
-      }
-    );
+      });
   });
 });

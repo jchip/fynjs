@@ -37,7 +37,6 @@ import {
 } from "../lib/log-items";
 
 import { syncLocalExports, localExportsScanIgnores } from "../lib/local-exports";
-import { PACKAGE_FYN_JSON } from "../lib/constants";
 
 /** Fyn CLI options */
 export interface FynCliOpts {
@@ -223,15 +222,6 @@ class FynCli {
       logger.prefix("").error(""); // Add blank line for spacing
     }
     
-    if (typeof (this._opts as any)?._rollback === "function") {
-      try {
-        (this._opts as any)._rollback();
-        (this._opts as any)._rollback = undefined;
-      } catch (e) {
-        logger.error("rollback failed:", e);
-      }
-    }
-
     await this.saveLogs(dbgLog);
     fyntil.exit(err);
   }
@@ -370,32 +360,6 @@ class FynCli {
           return false;
         }
 
-        const pkgFile = this.fyn.pkgFile;
-        const origPkgStr = await Fs.readFile(pkgFile, "utf8");
-        const pkgFynFile = Path.resolve(this.fyn.cwd, PACKAGE_FYN_JSON);
-        const origPkgFynStr = (await Fs.exists(pkgFynFile))
-          ? await Fs.readFile(pkgFynFile, "utf8")
-          : null;
-
-        let rolledBack = false;
-        const rollback = () => {
-          if (rolledBack) return;
-          rolledBack = true;
-          try {
-            Fs.writeFileSync(pkgFile, origPkgStr);
-            if (origPkgFynStr !== null) {
-              Fs.writeFileSync(pkgFynFile, origPkgFynStr);
-            } else if (Fs.existsSync(pkgFynFile)) {
-              Fs.unlinkSync(pkgFynFile);
-            }
-            logger.info("rolled back changes to package.json");
-          } catch (err) {
-            logger.error("failed to rollback package.json:", err);
-          }
-        };
-
-        (this._opts as any)._rollback = rollback;
-
         const added: Record<string, string[]> = _.mapValues(sections, () => [] as string[]);
 
         const pkg = this.fyn._pkg as PackageJson;
@@ -446,28 +410,6 @@ class FynCli {
       logger.error("No packages to remove");
       fyntil.exit(1);
     }
-
-    const pkgFile = this.fyn.pkgFile;
-    const origPkgStr = Fs.readFileSync(pkgFile, "utf8");
-    const pkgFynFile = Path.resolve(this.fyn.cwd, PACKAGE_FYN_JSON);
-    const origPkgFynStr = Fs.existsSync(pkgFynFile) ? Fs.readFileSync(pkgFynFile, "utf8") : null;
-
-    let rolledBack = false;
-    const rollback = () => {
-      if (rolledBack) return;
-      rolledBack = true;
-      try {
-        Fs.writeFileSync(pkgFile, origPkgStr);
-        if (origPkgFynStr !== null) {
-          Fs.writeFileSync(pkgFynFile, origPkgFynStr);
-        } else if (Fs.existsSync(pkgFynFile)) {
-          Fs.unlinkSync(pkgFynFile);
-        }
-        logger.info("rolled back changes to package.json");
-      } catch (err) {
-        logger.error("failed to rollback package.json:", err);
-      }
-    };
 
     const sections = [
       "dependencies",
@@ -524,7 +466,6 @@ class FynCli {
 
     if (removed.length > 0) {
       logger.info("removed packages from package.json:", removed.join(", "));
-      (this._opts as any)._rollback = rollback;
       this.fyn.savePkg();
       return true;
     }
@@ -710,12 +651,6 @@ class FynCli {
           await this.fyn.removeInstallLock();
         }
 
-        if (this.fyn.blockedScripts.length > 0 || this.fyn.pendingScripts.length > 0) {
-          try {
-            await this.fyn.saveInstallConfig();
-          } catch {}
-        }
-
         if (failure) {
           await this.fail(chalk.red("install failed:"), failure);
           return failure;
@@ -723,10 +658,6 @@ class FynCli {
 
         if (this._opts.saveLogs) {
           await this.saveLogs(this._opts.saveLogs);
-        }
-
-        if (!failure && typeof (this._opts as any)?._rollback === "function") {
-          (this._opts as any)._rollback = undefined;
         }
 
         await this.fyn.saveInstallConfig();
@@ -763,25 +694,13 @@ class FynCli {
       switch (action) {
         case "ls":
           return await cmd.ls({ json: Boolean(opts.json) });
-        case "approve": {
-          if (!opts.all && packages.length === 0) {
-            throw new Error("no packages named to approve");
-          }
-          const res = (await cmd.approve(packages, {
+        case "approve":
+          return await cmd.approve(packages, {
             all: Boolean(opts.all),
             local: Boolean(opts.local)
-          })) as string[];
-          if (packages.length > 0 && Array.isArray(res) && res.length === 0) {
-            fyntil.exit(1);
-          }
-          return res;
-        }
-        case "deny": {
-          if (packages.length === 0) {
-            throw new Error("no packages named to deny");
-          }
+          });
+        case "deny":
           return await cmd.deny(packages, { local: Boolean(opts.local) });
-        }
         case "prune":
           return await cmd.prune({ local: Boolean(opts.local) });
         default:

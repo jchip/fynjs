@@ -129,13 +129,7 @@ export class TopoRunner {
           this._totalTime = Date.now() - start;
         },
         failItem: (data) => {
-          const item: PackageRunInfo = data.item;
-          if (item) {
-            item.status = "failed";
-          }
           this._errors.push(data);
-          const items = this.getMore();
-          itemQ.addItems(items, true);
         },
       },
     });

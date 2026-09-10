@@ -1,73 +1,84 @@
 import { describe, test, expect } from "vitest";
+import { verify, signal } from "run-verify";
 // This test file directly imports AveAzul from the dist directory
 // so it always tests the AveAzul implementation, even when running
 // in Bluebird test mode with USE_BLUEBIRD=true
 import { AveAzul } from "../../src/index.ts";
 
+/**
+ * Each test replaces AveAzul.___throwUncaughtError to capture what the library
+ * reports, so the replacement has to be restored even when an assertion fails.
+ * `cleanup` does that. The captured error arrives out of band, so it is a
+ * signal: the test waits for it rather than sleeping and hoping, and the
+ * deadline turns "it never arrived" into a clear failure instead of an
+ * assertion against an empty array.
+ */
+const captureUncaught = () => {
+  const original = AveAzul.___throwUncaughtError;
+  // unknown, matching ___throwUncaughtError: the point of the third test is
+  // that whatever was thrown arrives unchanged, so it must not be narrowed here
+  const thrown = signal<unknown>();
+  let calls = 0;
+
+  AveAzul.___throwUncaughtError = (err: unknown) => {
+    calls += 1;
+    thrown.resolve(err);
+  };
+
+  return {
+    thrown,
+    callCount: () => calls,
+    restore: () => {
+      AveAzul.___throwUncaughtError = original;
+    }
+  };
+};
+
 describe("AveAzul.prototype.asCallback error handling", () => {
-  test("should propagate errors thrown in callback when promise resolves", async () => {
-    // Mock the ___throwUncaughtError method to capture errors
-    const originalThrowUncaughtError = AveAzul.___throwUncaughtError;
-    const thrownErrors = [];
-
-    AveAzul.___throwUncaughtError = (err) => {
-      thrownErrors.push(err);
-      // Don't actually throw in tests
-    };
-
-    // Use asCallback with a callback that throws
+  test("should propagate errors thrown in callback when promise resolves", () => {
+    const captured = captureUncaught();
     const callbackError = new Error("callback error");
-    AveAzul.resolve("value").asCallback(() => {
-      throw callbackError;
-    });
 
-    // Wait for the setTimeout to execute
-    await AveAzul.delay(10);
-
-    // Verify the error was passed to ___throwUncaughtError
-    expect(thrownErrors.length).toBe(1);
-    expect(thrownErrors[0]).toBe(callbackError);
-
-    // Restore the original method
-    AveAzul.___throwUncaughtError = originalThrowUncaughtError;
+    return verify({
+      timeout: 500,
+      signals: { thrown: captured.thrown },
+      cleanup: captured.restore
+    })
+      .step(() => {
+        AveAzul.resolve("value").asCallback(() => {
+          throw callbackError;
+        });
+      })
+      .awaiting("thrown")
+      .step((err) => {
+        expect(captured.callCount()).toBe(1);
+        expect(err).toBe(callbackError);
+      });
   });
 
-  test("should propagate errors thrown in callback when promise rejects", async () => {
-    // Mock the ___throwUncaughtError method to capture errors
-    const originalThrowUncaughtError = AveAzul.___throwUncaughtError;
-    const thrownErrors = [];
-
-    AveAzul.___throwUncaughtError = (err) => {
-      thrownErrors.push(err);
-      // Don't actually throw in tests
-    };
-
-    // Use asCallback with a callback that throws
+  test("should propagate errors thrown in callback when promise rejects", () => {
+    const captured = captureUncaught();
     const callbackError = new Error("callback error");
-    AveAzul.reject(new Error("rejection")).asCallback(() => {
-      throw callbackError;
-    });
 
-    // Wait for the setTimeout to execute
-    await AveAzul.delay(10);
-
-    // Verify the error was passed to ___throwUncaughtError
-    expect(thrownErrors.length).toBe(1);
-    expect(thrownErrors[0]).toBe(callbackError);
-
-    // Restore the original method
-    AveAzul.___throwUncaughtError = originalThrowUncaughtError;
+    return verify({
+      timeout: 500,
+      signals: { thrown: captured.thrown },
+      cleanup: captured.restore
+    })
+      .step(() => {
+        AveAzul.reject(new Error("rejection")).asCallback(() => {
+          throw callbackError;
+        });
+      })
+      .awaiting("thrown")
+      .step((err) => {
+        expect(captured.callCount()).toBe(1);
+        expect(err).toBe(callbackError);
+      });
   });
 
-  test("should preserve the error object when throwing uncaught errors", async () => {
-    // Mock the ___throwUncaughtError method to capture errors
-    const originalThrowUncaughtError = AveAzul.___throwUncaughtError;
-    const thrownErrors = [];
-
-    AveAzul.___throwUncaughtError = (err) => {
-      thrownErrors.push(err);
-      // Don't actually throw in tests
-    };
+  test("should preserve the error object when throwing uncaught errors", () => {
+    const captured = captureUncaught();
 
     // Create a custom error with additional properties
     class CustomError extends Error {
@@ -81,20 +92,23 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     }
 
     const callbackError = new CustomError("custom error");
-    AveAzul.resolve("value").asCallback(() => {
-      throw callbackError;
-    });
 
-    // Wait for the setTimeout to execute
-    await AveAzul.delay(10);
-
-    // Verify the error was passed to ___throwUncaughtError
-    expect(thrownErrors.length).toBe(1);
-    expect(thrownErrors[0]).toBe(callbackError);
-    expect(thrownErrors[0].name).toBe("CustomError");
-    expect(thrownErrors[0].customProperty).toBe("test");
-
-    // Restore the original method
-    AveAzul.___throwUncaughtError = originalThrowUncaughtError;
+    return verify({
+      timeout: 500,
+      signals: { thrown: captured.thrown },
+      cleanup: captured.restore
+    })
+      .step(() => {
+        AveAzul.resolve("value").asCallback(() => {
+          throw callbackError;
+        });
+      })
+      .awaiting("thrown")
+      .step((err) => {
+        expect(captured.callCount()).toBe(1);
+        expect(err).toBe(callbackError);
+        expect((err as CustomError).name).toBe("CustomError");
+        expect((err as CustomError).customProperty).toBe("test");
+      });
   });
 });

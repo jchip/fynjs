@@ -9,14 +9,9 @@ import assert from "assert";
 import stripAnsi from "strip-ansi";
 import Munchy from "munchy";
 import { PassThrough } from "stream";
-import {
-  asyncVerify,
-  runFinally,
-  runTimeout,
-  expectError,
-  expectErrorToBe,
-  runDefer
-} from "run-verify";
+// verify.signal rather than the bare `signal` export: the SIGTERM test below has a
+// local `signal` from node's (code, signal) exit handler, so the name is taken here.
+import { verify } from "run-verify";
 import xsh from "xsh";
 import * as xaa from "xaa";
 import { CliContext } from "../../lib/cli-context.js";
@@ -38,13 +33,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should lookup and call task function with 2 params with context and callback", () => {
@@ -56,14 +50,12 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      () => xrun.asyncRun("foo --a=50 --bar=60"),
-      () => {
+    return verify({ timeout: 500 })
+      .step(() => xrun.asyncRun("foo --a=50 --bar=60"))
+      .step(() => {
         expect(Object.prototype.toString.call(context)).toBe("[object Object]");
         expect(context.argOpts).toStrictEqual({ a: 50, bar: 60 });
-      }
-    );
+      });
   });
 
   it("should call task function with only callback parameter (no context)", () => {
@@ -77,13 +69,11 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      () => xrun.asyncRun("foo"),
-      () => {
+    return verify({ timeout: 500 })
+      .step(() => xrun.asyncRun("foo"))
+      .step(() => {
         expect(callbackCalled).toBe(true);
-      }
-    );
+      });
   });
 
   it("should handle synchronous task function that doesn't return a promise", () => {
@@ -95,13 +85,11 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      () => xrun.asyncRun("foo"),
-      () => {
+    return verify({ timeout: 500 })
+      .step(() => xrun.asyncRun("foo"))
+      .step(() => {
         expect(taskCalled).toBe(true);
-      }
-    );
+      });
   });
 
   it("should fail on unknown options if cliParser.allowUnknownOption is false", () => {
@@ -117,14 +105,12 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      expectError(() => xrun.asyncRun("foo --a=50 --bar=60")),
-      error => {
+    return verify({ timeout: 500 })
+      .expectError.step(() => xrun.asyncRun("foo --a=50 --bar=60"))
+      .step(error => {
         expect(error.message).toBe("Unknown options for task foo: a, bar");
         expect(context).toBeUndefined();
-      }
-    );
+      });
   });
 
   it("should parse task argOpts with aliases and values (FJM-131)", () => {
@@ -140,14 +126,12 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      () => xrun.asyncRun("foo -n world"),
-      () => {
+    return verify({ timeout: 500 })
+      .step(() => xrun.asyncRun("foo -n world"))
+      .step(() => {
         expect(context.argOpts.name).toBe("world");
         expect(context.argOpts.n).toBe("world");
-      }
-    );
+      });
   });
 
   it("should fail when required task argOpts is missing (FJM-131)", () => {
@@ -163,14 +147,12 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      expectError(() => xrun.asyncRun("foo")),
-      error => {
+    return verify({ timeout: 500 })
+      .expectError.step(() => xrun.asyncRun("foo"))
+      .step(error => {
         expect(error.message).toContain("missing these required options name");
         expect(context).toBeUndefined();
-      }
-    );
+      });
   });
 
   it("should support legacy require: true and type: 'string' in argOpts (FJM-131)", () => {
@@ -186,13 +168,11 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(500),
-      () => xrun.asyncRun("foo -n legacy"),
-      () => {
+    return verify({ timeout: 500 })
+      .step(() => xrun.asyncRun("foo -n legacy"))
+      .step(() => {
         expect(context.argOpts.name).toBe("legacy");
-      }
-    );
+      });
   });
 
   it("should run a top-level exec task with env options without leaking env to argOpts (FJM-191)", () => {
@@ -205,13 +185,11 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(1000),
-      () => xrun.asyncRun(xrun.serial("foo", "check")),
-      () => {
+    return verify({ timeout: 1000 })
+      .step(() => xrun.asyncRun(xrun.serial("foo", "check")))
+      .step(() => {
         expect(context.argOpts).toBeUndefined();
-      }
-    );
+      });
   });
 
   it("should parse task with array and count options (FJM-194)", () => {
@@ -228,15 +206,13 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      runTimeout(1000),
-      () => xrun.asyncRun("foo --files a b -vvv"),
-      () => {
+    return verify({ timeout: 1000 })
+      .step(() => xrun.asyncRun("foo --files a b -vvv"))
+      .step(() => {
         expect(context.argOpts.files).toStrictEqual(["a", "b"]);
         expect(context.argOpts.verbose).toBe(3);
         expect(context.argOpts.v).toBe(3);
-      }
-    );
+      });
   });
 
   it("should pass context to function that take a single param named ctx/context", () => {
@@ -265,20 +241,19 @@ describe("xrun", function() {
       })
     );
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(Object.prototype.toString.call(receivedContext)).toBe("[object Object]");
         expect(receivedContext.argOpts.a).toBe(50);
         expect(receivedContext.argOpts.bar).toBe(60);
-      },
-      next => xrun.run("blah", next),
-      () => {
+      })
+      .callbackStep(next => xrun.run("blah", next))
+      .step(() => {
         expect(Object.prototype.toString.call(receivedCtx)).toBe("[object Object]");
         expect(receivedCtx.argOpts.x).toBe(500);
         expect(receivedCtx.argOpts.abc).toBe(100);
-      }
-    );
+      });
   });
 
   it("should exe task name return by function", () => {
@@ -297,13 +272,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(2);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should exe task array return by function", () => {
@@ -332,14 +306,13 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(4);
         expect(foo2).toBe(1);
         expect(foo3).toBe(1);
-      }
-    );
+      });
   });
 
   it("should exe function return by function", () => {
@@ -357,13 +330,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(2);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should pass task options as argv", () => {
@@ -379,7 +351,7 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(next => xrun.run(["foo", "foo1 --test", "foo2 --a --b"], next));
+    return verify().callbackStep(next => xrun.run(["foo", "foo1 --test", "foo2 --a --b"], next));
   });
 
   it("should execute a dep string as shell directly", () => {
@@ -400,13 +372,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(2);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should handle error from dep shell", () => {
@@ -427,14 +398,13 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toBe("shell cmd 'exit 1' exit code 1");
         expect(doneItem).toBe(1);
         expect(foo).toBe(0);
-      }
-    );
+      });
   });
 
   it.skipIf(!process.stdout.isTTY)("should execute shell with tty", () => {
@@ -451,12 +421,11 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   it("should execute shell with remaining args", () => {
@@ -474,18 +443,14 @@ describe("xrun", function() {
       })
     );
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.join().trim()).toBe(
           "hello foo     world a b    test  1   2   3"
         );
-      },
-      runFinally(() => {
-        intercept.restore();
-      })
-    );
+      });
   });
 
   it("should execute XTaskSpec shell with flags as array", () => {
@@ -504,17 +469,13 @@ describe("xrun", function() {
 
     const intercept = xstdout.intercept(true);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         intercept.restore();
         expect(doneItem).toBe(1);
         expect(intercept.stdout.join().trim()).toBe("test-flags-array");
-      },
-      runFinally(() => {
-        intercept.restore();
-      })
-    );
+      });
   });
 
   const execXTaskSpec = flags => {
@@ -531,12 +492,11 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   };
 
   it.skipIf(!process.stdout.isTTY)("should execute XTaskSpec shell with tty flag", () => {
@@ -569,12 +529,11 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(2);
-      }
-    );
+      });
   });
 
   it("should execute shell with spawn sync", () => {
@@ -591,12 +550,11 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   it("should execute shell with spawn sync noenv", () => {
@@ -614,12 +572,11 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   it("env should avoid replacing if override is false", () => {
@@ -632,13 +589,12 @@ describe("xrun", function() {
       foo: xrun.env({ [key]: "blah" }, { override: false })
     });
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(process.env[key]).toBe("TEST123");
         delete process.env[key];
-      }
-    );
+      });
   });
 
   it("updateEnv should set env", () => {
@@ -664,13 +620,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(doneItem).toBe(0);
         expect(err.message).toContain("Unknown flag foo in shell task");
-      }
-    );
+      });
   });
 
   it("should handle XTaskSpec with unknown type", () => {
@@ -678,12 +633,11 @@ describe("xrun", function() {
       foo: new gxrun.XTaskSpec({ type: "blah" })
     });
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toContain("Unable to process XTaskSpec type blah");
-      }
-    );
+      });
   });
 
   it("should handle anonymous XTaskSpec with unknown type", () => {
@@ -691,12 +645,11 @@ describe("xrun", function() {
       foo: [new gxrun.XTaskSpec({ type: "blah" })]
     });
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toContain("Unable to process XTaskSpec type blah");
-      }
-    );
+      });
   });
 
   it("should handle fail status of shell with spawn", () => {
@@ -711,13 +664,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toBe(`cmd "node -e "process.exit(1)"" exit code 1`);
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   it("should handle fail status of shell with spawn sync", () => {
@@ -732,13 +684,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toBe(`cmd "node -e "process.exit(1)"" exit code 1`);
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   it("should handle error of shell with spawn sync", () => {
@@ -758,13 +709,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toContain(`ETIMEDOUT`);
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   // Skip on macOS in sandboxed environments where process.kill may fail with EPERM
@@ -780,18 +730,14 @@ describe("xrun", function() {
 
     const intercept = xstdout.intercept(true);
 
-    return asyncVerify(
-      next => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => {
         xrun.run("test-stop", next);
-      },
-      () => {
+      })
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.join()).not.toContain("BAD IF YOU SEE THIS");
-      },
-      runFinally(() => {
-        intercept.restore();
-      })
-    );
+      });
   });
 
   it("should kill task spawn child and stop", () => {
@@ -805,18 +751,14 @@ describe("xrun", function() {
 
     const intercept = xstdout.intercept(true);
 
-    return asyncVerify(
-      next => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => {
         xrun.run("test-stop", next);
-      },
-      () => {
+      })
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.join()).not.toContain("BAD IF YOU SEE THIS");
-      },
-      runFinally(() => {
-        intercept.restore();
-      })
-    );
+      });
   });
 
   // Skip on macOS in sandboxed environments where process.kill may fail with EPERM
@@ -832,18 +774,14 @@ describe("xrun", function() {
 
     const intercept = xstdout.intercept(true);
 
-    return asyncVerify(
-      next => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => {
         xrun.run("test-stop", next);
-      },
-      () => {
+      })
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.join()).not.toContain("BAD IF YOU SEE THIS");
-      },
-      runFinally(() => {
-        intercept.restore();
-      })
-    );
+      });
   });
 
   it("should handle error of shell command malformed", () => {
@@ -863,13 +801,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toContain(`Missing )$ in shell task: ~(spawn,syncsleep 1`);
         expect(doneItem).toBe(0);
-      }
-    );
+      });
   });
 
   it("should handle error from task shell", () => {
@@ -888,13 +825,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toBe("shell cmd 'exit 1' exit code 1");
         expect(doneItem).toBe(1);
-      }
-    );
+      });
   });
 
   it("should execute serial tasks", () => {
@@ -926,13 +862,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(6);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should count tasks", () => {
@@ -973,13 +908,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(6);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should execute concurrent tasks", () => {
@@ -1013,14 +947,13 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(7);
         expect(foo).toBe(1);
         expect(foo2).toBe(1);
-      }
-    );
+      });
   });
 
   it("should run a user array concurrently", () => {
@@ -1062,15 +995,14 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run(["foo", "fooX"], next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run(["foo", "fooX"], next))
+      .step(() => {
         expect(doneItem).toBe(9);
         expect(foo).toBe(1);
         expect(foo2).toBe(1);
         expect(fooX).toBe(1);
-      }
-    );
+      });
   });
 
   it("should return all errors from concurrent tasks", () => {
@@ -1108,9 +1040,9 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.more).toEqual(expect.anything());
         expect(err.more.length).toBe(1);
         expect(err.message).toBe("a failed");
@@ -1118,12 +1050,11 @@ describe("xrun", function() {
         expect(doneItem).toBe(7);
         expect(foo).toBe(1);
         expect(foo2).toBe(1);
-      },
-      next => xrun.waitAllPending(next),
-      () => {
+      })
+      .callbackStep(next => xrun.waitAllPending(next))
+      .step(() => {
         expect(doneItem).toBe(7);
-      }
-    );
+      });
   });
 
   it("should execute a dep function directly", () => {
@@ -1145,14 +1076,13 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", () => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(2);
         expect(dep).toBe(1);
         expect(foo).toBe(1);
-      }
-    );
+      });
   });
 
   it("should execute a dep as serial array", () => {
@@ -1172,13 +1102,12 @@ describe("xrun", function() {
       exeEvents.shift();
     });
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(foo).toBe(1);
         expect(foo2).toBe(1);
-      }
-    );
+      });
   });
 
   it("should parse and execute array in a string", () => {
@@ -1227,13 +1156,12 @@ describe("xrun", function() {
       exeEvents.shift();
     });
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(foo2).toBe(4);
         expect(foo3).toBe(2);
-      }
-    );
+      });
   });
 
   it("should execute a dep as serial and then concurrent array", () => {
@@ -1253,13 +1181,12 @@ describe("xrun", function() {
       exeEvents.shift();
     });
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(foo).toBe(1);
         expect(foo2).toBe(1);
-      }
-    );
+      });
   });
 
   it("should await a promise a task function returned", () => {
@@ -1275,12 +1202,11 @@ describe("xrun", function() {
       exeEvents.shift();
     });
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(foo2).toBe(1);
-      }
-    );
+      });
   });
 
   it("should supply context as this to task function", () => {
@@ -1318,13 +1244,12 @@ describe("xrun", function() {
       exeEvents.shift();
     });
 
-    return asyncVerify(
-      next => xrun.run("foo2", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo2", next))
+      .step(() => {
         expect(foo).toBe(1);
         expect(foo3).toBe(1);
-      }
-    );
+      });
   });
 
   it("should ignore value returned by task function that's not string/function/array", () => {
@@ -1342,12 +1267,11 @@ describe("xrun", function() {
       exeEvents.shift();
     });
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(foo).toBe(999);
-      }
-    );
+      });
   });
 
   it("should handle error from event handler", () => {
@@ -1357,7 +1281,7 @@ describe("xrun", function() {
     xrun.on("execute", _data => {
       throw new Error("test");
     });
-    return asyncVerify(expectError(next => xrun.run("foo", next)));
+    return verify().expectError.callbackStep(next => xrun.run("foo", next));
   });
 
   it("should support load tasks", () => {
@@ -1367,7 +1291,7 @@ describe("xrun", function() {
         throw new Error("test");
       }
     });
-    return asyncVerify(expectErrorToBe(next => xrun.run("1/foo", next), "test"));
+    return verify().expectErrorToBe("test").callbackStep(next => xrun.run("1/foo", next));
   });
 
   it("should handle direct error from exe a function task", () => {
@@ -1376,7 +1300,7 @@ describe("xrun", function() {
         throw new Error("test");
       }
     });
-    return asyncVerify(expectErrorToBe(next => xrun.run("foo", next), "test"));
+    return verify().expectErrorToBe("test").callbackStep(next => xrun.run("foo", next));
   });
 
   it("should exit on error", () => {
@@ -1384,11 +1308,11 @@ describe("xrun", function() {
     let testStatus;
     const ox = process.exit;
 
-    const defer = runDefer(500);
+    const exited = verify.signal(500);
 
     process.exit = status => {
       testStatus = status;
-      defer.resolve();
+      exited.resolve();
     };
 
     const xrun = new XRun({
@@ -1397,19 +1321,17 @@ describe("xrun", function() {
       }
     });
 
-    return asyncVerify(
-      () => xrun.run("foo"),
-      runFinally(() => intercept.restore()),
+    return verify({ signals: { exited }, cleanup: () => intercept.restore() })
+      .step(() => xrun.run("foo"))
       // wait for xrun to execute foo, catch the error, and then try to exit
-      defer.wait(),
-      () => {
+      .awaiting(exited)
+      .step(() => {
         // restore process.exit
         process.exit = ox;
         intercept.restore();
         expect(intercept.stdout.join()).toContain("Execution Failed - Errors:");
         expect(testStatus).toBe(1);
-      }
-    );
+      });
   });
 
   it("should not exit on error if stopOnError is false", () => {
@@ -1420,27 +1342,25 @@ describe("xrun", function() {
     process.exit = () => {
       testStatus = "called";
     };
-    const defer = runDefer(500);
+    const ranFoo = verify.signal(500);
     const xrun = new XRun({
       foo: () => {
-        defer.resolve();
+        ranFoo.resolve();
         throw new Error("test");
       }
     });
     xrun.stopOnError = false;
 
-    return asyncVerify(
-      () => xrun.run("foo"),
-      runFinally(() => intercept.restore()),
-      defer.wait(),
-      () => xaa.delay(10),
-      () => {
+    return verify({ signals: { ranFoo }, cleanup: () => intercept.restore() })
+      .step(() => xrun.run("foo"))
+      .awaiting(ranFoo)
+      .step(() => xaa.delay(10))
+      .step(() => {
         process.exit = ox;
         intercept.restore();
         expect(intercept.stdout.join()).toContain("Execution Failed - Errors:");
         expect(testStatus).toBe("test");
-      }
-    );
+      });
   });
 
   it("_exitOnError should do nothing for no error", () => {
@@ -1463,36 +1383,34 @@ describe("xrun", function() {
         task: true
       }
     });
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toBe("Task foo2 has unrecognize task value type Boolean");
-      }
-    );
+      });
   });
 
   it("should fail for task with unknown value type", () => {
     const xrun = new XRun({
       foo: [true]
     });
-    return asyncVerify(
-      expectError(next => xrun.run("foo", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("foo", next))
+      .step(err => {
         expect(err.message).toBe(
           "Unable to process task foo.S because value type Boolean is unknown and no value.item"
         );
-      }
-    );
+      });
   });
 
   it("should not fail if optional task name is not found", () => {
     const xrun = new XRun({});
-    return asyncVerify(next => xrun.run("?foo", next));
+    return verify().callbackStep(next => xrun.run("?foo", next));
   });
 
   it("should fail if task name is not found", () => {
     const xrun = new XRun({});
-    return asyncVerify(expectErrorToBe(next => xrun.run("foo", next), "Task foo not found"));
+    return verify().expectErrorToBe("Task foo not found").callbackStep(next => xrun.run("foo", next));
   });
 
   it("should show similar tasks if not found", () => {
@@ -1511,53 +1429,49 @@ describe("xrun", function() {
     });
     const intercept = xstdout.intercept(true);
 
-    return asyncVerify(
-      runFinally(() => intercept.restore()),
-      next => {
-        xrun.exit = _code => {
-          intercept.restore();
-          const stdout = intercept.stdout.map(l => stripAnsi(l));
-          expect(stdout[2].trim()).toBe("Maybe try: foo1, foo2, foo3, moo, xoo");
-          next();
-        };
-        xrun.run("foox");
-      }
-    );
+    return verify({ cleanup: () => intercept.restore() }).callbackStep(next => {
+      xrun.exit = _code => {
+        intercept.restore();
+        const stdout = intercept.stdout.map(l => stripAnsi(l));
+        expect(stdout[2].trim()).toBe("Maybe try: foo1, foo2, foo3, moo, xoo");
+        next();
+      };
+      xrun.run("foox");
+    });
   });
 
   it("should fail if namespace is not found", () => {
     const xrun = new XRun({});
-    return asyncVerify(
-      expectErrorToBe(next => xrun.run("foo/bar", next), "No task namespace foo exist")
-    );
+    return verify()
+      .expectErrorToBe("No task namespace foo exist")
+      .callbackStep(next => xrun.run("foo/bar", next));
   });
 
   it("should fail if task name is empty", () => {
     const xrun = new XRun({});
-    return asyncVerify(
-      expectError(next => xrun.run("", next)),
-      err => {
+    return verify()
+      .expectError.callbackStep(next => xrun.run("", next))
+      .step(err => {
         expect(err[0].message).toContain(`xqitem must have a name`);
-      }
-    );
+      });
   });
 
   it("should fail if task is not in namespace", () => {
     const xrun = new XRun("foo", {
       test: () => undefined
     });
-    return asyncVerify(
-      expectErrorToBe(next => xrun.run("foo/bar", next), "Task bar in namespace foo not found")
-    );
+    return verify()
+      .expectErrorToBe("Task bar in namespace foo not found")
+      .callbackStep(next => xrun.run("foo/bar", next));
   });
 
   it("should fail if task is not in default namespace", () => {
     const xrun = new XRun({
       test: () => undefined
     });
-    return asyncVerify(
-      expectErrorToBe(next => xrun.run("/bar", next), "Task bar in namespace / not found")
-    );
+    return verify()
+      .expectErrorToBe("Task bar in namespace / not found")
+      .callbackStep(next => xrun.run("/bar", next));
   });
 
   describe("stopOnError", function() {
@@ -1591,13 +1505,12 @@ describe("xrun", function() {
       });
       xrun.stopOnError = "full";
 
-      return asyncVerify(
-        expectError(next => xrun.run(["task1", "task2"], next)),
-        err => {
+      return verify()
+        .expectError.callbackStep(next => xrun.run(["task1", "task2"], next))
+        .step(err => {
           expect(task1Called).toBe(true);
           expect(err.message).toContain("task1 failed");
-        }
-      );
+        });
     });
 
     it("should watch for failure when stopOnError is full with promise task", () => {
@@ -1625,15 +1538,14 @@ describe("xrun", function() {
       xrun.stopOnError = "full";
 
       // Run tasks concurrently so task2's promise is active when task1 fails
-      return asyncVerify(
-        expectError(next => xrun.run([["task1", "task2"]], next)),
-        err => {
+      return verify()
+        .expectError.callbackStep(next => xrun.run([["task1", "task2"]], next))
+        .step(err => {
           expect(task1Called).toBe(true);
           expect(task2Called).toBe(true);
           expect(err.message).toContain("task1 failed");
           // task2's promise should be cancelled due to stopOnError full
-        }
-      );
+        });
     });
   });
 
@@ -1713,27 +1625,25 @@ describe("xrun", function() {
   });
 
   it("should cancel and kill a shell exec on error", () => {
-    const defer = runDefer(500);
+    const ranFnErr = verify.signal(500);
     const tasks = {
       sh: "sleep 1; echo sh output",
       fnErr: () => {
-        defer.resolve();
+        ranFnErr.resolve();
         throw new Error("error");
       }
     };
 
     const xrun = new XRun(tasks);
     const intercept = xstdout.intercept(true);
-    return asyncVerify(
-      runFinally(() => intercept.restore()),
-      expectError(next => xrun.run(["sh", "fnErr"], next)),
-      defer.wait(500),
-      () => xaa.delay(100),
-      () => {
+    return verify({ signals: { ranFnErr }, cleanup: () => intercept.restore() })
+      .expectError.callbackStep(next => xrun.run(["sh", "fnErr"], next))
+      .awaiting(ranFnErr)
+      .step(() => xaa.delay(100))
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout).toStrictEqual([]);
-      }
-    );
+      });
   });
 
   const timeoutFoo = x => {
@@ -1755,15 +1665,14 @@ describe("xrun", function() {
     setTimeout(() => (cfoo2 = tasks.foo2Value), 10);
 
     const start = Date.now();
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         const end = Date.now();
         expect(end - start).toBeGreaterThan(28);
         expect(cfoo2).toBe(0);
         expect(tasks.foo2Value).toBe(1);
-      }
-    );
+      });
   };
 
   it("should handle async function", () => {
@@ -1837,12 +1746,11 @@ describe("xrun", function() {
       }
     };
 
-    return asyncVerify(
-      expectError(() => testAsync(tasks)),
-      err => {
+    return verify()
+      .expectError.step(() => testAsync(tasks))
+      .step(err => {
         expect(err.message).toContain("test oops");
-      }
-    );
+      });
   });
 
   it("should handle promise rejection with SIGTERM child process", () => {
@@ -1878,13 +1786,12 @@ describe("xrun", function() {
     let doneItem = 0;
     xrun.on("done-item", _data => doneItem++);
 
-    return asyncVerify(
-      next => xrun.run("foo", next),
-      () => {
+    return verify()
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         // Should complete without error (SIGTERM treated as normal exit)
         expect(doneItem).toBeGreaterThan(0);
-      }
-    );
+      });
   });
   //
   // exit() kills tracked children before leaving, so a stopped run does not orphan the

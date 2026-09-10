@@ -9,7 +9,11 @@ describe("AveAzul.using", () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    // restore, not clear: the first test replaces the static
+    // ___throwUncaughtError, and clearAllMocks would leave the replacement in
+    // place. Restoring here keeps it from outliving the test that installed it
+    // even if an assertion above the end of that test fails.
+    vi.restoreAllMocks();
   });
 
   /**

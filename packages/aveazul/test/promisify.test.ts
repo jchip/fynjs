@@ -1,4 +1,5 @@
 import { describe, test, it, expect } from "vitest";
+import { verify } from "run-verify";
 import AveAzul from "./promise-lib.ts";
 
 describe("promisify", () => {
@@ -216,11 +217,14 @@ describe("promisify", () => {
     // They should be different function references since each promisification creates a new wrapper
     expect(promisified2).not.toBe(promisified1);
 
-    // Both should work correctly
-    return Promise.all([
-      promisified1().then((result) => expect(result).toBe("success")),
-      promisified2().then((result) => expect(result).toBe("success")),
-    ]);
+    // Both should work correctly. Neither call starts until the step is
+    // reached, and the array resolves element-wise.
+    return verify({ timeout: 500 })
+      .asyncStep(() => [promisified1(), promisified2()])
+      .step(([result1, result2]) => {
+        expect(result1).toBe("success");
+        expect(result2).toBe("success");
+      });
   });
 
   it("should handle multiArgs option correctly", async () => {

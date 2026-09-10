@@ -12,7 +12,6 @@ import {
   mergeAllowEntry,
   blockedReasonText
 } from "./util/script-policy-report";
-import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
 
 //
 // `fyn install-scripts` - reviewing and recording which packages may run their
@@ -152,36 +151,33 @@ export function selectRecords(names, records) {
   const byName = new Map();
   for (const record of records) {
     if (!byName.has(record.name)) {
-      byName.set(record.name, []);
+      byName.set(record.name, record);
     }
-    byName.get(record.name).push(record);
   }
 
   const matched = [];
   const unknown = [];
-  const ambiguous = [];
 
   for (const arg of names) {
     const { name, spec } = parseAllowKey(arg);
-    const existing = byName.get(name) || [];
+    const record = byName.get(name);
 
     if (spec) {
-      const found = existing.find(r => r.version === spec);
+      // an explicit version is the user's call - it does not need to have been
+      // seen by an install
       matched.push({
         name,
         version: spec,
-        scripts: found ? found.scripts : ["preinstall", "install", "postinstall"]
+        scripts: record ? record.scripts : ["preinstall", "install", "postinstall"]
       });
-    } else if (existing.length === 1) {
-      matched.push(existing[0]);
-    } else if (existing.length > 1) {
-      ambiguous.push({ name, versions: existing.map(r => r.version) });
+    } else if (record) {
+      matched.push(record);
     } else {
       unknown.push(arg);
     }
   }
 
-  return { matched, unknown, ambiguous };
+  return { matched, unknown };
 }
 
 /**
@@ -243,35 +239,6 @@ export function ask(question) {
 }
 
 /**
- * Format JSON preserving compact single-line representation for simple arrays
- * (e.g. versionLocks tuples, packages lists, scripts lists) to avoid formatting diff noise.
- */
-export function formatCompactJson(json) {
-  let str = JSON.stringify(json, null, 2);
-  str = str.replace(
-    /\[\s*\n\s+("[^"\n]+"|\d+|true|false)(?:,\s*\n\s+("[^"\n]+"|\d+|true|false))*\s*\n\s*\]/g,
-    match => {
-      try {
-        const parsed = JSON.parse(match);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            x => typeof x === "string" || typeof x === "number" || typeof x === "boolean"
-          )
-        ) {
-          const compact = `[${parsed.map(x => JSON.stringify(x)).join(", ")}]`;
-          if (compact.length <= 100) {
-            return compact;
-          }
-        }
-      } catch {}
-      return match;
-    }
-  );
-  return `${str}\n`;
-}
-
-/**
  * `fyn install-scripts` - list, approve, deny and prune install-script
  * approvals.
  */
@@ -292,64 +259,6 @@ export class InstallScripts {
    */
   get records() {
     return dedupeBlockedRecords([...this._fyn.blockedScripts, ...this._fyn.pendingScripts]);
-  }
-
-  /**
-   * Load blocked and pending records across the monorepo if inside a fynpo monorepo,
-   * or from the current package otherwise.
-   *
-   * @returns {Promise<object[]>} deduplicated records
-   */
-  async loadRecords() {
-    const rawRecords = [...this._fyn.blockedScripts, ...this._fyn.pendingScripts];
-    const fynpo = this._fyn._fynpo;
-    if (fynpo && fynpo.dir) {
-      // Check root node_modules/.f/fyn-install-config.json
-      const rootConfigPath = Path.join(fynpo.dir, "node_modules", ".f", "fyn-install-config.json");
-      try {
-        const data = JSON.parse(await Fs.readFile(rootConfigPath, "utf8"));
-        if (data.blockedScripts) rawRecords.push(...data.blockedScripts);
-        if (data.pendingScripts) rawRecords.push(...data.pendingScripts);
-      } catch {}
-
-      // Check all workspace packages in graph
-      if (fynpo.graph && fynpo.graph.packages && fynpo.graph.packages.byName) {
-        for (const pkgName of Object.keys(fynpo.graph.packages.byName)) {
-          const pkgInfo = fynpo.graph.packages.byName[pkgName];
-          const pkgDir = pkgInfo.dir || Path.join(fynpo.dir, pkgInfo.path);
-          const configPath = Path.join(pkgDir, "node_modules", ".f", "fyn-install-config.json");
-          try {
-            const data = JSON.parse(await Fs.readFile(configPath, "utf8"));
-            if (data.blockedScripts) rawRecords.push(...data.blockedScripts);
-            if (data.pendingScripts) rawRecords.push(...data.pendingScripts);
-          } catch {}
-        }
-      }
-    }
-    const deduped = dedupeBlockedRecords(rawRecords);
-
-    // Read active allowScripts from target (fynpo.json or package.json) + fyn instance
-    let targetAllow = {};
-    let targetDeny = {};
-    try {
-      const target = resolveTarget(this._fyn, false);
-      const read = await this.readTarget(target);
-      targetAllow = read.allowScripts || {};
-      targetDeny = read.denyScripts || {};
-    } catch {}
-
-    const allowScripts = { ...(this._fyn.allowScripts || {}), ...targetAllow };
-    const denyScripts = { ...(this._fyn.denyScripts || {}), ...targetDeny };
-
-    return deduped.filter(record => {
-      const policy = evaluateScriptPolicy(record, allowScripts, {
-        mode: "review",
-        denyScripts
-      });
-      const scripts = record.scripts && record.scripts.length > 0 ? record.scripts : ["install"];
-      const allAllowed = scripts.every(s => isScriptAllowed(policy, s));
-      return !allAllowed;
-    });
   }
 
   /**
@@ -383,20 +292,20 @@ export class InstallScripts {
     };
   }
 
-/**
- * Write script-policy lists back to their file. Only the keys named in
- * `values` are touched, so approving does not rewrite the deny list.
- *
- * @param {object} target from {@link resolveTarget}
- * @param {object} read result of {@link readTarget}
- * @param {object} values the option values to write, keyed by option name
- * @returns {Promise<void>} nothing
- */
+  /**
+   * Write script-policy lists back to their file. Only the keys named in
+   * `values` are touched, so approving does not rewrite the deny list.
+   *
+   * @param {object} target from {@link resolveTarget}
+   * @param {object} read result of {@link readTarget}
+   * @param {object} values the option values to write, keyed by option name
+   * @returns {Promise<void>} nothing
+   */
   async writeTarget(target, read, values) {
     for (const key of Object.keys(values)) {
       _.set(read.json, targetOptionPath(target, key), values[key]);
     }
-    await Fs.writeFile(target.file, formatCompactJson(read.json));
+    await Fs.writeFile(target.file, `${JSON.stringify(read.json, null, 2)}\n`);
     logger.info(`updated ${chalk.cyan(target.file)}`);
   }
 
@@ -408,7 +317,7 @@ export class InstallScripts {
    * @returns {Promise<object[]>} the records listed
    */
   async ls({ json = false } = {}) {
-    const records = await this.loadRecords();
+    const records = this.records;
 
     if (json) {
       // stdout, not the logger: this is data for a pipe
@@ -464,26 +373,16 @@ export class InstallScripts {
     const pin = this._fyn.allowScriptsPin;
     let toApprove;
 
-    const records = await this.loadRecords();
-
     if (all) {
-      toApprove = records;
+      toApprove = this.records;
     } else {
-      if (names.length === 0) {
-        throw new Error("no packages named to approve");
-      }
-      const { matched, unknown, ambiguous } = selectRecords(names, records);
-      if (ambiguous && ambiguous.length > 0) {
-        const details = ambiguous.map(a => `${a.name} (${a.versions.join(", ")})`).join("; ");
-        throw new Error(
-          `multiple versions awaiting review for: ${details} - name an explicit version (e.g. name@version)`
-        );
-      }
+      const { matched, unknown } = selectRecords(names, this.records);
       if (unknown.length > 0) {
-        throw new Error(
+        logger.error(
           `not awaiting review: ${unknown.join(", ")} - run ` +
             `${chalk.cyan("fyn install-scripts ls")} to see what is, or name an explicit version`
         );
+        return [];
       }
       toApprove = matched;
     }
@@ -537,7 +436,8 @@ export class InstallScripts {
    */
   async deny(names = [], { local = false } = {}) {
     if (names.length === 0) {
-      throw new Error("no packages named to deny");
+      logger.error("no packages named to deny");
+      return [];
     }
 
     const target = resolveTarget(this._fyn, local);

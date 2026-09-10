@@ -37,7 +37,8 @@
   "author": "Walmart GTP.js Team and Contributors",
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.com/"
+    "registry": "https://registry.npmjs.com/",
+    "tag": "v3"
   },
   "files": [
     "bin",
@@ -140,7 +141,7 @@
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
     "which": "^6.0.1",
-    "xstdout": "^1.0.0"
+    "xstdout": "^0.1.1"
   },
   "nyc": {
     "all": true,

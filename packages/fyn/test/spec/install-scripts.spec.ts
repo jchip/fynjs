@@ -176,16 +176,6 @@ describe("install-scripts", function () {
       expect(unknown).toStrictEqual([]);
       expect(matched[0]).toMatchObject({ name: "ghost", version: "2.0.0" });
     });
-
-    it("detects ambiguous bare name when multiple versions are pending", () => {
-      const { matched, unknown, ambiguous } = selectRecords(["sharp"], [
-        mkRecord({ name: "sharp", version: "0.34.1" }),
-        mkRecord({ name: "sharp", version: "0.34.4" })
-      ]);
-      expect(matched).toStrictEqual([]);
-      expect(unknown).toStrictEqual([]);
-      expect(ambiguous).toStrictEqual([{ name: "sharp", versions: ["0.34.1", "0.34.4"] }]);
-    });
   });
 
   describe("resolveTarget / write", function () {
@@ -278,37 +268,6 @@ describe("install-scripts", function () {
       });
       const approved = await new InstallScripts({ fyn }).approve([], { all: true });
       expect(approved.sort()).toStrictEqual(["canvas", "sharp"]);
-    });
-
-    it("approve throws when a named package is not awaiting review", async () => {
-      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
-      const fyn = mkFyn({ blockedScripts: [] });
-      const cmd = new InstallScripts({ fyn });
-      await expect(cmd.approve(["ghost"])).rejects.toThrow("not awaiting review: ghost");
-    });
-
-    it("approve throws when a bare name is ambiguous", async () => {
-      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
-      const fyn = mkFyn({
-        blockedScripts: [
-          mkRecord({ name: "sharp", version: "0.34.1" }),
-          mkRecord({ name: "sharp", version: "0.34.4" })
-        ]
-      });
-      const cmd = new InstallScripts({ fyn });
-      await expect(cmd.approve(["sharp"])).rejects.toThrow("multiple versions awaiting review for: sharp (0.34.1, 0.34.4)");
-    });
-
-    it("approve throws when no packages are named and all is false", async () => {
-      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
-      const cmd = new InstallScripts({ fyn: mkFyn() });
-      await expect(cmd.approve([])).rejects.toThrow("no packages named to approve");
-    });
-
-    it("deny throws when no packages are named", async () => {
-      Fs.writeFileSync(Path.join(dir, "package.json"), JSON.stringify({ name: "app" }));
-      const cmd = new InstallScripts({ fyn: mkFyn() });
-      await expect(cmd.deny([])).rejects.toThrow("no packages named to deny");
     });
 
     it("deny writes fyn.denyScripts and approve then refuses", async () => {
@@ -532,66 +491,6 @@ describe("install-scripts", function () {
       expect(
         JSON.parse(Fs.readFileSync(Path.join(dir, "package.json"), "utf8")).fyn.allowScripts
       ).toStrictEqual({ sharp: {} });
-    });
-
-    it("writeTarget formats compact arrays in fynpo.json", async () => {
-      const fynpoJson = {
-        packages: ["packages/*", "_w/*"],
-        versionLocks: [["fynpo", "fyn", "fynpo-cli"]],
-        fyn: { options: {} }
-      };
-      Fs.writeFileSync(Path.join(dir, "fynpo.json"), JSON.stringify(fynpoJson, null, 2));
-      const fyn = mkFyn({ _fynpo: { dir }, blockedScripts: [mkRecord()] });
-      await new InstallScripts({ fyn }).approve(["sharp"]);
-
-      const content = Fs.readFileSync(Path.join(dir, "fynpo.json"), "utf8");
-      expect(content).toContain('["packages/*", "_w/*"]');
-      expect(content).toContain('["fynpo", "fyn", "fynpo-cli"]');
-    });
-
-    it("loadRecords aggregates records across monorepo workspaces", async () => {
-      const pkgDir = Path.join(dir, "packages", "pkg-a");
-      Fs.mkdirSync(Path.join(pkgDir, "node_modules", ".f"), { recursive: true });
-      Fs.writeFileSync(
-        Path.join(pkgDir, "node_modules", ".f", "fyn-install-config.json"),
-        JSON.stringify({
-          blockedScripts: [mkRecord({ name: "workspace-dep", version: "1.2.3" })]
-        })
-      );
-
-      const fyn = mkFyn({
-        _fynpo: {
-          dir,
-          graph: {
-            packages: {
-              byName: {
-                "pkg-a": { dir: pkgDir, path: "packages/pkg-a" }
-              }
-            }
-          }
-        },
-        blockedScripts: [mkRecord({ name: "root-dep", version: "2.0.0" })]
-      });
-
-      const records = await new InstallScripts({ fyn }).loadRecords();
-      const names = records.map(r => r.name).sort();
-      expect(names).toStrictEqual(["root-dep", "workspace-dep"]);
-    });
-
-    it("ls and loadRecords filter out packages that are already approved", async () => {
-      Fs.writeFileSync(
-        Path.join(dir, "package.json"),
-        JSON.stringify({ name: "app", fyn: { allowScripts: { sharp: { semver: "^0.34.0" } } } })
-      );
-      const fyn = mkFyn({
-        blockedScripts: [mkRecord({ name: "sharp", version: "0.34.4" })],
-        pendingScripts: [mkRecord({ name: "canvas", version: "5.0.1" })]
-      });
-      const cmd = new InstallScripts({ fyn });
-      const records = await cmd.loadRecords();
-      expect(records.map(r => r.name)).toStrictEqual(["canvas"]);
-      const listed = await cmd.ls();
-      expect(listed.map(r => r.name)).toStrictEqual(["canvas"]);
     });
   });
 });

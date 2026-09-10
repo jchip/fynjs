@@ -110,7 +110,6 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   getFvDir(x?: string): string;
   // NativePromise: `Promise` here is aveazul's (FPO-41), Fyn's method returns the global one
   loadFvVersions(): NativePromise<FvVersions>;
-  saveInstallConfig(): NativePromise<void>;
   setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
 }
 
@@ -800,11 +799,6 @@ class PkgInstaller {
     if (pending.length === 0) {
       return;
     }
-
-    this._fyn.setBlockedScripts(this.blockedScripts, this.pendingScripts);
-    try {
-      await this._fyn.saveInstallConfig();
-    } catch {}
 
     const approved = await new InstallScripts({ fyn: this._fyn }).review(pending);
 

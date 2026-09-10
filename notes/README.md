@@ -18,6 +18,10 @@ own `README.md`. Stale documents move to `notes/archive/`.
 | [stale-local-manifest-detection.md](stale-local-manifest-detection.md) | Why an installed `package.json` goes stale by design, and how `fynpo run` warns instead of hanging (FJM-64) |
 | [fyn-install-script-allowlist.md](fyn-install-script-allowlist.md) | Install-script allowlist — design and what shipped: npm 12 parity, the fynpo-wide allowlist, and why workspace-local packages are exempt (FPM-82) |
 | [fynjs-fetch-design.md](fynjs-fetch-design.md) | Design & architecture for `@fynjs/fetch` — zero-dependency hardened HTTP client on Node core fetch, failure modes, socket leak protection, retries, and consumer integration |
+| [run-verify-api-redesign.md](run-verify-api-redesign.md) | Corrected design centered on the sequential step pipeline, unified expected errors, and defer coordination |
+| [run-verify-frv5-audit-2026-09-08.md](run-verify-frv5-audit-2026-09-08.md) | Retro for the withdrawn FRV-3/4/5 work: disposition, the evidence table for future runtime changes, verification runs, and two defects found in callback inference |
+| [run-verify-assessment.md](run-verify-assessment.md) | Independent review: what the library is worth against modern Node, the source-text inference flaw, ranked API improvements, why a frontier model misread the API, and measured results from a chain-typing prototype |
+| [run-verify-explicit-api-proposal.md](run-verify-explicit-api-proposal.md) | Proposed explicit `.step` chain API built as a facade over the positional runtime: design constraints, verified prototype results, coexistence instead of migration, the `xrun.spec.js` trial, and rejected alternatives |
 
 ## Conventions
 

@@ -550,36 +550,12 @@ export class FynpoDepGraph {
       groups = groupMM(mms, {});
     }
 
-    const isDirPrunedInAutoSearch = (path: string) => {
+    const foundInAutoSearch = (path: string) => {
       if (!autoSearch) {
         return false;
       }
       for (const e of autoSearchFound) {
         if (isPathInside(path, e)) {
-          if (
-            includeMms.length > 0 &&
-            includeMms.some((m) => m.match(posixify(path), true))
-          ) {
-            return false;
-          }
-          return true;
-        }
-      }
-      return false;
-    };
-
-    const isPkgPrunedInAutoSearch = (path: string) => {
-      if (!autoSearch) {
-        return false;
-      }
-      for (const e of autoSearchFound) {
-        if (isPathInside(path, e)) {
-          if (
-            includeMms.length > 0 &&
-            includeMms.some((m) => m.match(posixify(path)))
-          ) {
-            return false;
-          }
           return true;
         }
       }
@@ -597,12 +573,12 @@ export class FynpoDepGraph {
             if (isExcluded(path) || skipForAutoSearch(path)) {
               return false;
             }
-            if (extras.files.includes("fynpo.json") || isPkgPrunedInAutoSearch(path)) {
+            if (extras.files.includes("fynpo.json") || foundInAutoSearch(path)) {
               //
               // We ignore dir with package.json if:
               // 1. It's a fynpo root dir, ie: `fynpo.json` exists
               // 2. In auto search, if we've found a package.json in a dir, we don't want to
-              //    search any other package.json further under that dir unless explicitly included
+              //    search any other package.json further under that dir
               //
               return false;
             }
@@ -613,16 +589,12 @@ export class FynpoDepGraph {
         },
         filterDir: (dir: string, path: string, extras: any) => {
           if (dir !== "node_modules") {
-            if (isDirPrunedInAutoSearch(path) || isExcluded(path) || skipForAutoSearch(path)) {
+            if (foundInAutoSearch(path) || isExcluded(path) || skipForAutoSearch(path)) {
               return false;
             }
             return prefix === "." && groups[prefix] === null
               ? !dir.startsWith(".")
-              : Boolean(
-                  groups[prefix].find((save) =>
-                    save.mm.match(posixify(extras.dirFile), true)
-                  )
-                );
+              : Boolean(groups[prefix].find((save) => save.mm.match(extras.dirFile)));
           }
           return false;
         },
@@ -653,7 +625,7 @@ export class FynpoDepGraph {
   async addPackageByFile(pkgFile: string) {
     const pkgStr = await Fs.readFile(Path.join(this._options.cwd, pkgFile), "utf-8");
     const pkgJson = JSON.parse(pkgStr);
-    this.addPackage(pkgJson, posixify(Path.dirname(pkgFile)), pkgStr);
+    this.addPackage(pkgJson, Path.dirname(pkgFile), pkgStr);
   }
 
   /**

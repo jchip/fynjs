@@ -1,7 +1,7 @@
 import XRun from "../../lib/xrun.js";
 import sample1 from "../fixtures/sample1.js";
 import { expect } from "vitest";
-import { asyncVerify, expectError } from "run-verify";
+import { verify } from "run-verify";
 import xstdout from "xstdout";
 
 describe("sample1", function() {
@@ -41,14 +41,13 @@ describe("sample1", function() {
         "this is foo3Dep"
       ];
     const xrun = new XRun(sample1);
-    return asyncVerify(
-      next => xrun.run("foo2", next),
-      () => {
+    return verify({ cleanup: () => intercept.restore() })
+      .callbackStep(next => xrun.run("foo2", next))
+      .step(() => {
         intercept.restore();
         const output = intercept.stdout.sort().map(x => x.trim());
         expect(output).toStrictEqual(expectOutput.sort());
-      }
-    );
+      });
   });
 
   it("should run sample1:foo2b tasks with failure", () => {
@@ -74,29 +73,28 @@ describe("sample1", function() {
       "this is foo3Dep"
     ];
     const xrun = new XRun(sample1);
-    return asyncVerify(
-      expectError(next => xrun.run("foo2ba", next)),
-      err => {
+    return verify({ cleanup: () => intercept.restore() })
+      .expectError.callbackStep(next => xrun.run("foo2ba", next))
+      .step(err => {
         intercept.restore();
         expect(err).toEqual(expect.anything());
         const output = intercept.stdout.sort().map(x => x.trim());
         expect(output).toStrictEqual(expectOutput.sort());
         intercept = xstdout.intercept(true);
-      },
-      next => xrun.waitAllPending(next),
-      () => {
+      })
+      .callbackStep(next => xrun.waitAllPending(next))
+      .step(() => {
         intercept.restore();
-      }
-    );
+      });
   });
 
   it("should run sample1:foo2b tasks with stopOnError false", () => {
     let intercept = xstdout.intercept(true);
     const xrun = new XRun(sample1);
     xrun.stopOnError = false;
-    return asyncVerify(
-      expectError(next => xrun.run("foo2ba", next)),
-      err => {
+    return verify({ cleanup: () => intercept.restore() })
+      .expectError.callbackStep(next => xrun.run("foo2ba", next))
+      .step(err => {
         intercept.restore();
         expect(err).toEqual(expect.anything());
         expect(err.more).toEqual(expect.anything());
@@ -104,11 +102,10 @@ describe("sample1", function() {
         expect(err.message).toBe("xerr");
         expect(err.more[0].message).toBe("xerr");
         intercept = xstdout.intercept(true);
-      },
-      next => xrun.waitAllPending(next),
-      () => {
+      })
+      .callbackStep(next => xrun.waitAllPending(next))
+      .step(() => {
         intercept.restore();
-      }
-    );
+      });
   });
 });

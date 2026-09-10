@@ -1,25 +1,24 @@
 import { describe, test, expect } from "vitest";
-import { asyncVerify, expectError } from "run-verify";
+import { verify, signal } from "run-verify";
 import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.prototype.asCallback", () => {
-  test("should call callback with value when promise resolves", () => {
-    return asyncVerify(
-      (next) => AveAzul.resolve("success").asCallback(next),
-      (value) => {
+  test("should call callback with value when promise resolves", () =>
+    verify({ timeout: 500 })
+      .callbackStep((next) => AveAzul.resolve("success").asCallback(next))
+      .step((value) => {
         expect(value).toBe("success");
-      }
-    );
-  });
+      }));
 
   test("should call callback with error when promise rejects", () => {
     const testError = new Error("test error");
-    return asyncVerify(
-      expectError((next) => AveAzul.reject(testError).asCallback(next)),
-      (err) => {
+    return verify({ timeout: 500 })
+      .expectError.callbackStep((next) =>
+        AveAzul.reject(testError).asCallback(next)
+      )
+      .step((err) => {
         expect(err).toBe(testError);
-      }
-    );
+      });
   });
 
   test("should return the same promise instance", () => {
@@ -36,53 +35,62 @@ describe("AveAzul.prototype.asCallback", () => {
   });
 
   test("should spread array values with spread option", () => {
-    return new Promise<void>((resolve) => {
-      AveAzul.resolve([1, 2, 3]).asCallback(
-        (err, a, b, c) => {
-          expect(err).toBeNull();
-          expect(a).toBe(1);
-          expect(b).toBe(2);
-          expect(c).toBe(3);
-          resolve();
-        },
-        { spread: true }
-      );
-    });
+    const spread = signal<number[]>();
+
+    return verify({ timeout: 500, signals: { spread } })
+      .step(() => {
+        AveAzul.resolve([1, 2, 3]).asCallback(
+          (err: Error | null, a: number, b: number, c: number) => {
+            expect(err).toBeNull();
+            spread.resolve([a, b, c]);
+          },
+          { spread: true }
+        );
+      })
+      .awaiting("spread")
+      .step((values) => {
+        expect(values).toEqual([1, 2, 3]);
+      });
   });
 
-  test("should not spread array values without spread option", () => {
-    return asyncVerify(
-      (next) => AveAzul.resolve([1, 2, 3]).asCallback(next),
-      (value) => {
+  test("should not spread array values without spread option", () =>
+    verify({ timeout: 500 })
+      .callbackStep((next) =>
+        AveAzul.resolve([1, 2, 3]).asCallback(next)
+      )
+      .step((value) => {
         expect(Array.isArray(value)).toBe(true);
         expect(value).toEqual([1, 2, 3]);
-      }
-    );
-  });
+      }));
 
   test("should work with delay", () => {
+    const delayed = signal<string>();
     let callbackCalled = false;
 
-    const promise = new Promise<void>((resolve) => {
-      AveAzul.delay(50, "delayed value").asCallback((err, value) => {
-        callbackCalled = true;
-        expect(err).toBeNull();
+    return verify({ timeout: 500, signals: { delayed } })
+      .step(() => {
+        AveAzul.delay(50, "delayed value").asCallback(
+          (err: Error | null, value: string) => {
+            callbackCalled = true;
+            expect(err).toBeNull();
+            delayed.resolve(value);
+          }
+        );
+      })
+      // still synchronous here, so the delayed callback cannot have run yet
+      .keep.step(() => {
+        expect(callbackCalled).toBe(false);
+      })
+      .awaiting("delayed")
+      .step((value) => {
         expect(value).toBe("delayed value");
-        resolve();
       });
-    });
-
-    // Verify callback hasn't been called yet
-    expect(callbackCalled).toBe(false);
-    return promise;
   });
 
-  test("nodeify should function the same as asCallback", () => {
-    return asyncVerify(
-      (next) => AveAzul.resolve("success").nodeify(next),
-      (value) => {
+  test("nodeify should function the same as asCallback", () =>
+    verify({ timeout: 500 })
+      .callbackStep((next) => AveAzul.resolve("success").nodeify(next))
+      .step((value) => {
         expect(value).toBe("success");
-      }
-    );
-  });
+      }));
 });
