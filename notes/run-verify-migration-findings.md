@@ -4,7 +4,7 @@ Log of concrete defects and anti-patterns turned up while migrating existing pac
 test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, distinct from
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
-`xsh`, `item-queue`, `fyn` (one spec), `http-server` (one spec), `xaa` (fully converted).
+`xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted).
 `aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
 flows are covered, while simple promise-result tests remain native.
 
@@ -150,6 +150,12 @@ Considered but skipped: `http-server`'s `async-event-emitter.spec.ts` has a sing
 vitest's own `.resolves`/`.rejects` - already correct, no swallowed errors, and replacing it
 with `callbackStep` would be a lateral rewrite with no bug fixed and no consistency win.
 Not every anti-pattern-shaped helper is worth converting; this one didn't clear the bar.
+
+`test/spec/pkg-dist-extractor.spec.ts` had two hand-written Promises adapting mutually
+exclusive `EventEmitter` outcomes. Both now use bounded `callbackStep()` calls that attach
+the success and failure listeners before starting extraction, preserving the important
+ordering while removing the per-test adapters. No bug was found; the change makes the
+event contract and its deadline explicit.
 
 ## xaa
 
