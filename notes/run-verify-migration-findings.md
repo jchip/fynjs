@@ -12,6 +12,25 @@ not every conversion is equally justified, and the anti-pattern catalog below is
 grep for first when picking the next migration target, ahead of mechanically replacing
 event-wait boilerplate for consistency alone.
 
+## A second axis: structural legibility, independent of bugs
+
+The anti-pattern catalog below asks "does native code get this wrong." That is not the only
+question worth asking. Per the user (2026-09-10): even when native async/await or Promise
+code is already correct, forcing a test into `verify()`'s bounded `.step()`/`.expectError`/
+`.awaiting()` sequence still has value, because the test's structure becomes self-evident
+from the code itself. A reader (or an editor making a later change) does not have to
+mentally simulate free-form control flow — nesting order, what happens on error, what is
+guaranteed before what — the chain states it. This is a distinct, additional axis, not a
+replacement for the bug-finding one.
+
+In practice: weigh this alongside the anti-pattern catalog, not instead of it. A single,
+one-shot promisify wrapper used identically everywhere (e.g. `http-server`'s
+`async-event-emitter.spec.ts` `emitAsync` helper, see below) has less to gain from this
+axis, since there is no real multi-step sequence to make legible. A test with genuine
+multi-step orchestration - setup, trigger, wait, assert, cleanup, especially interleaved
+with conditionals - gains real value from being forced into explicit steps even when the
+current native version has no bug in it.
+
 ## Anti-pattern catalog
 
 These are the shapes worth searching for. In order of how strong a justification they are
