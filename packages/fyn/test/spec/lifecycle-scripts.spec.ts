@@ -5,6 +5,7 @@ import xstdout from "xstdout";
 import logger from "../../lib/logger";
 import chalk from "chalk";
 import * as xaa from "xaa";
+import { verify } from "run-verify";
 
 describe("lifecycle-scripts", function() {
   logger.setItemType(false);
@@ -13,13 +14,6 @@ describe("lifecycle-scripts", function() {
   beforeEach(() => {
     logger._logLevel = 0;
   });
-
-  const failRestore = (err, intercept) => {
-    intercept.restore();
-    console.log(intercept.stdout);
-    console.log(intercept.stderr);
-    throw err;
-  };
 
   const extractOutput = intercept => {
     let output = intercept.stdout.find(x => x.indexOf(">>> Start of output") >= 0).split("\n");
@@ -38,98 +32,98 @@ describe("lifecycle-scripts", function() {
     const intercept = xstdout.intercept(true);
     const ls = new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1"));
 
-    const promise = xaa
-      .wrap(() => ls.execute(["test"]))
-      .then(() => {
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() => xaa.wrap(() => ls.execute(["test"])))
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.map(x => x.trim())).toContain("hello");
-      })
-      .catch(err => {
-        failRestore(err, intercept);
       });
-
-    return promise;
   });
 
   it("should silently execute a script from package.json", () => {
     const intercept = xstdout.intercept(true);
-    const promise = new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1"))
-      .execute("test1", true)
-      .then(() => {
+
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() =>
+        new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1")).execute(
+          "test1",
+          true
+        )
+      )
+      .step(() => {
         intercept.restore();
         const output = extractOutput(intercept);
         expect(output.stdout[0]).toBe("hello");
         expect(output.stderr[0]).toBe("stderr foo");
-      })
-      .catch(err => failRestore(err, intercept));
-
-    return promise;
+      });
   });
 
   it("should silently execute a script with empty output from package.json", () => {
     const intercept = xstdout.intercept(true);
-    const promise = new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1"))
-      .execute("test4", true)
-      .then(() => {
+
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() =>
+        new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1")).execute(
+          "test4",
+          true
+        )
+      )
+      .step(() => {
         intercept.restore();
         const output = extractOutput(intercept);
         expect(output.stdout).toHaveLength(0);
         expect(output.stderr).toHaveLength(0);
-      })
-      .catch(err => failRestore(err, intercept));
-
-    return promise;
+      });
   });
 
   it("should silently execute a fail script from package.json", () => {
-    let error;
     const intercept = xstdout.intercept(true);
-    const promise = new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1"))
-      .execute("test3", true)
-      .catch(err => {
+
+    return verify({ cleanup: () => intercept.restore() })
+      .expectError.step(() =>
+        new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1")).execute(
+          "test3",
+          true
+        )
+      )
+      .step(error => {
         intercept.restore();
-        error = err;
-      })
-      .then(() => {
-        intercept.restore();
-        expect(error).toBeDefined();
         const output = extractOutput(intercept);
         expect(output.stdout).toHaveLength(0);
         expect(output.stderr[0]).toBe("stderr blah");
         expect(error.stack).toContain("exit code 127");
       });
-
-    return promise;
   });
 
   it("should silently execute a script with no output from package.json", () => {
     const intercept = xstdout.intercept(true);
-    const promise = new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1"))
-      .execute("test2", true)
-      .then(() => {
+
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() =>
+        new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f1")).execute(
+          "test2",
+          true
+        )
+      )
+      .step(() => {
         intercept.restore();
         expect(intercept.stdout.map(x => x.trim())).toContain(
           "> No output from f1@1.0.0 npm script test2"
         );
-      })
-      .catch(err => failRestore(err, intercept));
-
-    return promise;
+      });
   });
 
   it("should set vars from config in package.json", () => {
     const intercept = xstdout.intercept(true);
     const ls = new LifecycleScripts(Path.join(__dirname, "../fixtures/lifecycle-scripts/f3"));
-    const promise = ls
-      .execute("test1", true)
-      .then(() => {
+
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() => ls.execute("test1", true))
+      .step(() => {
         intercept.restore();
         const output = extractOutput(intercept);
         expect(output.stdout).toContain("foo-bar");
-      })
-      .catch(err => failRestore(err, intercept));
-
-    return promise;
+      });
   });
 
   //
@@ -148,44 +142,41 @@ describe("lifecycle-scripts", function() {
     const dir = Path.join(__dirname, "../fixtures/lifecycle-scripts/f3");
     const intercept = xstdout.intercept(true);
 
-    return new LifecycleScripts(dir)
-      .execute("test-pkg-json", true)
-      .then(() => {
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() => new LifecycleScripts(dir).execute("test-pkg-json", true))
+      .step(() => {
         intercept.restore();
         const output = extractOutput(intercept);
         expect(output.stdout).toContain(Path.join(dir, "package.json"));
-      })
-      .catch(err => failRestore(err, intercept));
+      });
   });
 
   it("should tell the spawned script which lifecycle stage is running", () => {
     const dir = Path.join(__dirname, "../fixtures/lifecycle-scripts/f3");
     const intercept = xstdout.intercept(true);
 
-    return new LifecycleScripts(dir)
-      .execute("test-lifecycle", true)
-      .then(() => {
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() => new LifecycleScripts(dir).execute("test-lifecycle", true))
+      .step(() => {
         intercept.restore();
         const output = extractOutput(intercept);
         expect(output.stdout).toContain("test-lifecycle");
-      })
-      .catch(err => failRestore(err, intercept));
+      });
   });
 
   it("should tell the spawned script what its own script body is", () => {
     const dir = Path.join(__dirname, "../fixtures/lifecycle-scripts/f3");
     const intercept = xstdout.intercept(true);
 
-    return new LifecycleScripts(dir)
-      .execute("test-lifecycle-script", true)
-      .then(() => {
+    return verify({ cleanup: () => intercept.restore() })
+      .step(() => new LifecycleScripts(dir).execute("test-lifecycle-script", true))
+      .step(() => {
         intercept.restore();
         const output = extractOutput(intercept);
         expect(output.stdout).toContain(
           'node -e "console.log(process.env.npm_lifecycle_script)"'
         );
-      })
-      .catch(err => failRestore(err, intercept));
+      });
   });
 
   it("should not execute a script not in package.json", () => {

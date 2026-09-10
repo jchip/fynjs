@@ -51,6 +51,7 @@ $pkg:
   patch-package: ^8.0.0
   prettier: ^3.5.3
   rolldown: ^1.2.6
+  run-verify: ../run-verify
   typescript: ^7.0.2
   vite: ^8.2.2
   vitest: ^5.0.0
@@ -3110,6 +3111,14 @@ run-parallel:
   _: 'https://registry.npmjs.org/run-parallel/-/run-parallel-1.2.0.tgz'
   dependencies:
    queue-microtask: ^1.2.2
+run-verify:
+ _latest: 2.1.2-fynlocal_h
+ _:
+  ../run-verify: 2.1.2-fynlocal_h
+ 2.1.2-fynlocal_h:
+  top: 1
+  $: local
+  _: ../run-verify
 safer-buffer:
  _latest: 2.1.2
  _:
