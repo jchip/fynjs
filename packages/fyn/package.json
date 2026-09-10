@@ -2,7 +2,7 @@
   "name": "fyn",
   "type": "module",
   "version": "3.1.3",
-  "description": "fyn is the NPM for fynpo -- a zero setup monorepo tool",
+  "description": "fyn is a node.js package manager, and supports fynpo -- a zero setup monorepo tool",
   "main": "./bin/index.mjs",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fyn",
   "license": "Apache-2.0",
