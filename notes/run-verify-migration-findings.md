@@ -4,8 +4,8 @@ Log of concrete defects and anti-patterns turned up while migrating existing pac
 test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, distinct from
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
-`xsh`, `item-queue`, `fyn` (one spec), `http-server` (one spec). `aveazul` is partially
-converted (3 of ~26 test files) from earlier work.
+`xsh`, `item-queue`, `fyn` (one spec), `http-server` (one spec), `xaa` (partial - 5 of ~50
+tests in one spec). `aveazul` is partially converted (3 of ~26 test files) from earlier work.
 
 The point of this log is to separate **real defects found** from **style-parity churn** —
 not every conversion is equally justified, and the anti-pattern catalog below is what to
@@ -149,6 +149,34 @@ Considered but skipped: `http-server`'s `async-event-emitter.spec.ts` has a sing
 vitest's own `.resolves`/`.rejects` - already correct, no swallowed errors, and replacing it
 with `callbackStep` would be a lateral rewrite with no bug fixed and no consistency win.
 Not every anti-pattern-shaped helper is worth converting; this one didn't clear the bar.
+
+## xaa
+
+`test/spec/xaa.spec.ts`. No bugs found - every test that expects an error already guards
+correctly (a `throw new Error("should have thrown")` after the operation, inside `try`, so
+the test fails on its own if the operation stops rejecting). Converted only the subset that
+clears the bar on one of the two axes, out of ~50 tests in the file:
+
+- **`"should wrap direct throws into async"` / `"should wrap async error"`** - the same
+  `.then(() => { throw "expecting error" }).catch(err => error = err).then(() => expect(error)...)`
+  shape `xsh` already converted. `.expectError.step()` states the requirement directly
+  instead of simulating it with a re-throwing `.then()`.
+- **`"should cancel run"` / `"should ignore cancel if already resolved"` / `"should cancel
+  run with custom message"`** - genuine multi-step orchestration (start a run, act on it
+  mid-flight via `cancel()`, then await the outcome) - a structural-legibility case per the
+  axis above, not a bug fix. **Caveat found while converting**: `.step()` adopts a returned
+  Promise and awaits it before advancing, so `.step(() => too.run(...))` would make the
+  chain await the run to settle *before* the next step's `cancel()` ever gets a chance to
+  run - silently breaking the "start, then cancel mid-flight" ordering the test exists to
+  check. Fixed by returning `{ promise: too.run(...) }` (a plain, non-thenable value) from
+  the first step, so it passes through unawaited, and only awaiting it - via `.expectError`
+  or an `async` step - in the following step where `cancel()` runs first.
+
+Left the remaining ~10 `try { op(); throw("should have thrown") } catch (err) { expect(...) }`
+blocks (in `defer`, `timeout`, and `map`) unconverted - already safe, and already about as
+legible as this idiom gets; no bug and no real orchestration to make explicit by converting.
+Also left the `map`/`each`/`filter`/`tryCatch` sections alone - no anti-pattern shapes, and
+their complexity is in the mapper function bodies, not in test-level control flow.
 
 ## http-server
 
