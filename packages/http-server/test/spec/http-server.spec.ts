@@ -200,7 +200,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("XEVENT_FAILED");
           expect(err.event).toBe("config-composed");
           expect(err.message).toContain("handler boom");
@@ -218,7 +218,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("XEVENT_TIMEOUT");
           expect(err.event).toBe("config-composed");
           expect(err.timeout).toBe(50);
@@ -406,7 +406,7 @@ describe("httpServer", () => {
             plugins: { missing: { module: "./no-such-module.cjs", requireFromPath: FIXTURES } }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("Failed loading module ./no-such-module.cjs");
         }));
 
@@ -420,7 +420,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("register of plugin is not a function");
         }));
 
@@ -432,7 +432,7 @@ describe("httpServer", () => {
             plugins: { orphan: { module: false } }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("disable 'module' but has no 'register' field");
         }));
 
@@ -444,7 +444,7 @@ describe("httpServer", () => {
             plugins: { nameless: { module: {} } }
           } as any)
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("'module' must have 'name' field");
         }));
 
@@ -456,7 +456,7 @@ describe("httpServer", () => {
             plugins: { bad: { module: { name: "x", requireFromPath: 123 } } }
           } as any)
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("'module.requireFromPath' must be a string");
         }));
 
@@ -468,7 +468,7 @@ describe("httpServer", () => {
             plugins: { requireFromPath: 123 }
           } as any)
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.message).toContain("config.plugins.requireFromPath must be a string");
         }));
 
@@ -486,7 +486,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("XPLUGIN_FAILED");
           expect(err.plugin.__name).toBe("exploding");
           expect(err.method).toBe("with register function");
@@ -521,7 +521,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("XPLUGIN_FAILED");
           expect(err.plugin.__name).toBe("asyncBoom");
           expect(err.message).toContain("async plugin boom");
@@ -541,7 +541,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("XPLUGIN_FAILED");
           expect(err.plugin.__name).toBe("neverFinishes");
           expect(err.method).toBe("with register function");
@@ -561,7 +561,7 @@ describe("httpServer", () => {
             }
           })
         )
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("XPLUGIN_FAILED");
           expect(err.method).toContain("with module '\"./plugin-plugin-field.cjs\"'");
         }));
@@ -574,7 +574,7 @@ describe("httpServer", () => {
 
       return verify()
         .expectError.step(() => httpServer({ connection: { port } }))
-        .step(err => {
+        .step((err: any) => {
           expect(err.code).toBe("EADDRINUSE");
           expect(err.message).toContain("already in use");
           expect(err.moreInfo.resolution).toContain(`lsof -i :${port}`);
