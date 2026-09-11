@@ -596,7 +596,7 @@ describe("munchy", function () {
         });
     });
 
-    it("should not consume more sources while backpressured on a handleStreamError result", async () => {
+    it("should not consume more sources while backpressured on a handleStreamError result", () => {
       const big = () => Buffer.alloc(4096);
       const p = new PassThrough();
       const munchy = new Munchy(
@@ -616,15 +616,22 @@ describe("munchy", function () {
       });
       munchy._read(); // start the loop with nothing consuming
 
-      await new Promise(r => setTimeout(r, 30));
-
-      expect(munchy._canPush).to.equal(false);
-      expect(munchy._moreSources()).to.equal(true);
-      expect(munchy.readableLength).to.equal(4096);
-      munchy.destroy();
+      return verify({
+        timeout: 500,
+        cleanup: () => {
+          munchy.destroy();
+          p.destroy();
+        }
+      })
+        .step(() => new Promise(r => setTimeout(r, 30)))
+        .step(() => {
+          expect(munchy._canPush).to.equal(false);
+          expect(munchy._moreSources()).to.equal(true);
+          expect(munchy.readableLength).to.equal(4096);
+        });
     });
 
-    it("should pause a Readable source while backpressured", async () => {
+    it("should pause a Readable source while backpressured", () => {
       let emitted = 0;
       const src = new Readable({
         highWaterMark: 1024,
@@ -641,10 +648,17 @@ describe("munchy", function () {
       const munchy = new Munchy({ highWaterMark: 64 }, src);
       munchy._read(); // start the loop with nothing consuming
 
-      await new Promise(r => setTimeout(r, 30));
-
-      expect(emitted).to.be.lessThan(20);
-      munchy.destroy();
+      return verify({
+        timeout: 500,
+        cleanup: () => {
+          munchy.destroy();
+          src.destroy();
+        }
+      })
+        .step(() => new Promise(r => setTimeout(r, 30)))
+        .step(() => {
+          expect(emitted).to.be.lessThan(20);
+        });
     });
 
     it("should not error on a no-op munch after the stream ended", () => {

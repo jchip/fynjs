@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import os from "os";
 import Path from "path";
 import { Readable, Writable } from "node:stream";
+import { verify } from "run-verify";
 import fyntil from "../../../lib/util/fyntil";
 
 describe("fyntil", function () {
@@ -70,49 +71,48 @@ describe("fyntil", function () {
   describe("retry", function () {
     it("should retry if checks array contains allowed code", () => {
       let count = 0;
-      return fyntil
-        .retry(
-          () => {
-            count++;
-            if (count < 2) {
-              const err = new Error("test");
-              err.code = "test";
-              throw err;
-            }
-          },
-          ["test"],
-          5,
-          10,
+      return verify({ timeout: 500 })
+        .step(() =>
+          fyntil.retry(
+            () => {
+              count++;
+              if (count < 2) {
+                const err = new Error("test");
+                err.code = "test";
+                throw err;
+              }
+            },
+            ["test"],
+            5,
+            10,
+          )
         )
-        .then(() => {
+        .step(() => {
           expect(count).toBe(2);
         });
     });
 
     it("should not retry if checks array does not contains allowed code", () => {
       let count = 0;
-      let error;
 
-      return fyntil
-        .retry(
-          () => {
-            count++;
-            if (count < 2) {
-              const err = new Error("test");
-              err.code = "test";
-              throw err;
-            }
-          },
-          ["blah"],
-          5,
-          10,
+      return verify({ timeout: 500 })
+        .expectErrorToBe("test")
+        .step(() =>
+          fyntil.retry(
+            () => {
+              count++;
+              if (count < 2) {
+                const err = new Error("test");
+                err.code = "test";
+                throw err;
+              }
+            },
+            ["blah"],
+            5,
+            10,
+          )
         )
-        .catch((err) => {
-          error = err;
-        })
-        .then(() => {
-          expect(error).toEqual(expect.anything());
-          expect(error.message).toBe("test");
+        .step(() => {
           expect(count).toBe(1);
         });
     });
@@ -129,43 +129,41 @@ describe("fyntil", function () {
     });
 
     it("should not retry if check returns false", () => {
-      let error;
       let count = 0;
-      return fyntil
-        .retry(
-          () => {
-            count++;
-            throw new Error("test");
-          },
-          () => false,
-          5,
-          10,
+      return verify({ timeout: 500 })
+        .expectErrorToBe("test")
+        .step(() =>
+          fyntil.retry(
+            () => {
+              count++;
+              throw new Error("test");
+            },
+            () => false,
+            5,
+            10,
+          )
         )
-        .catch((err) => (error = err))
-        .then(() => {
+        .step((error) => {
           expect(error).toEqual(expect.anything());
           expect(count).toBe(1);
         });
     });
 
     it("should fail afer all retries", () => {
-      let error;
-      return fyntil
-        .retry(
-          () => {
-            throw new Error("test failure");
-          },
-          () => {
-            return true;
-          },
-          3,
-          10,
-        )
-        .catch((err) => (error = err))
-        .then(() => {
-          expect(error).toEqual(expect.anything());
-          expect(error.message).toBe("test failure");
-        });
+      return verify({ timeout: 500 })
+        .expectErrorToBe("test failure")
+        .step(() =>
+          fyntil.retry(
+            () => {
+              throw new Error("test failure");
+            },
+            () => {
+              return true;
+            },
+            3,
+            10,
+          )
+        );
     });
   });
 

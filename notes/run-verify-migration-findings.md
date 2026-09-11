@@ -35,6 +35,13 @@ multi-step orchestration - setup, trigger, wait, assert, cleanup, especially int
 with conditionals - gains real value from being forced into explicit steps even when the
 current native version has no bug in it.
 
+For expected failures, use the narrowest modifier that states the contract on the
+operation step. Exact top-level messages use `.expectErrorToBe()`, substrings use
+`.expectErrorHas()`, and their optional second argument matches the top-level error code.
+Both forms still pass the error downstream for other structural assertions. Keep generic
+`.expectError` plus a following message assertion only for regular expressions, nested
+errors, normalization, or another custom predicate.
+
 ## Anti-pattern catalog
 
 These are the shapes worth searching for. In order of how strong a justification they are
@@ -91,8 +98,12 @@ benefits, not bug fixes:
   implicit 5000ms default.
 - Explicit `timeout: 500` per test instead of relying on that implicit default.
 
-The other 17 tests were left alone — either fully synchronous or waiting on a fixed
-`setTimeout` settle-delay with no event to await, where `verify()` adds nothing.
+Of the 17 tests initially left alone, two backpressure tests owned live stream graphs but
+called `munchy.destroy()` only after their delay-based assertions succeeded. They now keep
+the 30 ms settle window as an ordinary bounded step and use chain cleanup to destroy the
+`Munchy` instance and its source on every exit path. No signals were added because those
+tests cover absence/backpressure after elapsed time, not a positive completion event. The
+remaining 15 tests are either fully synchronous or have no multi-step lifecycle to clarify.
 
 ## xsh
 
@@ -132,6 +143,11 @@ synchronous, nothing to convert):
 `"should reject in wait if Q failed"` and `"should reject in subsequent wait if Q failed"`
 were already safe (assertion outside the try/catch) — converted for consistency only.
 
+`"should emit done after start even if Q is empty"` still hand-wrapped the `"done"` event
+in an unbounded Promise. It now uses a 500 ms `callbackStep`, attaching the listener before
+`start()` and mapping event completion explicitly with `next(null)`. No bug was found; the
+change makes the event boundary and deadline explicit.
+
 ## fyn
 
 `test/spec/lifecycle-scripts.spec.ts`. No bugs found. 8 of 11 tests shared a file-local
@@ -147,6 +163,13 @@ One test (`"should silently execute a fail script from package.json"`) expected 
 to reject; it already asserted unconditionally after the `.catch()` (not gated inside it), so
 converting to `.expectError.step()` is readability, not a bug fix - same category as xsh's
 already-converted patterns.
+
+`test/spec/util/fyntil.spec.ts` had one retry success flow expressed as
+`.then(assertions)` and three expected failures expressed as repeated
+`.catch(err => error = err).then(assertions)` chains. They now use bounded `.step()`,
+`.expectError.step()`, and `.expectErrorToBe()` sequences. The old tests were already safe
+because their assertions ran downstream; this is a structural-legibility change, not a bug
+fix. The single-operation success case remains native.
 
 Considered but skipped: `http-server`'s `async-event-emitter.spec.ts` has a single
 `emitAsync` promisify helper (anti-pattern #4 shape) used uniformly by all 13 tests via

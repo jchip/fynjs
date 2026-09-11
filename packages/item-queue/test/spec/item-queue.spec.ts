@@ -216,13 +216,14 @@ describe("item-queue", () => {
     expect(sum).toBe(30);
   });
 
-  it("should emit done after start even if Q is empty", async () => {
-    return new Promise<void>((done) => {
-      const pq = new ItemQueue({
-        concurrency: 2,
-        processItem: () => undefined,
-      });
-      pq.on("done", () => done());
+  it("should emit done after start even if Q is empty", () => {
+    const pq = new ItemQueue({
+      concurrency: 2,
+      processItem: () => undefined,
+    });
+
+    return verify({ timeout: 500 }).callbackStep((next) => {
+      pq.on("done", () => next(null));
       pq.start();
     });
   });
