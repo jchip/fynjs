@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/cli-args",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/cli-args",
   "description": "Simple, lightweight, flexible, and comprehensive Command Line Argument Parsing for node.js",
   "engines": {
@@ -71,12 +71,12 @@
   "license": "Apache-2.0",
   "dependencies": {},
   "devDependencies": {
-    "@fynjs/ts-resolve": "^1.0.1",
+    "@fynjs/ts-resolve": "^1.0.2",
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "prettier": "^3.5.3",
-    "publish-util": "^3.1.1",
-    "run-verify": "^2.1.2",
+    "publish-util": "^3.1.2",
+    "run-verify": "^2.1.3",
     "source-map-support": "^0.5.21",
     "typedoc": "^0.28.5",
     "typescript": "^7.0.2",

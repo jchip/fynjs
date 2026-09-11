@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/fetch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Hardened, zero-dependency HTTP client based on Node core fetch",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -51,7 +51,7 @@
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "prettier": "^3.5.3",
-    "run-verify": "^2.1.2",
+    "run-verify": "^2.1.3",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
