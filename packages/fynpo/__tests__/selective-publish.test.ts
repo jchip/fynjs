@@ -26,7 +26,11 @@ import {
   selectivePublishSubject,
   isSelectiveRelease,
 } from "../src/utils";
-import { collectSelectiveBaselines, collateCommitsPackages } from "../src/utils/git-list-commits";
+import {
+  collectSelectiveBaselines,
+  collateCommitsPackages,
+  getNewCommits,
+} from "../src/utils/git-list-commits";
 
 describe("selective release tag namespace", () => {
   //
@@ -203,6 +207,24 @@ describe("collectSelectiveBaselines", () => {
 
     expect([...baselines["pkg-a"]].sort()).toEqual(["bbb", "ccc", "ddd"]);
     expect([...baselines["pkg-b"]].sort()).toEqual(["ddd"]);
+  });
+});
+
+describe("getNewCommits boundary range", () => {
+  it("collects only commits reachable from HEAD after the boundary", async () => {
+    execSync.mockReset();
+    execSync.mockReturnValue("abc123 change after boundary");
+
+    await getNewCommits(
+      { cwd: ".", changeLog: "" },
+      { latestTag: "base123" }
+    );
+
+    expect(execSync).toHaveBeenCalledWith(
+      "git",
+      ["log", "base123..HEAD", "--pretty=format:'%H %s'"],
+      { cwd: "." }
+    );
   });
 });
 

@@ -68,7 +68,7 @@ export const getNewCommits = (opts, changed) => {
 
   let args;
   if (tag) {
-    args = ["log", `${tag}...HEAD`, "--pretty=format:'%H %s'"];
+    args = ["log", `${tag}..HEAD`, "--pretty=format:'%H %s'"];
   } else {
     args = ["log", "--pretty=format:'%H %s'"];
   }

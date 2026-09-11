@@ -399,6 +399,11 @@ export const cliOptions = {
     desc: "force publish packages",
     allowCmd: ["updated", "changelog", "version"],
   },
+  since: {
+    args: "<git-ref string>",
+    desc: "detect changes after this Git commit, tag, or other commit reference",
+    allowCmd: ["updated", "changelog", "version"],
+  },
   //
   // One option, two readers, same shape (a list of package names):
   //   - bootstrap/local/run filter the topo set by it (topo-runner.ts)

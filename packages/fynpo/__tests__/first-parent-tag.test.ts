@@ -59,7 +59,7 @@ const makeRepoWithTagOffFirstParent = (): string => {
   writePkg(dir, "lib-a", { description: "released state" });
   git(dir, "add", "-A");
   git(dir, "commit", "-q", "-m", "release work");
-  git(dir, "tag", "fynpo-rel-20260816-deadbeef");
+  git(dir, "tag", "-a", "fynpo-rel-20260816-deadbeef", "-m", "release");
 
   git(dir, "checkout", "-q", "main");
   writePkg(dir, "lib-b");
@@ -115,6 +115,49 @@ describe("release tag that is not on the first-parent chain (FPO-46)", () => {
     expect(changed.pkgs).toEqual(["lib-b"]);
   });
 
+  it.each(["fynpo-rel-20260816-deadbeef", "sha"])(
+    "uses an explicit --since %s instead of automatic tag discovery",
+    (since) => {
+      const tagSha = git(dir, "rev-parse", "fynpo-rel-20260816-deadbeef^{commit}");
+      const changed: any = getUpdatedPackages(graph, {
+        cwd: dir,
+        command: { publish: { gitTagTemplate: "new-prefix-{YYYY}{MM}{DD}-{COMMIT}" } },
+        fynpoRc: {},
+        versionLockMap: {},
+        forcePublish: [],
+        since: since === "sha" ? tagSha.slice(0, 8) : since,
+      });
+
+      expect(changed.latestTag).toBe(tagSha);
+      expect(changed.pkgs).toEqual(["lib-b"]);
+    }
+  );
+
+  it("rejects a --since value that does not resolve to a commit", () => {
+    expect(() =>
+      getUpdatedPackages(graph, {
+        cwd: dir,
+        fynpoRc: {},
+        versionLockMap: {},
+        forcePublish: [],
+        since: "not-a-git-ref",
+      })
+    ).toThrow("Invalid --since Git ref 'not-a-git-ref': it must resolve to a commit");
+  });
+
+  it("treats --since HEAD as an empty range", () => {
+    const changed: any = getUpdatedPackages(graph, {
+      cwd: dir,
+      fynpoRc: {},
+      versionLockMap: {},
+      forcePublish: [],
+      since: "HEAD",
+    });
+
+    expect(changed.latestTag).toBe(git(dir, "rev-parse", "HEAD"));
+    expect(changed.pkgs).toEqual([]);
+  });
+
   it("says why it settled for a tag off the first-parent line", () => {
     warn.mockClear();
     getUpdatedPackages(graph, { cwd: dir, fynpoRc: {}, versionLockMap: {}, forcePublish: [] });
@@ -164,5 +207,17 @@ describe("release tag on a branch that does not describe HEAD (FPO-46)", () => {
     expect(changed.latestTag).toBeUndefined();
     expect(changed.pkgs).toEqual(["lib-a"]);
     expect(warn.mock.calls.map((c) => c.join(" ")).join("\n")).toContain("no release boundary");
+  });
+
+  it("rejects a --since commit that is not an ancestor of HEAD", () => {
+    expect(() =>
+      getUpdatedPackages(graph, {
+        cwd: dir,
+        fynpoRc: {},
+        versionLockMap: {},
+        forcePublish: [],
+        since: "abandoned",
+      })
+    ).toThrow("is not an ancestor of HEAD");
   });
 });

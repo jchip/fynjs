@@ -127,6 +127,11 @@ describe("cliOptions (FPO-30 regression)", () => {
     }
   });
 
+  it("allows an explicit Git boundary on every command that detects changes", () => {
+    expect(cliOptions.since.args).toBe("<git-ref string>");
+    expect(cliOptions.since.allowCmd).toEqual(["updated", "changelog", "version"]);
+  });
+
   it("assigns each alias to exactly one option", () => {
     const seen = new Map<string, string>();
     for (const [name, opt] of Object.entries<any>(cliOptions)) {

@@ -89,6 +89,41 @@ through a merge. Using it as the release boundary anyway.`
   return { tagName, commitCount, sha };
 };
 
+const resolveSince = (opts): { sha: string; commitCount: string } | undefined => {
+  if (!opts.since) {
+    return undefined;
+  }
+
+  let sha: string;
+  try {
+    sha = execSync(
+      "git",
+      ["rev-parse", "--verify", "--quiet", "--end-of-options", `${opts.since}^{commit}`],
+      { cwd: opts.cwd }
+    ).trim();
+  } catch {
+    throw new Error(`Invalid --since Git ref '${opts.since}': it must resolve to a commit.`);
+  }
+
+  if (!sha) {
+    throw new Error(`Invalid --since Git ref '${opts.since}': it must resolve to a commit.`);
+  }
+
+  try {
+    execSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { cwd: opts.cwd });
+  } catch {
+    throw new Error(
+      `--since Git ref '${opts.since}' resolves to ${sha}, which is not an ancestor of HEAD.`
+    );
+  }
+
+  const commitCount = execSync("git", ["rev-list", "--count", `${sha}..HEAD`], {
+    cwd: opts.cwd,
+  }).trim();
+
+  return { sha, commitCount };
+};
+
 const addDependents = (name, changed, graph: FynpoDepGraph, canPublish) => {
   const pkg = graph.getPackageByName(name);
   const dependentsByPath = graph.depMapByPath[pkg.path].dependentsByPath;
@@ -144,6 +179,7 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
   const execOpts = {
     cwd: opts.cwd,
   };
+  const since = resolveSince(opts);
 
   // `command.publish.includePackages` / `excludePackages`. Filtering here keeps every
   // downstream consumer consistent - the changed list that's printed, the changelog,
@@ -198,16 +234,27 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
     logger.info(`Excluded ${skipped} package(s) from publishing`);
   }
 
-  if (ifTagExists(opts)) {
-    const { tagName, commitCount } = getLatestTag(opts);
+  let commitCount;
+  if (since) {
+    latestTag = since.sha;
+    changed.latestTag = since.sha;
+    commitCount = since.commitCount;
+    logger.info(`Using explicit change boundary from --since ${opts.since}: ${since.sha}`);
+  } else if (ifTagExists(opts)) {
+    const latest = getLatestTag(opts);
+    const { tagName } = latest;
     changed.latestTag = tagName;
-
-    if (commitCount === "0" && forced.length === 0) {
-      logger.info("No commits since previous release. Skipping change detection");
-      return changed;
-    }
-
+    commitCount = latest.commitCount;
     latestTag = tagName;
+  }
+
+  if (latestTag && commitCount === "0" && forced.length === 0) {
+    logger.info(
+      since
+        ? "No commits after the --since boundary. Skipping change detection"
+        : "No commits since previous release. Skipping change detection"
+    );
+    return changed;
   }
 
   if (!latestTag || forced.includes("*") || opts.lockAll) {
@@ -237,7 +284,11 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
       });
     }
   } else {
-    logger.info(`Detecting changed packages since the release tag: ${latestTag}`);
+    logger.info(
+      since
+        ? `Detecting changed packages after the --since boundary: ${latestTag}`
+        : `Detecting changed packages since the release tag: ${latestTag}`
+    );
 
     const ignoreChanges = opts.ignoreChanges || [];
     if (ignoreChanges.length) {
