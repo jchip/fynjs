@@ -2,9 +2,11 @@ import { describe, it, beforeEach, afterEach, expect, vi } from "vitest";
 import {
   getRunExitCode,
   pickEnvOptions,
+  run as runCli,
   setLockfile,
   reportFynpoLoadError
 } from "../../cli/main";
+import FynCli from "../../cli/fyn-cli";
 import { FynpoConfigError } from "@fynpo/base";
 import logger from "../../lib/logger";
 import fynTil from "../../lib/util/fyntil";
@@ -13,6 +15,32 @@ describe("cli/main", function() {
   describe("getRunExitCode", function() {
     it("prefers the child exit code over errno", () => {
       expect(getRunExitCode({ code: 5, errno: -2 })).toBe(5);
+    });
+  });
+
+  describe("run --if-present", function() {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const expectIfPresent = async (args: string[]) => {
+      const run = vi.spyOn(FynCli.prototype, "run").mockResolvedValue(undefined);
+
+      await runCli(args, 0);
+
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(run.mock.calls[0][0]).toMatchObject({
+        args: { script: "missing" },
+        opts: { ifPresent: true }
+      });
+    };
+
+    it("passes the option through the normal run command", async () => {
+      await expectIfPresent(["run", "--if-present", "missing"]);
+    });
+
+    it("passes the option through the script shorthand", async () => {
+      await expectIfPresent(["missing", "--if-present"]);
     });
   });
 

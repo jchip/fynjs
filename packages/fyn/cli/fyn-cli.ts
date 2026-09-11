@@ -109,6 +109,7 @@ interface RunArgv {
     _?: string[];
   };
   opts?: {
+    ifPresent?: boolean;
     list?: boolean;
   };
   _?: string[];
@@ -843,6 +844,7 @@ class FynCli {
     await this.fyn.loadPkg();
 
     if (!_.get(this.fyn._pkg, ["scripts", resolvedScript])) {
+      if (argv.opts?.ifPresent) return;
       logger.error(
         `Error: missing script: ${JSON.stringify(resolvedScript)} - not found in package.json scripts`
       );

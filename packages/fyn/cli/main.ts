@@ -625,6 +625,10 @@ const commands: Record<string, CommandSpec> = {
         desc: "list scripts",
         alias: "l",
         args: "<flag boolean>"
+      },
+      "if-present": {
+        desc: "exit successfully when the script is missing",
+        args: "<flag boolean>"
       }
     }
   },
