@@ -1,6 +1,7 @@
 import Path from "path";
 import { filterScanDir, filterScanDirSync } from "../../src/index.js";
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 
 describe("filter-scan-dir", function () {
   describe("sync", function () {
@@ -24,18 +25,19 @@ describe("filter-scan-dir", function () {
       expect(files1).toEqual(expectFiles);
     });
 
-    it("should handle passing no options", async () => {
+    it("should handle passing no options", () => {
       const save = process.cwd();
+      let files1;
 
-      try {
-        const files1 = filterScanDirSync("test/fixture-1");
-        process.chdir("test/fixture-1");
-
-        const files2 = filterScanDirSync();
-        expect(files2).toEqual(files1);
-      } finally {
-        process.chdir(save);
-      }
+      return verify({ timeout: 500, cleanup: () => process.chdir(save) })
+        .step(() => {
+          files1 = filterScanDirSync("test/fixture-1");
+          process.chdir("test/fixture-1");
+        })
+        .step(() => filterScanDirSync())
+        .step((files2) => {
+          expect(files2).toEqual(files1);
+        });
     });
 
     it("should scan all files with prefix", () => {
@@ -274,18 +276,20 @@ describe("filter-scan-dir", function () {
       expect(files2).toEqual(expectFiles);
     });
 
-    it("should handle passing no options", async () => {
+    it("should handle passing no options", () => {
       const save = process.cwd();
+      let files1;
 
-      try {
-        const files1 = await filterScanDir("test/fixture-1");
-        process.chdir("test/fixture-1");
-
-        const files2 = await filterScanDir();
-        expect(files2).toEqual(files1);
-      } finally {
-        process.chdir(save);
-      }
+      return verify({ timeout: 500, cleanup: () => process.chdir(save) })
+        .step(() => filterScanDir("test/fixture-1"))
+        .step((files) => {
+          files1 = files;
+          process.chdir("test/fixture-1");
+          return filterScanDir();
+        })
+        .step((files2) => {
+          expect(files2).toEqual(files1);
+        });
     });
 
     it("should scan all files with prefix", async () => {
@@ -501,18 +505,18 @@ describe("filter-scan-dir", function () {
       ).toEqual([]);
     });
 
-    it("should rethrow errors", async () => {
-      let err;
-      try {
-        await filterScanDir({
-          cwd: "blah-blah",
-          rethrowError: true,
+    it("should rethrow errors", () => {
+      return verify({ timeout: 500 })
+        .expectErrorHas("no such file or directory")
+        .step(() =>
+          filterScanDir({
+            cwd: "blah-blah",
+            rethrowError: true,
+          }),
+        )
+        .step((err) => {
+          expect(err).toBeInstanceOf(Error);
         });
-      } catch (e) {
-        err = e;
-      }
-      expect(err).toBeInstanceOf(Error);
-      expect(err.message).toContain("no such file or directory");
     });
   });
 

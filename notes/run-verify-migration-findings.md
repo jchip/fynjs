@@ -331,3 +331,17 @@ regression that stopped the operation from rejecting would still fail the test o
 as xsh's already-converted `.catch(err => error = err).then(...)` pattern - `expectError`
 also makes the requirement explicit up front rather than implicit in an unconditional
 assertion after a catch-all.
+
+## filter-scan-dir
+
+This package now adopts `run-verify` through three applicable tests in
+`test/spec/filter-scan-dir.spec.ts`. The synchronous and asynchronous no-options cases both
+change the process-wide working directory; their scan sequences now run under a 500 ms
+deadline and restore the original directory through cleanup on every exit path. Their old
+`try/finally` blocks were already safe, so this is structural consistency rather than a bug
+fix.
+
+The asynchronous rethrow case now uses `.expectErrorHas("no such file or directory")`
+instead of a manual catch and message assertion, while retaining its `Error` instance
+assertion downstream. Ordinary direct scans and Vitest's native synchronous `.toThrow()`
+case remain unchanged because wrapping them would add no useful sequencing or cleanup.
