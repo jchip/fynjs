@@ -381,3 +381,16 @@ both the existing top-level message containment and exact code assertion, while 
 the custom type guard, path, and nested parse-reason checks. The other three use generic
 `.expectError` because their requirements concern error type, path, or cause rather than a
 top-level message. Native Vitest regex/string rejection checks remain unchanged.
+
+## cli-args
+
+`test/spec/nix-clap.spec.ts` is the package's first `run-verify` adoption. Two tests
+replaced `process.argv` with synthetic command lines and never restored it, leaving later
+tests in the same worker dependent on their order. A third test restored
+`process.exitCode` only after its assertion, so an early failure could leave the worker
+with exit code 100. All three now run in bounded chains whose cleanup restores the exact
+saved process-global value on every exit path.
+
+The package's synchronous `.toThrow()` assertions remain native Vitest checks because
+they have no asynchronous boundary or cleanup requirement; wrapping them would add no
+sequencing benefit.

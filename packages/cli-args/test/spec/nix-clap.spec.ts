@@ -10,6 +10,7 @@
 import { type CommandExecFunc, type CommandSpec, NixClap } from "../../src/index.js";
 import { defaultOutput, defaultExit, type ParseResult } from "../../src/nix-clap.js";
 import { describe, it, expect, beforeEach } from "vitest";
+import { verify } from "run-verify";
 import type { OptionSpec } from "../../src/option-base.js";
 import { CommandNode } from "../../src/command-node.js";
 import { setHelpZebra } from "../../src/xtil.js";
@@ -35,12 +36,18 @@ describe("nix-clap", () => {
     expect(help).toEqual(["Error: CLI not initialized. Call init() or init2() first."]);
   });
 
-  it("should provide default output and exit setup", () => {
+  it("should provide default output and exit setup", async () => {
     defaultOutput("\ntesting defaultOutput to stdout - you should see this\n");
     const saveExitCode = process.exitCode;
-    defaultExit(100);
-    expect(process.exitCode).toBe(100);
-    process.exitCode = saveExitCode;
+    await verify({
+      timeout: 500,
+      cleanup: () => {
+        process.exitCode = saveExitCode;
+      }
+    }).step(() => {
+      defaultExit(100);
+      expect(process.exitCode).toBe(100);
+    });
     let o = "";
     const nc = new NixClap({
       version: "100",
@@ -1912,10 +1919,18 @@ describe("nix-clap", () => {
     expect(cmd2.args.boo).toBe("wooo");
   });
 
-  it("should parse process.argv", () => {
+  it("should parse process.argv", async () => {
     const nc = initParser();
-    process.argv = getArgv("node blah.js cmd1 a --cmd1-bar woo");
-    const x = nc.parse();
+    const saveArgv = process.argv;
+    const x = await verify({
+      timeout: 500,
+      cleanup: () => {
+        process.argv = saveArgv;
+      }
+    }).step(() => {
+      process.argv = getArgv("node blah.js cmd1 a --cmd1-bar woo");
+      return nc.parse();
+    });
     const m = x.command.jsonMeta;
 
     expect(m.subCommands.cmd1).toStrictEqual({
@@ -1962,10 +1977,18 @@ describe("nix-clap", () => {
     });
   });
 
-  it("should use name passed to construtor", () => {
+  it("should use name passed to construtor", async () => {
     const nc = initParser(undefined, new NixClap({ name: "foo-test", ...noOutputExit }));
-    process.argv = getArgv("node blah.js cmd1 a --cmd1-bar woo");
-    const r = nc.parse();
+    const saveArgv = process.argv;
+    const r = await verify({
+      timeout: 500,
+      cleanup: () => {
+        process.argv = saveArgv;
+      }
+    }).step(() => {
+      process.argv = getArgv("node blah.js cmd1 a --cmd1-bar woo");
+      return nc.parse();
+    });
     const h = nc.makeHelp();
     expect(h[1]).toBe("Usage: foo-test <command>");
     const h2 = r.command.cmdBase.makeHelp("foo-1");
