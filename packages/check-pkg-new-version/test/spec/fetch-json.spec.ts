@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { signal, verify } from "run-verify";
 import { internalFetchJSON } from "../../src/fetch-json.js";
 
 const okResponse = (body: any) => ({ ok: true, json: async () => body });
@@ -77,28 +78,35 @@ describe("internalFetchJSON", () => {
     expect(spy.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("should abort and return {} when the request outlives the timeout", async () => {
-    let captured: AbortSignal | undefined;
+  it("should abort and return {} when the request outlives the timeout", () => {
+    const aborted = signal<AbortSignal>();
     vi.stubGlobal(
       "fetch",
       vi.fn((_url: string, init: any) => {
-        captured = init?.signal;
         return new Promise((_resolve, reject) => {
           // no signal means no abort, so fail loudly instead of hanging the suite
           if (!init?.signal) {
             reject(new Error("fetch called without an abort signal"));
             return;
           }
-          init.signal.addEventListener("abort", () => reject(init.signal.reason));
+          init.signal.addEventListener("abort", () => {
+            aborted.resolve(init.signal);
+            reject(init.signal.reason);
+          });
         });
       })
     );
 
-    expect(await internalFetchJSON("https://registry.example.com/slow", { timeout: 10 })).toEqual(
-      {}
-    );
-    expect(captured?.aborted).toBe(true);
-    expect(captured?.reason?.name).toBe("TimeoutError");
+    return verify({ timeout: 1000, signals: { aborted } })
+      .step(() => internalFetchJSON("https://registry.example.com/slow", { timeout: 10 }))
+      .step((result) => {
+        expect(result).toEqual({});
+      })
+      .awaiting(aborted)
+      .step((abortSignal) => {
+        expect(abortSignal.aborted).toBe(true);
+        expect(abortSignal.reason?.name).toBe("TimeoutError");
+      });
   });
 
   it("should tolerate being called with no options", async () => {

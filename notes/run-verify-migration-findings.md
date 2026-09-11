@@ -6,7 +6,8 @@ test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, disti
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
 `xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted),
 `pkg-preper` (its integration spec), `@fynjs/fetch` (its callback-observation subset),
-and `visual-exec` (its error-context and output-file tests).
+`visual-exec` (its error-context and output-file tests), and `check-pkg-new-version` (its
+timeout/abort test).
 `aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
 flows are covered, while simple promise-result tests remain native.
 
@@ -246,6 +247,15 @@ an execution or assertion failure could leak the file. It and the existing flush
 test now use chain cleanup backstops around bounded execute/read/assert steps. Other direct
 `await` and Vitest `.rejects` tests remain native because they already carry failures and
 have no multi-stage resource lifecycle.
+
+## check-pkg-new-version
+
+`test/spec/fetch-json.spec.ts`. The timeout test now uses a direct `signal` reference to
+carry the observed `AbortSignal` into a bounded chain after `internalFetchJSON()` returns
+its fallback result. This removes the outer mutable capture and states both required
+outcomes in order: the request returns `{}`, and its controller aborted with a
+`TimeoutError`. No bug was found. The remaining tests are direct result or spy assertions
+with no callback orchestration to clarify.
 
 ## http-server
 
