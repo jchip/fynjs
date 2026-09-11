@@ -600,9 +600,9 @@ describe("pkg-src-manager", function () {
     mgr._netQ.addItem = () => queued++;
 
     return verify({ timeout: 500 })
-      .expectError.step(() => mgr.fetchMeta(item))
+      .expectErrorHas("offline")
+      .step(() => mgr.fetchMeta(item))
       .step((error) => {
-        expect((error as Error).message).toContain("offline");
         expect(queued).toBe(0);
         expect(mgr._metaStat.wait).toBe(0);
       });

@@ -170,7 +170,8 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
     let waitedPending;
 
     return verify({ timeout: 5000, cleanup: () => intercept.restore() })
-      .expectError.callbackStep(next => {
+      .expectErrorToBe("xerr")
+      .callbackStep(next => {
         xrun.once("spawn-async", _a => {
           xrun.waitAllPending(() => (waitedPending = true));
           eventReceived = true;
@@ -178,7 +179,6 @@ Done Process /foo2ba serial array ["xfoo1","xfoo2","~$echo test anon shell",["."
         xrun.run("foo2ba", next);
       })
       .step(error => {
-        expect(error.message).toBe("xerr");
         expect(error.more).toEqual(expect.anything());
         expect(error.more.length).toBe(1);
         expect(error.more[0].message).toBe("xerr");

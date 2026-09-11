@@ -71,10 +71,10 @@ describe("AveAzul.prototype.error", () => {
     const promise = AveAzul.reject(new TypeError("programmer error"));
 
     return verify({ timeout: 500 })
-      .expectError.step(() => promise.error(() => "should not reach here"))
+      .expectErrorToBe("programmer error")
+      .step(() => promise.error(() => "should not reach here"))
       .step((err) => {
         expect(err).toBeInstanceOf(TypeError);
-        expect((err as Error).message).toBe("programmer error");
       });
   });
 
@@ -82,14 +82,14 @@ describe("AveAzul.prototype.error", () => {
     const promise = AveAzul.reject(new AveAzul.OperationalError("test error"));
 
     return verify({ timeout: 500 })
-      .expectError.step(() =>
+      .expectErrorToBe("error from handler")
+      .step(() =>
         promise.error(() => {
           throw new Error("error from handler");
         })
       )
       .step((err) => {
         expect(err).toBeInstanceOf(Error);
-        expect((err as Error).message).toBe("error from handler");
       });
   });
 

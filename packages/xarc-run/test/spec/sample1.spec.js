@@ -93,13 +93,13 @@ describe("sample1", function() {
     const xrun = new XRun(sample1);
     xrun.stopOnError = false;
     return verify({ cleanup: () => intercept.restore() })
-      .expectError.callbackStep(next => xrun.run("foo2ba", next))
+      .expectErrorToBe("xerr")
+      .callbackStep(next => xrun.run("foo2ba", next))
       .step(err => {
         intercept.restore();
         expect(err).toEqual(expect.anything());
         expect(err.more).toEqual(expect.anything());
         expect(err.more.length).toBe(1);
-        expect(err.message).toBe("xerr");
         expect(err.more[0].message).toBe("xerr");
         intercept = xstdout.intercept(true);
       })

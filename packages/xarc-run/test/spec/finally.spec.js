@@ -66,9 +66,9 @@ describe("xrun finally", function() {  let logs = [];
       logs.push(`${data.type}${fin}`);
     });
     return verify()
-      .expectError.callbackStep(next => xrun.run("fooConcurrent", next))
-      .step(err => {
-        expect(err.message).toBe("fnFail throwing");
+      .expectErrorToBe("fnFail throwing")
+      .callbackStep(next => xrun.run("fooConcurrent", next))
+      .step(() => {
         expect(logs.sort()).toStrictEqual(
           [
             "lookup",

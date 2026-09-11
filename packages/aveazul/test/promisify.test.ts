@@ -15,10 +15,10 @@ describe("promisify", () => {
     const fn = (cb) => cb(error);
     const promisified = AveAzul.promisify(fn);
     return verify({ timeout: 500 })
-      .expectError.step(() => promisified())
+      .expectErrorToBe("test error")
+      .step(() => promisified())
       .step((err) => {
         expect(err).toBeInstanceOf(Error);
-        expect((err as Error).message).toBe("test error");
       });
   });
 

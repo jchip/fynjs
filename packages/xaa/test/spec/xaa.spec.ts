@@ -57,10 +57,8 @@ describe("xaa", () => {
       setTimeout(() => defer2.done(null, "hello"));
 
       return verify()
-        .expectError.step(() => defer1.promise)
-        .step((err: any) => {
-          expect(err.message).toBe("oops");
-        })
+        .expectErrorToBe("oops")
+        .step(() => defer1.promise)
         .step(() => defer2.promise)
         .step(r => {
           expect(r).toBe("hello");
@@ -73,10 +71,8 @@ describe("xaa", () => {
       const too = xaa.timeout(50, "foo");
 
       return verify()
-        .expectError.step(() => too.run(xaa.delay(150)))
-        .step((err: any) => {
-          expect(err.message).toEqual("foo");
-        });
+        .expectErrorToBe("foo")
+        .step(() => too.run(xaa.delay(150)));
     });
 
     it("should cancel run", () => {
@@ -86,12 +82,12 @@ describe("xaa", () => {
       // the chain must not await the run before `cancel()` gets a chance to run.
       return verify()
         .step(() => ({ promise: too.run(xaa.delay(150)) }))
-        .expectError.step(({ promise }) => {
+        .expectErrorHas("operation cancelled")
+        .step(({ promise }) => {
           too.cancel();
           return promise;
         })
         .step((err: any) => {
-          expect(err.message).toContain("operation cancelled");
           expect(too.isDone()).toBe(true);
         });
     });
@@ -116,12 +112,10 @@ describe("xaa", () => {
 
       return verify()
         .step(() => ({ promise: too.run(xaa.delay(150)) }))
-        .expectError.step(({ promise }) => {
+        .expectErrorToBe("cancelling test")
+        .step(({ promise }) => {
           too.cancel("cancelling test");
           return promise;
-        })
-        .step((err: any) => {
-          expect(err.message).toEqual("cancelling test");
         });
     });
 
@@ -129,10 +123,8 @@ describe("xaa", () => {
       const too = xaa.timeout(50);
 
       return verify()
-        .expectError.step(() => too.run(xaa.delay(150)))
-        .step((err: any) => {
-          expect(err.message).toContain("operation timed out");
-        });
+        .expectErrorHas("operation timed out")
+        .step(() => too.run(xaa.delay(150)));
     });
 
     it("should resolve", async () => {
@@ -163,7 +155,8 @@ describe("xaa", () => {
 
     it("should fail with runTimeout", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("operation timed out")
+        .step(() =>
           xaa.runTimeout(
             [
               () => xaa.delay(10, 1),
@@ -173,10 +166,7 @@ describe("xaa", () => {
             ] as any,
             50
           )
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("operation timed out");
-        }));
+        ));
   });
 
   describe("each", function () {
@@ -375,7 +365,8 @@ describe("xaa", () => {
       const doneOrder: number[] = [];
 
       return verify()
-        .expectError.step(() =>
+        .expectErrorToBe("Test error")
+        .step(() =>
           xaa.map(
             [1, 2, 3, 4, 5, 6, 7, 8, 9],
             async v => {
@@ -396,7 +387,6 @@ describe("xaa", () => {
         )
         .step((err: any) => {
           expect(err).toBeInstanceOf(Error);
-          expect(err.message).toEqual("Test error");
           expect(Date.now() - a).toBeLessThan(150);
           expect(doneOrder).toEqual([1, 3, 4]);
         });
@@ -407,7 +397,8 @@ describe("xaa", () => {
       const doneOrder: number[] = [];
 
       return verify()
-        .expectError.step(() =>
+        .expectErrorToBe("Test error")
+        .step(() =>
           xaa.map(
             [1, 2, 3, 4, 5, 6, 7, 8, 9],
             v => {
@@ -431,14 +422,14 @@ describe("xaa", () => {
           expect(Date.now() - a).toBeLessThan(100);
           await xaa.delay(50);
           expect(err).toBeInstanceOf(Error);
-          expect(err.message).toEqual("Test error");
           expect(doneOrder).toEqual([2, 1, 3, 4]);
         });
     });
 
     it("should ignore multiple failures and use the first one", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorToBe("error-1")
+        .step(() =>
           xaa.map(
             [1, 2, 3],
             async v => {
@@ -447,10 +438,7 @@ describe("xaa", () => {
             },
             { concurrency: 3 }
           )
-        )
-        .step((err: any) => {
-          expect(err.message).toEqual("error-1");
-        }));
+        ));
 
     const testInflight = (observing: boolean, expectCount: number) => {
       let count = 0;
@@ -564,7 +552,8 @@ describe("xaa", () => {
       const arrayWithError = [1, 2, 3];
 
       return verify()
-        .expectError.step(() =>
+        .expectErrorToBe("Test error during mapping")
+        .step(() =>
           xaa.map(
             arrayWithError,
             async (v, i) => {
@@ -582,7 +571,6 @@ describe("xaa", () => {
           expect(err.partial).toBeDefined();
           // expect(err.partial.length).toBe(1);
           expect(err.partial[0]).toBe(2); // First element was processed successfully
-          expect(err.message).toBe("Test error during mapping");
         });
     });
   });
@@ -653,26 +641,26 @@ describe("xaa", () => {
   describe("wrap", function () {
     it("should wrap direct throws into async", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorToBe("blah")
+        .step(() =>
           xaa.wrap(() => {
             throw new Error("blah");
           })
         )
         .step(error => {
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toEqual("blah");
         }));
 
     it("should wrap async error", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorToBe("blah")
+        .step(() =>
           xaa.wrap(() => {
             return Promise.reject(new Error("blah"));
           })
         )
         .step(error => {
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toEqual("blah");
         }));
 
     it("should call with args", () => {

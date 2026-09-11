@@ -190,7 +190,8 @@ describe("httpServer", () => {
 
     it("fails startup with XEVENT_FAILED when a handler errors", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("handler boom", "XEVENT_FAILED")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             listener: (emitter: any) => {
@@ -201,15 +202,14 @@ describe("httpServer", () => {
           })
         )
         .step((err: any) => {
-          expect(err.code).toBe("XEVENT_FAILED");
           expect(err.event).toBe("config-composed");
-          expect(err.message).toContain("handler boom");
           expect(err.moreInfo.reason).toContain("config-composed");
         }));
 
     it("fails startup with XEVENT_TIMEOUT when a handler never completes", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("timeout waiting for event", "XEVENT_TIMEOUT")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             electrode: { eventTimeout: 50 },
@@ -219,10 +219,8 @@ describe("httpServer", () => {
           })
         )
         .step((err: any) => {
-          expect(err.code).toBe("XEVENT_TIMEOUT");
           expect(err.event).toBe("config-composed");
           expect(err.timeout).toBe(50);
-          expect(err.message).toContain("timeout waiting for event");
         }));
 
     it("does not time out when eventTimeout is zero", async () => {
@@ -400,81 +398,70 @@ describe("httpServer", () => {
 
     it("fails when a plugin module cannot be loaded", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("Failed loading module ./no-such-module.cjs")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: { missing: { module: "./no-such-module.cjs", requireFromPath: FIXTURES } }
           })
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("Failed loading module ./no-such-module.cjs");
-        }));
+        ));
 
     it("fails when a plugin's register is not a function", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("register of plugin is not a function")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: {
               bad: { module: "./plugin-not-a-function.cjs", requireFromPath: FIXTURES }
             }
           })
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("register of plugin is not a function");
-        }));
+        ));
 
     it("fails when module is false and no register is given", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("disable 'module' but has no 'register' field")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: { orphan: { module: false } }
           })
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("disable 'module' but has no 'register' field");
-        }));
+        ));
 
     it("fails when a module object has no name", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("'module' must have 'name' field")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: { nameless: { module: {} } }
           } as any)
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("'module' must have 'name' field");
-        }));
+        ));
 
     it("fails when module.requireFromPath is not a string", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("'module.requireFromPath' must be a string")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: { bad: { module: { name: "x", requireFromPath: 123 } } }
           } as any)
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("'module.requireFromPath' must be a string");
-        }));
+        ));
 
     it("fails when plugins.requireFromPath is not a string", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("config.plugins.requireFromPath must be a string")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: { requireFromPath: 123 }
           } as any)
-        )
-        .step((err: any) => {
-          expect(err.message).toContain("config.plugins.requireFromPath must be a string");
-        }));
+        ));
 
     it("reports XPLUGIN_FAILED when a plugin's register throws", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("plugin boom", "XPLUGIN_FAILED")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: {
@@ -487,10 +474,8 @@ describe("httpServer", () => {
           })
         )
         .step((err: any) => {
-          expect(err.code).toBe("XPLUGIN_FAILED");
           expect(err.plugin.__name).toBe("exploding");
           expect(err.method).toBe("with register function");
-          expect(err.message).toContain("plugin boom");
         }));
 
     it("supports an async plugin that returns a promise instead of calling next", async () => {
@@ -509,7 +494,8 @@ describe("httpServer", () => {
 
     it("attributes a rejection from an async plugin", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorHas("async plugin boom", "XPLUGIN_FAILED")
+        .step(() =>
           httpServer({
             connection: { port: 0 },
             plugins: {
@@ -522,9 +508,7 @@ describe("httpServer", () => {
           })
         )
         .step((err: any) => {
-          expect(err.code).toBe("XPLUGIN_FAILED");
           expect(err.plugin.__name).toBe("asyncBoom");
-          expect(err.message).toContain("async plugin boom");
         }));
 
     it("attributes a plugin that never finishes", () =>
@@ -573,10 +557,9 @@ describe("httpServer", () => {
       const port = server!.info.port;
 
       return verify()
-        .expectError.step(() => httpServer({ connection: { port } }))
+        .expectErrorHas("already in use", "EADDRINUSE")
+        .step(() => httpServer({ connection: { port } }))
         .step((err: any) => {
-          expect(err.code).toBe("EADDRINUSE");
-          expect(err.message).toContain("already in use");
           expect(err.moreInfo.resolution).toContain(`lsof -i :${port}`);
         });
     });

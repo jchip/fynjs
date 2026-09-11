@@ -106,9 +106,9 @@ describe("xrun", function() {
     });
 
     return verify({ timeout: 500 })
-      .expectError.step(() => xrun.asyncRun("foo --a=50 --bar=60"))
-      .step(error => {
-        expect(error.message).toBe("Unknown options for task foo: a, bar");
+      .expectErrorToBe("Unknown options for task foo: a, bar")
+      .step(() => xrun.asyncRun("foo --a=50 --bar=60"))
+      .step(() => {
         expect(context).toBeUndefined();
       });
   });
@@ -148,9 +148,9 @@ describe("xrun", function() {
     });
 
     return verify({ timeout: 500 })
-      .expectError.step(() => xrun.asyncRun("foo"))
-      .step(error => {
-        expect(error.message).toContain("missing these required options name");
+      .expectErrorHas("missing these required options name")
+      .step(() => xrun.asyncRun("foo"))
+      .step(() => {
         expect(context).toBeUndefined();
       });
   });
@@ -399,9 +399,9 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toBe("shell cmd 'exit 1' exit code 1");
+      .expectErrorToBe("shell cmd 'exit 1' exit code 1")
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
         expect(foo).toBe(0);
       });
@@ -621,10 +621,10 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
+      .expectErrorHas("Unknown flag foo in shell task")
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(0);
-        expect(err.message).toContain("Unknown flag foo in shell task");
       });
   });
 
@@ -634,10 +634,8 @@ describe("xrun", function() {
     });
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toContain("Unable to process XTaskSpec type blah");
-      });
+      .expectErrorHas("Unable to process XTaskSpec type blah")
+      .callbackStep(next => xrun.run("foo", next));
   });
 
   it("should handle anonymous XTaskSpec with unknown type", () => {
@@ -646,10 +644,8 @@ describe("xrun", function() {
     });
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toContain("Unable to process XTaskSpec type blah");
-      });
+      .expectErrorHas("Unable to process XTaskSpec type blah")
+      .callbackStep(next => xrun.run("foo", next));
   });
 
   it("should handle fail status of shell with spawn", () => {
@@ -665,9 +661,9 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toBe(`cmd "node -e "process.exit(1)"" exit code 1`);
+      .expectErrorToBe(`cmd "node -e "process.exit(1)"" exit code 1`)
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
       });
   });
@@ -685,9 +681,9 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toBe(`cmd "node -e "process.exit(1)"" exit code 1`);
+      .expectErrorToBe(`cmd "node -e "process.exit(1)"" exit code 1`)
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
       });
   });
@@ -710,9 +706,9 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toContain(`ETIMEDOUT`);
+      .expectErrorHas(`ETIMEDOUT`)
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
       });
   });
@@ -802,9 +798,9 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toContain(`Missing )$ in shell task: ~(spawn,syncsleep 1`);
+      .expectErrorHas(`Missing )$ in shell task: ~(spawn,syncsleep 1`)
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(0);
       });
   });
@@ -826,9 +822,9 @@ describe("xrun", function() {
     xrun.on("done-item", _data => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toBe("shell cmd 'exit 1' exit code 1");
+      .expectErrorToBe("shell cmd 'exit 1' exit code 1")
+      .callbackStep(next => xrun.run("foo", next))
+      .step(() => {
         expect(doneItem).toBe(1);
       });
   });
@@ -1041,11 +1037,11 @@ describe("xrun", function() {
     xrun.on("done-item", () => doneItem++);
 
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
+      .expectErrorToBe("a failed")
+      .callbackStep(next => xrun.run("foo", next))
       .step(err => {
         expect(err.more).toEqual(expect.anything());
         expect(err.more.length).toBe(1);
-        expect(err.message).toBe("a failed");
         expect(err.more[0].message).toBe("c failed");
         expect(doneItem).toBe(7);
         expect(foo).toBe(1);
@@ -1384,10 +1380,8 @@ describe("xrun", function() {
       }
     });
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toBe("Task foo2 has unrecognize task value type Boolean");
-      });
+      .expectErrorToBe("Task foo2 has unrecognize task value type Boolean")
+      .callbackStep(next => xrun.run("foo", next));
   });
 
   it("should fail for task with unknown value type", () => {
@@ -1395,12 +1389,10 @@ describe("xrun", function() {
       foo: [true]
     });
     return verify()
-      .expectError.callbackStep(next => xrun.run("foo", next))
-      .step(err => {
-        expect(err.message).toBe(
-          "Unable to process task foo.S because value type Boolean is unknown and no value.item"
-        );
-      });
+      .expectErrorToBe(
+        "Unable to process task foo.S because value type Boolean is unknown and no value.item"
+      )
+      .callbackStep(next => xrun.run("foo", next));
   });
 
   it("should not fail if optional task name is not found", () => {
@@ -1506,10 +1498,10 @@ describe("xrun", function() {
       xrun.stopOnError = "full";
 
       return verify()
-        .expectError.callbackStep(next => xrun.run(["task1", "task2"], next))
-        .step(err => {
+        .expectErrorHas("task1 failed")
+        .callbackStep(next => xrun.run(["task1", "task2"], next))
+        .step(() => {
           expect(task1Called).toBe(true);
-          expect(err.message).toContain("task1 failed");
         });
     });
 
@@ -1539,11 +1531,11 @@ describe("xrun", function() {
 
       // Run tasks concurrently so task2's promise is active when task1 fails
       return verify()
-        .expectError.callbackStep(next => xrun.run([["task1", "task2"]], next))
-        .step(err => {
+        .expectErrorHas("task1 failed")
+        .callbackStep(next => xrun.run([["task1", "task2"]], next))
+        .step(() => {
           expect(task1Called).toBe(true);
           expect(task2Called).toBe(true);
-          expect(err.message).toContain("task1 failed");
           // task2's promise should be cancelled due to stopOnError full
         });
     });
@@ -1747,10 +1739,8 @@ describe("xrun", function() {
     };
 
     return verify()
-      .expectError.step(() => testAsync(tasks))
-      .step(err => {
-        expect(err.message).toContain("test oops");
-      });
+      .expectErrorHas("test oops")
+      .step(() => testAsync(tasks));
   });
 
   it("should handle promise rejection with SIGTERM child process", () => {
