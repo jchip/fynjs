@@ -169,24 +169,17 @@ const hasSameContent = (a: string, b: string, sizeA: number, sizeB: number): boo
 /**
  * Whether an installed file is still the current install of its workspace source.
  *
- * This is install identity, not byte identity - {@link hasSameContent} is what answers the
- * latter, and this calls it when it has to. The distinction matters because the three signals
- * available answer different questions:
+ * Publishing cares whether the installed artifact has the same bytes as the workspace build.
+ * The available filesystem signals help answer that question:
  *
  * 1. **same inode** - the install is a hardlink, so it is not a copy of the source, it IS the
  *    source. fyn links wherever it can, which is every one of the 1402 installed files in this
  *    monorepo. Nothing to compare.
- * 2. **differing mtime** - the link was broken by something rewriting the source (`rm -rf dist
- *    && tsc` makes new inodes), and that write stamped a new mtime. The copy therefore predates
- *    the current source and a bootstrap is owed, whatever the bytes turn out to be.
- * 3. **same mtime, different inode** - proves nothing on its own, so read and compare.
+ * 2. **different inode** - timestamps prove neither equality nor staleness, so read and compare.
+ *    This matters for circular builds that install a dependency before rebuilding its source to
+ *    identical bytes, and for fyn's copy fallback, which does not preserve source timestamps.
  *
- * Where fyn cannot hardlink it falls back to `copyFile`/`clonefile`, and neither carries the
- * source mtime over - so on a node_modules on another device, or Windows without link
- * privileges, every file reads as not-current here. That direction is the safe one (it asks for
- * a bootstrap, which is never wrong to run), and it is why this is not the only gate:
- * {@link diffResolutionFields} stays a warning, and only a file difference in a package actually
- * being published stops a release.
+ * {@link diffResolutionFields} separately checks the manifest fields consumers resolve against.
  *
  * @param srcFile - the file in the workspace package
  * @param copyFile - the corresponding file in the installed copy
@@ -198,9 +191,6 @@ const isCurrentInstall = (srcFile: string, copyFile: string): boolean => {
 
     if (srcStat.ino === copyStat.ino && srcStat.dev === copyStat.dev) {
       return true;
-    }
-    if (srcStat.mtimeMs !== copyStat.mtimeMs) {
-      return false;
     }
 
     return hasSameContent(srcFile, copyFile, srcStat.size, copyStat.size);

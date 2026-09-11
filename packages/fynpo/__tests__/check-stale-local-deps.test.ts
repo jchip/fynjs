@@ -161,17 +161,16 @@ describe("diffInstalledFiles", () => {
   });
 
   //
-  // The links only break when something rewrote the source, and that write stamps a new mtime -
-  // so a differing mtime is taken as not-current without reading the file. The one place this
-  // over-reports is fyn's copyFile fallback, which does not carry the source mtime over.
+  // A circular build can install a dependency and then rebuild its source to identical bytes.
+  // The later timestamp does not make the installed artifact stale.
   //
-  it("reports a copy whose mtime no longer matches, without reading it", () => {
+  it("treats identical bytes as current even when mtimes differ", () => {
     write(srcDir, "dist/touched.js", "identical");
     write(copyDir, "dist/touched.js", "identical");
     Fs.utimesSync(Path.join(srcDir, "dist/touched.js"), new Date(1700000000000), new Date(1700000000000));
     Fs.utimesSync(Path.join(copyDir, "dist/touched.js"), new Date(1600000000000), new Date(1600000000000));
 
-    expect(diffInstalledFiles(srcDir, copyDir, 20)).toContain("dist/touched.js");
+    expect(diffInstalledFiles(srcDir, copyDir, 20)).not.toContain("dist/touched.js");
   });
 
   it("reports a file whose content moved on at the source", () => {
