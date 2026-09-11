@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import os from "node:os";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";
+import { verify } from "run-verify";
 import { FynpoConfigManager } from "../src/fynpo-config.js";
 import {
   FynpoConfigError,
@@ -90,30 +91,26 @@ describe("FynpoConfigManager", () => {
     const cwd = await dirWith({ "fynpo.config.js": `throw new Error("bad config");` });
     const file = Path.join(cwd, "fynpo.config.js");
 
-    const err = await new FynpoConfigManager({ cwd }).load().then(
-      () => undefined,
-      (e: unknown) => e
-    );
-
-    expect(isFynpoConfigError(err)).toBe(true);
-    expect((err as FynpoConfigError).filePath).toBe(file);
-    expect((err as FynpoConfigError).cause).toBeInstanceOf(Error);
-    expect((err as FynpoConfigError).cause?.stack).toContain("fynpo.config.js");
+    await verify({ timeout: 2000 })
+      .expectError.step(() => new FynpoConfigManager({ cwd }).load())
+      .step((err) => {
+        expect(isFynpoConfigError(err)).toBe(true);
+        expect((err as FynpoConfigError).filePath).toBe(file);
+        expect((err as FynpoConfigError).cause).toBeInstanceOf(Error);
+        expect((err as FynpoConfigError).cause?.stack).toContain("fynpo.config.js");
+      });
   });
 
   it("should throw a FynpoConfigError carrying the cause from loadSync too", async () => {
     const cwd = await dirWith({ "fynpo.config.js": `throw new Error("bad config");` });
 
-    let caught: unknown;
-    try {
-      new FynpoConfigManager({ cwd }).loadSync();
-    } catch (e) {
-      caught = e;
-    }
-
-    expect(isFynpoConfigError(caught)).toBe(true);
-    expect((caught as FynpoConfigError).filePath).toBe(Path.join(cwd, "fynpo.config.js"));
-    expect((caught as FynpoConfigError).cause).toBeInstanceOf(Error);
+    await verify({ timeout: 2000 })
+      .expectError.step(() => new FynpoConfigManager({ cwd }).loadSync())
+      .step((err) => {
+        expect(isFynpoConfigError(err)).toBe(true);
+        expect((err as FynpoConfigError).filePath).toBe(Path.join(cwd, "fynpo.config.js"));
+        expect((err as FynpoConfigError).cause).toBeInstanceOf(Error);
+      });
   });
 
   //
@@ -156,32 +153,29 @@ describe("FynpoConfigManager", () => {
       const cwd = await dirWith({ "fynpo.json": badJson });
       const file = Path.join(cwd, "fynpo.json");
 
-      const err = await new FynpoConfigManager({ cwd }).load().then(
-        () => undefined,
-        (e: unknown) => e
-      );
-
-      expect(isFynpoConfigError(err)).toBe(true);
-      expect((err as FynpoConfigError).filePath).toBe(file);
-      expect((err as FynpoConfigError).code).toBe("FYNPO_BAD_CONFIG");
-      // the raw parse failure, kept apart from the "Failed to read ..." framing so the CLI
-      // banner can show it on its own line
-      expect((err as FynpoConfigError).reason).toMatch(/JSON/);
-      expect((err as FynpoConfigError).message).toContain(file);
+      await verify({ timeout: 2000 })
+        .expectErrorHas(file, "FYNPO_BAD_CONFIG")
+        .step(() => new FynpoConfigManager({ cwd }).load())
+        .step((err) => {
+          expect(isFynpoConfigError(err)).toBe(true);
+          expect((err as FynpoConfigError).filePath).toBe(file);
+          // the raw parse failure, kept apart from the "Failed to read ..." framing so the CLI
+          // banner can show it on its own line
+          expect((err as FynpoConfigError).reason).toMatch(/JSON/);
+        });
     });
 
     it("should throw a FynpoConfigError from loadSync too", async () => {
       const cwd = await dirWith({ "lerna.json": badJson });
 
-      let caught: unknown;
-      try {
-        new FynpoConfigManager({ cwd, allowLernaWithoutFynpo: true }).loadSync();
-      } catch (e) {
-        caught = e;
-      }
-
-      expect(isFynpoConfigError(caught)).toBe(true);
-      expect((caught as FynpoConfigError).filePath).toBe(Path.join(cwd, "lerna.json"));
+      await verify({ timeout: 2000 })
+        .expectError.step(() =>
+          new FynpoConfigManager({ cwd, allowLernaWithoutFynpo: true }).loadSync(),
+        )
+        .step((err) => {
+          expect(isFynpoConfigError(err)).toBe(true);
+          expect((err as FynpoConfigError).filePath).toBe(Path.join(cwd, "lerna.json"));
+        });
     });
 
     it("should still report no config when the files are simply absent", async () => {

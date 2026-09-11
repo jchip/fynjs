@@ -364,3 +364,20 @@ The failed-download case now expresses its existing failure-only requirement wit
 `.expectError.step()`; no message or code constraint was invented. The other cache
 operations remain direct `async` tests because their returned Promises already propagate
 failures and have no separate completion boundary to express.
+
+## fynpo-base
+
+This package now adopts `run-verify` in seven tests. In
+`__test__/fynpo-dep-graph.test.ts`, the CWD-based resolution test previously restored the
+process-wide working directory only after a successful `resolve()`; a rejection could
+therefore contaminate later tests. A bounded chain now restores it through cleanup while
+preserving the original restore-before-assertion ordering. Two tests that temporarily
+rewrite a fixture `package.json` also moved their correct `try/finally` restoration into
+bounded cleanup chains for consistent timeout coverage.
+
+Four structured error cases in `__test__/fynpo-config.test.ts` now use expected-error
+chains. The malformed JSON case uses `.expectErrorHas(file, "FYNPO_BAD_CONFIG")`, covering
+both the existing top-level message containment and exact code assertion, while retaining
+the custom type guard, path, and nested parse-reason checks. The other three use generic
+`.expectError` because their requirements concern error type, path, or cause rather than a
+top-level message. Native Vitest regex/string rejection checks remain unchanged.
