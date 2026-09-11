@@ -5,8 +5,8 @@ $pkg:
  dep:
   vite-node: ^6.0.0
  dev:
-  fyn: ^3.1.1
-  fynpo: ^3.1.1
+  fyn: ^3.1.4
+  fynpo: ^3.1.4
   run-verify: ./packages/run-verify
   semver: ^7.8.5
 '@oxc-project/types':
@@ -195,13 +195,6 @@ cac:
  7.0.0:
   $: sha512-tixWYgm5ZoOD+3g6UTea91eow5z6AAHaho3g0V9CNSNb45gM8SmflpAc+GRd1InC4AqN/07Unrgp56Y94N9hJQ==
   _: 'https://registry.npmjs.org/cac/-/cac-7.0.0.tgz'
-callsites:
- _latest: 4.2.0
- _:
-  ^3.0.0: 3.1.0
- 3.1.0:
-  $: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==
-  _: 'https://registry.npmjs.org/callsites/-/callsites-3.1.0.tgz'
 detect-libc:
  _latest: 2.1.2
  _:
@@ -235,52 +228,49 @@ fsevents:
   os:
    - darwin
 fyn:
- _latest: 1.1.46
+ _latest: 3.1.4
  _:
-  ^3.1.1: 3.1.1
- 3.1.1:
+  ^3.1.4: 3.1.4
+ 3.1.4:
   top: 1
-  $: sha512-nf0GHfQMSycY7xPg/zzCUumGPIDNbrIPnAK93pSbwBcaeEIToCtn+JH0vDunBn7rlfbzkwsec9IVqT04P6m7xQ==
-  _: 'https://registry.npmjs.org/fyn/-/fyn-3.1.1.tgz'
+  $: sha512-jRgR1qzQ7IEd4Ce6NjuZs12phD4wFo7AMQii7H4CeUnU3kgN13PKQFXv5brAejPfQtr1DFXZXdenNiGhvkMgxg==
+  _: 'https://registry.npmjs.org/fyn/-/fyn-3.1.4.tgz'
 fynpo:
- _latest: 1.1.49
+ _latest: 3.1.4
  _:
-  ^3.1.1: 3.1.1
- 3.1.1:
+  ^3.1.4: 3.1.4
+ 3.1.4:
   top: 1
-  $: sha512-i5gp5lza5t/JVbZFU8uFKpY9i+nOgCWYfDGfzRFcpEwxSGuxn1vOY68HTgYxduA7j/gcCJh7E64S5Ssc0cdErQ==
-  _: 'https://registry.npmjs.org/fynpo/-/fynpo-3.1.1.tgz'
+  $: sha512-ac8ZlhoLt7Mm1CFphZLhY35b/sX8IrxWeH7vDbsyjmcmfP56GcOxTlpPvnHZa95NR2VfEQ4CYJ17CS06Usf1bg==
+  _: 'https://registry.npmjs.org/fynpo/-/fynpo-3.1.4.tgz'
   dependencies:
-   fyn: ^3.1.1
-   import-fresh: 3.3.0
+   fyn: ^3.1.4
+   import-fresh: ^4.0.0
    resolve-from: ^5.0.0
-   resolve-global: 1.0.0
-global-dirs:
- _latest: 4.0.0
+   resolve-global: ^2.0.0
+global-directory:
+ _latest: 5.0.0
  _:
-  ^0.1.1: 0.1.1
- 0.1.1:
-  $: sha512-NknMLn7F2J7aflwFOlGdNIuCDpN3VGoSoB+aap3KABFWbHVn1TCgFC+np23J8W2BiZbjfEw3BFBycSMv1AFblg==
-  _: 'https://registry.npmjs.org/global-dirs/-/global-dirs-0.1.1.tgz'
+  ^4.0.1: 4.0.1
+ 4.0.1:
+  $: sha512-wHTUcDUoZ1H5/0iVqEudYW4/kAlN5cZ3j/bXn0Dpbizl9iaUVeWSHqiOjsgk6OW2bkLclbBjzewBz6weQ1zA2Q==
+  _: 'https://registry.npmjs.org/global-directory/-/global-directory-4.0.1.tgz'
   dependencies:
-   ini: ^1.3.4
+   ini: 4.1.1
 import-fresh:
  _latest: 4.0.0
  _:
-  3.3.0: 3.3.0
- 3.3.0:
-  $: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==
-  _: 'https://registry.npmjs.org/import-fresh/-/import-fresh-3.3.0.tgz'
-  dependencies:
-   parent-module: ^1.0.0
-   resolve-from: ^4.0.0
+  ^4.0.0: 4.0.0
+ 4.0.0:
+  $: sha512-Fpi660c7VPDM3fPKYovStd9IP1CPOikf6v/dGxJJMmHPcwYQIMJ4W7kO1avBYEpMqkCh+Dx3Ln6H7VYqgztLjw==
+  _: 'https://registry.npmjs.org/import-fresh/-/import-fresh-4.0.0.tgz'
 ini:
  _latest: 7.0.0
  _:
-  ^1.3.4: 1.3.8
- 1.3.8:
-  $: sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==
-  _: 'https://registry.npmjs.org/ini/-/ini-1.3.8.tgz'
+  4.1.1: 4.1.1
+ 4.1.1:
+  $: sha512-QQnnxNyfvmHFIsj7gkPcYymR8Jdw/o7mp5ZFihxn6h8Ci6fh3Dx4E1gPjpQEpIuPo9XVNY/ZUwh4BPMjGyL01g==
+  _: 'https://registry.npmjs.org/ini/-/ini-4.1.1.tgz'
 lightningcss:
  _latest: 1.33.0
  _:
@@ -437,15 +427,6 @@ obug:
  2.1.4:
   $: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==
   _: 'https://registry.npmjs.org/obug/-/obug-2.1.4.tgz'
-parent-module:
- _latest: 3.2.0
- _:
-  ^1.0.0: 1.0.1
- 1.0.1:
-  $: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==
-  _: 'https://registry.npmjs.org/parent-module/-/parent-module-1.0.1.tgz'
-  dependencies:
-   callsites: ^3.0.0
 pathe:
  _latest: 2.0.3
  _:
@@ -481,23 +462,19 @@ postcss:
 resolve-from:
  _latest: 5.0.0
  _:
-  ^4.0.0: 4.0.0
   ^5.0.0: 5.0.0
  5.0.0:
   $: sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==
   _: 'https://registry.npmjs.org/resolve-from/-/resolve-from-5.0.0.tgz'
- 4.0.0:
-  $: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==
-  _: 'https://registry.npmjs.org/resolve-from/-/resolve-from-4.0.0.tgz'
 resolve-global:
  _latest: 2.0.0
  _:
-  1.0.0: 1.0.0
- 1.0.0:
-  $: sha512-zFa12V4OLtT5XUX/Q4VLvTfBf+Ok0SPc1FNGM/z9ctUdiU618qwKpWnd0CHs3+RqROfyEg/DhuHbMWYqcgljEw==
-  _: 'https://registry.npmjs.org/resolve-global/-/resolve-global-1.0.0.tgz'
+  ^2.0.0: 2.0.0
+ 2.0.0:
+  $: sha512-gnAQ0Q/KkupGkuiMyX4L0GaBV8iFwlmoXsMtOz+DFTaKmHhOO/dSlP1RMKhpvHv/dh6K/IQkowGJBqUG0NfBUw==
+  _: 'https://registry.npmjs.org/resolve-global/-/resolve-global-2.0.0.tgz'
   dependencies:
-   global-dirs: ^0.1.1
+   global-directory: ^4.0.1
 rolldown:
  _latest: 1.2.7
  _:
@@ -525,10 +502,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.2-fynlocal_h
+ _latest: 2.1.3-fynlocal_h
  _:
-  ./packages/run-verify: 2.1.2-fynlocal_h
- 2.1.2-fynlocal_h:
+  ./packages/run-verify: 2.1.3-fynlocal_h
+ 2.1.3-fynlocal_h:
   top: 1
   $: local
   _: ./packages/run-verify
