@@ -79,6 +79,7 @@ $ fyn add --dev run-verify
   - [`callbackStep`](#callbackstep)
   - [Modifiers](#modifiers)
   - [Config](#config)
+    - [Migrating resource lifecycles](#migrating-resource-lifecycles)
   - [Signals](#signals)
   - [Why you might pick it](#why-you-might-pick-it)
 - [`checkFunc`](#checkfunc)
@@ -815,6 +816,77 @@ verify({ timeout, cleanup, signals });
 
 These are config rather than positions in the chain because that is how they are used in
 practice: one deadline for the test, and cleanup that does not care where it sits.
+
+### Migrating resource lifecycles
+
+Put fallible setup inside the run, after cleanup has been declared. In this common shape,
+cleanup does not cover setup itself:
+
+```js
+const resource = await open();
+try {
+  await use(resource);
+} finally {
+  await close(resource);
+}
+```
+
+If `open()` stalls or partially succeeds before failing, the `finally` block is never
+entered. A bounded chain establishes the cleanup backstop first and makes every callback
+outcome explicit:
+
+```js
+let active;
+
+await verify({
+  timeout: 1000,
+  cleanup: async () => {
+    try {
+      if (active) await close(active);
+    } finally {
+      await removeFixture();
+    }
+  }
+})
+  .callbackStep(next => {
+    openResource({
+      onError: error => next(error),
+      onOpen: resource => next(null, resource)
+    });
+  })
+  .step(resource => {
+    active = resource;
+    return use(resource);
+  })
+  .step(async () => {
+    const old = active;
+    await close(old);
+    active = undefined;
+  })
+  .callbackStep(next => {
+    openReplacement({
+      onError: error => next(error),
+      onOpen: resource => next(null, resource)
+    });
+  })
+  .step(resource => {
+    active = resource;
+  });
+```
+
+A success-only callback is not an error-first callback. If an API reports failure by
+throwing, emitting an error event, or calling a separate handler, forward that path to
+`next(error)`; otherwise the real failure may escape the run or appear only as a timeout.
+
+When replacing a tracked resource, await closing the old one before overwriting its
+reference, as the middle steps do above. If close fails, cleanup still sees the old
+resource and can retry it.
+
+If one cleanup must run even when another cleanup fails, express that dependency with
+`try`/`finally` inside one async cleanup, as above. For failure assertions, use
+[`expectErrorHas(message, code?)`](#modifiers) only for the top-level message and code;
+use `.expectError` followed by an inspection step for nested causes, regular expressions,
+or other custom checks.
 
 ## Signals
 

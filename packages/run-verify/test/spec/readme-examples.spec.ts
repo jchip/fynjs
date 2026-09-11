@@ -138,6 +138,65 @@ describe("README chain examples", () => {
       .step((error: any) => expect(error.task).toBe("foo"));
   });
 
+  it("resource lifecycle migration example", async () => {
+    const events: string[] = [];
+    let active: any;
+    const open = (name: string, { onOpen }: any) =>
+      setImmediate(() => {
+        events.push(`open:${name}`);
+        onOpen({ name });
+      });
+    const openResource = (handlers: any) => open("first", handlers);
+    const openReplacement = (handlers: any) => open("second", handlers);
+    const use = (resource: any) => events.push(`use:${resource.name}`);
+    const close = async (resource: any) => events.push(`close:${resource.name}`);
+    const removeFixture = async () => events.push("remove");
+
+    await verify({
+      timeout: 1000,
+      cleanup: async () => {
+        try {
+          if (active) await close(active);
+        } finally {
+          await removeFixture();
+        }
+      }
+    })
+      .callbackStep(next => {
+        openResource({
+          onError: error => next(error),
+          onOpen: resource => next(null, resource)
+        });
+      })
+      .step(resource => {
+        active = resource;
+        return use(resource);
+      })
+      .step(async () => {
+        const old = active;
+        await close(old);
+        active = undefined;
+      })
+      .callbackStep(next => {
+        openReplacement({
+          onError: error => next(error),
+          onOpen: resource => next(null, resource)
+        });
+      })
+      .step(resource => {
+        active = resource;
+      });
+
+    expect(events).toEqual([
+      "open:first",
+      "use:first",
+      "close:first",
+      "open:second",
+      "close:second",
+      "remove"
+    ]);
+  });
+
   it("signals example", async () => {
     const store = new (class extends EventEmitter {
       async save(id: string) {
