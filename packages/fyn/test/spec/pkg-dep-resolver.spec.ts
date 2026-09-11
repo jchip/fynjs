@@ -10,6 +10,7 @@ import mockNpm from "../fixtures/mock-npm";
 import * as _ from "lodash-es";
 import logger from "../../lib/logger";
 import chalk from "chalk";
+import { verify } from "run-verify";
 
 // vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
 // the same millisecond shared this directory and deleted each other's fixtures (ENOTEMPTY on
@@ -150,13 +151,14 @@ describe("pkg-dep-resolver", function () {
     "should resolve dependencies repeatedly for pkg-a fixture @deepResolve true",
     { timeout: 10000 },
     () => {
-      return testPkgAFixture(true)
-        .then(() => testPkgAFixture(true))
-        .then(() => {
+      return verify({ timeout: 9000 })
+        .step(() => testPkgAFixture(true))
+        .step(() => testPkgAFixture(true))
+        .step(() => {
           Fs.rmSync(Path.join(fynDir, "xout"), { recursive: true, force: true });
           return testPkgAFixture(true);
         })
-        .then(() => {
+        .step(() => {
           Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
           return testPkgAFixture(true);
         });
@@ -175,13 +177,14 @@ describe("pkg-dep-resolver", function () {
     "should resolve dependencies repeatedly for pkg-a fixture @deepResolve false",
     { timeout: 10000 },
     () => {
-      return testPkgAFixture(false)
-        .then(() => testPkgAFixture(false))
-        .then(() => {
+      return verify({ timeout: 9000 })
+        .step(() => testPkgAFixture(false))
+        .step(() => testPkgAFixture(false))
+        .step(() => {
           Fs.rmSync(Path.join(fynDir, "xout"), { recursive: true, force: true });
           return testPkgAFixture(false);
         })
-        .then(() => {
+        .step(() => {
           Fs.rmSync(Path.join(fynDir, "cache"), { recursive: true, force: true });
           return testPkgAFixture(false);
         });
@@ -204,14 +207,11 @@ describe("pkg-dep-resolver", function () {
         cwd: fynDir,
       },
     });
-    let error;
-    return fyn
-      .resolveDependencies()
-      .catch((err) => (error = err))
-      .then(() => {
-        expect(error).toEqual(expect.anything());
+    return verify({ timeout: 9000 })
+      .expectErrorHas("Unable to retrieve meta for package mod-a")
+      .step(() => fyn.resolveDependencies())
+      .step((error) => {
         expect(error.errors).toEqual(expect.anything());
-        expect(error.message).toContain("Unable to retrieve meta for package mod-a");
         const message = error.errors.map((e) => e.message).join("\n");
         expect(message).toContain(
           `Unable to find a version from lock data that satisfied semver mod-a@^14.0.0`,
@@ -235,14 +235,11 @@ describe("pkg-dep-resolver", function () {
         cwd: fynDir,
       },
     });
-    let error;
-    return fyn
-      .resolveDependencies()
-      .catch((err) => (error = err))
-      .then(() => {
-        expect(error).toEqual(expect.anything());
+    return verify({ timeout: 9000 })
+      .expectErrorHas("Unable to retrieve meta for package mod-a")
+      .step(() => fyn.resolveDependencies())
+      .step((error) => {
         expect(error.errors).toEqual(expect.anything());
-        expect(error.message).toContain("Unable to retrieve meta for package mod-a");
         const message = error.errors.map((e) => e.message).join("\n");
         expect(message).toContain(
           `Unable to find a version from lock data that satisfied semver mod-a@blah`,
@@ -273,13 +270,10 @@ describe("pkg-dep-resolver", function () {
           ignoreDist: true,
         },
       });
-      let error;
-      return fyn
-        .resolveDependencies()
-        .catch((err) => (error = err))
-        .then(() => {
+      return verify({ timeout: 9000 })
+        .step(() => fyn.resolveDependencies())
+        .step(() => {
           // a failing *optional* (devopt) dep must not reject the whole install
-          expect(error, error && error.message).toBeUndefined();
           // the required dependency still resolved
           expect(fyn._data.pkgs["mod-a"]).toEqual(expect.anything());
         });
@@ -338,9 +332,9 @@ describe("pkg-dep-resolver", function () {
       },
     });
 
-    return fyn
-      .resolveDependencies()
-      .then(() => {
+    return verify({ timeout: 9000, cleanup: () => stub.mockRestore() })
+      .step(() => fyn.resolveDependencies())
+      .step(() => {
         const calls = stub.mock.calls.filter((args) => args[0] && args[0].name === "mod-a");
         expect(calls.length).toBeGreaterThanOrEqual(2);
         const refreshed = calls.filter((args) => args[1] === true);
@@ -351,8 +345,7 @@ describe("pkg-dep-resolver", function () {
         const resolved = Object.keys((fyn._data.pkgs["mod-a"] || {}).versions || {});
         const found11x = resolved.some((v) => v.startsWith("1.1"));
         expect(found11x, `expected a 1.1.x version, got ${resolved.join(",")}`).toBe(true);
-      })
-      .finally(() => stub.mockRestore());
+      });
   });
 
   describe("overrides", function () {

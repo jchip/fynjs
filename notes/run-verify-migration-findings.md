@@ -191,6 +191,27 @@ expected-error captures now use `.expectError.step()`, and the tests that replac
 assertion fails. No bug was found; the conversion makes the callback contract, error
 expectations, and cleanup guarantee explicit. No signals are used in this slice.
 
+The remaining metadata-memoization test in `test/spec/pkg-src-manager.spec.ts` owned a
+second HTTP server through unbounded listen/close Promises. Its cache setup, server listen,
+fetch, and assertion now share one 500 ms chain. Listen reports `next(err)` or
+`next(null, port)` explicitly, and conditional async cleanup closes the server on every
+exit path. This closes a real isolation gap: the old `try/finally` began only after listen
+completed, so a stalled listen could leave the server outside its cleanup scope.
+
+`test/spec/pkg-dep-resolver.spec.ts` now bounds both repeated four-stage resolution flows,
+the two expected failures, the optional-dependency success case, and the stale-cache
+refetch case. The expected failures use `.expectErrorHas()` for their shared top-level
+message and retain ordinary assertions for the nested `error.errors` messages; the API's
+message modifier is deliberately preferred wherever the top-level check fits it. The
+refetch spy moved from native `.finally()` to chain cleanup. Apart from that cleanup
+backstop, these tests were already safe and the change is structural.
+
+Four adjacent cases in `test/spec/install-scripts.spec.ts` now use bounded chains. Two
+logger spies are restored through cleanup even when `ls()` or an assertion fails, fixing a
+worker-isolation gap. The two expected failures use `.expectErrorHas()` for their
+top-level messages, with downstream assertions only where one error contains additional
+details that still matter.
+
 ## xaa
 
 `test/spec/xaa.spec.ts`. No bugs found - every test that expected an error already guarded

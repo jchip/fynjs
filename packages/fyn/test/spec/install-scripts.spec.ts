@@ -2,6 +2,7 @@ import { describe, it, beforeEach, afterEach, vi, expect } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
+import { verify } from "run-verify";
 import logger from "../../lib/logger";
 import {
   parseAllowKey,
@@ -377,7 +378,7 @@ describe("install-scripts", function () {
       expect(records.map((r: any) => r.name)).toStrictEqual(["canvas", "sharp"]);
     });
 
-    it("does not suggest --allow-scripts-pending when review is already the mode", async () => {
+    it("does not suggest --allow-scripts-pending when review is already the mode", () => {
       // FPM-91: the flag previews what "review" would ask, so under "review" it
       // is a no-op and the suggestion reads as though review were off
       const lines: string[] = [];
@@ -385,52 +386,51 @@ describe("install-scripts", function () {
         lines.push(args.join(" "));
       });
 
-      await new InstallScripts({ fyn: mkFyn({ scriptPolicy: "review" }) }).ls();
-      spy.mockRestore();
-
-      expect(lines.join("\n")).toContain("No packages are awaiting install-script review.");
-      expect(lines.join("\n")).not.toContain("--allow-scripts-pending");
+      return verify({ timeout: 500, cleanup: () => spy.mockRestore() })
+        .step(() => new InstallScripts({ fyn: mkFyn({ scriptPolicy: "review" }) }).ls())
+        .step(() => {
+          expect(lines.join("\n")).toContain("No packages are awaiting install-script review.");
+          expect(lines.join("\n")).not.toContain("--allow-scripts-pending");
+        });
     });
 
-    it("suggests --allow-scripts-pending from a looser mode", async () => {
+    it("suggests --allow-scripts-pending from a looser mode", () => {
       const lines: string[] = [];
       const spy = vi.spyOn(logger, "info").mockImplementation((...args: any[]) => {
         lines.push(args.join(" "));
       });
 
-      await new InstallScripts({ fyn: mkFyn({ scriptPolicy: "source" }) }).ls();
-      spy.mockRestore();
-
-      expect(lines.join("\n")).toContain("--allow-scripts-pending");
+      return verify({ timeout: 500, cleanup: () => spy.mockRestore() })
+        .step(() => new InstallScripts({ fyn: mkFyn({ scriptPolicy: "source" }) }).ls())
+        .step(() => {
+          expect(lines.join("\n")).toContain("--allow-scripts-pending");
+        });
     });
 
-    it("explains that a monorepo allowlist needs a fynpo.json", async () => {
+    it("explains that a monorepo allowlist needs a fynpo.json", () => {
       const fyn = mkFyn({ _fynpo: { dir }, blockedScripts: [mkRecord()] });
-      let caught: Error | undefined;
-      await new InstallScripts({ fyn }).approve(["sharp"]).catch((err: Error) => {
-        caught = err;
-      });
-      expect(caught?.message).toMatch(/needs a fynpo\.json/);
+      return verify({ timeout: 500 })
+        .expectErrorHas("needs a fynpo.json")
+        .step(() => new InstallScripts({ fyn }).approve(["sharp"]));
     });
   
     it("approves nothing when there was nothing blocked", async () => {
       expect(await new InstallScripts({ fyn: mkFyn() }).review([])).toStrictEqual([]);
     });
 
-    it("fails rather than skipping scripts when there is nobody to ask", async () => {
+    it("fails rather than skipping scripts when there is nobody to ask", () => {
       // vitest is not a terminal, so this is the CI / piped / hook path
       expect(canPrompt()).toBe(false);
 
-      let caught: Error | undefined;
-      await new InstallScripts({ fyn: mkFyn() }).review([mkRecord()]).catch((err: Error) => {
-        caught = err;
-      });
-
-      expect(caught?.message).toMatch(/need approval to run their install scripts/);
-      expect(caught?.message).toContain("sharp@0.34.4");
-      // and it names the way out
-      expect(caught?.message).toContain("--script-policy=source");
-      expect(caught?.message).toContain("fyn install-scripts approve");
+      return verify({ timeout: 500 })
+        .expectErrorHas("need approval to run their install scripts")
+        .step(() => new InstallScripts({ fyn: mkFyn() }).review([mkRecord()]))
+        .step((error) => {
+          expect(error.message).toContain("sharp@0.34.4");
+          // and it names the way out
+          expect(error.message).toContain("--script-policy=source");
+          expect(error.message).toContain("fyn install-scripts approve");
+        });
     });
   
     it("prune keeps approvals for packages hoisted into node_modules", async () => {

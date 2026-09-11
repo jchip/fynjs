@@ -127,7 +127,7 @@ describe("pkg-src-manager", function () {
     expect(meta["dist-tags"].latest).toBe("2.0.0");
   });
 
-  it("should reread cache on meta-memoize hit before reusing packument", async () => {
+  it("should reread cache on meta-memoize hit before reusing packument", () => {
     const host = `localhost:${server.info.port}`;
     const registry = `http://${host}`;
     const packumentVersions = {
@@ -174,47 +174,57 @@ describe("pkg-src-manager", function () {
     const packumentUrl = mgr.makePackumentUrl("mod-a");
     const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
 
-    await cacache.put(fynCacheDir, cacheKey, JSON.stringify(packumentVersions.stale));
-
-    const bucket = getBucketPath(fynCacheDir, cacheKey);
+    let bucket;
     const staleTime = new Date(Date.now() - 26 * 60 * 60 * 1000);
-    Fs.utimesSync(bucket, staleTime, staleTime);
 
-    const memoServer = await new Promise((resolve) => {
-      const server2 = Http.createServer(async (req, res) => {
-        const { searchParams } = new URL(req.url, "http://localhost");
-        const key = searchParams.get("key");
+    const memoServer = Http.createServer(async (req, res) => {
+      const { searchParams } = new URL(req.url, "http://localhost");
+      const key = searchParams.get("key");
 
-        if (key === cacheKey) {
-          await cacache.put(fynCacheDir, cacheKey, JSON.stringify(packumentVersions.fresh));
-          await refreshCacheEntry(fynCacheDir, cacheKey);
-          res.writeHead(200, { "content-type": "application/json" });
-          res.end(JSON.stringify({ time: Date.now() }));
-          return;
-        }
+      if (key === cacheKey) {
+        await cacache.put(fynCacheDir, cacheKey, JSON.stringify(packumentVersions.fresh));
+        await refreshCacheEntry(fynCacheDir, cacheKey);
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ time: Date.now() }));
+        return;
+      }
 
-        res.writeHead(404, { "content-type": "application/json" });
-        res.end(JSON.stringify({ err: "not found" }));
-      });
-
-      server2.listen(0, () => {
-        server2.port = server2.address().port;
-        resolve(server2);
-      });
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ err: "not found" }));
     });
 
-    fyn._options.metaMemoize = `http://localhost:${memoServer.port}`;
-
-    try {
-      const meta = await mgr.fetchMeta({
-        name: "mod-a",
-        semver: "",
+    return verify({
+      timeout: 500,
+      cleanup: () =>
+        memoServer.listening
+          ? new Promise<void>((resolve, reject) =>
+              memoServer.close((err) => (err ? reject(err) : resolve())),
+            )
+          : undefined,
+    })
+      .step(() => cacache.put(fynCacheDir, cacheKey, JSON.stringify(packumentVersions.stale)))
+      .step(() => {
+        bucket = getBucketPath(fynCacheDir, cacheKey);
+        Fs.utimesSync(bucket, staleTime, staleTime);
+      })
+      .callbackStep<number>((next) => {
+        const onError = (err) => next(err);
+        memoServer.once("error", onError);
+        memoServer.listen(0, () => {
+          memoServer.off("error", onError);
+          next(null, memoServer.address().port);
+        });
+      })
+      .step((port) => {
+        fyn._options.metaMemoize = `http://localhost:${port}`;
+        return mgr.fetchMeta({
+          name: "mod-a",
+          semver: "",
+        });
+      })
+      .step((meta) => {
+        expect(meta["dist-tags"].latest).toBe("2.0.0");
       });
-
-      expect(meta["dist-tags"].latest).toBe("2.0.0");
-    } finally {
-      await new Promise((resolve) => memoServer.close(resolve));
-    }
   });
 
   it("should prefer the freshest packument when both cache keys exist", async () => {
