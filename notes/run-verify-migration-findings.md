@@ -394,3 +394,18 @@ saved process-global value on every exit path.
 The package's synchronous `.toThrow()` assertions remain native Vitest checks because
 they have no asynchronous boundary or cleanup requirement; wrapping them would add no
 sequencing benefit.
+
+## xflight
+
+`test/spec/index.spec.ts` now uses bounded chains for six Promise lifecycle tests. The
+rejection-cleanup test previously swallowed any rejection with `.catch(() => {})`; it now
+requires the intended message with `.expectErrorHas("fail")` before checking that the
+inflight entry was removed. The other two failure cases use the same direct expected-error
+contract instead of Vitest Promise wrappers.
+
+The resolve, reject, and manual-removal cases no longer use zero-delay timers to guess when
+the Promise cleanup handler has run. Returning the managed Promise from one step and
+checking the store in the next makes that ordering explicit, while a 500 ms deadline gives
+lost-settlement regressions a focused failure. Clock-measurement sleeps and synchronous
+`.toThrow()` assertions remain unchanged because they do not gain lifecycle semantics from
+a chain.

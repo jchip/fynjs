@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 import Inflight from "../../src/index.js";
 
 describe("Inflight", () => {
@@ -143,7 +144,7 @@ describe("Inflight", () => {
     expect(ifl.resetCheckTime("nonexistent")).toBe(ifl);
   });
 
-  it("should deduplicate concurrent promise calls", async () => {
+  it("should deduplicate concurrent promise calls", () => {
     let callCount = 0;
     const delay = () => {
       callCount++;
@@ -153,66 +154,92 @@ describe("Inflight", () => {
     };
 
     const ifl = new Inflight<number>();
-    const a = ifl.promise("test", delay);
-    const b = ifl.promise("test", delay);
 
-    expect(a).toBe(b);
-    const [r1, r2] = await Promise.all([a, b]);
-    expect(callCount).toBe(1);
-    expect(r1).toBe(r2);
-    expect(ifl.get("test")).toBeUndefined();
+    return verify({ timeout: 500 })
+      .step(() => {
+        const a = ifl.promise("test", delay);
+        const b = ifl.promise("test", delay);
+
+        expect(a).toBe(b);
+        return Promise.all([a, b]);
+      })
+      .step(([r1, r2]) => {
+        expect(callCount).toBe(1);
+        expect(r1).toBe(r2);
+        expect(ifl.get("test")).toBeUndefined();
+      });
   });
 
-  it("should cleanup after promise resolves", async () => {
+  it("should cleanup after promise resolves", () => {
     const ifl = new Inflight<string>();
-    const p = ifl.promise("test", () => Promise.resolve("done"));
 
-    expect(ifl.get("test")).toBeDefined();
-    await p;
-    await new Promise((res) => setTimeout(res, 0));
-    expect(ifl.get("test")).toBeUndefined();
+    return verify({ timeout: 500 })
+      .step(() => {
+        const p = ifl.promise("test", () => Promise.resolve("done"));
+        expect(ifl.get("test")).toBeDefined();
+        return p;
+      })
+      .step(() => expect(ifl.get("test")).toBeUndefined());
   });
 
-  it("should cleanup after promise rejects", async () => {
+  it("should cleanup after promise rejects", () => {
     const ifl = new Inflight<string>();
-    const p = ifl.promise("test", () => Promise.reject(new Error("fail")));
 
-    expect(ifl.get("test")).toBeDefined();
-    await p.catch(() => {});
-    await new Promise((res) => setTimeout(res, 0));
-    expect(ifl.get("test")).toBeUndefined();
+    return verify({ timeout: 500 })
+      .expectErrorHas("fail")
+      .step(() => {
+        const p = ifl.promise("test", () => Promise.reject(new Error("fail")));
+        expect(ifl.get("test")).toBeDefined();
+        return p;
+      })
+      .step(() => expect(ifl.get("test")).toBeUndefined());
   });
 
-  it("should not throw if manually removed before promise settles", async () => {
+  it("should not throw if manually removed before promise settles", () => {
     const ifl = new Inflight<string>();
-    let resolve: (v: string) => void;
-    const p = ifl.promise("test", () => new Promise<string>((r) => { resolve = r; }));
 
-    expect(ifl.get("test")).toBeDefined();
-    ifl.remove("test"); // Manual removal
-    expect(ifl.get("test")).toBeUndefined();
+    return verify({ timeout: 500 })
+      .step(() => {
+        let resolve: (v: string) => void;
+        const p = ifl.promise(
+          "test",
+          () =>
+            new Promise<string>((done) => {
+              resolve = done;
+            })
+        );
 
-    // Settle the promise - auto-cleanup should not throw
-    resolve!("done");
-    await p;
-    await new Promise((res) => setTimeout(res, 0));
-    // Should complete without error
-    expect(ifl.isEmpty).toBe(true);
+        expect(ifl.get("test")).toBeDefined();
+        ifl.remove("test"); // Manual removal
+        expect(ifl.get("test")).toBeUndefined();
+
+        // Settle the promise - auto-cleanup should not throw
+        resolve!("done");
+        return p;
+      })
+      .step(() => {
+        // Should complete without error
+        expect(ifl.isEmpty).toBe(true);
+      });
   });
 
-  it("should reject when factory doesn't return promise", async () => {
+  it("should reject when factory doesn't return promise", () => {
     const ifl = new Inflight<string>();
-    const p = ifl.promise("test", (() => "not a promise") as any);
 
-    await expect(p).rejects.toThrow("didn't return a promise");
+    return verify({ timeout: 500 })
+      .expectErrorHas("didn't return a promise")
+      .step(() => ifl.promise("test", (() => "not a promise") as any));
   });
 
-  it("should reject when factory throws", async () => {
+  it("should reject when factory throws", () => {
     const ifl = new Inflight<string>();
-    const p = ifl.promise("test", () => {
-      throw new Error("factory error");
-    });
 
-    await expect(p).rejects.toThrow("factory error");
+    return verify({ timeout: 500 })
+      .expectErrorHas("factory error")
+      .step(() =>
+        ifl.promise("test", () => {
+          throw new Error("factory error");
+        })
+      );
   });
 });
