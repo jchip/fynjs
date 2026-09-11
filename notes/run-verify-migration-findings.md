@@ -4,7 +4,7 @@ Log of concrete defects and anti-patterns turned up while migrating existing pac
 test suites onto `run-verify`'s `verify()` chain (the FRV-3 adoption pass, distinct from
 `run-verify-explicit-api-proposal.md` and `run-verify-frv5-audit-2026-09-08.md`, which are
 about the library's own design). Packages converted so far, in order: `xarc-run`, `munchy`,
-`xsh`, `item-queue`, `fyn` (two specs), `http-server` (one spec), `xaa` (fully converted),
+`xsh`, `item-queue`, `fyn` (three specs), `http-server` (one spec), `xaa` (fully converted),
 `pkg-preper` (its integration spec), `@fynjs/fetch` (its callback-observation subset),
 `visual-exec` (its error-context and output-file tests), and `check-pkg-new-version` (its
 timeout/abort test).
@@ -159,6 +159,14 @@ exclusive `EventEmitter` outcomes. Both now use bounded `callbackStep()` calls t
 the success and failure listeners before starting extraction, preserving the important
 ordering while removing the per-test adapters. No bug was found; the change makes the
 event contract and its deadline explicit.
+
+`test/spec/pkg-src-manager.spec.ts` had four more hand-written Promises adapting
+`netRetrieveMeta`'s mutually exclusive `defer.resolve`/`defer.reject` callbacks. They now
+use bounded `callbackStep()` calls with explicit error-first mappings. Two manual
+expected-error captures now use `.expectError.step()`, and the tests that replace
+`pacote.packument` restore it through chain cleanup even if a callback stalls or an
+assertion fails. No bug was found; the conversion makes the callback contract, error
+expectations, and cleanup guarantee explicit. No signals are used in this slice.
 
 ## xaa
 

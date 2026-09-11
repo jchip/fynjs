@@ -5,6 +5,7 @@ import * as Yaml from "js-yaml";
 import Path from "path";
 import xsh from "xsh";
 import cacache from "cacache";
+import { verify } from "run-verify";
 import Fyn from "../../lib/fyn";
 import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
@@ -279,7 +280,7 @@ describe("pkg-src-manager", function () {
     expect(meta["dist-tags"].latest).toBe("2.0.0");
   });
 
-  it("requests packument with camelCase pacote v21 options", async () => {
+  it("requests packument with camelCase pacote v21 options", () => {
     const pacote = require("pacote");
     const origPackument = pacote.packument;
     let captured;
@@ -308,32 +309,38 @@ describe("pkg-src-manager", function () {
       fyn,
     });
 
-    try {
-      const result = await new Promise((resolve, reject) => {
+    return verify({
+      timeout: 500,
+      cleanup: () => {
+        pacote.packument = origPackument;
+      },
+    })
+      .callbackStep<any>((next) => {
         mgr.netRetrieveMeta({
           item: { name: "mod-a" },
           packumentUrl: mgr.makePackumentUrl("mod-a"),
           cacheKey: "test-cache-key",
-          defer: { resolve, reject },
+          defer: {
+            resolve: (value) => next(null, value),
+            reject: (err) => next(err),
+          },
         });
+      })
+      .step((result) => {
+        expect(result["dist-tags"].latest).toBe("1.0.0");
+        // the v21-correct camelCase options must reach pacote
+        expect(captured.fullMetadata).toBe(true);
+        expect(captured.fetchRetries).toBe(3);
+        expect(captured.preferOnline).toBe(true);
+        // the old kebab-case / nonexistent names must be gone
+        expect(captured).not.toHaveProperty("full-metadata");
+        expect(captured).not.toHaveProperty("fetch-retries");
+        expect(captured).not.toHaveProperty("cache-policy");
+        expect(captured).not.toHaveProperty("cache-key");
       });
-
-      expect(result["dist-tags"].latest).toBe("1.0.0");
-      // the v21-correct camelCase options must reach pacote
-      expect(captured.fullMetadata).toBe(true);
-      expect(captured.fetchRetries).toBe(3);
-      expect(captured.preferOnline).toBe(true);
-      // the old kebab-case / nonexistent names must be gone
-      expect(captured).not.toHaveProperty("full-metadata");
-      expect(captured).not.toHaveProperty("fetch-retries");
-      expect(captured).not.toHaveProperty("cache-policy");
-      expect(captured).not.toHaveProperty("cache-key");
-    } finally {
-      pacote.packument = origPackument;
-    }
   });
 
-  it("refreshes fetched packument cache timestamps with the manager cache directory", async () => {
+  it("refreshes fetched packument cache timestamps with the manager cache directory", () => {
     const pacote = require("pacote");
     const origPackument = pacote.packument;
     pacote.packument = (name) =>
@@ -357,29 +364,38 @@ describe("pkg-src-manager", function () {
       },
     });
     const cacheKey = "test-cache-key";
-    await cacache.put(fynCacheDir, cacheKey, "cached");
-    const bucket = getBucketPath(fynCacheDir, cacheKey);
+    let bucket;
     const staleTime = new Date(Date.now() - 26 * 60 * 60 * 1000);
-    Fs.utimesSync(bucket, staleTime, staleTime);
 
-    try {
-      await new Promise((resolve, reject) => {
+    return verify({
+      timeout: 500,
+      cleanup: () => {
+        pacote.packument = origPackument;
+      },
+    })
+      .step(() => cacache.put(fynCacheDir, cacheKey, "cached"))
+      .step(() => {
+        bucket = getBucketPath(fynCacheDir, cacheKey);
+        Fs.utimesSync(bucket, staleTime, staleTime);
+      })
+      .callbackStep((next) => {
         mgr.netRetrieveMeta({
           item: { name: "mod-a" },
           packumentUrl: mgr.makePackumentUrl("mod-a"),
           cacheKey,
-          defer: { resolve, reject },
+          defer: {
+            resolve: (value) => next(null, value),
+            reject: (err) => next(err),
+          },
         });
+      })
+      .step(() => new Promise((resolve) => setTimeout(resolve, 20)))
+      .step(() => {
+        expect(Fs.statSync(bucket).mtimeMs).toBeGreaterThan(staleTime.getTime());
       });
-      await new Promise((resolve) => setTimeout(resolve, 20));
-
-      expect(Fs.statSync(bucket).mtimeMs).toBeGreaterThan(staleTime.getTime());
-    } finally {
-      pacote.packument = origPackument;
-    }
   });
 
-  it("settles the in-flight meta count after a URL fetch", async () => {
+  it("settles the in-flight meta count after a URL fetch", () => {
     const mgr = new PkgSrcManager({
       registry: "http://localhost/",
       fynCacheDir,
@@ -395,18 +411,23 @@ describe("pkg-src-manager", function () {
     });
     mgr.fetchUrlSemverMeta = () => Promise.resolve({ name: "gitdep", versions: {} });
 
-    await new Promise((resolve, reject) => {
-      mgr.netRetrieveMeta({
-        item: { name: "gitdep", urlType: "git" },
-        cacheKey: "unused-url-cache-key",
-        defer: { resolve, reject },
+    return verify({ timeout: 500 })
+      .callbackStep((next) => {
+        mgr.netRetrieveMeta({
+          item: { name: "gitdep", urlType: "git" },
+          cacheKey: "unused-url-cache-key",
+          defer: {
+            resolve: (value) => next(null, value),
+            reject: (err) => next(err),
+          },
+        });
+      })
+      .step(() => {
+        expect(mgr._metaStat.inTx).toBe(0);
       });
-    });
-
-    expect(mgr._metaStat.inTx).toBe(0);
   });
 
-  it("settles the in-flight meta count after a failed packument fetch", async () => {
+  it("settles the in-flight meta count after a failed packument fetch", () => {
     const pacote = require("pacote");
     const origPackument = pacote.packument;
     pacote.packument = () => Promise.reject(new Error("registry unavailable"));
@@ -424,29 +445,30 @@ describe("pkg-src-manager", function () {
       },
     });
 
-    try {
-      let error;
-      try {
-        await new Promise((resolve, reject) => {
-          mgr.netRetrieveMeta({
-            item: { name: "mod-a" },
-            packumentUrl: mgr.makePackumentUrl("mod-a"),
-            cacheKey: "unused-packument-cache-key",
-            defer: { resolve, reject },
-          });
+    return verify({
+      timeout: 500,
+      cleanup: () => {
+        pacote.packument = origPackument;
+      },
+    })
+      .expectError.callbackStep((next) => {
+        mgr.netRetrieveMeta({
+          item: { name: "mod-a" },
+          packumentUrl: mgr.makePackumentUrl("mod-a"),
+          cacheKey: "unused-packument-cache-key",
+          defer: {
+            resolve: (value) => next(null, value),
+            reject: (err) => next(err),
+          },
         });
-      } catch (err) {
-        error = err;
-      }
-
-      expect(error).toBeInstanceOf(Error);
-      expect(mgr._metaStat.inTx).toBe(0);
-    } finally {
-      pacote.packument = origPackument;
-    }
+      })
+      .step((error) => {
+        expect(error).toBeInstanceOf(Error);
+        expect(mgr._metaStat.inTx).toBe(0);
+      });
   });
 
-  it("does not repeat a failed network metadata request", async () => {
+  it("does not repeat a failed network metadata request", () => {
     const mgr = new PkgSrcManager({
       registry: "http://localhost/",
       fynCacheDir,
@@ -468,16 +490,13 @@ describe("pkg-src-manager", function () {
       item.defer.reject(error);
     };
 
-    let caught;
-    try {
-      await mgr.fetchMeta({ name: "missing", semver: "" });
-    } catch (err) {
-      caught = err;
-    }
-
-    expect(caught).toBe(error);
-    expect(queued).toBe(1);
-    expect(mgr._metaStat.wait).toBe(0);
+    return verify({ timeout: 500 })
+      .expectError.step(() => mgr.fetchMeta({ name: "missing", semver: "" }))
+      .step((caught) => {
+        expect(caught).toBe(error);
+        expect(queued).toBe(1);
+        expect(mgr._metaStat.wait).toBe(0);
+      });
   });
 
   it("uses stale metadata when its network refresh fails", async () => {
@@ -562,7 +581,7 @@ describe("pkg-src-manager", function () {
     expect(mgr._metaStat.wait).toBe(0);
   });
 
-  it("keeps the offline URL cache-miss error balanced", async () => {
+  it("keeps the offline URL cache-miss error balanced", () => {
     const item = { name: "gitdep", semver: "github:user/missing#main", urlType: "github" };
     const mgr = new PkgSrcManager({
       registry: "http://localhost/",
@@ -580,16 +599,13 @@ describe("pkg-src-manager", function () {
     let queued = 0;
     mgr._netQ.addItem = () => queued++;
 
-    let error;
-    try {
-      await mgr.fetchMeta(item);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toContain("offline");
-    expect(queued).toBe(0);
-    expect(mgr._metaStat.wait).toBe(0);
+    return verify({ timeout: 500 })
+      .expectError.step(() => mgr.fetchMeta(item))
+      .step((error) => {
+        expect((error as Error).message).toContain("offline");
+        expect(queued).toBe(0);
+        expect(mgr._metaStat.wait).toBe(0);
+      });
   });
 
   it("tarball-stream fallback requests full metadata with the correct camelCase option", () => {
