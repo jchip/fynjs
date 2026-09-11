@@ -1,3 +1,267 @@
+# 9/11/2026
+
+## Packages
+
+-   `@fynjs/cli-args@1.1.2` `(1.1.1 => 1.1.2)`
+-   `@fynjs/fetch@1.0.1` `(1.0.0 => 1.0.1)`
+-   `@fynjs/run@1.1.3` `(1.1.2 => 1.1.3)`
+-   `@fynjs/ts-resolve@1.0.2` `(1.0.1 => 1.0.2)`
+-   `@fynpo/base@2.1.3` `(2.1.2 => 2.1.3)`
+-   `@jchip/error@2.1.2` `(2.1.1 => 2.1.2)`
+-   `aveazul@2.1.3` `(2.1.2 => 2.1.3)`
+-   `chalker@2.1.2` `(2.1.1 => 2.1.2)`
+-   `check-pkg-new-version@1.1.2` `(1.1.1 => 1.1.2)`
+-   `check-pkg-new-version-engine@2.1.2` `(2.1.1 => 2.1.2)`
+-   `filter-scan-dir@2.1.3` `(2.1.2 => 2.1.3)`
+-   `fyn@3.1.4` `(3.1.3 => 3.1.4)`
+-   `fynpo@3.1.4` `(3.1.3 => 3.1.4)`
+-   `fynpo-cli@3.1.4` `(3.1.3 => 3.1.4)`
+-   `item-queue@2.1.4` `(2.1.3 => 2.1.4)`
+-   `munchy@2.0.2` `(2.0.1 => 2.0.2)`
+-   `optional-import@1.1.2` `(1.1.1 => 1.1.2)`
+-   `pkg-preper@0.3.2` `(0.3.1 => 0.3.2)`
+-   `publish-util@3.1.2` `(3.1.1 => 3.1.2)`
+-   `run-verify@2.1.3` `(2.1.2 => 2.1.3)`
+-   `string-array@2.1.2` `(2.1.1 => 2.1.2)`
+-   `unwrap-npm-cmd@2.1.2` `(2.1.1 => 2.1.2)`
+-   `visual-exec@1.1.4` `(1.1.3 => 1.1.4)`
+-   `visual-logger@2.1.3` `(2.1.2 => 2.1.3)`
+-   `xaa@3.1.2` `(3.1.1 => 3.1.2)`
+-   `xenv-config@2.1.2` `(2.1.1 => 2.1.2)`
+-   `xflight@3.1.3` `(3.1.2 => 3.1.3)`
+-   `xsh@1.1.3` `(1.1.2 => 1.1.3)`
+
+## Commits
+
+-   `packages/cli-args`
+
+    -   FRV-3: adopt run-verify in cli-args tests [commit](https://github.com/jchip/fynjs/commit/eadf3fcf443d3e1d918a75d49393f8b6bc3a1cb6)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/confippet`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/create-monorepo`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/dual-mode-template`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/fetch`
+
+    -   FRV-3: migrate fetch request observation tests [commit](https://github.com/jchip/fynjs/commit/43ce8276f5488f5ad16cd24eed6ac2f6ce17a29e)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/http-server`
+
+    -   FRV-3: use expected error message modifiers [commit](https://github.com/jchip/fynjs/commit/ac4495f60be59b11979f5176a5806a33a2e39099)
+    -   FRV-3: fix http-server typecheck errors caught by ci:check [commit](https://github.com/jchip/fynjs/commit/bb41864b5cdd46c65ace6c885050aad10b305a60)
+    -   FRV-3: migrate http-servers spec to the verify chain [commit](https://github.com/jchip/fynjs/commit/8a448bd7946d05efe64d2395e822fd4085fedec5)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/xarc-run`
+
+    -   FRV-3: use expected error message modifiers [commit](https://github.com/jchip/fynjs/commit/ac4495f60be59b11979f5176a5806a33a2e39099)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/ts-resolve`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/fynpo-base`
+
+    -   FRV-3: adopt run-verify in fynpo-base tests [commit](https://github.com/jchip/fynjs/commit/8d875c06ffe74bec5ed493df04d067f199e1af2c)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/error`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/aveazul`
+
+    -   FRV-3: use expected error message modifiers [commit](https://github.com/jchip/fynjs/commit/ac4495f60be59b11979f5176a5806a33a2e39099)
+    -   FRV-3: use direct signal references in aveazul tests [commit](https://github.com/jchip/fynjs/commit/d9fa118e4688b9e73e4a5dca47755e4ab3bb978b)
+    -   FRV-3: continue aveazul verify chain migration [commit](https://github.com/jchip/fynjs/commit/14fd50500f200ad255c5aaecf8a1258476d37a18)
+    -   refresh lockfiles [commit](https://github.com/jchip/fynjs/commit/baf5fe28fc8486c61855e5d20c4391847843c21b)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/bluebird`
+
+    -   refresh lockfiles [commit](https://github.com/jchip/fynjs/commit/baf5fe28fc8486c61855e5d20c4391847843c21b)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/chalker`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/check-pkg-new-version`
+
+    -   FRV-3: migrate package-version timeout test [commit](https://github.com/jchip/fynjs/commit/2eedc3a274abb0d8158613f778cdf7edea7f0cb0)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/check-pkg-new-version-engine`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/filter-scan-dir`
+
+    -   FRV-3: adopt run-verify in filter-scan-dir tests [commit](https://github.com/jchip/fynjs/commit/96c91cacaeba48327f175c116ea1ab27f9de8e37)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/fyn`
+
+    -   FRV-3: migrate fyn resolver and policy tests [commit](https://github.com/jchip/fynjs/commit/7eb1d22b7f16a9ebcbd7ce63080abbcb62c36b69)
+    -   FRV-3: migrate queue retry and backpressure tests [commit](https://github.com/jchip/fynjs/commit/b56fe82d2e35009be45b643f1f5650a0a3d54198)
+    -   FRV-3: use expected error message modifiers [commit](https://github.com/jchip/fynjs/commit/ac4495f60be59b11979f5176a5806a33a2e39099)
+    -   FRV-3: migrate fyn package source manager tests [commit](https://github.com/jchip/fynjs/commit/dea9c6654364f5f4a0b649f982020d7a52a957dc)
+    -   FRV-3: migrate fyn dist extractor event tests [commit](https://github.com/jchip/fynjs/commit/33e41b34fee3b9a5b6364a918ec1a19c6e7b4d84)
+    -   FRV-3: migrate fyns lifecycle-scripts spec to the verify chain [commit](https://github.com/jchip/fynjs/commit/75b37f7258e9da6aaf218c9edfafc6b73af73026)
+    -   refresh lockfiles [commit](https://github.com/jchip/fynjs/commit/baf5fe28fc8486c61855e5d20c4391847843c21b)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+    -   Rewrite fyn README intro as a clearer, more direct selling message [commit](https://github.com/jchip/fynjs/commit/dc26cc3be9e0945a56cf22b9ce897afd89a8aab5)
+    -   Align fyn README description with the updated package.json wording [commit](https://github.com/jchip/fynjs/commit/c9c362baac3554c8fbbcb97a9565f58579b91810)
+
+-   `packages/fynpo`
+
+    -   Fix fynpo stale-copy false positives [commit](https://github.com/jchip/fynjs/commit/10ede7c0c2f222b4d770e7142335cc16366aa0b2)
+    -   Add fynpo --since change boundary [commit](https://github.com/jchip/fynjs/commit/39c2b3c9d2def9b4bae15a9de57a12599895f980)
+    -   Fix fynpo changelog full-history performance [commit](https://github.com/jchip/fynjs/commit/464df75a42a0eca271e9f0426b5a232f581e0059)
+    -   FRV-3: adopt run-verify in fynpo cache tests [commit](https://github.com/jchip/fynjs/commit/e6183addb2375407ad55da9dc8c7e22187cdbcca)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/fynpo-cli`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/init-package`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/item-queue`
+
+    -   FRV-3: migrate queue retry and backpressure tests [commit](https://github.com/jchip/fynjs/commit/b56fe82d2e35009be45b643f1f5650a0a3d54198)
+    -   refresh lockfiles [commit](https://github.com/jchip/fynjs/commit/baf5fe28fc8486c61855e5d20c4391847843c21b)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/munchy`
+
+    -   FRV-3: migrate queue retry and backpressure tests [commit](https://github.com/jchip/fynjs/commit/b56fe82d2e35009be45b643f1f5650a0a3d54198)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/optional-import`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/pkg-preper`
+
+    -   FRV-3: migrate pkg-preper integration tests [commit](https://github.com/jchip/fynjs/commit/ac5a0d5daca0927523996c2839f4ae59bdddf7ac)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/publish-util`
+
+    -   FPU-1: move run-verify dependency to monorepo root [commit](https://github.com/jchip/fynjs/commit/da1afda11f3ab2ec3944eb157bfc394302010e87)
+    -   FRV-3: adopt run-verify in publish-util tests [commit](https://github.com/jchip/fynjs/commit/7eac621c2c55cf913a305b9b137991e365101819)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/run-verify`
+
+    -   FRV-3: document resource lifecycle migrations [commit](https://github.com/jchip/fynjs/commit/8570e4b5ab1e389cb7eda7185fe9b7594d098a2a)
+    -   FRV-3: match expected error codes [commit](https://github.com/jchip/fynjs/commit/62c18b6a395ec6a5c5369917d9b16f80a766d7af)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/string-array`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/visual-exec`
+
+    -   FRV-3: migrate visual-exec error and file tests [commit](https://github.com/jchip/fynjs/commit/e927e917677b458c5800b555649db766e60ebb4d)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/visual-logger`
+
+    -   FRV-3: migrate visual logger cleanup tests [commit](https://github.com/jchip/fynjs/commit/420c6192b921a607c212f576aeba96dc0319ac46)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/xaa`
+
+    -   FRV-3: use expected error message modifiers [commit](https://github.com/jchip/fynjs/commit/ac4495f60be59b11979f5176a5806a33a2e39099)
+    -   FRV-3: fix xaa typecheck errors caught by ci:check [commit](https://github.com/jchip/fynjs/commit/eb2a4ad0b9810aefc644d88c01eee06f64f9451c)
+    -   FRV-3: finish migrating xaas spec to the verify chain [commit](https://github.com/jchip/fynjs/commit/325122a5566fe6ce097447885989ef13b63bd629)
+    -   FRV-3: migrate part of xaas spec to the verify chain [commit](https://github.com/jchip/fynjs/commit/af92a7493ee9fd1815320194fe5f5e6301acc6b5)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/xenv-config`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `packages/xflight`
+
+    -   FRV-3: adopt run-verify in xflight tests [commit](https://github.com/jchip/fynjs/commit/356ea57f76c1c0f6d32b28dfe92e74f0872835db)
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `packages/xsh`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+    -   Normalize author and contributors across all packages [commit](https://github.com/jchip/fynjs/commit/4925a826599a41539e62ff0a91db90423b081e9c)
+
+-   `docusaurus`
+
+    -   Normalize copyright notices to 2022-2026 Joel Chen [commit](https://github.com/jchip/fynjs/commit/89c869cbf7627d41e7a1218c049db44f456b6601)
+
+-   `notes`
+
+    -   FRV-3: adopt run-verify in publish-util tests [commit](https://github.com/jchip/fynjs/commit/7eac621c2c55cf913a305b9b137991e365101819)
+    -   FRV-3: adopt run-verify in xflight tests [commit](https://github.com/jchip/fynjs/commit/356ea57f76c1c0f6d32b28dfe92e74f0872835db)
+    -   FRV-3: adopt run-verify in cli-args tests [commit](https://github.com/jchip/fynjs/commit/eadf3fcf443d3e1d918a75d49393f8b6bc3a1cb6)
+    -   FRV-3: adopt run-verify in fynpo-base tests [commit](https://github.com/jchip/fynjs/commit/8d875c06ffe74bec5ed493df04d067f199e1af2c)
+    -   FRV-3: adopt run-verify in fynpo cache tests [commit](https://github.com/jchip/fynjs/commit/e6183addb2375407ad55da9dc8c7e22187cdbcca)
+    -   FRV-3: adopt run-verify in filter-scan-dir tests [commit](https://github.com/jchip/fynjs/commit/96c91cacaeba48327f175c116ea1ab27f9de8e37)
+    -   FRV-3: migrate fyn resolver and policy tests [commit](https://github.com/jchip/fynjs/commit/7eb1d22b7f16a9ebcbd7ce63080abbcb62c36b69)
+    -   FRV-3: migrate queue retry and backpressure tests [commit](https://github.com/jchip/fynjs/commit/b56fe82d2e35009be45b643f1f5650a0a3d54198)
+    -   FRV-3: migrate visual logger cleanup tests [commit](https://github.com/jchip/fynjs/commit/420c6192b921a607c212f576aeba96dc0319ac46)
+    -   FRV-3: migrate fyn package source manager tests [commit](https://github.com/jchip/fynjs/commit/dea9c6654364f5f4a0b649f982020d7a52a957dc)
+    -   FRV-3: migrate package-version timeout test [commit](https://github.com/jchip/fynjs/commit/2eedc3a274abb0d8158613f778cdf7edea7f0cb0)
+    -   FRV-3: migrate visual-exec error and file tests [commit](https://github.com/jchip/fynjs/commit/e927e917677b458c5800b555649db766e60ebb4d)
+    -   FRV-3: migrate fetch request observation tests [commit](https://github.com/jchip/fynjs/commit/43ce8276f5488f5ad16cd24eed6ac2f6ce17a29e)
+    -   FRV-3: migrate pkg-preper integration tests [commit](https://github.com/jchip/fynjs/commit/ac5a0d5daca0927523996c2839f4ae59bdddf7ac)
+    -   FRV-3: migrate fyn dist extractor event tests [commit](https://github.com/jchip/fynjs/commit/33e41b34fee3b9a5b6364a918ec1a19c6e7b4d84)
+    -   FRV-3: continue aveazul verify chain migration [commit](https://github.com/jchip/fynjs/commit/14fd50500f200ad255c5aaecf8a1258476d37a18)
+    -   FRV-3: update xaa findings - spec is now fully converted [commit](https://github.com/jchip/fynjs/commit/b51624540eeb4d3608175696103d790c1b372551)
+    -   FRV-3: document xaa migration findings and the step-adoption caveat [commit](https://github.com/jchip/fynjs/commit/97ae9a9ebd66f137f9939a24110b8c9bbb416293)
+    -   FRV-3: document the structural-legibility axis for migration targets [commit](https://github.com/jchip/fynjs/commit/adaa02d3d0967777b487841c22d36b4fa02fc533)
+    -   FRV-3: document fyn and http-server run-verify migration findings [commit](https://github.com/jchip/fynjs/commit/e158879e66ec7254da632554c93289e2c27c0abc)
+
+-   `MISC`
+
+    -   Disable v3 publish tag for fyn and fynpo in fynpo.json [commit](https://github.com/jchip/fynjs/commit/12e539c6c4acff101fc62c091745d773df1eb525)
+    -   Set publish git tag template to fynjs-rel prefix [commit](https://github.com/jchip/fynjs/commit/cb0d59604eb74eb2c11d29a59ac3ebd97af2f14f)
+
 # 9/10/2026
 
 ## Packages
