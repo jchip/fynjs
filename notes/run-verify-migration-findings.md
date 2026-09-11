@@ -409,3 +409,21 @@ checking the store in the next makes that ordering explicit, while a 500 ms dead
 lost-settlement regressions a focused failure. Clock-measurement sleeps and synchronous
 `.toThrow()` assertions remain unchanged because they do not gain lifecycle semantics from
 a chain.
+
+## publish-util
+
+The four `test/pack-roundtrip.spec.ts` cases mutate a manifest during `prePack()` and rely
+on `postPack()` to restore it. Previously, any intermediate assertion or setup failure
+skipped `postPack()`. Each lifecycle now runs in a bounded chain with a per-test restoration
+flag set before `prePack()` starts and cleared only after `postPack()` finishes. Cleanup
+returns to the original package directory before retrying restoration, which also gives the
+legacy no-sidecar fallback a deterministic target. The twin-copy case uses `.keep` to carry
+its assertion data through the restoration step without a manual pass-through return.
+
+The outer fixture teardown remains a second backstop for process-wide CWD/environment state
+and temporary files. It now records the backup path while the fixture manifest is known to
+be readable instead of suppressing a later `loadInfo()` failure against possibly damaged
+state. Backup removal is wrapped so temporary-directory removal still runs if that first
+cleanup fails. This migration shows the distinction between lifecycle cleanup, which
+restores the subject under test, and fixture cleanup, which prevents test pollution; both
+are required here.
