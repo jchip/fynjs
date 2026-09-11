@@ -224,14 +224,12 @@ describe("collateCommitsPackages honors --only", () => {
   };
 
   const commits = { ids: ["c1", "c2"], c1: "work on optional-import", c2: "work on chalker" };
+  const diffTreeOutput =
+    "\x1ec1\n\npackages/optional-import/src/index.ts\n" +
+    "\x1ec2\n\npackages/chalker/src/index.ts\n";
 
   const run = (only?: string[]) => {
-    execSync.mockImplementation((_cmd, args) => {
-      const id = args[args.length - 1];
-      return id === "c1"
-        ? "packages/optional-import/src/index.ts"
-        : "packages/chalker/src/index.ts";
-    });
+    execSync.mockReturnValue(diffTreeOutput);
     return collateCommitsPackages({
       commits,
       changed: {},
@@ -249,5 +247,24 @@ describe("collateCommitsPackages honors --only", () => {
     const collated = await run(["optional-import"]);
     expect(collated.realPackages).toEqual(["optional-import"]);
     expect(collated.packages.chalker).toBeUndefined();
+  });
+
+  it("loads files for every commit with one git process", async () => {
+    execSync.mockReturnValue(diffTreeOutput);
+
+    const collated = await collateCommitsPackages({
+      commits,
+      changed: {},
+      opts: { cwd: ".", graph, changeLog: "" },
+      selectiveBaselines: {},
+    });
+
+    expect(execSync).toHaveBeenCalledTimes(1);
+    expect(execSync).toHaveBeenCalledWith(
+      "git",
+      ["diff-tree", "--stdin", "--format=%x1e%H", "--name-only", "--root", "-r"],
+      { cwd: ".", input: "c1\nc2" }
+    );
+    expect(collated.realPackages.sort()).toEqual(["chalker", "optional-import"]);
   });
 });

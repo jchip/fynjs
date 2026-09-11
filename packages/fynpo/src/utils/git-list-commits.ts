@@ -172,60 +172,66 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
     })
   );
 
-  return Promise.map(
-    commitIds,
-    // typed because `commits` is indexed by it below, and aveazul's map infers unknown
-    (id: string) => {
-      const args = ["diff-tree", "--no-commit-id", "--name-only", "--root", "-r", `${id}`];
-      const stdout = execSync("git", args, execOpts);
-      let files = stdout.split("\n").filter((x) => x.trim().length > 0);
+  const records = commitIds.length
+    ? execSync(
+        "git",
+        ["diff-tree", "--stdin", "--format=%x1e%H", "--name-only", "--root", "-r"],
+        { ...execOpts, input: commitIds.join("\n") }
+      )
+        .split("\x1e")
+        .filter((x) => x.trim().length > 0)
+    : [];
 
-      if (filterFunctions.length) {
-        for (const filerFn of filterFunctions) {
-          files = files.filter(filerFn);
+  records.forEach((record) => {
+    const [idLine, ...fileLines] = record.split("\n");
+    const id = idLine.trim();
+    let files = fileLines.filter((x) => x.trim().length > 0);
+
+    if (filterFunctions.length) {
+      for (const filerFn of filterFunctions) {
+        files = files.filter(filerFn);
+      }
+    }
+
+    const handled = { packages: {}, others: {}, files: {} };
+
+    files.reduce((a, x) => {
+      const parts = x.split("/");
+      const add = (group, key) => {
+        if (handled[group][key]) return;
+        a[group][key] ??= {};
+        if (!a[group][key].msgs) {
+          a[group][key].msgs = [];
         }
+        a[group][key].msgs.push({ m: commits[id], id });
+        handled[group][key] = true;
+      };
+
+      const ownerPkg = findPkgForFile(x);
+      if (ownerPkg) {
+        // not part of this selective release
+        if (selection && !selection.has(ownerPkg.name)) {
+          return a;
+        }
+        // already shipped for this package by an earlier selective release - checked before
+        // realPackages, so a package with nothing new left does not show up as changed at all
+        if (selectiveBaselines[ownerPkg.name]?.has(id)) {
+          return a;
+        }
+        if (collated.realPackages.indexOf(ownerPkg.name) < 0) {
+          collated.realPackages.push(ownerPkg.name);
+          a.packages[ownerPkg.name] = { dirName: ownerPkg.dirName };
+        }
+        add("packages", ownerPkg.name);
+      } else if (parts.length > 1) {
+        add("others", parts[0]);
+      } else {
+        add("files", parts[0]);
       }
 
-      const handled = { packages: {}, others: {}, files: {} };
+      return a;
+    }, collated);
+  });
 
-      files.reduce((a, x) => {
-        const parts = x.split("/");
-        const add = (group, key) => {
-          if (handled[group][key]) return;
-          a[group][key] ??= {};
-          if (!a[group][key].msgs) {
-            a[group][key].msgs = [];
-          }
-          a[group][key].msgs.push({ m: commits[id], id });
-          handled[group][key] = true;
-        };
-
-        const ownerPkg = findPkgForFile(x);
-        if (ownerPkg) {
-          // not part of this selective release
-          if (selection && !selection.has(ownerPkg.name)) {
-            return a;
-          }
-          // already shipped for this package by an earlier selective release - checked before
-          // realPackages, so a package with nothing new left does not show up as changed at all
-          if (selectiveBaselines[ownerPkg.name]?.has(id)) {
-            return a;
-          }
-          if (collated.realPackages.indexOf(ownerPkg.name) < 0) {
-            collated.realPackages.push(ownerPkg.name);
-            a.packages[ownerPkg.name] = { dirName: ownerPkg.dirName };
-          }
-          add("packages", ownerPkg.name);
-        } else if (parts.length > 1) {
-          add("others", parts[0]);
-        } else {
-          add("files", parts[0]);
-        }
-
-        return a;
-      }, collated);
-      return "";
-    },
-    { concurrency: 1 }
-  ).then(() => collated);
+  return Promise.resolve(collated);
 };
