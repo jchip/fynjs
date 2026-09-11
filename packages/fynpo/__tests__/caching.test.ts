@@ -1,9 +1,38 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import http from "node:http";
 import Fs from "node:fs";
+import type { AddressInfo } from "node:net";
 import Path from "node:path";
 import os from "node:os";
+import { verify } from "run-verify";
 import { PkgBuildCache } from "../src/caching.js";
+
+const listen = (server: http.Server, hostname?: string) => {
+  let onError: ((error: Error) => void) | undefined;
+
+  return verify({
+    timeout: 500,
+    cleanup: () => onError && server.off("error", onError),
+  }).callbackStep<number>((next) => {
+    onError = (error) => next(error);
+    server.once("error", onError);
+    const onListening = () => next(null, (server.address() as AddressInfo).port);
+    if (hostname) {
+      server.listen(0, hostname, onListening);
+    } else {
+      server.listen(0, onListening);
+    }
+  });
+};
+
+const close = (server?: http.Server) =>
+  verify({ timeout: 500 }).callbackStep((next) => {
+    if (!server?.listening) {
+      next(null);
+      return;
+    }
+    server.close((error) => (error ? next(error) : next(null)));
+  });
 
 describe("PkgBuildCache remote operations", () => {
   let server: http.Server;
@@ -35,7 +64,7 @@ describe("PkgBuildCache remote operations", () => {
                   "dist/index.js": "hash123",
                 },
               },
-            })
+            }),
           );
         } else if (req.method === "GET" && req.url?.endsWith(".js")) {
           res.writeHead(200, { "content-type": "application/octet-stream" });
@@ -50,26 +79,23 @@ describe("PkgBuildCache remote operations", () => {
       });
     });
 
-    await new Promise<void>((resolve) => {
-      server.listen(0, () => {
-        const port = (server.address() as any).port;
-        serverUrl = `http://localhost:${port}`;
-        resolve();
-      });
-    });
+    const port = await listen(server);
+    serverUrl = `http://localhost:${port}`;
   });
 
-  afterEach(async () => {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await Fs.promises.rm(tempDir, { recursive: true, force: true });
-  });
+  afterEach(() =>
+    verify({
+      timeout: 1000,
+      cleanup: () => Fs.promises.rm(tempDir, { recursive: true, force: true }),
+    }).step(() => close(server)),
+  );
 
   it("checkCache fetches remote json metadata via fetch", async () => {
     const pkgDir = Path.join(tempDir, "packages/pkg-a");
     await Fs.promises.mkdir(pkgDir, { recursive: true });
     await Fs.promises.writeFile(
       Path.join(pkgDir, "package.json"),
-      JSON.stringify({ name: "pkg-a", version: "1.0.0" })
+      JSON.stringify({ name: "pkg-a", version: "1.0.0" }),
     );
 
     const cache = new PkgBuildCache(
@@ -85,7 +111,7 @@ describe("PkgBuildCache remote operations", () => {
           include: ["package.json"],
         },
       },
-      "test-label"
+      "test-label",
     );
 
     const depData: any = {
@@ -122,7 +148,7 @@ describe("PkgBuildCache remote operations", () => {
         },
       },
       {},
-      "test-label"
+      "test-label",
     );
 
     cache.pkgInfo = { name: "pkg-a", path: "packages/pkg-a" } as any;
@@ -162,7 +188,7 @@ describe("PkgBuildCache remote operations", () => {
         },
       },
       {},
-      "test-label"
+      "test-label",
     );
 
     cache.filesCacheDir = Path.join(cacheDir, "files");
@@ -192,7 +218,7 @@ describe("PkgBuildCache remote operations", () => {
 
   it("uploadCacheToRemote falls back from PUT to POST if server returns 405", async () => {
     // Reconfigure server handler to return 405 on PUT and 200 on POST
-    server.close();
+    await close(server);
     server = http.createServer((req, res) => {
       if (req.method === "PUT") {
         res.writeHead(405, { "content-type": "text/plain" });
@@ -215,11 +241,8 @@ describe("PkgBuildCache remote operations", () => {
       res.end();
     });
 
-    await new Promise<void>((resolve) => {
-      server.listen(0, "127.0.0.1", () => resolve());
-    });
-    const addr = server.address() as any;
-    const newServerUrl = `http://127.0.0.1:${addr.port}/cache/`;
+    const port = await listen(server, "127.0.0.1");
+    const newServerUrl = `http://127.0.0.1:${port}/cache/`;
 
     const pkgDir = Path.join(tempDir, "packages/pkg-b");
     const distDir = Path.join(pkgDir, "dist");
@@ -236,7 +259,7 @@ describe("PkgBuildCache remote operations", () => {
         },
       },
       {},
-      "test-label"
+      "test-label",
     );
 
     cache.pkgInfo = { name: "pkg-b", path: "packages/pkg-b" } as any;
@@ -261,17 +284,14 @@ describe("PkgBuildCache remote operations", () => {
 
   it("downloadCacheFromRemote cleans up destination file on download failure", async () => {
     // Reconfigure server to return 500 error on download
-    server.close();
+    await close(server);
     server = http.createServer((_req, res) => {
       res.writeHead(500, { "content-type": "text/plain" });
       res.end("Internal Server Error");
     });
 
-    await new Promise<void>((resolve) => {
-      server.listen(0, "127.0.0.1", () => resolve());
-    });
-    const addr = server.address() as any;
-    const errServerUrl = `http://127.0.0.1:${addr.port}/cache/`;
+    const port = await listen(server, "127.0.0.1");
+    const errServerUrl = `http://127.0.0.1:${port}/cache/`;
 
     const cacheDir = Path.join(tempDir, ".cache-err");
     const cache = new PkgBuildCache(
@@ -284,7 +304,7 @@ describe("PkgBuildCache remote operations", () => {
         },
       },
       {},
-      "test-label"
+      "test-label",
     );
 
     cache.filesCacheDir = Path.join(cacheDir, "files");
@@ -299,7 +319,7 @@ describe("PkgBuildCache remote operations", () => {
       },
     };
 
-    await expect(cache.downloadCacheFromRemote()).rejects.toThrow();
+    await verify({ timeout: 2000 }).expectError.step(() => cache.downloadCacheFromRemote());
 
     const targetFile = Path.join(cache.filesCacheDir, "hash-err-1.js");
     const exists = await Fs.promises

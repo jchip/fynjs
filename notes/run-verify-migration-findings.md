@@ -345,3 +345,22 @@ The asynchronous rethrow case now uses `.expectErrorHas("no such file or directo
 instead of a manual catch and message assertion, while retaining its `Error` instance
 assertion downstream. Ordinary direct scans and Vitest's native synchronous `.toThrow()`
 case remain unchanged because wrapping them would add no useful sequencing or cleanup.
+
+## fynpo
+
+`__tests__/caching.test.ts` is the package's first `run-verify` adoption. Its three HTTP
+server listen adapters previously had success callbacks only, so bind errors could not
+reject those setup operations directly. A shared 500 ms `callbackStep()` helper now maps
+the server's `error` event to `next(error)` and successful listening to
+`next(null, port)`, removing its temporary listener through cleanup.
+
+The two tests that replace the fixture server previously called `server.close()` without
+awaiting its callback and then overwrote the only reference to that server. They now await
+a bounded close helper before replacement. Teardown uses the same helper and moves its
+temporary-directory removal into chain cleanup, so a close failure or timeout cannot skip
+filesystem cleanup. These are concrete lifecycle and test-isolation fixes.
+
+The failed-download case now expresses its existing failure-only requirement with
+`.expectError.step()`; no message or code constraint was invented. The other cache
+operations remain direct `async` tests because their returned Promises already propagate
+failures and have no separate completion boundary to express.
