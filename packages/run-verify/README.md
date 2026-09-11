@@ -267,7 +267,7 @@ A test should show what it requires. These APIs say it:
 | What you require | How to write it |
 | --- | --- |
 | An operation throws, rejects, or calls back with an error | `expectError(operation)`, then a step that checks the error |
-| The error has a given message | `expectErrorHas(operation, text)` or `expectErrorToBe(operation, text)` |
+| The error has a given message, and optionally a code | `expectErrorHas(operation, text, code?)` or `expectErrorToBe(operation, text, code?)` |
 | A callback runs and gives the expected result | `withCallback(register)`, then a step that checks the result |
 | A signal fires and gives the expected value | Register a `runDefer`, resolve it from the signal, then `defer.wait()` and a step that checks the value |
 | Every registered signal settles | Pass each defer to `asyncVerify`. It waits for all of them before it passes. |
@@ -744,8 +744,8 @@ two-parameter function must annotate its parameters to be checked under `strict`
 | Modifier | Effect on the next `.step` |
 | --- | --- |
 | `.expectError` | The step must fail. A throw, a rejection and `next(err)` all satisfy it, and the error becomes the next step's value. Success fails the run. |
-| `.expectErrorToBe(msg)` | Like `.expectError`, and the error message must equal `msg`. |
-| `.expectErrorHas(msg)` | Like `.expectError`, and the error message must contain `msg`. |
+| `.expectErrorToBe(msg, code?)` | Like `.expectError`, the error message must equal `msg`, and its code must equal `code` when given. |
+| `.expectErrorHas(msg, code?)` | Like `.expectError`, the error message must contain `msg`, and its code must equal `code` when given. |
 | `.keep` | The step passes its input through, whatever it returns. Use it for assertions that should not consume the value. |
 
 
@@ -765,12 +765,41 @@ function returns, `.keep.step` forwards the input.
 An expected error's value is typed `unknown`, not `Error`, because a rejection value can
 be anything.
 
+Choose the narrowest expected-error modifier that states the requirement:
+
+- Use `.expectError` when the test needs only a failure or has a message check more
+  complex than exact/substring matching.
+- Use `.expectErrorToBe(msg, code?)` instead of a following
+  `expect(error.message).toBe(msg)` or equivalent exact-equality assertion.
+- Use `.expectErrorHas(msg, code?)` instead of a following
+  `expect(error.message).toContain(msg)` or equivalent substring assertion.
+
+When `code` is given, it is compared with strict equality to the top-level error's
+`.code`. Codes may be strings, as in Node errors, or numbers, as in HTTP-style errors.
+
 The two message forms keep a whole test on one line when the message is all you need to
 check:
 
 ```js
 await verify().expectErrorToBe("Task foo not found").callbackStep(next => run("foo", next));
+await verify()
+  .expectErrorHas("not found", "TASK_NOT_FOUND")
+  .step(() => loadTask("foo"));
 ```
+
+They still forward the error to the following step, so keep that step for additional
+structural checks and remove only the redundant message assertion:
+
+```js
+await verify()
+  .expectErrorHas("not found", "TASK_NOT_FOUND")
+  .step(() => loadTask("foo"))
+  .step(error => assert.equal(error.task, "foo"));
+```
+
+Both message modifiers inspect the top-level error's `.message` and, when given, `.code`.
+Use `.expectError` and a following step for regular expressions, normalized messages,
+nested errors such as `error.cause.message`, or any other custom predicate.
 
 ## Config
 
@@ -1137,30 +1166,30 @@ expectError(() => {}).withCallback;
 ### `expectErrorHas`
 
 ```js
-expectErrorHas(checkFunc, msg);
+expectErrorHas(checkFunc, msg, code?);
 ```
 
 Shortcut for:
 
 ```js
-wrapCheck(checkFunc).expectErrorHas(msg);
+wrapCheck(checkFunc).expectErrorHas(msg, code?);
 ```
 
-Decorate a [`checkFunc`](#checkfunc) expected to throw, reject, or invoke an error-first callback with an error with message containing `msg`. Its error will be passed to the next [`checkFunc`](#checkfunc).
+Decorate a [`checkFunc`](#checkfunc) expected to throw, reject, or invoke an error-first callback with an error whose message contains `msg`. When `code` is given, its top-level `code` must also equal it. The error is passed to the next [`checkFunc`](#checkfunc).
 
 ### `expectErrorToBe`
 
 ```js
-expectErrorToBe(checkFunc, msg);
+expectErrorToBe(checkFunc, msg, code?);
 ```
 
 Shortcut for:
 
 ```js
-wrapCheck(checkFunc).expectErrorToBe(msg);
+wrapCheck(checkFunc).expectErrorToBe(msg, code?);
 ```
 
-Decorate a [`checkFunc`](#checkfunc) expected to throw, reject, or invoke an error-first callback with an error with message to be `msg`. Its error will be passed to the next `checkFunc`.
+Decorate a [`checkFunc`](#checkfunc) expected to throw, reject, or invoke an error-first callback with an error whose message equals `msg`. When `code` is given, its top-level `code` must also equal it. The error is passed to the next `checkFunc`.
 
 ### `withCallback`
 

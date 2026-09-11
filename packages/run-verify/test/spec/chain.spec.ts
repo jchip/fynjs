@@ -489,6 +489,29 @@ describe("verify expected error messages", () => {
     ).rejects.toThrow(/message has 'absent'/);
   });
 
+  it("message modifiers can also require an error code", async () => {
+    const error = Object.assign(new Error("start middle end"), { code: "E_TEST" });
+    const result = await verify({ timeout: 500 })
+      .expectErrorHas("middle", "E_TEST")
+      .step(() => Promise.reject(error))
+      .step(err => err);
+    expect(result).toBe(error);
+
+    await verify({ timeout: 500 })
+      .expectErrorToBe("missing", 404)
+      .step(() => Promise.reject(Object.assign(new Error("missing"), { code: 404 })));
+  });
+
+  it("message modifiers fail when the error code differs", async () => {
+    await expect(
+      verify({ timeout: 500 })
+        .expectErrorHas("middle", "E_EXPECTED")
+        .step(() => {
+          throw Object.assign(new Error("start middle end"), { code: "E_ACTUAL" });
+        })
+    ).rejects.toThrow(/code to be 'E_EXPECTED'.*got 'E_ACTUAL'/);
+  });
+
   it("still fails when the step succeeds", async () => {
     await expect(
       verify({ timeout: 500 })

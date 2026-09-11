@@ -89,6 +89,21 @@ describe("runVerify", () => {
     });
   });
 
+  it("should verify async event error code with its message", () => {
+    return new Promise<void>((done) => {
+      runVerify(
+        expectErrorHas(
+          (next: any) => {
+            next(Object.assign(new Error("foo failed"), { code: "E_FOO" }));
+          },
+          "foo",
+          "E_FOO"
+        ),
+        done
+      );
+    });
+  });
+
   it("should fail async event error _not has_ msg", () => {
     return new Promise<void>((done) => {
       runVerify(

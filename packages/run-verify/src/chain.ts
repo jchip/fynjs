@@ -33,7 +33,8 @@ import {
   runDefer,
   runFinally,
   runTimeout,
-  type DeferObject
+  type DeferObject,
+  type ErrorCode
 } from "./index.js";
 
 /** Unwraps a Promise or any other thenable, leaving other types alone. */
@@ -58,6 +59,8 @@ interface Mods {
   /** Required error message, with `errMode` deciding how it is compared. */
   errMsg?: string;
   errMode?: "has" | "toBe";
+  /** Optional exact match for the top-level error's `code`. */
+  errCode?: ErrorCode;
 }
 
 /**
@@ -271,16 +274,18 @@ export interface Chain<Out, M extends Mods = {}, S extends SignalMap = SignalMap
 
   /**
    * Like {@link expectError}, and also require the error message to equal
-   * `message`. A shorthand for expecting the failure and checking its message
-   * in one step, matching `expectErrorToBe` in the positional API.
+   * `message`. When `code` is given, require the top-level error code to equal
+   * it too. A shorthand for expecting the failure and checking its primary
+   * fields in one step, matching `expectErrorToBe` in the positional API.
    */
-  expectErrorToBe(message: string): Chain<Out, M & { err: true }, S>;
+  expectErrorToBe(message: string, code?: ErrorCode): Chain<Out, M & { err: true }, S>;
 
   /**
    * Like {@link expectError}, and also require the error message to contain
-   * `message`.
+   * `message`. When `code` is given, require the top-level error code to equal
+   * it too.
    */
-  expectErrorHas(message: string): Chain<Out, M & { err: true }, S>;
+  expectErrorHas(message: string, code?: ErrorCode): Chain<Out, M & { err: true }, S>;
 
   /**
    * The next step passes its input through, whatever it returns. Use it for
@@ -371,8 +376,8 @@ function build(fn: (...args: any[]) => any, mods: Mods, isCallback: boolean): un
   }
 
   if (!mods.err) return step;
-  if (mods.errMode === "toBe") return wrapExpectErrorToBe(step, mods.errMsg!);
-  if (mods.errMode === "has") return wrapExpectErrorHas(step, mods.errMsg!);
+  if (mods.errMode === "toBe") return wrapExpectErrorToBe(step, mods.errMsg!, mods.errCode);
+  if (mods.errMode === "has") return wrapExpectErrorHas(step, mods.errMsg!, mods.errCode);
   return wrapExpectError(step);
 }
 
@@ -482,14 +487,14 @@ function makeChain<Out, M extends Mods, S extends SignalMap>(
     get expectError() {
       return derive<Out, M & { err: true }>({ mods: { ...mods, err: true } });
     },
-    expectErrorToBe(message: string) {
+    expectErrorToBe(message: string, code?: ErrorCode) {
       return derive<Out, M & { err: true }>({
-        mods: { ...mods, err: true, errMode: "toBe", errMsg: message }
+        mods: { ...mods, err: true, errMode: "toBe", errMsg: message, errCode: code }
       });
     },
-    expectErrorHas(message: string) {
+    expectErrorHas(message: string, code?: ErrorCode) {
       return derive<Out, M & { err: true }>({
-        mods: { ...mods, err: true, errMode: "has", errMsg: message }
+        mods: { ...mods, err: true, errMode: "has", errMsg: message, errCode: code }
       });
     },
     get keep() {

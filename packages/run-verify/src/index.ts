@@ -56,6 +56,7 @@ export type { Chain, ChainConfig, Signal, SignalMap, StepCallback, VerifyFn } fr
 export type CheckFunction = (...args: any[]) => any;
 export type DoneCallback = (err?: Error | null, result?: any) => void;
 export type NextCallback = (err?: Error | null, result?: any) => void;
+export type ErrorCode = string | number;
 
 export interface DeferHandlers {
   resolve: Array<(value: any) => void>;
@@ -103,14 +104,15 @@ export interface WrapObject {
   [IS_FINALLY]?: boolean;
   _expectError?: boolean | "has" | "toBe";
   _expectErrorMsg?: string;
+  _expectErrorCode?: ErrorCode;
   _withCallback?: boolean;
   _onFailVerify?: boolean;
   _timeout?: number;
   expectError?: WrapObject;
   withCallback?: WrapObject;
   onFailVerify?: WrapObject;
-  expectErrorHas?(msg: string): WrapObject;
-  expectErrorToBe?(msg: string): WrapObject;
+  expectErrorHas?(msg: string, code?: ErrorCode): WrapObject;
+  expectErrorToBe?(msg: string, code?: ErrorCode): WrapObject;
   runTimeout?(delay: number): WrapObject;
 }
 
@@ -393,6 +395,18 @@ run check function number ${stepNum(index - 1)}`
         }
       }
 
+      if (wrap._expectErrorCode !== undefined) {
+        const code = (err as Error & { code?: ErrorCode }).code;
+        if (code !== wrap._expectErrorCode) {
+          return invokeFinally(
+            errorMsg(
+              errorFromCall,
+              `runVerify expecting error with code to be '${wrap._expectErrorCode}' but got '${code}'`
+            )
+          );
+        }
+      }
+
       return invokeCheckFunc(err);
     };
 
@@ -553,15 +567,17 @@ export const wrapCheck = (fn: CheckFunction): WrapObject => {
     }
   });
 
-  wrap.expectErrorHas = (msg: string) => {
+  wrap.expectErrorHas = (msg: string, code?: ErrorCode) => {
     wrap._expectError = "has";
     wrap._expectErrorMsg = msg;
+    wrap._expectErrorCode = code;
     return wrap;
   };
 
-  wrap.expectErrorToBe = (msg: string) => {
+  wrap.expectErrorToBe = (msg: string, code?: ErrorCode) => {
     wrap._expectError = "toBe";
     wrap._expectErrorMsg = msg;
+    wrap._expectErrorCode = code;
     return wrap;
   };
 
@@ -582,16 +598,18 @@ export const expectError = (fn: CheckFunction): WrapObject => {
   return wrapCheck(fn).expectError!;
 };
 
-/** Like {@link expectError}, and also require the error message to contain `msg`. The
- * error is still passed on as the next step's input. */
-export const expectErrorHas = (fn: CheckFunction, msg: string): WrapObject => {
-  return wrapCheck(fn).expectErrorHas!(msg);
+/** Like {@link expectError}, and also require the error message to contain `msg`. When
+ * `code` is given, require the top-level error code to equal it. The error is still passed
+ * on as the next step's input. */
+export const expectErrorHas = (fn: CheckFunction, msg: string, code?: ErrorCode): WrapObject => {
+  return wrapCheck(fn).expectErrorHas!(msg, code);
 };
 
-/** Like {@link expectError}, and also require the error message to equal `msg`. The
- * error is still passed on as the next step's input. */
-export const expectErrorToBe = (fn: CheckFunction, msg: string): WrapObject => {
-  return wrapCheck(fn).expectErrorToBe!(msg);
+/** Like {@link expectError}, and also require the error message to equal `msg`. When
+ * `code` is given, require the top-level error code to equal it. The error is still passed
+ * on as the next step's input. */
+export const expectErrorToBe = (fn: CheckFunction, msg: string, code?: ErrorCode): WrapObject => {
+  return wrapCheck(fn).expectErrorToBe!(msg, code);
 };
 
 /**

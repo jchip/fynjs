@@ -112,7 +112,30 @@ describe("README chain examples", () => {
     const run = (name: string, next: (e?: Error | null) => void) =>
       setImmediate(() => next(new Error(`Task ${name} not found`)));
 
-    await verify().expectErrorToBe("Task foo not found").callbackStep(next => run("foo", next));
+    await verify()
+      .expectErrorToBe("Task foo not found")
+      .callbackStep(next => run("foo", next));
+  });
+
+  it("the expectErrorHas one-liner", async () => {
+    const loadTask = () =>
+      Promise.reject(Object.assign(new Error("Task foo not found"), { code: "TASK_NOT_FOUND" }));
+
+    await verify()
+      .expectErrorHas("not found", "TASK_NOT_FOUND")
+      .step(() => loadTask());
+  });
+
+  it("message modifiers still forward the error", async () => {
+    const loadTask = () =>
+      Promise.reject(
+        Object.assign(new Error("Task foo not found"), { code: "TASK_NOT_FOUND", task: "foo" })
+      );
+
+    await verify()
+      .expectErrorHas("not found", "TASK_NOT_FOUND")
+      .step(() => loadTask())
+      .step((error: any) => expect(error.task).toBe("foo"));
   });
 
   it("signals example", async () => {
