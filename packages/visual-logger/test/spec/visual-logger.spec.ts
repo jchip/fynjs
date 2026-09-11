@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import chalk from "chalk";
+import { verify } from "run-verify";
 import { VisualLogger, type OutputInterface } from "../../src/index.js";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -65,17 +66,25 @@ describe("visual-logger", () => {
     expect((visLog as any)._colorPrefix.debug).toBe("> ");
     visLog.color = true;
     const saveLevel = chalk.level;
-    chalk.level = 0;
-    visLog.log("hello");
-    expect((visLog as any)._colorPrefix.debug).toBe("> ");
-    // Force chalk.level to 1 to test colorized prefix (saveLevel might be 0 in CI)
-    chalk.level = 1;
-    visLog.log("hello");
-    expect((visLog as any)._colorPrefix.debug).not.toBe("> ");
-    visLog.color = false;
-    chalk.level = saveLevel;
-    visLog.log("hello");
-    expect((visLog as any)._colorPrefix.debug).toBe("> ");
+
+    return verify({
+      timeout: 500,
+      cleanup: () => {
+        chalk.level = saveLevel;
+      }
+    }).step(() => {
+      chalk.level = 0;
+      visLog.log("hello");
+      expect((visLog as any)._colorPrefix.debug).toBe("> ");
+      // Force chalk.level to 1 to test colorized prefix (saveLevel might be 0 in CI)
+      chalk.level = 1;
+      visLog.log("hello");
+      expect((visLog as any)._colorPrefix.debug).not.toBe("> ");
+      visLog.color = false;
+      chalk.level = saveLevel;
+      visLog.log("hello");
+      expect((visLog as any)._colorPrefix.debug).toBe("> ");
+    });
   });
 
   describe("visual item", () => {

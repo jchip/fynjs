@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createLogUpdate } from "log-update";
+import { verify } from "run-verify";
 import { VisualLogger, type OutputInterface } from "../../src/index.js";
 import { makeTtyStream } from "./vterm.js";
 
@@ -29,131 +30,147 @@ const setup = () => {
 };
 
 describe("visual-logger over-clearing", () => {
-  it("should keep logs written after the last item is removed", async () => {
+  it("should keep logs written after the last item is removed", () => {
     const { term, visLog } = setup();
 
-    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("fetch", "fetching packages...");
-    visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("load", "loading packages...");
-    await delay(RENDERED);
+    return verify({ timeout: 1000, cleanup: () => visLog.shutdown() })
+      .step(() => {
+        visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("fetch", "fetching packages...");
+        visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("load", "loading packages...");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        visLog.removeItem("fetch");
+        visLog.removeItem("load");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        visLog.info("KEEP-A");
+        visLog.info("KEEP-B");
+        visLog.info("KEEP-C");
 
-    visLog.removeItem("fetch");
-    visLog.removeItem("load");
-    await delay(RENDERED);
+        visLog.addItem({ name: "install", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("install", "installing packages...");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(term.screen()).toEqual([
+          "> KEEP-A",
+          "> KEEP-B",
+          "> KEEP-C",
+          "⠁ install: installing packages..."
+        ]);
 
-    visLog.info("KEEP-A");
-    visLog.info("KEEP-B");
-    visLog.info("KEEP-C");
-
-    visLog.addItem({ name: "install", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("install", "installing packages...");
-    await delay(RENDERED);
-
-    expect(term.screen()).toEqual([
-      "> KEEP-A",
-      "> KEEP-B",
-      "> KEEP-C",
-      "⠁ install: installing packages..."
-    ]);
-
-    // shutdown takes down its own frame and nothing else
-    visLog.shutdown();
-    expect(term.screen()).toEqual(["> KEEP-A", "> KEEP-B", "> KEEP-C"]);
+        // shutdown takes down its own frame and nothing else
+        visLog.shutdown();
+        expect(term.screen()).toEqual(["> KEEP-A", "> KEEP-B", "> KEEP-C"]);
+      });
   });
 
-  it("should keep logs written while items are frozen", async () => {
+  it("should keep logs written while items are frozen", () => {
     const { term, visLog } = setup();
 
-    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("fetch", "fetching packages...");
-    visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("load", "loading packages...");
-    await delay(RENDERED);
+    return verify({ timeout: 1000, cleanup: () => visLog.shutdown() })
+      .step(() => {
+        visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("fetch", "fetching packages...");
+        visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("load", "loading packages...");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => visLog.freezeItems(true))
+      .step(() => delay(RENDERED))
+      .step(() => {
+        visLog.info("KEEP-A");
+        visLog.info("KEEP-B");
+        visLog.info("KEEP-C");
+        visLog.info("KEEP-D");
 
-    visLog.freezeItems(true);
-    await delay(RENDERED);
-
-    visLog.info("KEEP-A");
-    visLog.info("KEEP-B");
-    visLog.info("KEEP-C");
-    visLog.info("KEEP-D");
-
-    visLog.unfreezeItems();
-    visLog.updateItem("fetch", "fetching more...");
-    await delay(RENDERED);
-
-    expect(term.screen()).toEqual([
-      // the frozen snapshot, printed once - not redrawn by a stale render
-      "⠁ fetch: fetching packages...",
-      "⠁ load: loading packages...",
-      "> KEEP-A",
-      "> KEEP-B",
-      "> KEEP-C",
-      "> KEEP-D",
-      "⠁ fetch: fetching more...",
-      "⠁ load: loading packages..."
-    ]);
-
-    visLog.shutdown();
+        visLog.unfreezeItems();
+        visLog.updateItem("fetch", "fetching more...");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(term.screen()).toEqual([
+          // the frozen snapshot, printed once - not redrawn by a stale render
+          "⠁ fetch: fetching packages...",
+          "⠁ load: loading packages...",
+          "> KEEP-A",
+          "> KEEP-B",
+          "> KEEP-C",
+          "> KEEP-D",
+          "⠁ fetch: fetching more...",
+          "⠁ load: loading packages..."
+        ]);
+      });
   });
 
   // FJM-145: setItemType() used to swap _itemType without tearing the frame down, which
   // stranded it on screen and left log-update owning lines it later erased from the wrong
   // place - the same over-clear, reached by turning the item display off and back on.
-  it("should clear the frame when the item display is turned off", async () => {
+  it("should clear the frame when the item display is turned off", () => {
     const { term, visLog } = setup();
 
-    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("fetch", "fetching packages...");
-    visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("load", "loading packages...");
-    await delay(RENDERED);
-    expect(term.screen()).toEqual([
-      "\u2801 fetch: fetching packages...",
-      "\u2801 load: loading packages..."
-    ]);
+    return verify({ timeout: 1000, cleanup: () => visLog.shutdown() })
+      .step(() => {
+        visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("fetch", "fetching packages...");
+        visLog.addItem({ name: "load", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("load", "loading packages...");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(term.screen()).toEqual([
+          "\u2801 fetch: fetching packages...",
+          "\u2801 load: loading packages..."
+        ]);
 
-    visLog.setItemType(false);
-    await delay(RENDERED);
-    expect(term.screen()).toEqual([]);
+        visLog.setItemType(false);
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(term.screen()).toEqual([]);
 
-    visLog.info("KEEP-A");
-    visLog.info("KEEP-B");
-    visLog.info("KEEP-C");
+        visLog.info("KEEP-A");
+        visLog.info("KEEP-B");
+        visLog.info("KEEP-C");
 
-    visLog.setItemType("normal");
-    visLog.updateItem("fetch", "fetching more...");
-    await delay(RENDERED);
-
-    expect(term.screen()).toEqual([
-      "> KEEP-A",
-      "> KEEP-B",
-      "> KEEP-C",
-      "\u2801 fetch: fetching more...",
-      "\u2801 load: loading packages..."
-    ]);
-    visLog.shutdown();
+        visLog.setItemType("normal");
+        visLog.updateItem("fetch", "fetching more...");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(term.screen()).toEqual([
+          "> KEEP-A",
+          "> KEEP-B",
+          "> KEEP-C",
+          "\u2801 fetch: fetching more...",
+          "\u2801 load: loading packages..."
+        ]);
+      });
   });
 
-  it("should stop and restart item spinners as the display is toggled", async () => {
+  it("should stop and restart item spinners as the display is toggled", () => {
     const { visLog } = setup();
 
-    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
-    const opts = (visLog as any)._itemOptions.fetch;
-    expect(opts._spinning).toBeTruthy();
+    return verify({ timeout: 1000, cleanup: () => visLog.shutdown() }).step(() => {
+      visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+      const opts = (visLog as any)._itemOptions.fetch;
+      expect(opts._spinning).toBeTruthy();
 
-    visLog.setItemType(false);
-    expect(opts._spinning).toBeFalsy();
+      visLog.setItemType(false);
+      expect(opts._spinning).toBeFalsy();
 
-    visLog.setItemType("normal");
-    expect(opts._spinning).toBeTruthy();
-    visLog.shutdown();
+      visLog.setItemType("normal");
+      expect(opts._spinning).toBeTruthy();
+    });
   });
 
   // FJM-147: a logger whose owner never calls setItemType() used to keep animating into a
   // pipe. Those bytes get captured by the parent process and corrupt its terminal on replay.
-  it("should not emit cursor control when the output is not a TTY", async () => {
+  it("should not emit cursor control when the output is not a TTY", () => {
     const visual = { write: [] as string[], clear: 0 };
     const visLog = new VisualLogger({
       color: false,
@@ -167,17 +184,20 @@ describe("visual-logger over-clearing", () => {
       } as OutputInterface
     });
 
-    visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
-    visLog.updateItem("fetch", "fetching packages...");
-    visLog.info("a log line");
-    await delay(RENDERED);
-
-    expect(visual.write).toEqual([]);
-    expect(visual.clear).toBe(0);
-    visLog.shutdown();
+    return verify({ timeout: 1000, cleanup: () => visLog.shutdown() })
+      .step(() => {
+        visLog.addItem({ name: "fetch", spinner: VisualLogger.spinners[1] });
+        visLog.updateItem("fetch", "fetching packages...");
+        visLog.info("a log line");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(visual.write).toEqual([]);
+        expect(visual.clear).toBe(0);
+      });
   });
 
-  it("should not draw a frame scheduled before the items were cleared", async () => {
+  it("should not draw a frame scheduled before the items were cleared", () => {
     const visual = { write: [] as string[], clear: 0 };
     const visLog = new VisualLogger({
       color: false,
@@ -191,13 +211,16 @@ describe("visual-logger over-clearing", () => {
       } as OutputInterface
     });
 
-    visLog.addItem({ name: "TEST_1" });
-    visLog.updateItem("TEST_1", "hello");
-    visLog.removeItem("TEST_1");
-    await delay(RENDERED);
-
-    expect(visual.write).toEqual([]);
-    expect((visLog as any)._renderTimer).toBe(null);
-    visLog.shutdown();
+    return verify({ timeout: 1000, cleanup: () => visLog.shutdown() })
+      .step(() => {
+        visLog.addItem({ name: "TEST_1" });
+        visLog.updateItem("TEST_1", "hello");
+        visLog.removeItem("TEST_1");
+      })
+      .step(() => delay(RENDERED))
+      .step(() => {
+        expect(visual.write).toEqual([]);
+        expect((visLog as any)._renderTimer).toBe(null);
+      });
   });
 });

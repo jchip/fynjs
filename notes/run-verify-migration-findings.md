@@ -7,7 +7,7 @@ about the library's own design). Packages converted so far, in order: `xarc-run`
 `xsh`, `item-queue`, `fyn` (three specs), `http-server` (one spec), `xaa` (fully converted),
 `pkg-preper` (its integration spec), `@fynjs/fetch` (its callback-observation subset),
 `visual-exec` (its error-context and output-file tests), and `check-pkg-new-version` (its
-timeout/abort test).
+timeout/abort test), and `visual-logger` (its cleanup-sensitive tests).
 `aveazul` is partially converted; the focused callback, expected-error, and async-cleanup
 flows are covered, while simple promise-result tests remain native.
 
@@ -264,6 +264,18 @@ its fallback result. This removes the outer mutable capture and states both requ
 outcomes in order: the request returns `{}`, and its controller aborted with a
 `TimeoutError`. No bug was found. The remaining tests are direct result or spy assertions
 with no callback orchestration to clarify.
+
+## visual-logger
+
+Three specs had real test-isolation gaps. `default-output.spec.ts` replaced
+`process.stdout.write`, `visual-logger.spec.ts` replaced the process-wide `chalk.level`,
+and six `over-clear.spec.ts` tests owned timer-backed `VisualLogger` instances; all
+restored or shut down their state only after the final successful assertion. An earlier
+throw could therefore leak global state or active timers into later tests. Bounded chains
+now provide cleanup backstops while preserving the one explicit `shutdown()` call whose
+screen effect is itself asserted. The timer waits remain ordinary delay steps because the
+tests cover elapsed-time and absence behavior. No signals or `.awaiting()` calls were
+introduced.
 
 ## http-server
 
