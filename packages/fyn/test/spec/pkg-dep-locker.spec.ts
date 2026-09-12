@@ -61,9 +61,10 @@ describe("pkg-dep-locker", function () {
   });
 
   describe("corrupt lock detection", function () {
-    const makeLocker = (lockData) => {
+    const makeLocker = (lockData, resolutionsMatchers?) => {
       const locker = new PkgDepLocker(false, true, {
         _pkgSrcMgr: { getRegistryUrl: () => "https://registry.npmjs.org/" },
+        _resolutionsMatchers: resolutionsMatchers,
       });
       locker._lockData = lockData;
       return locker;
@@ -81,6 +82,17 @@ describe("pkg-dep-locker", function () {
       },
     });
 
+    const outOfRangeResolutionLock = () => ({
+      "mod-a": {
+        _: { "0.3.2": "0.3.2" },
+        "0.3.2": { $: 0, _: "mod-a.tgz", dependencies: { "mod-g": "^3.0.0" } },
+      },
+      "mod-g": {
+        _: { "2.0.1": "2.0.1" },
+        "2.0.1": { $: 0, _: "mod-g.tgz" },
+      },
+    });
+
     it("convert() accepts a self-consistent lock entry", () => {
       const locked = makeLocker(consistentLock()).convert({ name: "@sentry/react" });
       expect(locked).toBeInstanceOf(Object);
@@ -94,6 +106,55 @@ describe("pkg-dep-locker", function () {
       const lock = consistentLock();
       lock["@sentry/react"]["10.49.0"].dependencies["@sentry/core"] = "10.55.0";
       expect(makeLocker(lock).convert({ name: "@sentry/react" })).toBe(false);
+    });
+
+    it("convert() accepts an out-of-range dep selected by resolutions (FPM-163)", () => {
+      const resolutionsMatchers = [
+        { mm: { match: (path) => path === "mod-a/mod-g" }, res: "2.0.1" },
+      ];
+
+      const locked = makeLocker(outOfRangeResolutionLock(), resolutionsMatchers).convert({
+        name: "mod-a",
+        nameDepPath: "mod-a",
+      });
+
+      expect(locked).toBeInstanceOf(Object);
+      expect(locked.versions).toHaveProperty("0.3.2");
+    });
+
+    it("convert() still rejects the same out-of-range dep without resolutions (FPM-163)", () => {
+      expect(
+        makeLocker(outOfRangeResolutionLock()).convert({ name: "mod-a", nameDepPath: "mod-a" }),
+      ).toBe(false);
+    });
+
+    it("convert() rejects an out-of-range dep selected for a different path (FPM-163)", () => {
+      const resolutionsMatchers = [
+        { mm: { match: (path) => path === "other/mod-g" }, res: "2.0.1" },
+      ];
+
+      expect(
+        makeLocker(outOfRangeResolutionLock(), resolutionsMatchers).convert({
+          name: "mod-a",
+          nameDepPath: "mod-a",
+        }),
+      ).toBe(false);
+    });
+
+    it("convert() checks resolutions independently for every dependency path (FPM-163)", () => {
+      const resolutionsMatchers = [
+        { mm: { match: (path) => path === "mod-a/mod-g" }, res: "2.0.1" },
+      ];
+      const matchingItem = { name: "mod-a", nameDepPath: "mod-a" };
+      const nonmatchingItem = { name: "mod-a", nameDepPath: "other/mod-a" };
+
+      const matchingFirst = makeLocker(outOfRangeResolutionLock(), resolutionsMatchers);
+      expect(matchingFirst.convert(matchingItem)).toBeInstanceOf(Object);
+      expect(matchingFirst.convert(nonmatchingItem)).toBe(false);
+
+      const nonmatchingFirst = makeLocker(outOfRangeResolutionLock(), resolutionsMatchers);
+      expect(nonmatchingFirst.convert(nonmatchingItem)).toBe(false);
+      expect(nonmatchingFirst.convert(matchingItem).versions).toHaveProperty("0.3.2");
     });
 
     it("convert() accepts a dep satisfied by a fynlocal version (FPM-110)", () => {

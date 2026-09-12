@@ -70,11 +70,14 @@ export interface FynPkgDirs {
 
 /** Fyn instance interface for dep locker */
 export interface FynForDepLocker {
+  _pkg?: { name: string };
   _pkgSrcMgr?: {
     getRegistryUrl(name: string): string;
   };
+  _resolutionsMatchers?: Array<{ mm: { match(path: string): boolean }; res: string }>;
   _options?: { ignoreLockUrl?: boolean };
   _shownMissingFiles: Set<string>;
+  isFynpo?: boolean;
 }
 
 /** Fyn instance interface for lifecycle scripts */

@@ -193,6 +193,8 @@ export interface PkgLockData {
 export interface LockDepItem {
   /** Package name */
   name: string;
+  /** Package-name path from the top-level dependency */
+  nameDepPath?: string;
   /** Semver range from package.json */
   semver?: string;
   /** Resolved version */

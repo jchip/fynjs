@@ -351,11 +351,9 @@ class PkgDepLocker {
         const vpkg = pkgLocked[version] as LockVersionMeta;
         const isLocalVpkg = vpkg && vpkg.$ === "local";
         // A corrupt lock (e.g. from a rebase/merge or a partial install) can carry a
-        // bogus version key, or a version whose recorded dependencies point at versions
-        // that don't exist anywhere in the lock. Trusting either yields a broken install.
+        // bogus version key. Trusting it yields a broken install.
         const badVersionKey = !isLocalVpkg && !Semver.valid(version);
-        const badDeps = vpkg && vpkg.dependencies && !this._depsResolvable(vpkg.dependencies);
-        if (!_.isEmpty(vpkg) && vpkg._valid !== false && !badVersionKey && !badDeps) {
+        if (!_.isEmpty(vpkg) && vpkg._valid !== false && !badVersionKey) {
           //
           // `vpkg` is the serialized shape - `$`, `_` and the `1` flags. What the resolver
           // wants back is the same shape a registry meta has, so expand into a new object
@@ -403,11 +401,6 @@ class PkgDepLocker {
               `lockfile entry for ${item.name} has invalid version key "${version}"` +
                 ` - ignoring and re-resolving from registry`
             );
-          } else if (badDeps) {
-            logger.error(
-              `lockfile entry ${item.name}@${version} has dependencies not satisfiable within` +
-                ` the lock (corrupt lock) - ignoring and re-resolving from registry`
-            );
           }
           valid = false;
         }
@@ -430,6 +423,17 @@ class PkgDepLocker {
       } as ConvertedLockData;
     }
 
+    const badDepsVersion = Object.entries((locked as ConvertedLockData).versions).find(
+      ([, vpkg]) => vpkg.dependencies && !this._depsResolvable(item, vpkg.dependencies)
+    )?.[0];
+    if (badDepsVersion) {
+      logger.error(
+        `lockfile entry ${item.name}@${badDepsVersion} has dependencies not satisfiable within` +
+          ` the lock (corrupt lock) - ignoring and re-resolving from registry`
+      );
+      return false;
+    }
+
     return valid && (locked as ConvertedLockData);
   }
 
@@ -440,13 +444,31 @@ class PkgDepLocker {
   // absent from the lock signals corruption (e.g. a version block's deps got swapped
   // during a rebase/merge), so the entry must be dropped and re-resolved.
   //
-  _depsResolvable(deps: Record<string, string>): boolean {
+  _depsResolvable(item: LockDepItem, deps: Record<string, string>): boolean {
     for (const depName in deps) {
-      if (!this._isDepResolvable(depName, deps[depName])) {
+      const declaredSpec = deps[depName];
+      // Selective resolutions can intentionally cross the package's declared range.
+      // Use the replacement only when it applies to this exact dependency path.
+      const resolutionSpec = this._resolutionSpec(item, depName);
+      const spec =
+        resolutionSpec && resolutionSpec !== "--no-change" ? resolutionSpec : declaredSpec;
+      if (!this._isDepResolvable(depName, spec)) {
         return false;
       }
     }
     return true;
+  }
+
+  _resolutionSpec(item: LockDepItem, depName: string): string | undefined {
+    if (!item.nameDepPath || !this._fyn._resolutionsMatchers) return undefined;
+
+    let nameDepPath = `${item.nameDepPath}/${depName}`;
+    if (this._fyn.isFynpo) {
+      nameDepPath = `${this._fyn._pkg!.name}/${nameDepPath}`;
+    }
+
+    const unslashed = fyntil.unSlashNpmScope(nameDepPath);
+    return this._fyn._resolutionsMatchers.find((r) => r.mm.match(unslashed))?.res;
   }
 
   _isDepResolvable(depName: string, spec: string): boolean {
