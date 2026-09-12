@@ -272,6 +272,9 @@ export function getSourceUrlType(depItem) {
   let item = depItem;
   while (item) {
     const analyzed = item.semver ? semverUtil.analyze(item.semver) : {};
+    if (item._semver?.alias || analyzed.alias) {
+      return "npm";
+    }
     const urlType = item.urlType || analyzed.urlType;
     if (urlType) {
       return urlType;

@@ -1,6 +1,7 @@
 import Semver from "semver";
 import Path from "path";
 import os from "os";
+import npmPackageArgModule from "npm-package-arg";
 
 //
 // Simplified compare two numeric versions in semver format for sorting
@@ -17,6 +18,32 @@ export interface SemverAnalysis {
   path?: string;
   localType?: string;
   urlType?: string;
+  alias?: {
+    name: string;
+    specifier: string;
+  };
+}
+
+interface NpmPackageArgResult {
+  type: string;
+  subSpec?: {
+    name?: string;
+    rawSpec?: string;
+  };
+}
+
+const npmPackageArg = npmPackageArgModule as {
+  resolve(name: string, specifier: string): NpmPackageArgResult;
+};
+
+function parseNpmAlias(
+  specifier: string,
+  aliasName: string
+): { name: string; range: string } | undefined {
+  if (!specifier.startsWith("npm:")) return undefined;
+
+  const parsed = npmPackageArg.resolve(aliasName, specifier);
+  return { name: parsed.subSpec!.name!, range: parsed.subSpec!.rawSpec! };
 }
 
 function split(v: string, sep: string, index: number = 0): [string] | [string, string] {
@@ -213,8 +240,15 @@ function fixBadSv(semver: string): string {
 /**
  * analyze a semver to detect its type
  */
-export function analyze(semver: string): SemverAnalysis {
+export function analyze(semver: string, aliasName = "fyn-alias"): SemverAnalysis {
   const sv: SemverAnalysis = { $: semver };
+
+  const alias = parseNpmAlias(semver, aliasName);
+  if (alias) {
+    sv.$ = alias.range;
+    sv.alias = { name: alias.name, specifier: semver };
+    return sv;
+  }
 
   const urlType = checkUrl(semver);
 

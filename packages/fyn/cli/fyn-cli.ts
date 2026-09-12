@@ -6,6 +6,7 @@ import Fyn from "../lib/fyn";
 import * as _ from "lodash-es";
 import PkgInstaller from "../lib/pkg-installer";
 import semver from "semver";
+import * as semverUtil from "../lib/util/semver";
 import chalk from "chalk";
 import logger from "../lib/logger";
 import PromiseQueue from "../lib/util/promise-queue";
@@ -133,6 +134,8 @@ interface AddItem {
   found?: string;
   fullPath?: string;
   version?: string;
+  resolutionName?: string;
+  specifier?: string;
 }
 
 /** Package.json with optional fields for partial loading */
@@ -263,6 +266,21 @@ class FynCli {
             parent: {}
           };
         }
+        const aliasAt = posixPath.indexOf("@npm:");
+        if (aliasAt > 0) {
+          const name = posixPath.substring(0, aliasAt);
+          const specifier = posixPath.substring(aliasAt + 1);
+          const analysis = semverUtil.analyze(specifier, name);
+          return {
+            $: posixPath,
+            name,
+            semver: analysis.$,
+            resolutionName: analysis.alias!.name,
+            specifier,
+            section,
+            parent: {}
+          };
+        }
         const atX = posixPath.lastIndexOf("@");
         return {
           $: posixPath,
@@ -309,7 +327,7 @@ class FynCli {
       processItem: (item: AddItem) => {
         let found: string | undefined;
         return xaa
-          .wrap(() => this._fyn!._pkgSrcMgr.fetchLocalItem(item))
+          .wrap(() => (item.specifier ? null : this._fyn!._pkgSrcMgr.fetchLocalItem(item)))
           .then((meta: unknown) => meta || this.fyn.pkgSrcMgr.fetchMeta(item))
           .then((meta: { local?: boolean; name?: string; json?: { version?: string }; "dist-tags"?: Record<string, string>; versions?: Record<string, unknown> } | null) => {
             if (!meta) {
@@ -342,6 +360,7 @@ class FynCli {
               }
             }
             if (found) {
+              if (item.specifier) found = item.specifier;
               logger.info(`found ${found} for ${item.$}`);
               item.found = found;
               results.push(item);

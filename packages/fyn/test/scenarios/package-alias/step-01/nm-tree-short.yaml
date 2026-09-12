@@ -1,0 +1,31 @@
+node_modules:
+  .f:
+    .fyn.json: file
+    _:
+      '@alias':
+        mod-b:
+          2.0.0:
+            '@alias':
+              mod-b:
+                package.json:
+                  id: '@alias/mod-b@2.0.0'
+      alias-a:
+        1.1.2:
+          alias-a:
+            package.json:
+              id: alias-a@1.1.2
+      alias-a-old:
+        0.4.5:
+          alias-a-old:
+            package.json:
+              id: alias-a-old@0.4.5
+      mod-a:
+        2.0.0:
+          mod-a:
+            package.json:
+              id: mod-a@2.0.0
+  '@alias':
+    mod-b: -> ../.f/_/@alias/mod-b/2.0.0/@alias/mod-b
+  alias-a: -> .f/_/alias-a/1.1.2/alias-a
+  alias-a-old: -> .f/_/alias-a-old/0.4.5/alias-a-old
+  mod-a: -> .f/_/mod-a/2.0.0/mod-a

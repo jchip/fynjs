@@ -76,7 +76,7 @@ export class DepItem implements DepItemRef {
 
   constructor(options: DepItemOptions, parent?: DepItem) {
     this.name = options.name;
-    this._semver = semverUtil.analyze(options.semver);
+    this._semver = semverUtil.analyze(options.semver, options.name);
     this.src = options.src;
     this.dsrc = options.dsrc;
     this.resolved = options.resolved;
@@ -101,6 +101,14 @@ export class DepItem implements DepItemRef {
 
   get semver(): string {
     return this._semver.$;
+  }
+
+  get resolutionName(): string {
+    return this._semver.alias?.name || this.name;
+  }
+
+  get specifier(): string | undefined {
+    return this._semver.alias?.specifier;
   }
 
   get semverPath(): string | undefined {

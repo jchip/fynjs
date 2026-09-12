@@ -24,6 +24,7 @@ $pkg:
   '@fynjs/cli-args': ../cli-args
   '@fynjs/fetch': ../fetch
   npm-packlist: ../../_w/npm-packlist
+  npm-package-arg: ^14.0.0
   npm-registry-fetch: ^20.0.1
   optional-require: ^2.1.1
   pacote: ^22.0.0
@@ -2665,6 +2666,7 @@ npm-package-arg:
  _:
   ^14.0.0: 14.0.0
  14.0.0:
+  top: 1
   $: sha512-69XQh3k+dtGa1p+7RaR57IuG3rCko96xr/nUfN4yDYBXbTYICiWcOpsFKLN2GtGE9cyIljE+f1exnaYt9MvM+Q==
   _: 'https://registry.npmjs.org/npm-package-arg/-/npm-package-arg-14.0.0.tgz'
   dependencies:

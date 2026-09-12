@@ -97,6 +97,7 @@ interface FynCentralInstance {
 /** Fetch item representing a dependency to fetch */
 interface FetchItem {
   name: string;
+  resolutionName?: string;
   semver: string;
   semverPath?: string;
   localType?: string;
@@ -609,7 +610,7 @@ class PkgSrcManager {
   }
 
   netRetrieveMeta(qItem: MetaQueueItem): Promise<void> {
-    const pkgName = qItem.item.name;
+    const pkgName = qItem.item.resolutionName || qItem.item.name;
 
     const startTime = Date.now();
 
@@ -707,7 +708,7 @@ class PkgSrcManager {
   }
 
   hasMeta(item: FetchItem): boolean {
-    return Boolean(this._meta[item.name]);
+    return Boolean(this._meta[item.resolutionName || item.name]);
   }
 
   pkgPreperInstallDep(dir: string, displayTitle: string): NativePromise<void> {
@@ -939,7 +940,7 @@ class PkgSrcManager {
   }
 
   fetchMeta(item: FetchItem, forceRefresh = false): Promise<Packument> {
-    const pkgName = item.name;
+    const pkgName = item.resolutionName || item.name;
     const pkgKey = `${pkgName}@${item.urlType ? item.urlType : "semver"}`;
 
     if (!forceRefresh) {

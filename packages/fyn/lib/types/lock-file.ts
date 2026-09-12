@@ -199,6 +199,10 @@ export interface LockDepItem {
   resolved?: string;
   /** Internal semver tracking */
   _semver?: { $: string };
+  /** Registry package name used to resolve an alias */
+  resolutionName?: string;
+  /** Original dependency specifier written to package.json and $pkg */
+  specifier?: string;
 }
 
 /**

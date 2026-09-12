@@ -165,4 +165,9 @@ export interface SemverAnalysis {
   localType?: string;
   /** Type of URL specifier (git, http, etc.) */
   urlType?: string;
+  /** npm registry alias target, while the dependency name remains the install name */
+  alias?: {
+    name: string;
+    specifier: string;
+  };
 }

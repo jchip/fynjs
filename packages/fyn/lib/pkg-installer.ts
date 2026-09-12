@@ -237,7 +237,7 @@ class PkgInstaller {
       if (depInfo.local === "sym" || depInfo._removed) {
         continue;
       }
-      depInfo.json!._from = `${depInfo.name}@${depInfo[SEMVER]}`;
+      depInfo.json!._from = `${depInfo.name}@${depInfo.specifier || depInfo[SEMVER]}`;
       depInfo.json!._id = `${depInfo.name}@${depInfo.version}`;
       const outputStr = JSON.stringify(depInfo.json, null, 2);
       if (log && depInfo.linkDep) {

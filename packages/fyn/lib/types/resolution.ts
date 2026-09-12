@@ -43,6 +43,8 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   dist?: PackageDist;
   /** Source type (e.g., "npm", "git", "file") */
   src: string;
+  /** Original npm alias specifier, when different from the selector used for resolution */
+  specifier?: string;
   /** Dependency source (dep, dev, opt, peer) */
   dsrc: string;
   /** Resolved nested dependencies - filled in as resolution progresses */

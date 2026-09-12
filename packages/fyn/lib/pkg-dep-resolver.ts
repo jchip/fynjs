@@ -1041,6 +1041,7 @@ class PkgDepResolver {
         res: {},
         priority: item.priority!
       };
+      if (item.specifier) newPkgV.specifier = item.specifier;
       pkgV = kpkg.versions[resolved] = newPkgV;
       if (meta[LOCK_RSEMVERS]) pkgV.fromLock = true;
       const scripts = metaJson.scripts || {};
@@ -1687,7 +1688,7 @@ ${item.depPath.join(" > ")}`
 
     // check if an already resolved local package satisfies item
     // before trying to resolve with lock data
-    if (!this._fyn.preferLock) {
+    if (!this._fyn.preferLock && !item._semver.alias) {
       const localMeta = this._pkgSrcMgr.getAllLocalMetaOfPackage(item.name);
 
       if (localMeta) {

@@ -293,7 +293,8 @@ class PkgDepLocker {
       return tarballUrl;
     }
 
-    const currentRegistry = this._fyn._pkgSrcMgr.getRegistryUrl(item.name);
+    const packageName = item.resolutionName || item.name;
+    const currentRegistry = this._fyn._pkgSrcMgr.getRegistryUrl(packageName);
     // --ignore-lock-url forces rewriting even if the URL already matches
     const ignoreLockUrl = this._fyn._options?.ignoreLockUrl;
     if (!currentRegistry || (!ignoreLockUrl && tarballUrl.startsWith(currentRegistry))) {
@@ -314,7 +315,7 @@ class PkgDepLocker {
         return lockedUrl.toString();
       }
 
-      const tarballMarker = `/${item.name}/-/`;
+      const tarballMarker = `/${packageName}/-/`;
       const markerIndex = lockedPath.indexOf(tarballMarker);
 
       if (markerIndex >= 0) {
@@ -500,7 +501,7 @@ class PkgDepLocker {
     const { dep, dev, opt } = pkgDepItems;
     const items: { dep?: Record<string, string>; dev?: Record<string, string>; opt?: Record<string, string> } = {};
     const makeDep = (acc: Record<string, string>, di: LockDepItem): Record<string, string> => {
-      acc[di.name] = di._semver!.$;
+      acc[di.name] = di.specifier || di._semver!.$;
       return acc;
     };
 
