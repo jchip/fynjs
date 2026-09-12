@@ -4,6 +4,10 @@ import Os from "os";
 import Path from "path";
 import logger from "../../lib/logger";
 
+const mocks = vi.hoisted(() => ({
+  question: vi.fn((_q: string, cb: (answer: string) => void) => cb("a"))
+}));
+
 // review() only asks when there is a terminal and no CI, and it reads the
 // answer through readline - both faked here so the prompt path can run under
 // vitest. Kept in its own spec file so these mocks cannot reach the other
@@ -12,7 +16,7 @@ vi.mock("ci-info", () => ({ default: { isCI: false }, isCI: false }));
 vi.mock("readline", () => ({
   default: {
     createInterface: () => ({
-      question: (_q: string, cb: (answer: string) => void) => cb("a"),
+      question: mocks.question,
       close: () => undefined
     })
   }
@@ -43,6 +47,7 @@ describe("review() applies the approval it just wrote", function () {
     stdoutTTY = process.stdout.isTTY;
     process.stdin.isTTY = true;
     process.stdout.isTTY = true;
+    mocks.question.mockClear();
     infoSpy = vi.spyOn(logger, "info").mockImplementation(() => undefined as any);
   });
 
@@ -93,6 +98,35 @@ describe("review() applies the approval it just wrote", function () {
     expect(fyn.applied).toHaveLength(1);
     expect(fyn.applied[0].allowScripts).toStrictEqual(onDisk.fyn.allowScripts);
     expect(fyn.applied[0].opts).toStrictEqual({ fynpo: false });
+  });
+
+  it("pauses visual items while asking for approval", async () => {
+    const freezeSpy = vi.spyOn(logger, "freezeItems").mockImplementation(() => logger);
+    const unfreezeSpy = vi.spyOn(logger, "unfreezeItems").mockImplementation(() => logger);
+    let answer: ((value: string) => void) | undefined;
+    mocks.question.mockImplementationOnce((_q, cb) => {
+      answer = cb;
+    });
+
+    try {
+      const reviewing = new InstallScripts({ fyn: mkFyn() }).review([mkRecord()]);
+
+      expect(freezeSpy).toHaveBeenCalledOnce();
+      expect(unfreezeSpy).not.toHaveBeenCalled();
+      expect(freezeSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.question.mock.invocationCallOrder[0]
+      );
+      answer!("a");
+      await reviewing;
+
+      expect(unfreezeSpy).toHaveBeenCalledOnce();
+      expect(mocks.question.mock.invocationCallOrder[0]).toBeLessThan(
+        unfreezeSpy.mock.invocationCallOrder[0]
+      );
+    } finally {
+      freezeSpy.mockRestore();
+      unfreezeSpy.mockRestore();
+    }
   });
 
   it("targets the fynpo config when the approval went to fynpo.json", async () => {

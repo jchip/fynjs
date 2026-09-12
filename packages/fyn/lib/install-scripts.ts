@@ -227,15 +227,21 @@ export function canPrompt() {
  * @param {string} question the prompt
  * @returns {Promise<string>} the trimmed, lowercased answer
  */
-export function ask(question) {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+export async function ask(question) {
+  logger.freezeItems();
 
-  return new Promise(resolve => {
-    rl.question(question, answer => {
-      rl.close();
-      resolve(String(answer).trim().toLowerCase());
+  try {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+    return await new Promise(resolve => {
+      rl.question(question, answer => {
+        rl.close();
+        resolve(String(answer).trim().toLowerCase());
+      });
     });
-  });
+  } finally {
+    logger.unfreezeItems();
+  }
 }
 
 /**
