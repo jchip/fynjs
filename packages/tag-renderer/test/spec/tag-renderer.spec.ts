@@ -350,6 +350,29 @@ describe("TagRenderer", () => {
     expect(provider).toHaveBeenCalledOnce();
   });
 
+  it("publishes initialization atomically and retries after failure", async () => {
+    let attempts = 0;
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${TokenInvoke(async () => {
+        attempts++;
+        if (attempts === 1) throw new Error("initialization failed");
+        return { process: () => "ready" };
+      })}`,
+    });
+
+    const failed = await renderer.render({});
+
+    expect(failed.error).toMatchObject({ message: "initialization failed" });
+    expect(renderer._processor).toBeUndefined();
+    expect(renderer._template).toBeUndefined();
+
+    const retried = await renderer.render({});
+
+    expect(retried.result).toBe("ready");
+    expect(retried.error).toBeUndefined();
+    expect(attempts).toBe(2);
+  });
+
   it("fails fast for invalid renderer and token provider inputs", async () => {
     expect(() => new TagRenderer({ templateTags: null as never })).toThrow(
       "templateTags must be an array",

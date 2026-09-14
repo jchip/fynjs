@@ -86,10 +86,10 @@ export class TagRenderer {
         templateDir: this._options.templateDir,
         processor,
       });
-      this._processor = processor;
-      this._template = template;
       await processor.loadTokenModules(template);
       await template.initTagOpCode();
+      this._processor = processor;
+      this._template = template;
     };
 
     this._initializing = initialize();
