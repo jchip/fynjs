@@ -119,6 +119,13 @@ export class RenderContext {
       reason instanceof Error ? reason : new Error(reason ? String(reason) : "Rendering aborted");
     if (!(reason instanceof Error)) error.name = "AbortError";
     this.deferredTasks.fail(error);
+    if (this.error !== undefined) return;
+    if (!this.stopMode) {
+      this.stopMode = RenderContext.VOID_STOP;
+      this.voidResult = error;
+    }
+    this.error = error;
+    this.output.fail(error);
   }
 
   _handleOutputError(error: unknown): void {

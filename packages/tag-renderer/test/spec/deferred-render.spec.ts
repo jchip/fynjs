@@ -519,6 +519,27 @@ describe("deferred rendering", () => {
     expect(invoked).not.toHaveBeenCalled();
   });
 
+  it("fails an unread multi-batch stream when aborted after producer completion", async () => {
+    const failure = new Error("late explicit abort");
+    const observed: Error[] = [];
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTagsFromArray(Array.from({ length: 600 }, () => () => "x")),
+    });
+    await renderer.initializeRenderer();
+
+    const handle = renderer.renderStream();
+    const context = await handle.completed;
+    const closed = new Promise<void>((resolve) => handle.stream.once("close", resolve));
+    handle.stream.on("error", (error) => observed.push(error));
+    handle.abort(failure);
+    await closed;
+
+    expect(context.error).toBe(failure);
+    expect(observed).toEqual([failure]);
+    expect((handle.stream as Readable).destroyed).toBe(true);
+    expect((handle.stream as Readable).listenerCount("munched")).toBe(0);
+  });
+
   it("settles producer completion without consuming the output stream", async () => {
     const renderer = new TagRenderer({ templateTags: createTemplateTags`unread` });
 
