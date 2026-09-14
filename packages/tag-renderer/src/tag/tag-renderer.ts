@@ -42,7 +42,8 @@ export class TagRenderer {
   _tokenIdLookupMap: TokenMap;
   _processor?: RenderProcessor;
   _template?: TagTemplate;
-  private readonly registeredTokenIds = new Set<symbol>();
+  private readonly tokenIdRegistrations = new Map<symbol, Promise<void>>();
+  private registrationTail: Promise<void> = Promise.resolve();
   private _initializing?: Promise<void>;
 
   constructor(options: TagRendererOptions) {
@@ -130,10 +131,31 @@ export class TagRenderer {
     handler: TokenIdHandler,
     priority = 0,
   ): Promise<void> {
-    if (this.registeredTokenIds.has(uniqueId)) return;
-    this.registeredTokenIds.add(uniqueId);
-    this.addTokenIds(name, handler, priority);
-    await this._initializeTokenHandlers(this._tokenHandlers);
+    const existing = this.tokenIdRegistrations.get(uniqueId);
+    if (existing) return existing;
+
+    const registration = this.registrationTail.then(async () => {
+      const previousHandlers = this._tokenHandlers;
+      this.addTokenIds(name, handler, priority);
+      try {
+        await this._initializeTokenHandlers(this._tokenHandlers);
+      } catch (error) {
+        this._tokenHandlers = previousHandlers;
+        throw error;
+      }
+    });
+
+    this.tokenIdRegistrations.set(uniqueId, registration);
+    this.registrationTail = registration.catch(() => undefined);
+
+    try {
+      await registration;
+    } catch (error) {
+      if (this.tokenIdRegistrations.get(uniqueId) === registration) {
+        this.tokenIdRegistrations.delete(uniqueId);
+      }
+      throw error;
+    }
   }
 
   async _initializeTokenHandlers(handlers: TokenIdProvider[]): Promise<void> {

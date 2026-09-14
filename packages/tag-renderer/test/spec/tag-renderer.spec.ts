@@ -22,6 +22,17 @@ async function readStream(stream: NodeJS.ReadableStream): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+function deferred<Value = void>(): {
+  promise: Promise<Value>;
+  resolve: (value: Value | PromiseLike<Value>) => void;
+} {
+  let resolve!: (value: Value | PromiseLike<Value>) => void;
+  const promise = new Promise<Value>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 describe("tag templates", () => {
   it("creates tagged templates from literals and arrays", () => {
     const template = createTemplateTags` before ${"value"} after `;
@@ -407,6 +418,68 @@ describe("TagRenderer", () => {
     expect(first.result).toBe("ready");
     expect(second.result).toBe("ready");
     expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it("shares one dynamic token registration across concurrent renders", async () => {
+    const gate = deferred();
+    const provider = vi.fn(async () => {
+      await gate.promise;
+      return { VALUE: "ok" };
+    });
+    const child = createTemplateTags`${RegisterTokenIds(provider)}${Token("VALUE")}`;
+    const renderer = new TagRenderer({ templateTags: createTemplateTags`${() => child}` });
+    await renderer.initializeRenderer();
+
+    const first = renderer.render({});
+    const second = renderer.render({});
+    await vi.waitFor(() => expect(provider).toHaveBeenCalledOnce());
+    gate.resolve();
+
+    const results = await Promise.all([first, second]);
+    expect(results.map(({ result }) => result)).toEqual(["ok", "ok"]);
+    expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it("rolls back a failed registration so the same ID can retry", async () => {
+    const id = Symbol("retry");
+    let attempts = 0;
+    const provider = vi.fn(() => {
+      attempts++;
+      if (attempts === 1) throw new Error("registration failed");
+      return { VALUE: "ready" };
+    });
+    const renderer = new TagRenderer({ templateTags: createTemplateTags`ok` });
+
+    await expect(renderer.registerTokenIds("retry", id, provider)).rejects.toThrow(
+      "registration failed",
+    );
+    await renderer.registerTokenIds("retry", id, provider);
+
+    expect(renderer.lookupTokenHandler(Token("VALUE"))).toBe("ready");
+    expect(provider).toHaveBeenCalledTimes(2);
+  });
+
+  it("serializes registrations for different IDs without losing either result", async () => {
+    const gate = deferred();
+    const started: string[] = [];
+    const renderer = new TagRenderer({ templateTags: createTemplateTags`ok` });
+    const first = renderer.registerTokenIds("first", Symbol("first"), async () => {
+      started.push("first");
+      await gate.promise;
+      return { FIRST: "one" };
+    });
+    const second = renderer.registerTokenIds("second", Symbol("second"), () => {
+      started.push("second");
+      return { SECOND: "two" };
+    });
+
+    await vi.waitFor(() => expect(started).toEqual(["first"]));
+    gate.resolve();
+    await Promise.all([first, second]);
+
+    expect(started).toEqual(["first", "second"]);
+    expect(renderer.lookupTokenHandler(Token("FIRST"))).toBe("one");
+    expect(renderer.lookupTokenHandler(Token("SECOND"))).toBe("two");
   });
 
   it("publishes initialization atomically and retries after failure", async () => {
