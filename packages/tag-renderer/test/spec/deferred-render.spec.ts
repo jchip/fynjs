@@ -310,6 +310,24 @@ describe("deferred rendering", () => {
     expect(Buffer.concat(chunks).toString()).toBe("prefixmiddletail");
   });
 
+  it("settles finished only after normal stream consumption and producer completion", async () => {
+    const renderer = new TagRenderer({ templateTags: createTemplateTags`complete` });
+    await renderer.initializeRenderer();
+
+    const handle = renderer.renderStream();
+    let finished = false;
+    void handle.finished.then(() => {
+      finished = true;
+    });
+    const context = await handle.completed;
+    await Promise.resolve();
+    expect(finished).toBe(false);
+
+    expect(await readStream(handle.stream)).toBe("complete");
+    expect(await handle.finished).toBe(context);
+    expect(finished).toBe(true);
+  });
+
   it("streams the prefix before a gated deferred position", async () => {
     const gate = deferred<string>();
     const renderer = new TagRenderer({
@@ -469,6 +487,7 @@ describe("deferred rendering", () => {
     (handle.stream as Readable).destroy();
     const context = await handle.completed;
 
+    expect(await handle.finished).toBe(context);
     expect(signalAborted).toBe(true);
     expect(context.error).toMatchObject({ message: "Render stream destroyed" });
   });
@@ -553,6 +572,26 @@ describe("deferred rendering", () => {
     expect(context.result).toBe(context.error);
   });
 
+  it("reports an ordinary late source failure through finished", async () => {
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${() =>
+        (function* () {
+          yield {} as unknown as string;
+        })()}`,
+    });
+
+    const handle = renderer.renderStream();
+    const completed = await handle.completed;
+    expect(completed.error).toBeUndefined();
+
+    handle.stream.resume();
+    const finished = await handle.finished;
+
+    expect(finished).toBe(completed);
+    expect(finished.error).toBeInstanceOf(TypeError);
+    expect(finished.result).toBe(handle.stream);
+  });
+
   it("supports explicit stream abort and rejects invalid concurrency", async () => {
     for (const invalid of [0, -1, 1.5, Number.NaN]) {
       expect(
@@ -593,6 +632,7 @@ describe("deferred rendering", () => {
     handle.abort(failure);
     await closed;
 
+    expect(await handle.finished).toBe(context);
     expect(context.error).toBe(failure);
     expect(observed).toEqual([failure]);
     expect((handle.stream as Readable).destroyed).toBe(true);

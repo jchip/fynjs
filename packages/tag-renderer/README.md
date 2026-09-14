@@ -44,12 +44,16 @@ For progressive output, `renderStream()` returns immediately while initializatio
 in the background:
 
 ```ts
-const { stream, completed, abort } = renderer.renderStream();
+const { stream, completed, finished, abort } = renderer.renderStream();
 stream.pipe(response);
 const context = await completed;
+const deliveredContext = await finished;
 ```
 
-Destroying the stream or calling `abort()` cancels outstanding deferred work.
+`completed` tracks producer orchestration and may resolve before stream delivery. `finished` waits for
+both producer completion and stream end or close, so it requires stream consumption or an abort.
+Deferred scheduling may backpressure producer completion while an ordered source is still draining.
+Destroying the stream or calling `abort()` cancels outstanding deferred work and settles `finished`.
 The returned `stream` is the raw output stream; configured result transforms still apply only to
 `context.result`.
 

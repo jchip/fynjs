@@ -52,6 +52,7 @@ export interface TagRenderStream {
   readonly stream: NodeJS.ReadableStream;
   readonly context: RenderContext;
   readonly completed: Promise<RenderContext>;
+  readonly finished: Promise<RenderContext>;
   abort(reason?: unknown): void;
 }
 
@@ -153,12 +154,26 @@ export class TagRenderer {
     context.output.flush();
     context.result = stream;
 
+    let resolveStreamFinished!: () => void;
+    let streamFinished = false;
+    const streamCompletion = new Promise<void>((resolve) => {
+      resolveStreamFinished = resolve;
+    });
+    const finishStream = (): void => {
+      if (streamFinished) return;
+      streamFinished = true;
+      resolveStreamFinished();
+    };
     const onError = (error: Error): void => context._handleOutputError(error);
+    const onEnd = (): void => finishStream();
     const onClose = (): void => {
       if (!stream.readableEnded) context._handleOutputError(new Error("Render stream destroyed"));
       stream.removeListener("error", onError);
+      stream.removeListener("end", onEnd);
+      finishStream();
     };
     stream.on("error", onError);
+    stream.once("end", onEnd);
     stream.once("close", onClose);
 
     const completed = new Promise<RenderContext>((resolve) => {
@@ -168,11 +183,13 @@ export class TagRenderer {
         });
       });
     });
+    const finished = Promise.all([completed, streamCompletion]).then(([result]) => result);
 
     return {
       stream,
       context,
       completed,
+      finished,
       abort: (reason?: unknown) => context.abort(reason),
     };
   }
