@@ -121,6 +121,17 @@ export class RenderContext {
     this.deferredTasks.fail(error);
   }
 
+  _handleOutputError(error: unknown): void {
+    if (this.error !== undefined) return;
+    if (!this.stopMode) {
+      this.stopMode = RenderContext.VOID_STOP;
+      this.voidResult = error;
+    }
+    this.error = error;
+    this.output.fail(error, false);
+    this.deferredTasks.fail(error);
+  }
+
   getTokenHandler(name: string): TokenProvider | undefined {
     return this.handlersMap[name];
   }

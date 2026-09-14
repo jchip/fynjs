@@ -70,14 +70,31 @@ export class BaseOutput {
     }
   }
 
-  sendToMunchy(munchy: Munchy, done: () => void): void {
+  sendToMunchy(munchy: Munchy, done: () => void, discarded: () => void): void {
     if (this.items.length === 0) {
       process.nextTick(done);
       return;
     }
 
     const values = this.streamValues();
+    let active = true;
+    let onMunched: (() => void) | undefined;
+    const cleanup = (): void => {
+      if (onMunched) munchy.removeListener("munched", onMunched);
+      munchy.removeListener("close", discard);
+      munchy.removeListener("error", discard);
+    };
+    const finish = (callback: () => void): void => {
+      if (!active) return;
+      active = false;
+      cleanup();
+      callback();
+    };
+    const discard = (): void => finish(discarded);
     const sendBatch = (): void => {
+      if (!active) return;
+      if (munchy.destroyed) return discard();
+
       const batch: RenderValue[] = [];
       let exhausted = false;
       while (batch.length < STREAM_BATCH_SIZE) {
@@ -90,14 +107,28 @@ export class BaseOutput {
       }
 
       if (batch.length === 0) {
-        done();
+        finish(done);
         return;
       }
 
-      munchy.once("munched", exhausted ? done : sendBatch);
+      onMunched = () => {
+        if (onMunched) munchy.removeListener("munched", onMunched);
+        onMunched = undefined;
+        queueMicrotask(() => {
+          if (munchy.destroyed) return discard();
+          if (exhausted) {
+            finish(done);
+          } else {
+            sendBatch();
+          }
+        });
+      };
+      munchy.once("munched", onMunched);
       munchy.munch(...batch);
     };
 
+    munchy.once("close", discard);
+    munchy.once("error", discard);
     sendBatch();
   }
 
@@ -270,18 +301,22 @@ export class RenderOutput {
     return this.closePromise;
   }
 
-  fail(error: unknown): void {
+  fail(error: unknown, destroyStream = true): void {
     if (this.hasFailed) return;
     this.hasFailed = true;
     this.failure = error;
     this.ended = true;
 
     const stream = this.sink?.mode === "stream" ? this.sink.munchy : this.context.munchy;
-    if (stream && !stream.destroyed) {
+    if (destroyStream && stream && !stream.destroyed) {
       stream.destroy(error instanceof Error ? error : new Error(String(error)));
     }
     this.rejectClose?.(error);
     for (const spot of [...this.openSpots]) spot._cancel();
+    this.output = undefined;
+    this.flushQueue.length = 0;
+    this.flushHead = 0;
+    this.checking = false;
   }
 
   private finish(): void {
@@ -324,6 +359,10 @@ export class RenderOutput {
   }
 
   private checkFlushQueue(): void {
+    if (this.hasFailed) {
+      this.checking = false;
+      return;
+    }
     if (this.checking) return;
     this.checking = true;
 
@@ -340,10 +379,16 @@ export class RenderOutput {
           this.compactFlushQueue();
           const sink = this.freezeSink();
           if (sink.mode === "stream") {
-            segment.sendToMunchy(sink.munchy, () => {
-              segment.markDrained();
-              advance();
-            });
+            segment.sendToMunchy(
+              sink.munchy,
+              () => {
+                segment.markDrained();
+                advance();
+              },
+              () => {
+                this.checking = false;
+              },
+            );
             return;
           }
 

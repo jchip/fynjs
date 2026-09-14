@@ -414,6 +414,86 @@ describe("deferred rendering", () => {
     expect(context.error).toMatchObject({ message: "Render stream destroyed" });
   });
 
+  it("does not advance a large output batch while the stream is being destroyed", async () => {
+    const errors: Error[] = [];
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTagsFromArray(Array.from({ length: 600 }, () => () => "x")),
+    });
+    await renderer.initializeRenderer();
+
+    const handle = renderer.renderStream();
+    handle.stream.on("error", (error) => errors.push(error));
+    handle.stream.once("data", () => (handle.stream as Readable).destroy());
+    const closed = once(handle.stream, "close");
+    handle.stream.resume();
+
+    await closed;
+    const context = await handle.completed;
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(errors).toEqual([]);
+    expect(context.error).toMatchObject({ message: "Render stream destroyed" });
+    expect((handle.stream as Readable).listenerCount("munched")).toBe(0);
+  });
+
+  it("aborts and closes a gated deferred iterable after consumer disconnect", async () => {
+    let finalized = false;
+    let signalAborted = false;
+    const chunks: string[] = [];
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${(context: RenderContext) =>
+        context.defer((signal) =>
+          (async function* () {
+            try {
+              yield "first";
+              if (!signal.aborted) {
+                await new Promise<void>((resolve) =>
+                  signal.addEventListener("abort", () => resolve(), { once: true }),
+                );
+              }
+              signalAborted = signal.aborted;
+              if (!signal.aborted) yield "late";
+            } finally {
+              finalized = true;
+            }
+          })(),
+        )}`,
+    });
+
+    const handle = renderer.renderStream();
+    handle.stream.on("data", (chunk) => {
+      chunks.push(String(chunk));
+      (handle.stream as Readable).destroy();
+    });
+    const closed = once(handle.stream, "close");
+
+    await closed;
+    const context = await handle.completed;
+    await vi.waitFor(() => expect(finalized).toBe(true));
+
+    expect(signalAborted).toBe(true);
+    expect(chunks).toEqual(["first"]);
+    expect(context.error).toMatchObject({ message: "Render stream destroyed" });
+  });
+
+  it("reflects an unrecoverable Munchy error in render completion", async () => {
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${(context: RenderContext) =>
+        context.defer(() =>
+          (function* () {
+            yield {} as unknown as string;
+          })(),
+        )}`,
+    });
+
+    const handle = renderer.renderStream();
+    handle.stream.resume();
+    const context = await handle.completed;
+
+    expect(context.error).toBeInstanceOf(TypeError);
+    expect(context.result).toBe(context.error);
+  });
+
   it("supports explicit stream abort and rejects invalid concurrency", async () => {
     for (const invalid of [0, -1, 1.5, Number.NaN]) {
       expect(

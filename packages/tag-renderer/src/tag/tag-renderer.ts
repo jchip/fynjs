@@ -152,19 +152,18 @@ export class TagRenderer {
     const stream = context.setMunchyOutput();
     context.output.flush();
     context.result = stream;
-    stream.on("error", () => undefined);
 
-    let finished = false;
+    const onError = (error: Error): void => context._handleOutputError(error);
     const onClose = (): void => {
-      if (!finished && !stream.readableEnded) context.abort(new Error("Render stream destroyed"));
+      if (!stream.readableEnded) context._handleOutputError(new Error("Render stream destroyed"));
+      stream.removeListener("error", onError);
     };
+    stream.on("error", onError);
     stream.once("close", onClose);
 
     const completed = new Promise<RenderContext>((resolve) => {
       queueMicrotask(() => {
         void this.executeRender(context).then((result) => {
-          finished = true;
-          stream.removeListener("close", onClose);
           resolve(result);
         });
       });
