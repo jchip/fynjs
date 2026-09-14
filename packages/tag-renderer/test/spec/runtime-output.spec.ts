@@ -95,6 +95,27 @@ describe("RenderOutput buffered output", () => {
     await expect(firstClose).resolves.toBe("done");
   });
 
+  it("locks buffered output on the first flush", async () => {
+    const context = new RenderContext();
+    context.output.add("before-");
+    context.output.flush();
+
+    expect(() => context.setMunchyOutput()).toThrow("RenderOutput output mode is already locked");
+    context.output.add("after");
+    await expect(context.output.close()).resolves.toBe("before-after");
+  });
+
+  it("keeps a waiting close on its locked buffered output", async () => {
+    const context = new RenderContext();
+    const spot = context.output.reserve();
+    const result = context.output.close();
+
+    expect(() => context.setMunchyOutput()).toThrow("RenderOutput output mode is already locked");
+    spot.add("done");
+    spot.close();
+    await expect(result).resolves.toBe("done");
+  });
+
   it("rejects a readable value in buffered mode when closing", async () => {
     const output = new RenderOutput();
     output.add(Readable.from(["stream"]));

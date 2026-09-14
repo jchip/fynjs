@@ -57,10 +57,12 @@ export class RenderContext {
   }
 
   setOutputSend(send: OutputSend): void {
+    this.output.assertSinkMutable();
     this.send = send;
   }
 
   setMunchyOutput(munchy?: Munchy | null): Munchy {
+    this.output.assertSinkMutable();
     this.munchy = munchy ?? new Munchy({ handleStreamError: munchyHandleStreamError });
     return this.munchy;
   }

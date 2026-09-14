@@ -12,6 +12,11 @@ export interface OutputContext {
   transform: RenderTransform;
 }
 
+type OutputSink =
+  | { readonly mode: "buffer" }
+  | { readonly mode: "send"; readonly send: OutputSend }
+  | { readonly mode: "stream"; readonly munchy: Munchy };
+
 function valueType(value: unknown): string {
   if (value && typeof value === "object" && "constructor" in value) {
     const constructor = (value as { constructor?: { name?: string } }).constructor;
@@ -157,6 +162,7 @@ export class RenderOutput {
   private readonly flushQueue: MainOutput[] = [];
   private flushHead = 0;
   private readonly context: OutputContext;
+  private sink: OutputSink | undefined;
   private result = "";
   private ended = false;
   private finished = false;
@@ -192,7 +198,12 @@ export class RenderOutput {
     return spot;
   }
 
+  assertSinkMutable(): void {
+    if (this.sink) throw new Error("RenderOutput output mode is already locked");
+  }
+
   flush(): void {
+    this.freezeSink();
     if (this.output && this.output.length > 0) {
       this.flushQueue.push(this.output);
       this.output = this.ended ? undefined : new MainOutput();
@@ -204,10 +215,9 @@ export class RenderOutput {
     if (this.closePromise) return this.closePromise;
 
     this.ended = true;
-    if (this.context.munchy) {
-      this.closePromise = Promise.resolve().then(() =>
-        this.context.transform(this.context.munchy as Munchy, this),
-      );
+    const sink = this.freezeSink();
+    if (sink.mode === "stream") {
+      this.closePromise = Promise.resolve().then(() => this.context.transform(sink.munchy, this));
     } else {
       this.closePromise = new Promise((resolve, reject) => {
         this.resolveClose = resolve;
@@ -223,8 +233,9 @@ export class RenderOutput {
     if (this.finished) return;
     this.finished = true;
 
-    if (this.context.munchy) {
-      this.context.munchy.munch(null);
+    const sink = this.freezeSink();
+    if (sink.mode === "stream") {
+      sink.munchy.munch(null);
       return;
     }
 
@@ -233,6 +244,17 @@ export class RenderOutput {
     } catch (error) {
       this.rejectClose?.(error);
     }
+  }
+
+  private freezeSink(): OutputSink {
+    if (!this.sink) {
+      this.sink = this.context.munchy
+        ? { mode: "stream", munchy: this.context.munchy }
+        : this.context.send
+          ? { mode: "send", send: this.context.send }
+          : { mode: "buffer" };
+    }
+    return this.sink;
   }
 
   private compactFlushQueue(): void {
@@ -257,14 +279,15 @@ export class RenderOutput {
 
           this.flushHead += 1;
           this.compactFlushQueue();
-          if (this.context.munchy) {
-            segment.sendToMunchy(this.context.munchy, advance);
+          const sink = this.freezeSink();
+          if (sink.mode === "stream") {
+            segment.sendToMunchy(sink.munchy, advance);
             return;
           }
 
           const rendered = segment.stringify();
-          if (this.context.send) {
-            this.context.send(rendered);
+          if (sink.mode === "send") {
+            sink.send(rendered);
           } else {
             this.result += rendered;
           }
