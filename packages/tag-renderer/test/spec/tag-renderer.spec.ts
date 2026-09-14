@@ -204,6 +204,30 @@ describe("TagRenderer", () => {
     expect((await renderer.render({})).result).toBe("second");
   });
 
+  it("binds tokens to the providers registered before their template position", async () => {
+    const template = createTemplateTags`${Token("VALUE")}${RegisterTokenIds(() => ({
+      VALUE: "registered",
+    }))}${Token("VALUE")}`;
+
+    const context = await new TagRenderer({ templateTags: template }).render({});
+
+    expect(context.result).toBe("<!-- unhandled token VALUE -->\nregistered");
+  });
+
+  it("moves a duplicate provider to the end without invoking it before initialization", async () => {
+    const shared = vi.fn(() => ({ VALUE: "shared" }));
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${Token("VALUE")}`,
+      tokenHandlers: [shared, () => ({ VALUE: "other" })],
+    });
+
+    renderer.addTokenIds("shared", shared);
+    expect(shared).not.toHaveBeenCalled();
+
+    expect((await renderer.render({})).result).toBe("shared");
+    expect(shared).toHaveBeenCalledOnce();
+  });
+
   it("isolates compiled handlers when renderers share an authoring template", async () => {
     const child = createTemplateTags`${Token("VALUE")}`;
     const template = createTemplateTags`${Token("VALUE")}|${TokenInvoke((options) => {
@@ -457,6 +481,27 @@ describe("TagRenderer", () => {
 
     expect(renderer.lookupTokenHandler(Token("VALUE"))).toBe("ready");
     expect(provider).toHaveBeenCalledTimes(2);
+  });
+
+  it("publishes no pending provider state when a later registration fails", async () => {
+    const pending = vi.fn(() => ({ PENDING: "pending" }));
+    const renderer = new TagRenderer({ templateTags: createTemplateTags`ok` });
+    await renderer.initializeRenderer();
+    renderer.addTokenIds("pending", pending);
+
+    await expect(
+      renderer.registerTokenIds("failing", Symbol("failing"), () => {
+        throw new Error("later provider failed");
+      }),
+    ).rejects.toThrow("later provider failed");
+
+    expect(renderer.lookupTokenHandler(Token("PENDING"))).toBeUndefined();
+    expect(renderer.handlersMap.pending).toBeUndefined();
+    expect(renderer._tokenHandlers.map(({ name }) => name)).toEqual(["pending"]);
+
+    await renderer.initializeRenderer(true);
+    expect(renderer.lookupTokenHandler(Token("PENDING"))).toBe("pending");
+    expect(pending).toHaveBeenCalledTimes(2);
   });
 
   it("serializes registrations for different IDs without losing either result", async () => {

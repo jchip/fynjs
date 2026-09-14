@@ -16,7 +16,21 @@ interface TokenIdProvider {
   name?: string;
   handler: TokenIdHandler;
   priority: number;
+  order: number;
+  unnamedIndex: number;
   loaded?: LoadedTokenIds;
+}
+
+interface TokenWinner {
+  order: number;
+  priority: number;
+  value: unknown;
+}
+
+interface PreparedTokenProvider {
+  entries: Array<[string, unknown]>;
+  loaded: LoadedTokenIds;
+  provider: TokenIdProvider;
 }
 
 interface TokenIdsWithMetadata {
@@ -42,6 +56,12 @@ export class TagRenderer {
   _tokenIdLookupMap: TokenMap;
   _processor?: RenderProcessor;
   _template?: TagTemplate;
+  private pendingTokenProviders: TokenIdProvider[] = [];
+  private readonly tokenProvidersByHandler = new Map<TokenIdHandler, TokenIdProvider>();
+  private readonly tokenWinners = new Map<string, TokenWinner>();
+  private readonly appliedTokenProviders = new Set<TokenIdProvider>();
+  private nextProviderOrder = 0;
+  private registryNeedsRebuild = false;
   private readonly tokenIdRegistrations = new Map<symbol, Promise<void>>();
   private registrationTail: Promise<void> = Promise.resolve();
   private _initializing?: Promise<void>;
@@ -77,7 +97,7 @@ export class TagRenderer {
     if (!reset && this._processor) return;
 
     const initialize = async (): Promise<void> => {
-      await this._initializeTokenHandlers(this._tokenHandlers);
+      await this._initializeTokenHandlers(this.pendingTokenProviders);
       const processor = new RenderProcessor({
         asyncTemplate: this,
         insertTokenIds: this._options.insertTokenIds,
@@ -121,8 +141,7 @@ export class TagRenderer {
   }
 
   addTokenIds(name: string | undefined, handler: TokenIdHandler, priority = 0): void {
-    this._tokenHandlers = this._tokenHandlers.filter((provider) => provider.handler !== handler);
-    this._tokenHandlers.push({ name, handler, priority });
+    this.addTokenProvider(name, handler, priority);
   }
 
   async registerTokenIds(
@@ -135,12 +154,32 @@ export class TagRenderer {
     if (existing) return existing;
 
     const registration = this.registrationTail.then(async () => {
-      const previousHandlers = this._tokenHandlers;
-      this.addTokenIds(name, handler, priority);
+      const previousProvider = this.tokenProvidersByHandler.get(handler);
+      const previousIndex = previousProvider ? this._tokenHandlers.indexOf(previousProvider) : -1;
+      const previousPendingIndex = previousProvider
+        ? this.pendingTokenProviders.indexOf(previousProvider)
+        : -1;
+      const previousNeedsRebuild = this.registryNeedsRebuild;
+      const previousNextOrder = this.nextProviderOrder;
+      const provider = this.addTokenProvider(name, handler, priority);
       try {
-        await this._initializeTokenHandlers(this._tokenHandlers);
+        await this._initializeTokenHandlers(this.pendingTokenProviders);
       } catch (error) {
-        this._tokenHandlers = previousHandlers;
+        this._tokenHandlers = this._tokenHandlers.filter((entry) => entry !== provider);
+        this.pendingTokenProviders = this.pendingTokenProviders.filter(
+          (entry) => entry !== provider,
+        );
+        if (previousProvider) {
+          this._tokenHandlers.splice(previousIndex, 0, previousProvider);
+          if (previousPendingIndex >= 0) {
+            this.pendingTokenProviders.splice(previousPendingIndex, 0, previousProvider);
+          }
+          this.tokenProvidersByHandler.set(handler, previousProvider);
+        } else {
+          this.tokenProvidersByHandler.delete(handler);
+        }
+        this.registryNeedsRebuild = previousNeedsRebuild;
+        this.nextProviderOrder = previousNextOrder;
         throw error;
       }
     });
@@ -159,32 +198,125 @@ export class TagRenderer {
   }
 
   async _initializeTokenHandlers(handlers: TokenIdProvider[]): Promise<void> {
-    const loaded: LoadedTokenIds[] = [];
-
-    for (let index = 0; index < handlers.length; index++) {
-      const provider = handlers[index];
-      if (!provider.loaded) {
+    const pending = [...handlers];
+    const prepared: PreparedTokenProvider[] = [];
+    for (const provider of pending) {
+      let loaded = provider.loaded;
+      if (!loaded) {
         const result = await provider.handler(this._handlerContext, this);
         const configured = isTokenIdsWithMetadata(result)
           ? result
           : { tokens: requireTokenMap(result) };
-        provider.loaded = {
-          name: configured.name || provider.name || `unnamed-token-id-handler-${index}`,
+        loaded = {
+          name:
+            configured.name || provider.name || `unnamed-token-id-handler-${provider.unnamedIndex}`,
           tokens: configured.tokens,
           priority: provider.priority,
         };
       }
-      loaded.push(provider.loaded);
+      prepared.push({ provider, loaded, entries: Object.entries(loaded.tokens) });
+    }
+
+    for (const { provider, loaded } of prepared) provider.loaded = loaded;
+    if (this.registryNeedsRebuild) {
+      this.rebuildTokenRegistry();
+    } else {
+      for (const provider of prepared) this.applyTokenProvider(provider);
+    }
+    const processed = new Set(pending);
+    this.pendingTokenProviders = this.pendingTokenProviders.filter(
+      (provider) => !processed.has(provider),
+    );
+  }
+
+  private addTokenProvider(
+    name: string | undefined,
+    handler: TokenIdHandler,
+    priority: number,
+  ): TokenIdProvider {
+    const previous = this.tokenProvidersByHandler.get(handler);
+    if (previous) {
+      this._tokenHandlers = this._tokenHandlers.filter((provider) => provider !== previous);
+      this.pendingTokenProviders = this.pendingTokenProviders.filter(
+        (provider) => provider !== previous,
+      );
+      if (this.appliedTokenProviders.has(previous)) this.registryNeedsRebuild = true;
+    }
+
+    const provider: TokenIdProvider = {
+      name,
+      handler,
+      priority,
+      order: this.nextProviderOrder++,
+      unnamedIndex: this._tokenHandlers.length,
+    };
+    this._tokenHandlers.push(provider);
+    this.pendingTokenProviders.push(provider);
+    this.tokenProvidersByHandler.set(handler, provider);
+    return provider;
+  }
+
+  private applyTokenProvider(prepared: PreparedTokenProvider): void {
+    const { entries, loaded, provider } = prepared;
+    if (this.appliedTokenProviders.has(provider)) return;
+
+    this.handlersMap[loaded.name] = loaded;
+    for (const [id, value] of entries) {
+      const winner = this.tokenWinners.get(id);
+      if (
+        !winner ||
+        provider.priority > winner.priority ||
+        (provider.priority === winner.priority && provider.order > winner.order)
+      ) {
+        this.tokenWinners.set(id, {
+          order: provider.order,
+          priority: provider.priority,
+          value,
+        });
+        this._tokenIdLookupMap[id] = value;
+      }
+    }
+    this.appliedTokenProviders.add(provider);
+  }
+
+  private rebuildTokenRegistry(): void {
+    const handlersMap = Object.create(null) as Record<string, LoadedTokenIds>;
+    const tokenLookup = Object.create(null) as TokenMap;
+    const tokenWinners = new Map<string, TokenWinner>();
+    const prepared = this._tokenHandlers.map((provider) => {
+      if (!provider.loaded) {
+        throw new Error("@fynjs/tag-renderer: cannot rebuild an unloaded token provider");
+      }
+      return { provider, loaded: provider.loaded, entries: Object.entries(provider.loaded.tokens) };
+    });
+
+    for (const { entries, loaded, provider } of prepared) {
+      handlersMap[loaded.name] = loaded;
+      for (const [id, value] of entries) {
+        const winner = tokenWinners.get(id);
+        if (
+          !winner ||
+          provider.priority > winner.priority ||
+          (provider.priority === winner.priority && provider.order > winner.order)
+        ) {
+          tokenWinners.set(id, {
+            order: provider.order,
+            priority: provider.priority,
+            value,
+          });
+          tokenLookup[id] = value;
+        }
+      }
     }
 
     for (const name of Object.keys(this.handlersMap)) delete this.handlersMap[name];
-    for (const provider of loaded) this.handlersMap[provider.name] = provider;
-
-    const tokenLookup = Object.create(null) as TokenMap;
-    for (const provider of [...loaded].sort((left, right) => left.priority - right.priority)) {
-      for (const id of Object.keys(provider.tokens)) tokenLookup[id] = provider.tokens[id];
-    }
+    Object.assign(this.handlersMap, handlersMap);
     this._tokenIdLookupMap = tokenLookup;
+    this.tokenWinners.clear();
+    for (const [id, winner] of tokenWinners) this.tokenWinners.set(id, winner);
+    this.appliedTokenProviders.clear();
+    for (const provider of this._tokenHandlers) this.appliedTokenProviders.add(provider);
+    this.registryNeedsRebuild = false;
   }
 }
 
