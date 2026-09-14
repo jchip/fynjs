@@ -59,11 +59,12 @@ export class TokenModule {
   }
 
   clone(pos: number, templateDir?: string): TokenModule {
+    const props = { ...this.props };
     const token = new TokenModule(
       this.id,
       pos,
-      this.props,
-      (this.props[TEMPLATE_DIR] as string | undefined) ?? templateDir ?? this[TEMPLATE_DIR],
+      props,
+      (props[TEMPLATE_DIR] as string | undefined) ?? templateDir ?? this[TEMPLATE_DIR],
     );
     token.injectedModule = this.injectedModule;
     return token;

@@ -217,6 +217,33 @@ describe("TagRenderer", () => {
     expect(secondResult.result).toBe("second|second-module|second");
   });
 
+  it("isolates token props when renderers share an authoring template", async () => {
+    let waiting = 0;
+    let release!: () => void;
+    const bothFactoriesStarted = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const token = TokenInvoke(
+      async (options, runtimeToken) => {
+        const props = (runtimeToken as { props: Record<string, unknown> }).props;
+        props.owner = (options as { label: string }).label;
+        if (++waiting === 2) release();
+        await bothFactoriesStarted;
+        return { process: () => String(props.owner) };
+      },
+      { owner: "authoring" },
+    );
+    const template = createTemplateTags`${token}`;
+    const first = new TagRenderer({ templateTags: template, label: "first" });
+    const second = new TagRenderer({ templateTags: template, label: "second" });
+
+    const [firstResult, secondResult] = await Promise.all([first.render({}), second.render({})]);
+
+    expect(firstResult.result).toBe("first");
+    expect(secondResult.result).toBe("second");
+    expect(token.props.owner).toBe("authoring");
+  });
+
   it("invokes a token module directly with props", async () => {
     const setup = vi.fn((_options: unknown, token: unknown) => {
       const props = (token as { props: Record<string, unknown> }).props;
