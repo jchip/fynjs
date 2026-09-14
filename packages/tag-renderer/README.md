@@ -86,10 +86,10 @@ work. Run the raw warm-render benchmark with:
 fyn bench:static
 ```
 
-It renders the same 64 KiB static HTML payload split across 1, 16, 256, and 4,096 literal tags. The
-renderer is initialized before timing, and the templates contain no functions, promises, tokens, or
-dynamic modules. Results include arithmetic mean, median, and p95 time per render; renders and MiB per
-second; median nanoseconds per tag; and median absolute deviation. MiB per second is logical rendered
-output, not string-flattening or I/O throughput. Timing statistics summarize batched per-render sample
-averages rather than request-tail latency.
+It renders the same 64 KiB static HTML payload split across 1, 16, 256, 512, 1,024, 2,048, 3,072, and
+4,096 literal tags. The renderer is initialized before timing, and the templates contain no functions,
+promises, tokens, or dynamic modules. Results include arithmetic mean, median, and p95 time per render;
+renders and MiB per second; median nanoseconds per tag; and median absolute deviation. MiB per second is
+logical rendered output, not string-flattening or I/O throughput. Timing statistics summarize batched
+per-render sample averages rather than request-tail latency.
 `fyn bench:static:smoke` runs the same cases with shorter sampling.

@@ -4,7 +4,7 @@ import { performance } from "node:perf_hooks";
 import { TagRenderer, createTemplateTagsFromArray } from "../dist/index.js";
 
 const PAYLOAD_BYTES = 64 * 1024;
-const CASES = [1, 16, 256, 4_096];
+const CASES = [1, 16, 256, 512, 1_024, 2_048, 3_072, 4_096];
 const HTML_UNIT =
   '<main><section class="card"><h2>Static title</h2><p>Static content.</p></section></main>';
 const EXPECTED = HTML_UNIT.repeat(Math.ceil(PAYLOAD_BYTES / HTML_UNIT.length)).slice(

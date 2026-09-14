@@ -24,6 +24,10 @@ describe("static rendering benchmark", () => {
       "static-1",
       "static-16",
       "static-256",
+      "static-512",
+      "static-1024",
+      "static-2048",
+      "static-3072",
       "static-4096",
     ]);
     for (const row of rows) {
