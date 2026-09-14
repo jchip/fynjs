@@ -62,6 +62,21 @@ describe("RenderOutput buffered output", () => {
     expect(send).toHaveBeenLastCalledWith("before-reserved-after");
   });
 
+  it("drains many queued segments iteratively after a reserved spot closes", async () => {
+    const output = new RenderOutput();
+    const spot = output.reserve();
+    output.flush();
+
+    for (let index = 0; index < 20_000; index += 1) {
+      output.add("x");
+      output.flush();
+    }
+
+    const result = output.close();
+    spot.close();
+    await expect(result).resolves.toBe("x".repeat(20_000));
+  });
+
   it("applies a final asynchronous transform", async () => {
     const output = new RenderOutput({
       transform: async (value) => `[${value}]`,

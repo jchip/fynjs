@@ -137,6 +137,7 @@ const identityTransform: RenderTransform = (result) => result;
 export class RenderOutput {
   private output: MainOutput | undefined = new MainOutput();
   private readonly flushQueue: MainOutput[] = [];
+  private flushHead = 0;
   private readonly context: OutputContext;
   private result = "";
   private ended = false;
@@ -221,38 +222,37 @@ export class RenderOutput {
     this.checking = true;
 
     const advance = (): void => {
-      const segment = this.flushQueue[0];
-      if (!segment) {
+      try {
+        while (this.flushHead < this.flushQueue.length) {
+          const segment = this.flushQueue[this.flushHead];
+          if (segment.hasPending) {
+            this.checking = false;
+            return;
+          }
+
+          this.flushHead += 1;
+          if (this.context.munchy) {
+            segment.sendToMunchy(this.context.munchy, advance);
+            return;
+          }
+
+          const rendered = segment.stringify();
+          if (this.context.send) {
+            this.context.send(rendered);
+          } else {
+            this.result += rendered;
+          }
+        }
+
+        this.flushQueue.length = 0;
+        this.flushHead = 0;
         this.checking = false;
         if (this.ended) this.finish();
-        return;
-      }
-
-      if (segment.hasPending) {
-        this.checking = false;
-        return;
-      }
-
-      this.flushQueue.shift();
-      if (this.context.munchy) {
-        segment.sendToMunchy(this.context.munchy, advance);
-        return;
-      }
-
-      try {
-        const rendered = segment.stringify();
-        if (this.context.send) {
-          this.context.send(rendered);
-        } else {
-          this.result += rendered;
-        }
       } catch (error) {
         this.checking = false;
         this.rejectClose?.(error);
         if (!this.closePromise) throw error;
-        return;
       }
-      advance();
     };
 
     advance();
