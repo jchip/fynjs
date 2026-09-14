@@ -108,7 +108,7 @@ export class TagRenderer {
   async render(options: Record<string, unknown> = {}): Promise<RenderContext> {
     const context = new RenderContext(options, this);
     try {
-      await this.initializeRenderer(false);
+      if (!this._processor || this._initializing) await this.initializeRenderer(false);
       const result = await this._processor!.render(this._template!, context);
       context.result = context.isVoidStop ? context.voidResult : result;
     } catch (error) {

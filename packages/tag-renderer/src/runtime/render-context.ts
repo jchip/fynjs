@@ -137,19 +137,7 @@ export class RenderContext {
     void id;
     try {
       const resolved = await result;
-      if (isRenderStream(resolved) && !this.output.acceptsStreams) {
-        const label = id === "" ? "<anonymous>" : String(id);
-        throw new TypeError(
-          `Token handler ${label} returned a readable or iterable value in buffered output; call context.setMunchyOutput() before returning it`,
-        );
-      }
-      if (
-        typeof resolved === "string" ||
-        resolved instanceof Uint8Array ||
-        isRenderStream(resolved)
-      ) {
-        this.output.add(resolved);
-      }
+      this.handleResolvedTokenResult(resolved, id);
       callback?.();
     } catch (error) {
       if (callback) {
@@ -157,6 +145,18 @@ export class RenderContext {
         return;
       }
       throw error;
+    }
+  }
+
+  handleResolvedTokenResult(result: unknown, id: string | number = ""): void {
+    if (isRenderStream(result) && !this.output.acceptsStreams) {
+      const label = id === "" ? "<anonymous>" : String(id);
+      throw new TypeError(
+        `Token handler ${label} returned a readable or iterable value in buffered output; call context.setMunchyOutput() before returning it`,
+      );
+    }
+    if (typeof result === "string" || result instanceof Uint8Array || isRenderStream(result)) {
+      this.output.add(result);
     }
   }
 }

@@ -84,6 +84,7 @@ export interface TagTemplateOptions {
 export class TagTemplate {
   readonly _templateTags: unknown[];
   readonly _tagOpCodes: Array<RenderStep | null | undefined>;
+  _steps: readonly RenderStep[] = [];
   readonly _templateDir?: string;
   readonly _processor: RenderProcessor;
 
@@ -125,6 +126,9 @@ export class TagTemplate {
     for (let index = 0; index < this._templateTags.length; index++) {
       await this.getTagOpCode(index);
     }
+    this._steps = Object.freeze(
+      this._tagOpCodes.filter((step): step is RenderStep => step !== null && step !== undefined),
+    );
   }
 
   async handleSubTemplate(templateTags: readonly unknown[]): Promise<TagTemplate> {
@@ -134,6 +138,7 @@ export class TagTemplate {
       processor: this._processor,
     });
     await this._processor.loadTokenModules(template);
+    await template.initTagOpCode();
     return template;
   }
 

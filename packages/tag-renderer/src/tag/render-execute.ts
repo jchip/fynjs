@@ -1,8 +1,23 @@
 import type { RenderContext } from "../runtime/index.js";
 import type { RenderStep } from "./render-processor.js";
-import { executeSteps } from "./render-processor.js";
 import type { TagTemplate } from "./tag-template.js";
 import { isTemplateTags } from "./tag-template.js";
+
+export const executeSteps = {
+  STEP_HANDLER: 0,
+  STEP_STR_TOKEN: 1,
+  STEP_NO_HANDLER: 2,
+  STEP_LITERAL_HANDLER: 3,
+  STEP_FUNC_HANDLER: 4,
+  STEP_SUB_TEMPLATE: 5,
+} as const;
+
+type StepResult = void | PromiseLike<void>;
+
+const isPromiseLike = <Value>(value: unknown): value is PromiseLike<Value> =>
+  (typeof value === "object" || typeof value === "function") &&
+  value !== null &&
+  typeof (value as PromiseLike<Value>).then === "function";
 
 const addDebugStart = (context: RenderContext, step: RenderStep): void => {
   const token = step.token;
@@ -14,43 +29,64 @@ const addDebugEnd = (context: RenderContext, step: RenderStep): void => {
   if (step.token) context.output.add(`<!-- ${String(step.token.id)} END -->\n`);
 };
 
-const handleResult = async (
+const handleResolvedResult = (
+  template: TagTemplate,
+  context: RenderContext,
+  tokenId: string | number,
+  resolved: unknown,
+): StepResult => {
+  if (isTemplateTags(resolved) || Array.isArray(resolved)) {
+    return template
+      .handleSubTemplate(resolved)
+      .then((subTemplate) => executeTemplateSteps(subTemplate, context));
+  }
+  void tokenId;
+  context.handleResolvedTokenResult(resolved, tokenId);
+};
+
+const handleResult = (
   template: TagTemplate,
   context: RenderContext,
   tokenId: string | number,
   result: unknown,
-): Promise<void> => {
-  const resolved = await result;
-  if (isTemplateTags(resolved) || Array.isArray(resolved)) {
-    const subTemplate = await template.handleSubTemplate(resolved);
-    await executeTagTemplate(subTemplate, context, true);
-    return;
+): StepResult =>
+  isPromiseLike(result)
+    ? Promise.resolve(result).then((resolved) =>
+        handleResolvedResult(template, context, tokenId, resolved),
+      )
+    : handleResolvedResult(template, context, tokenId, result);
+
+const finishDebug = (context: RenderContext, step: RenderStep, pending: StepResult): StepResult => {
+  if (isPromiseLike(pending)) {
+    return Promise.resolve(pending).then(() => addDebugEnd(context, step));
   }
-  await context.handleTokenResult(tokenId, resolved);
+  addDebugEnd(context, step);
 };
 
-const executeStep = async (
+const executeStep = (
   template: TagTemplate,
   context: RenderContext,
   step: RenderStep,
-): Promise<void> => {
+): StepResult => {
   switch (step.code) {
     case executeSteps.STEP_SUB_TEMPLATE:
-      if (step.template) await executeTagTemplate(step.template, context, true);
+      if (step.template) return executeTemplateSteps(step.template, context);
       return;
     case executeSteps.STEP_FUNC_HANDLER:
-      if (step.handler) await handleResult(template, context, "", step.handler(context));
+      if (step.handler) return handleResult(template, context, "", step.handler(context));
       return;
     case executeSteps.STEP_HANDLER: {
       if (!step.token) return;
       if (step.insertTokenId) addDebugStart(context, step);
       if (step.handler) {
-        await handleResult(
+        const pending = handleResult(
           template,
           context,
           String(step.token.id),
           step.handler(context, step.token),
         );
+        if (step.insertTokenId) return finishDebug(context, step, pending);
+        return pending;
       }
       if (step.insertTokenId) addDebugEnd(context, step);
       return;
@@ -60,7 +96,7 @@ const executeStep = async (
       return;
     case executeSteps.STEP_LITERAL_HANDLER:
       if (step.insertTokenId) addDebugStart(context, step);
-      await context.handleTokenResult("", step.data);
+      context.handleResolvedTokenResult(step.data);
       if (step.insertTokenId) addDebugEnd(context, step);
       return;
     case executeSteps.STEP_NO_HANDLER:
@@ -69,16 +105,27 @@ const executeStep = async (
   }
 };
 
-export async function executeTagTemplate(
+const executeTemplateSteps = (template: TagTemplate, context: RenderContext): StepResult => {
+  let index = 0;
+
+  const advance = (): StepResult => {
+    while (index < template._steps.length) {
+      if (context.isFullStop || context.isVoidStop) return;
+      const pending = executeStep(template, context, template._steps[index++]);
+      if (isPromiseLike(pending)) return Promise.resolve(pending).then(advance);
+    }
+  };
+
+  return advance();
+};
+
+export function executeTagTemplate(
   template: TagTemplate,
   context: RenderContext,
   subTemplate = false,
 ): Promise<unknown> {
-  for (let index = 0; index < template._templateTags.length; index++) {
-    if (context.isFullStop || context.isVoidStop) break;
-    const step = await template.getTagOpCode(index);
-    if (step) await executeStep(template, context, step);
-  }
+  const pending = executeTemplateSteps(template, context);
+  const finish = (): unknown => (subTemplate ? undefined : context.output.close());
 
-  return subTemplate ? undefined : context.output.close();
+  return isPromiseLike(pending) ? Promise.resolve(pending).then(finish) : Promise.resolve(finish());
 }

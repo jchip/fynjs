@@ -1,5 +1,6 @@
 import { TOKEN_HANDLER, TokenModule } from "../runtime/index.js";
 import type { RenderContext, TokenHandler } from "../runtime/index.js";
+import { executeTagTemplate, executeSteps } from "./render-execute.js";
 import type { TagRenderer } from "./tag-renderer.js";
 import {
   TagTemplate,
@@ -9,14 +10,7 @@ import {
   isTemplateTags,
 } from "./tag-template.js";
 
-export const executeSteps = {
-  STEP_HANDLER: 0,
-  STEP_STR_TOKEN: 1,
-  STEP_NO_HANDLER: 2,
-  STEP_LITERAL_HANDLER: 3,
-  STEP_FUNC_HANDLER: 4,
-  STEP_SUB_TEMPLATE: 5,
-} as const;
+export { executeSteps } from "./render-execute.js";
 
 type ExecuteStepCode = (typeof executeSteps)[keyof typeof executeSteps];
 
@@ -97,6 +91,7 @@ export class RenderProcessor {
       const tags = isTemplateTags(tag) ? tag : createTemplateTagsFromArray(tag);
       const template = new TagTemplate({ templateTags: tags, templateDir, processor: this });
       await this.loadTokenModules(template);
+      await template.initTagOpCode();
       return { code: executeSteps.STEP_SUB_TEMPLATE, template };
     }
     if (isRecord(tag) && typeof tag.str === "string") {
@@ -120,8 +115,7 @@ export class RenderProcessor {
     };
   }
 
-  async render(template: TagTemplate, context: RenderContext): Promise<unknown> {
-    const { executeTagTemplate } = await import("./render-execute.js");
+  render(template: TagTemplate, context: RenderContext): Promise<unknown> {
     return executeTagTemplate(template, context);
   }
 }

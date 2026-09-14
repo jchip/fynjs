@@ -76,6 +76,31 @@ describe("TagRenderer", () => {
     expect(events).toEqual(["first", "second"]);
   });
 
+  it("does not suspend between synchronous compiled steps", async () => {
+    const events: string[] = [];
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${() => {
+        events.push("first");
+        queueMicrotask(() => events.push("microtask"));
+        return "A";
+      }}${() => {
+        events.push("second");
+        return "B";
+      }}`,
+    });
+    await renderer.initializeRenderer();
+
+    const rendering = renderer.render({});
+
+    expect(events).toEqual(["first", "second"]);
+    expect(Object.isFrozen(renderer._template?._steps)).toBe(true);
+
+    const context = await rendering;
+
+    expect(context.result).toBe("AB");
+    expect(events).toEqual(["first", "second", "microtask"]);
+  });
+
   it("waits for reserved async output while preserving its template position", async () => {
     const template = createTemplateTags`${(context: RenderContext) => {
       const spot = context.output.reserve();
