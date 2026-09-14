@@ -1,5 +1,5 @@
 import { RenderContext } from "../runtime/index.js";
-import type { TokenModule, TokenProvider } from "../runtime/index.js";
+import type { RenderContextOptions, TokenModule, TokenProvider } from "../runtime/index.js";
 import { RenderProcessor } from "./render-processor.js";
 import { TagTemplate } from "./tag-template.js";
 import type { TokenIdHandler } from "./tag-template.js";
@@ -44,7 +44,15 @@ export interface TagRendererOptions {
   templateDir?: string;
   routeOptions?: unknown;
   insertTokenIds?: boolean;
+  deferConcurrency?: number;
   [key: string]: unknown;
+}
+
+export interface TagRenderStream {
+  readonly stream: NodeJS.ReadableStream;
+  readonly context: RenderContext;
+  readonly completed: Promise<RenderContext>;
+  abort(reason?: unknown): void;
 }
 
 export class TagRenderer {
@@ -65,14 +73,22 @@ export class TagRenderer {
   private readonly tokenIdRegistrations = new Map<symbol, Promise<void>>();
   private registrationTail: Promise<void> = Promise.resolve();
   private _initializing?: Promise<void>;
+  private readonly deferConcurrency: number;
 
   constructor(options: TagRendererOptions) {
     if (!Array.isArray(options.templateTags)) {
       throw new TypeError("@fynjs/tag-renderer: templateTags must be an array");
     }
+    if (
+      options.deferConcurrency !== undefined &&
+      (!Number.isInteger(options.deferConcurrency) || options.deferConcurrency < 1)
+    ) {
+      throw new TypeError("@fynjs/tag-renderer: deferConcurrency must be a positive integer");
+    }
 
     this._options = options;
     this._tokens = options.templateTags;
+    this.deferConcurrency = options.deferConcurrency ?? 8;
     this._tokenHandlers = [];
     this.handlersMap = Object.create(null) as Record<string, LoadedTokenIds>;
     this._tokenIdLookupMap = Object.create(null) as TokenMap;
@@ -126,16 +142,57 @@ export class TagRenderer {
     return Object.hasOwn(this._tokenIdLookupMap, id) ? this._tokenIdLookupMap[id] : undefined;
   }
 
-  async render(options: Record<string, unknown> = {}): Promise<RenderContext> {
-    const context = new RenderContext(options, this);
+  render(options: RenderContextOptions = {}): Promise<RenderContext> {
+    const context = new RenderContext(options, this, this.deferConcurrency);
+    return this.executeRender(context);
+  }
+
+  renderStream(options: RenderContextOptions = {}): TagRenderStream {
+    const context = new RenderContext(options, this, this.deferConcurrency);
+    const stream = context.setMunchyOutput();
+    context.output.flush();
+    context.result = stream;
+    stream.on("error", () => undefined);
+
+    let finished = false;
+    const onClose = (): void => {
+      if (!finished && !stream.readableEnded) context.abort(new Error("Render stream destroyed"));
+    };
+    stream.once("close", onClose);
+
+    const completed = new Promise<RenderContext>((resolve) => {
+      queueMicrotask(() => {
+        void this.executeRender(context).then((result) => {
+          finished = true;
+          stream.removeListener("close", onClose);
+          resolve(result);
+        });
+      });
+    });
+
+    return {
+      stream,
+      context,
+      completed,
+      abort: (reason?: unknown) => context.abort(reason),
+    };
+  }
+
+  private async executeRender(context: RenderContext): Promise<RenderContext> {
     try {
-      if (!this._processor || this._initializing) await this.initializeRenderer(false);
-      const result = await this._processor!.render(this._template!, context);
+      if (context.options.signal?.aborted) context.abort(context.options.signal.reason);
+      if (context.signal.aborted) throw context.signal.reason;
+      if (!this._processor || this._initializing) {
+        await context._awaitSuspension(this.initializeRenderer(false));
+      }
+      if (context.signal.aborted) throw context.signal.reason;
+      const result = await context._awaitSuspension(
+        this._processor!.render(this._template!, context),
+      );
       context.result = context.isVoidStop ? context.voidResult : result;
     } catch (error) {
       context.handleError(error);
-      context.result = error;
-      context.error = error;
+      context.result = context.error ?? error;
     }
     return context;
   }

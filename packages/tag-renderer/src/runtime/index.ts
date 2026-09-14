@@ -16,6 +16,8 @@ export {
 export type { OutputContext } from "./render-output.js";
 export type { StreamErrorResult } from "./utils.js";
 export type {
+  DeferredRenderValue,
+  DeferredRenderWork,
   InterceptState,
   OutputSend,
   RenderChunk,

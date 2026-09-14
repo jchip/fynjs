@@ -1,7 +1,9 @@
 import { Munchy } from "munchy";
 
 import { RenderOutput } from "./render-output.js";
+import { DeferredTaskGroup } from "./deferred-task-group.js";
 import type {
+  DeferredRenderWork,
   InterceptState,
   OutputSend,
   RenderContextOptions,
@@ -39,13 +41,84 @@ export class RenderContext {
   private renderStatus: unknown;
   private interception?: InterceptState;
   private outputTransform: RenderTransform = (result) => result;
+  private readonly deferredTasks: DeferredTaskGroup;
+  private deferFrameDepth = 0;
 
-  constructor(options: RenderContextOptions = {}, asyncTemplate: RenderHost = {}) {
+  get signal(): AbortSignal {
+    return this.deferredTasks.signal;
+  }
+
+  constructor(
+    options: RenderContextOptions = {},
+    asyncTemplate: RenderHost = {},
+    deferConcurrency = 8,
+  ) {
     this.options = options;
     this.asyncTemplate = asyncTemplate;
     this.handlersMap =
       asyncTemplate.handlersMap ?? (asyncTemplate._handlersMap as TokenRegistry | undefined) ?? {};
     this.output = new RenderOutput(this);
+    this.deferredTasks = new DeferredTaskGroup(
+      this.output,
+      deferConcurrency,
+      options.signal,
+      (error) => this.recordDeferredError(error),
+    );
+  }
+
+  defer(work: DeferredRenderWork): void {
+    if (!this.deferredTasks.acceptsWork) return this.deferredTasks.defer(work);
+    if (this.deferFrameDepth === 0) {
+      throw new Error("RenderContext.defer must be called synchronously from a token handler");
+    }
+    this.deferredTasks.defer(work);
+  }
+
+  _invokeHandler<Value>(handler: () => Value): Value {
+    this.deferFrameDepth += 1;
+    try {
+      return handler();
+    } finally {
+      this.deferFrameDepth -= 1;
+    }
+  }
+
+  _awaitSuspension<Value>(pending: PromiseLike<Value>): Promise<Value> {
+    const promise = Promise.resolve(pending);
+    if (this.signal.aborted && !this.isFullStop && !this.isVoidStop) {
+      return Promise.reject(this.signal.reason);
+    }
+
+    return new Promise<Value>((resolve, reject) => {
+      const onAbort = (): void => {
+        if (this.isFullStop || this.isVoidStop) return;
+        cleanup();
+        reject(this.signal.reason);
+      };
+      const cleanup = (): void => this.signal.removeEventListener("abort", onAbort);
+      this.signal.addEventListener("abort", onAbort, { once: true });
+      promise.then(
+        (value) => {
+          cleanup();
+          resolve(value);
+        },
+        (error) => {
+          cleanup();
+          reject(error);
+        },
+      );
+    });
+  }
+
+  closeDeferred(): Promise<void> {
+    return this.deferredTasks.close();
+  }
+
+  abort(reason?: unknown): void {
+    const error =
+      reason instanceof Error ? reason : new Error(reason ? String(reason) : "Rendering aborted");
+    if (!(reason instanceof Error)) error.name = "AbortError";
+    this.deferredTasks.fail(error);
   }
 
   getTokenHandler(name: string): TokenProvider | undefined {
@@ -97,11 +170,14 @@ export class RenderContext {
 
   intercept<Response>(state: InterceptState<Response>): never {
     this.interception = state as InterceptState;
-    throw new RenderInterceptError(state);
+    const error = new RenderInterceptError(state);
+    this.deferredTasks.cancel(error);
+    throw error;
   }
 
   fullStop(): void {
     this.stopMode = RenderContext.FULL_STOP;
+    this.deferredTasks.cancel("full stop");
   }
 
   get isFullStop(): boolean {
@@ -111,6 +187,7 @@ export class RenderContext {
   voidStop(result: unknown = null): void {
     this.stopMode = RenderContext.VOID_STOP;
     this.voidResult = result;
+    this.deferredTasks.cancel("void stop");
   }
 
   get isVoidStop(): boolean {
@@ -126,7 +203,22 @@ export class RenderContext {
   }
 
   handleError(error: unknown): void {
-    if (!this.stopMode) this.voidStop(error);
+    if (!this.stopMode) {
+      this.stopMode = RenderContext.VOID_STOP;
+      this.voidResult = error;
+    }
+    this.error ??= error;
+    this.deferredTasks.fail(error);
+    this.output.fail(error);
+  }
+
+  private recordDeferredError(error: unknown): void {
+    if (!this.stopMode) {
+      this.stopMode = RenderContext.VOID_STOP;
+      this.voidResult = error;
+    }
+    this.error ??= error;
+    this.output.fail(error);
   }
 
   async handleTokenResult(

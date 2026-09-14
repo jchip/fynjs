@@ -95,6 +95,28 @@ describe("RenderOutput buffered output", () => {
     await expect(firstClose).resolves.toBe("done");
   });
 
+  it("fails with a pending spot and ignores its late callback", async () => {
+    const error = new Error("output failed");
+    const output = new RenderOutput();
+    const spot = output.reserve();
+    const closing = output.close();
+
+    output.fail(error);
+
+    await expect(closing).rejects.toBe(error);
+    expect(() => {
+      spot.add("late");
+      spot.close();
+    }).not.toThrow();
+    await expect(output.close()).rejects.toBe(error);
+
+    const failedBeforeClose = new RenderOutput();
+    const lateSpot = failedBeforeClose.reserve();
+    failedBeforeClose.fail(error);
+    await expect(failedBeforeClose.close()).rejects.toBe(error);
+    expect(() => lateSpot.close()).not.toThrow();
+  });
+
   it("locks buffered output on the first flush", async () => {
     const context = new RenderContext();
     context.output.add("before-");

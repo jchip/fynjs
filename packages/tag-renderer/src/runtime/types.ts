@@ -9,6 +9,12 @@ export type RenderStream =
 /** A value accepted by RenderOutput. RenderStream values require streaming output. */
 export type RenderValue = RenderChunk | RenderStream;
 
+export type DeferredRenderValue = RenderValue | null | void;
+
+export type DeferredRenderWork = (
+  signal: AbortSignal,
+) => DeferredRenderValue | PromiseLike<DeferredRenderValue>;
+
 export type RenderTransform<Result = unknown> = (
   result: string | NodeJS.ReadableStream,
   output: RenderOutput,
@@ -31,6 +37,7 @@ export interface RenderHost {
 }
 
 export interface RenderContextOptions {
+  signal?: AbortSignal;
   [key: string]: unknown;
 }
 

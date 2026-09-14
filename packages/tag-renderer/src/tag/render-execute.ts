@@ -73,7 +73,14 @@ const executeStep = (
       if (step.template) return executeTemplateSteps(step.template, context);
       return;
     case executeSteps.STEP_FUNC_HANDLER:
-      if (step.handler) return handleResult(template, context, "", step.handler(context));
+      if (step.handler) {
+        return handleResult(
+          template,
+          context,
+          "",
+          context._invokeHandler(() => step.handler!(context)),
+        );
+      }
       return;
     case executeSteps.STEP_HANDLER: {
       if (!step.token) return;
@@ -83,7 +90,7 @@ const executeStep = (
           template,
           context,
           String(step.token.id),
-          step.handler(context, step.token),
+          context._invokeHandler(() => step.handler!(context, step.token)),
         );
         if (step.insertTokenId) return finishDebug(context, step, pending);
         return pending;
@@ -112,7 +119,10 @@ const executeTemplateSteps = (template: TagTemplate, context: RenderContext): St
     while (index < template._steps.length) {
       if (context.isFullStop || context.isVoidStop) return;
       const pending = executeStep(template, context, template._steps[index++]);
-      if (isPromiseLike(pending)) return Promise.resolve(pending).then(advance);
+      if (isPromiseLike(pending)) {
+        if (context.output.acceptsStreams) context.output.flush();
+        return context._awaitSuspension(pending).then(advance);
+      }
     }
   };
 
@@ -125,7 +135,12 @@ export function executeTagTemplate(
   subTemplate = false,
 ): Promise<unknown> {
   const pending = executeTemplateSteps(template, context);
-  const finish = (): unknown => (subTemplate ? undefined : context.output.close());
+  const finish = (): unknown => {
+    if (subTemplate) return;
+    const deferred = context.closeDeferred();
+    const output = context.output.close();
+    return Promise.all([deferred, output]).then(([, result]) => result);
+  };
 
   return isPromiseLike(pending) ? Promise.resolve(pending).then(finish) : Promise.resolve(finish());
 }

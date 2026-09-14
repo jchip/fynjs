@@ -1,5 +1,5 @@
 export { TagRenderer } from "./tag/tag-renderer.js";
-export type { TagRendererOptions } from "./tag/tag-renderer.js";
+export type { TagRendererOptions, TagRenderStream } from "./tag/tag-renderer.js";
 export {
   RegisterTokenIds,
   TagTemplate,
@@ -18,6 +18,8 @@ export type {
 
 export { RenderContext, RenderOutput, SpotOutput } from "./runtime/index.js";
 export type {
+  DeferredRenderValue,
+  DeferredRenderWork,
   InterceptState,
   RenderHost,
   RenderTransform,

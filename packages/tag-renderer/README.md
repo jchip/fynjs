@@ -29,18 +29,29 @@ console.log(context.result);
 
 Token handlers may return strings, buffers, promises, or nested tag templates. In streaming output
 mode they may also return readable streams and synchronous or asynchronous iterables. Promise-returning
-handlers are awaited in template order. A handler that starts independent work can reserve its output
-position so later handlers may continue without moving their output ahead:
+handlers are awaited in template order. A handler can explicitly defer independent work so later
+handlers continue without moving its output ahead. Deferred work is bounded by `deferConcurrency`
+(default 8), receives a render-scoped cancellation signal, and retires in template order:
 
 ```ts
-${(context) => {
-  const spot = context.output.reserve();
-  void loadContent().then((content) => {
-    spot.add(content);
-    spot.close();
-  });
-}}
+${(context) => context.defer((signal) => loadContent({ signal }))}
 ```
+
+Ordinary promise-returning handlers remain sequential. `context.output.reserve()` remains available
+as a low-level primitive for integrations that manage their own lifetime.
+
+For progressive output, `renderStream()` returns immediately while initialization and rendering run
+in the background:
+
+```ts
+const { stream, completed, abort } = renderer.renderStream();
+stream.pipe(response);
+const context = await completed;
+```
+
+Destroying the stream or calling `abort()` cancels outstanding deferred work.
+The returned `stream` is the raw output stream; configured result transforms still apply only to
+`context.result`.
 
 ## Public API
 

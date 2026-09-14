@@ -100,6 +100,12 @@ export class BaseOutput {
 
     sendBatch();
   }
+
+  markDrained(): void {
+    for (const item of this.items) {
+      if (item instanceof SpotOutput) item._markDrained();
+    }
+  }
 }
 
 export class MainOutput extends BaseOutput {
@@ -124,11 +130,17 @@ export class MainOutput extends BaseOutput {
 
 export class SpotOutput extends BaseOutput {
   private open = true;
+  private cancelled = false;
+  private drained = false;
   private closeCallback: (() => void) | undefined;
+  private drainCallback: (() => void) | undefined;
   position = -1;
 
   override add(value: RenderValue): number {
-    if (!this.open) throw new Error("SpotOutput is closed");
+    if (!this.open) {
+      if (this.cancelled) return -1;
+      throw new Error("SpotOutput is closed");
+    }
     if (!isRenderValue(value)) {
       throw new TypeError("SpotOutput accepts only strings, buffers, or readable values");
     }
@@ -136,13 +148,38 @@ export class SpotOutput extends BaseOutput {
   }
 
   close(): void {
-    if (!this.open) throw new Error("SpotOutput is already closed");
+    if (!this.open) {
+      if (this.cancelled) return;
+      throw new Error("SpotOutput is already closed");
+    }
+    this.open = false;
+    this.closeCallback?.();
+  }
+
+  _cancel(): void {
+    if (!this.open) return;
+    this.cancelled = true;
     this.open = false;
     this.closeCallback?.();
   }
 
   onClose(callback: () => void): void {
     this.closeCallback = callback;
+  }
+
+  onDrained(callback: () => void): void {
+    if (this.drained) {
+      callback();
+    } else {
+      this.drainCallback = callback;
+    }
+  }
+
+  _markDrained(): void {
+    if (this.drained) return;
+    this.drained = true;
+    this.drainCallback?.();
+    this.drainCallback = undefined;
   }
 }
 
@@ -161,6 +198,9 @@ export class RenderOutput {
   private closePromise: Promise<unknown> | undefined;
   private resolveClose: ((value: unknown) => void) | undefined;
   private rejectClose: ((reason: unknown) => void) | undefined;
+  private failure: unknown;
+  private hasFailed = false;
+  private readonly openSpots = new Set<SpotOutput>();
 
   constructor(context?: Partial<OutputContext> | null) {
     this.context = (context ?? {}) as OutputContext;
@@ -180,8 +220,10 @@ export class RenderOutput {
 
     let owner: MainOutput | undefined = this.output;
     const spot = new SpotOutput();
+    this.openSpots.add(spot);
     spot.position = owner.addSpot(spot);
     spot.onClose(() => {
+      this.openSpots.delete(spot);
       owner?.closeSpot(spot);
       owner = undefined;
       this.checkFlushQueue();
@@ -211,6 +253,10 @@ export class RenderOutput {
 
     this.ended = true;
     const sink = this.freezeSink();
+    if (this.hasFailed && sink.mode !== "stream") {
+      this.closePromise = Promise.reject(this.failure);
+      return this.closePromise;
+    }
     if (sink.mode === "stream") {
       this.closePromise = Promise.resolve().then(() => this.context.transform(sink.munchy, this));
     } else {
@@ -224,11 +270,29 @@ export class RenderOutput {
     return this.closePromise;
   }
 
+  fail(error: unknown): void {
+    if (this.hasFailed) return;
+    this.hasFailed = true;
+    this.failure = error;
+    this.ended = true;
+
+    const stream = this.sink?.mode === "stream" ? this.sink.munchy : this.context.munchy;
+    if (stream && !stream.destroyed) {
+      stream.destroy(error instanceof Error ? error : new Error(String(error)));
+    }
+    this.rejectClose?.(error);
+    for (const spot of [...this.openSpots]) spot._cancel();
+  }
+
   private finish(): void {
     if (this.finished) return;
     this.finished = true;
 
     const sink = this.freezeSink();
+    if (this.hasFailed) {
+      if (sink.mode !== "stream") this.rejectClose?.(this.failure);
+      return;
+    }
     if (sink.mode === "stream") {
       sink.munchy.munch(null);
       return;
@@ -276,7 +340,10 @@ export class RenderOutput {
           this.compactFlushQueue();
           const sink = this.freezeSink();
           if (sink.mode === "stream") {
-            segment.sendToMunchy(sink.munchy, advance);
+            segment.sendToMunchy(sink.munchy, () => {
+              segment.markDrained();
+              advance();
+            });
             return;
           }
 
@@ -286,6 +353,7 @@ export class RenderOutput {
           } else {
             this.result += rendered;
           }
+          segment.markDrained();
         }
 
         this.flushQueue.length = 0;
