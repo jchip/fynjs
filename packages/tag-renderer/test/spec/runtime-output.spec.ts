@@ -166,6 +166,20 @@ describe("RenderOutput streaming", () => {
     expect(Buffer.concat(received).toString("utf8")).toBe(pieces.join(""));
   });
 
+  it("streams large segments without exceeding the argument limit", async () => {
+    const context = new RenderContext();
+    context.setMunchyOutput();
+    const chunkCount = 150_000;
+    for (let index = 0; index < chunkCount; index += 1) {
+      context.output.add("x");
+    }
+
+    const stream = (await context.output.close()) as NodeJS.ReadableStream;
+    const rendered = await streamText(stream);
+    expect(rendered).toMatch(/^x+$/);
+    expect(rendered).toHaveLength(chunkCount);
+  });
+
   it("applies the output transform to the stream", async () => {
     const context = new RenderContext();
     context.setMunchyOutput();

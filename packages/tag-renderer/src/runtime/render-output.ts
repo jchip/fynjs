@@ -4,6 +4,7 @@ import type { OutputSend, RenderTransform, RenderValue } from "./types.js";
 import { isReadableStream } from "./utils.js";
 
 type OutputItem = RenderValue | SpotOutput;
+const STREAM_BATCH_SIZE = 256;
 
 export interface OutputContext {
   munchy?: Munchy;
@@ -63,18 +64,14 @@ export class BaseOutput {
     return output;
   }
 
-  streamValues(): RenderValue[] {
-    const values: RenderValue[] = [];
-
+  *streamValues(): IterableIterator<RenderValue> {
     for (const item of this.items) {
       if (item instanceof SpotOutput) {
-        values.push(...item.streamValues());
+        yield* item.streamValues();
       } else {
-        values.push(item);
+        yield item;
       }
     }
-
-    return values;
   }
 
   sendToMunchy(munchy: Munchy, done: () => void): void {
@@ -83,8 +80,29 @@ export class BaseOutput {
       return;
     }
 
-    munchy.once("munched", done);
-    munchy.munch(...this.streamValues());
+    const values = this.streamValues();
+    const sendBatch = (): void => {
+      const batch: RenderValue[] = [];
+      let exhausted = false;
+      while (batch.length < STREAM_BATCH_SIZE) {
+        const next = values.next();
+        if (next.done) {
+          exhausted = true;
+          break;
+        }
+        batch.push(next.value);
+      }
+
+      if (batch.length === 0) {
+        done();
+        return;
+      }
+
+      munchy.once("munched", exhausted ? done : sendBatch);
+      munchy.munch(...batch);
+    };
+
+    sendBatch();
   }
 }
 
