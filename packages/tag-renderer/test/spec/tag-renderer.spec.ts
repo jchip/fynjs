@@ -168,6 +168,23 @@ describe("TagRenderer", () => {
     expect((await renderer.render({})).result).toBe("second");
   });
 
+  it("isolates compiled handlers when renderers share an authoring template", async () => {
+    const template = createTemplateTags`${Token("VALUE")}`;
+    const first = new TagRenderer({
+      templateTags: template,
+      tokenHandlers: () => ({ VALUE: "first" }),
+    });
+    const second = new TagRenderer({
+      templateTags: template,
+      tokenHandlers: () => ({ VALUE: "second" }),
+    });
+
+    await Promise.all([first.initializeRenderer(), second.initializeRenderer()]);
+
+    expect((await first.render({})).result).toBe("first");
+    expect((await second.render({})).result).toBe("second");
+  });
+
   it("invokes a token module directly with props", async () => {
     const setup = vi.fn((_options: unknown, token: unknown) => {
       const props = (token as { props: Record<string, unknown> }).props;

@@ -1,4 +1,4 @@
-import { TEMPLATE_DIR, TokenModule } from "../runtime/index.js";
+import { TokenModule } from "../runtime/index.js";
 import type { RenderContext, TokenModuleFactory, TokenProperties } from "../runtime/index.js";
 import type { RenderProcessor, RenderStep } from "./render-processor.js";
 import { TAG_TYPE } from "./symbols.js";
@@ -89,16 +89,9 @@ export class TagTemplate {
 
   constructor(options: TagTemplateOptions) {
     this._templateTags = options.templateTags.map((tag, index) => {
-      if (
-        tag instanceof TokenModule &&
-        options.templateDir &&
-        tag.props[TEMPLATE_DIR] === undefined
-      ) {
-        tag[TEMPLATE_DIR] = options.templateDir;
-      }
+      if (tag instanceof TokenModule) return tag.clone(index, options.templateDir);
       if (isTaggedValue(tag)) {
-        tag.pos = index;
-        return tag;
+        return typeof tag === "function" || isTemplateTags(tag) ? tag : { ...tag, pos: index };
       }
       if (typeof tag === "function") {
         return {

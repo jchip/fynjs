@@ -1,6 +1,6 @@
 import type { RenderContext } from "../runtime/index.js";
 import type { RenderStep } from "./render-processor.js";
-import { executeSteps, getTokenHandler } from "./render-processor.js";
+import { executeSteps } from "./render-processor.js";
 import type { TagTemplate } from "./tag-template.js";
 import { isTemplateTags } from "./tag-template.js";
 
@@ -44,9 +44,13 @@ const executeStep = async (
     case executeSteps.STEP_HANDLER: {
       if (!step.token) return;
       if (step.insertTokenId) addDebugStart(context, step);
-      const handler = getTokenHandler(step.token);
-      if (handler) {
-        await handleResult(template, context, String(step.token.id), handler(context, step.token));
+      if (step.handler) {
+        await handleResult(
+          template,
+          context,
+          String(step.token.id),
+          step.handler(context, step.token),
+        );
       }
       if (step.insertTokenId) addDebugEnd(context, step);
       return;

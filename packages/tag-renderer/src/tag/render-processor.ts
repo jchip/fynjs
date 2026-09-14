@@ -24,7 +24,7 @@ export interface RenderStep {
   code: ExecuteStepCode;
   token?: TokenModule;
   data?: unknown;
-  handler?: (context: RenderContext) => unknown;
+  handler?: TokenHandler;
   template?: TagTemplate;
   insertTokenId?: boolean;
 }
@@ -72,10 +72,10 @@ export class RenderProcessor {
       };
     }
 
-    token.setHandler(handler as TokenHandler);
     return {
       token,
       code: executeSteps.STEP_HANDLER,
+      handler: handler as TokenHandler,
       insertTokenId: this._insertTokenIds && !token.props._noInsertId,
     };
   }
@@ -115,6 +115,7 @@ export class RenderProcessor {
     return {
       token: tag,
       code: executeSteps.STEP_HANDLER,
+      handler: getTokenHandler(tag) ?? undefined,
       insertTokenId: this._insertTokenIds && !tag.props._noInsertId,
     };
   }

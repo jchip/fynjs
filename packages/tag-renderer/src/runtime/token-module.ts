@@ -58,6 +58,17 @@ export class TokenModule {
     this.injectedModule = module;
   }
 
+  clone(pos: number, templateDir?: string): TokenModule {
+    const token = new TokenModule(
+      this.id,
+      pos,
+      this.props,
+      (this.props[TEMPLATE_DIR] as string | undefined) ?? templateDir ?? this[TEMPLATE_DIR],
+    );
+    token.injectedModule = this.injectedModule;
+    return token;
+  }
+
   async load(options: unknown = {}): Promise<void> {
     if (!this.isModule || this.custom !== undefined) return;
 
