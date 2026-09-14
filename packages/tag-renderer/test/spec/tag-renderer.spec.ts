@@ -169,20 +169,27 @@ describe("TagRenderer", () => {
   });
 
   it("isolates compiled handlers when renderers share an authoring template", async () => {
-    const template = createTemplateTags`${Token("VALUE")}`;
+    const child = createTemplateTags`${Token("VALUE")}`;
+    const template = createTemplateTags`${Token("VALUE")}|${TokenInvoke((options) => {
+      const label = String((options as { label: string }).label);
+      return { process: () => `${label}-module` };
+    })}|${() => child}`;
     const first = new TagRenderer({
       templateTags: template,
-      tokenHandlers: () => ({ VALUE: "first" }),
+      label: "first",
+      tokenHandlers: () => ({ VALUE: () => "first" }),
     });
     const second = new TagRenderer({
       templateTags: template,
-      tokenHandlers: () => ({ VALUE: "second" }),
+      label: "second",
+      tokenHandlers: () => ({ VALUE: () => "second" }),
     });
 
     await Promise.all([first.initializeRenderer(), second.initializeRenderer()]);
+    const [firstResult, secondResult] = await Promise.all([first.render({}), second.render({})]);
 
-    expect((await first.render({})).result).toBe("first");
-    expect((await second.render({})).result).toBe("second");
+    expect(firstResult.result).toBe("first|first-module|first");
+    expect(secondResult.result).toBe("second|second-module|second");
   });
 
   it("invokes a token module directly with props", async () => {
