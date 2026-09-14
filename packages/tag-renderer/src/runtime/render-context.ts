@@ -2,6 +2,7 @@ import { Munchy } from "munchy";
 
 import { RenderOutput } from "./render-output.js";
 import { DeferredTaskGroup } from "./deferred-task-group.js";
+import { normalizeRenderFailure } from "./render-error.js";
 import type {
   DeferredRenderWork,
   InterceptState,
@@ -129,6 +130,7 @@ export class RenderContext {
   }
 
   _handleOutputError(error: unknown): void {
+    error = normalizeRenderFailure(error);
     if (this.error !== undefined) return;
     if (!this.stopMode) {
       this.stopMode = RenderContext.VOID_STOP;
@@ -221,6 +223,7 @@ export class RenderContext {
   }
 
   handleError(error: unknown): void {
+    error = normalizeRenderFailure(error);
     if (!this.stopMode) {
       this.stopMode = RenderContext.VOID_STOP;
       this.voidResult = error;
@@ -231,6 +234,7 @@ export class RenderContext {
   }
 
   private recordDeferredError(error: unknown): void {
+    error = normalizeRenderFailure(error);
     if (!this.stopMode) {
       this.stopMode = RenderContext.VOID_STOP;
       this.voidResult = error;

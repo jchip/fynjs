@@ -1,6 +1,7 @@
 import type { RenderOutput, SpotOutput } from "./render-output.js";
 import type { DeferredRenderWork, DeferredRenderValue } from "./types.js";
 import { isReadableStream } from "./utils.js";
+import { normalizeRenderFailure } from "./render-error.js";
 
 type TaskState = "queued" | "running" | "fulfilled" | "committed" | "drained" | "cancelled";
 type GroupState = "open" | "closing" | "closed" | "failing";
@@ -125,6 +126,7 @@ export class DeferredTaskGroup {
 
   fail(error: unknown): void {
     if (this.state === "closed" || this.state === "failing") return;
+    error = normalizeRenderFailure(error);
     this.state = "failing";
     this.onError(error);
     this.controller.abort(error);

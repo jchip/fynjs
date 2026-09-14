@@ -122,6 +122,29 @@ describe("deferred rendering", () => {
     expect(() => context.output.reserve()).toThrow("closed");
   });
 
+  it.each([null, undefined])("normalizes a %s deferred rejection reason", async (reason) => {
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${(context: RenderContext) =>
+        context.defer(() => Promise.reject(reason))}`,
+    });
+
+    const context = await renderer.render({});
+
+    expect(context.error).toMatchObject({ message: "Rendering failed without an error reason" });
+    expect(context.result).toBe(context.error);
+  });
+
+  it.each([null, undefined])("normalizes a %s ordinary rejection reason", async (reason) => {
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${() => Promise.reject(reason)}`,
+    });
+
+    const context = await renderer.render({});
+
+    expect(context.error).toMatchObject({ message: "Rendering failed without an error reason" });
+    expect(context.result).toBe(context.error);
+  });
+
   it("preserves the first failure when disposing a readable throws", async () => {
     const returned = deferred();
     const disposalFailure = new Error("destroy failed");
