@@ -33,11 +33,13 @@
   "scripts": {
     "bench:defer": "fyn build && node bench/defer-scaling.mjs",
     "bench:registry": "fyn build && node bench/registry-scaling.mjs",
+    "bench:static": "fyn build && node bench/static-render.mjs",
+    "bench:static:smoke": "fyn build && node bench/static-render.mjs --smoke",
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "test": "vitest run",
+    "test": "fyn build && vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "ci:check": "fyn typecheck && fyn coverage",
-    "coverage": "vitest run --coverage --coverage.thresholds.100"
+    "coverage": "fyn build && vitest run --coverage --coverage.thresholds.100"
   },
   "files": [
     "dist"

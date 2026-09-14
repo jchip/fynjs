@@ -76,3 +76,19 @@ Rendering is buffered by default. Call `context.setMunchyOutput()` before return
 or iterable from a handler. Buffered and callback output reject those values instead of implicitly
 collecting an unbounded stream into memory. The output mode locks on the first flush or close.
 Reserved output spots retain template order in every mode.
+
+## Benchmarks
+
+The committed benchmark suite covers static rendering, registry construction, and ordered deferred
+work. Run the raw warm-render benchmark with:
+
+```sh
+fyn bench:static
+```
+
+It renders the same 64 KiB static HTML payload split across 1, 16, 256, and 4,096 literal tags. The
+renderer is initialized before timing, and the templates contain no functions, promises, tokens, or
+dynamic modules. Results include median and p95 time, renders and MiB per second, nanoseconds per tag,
+and median absolute deviation. MiB per second is logical rendered output, not string-flattening or I/O
+throughput; p95 summarizes batched sample averages rather than request-tail latency.
+`fyn bench:static:smoke` runs the same cases with shorter sampling.
