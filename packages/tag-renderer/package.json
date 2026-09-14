@@ -1,0 +1,65 @@
+{
+  "name": "@fynjs/tag-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Async template-literal renderer with ordered buffered and streaming output",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "default": "./dist/runtime.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/tag-renderer",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/tag-renderer"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "ci:check": "fyn typecheck && fyn test",
+    "coverage": "vitest run --coverage"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "async",
+    "renderer",
+    "stream",
+    "template-literal"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "munchy": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "@vitest/coverage-v8": "^5.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  },
+  "prettier": {
+    "printWidth": 100
+  }
+}
