@@ -235,6 +235,13 @@ export class RenderOutput {
     }
   }
 
+  private compactFlushQueue(): void {
+    if (this.flushHead >= 1_024 && this.flushHead * 2 >= this.flushQueue.length) {
+      this.flushQueue.splice(0, this.flushHead);
+      this.flushHead = 0;
+    }
+  }
+
   private checkFlushQueue(): void {
     if (this.checking) return;
     this.checking = true;
@@ -249,6 +256,7 @@ export class RenderOutput {
           }
 
           this.flushHead += 1;
+          this.compactFlushQueue();
           if (this.context.munchy) {
             segment.sendToMunchy(this.context.munchy, advance);
             return;
