@@ -23,7 +23,9 @@ const disposeValue = (value: DeferredRenderValue): void => {
   if (!value || typeof value !== "object") return;
   const readable = value as NodeJS.ReadableStream & { destroy?: () => void };
   if (isReadableStream(value) && typeof readable.destroy === "function") {
-    readable.destroy();
+    try {
+      readable.destroy();
+    } catch {}
     return;
   }
   const iterable = value as {

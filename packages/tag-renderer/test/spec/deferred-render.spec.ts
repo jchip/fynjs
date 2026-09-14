@@ -122,6 +122,42 @@ describe("deferred rendering", () => {
     expect(() => context.output.reserve()).toThrow("closed");
   });
 
+  it("preserves the first failure when disposing a readable throws", async () => {
+    const returned = deferred();
+    const disposalFailure = new Error("destroy failed");
+    const destroySource = vi.fn(() => {
+      throw disposalFailure;
+    });
+    const source = {
+      on: vi.fn(),
+      pipe: vi.fn(),
+      destroy: destroySource,
+    } as unknown as NodeJS.ReadableStream;
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTagsFromArray([
+        (context: RenderContext) => context.defer(() => new Promise(() => undefined)),
+        (context: RenderContext) =>
+          context.defer(() => {
+            returned.resolve();
+            return source;
+          }),
+      ]),
+      deferConcurrency: 2,
+    });
+    const handle = renderer.renderStream();
+    handle.stream.resume();
+    await returned.promise;
+    await Promise.resolve();
+    const failure = new Error("render failed first");
+
+    expect(() => handle.abort(failure)).not.toThrow();
+    const context = await handle.completed;
+
+    expect(destroySource).toHaveBeenCalledOnce();
+    expect(context.error).toBe(failure);
+    expect(context.result).toBe(failure);
+  });
+
   it("propagates an external abort signal and settles rendering", async () => {
     const controller = new AbortController();
     const started = deferred();
