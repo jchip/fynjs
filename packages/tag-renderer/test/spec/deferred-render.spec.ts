@@ -9,6 +9,8 @@ import {
   createTemplateTags,
   createTemplateTagsFromArray,
 } from "../../src/index.js";
+import { DeferredTaskGroup } from "../../src/runtime/deferred-task-group.js";
+import type { RenderOutput, SpotOutput } from "../../src/runtime/render-output.js";
 
 function deferred<Value = void>(): {
   promise: Promise<Value>;
@@ -32,7 +34,239 @@ async function readStream(stream: NodeJS.ReadableStream): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+function taskGroupHarness(
+  options: {
+    add?: (value: unknown) => void;
+    close?: () => void;
+    drainOnClose?: boolean;
+    externalSignal?: AbortSignal;
+    limit?: number;
+    reserve?: () => SpotOutput | undefined;
+  } = {},
+) {
+  let drain: (() => void) | undefined;
+  const spot = {
+    add: vi.fn((value: unknown) => options.add?.(value)),
+    close: vi.fn(() => {
+      options.close?.();
+      if (options.drainOnClose !== false) drain?.();
+    }),
+    onDrained: vi.fn((callback: () => void) => {
+      drain = callback;
+    }),
+    _cancel: vi.fn(),
+  } as unknown as SpotOutput;
+  const output = {
+    flush: vi.fn(),
+    reserve: vi.fn(() => (options.reserve ? options.reserve() : spot)),
+  } as unknown as RenderOutput;
+  const onError = vi.fn();
+  const group = new DeferredTaskGroup(output, options.limit ?? 2, options.externalSignal, onError);
+  return { group, onError, output, spot, drain: () => drain?.() };
+}
+
 describe("deferred rendering", () => {
+  it("rejects invalid scheduler inputs and does not start work cancelled in the same turn", async () => {
+    const output = taskGroupHarness().output;
+    expect(() => new DeferredTaskGroup(output, 0, undefined, vi.fn())).toThrow(
+      "limit must be a positive integer",
+    );
+
+    const { group, spot } = taskGroupHarness();
+    expect(() => group.defer(null as never)).toThrow("requires a work function");
+
+    const work = vi.fn(() => "late");
+    group.defer(work);
+    group.cancel();
+    group.cancel();
+    group.fail(new Error("ignored after cancellation"));
+
+    await group.close();
+    await Promise.resolve();
+    expect(work).not.toHaveBeenCalled();
+    expect(spot._cancel).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { reason: undefined, message: "Rendering aborted" },
+    { reason: "caller stopped", message: "caller stopped" },
+  ])(
+    "normalizes a pre-aborted external signal with reason $reason",
+    async ({ reason, message }) => {
+      const externalSignal = {
+        aborted: true,
+        reason,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as unknown as AbortSignal;
+      const { group, onError } = taskGroupHarness({ externalSignal });
+
+      await Promise.resolve();
+      await expect(group.close()).rejects.toMatchObject({ name: "AbortError", message });
+      expect(onError).toHaveBeenCalledOnce();
+      expect(externalSignal.removeEventListener).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("interrupts an awaited suspension but lets full and void stops settle it", async () => {
+    const failure = new Error("suspension aborted");
+    const aborted = new RenderContext();
+    aborted.abort(failure);
+    aborted.stop = 0;
+    await expect(aborted._awaitSuspension(Promise.resolve("late"))).rejects.toBe(failure);
+    aborted.abort(new Error("ignored second abort"));
+    aborted._handleOutputError(new Error("ignored output failure"));
+    expect(aborted.error).toBe(failure);
+
+    for (const mode of ["full", "void"] as const) {
+      const context = new RenderContext();
+      const gate = deferred<string>();
+      const waiting = context._awaitSuspension(gate.promise);
+      if (mode === "full") context.fullStop();
+      else context.voidStop("replacement");
+      gate.resolve("settled");
+
+      expect(await waiting).toBe("settled");
+      expect(await context._awaitSuspension(Promise.resolve("after stop"))).toBe("after stop");
+    }
+  });
+
+  it.each([
+    { reason: undefined, message: "Rendering aborted" },
+    { reason: "manual abort", message: "manual abort" },
+  ])("records a $message abort after deferred work has closed", async ({ reason, message }) => {
+    const context = new RenderContext();
+    await context.closeDeferred();
+
+    context.abort(reason);
+
+    expect(context.error).toMatchObject({ name: "AbortError", message });
+    expect(context.stop).toBe(RenderContext.VOID_STOP);
+    expect(context.voidResult).toBe(context.error);
+  });
+
+  it("preserves an existing stop mode when aborting after deferred work has closed", async () => {
+    const context = new RenderContext();
+    context.softStop();
+    await context.closeDeferred();
+
+    context.abort("after soft stop");
+
+    expect(context.isSoftStop).toBe(true);
+    expect(context.error).toMatchObject({ message: "after soft stop" });
+  });
+
+  it("does not start rendering for an already-aborted caller signal", async () => {
+    const controller = new AbortController();
+    const invoked = vi.fn();
+    controller.abort("aborted before render");
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${() => invoked()}`,
+    });
+
+    const context = await renderer.render({ signal: controller.signal });
+
+    expect(invoked).not.toHaveBeenCalled();
+    expect(context.error).toMatchObject({ name: "AbortError", message: "aborted before render" });
+  });
+
+  it("stops at the post-initialization cancellation checkpoint", async () => {
+    const invoked = vi.fn();
+    const renderer = new TagRenderer({
+      templateTags: createTemplateTags`${() => invoked()}`,
+    });
+    let handle!: ReturnType<typeof renderer.renderStream>;
+    vi.spyOn(renderer, "initializeRenderer").mockImplementation(async () => {
+      handle.context.fullStop();
+    });
+
+    handle = renderer.renderStream();
+    handle.stream.resume();
+    const context = await handle.completed;
+
+    expect(invoked).not.toHaveBeenCalled();
+    expect(context.error).toBe("full stop");
+  });
+
+  it("reports unavailable and failing output spots through scheduler completion", async () => {
+    const missing = taskGroupHarness({ reserve: () => undefined });
+    missing.group.defer(() => "value");
+    await expect(missing.group.close()).rejects.toThrow("output spot is unavailable");
+    expect(missing.onError).toHaveBeenCalledOnce();
+
+    const addFailure = new Error("spot add failed");
+    const closeAfterAddFailure = vi.fn(() => {
+      throw new Error("spot close also failed");
+    });
+    const failedAdd = taskGroupHarness({
+      add: () => {
+        throw addFailure;
+      },
+      close: closeAfterAddFailure,
+    });
+    failedAdd.group.defer(() => "value");
+    await expect(failedAdd.group.close()).rejects.toBe(addFailure);
+    expect(closeAfterAddFailure).toHaveBeenCalledOnce();
+
+    const closeFailure = new Error("spot close failed");
+    const failedClose = taskGroupHarness({
+      close: () => {
+        throw closeFailure;
+      },
+    });
+    failedClose.group.defer(() => "value");
+    await expect(failedClose.group.close()).rejects.toBe(closeFailure);
+  });
+
+  it("ignores a late drain notification after cancelling committed output", async () => {
+    const { group, spot, drain } = taskGroupHarness({ drainOnClose: false });
+    group.defer(() => "value");
+    const completed = group.close();
+    await vi.waitFor(() => expect(spot.add).toHaveBeenCalledOnce());
+
+    group.cancel();
+    drain();
+
+    await completed;
+    expect(spot._cancel).toHaveBeenCalledOnce();
+  });
+
+  it("disposes each supported unconsumed deferred object shape after failure", async () => {
+    const asyncReturn = vi.fn(() => Promise.reject(new Error("ignored disposal rejection")));
+    const syncReturn = vi.fn(() => {
+      throw new Error("ignored disposal failure");
+    });
+    const directReturn = vi.fn();
+    const throwingIterator = vi.fn(() => {
+      throw new Error("ignored iterator failure");
+    });
+    const values = [
+      { on: vi.fn(), pipe: vi.fn() } as unknown as NodeJS.ReadableStream,
+      { [Symbol.asyncIterator]: () => ({ return: asyncReturn }) },
+      { [Symbol.iterator]: () => ({ return: syncReturn }) },
+      { return: directReturn },
+      { [Symbol.asyncIterator]: throwingIterator },
+    ];
+
+    for (const value of values) {
+      const blocker = deferred();
+      const returned = vi.fn(() => value as never);
+      const { group } = taskGroupHarness({ drainOnClose: false });
+      group.defer(() => blocker.promise);
+      group.defer(returned);
+      await vi.waitFor(() => expect(returned).toHaveBeenCalledOnce());
+      await Promise.resolve();
+
+      group.fail(new Error("render failed"));
+      await expect(group.close()).rejects.toThrow("render failed");
+    }
+
+    expect(asyncReturn).toHaveBeenCalledOnce();
+    expect(syncReturn).toHaveBeenCalledOnce();
+    expect(directReturn).toHaveBeenCalledOnce();
+    expect(throwingIterator).toHaveBeenCalledOnce();
+  });
+
   it("retires deferred output in template order", async () => {
     const first = deferred<string>();
     const second = deferred<string>();

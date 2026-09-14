@@ -208,7 +208,7 @@ export class TagRenderer {
       context.result = context.isVoidStop ? context.voidResult : result;
     } catch (error) {
       context.handleError(error);
-      context.result = context.error ?? error;
+      context.result = context.error;
     }
     return context;
   }
@@ -263,9 +263,7 @@ export class TagRenderer {
     try {
       await registration;
     } catch (error) {
-      if (this.tokenIdRegistrations.get(uniqueId) === registration) {
-        this.tokenIdRegistrations.delete(uniqueId);
-      }
+      this.tokenIdRegistrations.delete(uniqueId);
       throw error;
     }
   }

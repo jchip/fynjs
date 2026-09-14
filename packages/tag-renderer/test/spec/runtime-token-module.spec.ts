@@ -6,11 +6,14 @@ import { describe, expect, it } from "vitest";
 import {
   loadTokenModuleHandler,
   RenderContext,
+  resolveTokenModulePath,
   TEMPLATE_DIR,
   TOKEN_HANDLER,
   TokenModule,
+  tokenModuleDirectory,
   type TokenModuleFactory,
   type TokenModuleInstance,
+  type TokenModuleLoader,
 } from "../../src/runtime/index.js";
 
 const fixturesDirectory = join(dirname(fileURLToPath(import.meta.url)), "../fixtures/runtime");
@@ -22,6 +25,34 @@ async function loadFallback(factory: TokenModuleFactory): Promise<TokenModuleIns
 }
 
 describe("module-backed tokens", () => {
+  it("recognizes factory IDs and both named-call property forms", async () => {
+    const factory: TokenModuleFactory = () => ({ process: () => "factory" });
+    const ordinary = new TokenModule(factory, 0);
+    expect(ordinary.isModule).toBe(false);
+
+    const stringCall = new TokenModule(
+      "#./custom-call.js",
+      0,
+      { _call: "prepare" },
+      fixturesDirectory,
+    );
+    await stringCall.load({ prefix: "string" });
+    expect(stringCall[TOKEN_HANDLER]?.(new RenderContext({ value: "context" }))).toBe(
+      "string:#./custom-call.js:context:undefined",
+    );
+
+    const arrayCall = new TokenModule(
+      "#./custom-call.js",
+      0,
+      { _call: ["prepare"] },
+      fixturesDirectory,
+    );
+    await arrayCall.load({ prefix: "array" });
+    expect(arrayCall[TOKEN_HANDLER]?.(new RenderContext({ value: "context" }))).toBe(
+      "array:#./custom-call.js:context:undefined",
+    );
+  });
+
   it("loads an asynchronous default factory relative to the template", async () => {
     const token = new TokenModule("require('./default-handler.js')", 2, {}, fixturesDirectory);
     await token.load({ value: "loaded" });
@@ -67,6 +98,28 @@ describe("module-backed tokens", () => {
     expect(token[TOKEN_HANDLER]?.(new RenderContext())).toBe("injected");
   });
 
+  it("preserves injected factories and independent props when cloning", async () => {
+    const token = new TokenModule(
+      "#injected",
+      0,
+      { value: "source", [TEMPLATE_DIR]: fixturesDirectory },
+      fixturesDirectory,
+    );
+    token.tokenMod = (_options, runtimeToken) => ({
+      process: (_context, next) =>
+        `${(runtimeToken as TokenModule).props.value}:${(next as TokenModule).pos}`,
+    });
+    const clone = token.clone(3, "/ignored");
+    clone.props.value = "clone";
+    await clone.load();
+
+    expect(token.props.value).toBe("source");
+    expect(clone.pos).toBe(3);
+    expect(clone[TEMPLATE_DIR]).toBe(fixturesDirectory);
+    expect(clone.wantsNext).toBe(true);
+    expect(clone[TOKEN_HANDLER]?.(new RenderContext())).toBe("clone:3");
+  });
+
   it("does not load ordinary token IDs", async () => {
     const token = new TokenModule("TITLE", 0);
     await token.load();
@@ -89,11 +142,37 @@ describe("module-backed tokens", () => {
     const brokenInstance = await loadFallback(broken as TokenModuleFactory);
     expect(missingInstance.process(new RenderContext())).toContain("not found");
     expect(brokenInstance.process(new RenderContext())).toContain("failed to load");
+
+    const typeError = await loadTokenModuleHandler("./type-error-handler.js", fixturesDirectory);
+    const typeErrorInstance = await loadFallback(typeError as TokenModuleFactory);
+    expect(typeErrorInstance.process(new RenderContext())).toContain("failed to load");
   });
 
   it("rejects modules without a supported export", async () => {
     await expect(loadTokenModuleHandler("./invalid-handler.js", fixturesDirectory)).rejects.toThrow(
       "token module invalid",
     );
+  });
+
+  it("reports malformed injected loaders and instances", async () => {
+    const missingCall = new TokenModule("#injected", 0, { _call: "missing" });
+    missingCall.tokenMod = {};
+    await expect(missingCall.load()).rejects.toThrow("'missing' not found");
+
+    const noFactory = new TokenModule("#injected", 0);
+    noFactory.tokenMod = {};
+    await expect(noFactory.load()).rejects.toThrow("has no factory");
+
+    for (const instance of [undefined, {}, { process: "invalid" }]) {
+      const malformed = new TokenModule("#injected", 0);
+      malformed.tokenMod = (() => instance) as unknown as TokenModuleLoader;
+      await expect(malformed.load()).rejects.toThrow("doesn't have process method");
+    }
+  });
+
+  it("resolves file URLs and exposes the module directory helper", () => {
+    const fixtureUrl = new URL("../fixtures/runtime/default-handler.js", import.meta.url);
+    expect(resolveTokenModulePath(fixtureUrl.href)).toBe(fileURLToPath(fixtureUrl));
+    expect(tokenModuleDirectory(import.meta.url)).toBe(dirname(fileURLToPath(import.meta.url)));
   });
 });

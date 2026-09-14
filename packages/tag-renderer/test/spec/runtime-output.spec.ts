@@ -3,7 +3,13 @@ import { pipeline } from "node:stream/promises";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { RenderContext, RenderOutput } from "../../src/runtime/index.js";
+import {
+  BaseOutput,
+  MainOutput,
+  RenderContext,
+  RenderOutput,
+  SpotOutput,
+} from "../../src/runtime/index.js";
 
 async function streamText(stream: NodeJS.ReadableStream): Promise<string> {
   const chunks: Buffer[] = [];
@@ -14,6 +20,53 @@ async function streamText(stream: NodeJS.ReadableStream): Promise<string> {
 }
 
 describe("RenderOutput buffered output", () => {
+  it("supports empty output and low-level output lifecycle branches", async () => {
+    const output = new RenderOutput(null);
+    await expect(output.close()).resolves.toBe("");
+    output.flush();
+
+    const spot = new SpotOutput();
+    expect(() => spot.add({} as never)).toThrow(
+      "SpotOutput accepts only strings, buffers, or readable values",
+    );
+    spot.add("value");
+    spot.close();
+    expect(() => spot.add("late")).toThrow("SpotOutput is closed");
+    expect(() => spot.close()).toThrow("SpotOutput is already closed");
+
+    const cancelled = new SpotOutput();
+    cancelled._cancel();
+    expect(cancelled.add("ignored")).toBe(-1);
+    expect(() => cancelled.close()).not.toThrow();
+    expect(() => cancelled._cancel()).not.toThrow();
+
+    const drained = vi.fn();
+    spot._markDrained();
+    spot._markDrained();
+    spot.onDrained(drained);
+    expect(drained).toHaveBeenCalledOnce();
+
+    const main = new MainOutput();
+    const pending = new SpotOutput();
+    main.addSpot(pending);
+    pending.position = 1;
+    expect(() => main.closeSpot(pending)).toThrow("closing unknown pending output spot");
+  });
+
+  it("describes unsupported low-level values without assuming a constructor", () => {
+    const primitive = new BaseOutput();
+    primitive.add(null as never);
+    expect(() => primitive.stringify()).toThrow("item of type object");
+
+    const unnamed = new BaseOutput();
+    unnamed.add({ constructor: {} } as never);
+    expect(() => unnamed.stringify()).toThrow("item of type object");
+
+    const constructorless = new BaseOutput();
+    constructorless.add(Object.create(null) as never);
+    expect(() => constructorless.stringify()).toThrow("item of type object");
+  });
+
   it("keeps reserved output in document order", async () => {
     const output = new RenderOutput();
     output.add("before-");
@@ -85,6 +138,17 @@ describe("RenderOutput buffered output", () => {
     await expect(output.close()).resolves.toBe("[content]");
   });
 
+  it("rejects when the buffered transform throws", async () => {
+    const error = new Error("transform failed");
+    const output = new RenderOutput({
+      transform: () => {
+        throw error;
+      },
+    });
+    output.add("content");
+    await expect(output.close()).rejects.toBe(error);
+  });
+
   it("makes close idempotent and rejects writes after close", async () => {
     const output = new RenderOutput();
     output.add("done");
@@ -151,6 +215,43 @@ describe("RenderOutput buffered output", () => {
     expect(() => output.add({} as never)).toThrow(
       "RenderOutput accepts only strings, buffers, or readable values",
     );
+  });
+
+  it("propagates a synchronous send failure before close", () => {
+    const error = new Error("send failed");
+    const output = new RenderOutput({
+      send: () => {
+        throw error;
+      },
+    });
+    output.add("content");
+    expect(() => output.flush()).toThrow(error);
+  });
+
+  it("does not re-enter flushing from a send callback", async () => {
+    const sent: string[] = [];
+    let output: RenderOutput;
+    output = new RenderOutput({
+      send: (value) => {
+        sent.push(value);
+        output.flush();
+      },
+    });
+    output.add("content");
+    await expect(output.close()).resolves.toBe("");
+    expect(sent).toEqual(["content"]);
+  });
+
+  it("preserves a failure triggered by a send callback", async () => {
+    const error = new Error("failed while sending");
+    let output: RenderOutput;
+    output = new RenderOutput({
+      send: () => output.fail(error),
+    });
+    output.add("content");
+    await expect(output.close()).rejects.toBe(error);
+    expect(() => output.fail(new Error("ignored"))).not.toThrow();
+    expect(() => output.flush()).not.toThrow();
   });
 });
 
@@ -235,5 +336,143 @@ describe("RenderOutput streaming", () => {
     };
     expect(transformed.transformed).toBe(true);
     await expect(streamText(transformed.stream)).resolves.toBe("data");
+  });
+
+  it("discards output if the stream is already destroyed", () => {
+    const output = new BaseOutput();
+    output.add("data");
+    const done = vi.fn();
+    const discarded = vi.fn();
+    const munchy = {
+      destroyed: true,
+      once: vi.fn(),
+      removeListener: vi.fn(),
+      munch: vi.fn(),
+    } as unknown as Parameters<BaseOutput["sendToMunchy"]>[0];
+
+    output.sendToMunchy(munchy, done, discarded);
+    expect(discarded).toHaveBeenCalledOnce();
+    expect(done).not.toHaveBeenCalled();
+  });
+
+  it("wraps a non-error reason when failing a stream", () => {
+    const destroy = vi.fn();
+    const output = new RenderOutput({
+      munchy: { destroyed: false, destroy } as never,
+    });
+    output.fail("stream failed");
+    expect(destroy).toHaveBeenCalledWith(expect.objectContaining({ message: "stream failed" }));
+  });
+
+  it("does not reject the transformed stream result after streaming has failed", async () => {
+    type Listener = () => void;
+    const listeners = new Map<string, Listener>();
+    const state = {
+      destroyed: false,
+      once: vi.fn((event: string, listener: Listener) => {
+        listeners.set(event, listener);
+      }),
+      removeListener: vi.fn(),
+      munch: vi.fn(),
+    };
+    const output = new RenderOutput({ munchy: state as never });
+    output.add("data");
+    const closing = output.close();
+    output.fail(new Error("stream failed"), false);
+    listeners.get("munched")?.();
+    await Promise.resolve();
+    await expect(closing).resolves.toBe(state);
+  });
+
+  it("completes an empty low-level stream on the next tick", async () => {
+    const output = new BaseOutput();
+    const done = vi.fn();
+    output.sendToMunchy({} as never, done, vi.fn());
+    await new Promise<void>((resolve) => process.nextTick(resolve));
+    expect(done).toHaveBeenCalledOnce();
+  });
+
+  it("handles empty nested spots and ignores duplicate terminal events", async () => {
+    type Listener = () => void;
+    const listeners = new Map<string, Listener>();
+    const munchy = {
+      destroyed: false,
+      once: vi.fn((event: string, listener: Listener) => {
+        listeners.set(event, listener);
+      }),
+      removeListener: vi.fn(),
+      munch: vi.fn(),
+    } as unknown as Parameters<BaseOutput["sendToMunchy"]>[0];
+    const output = new BaseOutput();
+    output.add(new SpotOutput());
+    const done = vi.fn();
+    const discarded = vi.fn();
+
+    output.sendToMunchy(munchy, done, discarded);
+    expect(done).toHaveBeenCalledOnce();
+
+    const nonempty = new BaseOutput();
+    nonempty.add("data");
+    nonempty.sendToMunchy(munchy, done, discarded);
+    const errorListener = listeners.get("error");
+    const closeListener = listeners.get("close");
+    errorListener?.();
+    closeListener?.();
+    expect(discarded).toHaveBeenCalledOnce();
+  });
+
+  it("stops a pending output batch when the stream is discarded", async () => {
+    type Listener = () => void;
+    const listeners = new Map<string, Listener>();
+    const munch = vi.fn();
+    const munchy = {
+      destroyed: false,
+      once: vi.fn((event: string, listener: Listener) => {
+        listeners.set(event, listener);
+      }),
+      removeListener: vi.fn(),
+      munch,
+    } as unknown as Parameters<BaseOutput["sendToMunchy"]>[0];
+    const output = new BaseOutput();
+    for (let index = 0; index < 257; index += 1) output.add("x");
+    const done = vi.fn();
+    const discarded = vi.fn();
+
+    output.sendToMunchy(munchy, done, discarded);
+    const munched = listeners.get("munched");
+    listeners.get("close")?.();
+    munched?.();
+    munched?.();
+    await Promise.resolve();
+
+    expect(munch).toHaveBeenCalledOnce();
+    expect(discarded).toHaveBeenCalledOnce();
+    expect(done).not.toHaveBeenCalled();
+  });
+
+  it("discards between output batches when the destination is destroyed", async () => {
+    type Listener = () => void;
+    const listeners = new Map<string, Listener>();
+    const state = {
+      destroyed: false,
+      once: vi.fn((event: string, listener: Listener) => {
+        listeners.set(event, listener);
+      }),
+      removeListener: vi.fn(),
+      munch: vi.fn(),
+    };
+    const output = new BaseOutput();
+    for (let index = 0; index < 257; index += 1) output.add("x");
+    const discarded = vi.fn();
+
+    output.sendToMunchy(
+      state as unknown as Parameters<BaseOutput["sendToMunchy"]>[0],
+      vi.fn(),
+      discarded,
+    );
+    state.destroyed = true;
+    listeners.get("munched")?.();
+    await Promise.resolve();
+    expect(discarded).toHaveBeenCalledOnce();
   });
 });

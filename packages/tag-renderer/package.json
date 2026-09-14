@@ -36,8 +36,8 @@
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
-    "ci:check": "fyn typecheck && fyn test",
-    "coverage": "vitest run --coverage"
+    "ci:check": "fyn typecheck && fyn coverage",
+    "coverage": "vitest run --coverage --coverage.thresholds.100"
   },
   "files": [
     "dist"
