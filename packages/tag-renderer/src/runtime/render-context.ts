@@ -10,7 +10,7 @@ import type {
   TokenProvider,
   TokenRegistry,
 } from "./types.js";
-import { isReadableStream, munchyHandleStreamError } from "./utils.js";
+import { isRenderStream, munchyHandleStreamError } from "./utils.js";
 
 export class RenderInterceptError<Response = unknown> extends Error {
   constructor(readonly state: InterceptState<Response>) {
@@ -137,10 +137,16 @@ export class RenderContext {
     void id;
     try {
       const resolved = await result;
+      if (isRenderStream(resolved) && !this.output.acceptsStreams) {
+        const label = id === "" ? "<anonymous>" : String(id);
+        throw new TypeError(
+          `Token handler ${label} returned a readable or iterable value in buffered output; call context.setMunchyOutput() before returning it`,
+        );
+      }
       if (
         typeof resolved === "string" ||
         resolved instanceof Uint8Array ||
-        isReadableStream(resolved)
+        isRenderStream(resolved)
       ) {
         this.output.add(resolved);
       }

@@ -1,3 +1,5 @@
+import type { RenderStream } from "./types.js";
+
 const MIN_CWD_LENGTH = 3;
 
 export interface StreamErrorResult {
@@ -29,4 +31,9 @@ export function isReadableStream(value: unknown): value is NodeJS.ReadableStream
 
   const stream = value as Partial<NodeJS.ReadableStream>;
   return typeof stream.on === "function" && typeof stream.pipe === "function";
+}
+
+export function isRenderStream(value: unknown): value is RenderStream {
+  if (!value || typeof value !== "object" || value instanceof Uint8Array) return false;
+  return isReadableStream(value) || Symbol.asyncIterator in value || Symbol.iterator in value;
 }

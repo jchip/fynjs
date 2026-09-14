@@ -27,9 +27,10 @@ const context = await renderer.render({});
 console.log(context.result);
 ```
 
-Token handlers may return strings, buffers, readable streams, promises, or nested tag templates.
-Promise-returning handlers are awaited in template order. A handler that starts independent work
-can reserve its output position so later handlers may continue without moving their output ahead:
+Token handlers may return strings, buffers, promises, or nested tag templates. In streaming output
+mode they may also return readable streams and synchronous or asynchronous iterables. Promise-returning
+handlers are awaited in template order. A handler that starts independent work can reserve its output
+position so later handlers may continue without moving their output ahead:
 
 ```ts
 ${(context) => {
@@ -56,6 +57,7 @@ and helpers, and stream-detection helpers.
 
 ## Output modes
 
-Rendering is buffered by default. A handler can configure the render context for callback-based or
-streaming output before producing content. Reserved output spots retain template order in every
-mode.
+Rendering is buffered by default. Call `context.setMunchyOutput()` before returning a readable stream
+or iterable from a handler. Buffered and callback output reject those values instead of implicitly
+collecting an unbounded stream into memory. The output mode locks on the first flush or close.
+Reserved output spots retain template order in every mode.

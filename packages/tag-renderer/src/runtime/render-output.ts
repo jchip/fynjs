@@ -1,7 +1,7 @@
 import { Munchy } from "munchy";
 
 import type { OutputSend, RenderTransform, RenderValue } from "./types.js";
-import { isReadableStream } from "./utils.js";
+import { isRenderStream } from "./utils.js";
 
 type OutputItem = RenderValue | SpotOutput;
 const STREAM_BATCH_SIZE = 256;
@@ -26,16 +26,7 @@ function valueType(value: unknown): string {
 }
 
 function isRenderValue(value: unknown): value is RenderValue {
-  return (
-    typeof value === "string" ||
-    value instanceof Uint8Array ||
-    isReadableStream(value) ||
-    Boolean(
-      value &&
-      typeof value === "object" &&
-      (Symbol.asyncIterator in value || Symbol.iterator in value),
-    )
-  );
+  return typeof value === "string" || value instanceof Uint8Array || isRenderStream(value);
 }
 
 export class BaseOutput {
@@ -200,6 +191,10 @@ export class RenderOutput {
 
   assertSinkMutable(): void {
     if (this.sink) throw new Error("RenderOutput output mode is already locked");
+  }
+
+  get acceptsStreams(): boolean {
+    return this.sink?.mode === "stream" || (!this.sink && Boolean(this.context.munchy));
   }
 
   flush(): void {

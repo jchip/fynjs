@@ -102,6 +102,31 @@ describe("TagRenderer", () => {
     expect(await readStream(context.result as NodeJS.ReadableStream)).toBe("before-stream-after");
   });
 
+  it("rejects handler-returned streams in buffered output", async () => {
+    const template = createTemplateTags`${() => Readable.from(["stream"])}`;
+
+    const context = await new TagRenderer({ templateTags: template }).render({});
+
+    expect(context.error).toBeInstanceOf(TypeError);
+    expect((context.error as Error).message).toContain(
+      "call context.setMunchyOutput() before returning it",
+    );
+  });
+
+  it("streams handler-returned async iterables", async () => {
+    const template = createTemplateTags`${(context: RenderContext) => {
+      context.setMunchyOutput();
+      return (async function* () {
+        yield "first";
+        yield "-second";
+      })();
+    }}`;
+
+    const context = await new TagRenderer({ templateTags: template }).render({});
+
+    expect(await readStream(context.result as NodeJS.ReadableStream)).toBe("first-second");
+  });
+
   it("renders static, returned, promised, and array subtemplates", async () => {
     const child = createTemplateTags`<b>${async () => "child"}</b>`;
     const template = createTemplateTags`${child}|${() => child}|${async () => child}|${[

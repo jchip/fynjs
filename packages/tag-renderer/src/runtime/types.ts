@@ -6,6 +6,7 @@ export type RenderChunk = string | Uint8Array;
 export type RenderStream =
   NodeJS.ReadableStream | AsyncIterable<RenderChunk> | Iterable<RenderChunk>;
 
+/** A value accepted by RenderOutput. RenderStream values require streaming output. */
 export type RenderValue = RenderChunk | RenderStream;
 
 export type RenderTransform<Result = unknown> = (

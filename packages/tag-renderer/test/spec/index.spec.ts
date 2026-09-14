@@ -93,6 +93,7 @@ describe("@fynjs/tag-renderer public surface", () => {
       SpotOutput: tagRenderer.SpotOutput,
       TokenModule: expect.any(Function),
       isReadableStream: expect.any(Function),
+      isRenderStream: expect.any(Function),
       loadTokenModuleHandler: expect.any(Function),
       munchyHandleStreamError: expect.any(Function),
       renderStreamError: expect.any(Function),

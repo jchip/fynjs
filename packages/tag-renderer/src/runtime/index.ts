@@ -7,7 +7,12 @@ export {
   tokenModuleDirectory,
 } from "./load-handler.js";
 export { TEMPLATE_DIR, TOKEN_HANDLER } from "./symbols.js";
-export { isReadableStream, munchyHandleStreamError, renderStreamError } from "./utils.js";
+export {
+  isReadableStream,
+  isRenderStream,
+  munchyHandleStreamError,
+  renderStreamError,
+} from "./utils.js";
 export type { OutputContext } from "./render-output.js";
 export type { StreamErrorResult } from "./utils.js";
 export type {

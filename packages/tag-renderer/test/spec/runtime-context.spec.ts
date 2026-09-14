@@ -54,15 +54,21 @@ describe("RenderContext", () => {
     expect(errorCallback).toHaveBeenCalledWith(rejected);
   });
 
-  it("accepts readable token results and ignores unrelated values", async () => {
+  it("accepts readable and iterable token results in streaming output", async () => {
     const context = new RenderContext();
     context.setMunchyOutput();
     await context.handleTokenResult("stream", Readable.from(["stream"]));
+    await context.handleTokenResult(
+      "iterable",
+      (async function* () {
+        yield "-iterable";
+      })(),
+    );
     await context.handleTokenResult("ignored", false);
     const stream = (await context.output.close()) as AsyncIterable<Uint8Array>;
     const chunks: Uint8Array[] = [];
     for await (const chunk of stream) chunks.push(chunk);
-    expect(Buffer.concat(chunks).toString("utf8")).toBe("stream");
+    expect(Buffer.concat(chunks).toString("utf8")).toBe("stream-iterable");
   });
 
   it("formats stream errors without exposing cwd in development", () => {
