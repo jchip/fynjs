@@ -88,7 +88,8 @@ fyn bench:static
 
 It renders the same 64 KiB static HTML payload split across 1, 16, 256, and 4,096 literal tags. The
 renderer is initialized before timing, and the templates contain no functions, promises, tokens, or
-dynamic modules. Results include median and p95 time, renders and MiB per second, nanoseconds per tag,
-and median absolute deviation. MiB per second is logical rendered output, not string-flattening or I/O
-throughput; p95 summarizes batched sample averages rather than request-tail latency.
+dynamic modules. Results include arithmetic mean, median, and p95 time per render; renders and MiB per
+second; median nanoseconds per tag; and median absolute deviation. MiB per second is logical rendered
+output, not string-flattening or I/O throughput. Timing statistics summarize batched per-render sample
+averages rather than request-tail latency.
 `fyn bench:static:smoke` runs the same cases with shorter sampling.

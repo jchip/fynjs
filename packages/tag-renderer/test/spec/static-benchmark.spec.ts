@@ -14,24 +14,22 @@ describe("static rendering benchmark", () => {
       maxBuffer: 1_000_000,
       timeout: 30_000,
     });
-    const rows = stdout
-      .split("\n")
-      .filter((line) => line.startsWith("static-"))
-      .map((line) => line.split("\t"));
+    const rows = stdout.split("\n").filter((line) => line.startsWith("static-"));
 
-    expect(stdout).toContain("case\tstatic_tags\tbytes\titerations\tmedian_ns\tp95_ns");
-    expect(rows.map(([name]) => name)).toEqual([
+    expect(stdout).toContain("Static render benchmark");
+    expect(stdout).toContain("Avg/render");
+    expect(stdout).toContain("Median/render");
+    expect(stdout).toContain("p95/render");
+    expect(rows.map((row) => row.split(/\s+/)[0])).toEqual([
       "static-1",
       "static-16",
       "static-256",
       "static-4096",
     ]);
     for (const row of rows) {
-      expect(row).toHaveLength(10);
-      expect(row.slice(1).every((value) => Number.isFinite(Number(value)))).toBe(true);
-      expect(Number(row[2])).toBe(65_536);
-      expect(Number(row[3])).toBeGreaterThan(0);
-      expect(Number(row[4])).toBeGreaterThan(0);
+      expect(row).toMatch(
+        /^static-\d+\s+\d+\s+[\d,]+\s+\d+\.\d{3}\s+\d+\.\d{3}\s+\d+\.\d{3}\s+[\d,]+\s+[\d,.]+\s+\d+\.\d\s+\d+\.\d{2}%$/,
+      );
     }
   }, 30_000);
 });

@@ -89,6 +89,7 @@ async function benchmarkCase(staticTags) {
   const final = await renderer.render({});
   if (final.result !== EXPECTED) throw new Error("static render benchmark final output mismatch");
 
+  const meanNs = samples.reduce((sum, sample) => sum + sample, 0) / samples.length;
   samples.sort((left, right) => left - right);
   const medianNs = percentile(samples, 0.5);
   const p95Ns = percentile(samples, 0.95);
@@ -100,6 +101,7 @@ async function benchmarkCase(staticTags) {
   return {
     iterations,
     madPercent,
+    meanNs,
     medianNs,
     logicalMibPerSecond,
     p95Ns,
@@ -108,30 +110,51 @@ async function benchmarkCase(staticTags) {
   };
 }
 
-console.log(
-  `# node=${process.version} platform=${process.platform} arch=${process.arch} cpu=${JSON.stringify(os.cpus()[0]?.model ?? "unknown")}`,
-);
-console.log(
-  `# mode=${smoke ? "smoke" : "full"} bytes=${PAYLOAD_BYTES} samples=${options.samples} target_batch_ms=${options.targetBatchMs} warmup_ms=${options.warmupMs}`,
-);
-console.log(
-  "case\tstatic_tags\tbytes\titerations\tmedian_ns\tp95_ns\trenders_per_sec\tlogical_mib_per_sec\tns_per_tag\tmad_percent",
-);
-
+const results = [];
 for (const staticTags of CASES) {
-  const result = await benchmarkCase(staticTags);
-  console.log(
-    [
-      `static-${staticTags}`,
-      staticTags,
-      PAYLOAD_BYTES,
-      result.iterations,
-      result.medianNs.toFixed(1),
-      result.p95Ns.toFixed(1),
-      result.rendersPerSecond.toFixed(1),
-      result.logicalMibPerSecond.toFixed(1),
-      (result.medianNs / staticTags).toFixed(1),
-      result.madPercent.toFixed(2),
-    ].join("\t"),
-  );
+  results.push(await benchmarkCase(staticTags));
 }
+
+const rows = results.map((result) => [
+  `static-${result.staticTags}`,
+  String(result.staticTags),
+  result.iterations.toLocaleString("en-US"),
+  (result.meanNs / 1_000).toFixed(3),
+  (result.medianNs / 1_000).toFixed(3),
+  (result.p95Ns / 1_000).toFixed(3),
+  result.rendersPerSecond.toLocaleString("en-US", { maximumFractionDigits: 0 }),
+  result.logicalMibPerSecond.toLocaleString("en-US", { maximumFractionDigits: 1 }),
+  (result.medianNs / result.staticTags).toFixed(1),
+  `${result.madPercent.toFixed(2)}%`,
+]);
+const headings = [
+  "Case",
+  "Tags",
+  "Iterations",
+  "Avg/render (µs)",
+  "Median/render (µs)",
+  "p95/render (µs)",
+  "Renders/s",
+  "Logical MiB/s",
+  "Median ns/tag",
+  "MAD",
+];
+const widths = headings.map((heading, index) =>
+  Math.max(heading.length, ...rows.map((row) => row[index].length)),
+);
+const formatRow = (row) =>
+  row.map((cell, index) => cell[index === 0 ? "padEnd" : "padStart"](widths[index])).join("  ");
+
+console.log("Static render benchmark");
+console.log(`Runtime:  Node ${process.version} · ${process.platform}/${process.arch}`);
+console.log(`CPU:      ${os.cpus()[0]?.model ?? "unknown"}`);
+console.log(
+  `Workload: ${(PAYLOAD_BYTES / 1024).toFixed(0)} KiB static output · no async work or JavaScript hooks`,
+);
+console.log(
+  `Sampling: ${smoke ? "smoke" : "full"} · ${options.samples} samples · ${options.targetBatchMs} ms target batch · ${options.warmupMs} ms warmup`,
+);
+console.log();
+console.log(formatRow(headings));
+console.log(formatRow(widths.map((width) => "-".repeat(width))));
+for (const row of rows) console.log(formatRow(row));
