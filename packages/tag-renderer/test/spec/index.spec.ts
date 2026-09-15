@@ -4,12 +4,16 @@ import * as tagRenderer from "../../src/index.js";
 import * as runtime from "../../src/runtime.js";
 import type {
   InterceptState,
+  LoadedTemplateSnapshot,
   RegisterTokenIdsTag,
   RenderHost,
   RenderTransform,
   RenderValue,
   TagRendererOptions,
   TagTemplateOptions,
+  TemplateSnapshot,
+  TemplateSnapshotJson,
+  TemplateSnapshotTag,
   TemplateFunction,
   TemplateTags,
   TokenHandler,
@@ -36,12 +40,16 @@ import type {
 
 type RootTypes =
   | InterceptState
+  | LoadedTemplateSnapshot
   | RegisterTokenIdsTag
   | RenderHost
   | RenderTransform
   | RenderValue
   | TagRendererOptions
   | TagTemplateOptions
+  | TemplateSnapshot
+  | TemplateSnapshotJson
+  | TemplateSnapshotTag
   | TemplateFunction
   | TemplateTags
   | TokenHandler
@@ -75,12 +83,18 @@ describe("@fynjs/tag-renderer public surface", () => {
       "RenderContext",
       "RenderOutput",
       "SpotOutput",
+      "TEMPLATE_SNAPSHOT_FORMAT",
+      "TEMPLATE_SNAPSHOT_VERSION",
       "TagRenderer",
       "TagTemplate",
       "Token",
       "TokenInvoke",
       "createTemplateTags",
       "createTemplateTagsFromArray",
+      "decodeTemplateSnapshot",
+      "encodeTemplateSnapshot",
+      "exportTemplateSnapshot",
+      "loadTemplateSnapshot",
     ]);
   });
 

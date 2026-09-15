@@ -63,12 +63,31 @@ The package root exports the template-authoring API:
 
 - `TagRenderer`
 - `TagTemplate`, `createTemplateTags`, and `createTemplateTagsFromArray`
+- `encodeTemplateSnapshot`, `decodeTemplateSnapshot`, `exportTemplateSnapshot`, and
+  `loadTemplateSnapshot`
 - `Token`, `TokenInvoke`, and `RegisterTokenIds`
 - `RenderContext`, `RenderOutput`, and `SpotOutput`, including the types needed by token handlers
 
 Advanced integrations may import the underlying runtime from `@fynjs/tag-renderer/runtime`. That
 subpath additionally exports `BaseOutput`, `MainOutput`, `TokenModule`, token-module loading symbols
 and helpers, and stream-detection helpers.
+
+## Template snapshots
+
+A trusted ESM template can be imported once and exported as a versioned JSON snapshot. The runtime
+loader reconstructs its template tags without importing the original template module:
+
+```ts
+await exportTemplateSnapshot("templates/page.js", "templates/page.template.json");
+
+const loaded = await loadTemplateSnapshot("templates/page.template.json");
+const renderer = new TagRenderer({ ...loaded, tokenHandlers });
+```
+
+Snapshots support literal strings, byte arrays, nested templates, and pristine string-ID tokens
+whose properties contain only JSON data. Export rejects executable tags such as functions,
+`TokenInvoke`, and `RegisterTokenIds`. Relative module-backed tokens resolve from the snapshot file's
+directory.
 
 ## Output modes
 
