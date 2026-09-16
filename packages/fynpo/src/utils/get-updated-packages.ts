@@ -239,7 +239,11 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
     latestTag = since.sha;
     changed.latestTag = since.sha;
     commitCount = since.commitCount;
-    logger.info(`Using explicit change boundary from --since ${opts.since}: ${since.sha}`);
+    logger.info(
+      opts._sinceFromPublishFallback
+        ? `Using accepted [Publish] commit as the change boundary: ${since.sha}`
+        : `Using explicit change boundary from --since ${opts.since}: ${since.sha}`
+    );
   } else if (ifTagExists(opts)) {
     const latest = getLatestTag(opts);
     const { tagName } = latest;
@@ -250,7 +254,7 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
 
   if (latestTag && commitCount === "0" && forced.length === 0) {
     logger.info(
-      since
+      since && !opts._sinceFromPublishFallback
         ? "No commits after the --since boundary. Skipping change detection"
         : "No commits since previous release. Skipping change detection"
     );
@@ -285,7 +289,7 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
     }
   } else {
     logger.info(
-      since
+      since && !opts._sinceFromPublishFallback
         ? `Detecting changed packages after the --since boundary: ${latestTag}`
         : `Detecting changed packages since the release tag: ${latestTag}`
     );

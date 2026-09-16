@@ -8,6 +8,10 @@ vi.mock("../src/utils/get-updated-packages", () => ({
   getUpdatedPackages: vi.fn(),
 }));
 
+vi.mock("../src/utils/recover-release-boundary", () => ({
+  recoverReleaseBoundary: vi.fn(),
+}));
+
 // Mock logger
 vi.mock("../src/logger", () => ({
   logger: {
@@ -19,6 +23,7 @@ vi.mock("../src/logger", () => ({
 }));
 
 import { getUpdatedPackages } from "../src/utils/get-updated-packages";
+import { recoverReleaseBoundary } from "../src/utils/recover-release-boundary";
 import { logger } from "../src/logger";
 
 describe("fynpo Updated", () => {
@@ -75,7 +80,7 @@ describe("fynpo Updated", () => {
     expect(updated._options.someOption).toBe("value");
   });
 
-  it("should exec and handle no changed packages", () => {
+  it("should exec and handle no changed packages", async () => {
     const opts = { cwd: dir };
     const updated = new Updated(opts, graph);
 
@@ -89,11 +94,29 @@ describe("fynpo Updated", () => {
       latestTag: undefined,
     });
 
-    updated.exec();
+    await updated.exec();
 
     expect(logger.info).toHaveBeenCalledWith("No changed packages!");
 
     vi.restoreAllMocks();
   });
-});
 
+  it("waits for boundary recovery before detecting changed packages", async () => {
+    vi.clearAllMocks();
+    let finishRecovery: () => void;
+    vi.mocked(recoverReleaseBoundary).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishRecovery = resolve;
+      })
+    );
+    vi.mocked(getUpdatedPackages).mockReturnValue({ pkgs: ["pkg1"] } as any);
+
+    const running = new Updated({ cwd: dir }, graph).exec();
+    expect(getUpdatedPackages).not.toHaveBeenCalled();
+
+    finishRecovery();
+    await running;
+
+    expect(getUpdatedPackages).toHaveBeenCalledOnce();
+  });
+});

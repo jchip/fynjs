@@ -16,6 +16,7 @@ vi.mock("../src/logger", () => ({
 }));
 
 import { getUpdatedPackages } from "../src/utils/get-updated-packages";
+import { recoverReleaseBoundary } from "../src/utils/recover-release-boundary";
 
 //
 // This one drives real git on purpose. The bug it guards is a `git describe --first-parent`
@@ -58,7 +59,7 @@ const makeRepoWithTagOffFirstParent = (): string => {
   git(dir, "checkout", "-q", "-b", "side");
   writePkg(dir, "lib-a", { description: "released state" });
   git(dir, "add", "-A");
-  git(dir, "commit", "-q", "-m", "release work");
+  git(dir, "commit", "-q", "-m", "[Publish]");
   git(dir, "tag", "-a", "fynpo-rel-20260816-deadbeef", "-m", "release");
 
   git(dir, "checkout", "-q", "main");
@@ -70,6 +71,29 @@ const makeRepoWithTagOffFirstParent = (): string => {
 
   // work after the merge - this is what a release should see as changed
   writePkg(dir, "lib-b", { description: "changed after the boundary" });
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "lib-b: change after the release");
+
+  return dir;
+};
+
+const makeRepoWithOldPublishTag = (): string => {
+  const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), "fynpo-old-tag-"));
+
+  git(dir, "init", "-q", "-b", "main");
+  writePkg(dir, "lib-a");
+  writePkg(dir, "lib-b");
+  git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "init");
+
+  git(dir, "commit", "-q", "--allow-empty", "-m", "[Publish]");
+  git(dir, "tag", "-a", "old-release-1", "-m", "release");
+
+  git(dir, "commit", "-q", "--allow-empty", "-m", "[Publish][Selective]");
+  git(dir, "tag", "selective-release-1");
+  git(dir, "commit", "-q", "--allow-empty", "-m", "[Publish]");
+
+  writePkg(dir, "lib-b", { description: "changed after the release" });
   git(dir, "add", "-A");
   git(dir, "commit", "-q", "-m", "lib-b: change after the release");
 
@@ -166,6 +190,28 @@ describe("release tag that is not on the first-parent chain (FPO-46)", () => {
     expect(said).toContain("fynpo-rel-20260816-deadbeef");
     expect(said).toContain("first-parent");
   });
+
+  it("offers a tagged publish commit that is reachable through a merge", async () => {
+    const confirmReleaseBoundary = vi.fn(() => true);
+    const opts: any = {
+      cwd: dir,
+      command: { publish: { gitTagTemplate: "new-release-{COMMIT}" } },
+      fynpoRc: {},
+      versionLockMap: {},
+      forcePublish: [],
+      _confirmReleaseBoundary: confirmReleaseBoundary,
+    };
+
+    await recoverReleaseBoundary(opts);
+
+    expect(confirmReleaseBoundary).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sha: git(dir, "rev-parse", "fynpo-rel-20260816-deadbeef^{commit}"),
+        offFirstParent: true,
+      })
+    );
+    expect(getUpdatedPackages(graph, opts).pkgs).toEqual(["lib-b"]);
+  });
 });
 
 describe("release tag on a branch that does not describe HEAD (FPO-46)", () => {
@@ -219,5 +265,100 @@ describe("release tag on a branch that does not describe HEAD (FPO-46)", () => {
         since: "abandoned",
       })
     ).toThrow("is not an ancestor of HEAD");
+  });
+
+  it("stops a suspicious tag-template mismatch when no publish candidate exists", async () => {
+    await expect(
+      recoverReleaseBoundary({
+        cwd: dir,
+        command: { publish: { gitTagTemplate: "new-release-{COMMIT}" } },
+      })
+    ).rejects.toThrow("no tagged [Publish] commit was found");
+  });
+});
+
+describe("publish commit fallback when the tag template changed (FPO-66)", () => {
+  let dir: string;
+  let graph: FynpoDepGraph;
+
+  beforeAll(async () => {
+    dir = makeRepoWithOldPublishTag();
+    graph = new FynpoDepGraph({ cwd: dir, patterns: ["packages/*"] });
+    await graph.resolve();
+  });
+
+  afterAll(() => {
+    Fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  const options = (confirmReleaseBoundary) => ({
+    cwd: dir,
+    command: { publish: { gitTagTemplate: "new-release-{COMMIT}" } },
+    fynpoRc: {},
+    versionLockMap: {},
+    forcePublish: [],
+    _confirmReleaseBoundary: confirmReleaseBoundary,
+  });
+
+  it("offers the latest tagged [Publish] commit and uses it when accepted", async () => {
+    const confirmReleaseBoundary = vi.fn(() => true);
+    const opts: any = options(confirmReleaseBoundary);
+    await recoverReleaseBoundary(opts);
+    const changed: any = getUpdatedPackages(graph, opts);
+    const publishSha = git(dir, "rev-parse", "old-release-1^{commit}");
+
+    expect(confirmReleaseBoundary).toHaveBeenCalledWith({
+      sha: publishSha,
+      date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      subject: "[Publish]",
+      tags: ["old-release-1"],
+      offFirstParent: false,
+      searchTerm: "new-release-*",
+    });
+    expect(changed.latestTag).toBe(publishSha);
+    expect(changed.pkgs).toEqual(["lib-b"]);
+  });
+
+  it("stops with --since guidance when the candidate is rejected", async () => {
+    await expect(recoverReleaseBoundary(options(() => false))).rejects.toThrow(
+      "was not accepted; re-run with --since"
+    );
+  });
+
+  it("does not guess when confirmation is unavailable", async () => {
+    const stdinTTY = process.stdin.isTTY;
+    const stdoutTTY = process.stdout.isTTY;
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: false });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+
+    try {
+      await expect(recoverReleaseBoundary(options(undefined))).rejects.toThrow(
+        "Cannot ask for confirmation in this environment"
+      );
+    } finally {
+      Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: stdinTTY });
+      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: stdoutTTY });
+    }
+  });
+
+  it("does not run the heuristic for an explicit --since boundary", async () => {
+    const confirmReleaseBoundary = vi.fn();
+    const opts = { ...options(confirmReleaseBoundary), since: "old-release-1" };
+
+    await recoverReleaseBoundary(opts);
+
+    expect(confirmReleaseBoundary).not.toHaveBeenCalled();
+    expect(opts.since).toBe("old-release-1");
+  });
+
+  it("does not run the heuristic when the configured tag pattern matches", async () => {
+    const confirmReleaseBoundary = vi.fn();
+    const opts: any = options(confirmReleaseBoundary);
+    opts.command.publish.gitTagTemplate = "old-release-{COMMIT}";
+
+    await recoverReleaseBoundary(opts);
+
+    expect(confirmReleaseBoundary).not.toHaveBeenCalled();
+    expect(opts.since).toBeUndefined();
   });
 });

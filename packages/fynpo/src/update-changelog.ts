@@ -34,6 +34,7 @@ import {
   printNextSteps,
   printCommand,
 } from "./release-output.ts";
+import { recoverReleaseBoundary } from "./utils/recover-release-boundary.ts";
 import { getUpdatedPackages } from "./utils/get-updated-packages.ts";
 import {
   isAnythingCommitted,
@@ -175,6 +176,7 @@ export default class Changelog {
       lockAll: this._lockAll,
       graph: this._graph,
     });
+    await recoverReleaseBoundary(opts);
     const changed = getUpdatedPackages(this._graph, opts);
 
     if (!changed.pkgs.length) {

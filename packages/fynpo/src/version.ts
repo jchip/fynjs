@@ -18,6 +18,7 @@ import {
   checkGitClean as gitIsClean,
   commitAndTagUpdates as commitAndTag,
 } from "./utils/git-commit-updates.ts";
+import { recoverReleaseBoundary } from "./utils/recover-release-boundary.ts";
 import Path from "path";
 import Promise from "aveazul";
 xsh.Promise = Promise;
@@ -124,6 +125,7 @@ export class Version {
       versionLockMap: this._versionLockMap,
       graph: this._graph,
     });
+    await recoverReleaseBoundary(opts);
     const changed = getUpdatedPackages(this._graph, opts);
 
     if (!changed.pkgs.length) {

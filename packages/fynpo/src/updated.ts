@@ -4,6 +4,7 @@ import { logger } from "./logger.ts";
 import { getUpdatedPackages } from "./utils/get-updated-packages.ts";
 import * as _ from "lodash-es";
 import { FynpoDepGraph } from "@fynpo/base";
+import { recoverReleaseBoundary } from "./utils/recover-release-boundary.ts";
 
 export class Updated {
   _cwd;
@@ -30,12 +31,13 @@ export class Updated {
     this._options = _.defaults(opts, overrides, fynpoRc);
   }
 
-  exec() {
+  async exec() {
     const opts = Object.assign({}, this._options, {
       cwd: this._cwd,
       versionLockMap: this._versionLockMap,
     });
 
+    await recoverReleaseBoundary(opts);
     const { pkgs: updates } = getUpdatedPackages(this._graph, opts);
 
     if (!updates.length) {
