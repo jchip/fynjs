@@ -28,6 +28,17 @@ To see detailed stats about any package, use the `stat` command:
 fyn stat lodash
 ```
 
+To check direct registry dependencies for newer versions without changing anything:
+
+```sh
+fyn outdated
+fyn outdated lodash --json
+```
+
+`outdated` compares the installed version with the newest version allowed by the declared range
+and the registry's `latest` tag. Local, Git, and URL dependencies are not compared. Pass
+`--refresh-meta` to bypass fresh registry metadata caches.
+
 - It can read and use some settings from your `.npmrc`.
 - It can use `npm-shrinkwrap.json` or `package-lock.json` files.
 

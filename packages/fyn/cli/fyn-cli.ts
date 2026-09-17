@@ -13,6 +13,8 @@ import PromiseQueue from "../lib/util/promise-queue";
 import sortObjKeys from "../lib/util/sort-obj-keys";
 import fyntil from "../lib/util/fyntil";
 import showStat from "./show-stat";
+import showOutdated from "./show-outdated";
+import type { OutdatedRecord } from "../lib/pkg-outdated-provider";
 import { InstallScripts } from "../lib/install-scripts";
 import showAudit from "./show-audit";
 import { runNpmScript, addNpmLifecycle } from "../lib/util/run-npm-script";
@@ -89,6 +91,16 @@ interface InstallArgv {
 interface StatArgv {
   args: {
     packages?: string[];
+  };
+}
+
+/** Outdated command arguments */
+interface OutdatedArgv {
+  args?: {
+    packages?: string[];
+  };
+  opts?: {
+    json?: boolean;
   };
 }
 
@@ -690,6 +702,22 @@ class FynCli {
     return showStat(this.fyn, argv.args.packages).finally(() => {
       return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
     });
+  }
+
+  async outdated(argv: OutdatedArgv): Promise<OutdatedRecord[]> {
+    const result = await showOutdated(this.fyn, {
+      packages: argv.args?.packages || [],
+      json: Boolean(argv.opts?.json),
+      colors: this.fyn._options.colors !== false
+    });
+
+    if (this._opts.saveLogs) {
+      await this.saveLogs(this._opts.saveLogs);
+    }
+    if (result.records.length > 0) {
+      fyntil.exit(1);
+    }
+    return result.records;
   }
 
   /**

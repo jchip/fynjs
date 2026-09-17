@@ -44,6 +44,24 @@ describe("cli/main", function() {
     });
   });
 
+  describe("outdated", function() {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("passes package filters and JSON output to the command", async () => {
+      const outdated = vi.spyOn(FynCli.prototype, "outdated").mockResolvedValue([]);
+
+      await runCli(["outdated", "alpha", "@scope/pkg", "--json"], 0);
+
+      expect(outdated).toHaveBeenCalledTimes(1);
+      expect(outdated.mock.calls[0][0]).toMatchObject({
+        args: { packages: ["alpha", "@scope/pkg"] },
+        opts: { json: true }
+      });
+    });
+  });
+
   describe("setLockfile", function() {
     it("updates the nested option consumed by Fyn and returns its previous value", () => {
       const config = { opts: { lockfile: true } };

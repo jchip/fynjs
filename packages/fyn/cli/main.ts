@@ -548,6 +548,33 @@ const commands: Record<string, CommandSpec> = {
       return new FynCli(await pickOptions(cmd)).stat(cmd.jsonMeta);
     }
   },
+  outdated: {
+    desc: "Check direct dependencies for newer versions",
+    usage: "$0 $1 [package-name ...] [--json]",
+    args: "[packages string..]",
+    exec: async (cmd: CommandNode) => {
+      const json = Boolean(cmd.jsonMeta.opts.json);
+      const previousLogLevel = (logger as any)._logLevel;
+      if (json) {
+        // Machine-readable output must not be mixed with startup/config messages on stdout.
+        cmd.jsonMeta.opts.logLevel = "none";
+      }
+      try {
+        const config = await pickOptions(cmd);
+        config.noStartupInfo = json;
+        return await new FynCli(config).outdated(cmd.jsonMeta);
+      } finally {
+        if (json) (logger as any)._logLevel = previousLogLevel;
+      }
+    },
+    options: {
+      json: {
+        alias: "j",
+        args: "<flag boolean>",
+        desc: "Output outdated dependencies as JSON"
+      }
+    }
+  },
   audit: {
     desc: "Check for known security vulnerabilities",
     exec: async (cmd: CommandNode) => {

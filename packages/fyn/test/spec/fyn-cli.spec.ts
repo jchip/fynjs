@@ -2,6 +2,9 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import FynCli from "../../cli/fyn-cli";
 import fyntil from "../../lib/util/fyntil";
 import logger from "../../lib/logger";
+import showOutdated from "../../cli/show-outdated";
+
+vi.mock("../../cli/show-outdated", () => ({ default: vi.fn() }));
 
 describe("FynCli", function () {
   afterEach(() => {
@@ -96,6 +99,39 @@ describe("FynCli", function () {
       } finally {
         (fyntil as any).exit = savedExit;
       }
+    });
+  });
+
+  describe("outdated", function () {
+    const makeCli = () => {
+      const cli: any = Object.create(FynCli.prototype);
+      cli._fyn = { _options: { colors: false } };
+      cli._opts = {};
+      return cli;
+    };
+
+    it("exits 1 when dependencies are outdated", async () => {
+      const record = {
+        name: "alpha",
+        type: "prod" as const,
+        requested: "^1.0.0",
+        current: "1.0.0",
+        wanted: "1.1.0",
+        latest: "2.0.0"
+      };
+      vi.mocked(showOutdated).mockResolvedValue({ records: [record], skipped: [] });
+      const exit = vi.spyOn(fyntil, "exit").mockImplementation(() => undefined as never);
+
+      expect(await makeCli().outdated({ args: {}, opts: {} })).toStrictEqual([record]);
+      expect(exit).toHaveBeenCalledWith(1);
+    });
+
+    it("does not exit when dependencies are current", async () => {
+      vi.mocked(showOutdated).mockResolvedValue({ records: [], skipped: [] });
+      const exit = vi.spyOn(fyntil, "exit").mockImplementation(() => undefined as never);
+
+      expect(await makeCli().outdated({ args: {}, opts: {} })).toStrictEqual([]);
+      expect(exit).not.toHaveBeenCalled();
     });
   });
 });
