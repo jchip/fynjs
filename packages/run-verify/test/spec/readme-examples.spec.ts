@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { verify, signal } from "../../src/index.js";
 
-// Every chain example in the README's `verify` section, run verbatim, so the
-// documentation cannot drift away from the code without a test failing.
+// Exercise the public behaviors shown in the README so its examples stay aligned
+// with the implementation.
 describe("README chain examples", () => {
   it("core example resolves count=6", async () => {
     const count = await verify({ timeout: 500 })

@@ -47,7 +47,8 @@
     "directory": "packages/run-verify"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "dependencies": {},
   "devDependencies": {
