@@ -192,7 +192,7 @@ export function prepareRequest(
     }
     if (form instanceof URLSearchParams) {
       body = form.toString();
-    } else if (typeof form === "object") {
+    } else {
       const sp = new URLSearchParams();
       for (const [k, v] of Object.entries(form)) {
         if (v !== undefined && v !== null) {

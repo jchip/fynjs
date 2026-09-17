@@ -113,4 +113,9 @@ describe("string-array parse", () => {
       remain: ""
     });
   });
+
+  it("should reject incomplete arrays", () => {
+    expect(() => parse("[abc")).toThrow("array missing ]");
+    expect(() => parse("[abc,")).toThrow("array missing ]");
+  });
 });

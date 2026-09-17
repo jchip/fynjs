@@ -52,10 +52,7 @@ export function parse(str: string, noPrefix?: boolean, noExtra?: boolean): Parse
 
     // end of an array
     if (m[0] === "]") {
-      const popped = nest.pop();
-      if (!popped) {
-        throw new Error("array has extra ]");
-      }
+      const popped = nest.pop()!;
       arr = popped;
       if (s.startsWith(",")) {
         s = s.substring(1).trimStart();

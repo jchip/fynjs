@@ -178,7 +178,7 @@ function _runVerify(args: any[], errorFromCall: Error): void {
   args.forEach((x, ix) => {
     if (x[IS_FINALLY] !== true) argPos.push(ix);
   });
-  const stepNum = (ix: number): number => (ix >= 0 && ix < argPos.length ? argPos[ix] : ix);
+  const stepNum = (ix: number): number => argPos[ix];
 
   const lastIx = checkFuncs.length - 1;
   const done = checkFuncs[lastIx] as DoneCallback;

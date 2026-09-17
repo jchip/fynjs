@@ -13,7 +13,7 @@ export function appendSearchParams(
     parsed.forEach((val, key) => target.append(key, val));
   } else if (searchParams instanceof URLSearchParams) {
     searchParams.forEach((val, key) => target.append(key, val));
-  } else if (typeof searchParams === "object") {
+  } else {
     for (const [key, val] of Object.entries(searchParams)) {
       if (val !== undefined && val !== null) {
         target.append(key, String(val));
