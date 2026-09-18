@@ -11,6 +11,12 @@ const withFiles = (...files: string[]) => {
 const B = "file:///p/src/";
 
 describe("createTsMapper", () => {
+  it("uses the real filesystem by default", () => {
+    const map = createTsMapper();
+    const source = new URL("../fixtures/esm/lib.ts", import.meta.url).href;
+    expect(map(new URL("../fixtures/esm/lib.js", import.meta.url).href)).toBe(source);
+  });
+
   describe("js specifier -> ts source", () => {
     it("maps .js to .ts when only the .ts exists", () => {
       const { map } = withFiles(`${B}a.ts`);
@@ -57,6 +63,11 @@ describe("createTsMapper", () => {
     it("prefers the sibling file over a directory index", () => {
       const { map } = withFiles(`${B}a.ts`, `${B}a/index.ts`);
       expect(map(`${B}a`)).toBe(`${B}a.ts`);
+    });
+
+    it("returns null when neither a sibling nor a directory index exists", () => {
+      const { map } = withFiles();
+      expect(map(`${B}missing`)).toBeNull();
     });
   });
 

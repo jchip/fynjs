@@ -12,6 +12,18 @@ const setup = (...files: string[]) => {
 };
 
 describe("createResolveHook", () => {
+  it("uses the real filesystem when no options are supplied", () => {
+    const hook = createResolveHook();
+    const next = vi.fn();
+    expect(hook("./lib.js", {
+      parentURL: new URL("../fixtures/esm/entry.ts", import.meta.url).href
+    }, next)).toEqual({
+      url: new URL("../fixtures/esm/lib.ts", import.meta.url).href,
+      shortCircuit: true
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("short-circuits a relative specifier onto its TypeScript source", () => {
     const { hook, next } = setup("file:///p/src/lib.ts");
     expect(hook("./lib.js", { parentURL: PARENT }, next)).toEqual({
