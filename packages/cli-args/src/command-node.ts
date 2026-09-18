@@ -281,6 +281,10 @@ export class CommandNode extends ClapNode {
         new ClapNodeGenerator(this).addOptionWithArgs(key, [].concat(data.arg), undefined, src);
       }
     }
+
+    for (let command: CommandNode = this; command; command = command.getParent()) {
+      command._jsonMeta = undefined;
+    }
   }
 
   /**

@@ -50,6 +50,32 @@ describe("configuration regressions", () => {
     expect.soft(command.optsFull.serverName).toEqual(command.optsFull["server-name"]);
   });
 
+  it("refreshes cached ancestor metadata after a nested command receives configuration", () => {
+    const nc = new NixClap(noOutputExit).init({}, {
+      parent: {
+        subCommands: {
+          child: { options: { port: { args: "<value number>", argDefault: 80 } } }
+        }
+      }
+    });
+    const { command } = nc.parse(["parent", "child"], 0);
+    const parent = command.subCmdNodes.parent;
+    const child = parent.subCmdNodes.child;
+    expect(command.subCommands.parent.subCommands.child.opts.port).toBe(80);
+
+    child.applyConfig({ port: 90 });
+
+    expect(child.opts.port).toBe(90);
+    expect(parent.subCommands.child.opts.port).toBe(90);
+    expect(command.subCommands.parent.subCommands.child.opts.port).toBe(90);
+    expect(command.subCommands.parent.subCommands.child.source.port).toBe("user");
+
+    child.applyConfig({ port: 100 }, "default");
+
+    expect(command.subCommands.parent.subCommands.child.opts.port).toBe(100);
+    expect(command.subCommands.parent.subCommands.child.source.port).toBe("default");
+  });
+
   it("preserves CLI values and their camelCase aliases when configuration is applied", () => {
     const nc = new NixClap(noOutputExit).init({
       "server-name": { args: "<name string>", argDefault: "default" }
