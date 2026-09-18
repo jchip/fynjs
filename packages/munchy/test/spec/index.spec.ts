@@ -631,6 +631,99 @@ describe("munchy", function () {
         });
     });
 
+    it("should continue after backpressure on a recovered error result", async () => {
+      const source = new PassThrough();
+      const munchy = new Munchy(
+        {
+          highWaterMark: 1,
+          handleStreamError: err => ({ result: `[${err.message}]`, remit: false })
+        },
+        source,
+        "tail",
+        null
+      );
+      const chunks: Buffer[] = [];
+      const readable = once(munchy, "readable");
+      const ended = once(munchy, "end");
+      munchy.once("draining", () => {
+        process.nextTick(() => source.emit("error", new Error("recover")));
+      });
+
+      munchy.read(0);
+      await readable;
+      munchy.on("data", chunk => chunks.push(chunk));
+      await ended;
+
+      expect(Buffer.concat(chunks).toString()).to.equal("[recover]tail");
+    });
+
+    it("should stop before pulling a source when destroyed by a draining listener", async () => {
+      let pulls = 0;
+      const source = {
+        async *[Symbol.asyncIterator]() {
+          pulls++;
+          yield "unused";
+        }
+      };
+      const munchy = new Munchy({}, source);
+      const closed = once(munchy, "close");
+      munchy.once("draining", () => munchy.destroy());
+
+      munchy.resume();
+      await closed;
+
+      expect(munchy.destroyed).to.equal(true);
+      expect(pulls).to.equal(0);
+    });
+
+    it("should stop a backpressured sync iterable when destroyed", async () => {
+      let pulls = 0;
+      const source = (function* () {
+        pulls++;
+        yield { item: 1 };
+        pulls++;
+        yield { item: 2 };
+      })();
+      const munchy = new Munchy({ objectMode: true, highWaterMark: 1 }, source);
+      const closed = once(munchy, "close");
+
+      munchy.read(0);
+      await new Promise(resolve => setImmediate(resolve));
+      munchy.destroy();
+      await closed;
+
+      expect(pulls).to.equal(1);
+    });
+
+    it("should stop a backpressured fallback item when destroyed", async () => {
+      const munchy = new Munchy(
+        { objectMode: true, highWaterMark: 1 },
+        { item: 1 },
+        { item: 2 }
+      );
+      const closed = once(munchy, "close");
+
+      munchy.read(0);
+      await new Promise(resolve => setImmediate(resolve));
+      expect(munchy.readableLength).to.equal(1);
+      munchy.destroy();
+      await closed;
+    });
+
+    it("should unwind when push destroys the stream", async () => {
+      const munchy = new Munchy({}, "item");
+      const closed = once(munchy, "close");
+      munchy.push = (() => {
+        munchy.destroy();
+        return false;
+      }) as any;
+
+      munchy.read(0);
+      await closed;
+
+      expect(munchy.destroyed).to.equal(true);
+    });
+
     it("should pause a Readable source while backpressured", () => {
       let emitted = 0;
       const src = new Readable({
