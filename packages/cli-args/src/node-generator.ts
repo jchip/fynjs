@@ -507,7 +507,7 @@ export class ClapNodeGenerator {
     
     
     const builder = new ClapNodeGenerator(optNode, this);
-    const minArg = data.value ? 1 : 0;
+    const minArg = data.value !== undefined ? 1 : 0;
     if (!(optNode.option.args.length > minArg)) {
       builder.complete();
     }
