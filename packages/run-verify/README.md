@@ -1,11 +1,12 @@
 # run-verify
 
-Build explicit, typed test flows. Mix Promise work with callback APIs. Require external
-events when needed.
+**run-verify gives tests a controlled progression.** Organize actions and assertions
+into explicit steps, each checked before the next begins. Coordinate callbacks, promises,
+and events in the order your test requires, with a deadline to keep the run bounded.
 
-`verify()` creates an immutable chain of steps. Each step receives the previous value.
-`await` runs the chain. The final step supplies its result. A run can require an expected
-failure or an external signal. It can also enforce a deadline and clean up resources.
+Turn an expected error into a positive outcome. When a step must fail, the expected error
+satisfies that step and becomes the input to the next, ready for further assertions.
+Unexpected success fails the test.
 
 ```bash
 fyn add --dev run-verify
@@ -17,13 +18,12 @@ fyn add --dev run-verify
 import assert from "node:assert/strict";
 import { verify } from "run-verify";
 
-const label = await verify({ timeout: 500 })
+await verify({ timeout: 500 })
   .step(() => 2)
   .step(value => value * 3)
   .keep.step(value => assert.equal(value, 6))
-  .step(value => `count=${value}`);
-
-assert.equal(label, "count=6");
+  .step(value => `count=${value}`)
+  .step(label => assert.equal(label, "count=6"));
 ```
 
 A plain `.step()` replaces the current value with what it returns. An assertion usually
@@ -133,7 +133,7 @@ import { signal, verify } from "run-verify";
 const saved = signal();
 const onSaved = record => saved.resolve(record);
 
-const id = await verify({
+await verify({
   timeout: 500,
   signals: { saved },
   cleanup: () => store.off("saved", onSaved)
@@ -143,9 +143,8 @@ const id = await verify({
     return store.save("record-1");
   })
   .awaiting(saved)
-  .step(record => record.id);
-
-assert.equal(id, "record-1");
+  .step(record => record.id)
+  .step(id => assert.equal(id, "record-1"));
 ```
 
 Registering a signal does not block the chain. The listener can be ready before the work

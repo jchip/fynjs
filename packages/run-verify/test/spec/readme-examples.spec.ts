@@ -6,13 +6,13 @@ import { verify, signal } from "../../src/index.js";
 // Exercise the public behaviors shown in the README so its examples stay aligned
 // with the implementation.
 describe("README chain examples", () => {
-  it("core example resolves count=6", async () => {
-    const count = await verify({ timeout: 500 })
+  it("core example asserts count=6 inside the chain", async () => {
+    await verify({ timeout: 500 })
       .step(() => 2)
       .step(value => value * 3)
       .keep.step(value => assert.equal(value, 6))
-      .step(value => `count=${value}`);
-    expect(count).toBe("count=6");
+      .step(value => `count=${value}`)
+      .step(label => assert.equal(label, "count=6"));
   });
 
   it("reusable prefix example", async () => {
@@ -208,7 +208,7 @@ describe("README chain examples", () => {
     const saved = signal<{ id: string }>();
     const onSaved = (record: { id: string }) => saved.resolve(record);
 
-    const id = await verify({
+    await verify({
       timeout: 500,
       signals: { saved },
       cleanup: () => store.off("saved", onSaved)
@@ -218,9 +218,8 @@ describe("README chain examples", () => {
         return store.save("a");
       })
       .awaiting("saved")
-      .step(record => record.id);
-
-    assert.equal(id, "a");
+      .step(record => record.id)
+      .step(id => assert.equal(id, "a"));
     expect(store.listenerCount("saved")).toBe(0);
   });
 });
