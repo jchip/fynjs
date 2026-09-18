@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as Fs from "fs";
 import * as Os from "os";
 import * as Path from "path";
@@ -32,6 +32,7 @@ describe("getPackInfo", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     process.env = { ...saveEnv };
     Fs.rmSync(Path.dirname(dir), { recursive: true, force: true });
   });
@@ -112,5 +113,20 @@ describe("getPackInfo", () => {
 
   it("names the meta sidecar next to the save file", () => {
     expect(metaFileOf("/tmp/package-util-x_pkg.json")).toBe("/tmp/package-util-x_pkg.json.meta.json");
+  });
+
+  it("ignores a missing inherited manifest and accepts a matching version", async () => {
+    process.env.npm_package_json = Path.join(other, "missing.json");
+    process.env.npm_package_version = "1.0.0";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect((await getPackInfo(dir)).pkgFile).toBe(Path.join(dir, "package.json"));
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("warns about a version mismatch while returning the package", async () => {
+    process.env.npm_package_version = "2.0.0";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect((await getPackInfo(dir)).pkg.version).toBe("1.0.0");
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("is version 1.0.0 but the package manager says 2.0.0"));
   });
 });
