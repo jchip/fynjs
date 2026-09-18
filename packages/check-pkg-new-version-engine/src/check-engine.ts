@@ -117,7 +117,7 @@ async function _internalCheck(options: CheckNewVersionOptions): Promise<any> {
   const shouldFetch = now - existMeta.time >= checkInterval || !existMeta.distTags;
   const distTags = shouldFetch ? await fetchDistTags() : existMeta.distTags;
 
-  const saveMetaFile = async (notifiedVersion = "", notifiedTime = 0) => {
+  const saveMetaFile = async (notifiedVersion = "", notifiedTime: number) => {
     await Fs.writeFile(
       metaFile,
       JSON.stringify({ ...pkg, distTags, time: now, notifiedVersion, notifiedTime })
