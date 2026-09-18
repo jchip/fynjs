@@ -9,6 +9,7 @@ describe("option args", () => {
       desc: "test option 1"
     });
     expect(opt.name).toBe("test");
+    expect(opt.isVariadicArgs).toBe(false);
 
     expect(opt.args).toEqual([
       {
@@ -23,12 +24,17 @@ describe("option args", () => {
   });
 
   it("should parse array and variadic args and basic props", () => {
+    const fixed = new OptionBase("fixed", { args: "<n number..3>" });
+    expect(fixed.args[0].array).toBe(true);
+    expect(fixed.isVariadicArgs).toBe(false);
+
     const opt = new OptionBase("test", {
       args: "<v1> <v2..3> <..4> <v3..>",
       alias: ["t"],
       desc: "test option 1"
     });
     expect(opt.name).toBe("test");
+    expect(opt.isVariadicArgs).toBe(true);
     expect(opt.args).toEqual([
       {
         required: true,
