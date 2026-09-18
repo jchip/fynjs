@@ -42,6 +42,7 @@ describe("option args", () => {
         required: true,
         name: "v2",
         type: "string",
+        array: true,
         variadic: undefined,
         min: 3,
         max: 3
@@ -50,6 +51,7 @@ describe("option args", () => {
         required: true,
         name: undefined,
         type: "string",
+        array: true,
         variadic: undefined,
         min: 4,
         max: 4
@@ -58,6 +60,7 @@ describe("option args", () => {
         required: true,
         name: "v3",
         type: "string",
+        array: true,
         variadic: true,
         min: 0,
         max: Infinity
@@ -95,6 +98,7 @@ describe("option args", () => {
         required: true,
         name: "v2",
         type: "string",
+        array: true,
         variadic: undefined,
         min: 3,
         max: 3
@@ -103,6 +107,7 @@ describe("option args", () => {
         required: true,
         name: "v3",
         type: "number",
+        array: true,
         variadic: true,
         min: 0,
         max: Infinity
@@ -131,6 +136,7 @@ describe("option args", () => {
         required: true,
         name: undefined,
         type: "string",
+        array: true,
         variadic: true,
         min: 0,
         max: Infinity
@@ -146,6 +152,7 @@ describe("option args", () => {
         required: true,
         name: undefined,
         type: "string",
+        array: true,
         variadic: true,
         min: 1,
         max: Infinity
@@ -161,6 +168,7 @@ describe("option args", () => {
         required: true,
         name: undefined,
         type: "string",
+        array: true,
         variadic: true,
         min: 1,
         max: Infinity

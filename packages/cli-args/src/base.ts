@@ -121,6 +121,7 @@ export type BaseSpec = {
 export type ArgInfo = {
   name: string;
   type: string;
+  array?: boolean;
   variadic: boolean;
   required: boolean;
   min: number;
@@ -278,6 +279,7 @@ export class CliBase<TSpec extends BaseSpec> {
         required,
         name,
         type,
+        array: xm[4] ? true : undefined,
         variadic,
         min,
         max

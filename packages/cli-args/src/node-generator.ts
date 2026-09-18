@@ -508,7 +508,7 @@ export class ClapNodeGenerator {
     
     const builder = new ClapNodeGenerator(optNode, this);
     const minArg = data.value !== undefined ? 1 : 0;
-    if (!(optNode.option.args.length > minArg)) {
+    if (!(optNode.option.expectArgs > minArg)) {
       builder.complete();
     }
 
@@ -554,7 +554,7 @@ export class ClapNodeGenerator {
           : (true as any);
     }
 
-    if (opt.isVariadicArgs) {
+    if (args.length > 0 && args[args.length - 1].array) {
       const lastIx = args.length - 1;
       if (node.argsList.length > lastIx) {
         setArg(lastIx, args[lastIx], node.argsList.slice(lastIx));
@@ -590,7 +590,7 @@ export class ClapNodeGenerator {
       setArg(i, args[i], node.argsList[i]);
     }
 
-    if (cmd.isVariadicArgs) {
+    if (args.length > 0 && args[args.length - 1].array) {
       const lastIx = args.length - 1;
       if (node.argsList.length > lastIx) {
         setArg(lastIx, args[lastIx], node.argsList.slice(lastIx));
