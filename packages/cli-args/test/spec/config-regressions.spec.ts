@@ -54,7 +54,7 @@ describe("configuration regressions", () => {
     const nc = new NixClap(noOutputExit).init({}, {
       parent: {
         subCommands: {
-          child: { options: { port: { args: "<value number>", argDefault: 80 } } }
+          child: { options: { port: { args: "<value number>", argDefault: "80" } } }
         }
       }
     });
