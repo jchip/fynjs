@@ -53,11 +53,9 @@ function getArg({ opt, msg, argv, value = true, valids = [] }: GetArgOptions): s
   return [];
 }
 
-async function removeFile(name?: string): Promise<void> {
+async function removeFile(name: string): Promise<void> {
   try {
-    if (name) {
-      await Fs.unlink(name);
-    }
+    await Fs.unlink(name);
   } catch {
     // ignore errors
   }

@@ -10,8 +10,7 @@ export default defineConfig({
       exclude: [],
       thresholds: {
         statements: 100,
-        // npmPublish always supplies a filename to its private removeFile helper.
-        branches: 99.35,
+        branches: 100,
         functions: 100,
         lines: 100
       }
