@@ -222,6 +222,10 @@ export class ClapNodeGenerator {
           fallbackNode.addVerbatimArg(arg);
           fallbackBuilder.node.addArg(arg);
 
+          if (fallbackMatched.cmd.expectArgs === fallbackNode.argsList.length) {
+            fallbackBuilder.endArgGathering();
+          }
+
           // Return the builder so parsing continues with the fallback command
           return [fallbackBuilder];
         }
