@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import Path from "node:path";
 import xsh from "../../src/index.ts";
 
@@ -12,6 +12,25 @@ describe("envPath", function () {
 
   afterAll(() => {
     process.env[pathKey] = save;
+  });
+
+  it.each([
+    ["win32", "Path"],
+    ["linux", "PATH"]
+  ])("prefers the platform default key on %s", async (platform, expectedKey) => {
+    vi.stubGlobal("process", {
+      ...process,
+      platform,
+      env: { PATH: "uppercase", Path: "mixed-case" }
+    });
+    try {
+      vi.resetModules();
+      const { envKey } = await import("../../src/env-path.ts");
+      expect(envKey).toBe(expectedKey);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
   });
 
   it("should add to a custom env/path", () => {
