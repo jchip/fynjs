@@ -292,6 +292,16 @@ const nc = new NixClap().init2({
 }
 ```
 
+In TypeScript, coerced values are `unknown` because custom converters can return any value.
+Narrow them before using type-specific methods, for example:
+
+```ts
+const count = meta.optsFull.count.num;
+if (typeof count === "number") {
+  console.log(count.toFixed(2));
+}
+```
+
 **Common mistake:**
 
 ```js
@@ -1151,7 +1161,7 @@ The command.jsonMeta object contains the following information:
   argList: [],
   args: {},
   opts: {}, // contains the parsed values for each option (coerced to proper types)
-  optsFull: {}, // contains the full string/array values for each option (before coercion)
+  optsFull: {}, // contains each option's complete argument map after coercion
   optsCount: {}, // contains the count for counting options
   source: {}, // contains info about where the option value came from
   verbatim: {}, // contains original unprocessed values as provided on command line

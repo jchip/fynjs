@@ -1,12 +1,13 @@
 /**
- * Type for option values - can be string, number, boolean, or arrays of these
+ * Coerced option values, including argument maps and arbitrary custom converter results.
+ * Narrow the value before using type-specific operations.
  */
-export type OptionValue = string | number | boolean | string[] | number[] | boolean[];
+export type OptionValue = unknown;
 
 /**
- * Type for argument values - similar to option values
+ * Coerced argument values. Custom converters may return any value.
  */
-export type ArgumentValue = string | number | boolean | string[] | number[] | boolean[];
+export type ArgumentValue = unknown;
 
 /**
  * Source tracking for where option/argument values came from
@@ -33,7 +34,7 @@ export type CommandMeta = {
    * Each entry is the option's full args map, keyed by arg name (or index for
    * unnamed args), which is why the value is a record and not a bare value.
    */
-  optsFull: Record<string, Record<string, string | string[]>>;
+  optsFull: Record<string, Record<string, ArgumentValue>>;
 
   /**
    * Name of the command.

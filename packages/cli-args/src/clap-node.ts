@@ -16,6 +16,7 @@
  * @public
  */
 import { _PARENT } from "./symbols.js";
+import type { ArgumentValue } from "./command-meta.js";
 export class ClapNode {
   /**
    * command/option name
@@ -34,7 +35,7 @@ export class ClapNode {
    * As is verbatim CLI args that were consumbed by this node
    */
   argv: string[];
-  argsMap: Record<string, string | string[]>;
+  argsMap: Record<string, ArgumentValue>;
   /**
    * Parent node (command -> sub command, option)
    */
