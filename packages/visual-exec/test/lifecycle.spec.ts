@@ -11,6 +11,7 @@ vi.mock("visual-logger", () => ({
     addItem = vi.fn();
     removeItem = vi.fn();
     updateItem = vi.fn();
+    setItemType = vi.fn();
     info = vi.fn();
     error = vi.fn();
     verbose = vi.fn();
