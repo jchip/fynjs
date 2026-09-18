@@ -1,3 +1,126 @@
+# 9/17/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/fetch@1.0.2` `(1.0.1 => 1.0.2)`
+-   `fyn@3.1.5` `(3.1.4 => 3.1.5)`
+-   `fynpo@3.1.5` `(3.1.4 => 3.1.5)`
+-   `fynpo-cli@3.1.5` `(3.1.4 => 3.1.5)`
+-   `munchy@2.0.3` `(2.0.2 => 2.0.3)`
+-   `pkg-preper@0.3.3` `(0.3.2 => 0.3.3)`
+-   `publish-util@3.1.3` `(3.1.2 => 3.1.3)`
+-   `run-verify@2.1.4` `(2.1.3 => 2.1.4)`
+-   `string-array@2.1.3` `(2.1.2 => 2.1.3)`
+-   `unwrap-npm-cmd@2.1.3` `(2.1.2 => 2.1.3)`
+-   `visual-logger@2.1.4` `(2.1.3 => 2.1.4)`
+-   `xflight@3.1.4` `(3.1.3 => 3.1.4)`
+
+### Fynpo Updated
+
+-   `@fynjs/cli-args@1.1.3` `(1.1.2 => 1.1.3)`
+-   `@fynjs/run@1.1.4` `(1.1.3 => 1.1.4)`
+-   `@fynpo/base@2.1.4` `(2.1.3 => 2.1.4)`
+-   `@jchip/error@2.1.3` `(2.1.2 => 2.1.3)`
+-   `aveazul@2.1.4` `(2.1.3 => 2.1.4)`
+-   `chalker@2.1.3` `(2.1.2 => 2.1.3)`
+-   `check-pkg-new-version@1.1.3` `(1.1.2 => 1.1.3)`
+-   `check-pkg-new-version-engine@2.1.3` `(2.1.2 => 2.1.3)`
+-   `filter-scan-dir@2.1.4` `(2.1.3 => 2.1.4)`
+-   `item-queue@2.1.5` `(2.1.4 => 2.1.5)`
+-   `optional-import@1.1.3` `(1.1.2 => 1.1.3)`
+-   `visual-exec@1.1.5` `(1.1.4 => 1.1.5)`
+-   `xaa@3.1.3` `(3.1.2 => 3.1.3)`
+-   `xenv-config@2.1.3` `(2.1.2 => 2.1.3)`
+-   `xsh@1.1.4` `(1.1.3 => 1.1.4)`
+
+## Commits
+
+-   `packages/fetch`
+
+    -   Enforce full coverage across utility packages [commit](https://github.com/jchip/fynjs/commit/ad7b31f2c3b4136ef4cc8f9f00ac6d412434d717)
+
+-   `packages/http-server`
+
+    -   Enforce full coverage for munchy and http-server [commit](https://github.com/jchip/fynjs/commit/2aaa09880559c30df08ad396925be70889774b0e)
+
+-   `packages/tag-renderer`
+
+    -   tag-renderer: add loadable template snapshots [commit](https://github.com/jchip/fynjs/commit/578081b9e1a1f6b568c902706b4120b0811d590b)
+    -   XTR-37: add intermediate static benchmark cases [commit](https://github.com/jchip/fynjs/commit/f5e5106e969f99740f205b3dc8fd6f2e29d50213)
+    -   XTR-36: improve static benchmark output [commit](https://github.com/jchip/fynjs/commit/60935b8b84cef9c82f97f6eae49fb1495b64ab11)
+    -   XTR-35: add static rendering benchmark suite [commit](https://github.com/jchip/fynjs/commit/7da53a166455fe299d6240bccde4abfe0093f56b)
+    -   XTR-34: enforce full package coverage [commit](https://github.com/jchip/fynjs/commit/af8dcef11dd973e3bbbc5d0297480d0753bfbd31)
+    -   XTR-30: expose full stream completion [commit](https://github.com/jchip/fynjs/commit/c7aca5ba563eb6be37e90cc390ac8d82b6b12227)
+    -   XTR-31: normalize empty render failures [commit](https://github.com/jchip/fynjs/commit/50d71a22557e3f93ce63bd0e7d252f7a1ae1496f)
+    -   XTR-29: guard deferred source disposal [commit](https://github.com/jchip/fynjs/commit/9f5f36f02bfb69d0c28a54af42eb6920bf63ecf4)
+    -   XTR-28: fail output on late explicit abort [commit](https://github.com/jchip/fynjs/commit/0acb91c44405ae84dc570d376d07e8d045e68401)
+    -   XTR-27: harden streaming output cancellation [commit](https://github.com/jchip/fynjs/commit/28a4b0d22ee210275b4082b557c01b039b1535b0)
+    -   XTR-24: add structured ordered defer rendering [commit](https://github.com/jchip/fynjs/commit/54101bc286e5c78644d61e3173af2598d3bb637d)
+    -   XTR-25: update token registry incrementally [commit](https://github.com/jchip/fynjs/commit/6ed4748ec7228050411fa0dac8e6c437cb145e36)
+    -   XTR-26: serialize dynamic token registration [commit](https://github.com/jchip/fynjs/commit/4ba3348c09c4172ae9b037114252d97592534d4e)
+    -   XTR-15: isolate cloned token properties [commit](https://github.com/jchip/fynjs/commit/24ef82d1cb0c7789f15f58bfb1d7e619ad6a708a)
+    -   XTR-23: add synchronous compiled execution path [commit](https://github.com/jchip/fynjs/commit/ec91dd808a87a77f4c4816a02d558e46c8453f78)
+    -   XTR-15: cover shared executable token state [commit](https://github.com/jchip/fynjs/commit/b6f76a9843ab9c3878173e94db54208de06d61d7)
+    -   XTR-20: publish renderer initialization atomically [commit](https://github.com/jchip/fynjs/commit/5174821a55c8985ae0eadb179956a51a29e25db9)
+    -   XTR-15: isolate compiled token handlers [commit](https://github.com/jchip/fynjs/commit/4851ba6018d631c6025b4a17a909e754c0d8494e)
+    -   XTR-16: define buffered stream behavior [commit](https://github.com/jchip/fynjs/commit/3e65443235e7ee6e3ba21643f66dc7e255732966)
+    -   XTR-22: lock output mode before flushing [commit](https://github.com/jchip/fynjs/commit/ebd50f4cff653762f42934dd2c5f09326c756667)
+    -   XTR-18: compact consumed output segments [commit](https://github.com/jchip/fynjs/commit/ee8af6ac0a2545d26cab41a4f3e83ad66909c921)
+    -   XTR-17: stream output in bounded batches [commit](https://github.com/jchip/fynjs/commit/0aae5e053bd00ce577f8f90cc47eba844d223760)
+    -   XTR-18: drain output segments iteratively [commit](https://github.com/jchip/fynjs/commit/4db9d85b1a4b5865fa2829d4d0017bcab0423c82)
+    -   XTR-5: add full async tag renderer [commit](https://github.com/jchip/fynjs/commit/670e920f88c3b5d25fe4437564bd5b3d5e6814dd)
+
+-   `packages/fyn`
+
+    -   Reject an install dir holding a different version [commit](https://github.com/jchip/fynjs/commit/138335a2bff29ca260f3be23a4db35ed4db1e644)
+    -   Add fyn outdated command [commit](https://github.com/jchip/fynjs/commit/7b2bd382b7e415c2bd01849e68b35eff1d85570c)
+    -   FPM-163: honor resolutions in lock consistency checks [commit](https://github.com/jchip/fynjs/commit/76d646349a223b79b894dabf525ff90d440b041a)
+    -   FPM-157: support npm-style package aliases [commit](https://github.com/jchip/fynjs/commit/d7e31b2c6ff0fb186971207aec0e4fda0a4f7c7b)
+    -   FPM-154: keep install approval prompt visible [commit](https://github.com/jchip/fynjs/commit/923d354191ca400334091907bf483f8b71a12147)
+    -   FPM-152: support run --if-present [commit](https://github.com/jchip/fynjs/commit/ef4003d653750945912dba3586b4cfaafd4d0b1b)
+    -   FPM-149: refresh fyn TODO backlog [commit](https://github.com/jchip/fynjs/commit/10feb4e087931db89404796bcc00344da7d55826)
+
+-   `packages/fynpo`
+
+    -   FPO-66: recover release boundary from publish commits [commit](https://github.com/jchip/fynjs/commit/f9a2bfc6dd0d2cf14e411a5e976db018514c292f)
+
+-   `packages/munchy`
+
+    -   Enforce full coverage for munchy and http-server [commit](https://github.com/jchip/fynjs/commit/2aaa09880559c30df08ad396925be70889774b0e)
+
+-   `packages/pkg-preper`
+
+    -   Untrack build output committed while dist was unignored [commit](https://github.com/jchip/fynjs/commit/469f4abbb8165c7ffbd4b41ed43ab2e1908d849e)
+
+-   `packages/publish-util`
+
+    -   Untrack build output committed while dist was unignored [commit](https://github.com/jchip/fynjs/commit/469f4abbb8165c7ffbd4b41ed43ab2e1908d849e)
+
+-   `packages/run-verify`
+
+    -   docs(run-verify): explain controlled steps and expected errors [commit](https://github.com/jchip/fynjs/commit/f7145a9fbc88cb7012601236b701079bf6e25c4d)
+    -   Enforce full coverage across utility packages [commit](https://github.com/jchip/fynjs/commit/ad7b31f2c3b4136ef4cc8f9f00ac6d412434d717)
+    -   Modernize run-verify documentation [commit](https://github.com/jchip/fynjs/commit/1327a0d5ec75a4971758ad40519c13709402db61)
+
+-   `packages/string-array`
+
+    -   Untrack build output committed while dist was unignored [commit](https://github.com/jchip/fynjs/commit/469f4abbb8165c7ffbd4b41ed43ab2e1908d849e)
+    -   Enforce full coverage across utility packages [commit](https://github.com/jchip/fynjs/commit/ad7b31f2c3b4136ef4cc8f9f00ac6d412434d717)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   Untrack build output committed while dist was unignored [commit](https://github.com/jchip/fynjs/commit/469f4abbb8165c7ffbd4b41ed43ab2e1908d849e)
+
+-   `packages/visual-logger`
+
+    -   Untrack build output committed while dist was unignored [commit](https://github.com/jchip/fynjs/commit/469f4abbb8165c7ffbd4b41ed43ab2e1908d849e)
+
+-   `packages/xflight`
+
+    -   Untrack build output committed while dist was unignored [commit](https://github.com/jchip/fynjs/commit/469f4abbb8165c7ffbd4b41ed43ab2e1908d849e)
+
 # 9/11/2026
 
 ## Packages
