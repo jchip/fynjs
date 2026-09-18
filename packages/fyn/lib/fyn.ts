@@ -1768,11 +1768,26 @@ class Fyn {
       return json;
     }
 
-    // TODO: check npm:pkg-alias in semver
-    // assert(
-    //   json && json.name === pkg.name && semverUtil.equal(json.version, pkg.version),
-    //   `Pkg in ${fullOutDir} ${id} doesn't match ${pkg.name}@${pkg.version}`
-    // );
+    //
+    // The directory has to hold the version being asked for, and `_id` cannot establish
+    // that: pkg-installer writes it from the version fyn believed it was installing, and
+    // `pkgId` is built from that same belief, so the two always agree. A directory left
+    // holding a different version therefore passed as a match, its content became this
+    // package's json, and its dependency ranges became a lock entry's - recorded under
+    // the version key fyn asked for. That is what makes a lock report its own entries as
+    // "not satisfiable within the lock" on the next run.
+    //
+    // The version is the thing to compare, because it comes from the package rather than
+    // from fyn. `semverUtil.equal` is fynlocal-aware, since a linked package's version
+    // carries a `-fynlocal_h` tag that the directory on disk does not. The name is
+    // deliberately not compared: an aliased install (`npm:pkg-alias`) legitimately has a
+    // different one.
+    //
+    if (!semverUtil.equal(json.version, pkg.version)) {
+      logger.debug(`readPkgJson - ${id} in ${fullOutDir} does not match ${pkgId}`);
+      json._invalid = true;
+      return json;
+    }
 
     pkg.dir = json[PACKAGE_RAW_INFO]!.dir;
     pkg.str = json[PACKAGE_RAW_INFO]!.str;
