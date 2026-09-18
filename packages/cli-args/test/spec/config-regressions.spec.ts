@@ -88,4 +88,33 @@ describe("configuration regressions", () => {
     expect(command.opts).toEqual({ "server-name": "cli-value", serverName: "cli-value" });
     expect(command.source).toEqual({ "server-name": "cli", serverName: "cli" });
   });
+
+  it("refreshes synthesized aliases across repeated configuration updates", () => {
+    const nc = new NixClap(noOutputExit).init({
+      "server-name": { args: "<name string>", argDefault: "default" }
+    });
+    const { command } = nc.parse([], 0);
+    expect(command.opts.serverName).toBe("default");
+
+    command.applyConfig({ "server-name": "first" });
+    expect(command.opts.serverName).toBe("first");
+    command.applyConfig({ "server-name": "second" });
+
+    expect(command.opts).toEqual({ "server-name": "second", serverName: "second" });
+    expect(command.source).toEqual({ "server-name": "user", serverName: "user" });
+    expect(command.jsonMeta.optsCount).toEqual({ "server-name": 1, serverName: 1 });
+  });
+
+  it("preserves independently declared options whose names collide with camelCase aliases", () => {
+    const nc = new NixClap(noOutputExit).init({
+      "server-name": { args: "<name string>", argDefault: "default" },
+      serverName: { args: "<name string>", argDefault: "independent" }
+    });
+    const { command } = nc.parse([], 0);
+
+    command.applyConfig({ "server-name": "configured" });
+
+    expect(command.opts).toEqual({ "server-name": "configured", serverName: "independent" });
+    expect(command.source).toEqual({ "server-name": "user", serverName: "default" });
+  });
 });

@@ -269,6 +269,8 @@ export class CommandNode extends ClapNode {
       if (matchOpt) {
         const optNode = this.optNodes[matchOpt.name];
         if (!optNode || !optNode.source.startsWith("cli")) {
+          const camelCaseKey = camelCase(matchOpt.name);
+          const aliasNode = this.optNodes[camelCaseKey];
           this.removeOptionNode(matchOpt.name);
           new ClapNodeGenerator(this).addOptionWithArgs(
             matchOpt.name,
@@ -276,6 +278,10 @@ export class CommandNode extends ClapNode {
             matchOpt.option,
             src
           );
+          if (optNode && aliasNode === optNode) {
+            this.optNodes[camelCaseKey] = this.optNodes[matchOpt.name];
+            this.optCount[camelCaseKey] = this.optCount[matchOpt.name];
+          }
         }
       } else if (!this.optNodes[key]) {
         new ClapNodeGenerator(this).addOptionWithArgs(key, [].concat(data.arg), undefined, src);
