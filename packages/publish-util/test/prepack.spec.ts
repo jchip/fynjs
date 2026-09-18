@@ -1,7 +1,50 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { prePackObj } from "../src/prepack.js";
 
 describe("prePackObj", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("reports removed fields and installs a missing postpack script by default", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const pkg = { name: "test-pkg", custom: true, publishUtil: {} };
+
+    prePackObj(pkg);
+
+    expect(pkg).toEqual({ name: "test-pkg", scripts: { postpack: "publish-util-postpack" } });
+    expect(log).toHaveBeenCalledTimes(2);
+    expect(log.mock.calls[0][1]).toBe("custom");
+  });
+
+  it("keeps selected fields after renaming and removing fields", () => {
+    const pkg = { name: "test-pkg", source: "./dist/index.js", custom: { keep: true, remove: true } };
+
+    prePackObj(pkg, {
+      rename: { source: "main" },
+      keep: [{ custom: ["keep"] }],
+      remove: ["custom"],
+      autoPostPack: false,
+      silent: true
+    });
+
+    expect(pkg).toEqual({ name: "test-pkg", main: "./dist/index.js", custom: { keep: true } });
+  });
+
+  it("removes its own prepack script while preserving an existing postpack", () => {
+    const pkg = { scripts: { prepack: "publish-util-prepack", postpack: "custom-postpack" } };
+
+    prePackObj(pkg, { silent: true });
+
+    expect(pkg.scripts).toEqual({ postpack: "custom-postpack" });
+  });
+
+  it("preserves custom prepack scripts and honors disabled automatic postpack", () => {
+    const pkg = { scripts: { prepack: "custom-prepack" } };
+
+    prePackObj(pkg, { autoPostPack: false, silent: true });
+
+    expect(pkg.scripts).toEqual({ prepack: "custom-prepack" });
+  });
+
   it("should keep standard consumer-facing fields and strip the rest", () => {
     const pkg: Record<string, unknown> = {
       name: "test-pkg",
