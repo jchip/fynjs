@@ -3,6 +3,7 @@ import { NixClap } from "./nix-clap.js";
 import { ClapNodeGenerator } from "./node-generator.js";
 import { CommandNode } from "./command-node.js";
 import { CommandBase } from "./command-base.js";
+import { isBoolean } from "./xtil.js";
 
 
 /**
@@ -130,7 +131,7 @@ export class Parser {
    * @param arg - a raw argv entry already known to start with '-'
    * @returns count of subsequent argv entries taken as this option's value
    */
-  private _optionValueCount(arg: string): number {
+  private _optionValueCount(arg: string, nextArg?: string): number {
     if (arg.startsWith("--no-")) {
       return 0;
     }
@@ -169,6 +170,13 @@ export class Parser {
         arg
       } as any);
       if (matched && matched.option) {
+        if (
+          matched.option.expectArgs > 0 &&
+          matched.option.args[0].type === "boolean" &&
+          !isBoolean(nextArg)
+        ) {
+          return 0;
+        }
         return matched.option.expectArgs || 0;
       }
     }
@@ -215,7 +223,7 @@ export class Parser {
         hasNonOptionArgs = true;
         break;
       }
-      i += this._optionValueCount(arg);
+      i += this._optionValueCount(arg, argv[i + 1]);
       // Check for --help, -h, -?, --version, -v, -V
       // These should show root command help/version, not default command's
       if (

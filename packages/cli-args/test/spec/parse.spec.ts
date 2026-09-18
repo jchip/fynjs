@@ -432,6 +432,43 @@ describe("parser", () => {
     expect(cmd1.optNodes["dev"].argv).toEqual(["--dev", "x", "y", "z"]);
   });
 
+  describe.each(["parse", "parseAsync"] as const)("%s with typed boolean options", method => {
+    it.each([
+      { argv: ["--flag", "list"], command: "list" },
+      { argv: ["-b", "list"], command: "list" },
+      { argv: ["--flag", "true", "list"], command: "list" },
+      { argv: ["--flag", "false", "list"], command: "list", flag: false },
+      { argv: ["-b", "OFF", "list"], command: "list", flag: false },
+      { argv: ["--flag=true", "list"], command: "list" },
+      { argv: ["--flag", "true"], command: "create" },
+      { argv: ["--flag"], command: "create" }
+    ])("runs only $command for $argv", async ({ argv, command, flag = true }) => {
+      const calls: string[] = [];
+      const nc = new NixClap({ defaultCommand: "create", noDefaultHandlers: true }).init(
+        { flag: { alias: "b", args: "<value boolean>" } },
+        {
+          create: {
+            exec: () => {
+              calls.push("create");
+            }
+          },
+          list: {
+            exec: () => {
+              calls.push("list");
+            }
+          }
+        }
+      );
+
+      const parsed = await nc[method](argv, 0);
+
+      expect(parsed.errorNodes).toEqual([]);
+      expect(parsed.command.opts.flag).toBe(flag);
+      expect(calls).toEqual([command]);
+      expect(Object.keys(parsed.command.subCmdNodes)).toEqual([command]);
+    });
+  });
+
   //
   // FJM-137: the pre-scan that decides whether to insert the default command walked raw argv and
   // treated anything without a leading dash as a command argument -- including an option'"'"'s own
