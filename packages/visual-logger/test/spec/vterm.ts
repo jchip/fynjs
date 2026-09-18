@@ -77,7 +77,7 @@ export class VTerm {
             else if (p === 0) this.lines[this.row] = this.lines[this.row].slice(0, this.col);
             else
               this.lines[this.row] =
-                " ".repeat(this.col) + this.lines[this.row].slice(this.col);
+                " ".repeat(this.col + 1) + this.lines[this.row].slice(this.col + 1);
             break;
           }
           default:
