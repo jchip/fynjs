@@ -671,11 +671,9 @@ because value type ${vtype} is unknown and no value.item`)
               new Error(`Unknown options for task ${qItem.name}: ${unknownOptions.join(", ")}`)
             );
           }
-          if (otherErrors.length > 0) {
-            return done(
-              new Error(`Error parsing options for task ${qItem.name}: ${otherErrors.join("; ")}`)
-            );
-          }
+          return done(
+            new Error(`Error parsing options for task ${qItem.name}: ${otherErrors.join("; ")}`)
+          );
         }
 
         cliCmd = argp.command;

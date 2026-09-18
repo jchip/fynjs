@@ -77,6 +77,34 @@ describe("parse-cmd-args", function() {
       expect(result.parsed.errorNodes.length).toBeGreaterThan(0);
     });
 
+    it.each([false, true])("honors task allowUnknownOption set to %s", async allowUnknownOption => {
+      let exitCode;
+      WrapProcess.exit = code => {
+        exitCode = code;
+      };
+      ownInstance.xrun.load({
+        strict: {
+          cliParser: {
+            allowUnknownOption,
+            options: { name: { args: "<value string>" } }
+          },
+          task: () => {}
+        }
+      });
+
+      const result = await parseArgs(["node", "xrun", "strict", "--extra=value"], 2);
+
+      if (allowUnknownOption) {
+        expect(exitCode).toBeUndefined();
+        expect(result.tasks).toStrictEqual(["strict"]);
+        expect(result.parsed.command.subCmdNodes.strict.opts.extra).toBe("value");
+        expect(result.parsed.errorNodes).toHaveLength(0);
+      } else {
+        expect(exitCode).toBe(1);
+        expect(result.parsed.errorNodes[0].errors[0].message).toContain("unknown CLI option");
+      }
+    });
+
     it("does not register exec options as CLI options (FJM-191)", async () => {
       const tempDir = Path.join(import.meta.dirname, "../../../.temp", `task-exec-opts-${Date.now()}`);
       fs.mkdirSync(tempDir, { recursive: true });

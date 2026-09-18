@@ -1,4 +1,5 @@
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
+import Module from "node:module";
 import xrun from "../../../cli/xrun.js";
 import logger from "../../../lib/logger.js";
 import WrapProcess from "../../../cli/wrap-process.js";
@@ -95,6 +96,27 @@ describe("xrun cli", function() {  logger.quiet(true);
     expect(output).toContain("your task file");
     expect(output).toContain("didn't load any tasks or contains errors");
     expect(output).toContain("there are multiple copies of this package");
+  });
+
+  it("should explain when the package cannot be resolved while reporting missing tasks", () => {
+    const resolveFilename = Module._resolveFilename;
+    const resolve = vi.spyOn(Module, "_resolveFilename").mockImplementation(function(request, ...args) {
+      if (request === "@fynjs/run") {
+        throw Object.assign(new Error("Cannot find module '@fynjs/run'"), { code: "MODULE_NOT_FOUND" });
+      }
+      return resolveFilename.call(this, request, ...args);
+    });
+
+    try {
+      handleNoTasks(new CliContext({ searchResult: {} }), process.cwd(), undefined, { quiet: false });
+
+      const output = logOutput.join("\n");
+      expect(output).toContain("*** No tasks found ***");
+      expect(output).toContain("resolved from CWD: 'not found - probably not installed'");
+      expect(exitCode).toBe(1);
+    } finally {
+      resolve.mockRestore();
+    }
   });
 
   it("should handle error in task listing", () => {

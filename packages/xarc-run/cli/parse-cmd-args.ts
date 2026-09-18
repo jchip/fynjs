@@ -137,32 +137,30 @@ async function parseArgs(argv, start) {
 
   // Register loaded tasks into subcommand definitions for proper argument & option parsing
   const subCommands: Record<string, any> = {};
-  if (ownInstance.xrun?._tasks) {
-    const names = ownInstance.xrun._tasks.names();
-    const fullNames = ownInstance.xrun._tasks.fullNames();
-    const allTaskNames = new Set([...names, ...fullNames]);
+  const names = ownInstance.xrun._tasks.names();
+  const fullNames = ownInstance.xrun._tasks.fullNames();
+  const allTaskNames = new Set([...names, ...fullNames]);
 
-    for (const name of allTaskNames) {
-      try {
-        const lookupRes = ownInstance.xrun._tasks.lookup(name);
-        const taskSpec = getTaskOptionSpec(lookupRes?.item);
-        if (
-          Object.keys(taskSpec.options).length > 0 ||
-          Object.keys(taskSpec.commands).length > 0
-        ) {
-          subCommands[name] = {
-            desc: lookupRes?.item?.desc || "",
-            options: taskSpec.options,
-            subCommands: taskSpec.commands,
-            commands: taskSpec.commands,
-            ...(taskSpec.allowUnknownOption !== undefined
-              ? { allowUnknownOption: taskSpec.allowUnknownOption }
-              : {})
-          };
-        }
-      } catch {
-        // ignore lookup errors for invalid task names
+  for (const name of allTaskNames) {
+    try {
+      const lookupRes = ownInstance.xrun._tasks.lookup(name);
+      const taskSpec = getTaskOptionSpec(lookupRes?.item);
+      if (
+        Object.keys(taskSpec.options).length > 0 ||
+        Object.keys(taskSpec.commands).length > 0
+      ) {
+        subCommands[name] = {
+          desc: lookupRes?.item?.desc || "",
+          options: taskSpec.options,
+          subCommands: taskSpec.commands,
+          commands: taskSpec.commands,
+          ...(taskSpec.allowUnknownOption !== undefined
+            ? { allowUnknownOption: taskSpec.allowUnknownOption }
+            : {})
+        };
       }
+    } catch {
+      // ignore lookup errors for invalid task names
     }
   }
 

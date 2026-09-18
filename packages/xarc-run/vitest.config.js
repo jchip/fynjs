@@ -65,8 +65,7 @@ export default defineConfig({
         lines: 100,
         functions: 100,
         statements: 100,
-        // one uncovered arm in xqtor: a task cliParser error that is not an unknown option
-        branches: 99
+        branches: 100
       },
     },
     testTimeout: 10000,
