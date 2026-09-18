@@ -55,6 +55,9 @@ describe("internalCheckIsNewer", () => {
     expect(
       internalCheckIsNewer({ name: "test", version: "1.0.0" } as any, { latest: "1.2.0" })
     ).toEqual({ isNewer: true, version: "1.2.0" });
+    expect(
+      internalCheckIsNewer({ name: "test", version: "1.0.0" }, { latest: "1.2.0" }, "")
+    ).toEqual({ isNewer: true, version: "1.2.0" });
   });
 
   it("reads the requested tag, not just latest", () => {
@@ -75,6 +78,8 @@ describe("internalCheckIsNewer", () => {
   it("returns false rather than throwing on unusable input", () => {
     const pkg = { name: "test", version: "1.0.0" } as any;
 
+    expect(internalCheckIsNewer(undefined, { latest: "2.0.0" })).toEqual({ isNewer: false });
+    expect(internalCheckIsNewer(pkg, undefined)).toEqual({ isNewer: false });
     expect(internalCheckIsNewer(pkg, { latest: "not-a-version" })).toEqual({ isNewer: false });
     expect(internalCheckIsNewer(pkg, {})).toEqual({ isNewer: false });
     expect(internalCheckIsNewer(pkg, { latest: undefined } as any)).toEqual({ isNewer: false });

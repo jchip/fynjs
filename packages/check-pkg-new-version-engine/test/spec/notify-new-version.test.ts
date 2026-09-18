@@ -1,8 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { internalNotify } from "../../src/notify-new-version.js";
 
+const installation = vi.hoisted(() => ({ global: false }));
+vi.mock("is-installed-globally", () => ({ get default() { return installation.global; } }));
+
 describe("notifyNewer", () => {
-  it("should register process.on('exit') and log update notification", () => {
+  it.each([false, true])("logs the update command on exit (global: %s)", (global) => {
+    installation.global = global;
     let exitCallback: (() => void) | undefined;
     const onSpy = vi.spyOn(process, "on").mockImplementation((event: string | symbol, cb: any) => {
       if (event === "exit") {
@@ -23,6 +27,7 @@ describe("notifyNewer", () => {
       const logMessage = logSpy.mock.calls[0][0];
       expect(logMessage).toContain("New version 'my-package' available 1.0.0 -> 1.1.0");
       expect(logMessage).toContain("my-package@1.1.0");
+      expect(logMessage).toContain(`npm i ${global ? "-g " : ""}my-package@1.1.0`);
     } finally {
       onSpy.mockRestore();
       logSpy.mockRestore();
