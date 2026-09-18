@@ -150,7 +150,7 @@ export class CommandBase extends CliBase<CommandSpec> {
    */
   setCommandAliases(alias: string[], name: string) {
     alias.forEach(a => {
-      if (this.subAliases[a]) {
+      if (Object.hasOwn(this.subAliases, a)) {
         throw new Error(`Command ${name} alias ${a} already used by command ${this.subAliases[a]}`);
       }
       this.subAliases[a] = name;
@@ -255,11 +255,11 @@ export class CommandBase extends CliBase<CommandSpec> {
    * ```
    */
   matchSubCommand(alias: string): CommandMatched {
-    let cmd = this.subCmdsBase[alias];
+    let cmd = Object.hasOwn(this.subCmdsBase, alias) ? this.subCmdsBase[alias] : undefined;
     let name = alias;
 
     if (!cmd) {
-      name = this.subAliases[alias];
+      name = Object.hasOwn(this.subAliases, alias) ? this.subAliases[alias] : undefined;
       if (name) {
         cmd = this.subCmdsBase[name];
       } else {

@@ -108,11 +108,11 @@ export class Options {
   match(data: OptionMatch): OptionMatch | false {
     const alias = data.name;
     let name: string;
-    let option = this._options[alias];
+    let option = Object.hasOwn(this._options, alias) ? this._options[alias] : undefined;
 
     if (option) {
       name = alias;
-    } else if (this._optAlias[alias]) {
+    } else if (Object.hasOwn(this._optAlias, alias)) {
       name = this._optAlias[alias];
       option = this._options[name];
     } else {
