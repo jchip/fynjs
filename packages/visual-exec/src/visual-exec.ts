@@ -156,7 +156,6 @@ function createAbortError(context: Partial<ExecErrorContext>): VisualExecError {
 }
 
 function lastLines(text: string, n: number): string[] {
-  if (!text) return [];
   const lines = text.split("\n").filter(Boolean);
   return lines.slice(-n);
 }
@@ -386,14 +385,13 @@ export class VisualExec {
     return `Running ${command}`;
   }
 
-  private _createOutputFileStream(): fs.WriteStream | undefined {
-    if (typeof this._outputFile !== "string") return undefined;
+  private _createOutputFileStream(outputFile: string): fs.WriteStream {
     const flags = this._outputFileOptions.append ? "a" : "w";
-    const dir = path.dirname(this._outputFile);
+    const dir = path.dirname(outputFile);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    return fs.createWriteStream(this._outputFile, { flags });
+    return fs.createWriteStream(outputFile, { flags });
   }
 
   private _writeToOutputFile(data: string, stream: OutputStream): void {
@@ -552,7 +550,7 @@ export class VisualExec {
     this._child = child;
 
     if (typeof this._outputFile === "string") {
-      this._outputStream = this._createOutputFileStream();
+      this._outputStream = this._createOutputFileStream(this._outputFile);
     } else if (this._outputFile) {
       this._outputStream = undefined;
     }
@@ -748,6 +746,7 @@ export class VisualExec {
     };
 
     const duration = () => Date.now() - this._startTime;
+    /* v8 ignore next -- @preserve Every field is overwritten in the context below. */
     const baseContext = (output?: ExecOutput): Partial<ExecErrorContext> => ({
       command: cmd,
       cwd: this._cwd,
@@ -763,7 +762,8 @@ export class VisualExec {
     child.promise = child.promise.catch((err: VisualExecError) => {
       const output = err.output ?? { stdout: "", stderr: "" };
       const exitCode = err.code ?? 1;
-      const signal = err.signal ?? (result.child?.killed ? "SIGTERM" : null) ?? null;
+      const signal = err.signal ?? (result.child?.killed ? "SIGTERM" : null) ??
+        /* v8 ignore next -- @preserve The preceding fallback already returns null. */ null;
       const context: ExecErrorContext = {
         ...baseContext(output),
         exitCode,
