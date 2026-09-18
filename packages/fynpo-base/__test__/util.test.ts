@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { writeJson, writeJsonSync, readJson, readJsonSync, readPkgJson } from "../src/util.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { writeJson, writeJsonSync, readJson, readJsonSync, readPkgJson, readPkgJsonSync } from "../src/util.js";
 import Fs from "fs";
 import Path from "path";
 import Os from "os";
@@ -120,6 +120,11 @@ describe("JSON I/O utilities", () => {
     });
   });
 
+  it("reads package.json synchronously from a directory", () => {
+    Fs.writeFileSync(Path.join(tmpDir, "package.json"), '{"name":"sync-pkg"}');
+    expect(readPkgJsonSync(tmpDir)).toEqual({ name: "sync-pkg" });
+  });
+
   // ── round-trip ──────────────────────────────────────────────────────────────
 
   describe("round-trip", () => {
@@ -138,5 +143,22 @@ describe("JSON I/O utilities", () => {
 
       expect(readJsonSync(file)).toEqual(original);
     });
+  });
+});
+
+describe("posixify", () => {
+  it.each([
+    ["/", "packages/example"],
+    ["\\", "packages\\example"]
+  ])("normalizes paths using %s separators", async (sep, input) => {
+    vi.doMock("path", () => ({ default: { ...Path, sep } }));
+    try {
+      vi.resetModules();
+      const { posixify } = await import("../src/util.js");
+      expect(posixify(input)).toBe("packages/example");
+    } finally {
+      vi.doUnmock("path");
+      vi.resetModules();
+    }
   });
 });

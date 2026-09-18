@@ -60,12 +60,22 @@ describe("makeGitignoreMatcher", () => {
     expect(m.ignores("scratch")).toBe(true);
   });
 
+  it("reads root rules when .git is a file, as in a worktree", () => {
+    Fs.writeFileSync(Path.join(dir, ".gitignore"), "scratch\n");
+    Fs.writeFileSync(Path.join(dir, ".git"), "gitdir: ../repo/.git/worktrees/test\n");
+
+    const m = makeGitignoreMatcher(dir);
+    expect(m.ignores("scratch")).toBe(true);
+    expect(m.ignores("packages/example")).toBe(false);
+  });
+
   it("refuses paths ignore cannot judge, rather than throwing", () => {
     Fs.writeFileSync(Path.join(dir, ".gitignore"), "_w\n");
     const m = makeGitignoreMatcher(dir);
 
     expect(m.ignores("")).toBe(false);
     expect(m.ignores(".")).toBe(false);
+    expect(m.ignores("./")).toBe(false);
     expect(m.ignores(Path.join(dir, "_w"))).toBe(false); // absolute
     expect(m.ignores("../outside")).toBe(false);
   });

@@ -32,6 +32,37 @@ describe("FynpoConfigManager", () => {
     return dir;
   };
 
+  it.each([
+    ["custom.json", '{"packages":["explicit"]}', "fynpo monorepo"],
+    ["lerna.json", '{"packages":["explicit"]}', "lerna monorepo"],
+    ["custom.cjs", 'module.exports = { packages: ["explicit"] };', "fynpo monorepo"],
+    ["custom.mjs", 'export default { packages: ["explicit"] };', "fynpo monorepo"]
+  ])("loads and caches an explicit %s configuration", async (configPath, content, repoType) => {
+    const cwd = await dirWith({ [configPath]: content });
+    const mgr = new FynpoConfigManager({ cwd, configPath });
+    const config = await mgr.load();
+
+    expect(config).toEqual({ packages: ["explicit"] });
+    expect(await mgr.load()).toBe(config);
+    expect(mgr.config).toBe(config);
+    expect(mgr.cwd).toBe(cwd);
+    expect(mgr.topDir).toBe(cwd);
+    expect(mgr.fileName).toBe(configPath);
+    expect(mgr.filePath).toBe(Path.join(cwd, configPath));
+    expect(mgr.repoType).toBe(repoType);
+  });
+
+  it("loads and caches an explicit CommonJS configuration synchronously", async () => {
+    const cwd = await dirWith({ "custom.cjs": 'module.exports = { packages: ["explicit"] };' });
+    const mgr = new FynpoConfigManager({ cwd, configPath: "custom.cjs" });
+    const config = mgr.loadSync();
+
+    expect(config).toEqual({ packages: ["explicit"] });
+    expect(mgr.loadSync()).toBe(config);
+    expect(mgr.filePath).toBe(Path.join(cwd, "custom.cjs"));
+    expect(mgr.repoType).toBe("fynpo monorepo");
+  });
+
   it("should load a CJS fynpo.config.js off its module.exports", async () => {
     const cwd = await dirWith({
       "fynpo.config.js": `module.exports = { packages: ["cjs-pkgs"] };`,

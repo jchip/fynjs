@@ -114,6 +114,11 @@ describe("scanPatterns / includeFilter", () => {
   it("falls back to packages/* with auto-search off and no include", () => {
     expect(scanPatterns(resolvePackagesConfig({ autoSearch: false }))).toEqual(["packages/*"]);
   });
+
+  it("falls back when a caller supplies an empty resolved include list", () => {
+    const c = { ...resolvePackagesConfig({ autoSearch: false }), include: [] };
+    expect(scanPatterns(c)).toEqual(["packages/*"]);
+  });
 });
 
 // The array form has always held PATH globs, but PackageRef reads a bare string as a NAME.
