@@ -133,6 +133,7 @@ export type GroupingOptions = {
 type InternalOpts = GroupingOptions & {
   _concurrentCount?: number;
   _stopped: boolean;
+  _error?: { cause: unknown };
   /** path separator to use for joining paths */
   _sep: string;
   result: Record<string, string[]>;
@@ -377,6 +378,7 @@ const asyncLStat = Util.promisify(Fs.lstat);
  * @returns
  */
 async function walk(path: string, options: InternalOpts, level = 0) {
+  let promises = [];
   try {
     // Use Path.join to normalize the directory path once at entry
     const dir = Path.join(options.dir, path);
@@ -423,8 +425,6 @@ async function walk(path: string, options: InternalOpts, level = 0) {
 
     // now process dirs
     if (!options._stopped && dirs.length > 0) {
-      let promises = [];
-
       for (let ix = 0; !options._stopped && ix < dirs.length; ix++) {
         const extras = dirs[ix];
         const flags = processDir(options, extras);
@@ -451,19 +451,22 @@ async function walk(path: string, options: InternalOpts, level = 0) {
           }
         }
       }
-
-      if (promises.length) {
-        await Promise.all(promises);
-        options._concurrentCount -= promises.length;
-        promises = [];
-      }
     }
   } catch (err) {
     if (options.rethrowError) {
-      throw err;
+      // Child walks resolve after recording failure, so none can reject unobserved.
+      if (!options._error) options._error = { cause: err };
+      options._stopped = true;
+    }
+  } finally {
+    // A callback can throw after siblings have started. Drain them before returning.
+    if (promises.length) {
+      await Promise.all(promises);
+      options._concurrentCount -= promises.length;
     }
   }
 
+  if (level === 0 && options._error) throw options._error.cause;
   return level === 0 ? getResult(options) : undefined;
 }
 
@@ -526,6 +529,7 @@ function makeOptions(opts: string | Options): InternalOpts {
         .filter((x) => x),
       _concurrentCount: 0,
       _stopped: false,
+      _error: undefined,
     },
   );
 
