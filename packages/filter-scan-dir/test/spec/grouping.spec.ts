@@ -5,10 +5,39 @@ describe.each([
   ["sync", filterScanDirSync],
   ["async", filterScanDir],
 ] as const)("%s grouping", (_name, scan) => {
+  it.each(["constructor", "toString", "hasOwnProperty", "__proto__"])(
+    "should retain files grouped under %s without changing the result prototype",
+    async (group) => {
+      const result = await scan({
+        cwd: "test/fixture-1",
+        fullStat: false,
+        grouping: true,
+        filterExt: ".js",
+        filter: () => group,
+      });
+
+      expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+      expect(Object.prototype.hasOwnProperty.call(result, group)).toBe(true);
+      expect(result[group].sort()).toEqual(["a.js", "c.js", "dir1/b.js"]);
+      expect(result.files).toEqual([]);
+    },
+  );
+
   it("should finalize nested groups only once", async () => {
-    const assign = vi.spyOn(Object, "assign");
+    const originalCreate = Object.create;
+    let finalizations = 0;
+    const create = vi.spyOn(Object, "create").mockImplementation((prototype, properties) => {
+      const result = originalCreate(prototype, properties);
+      return prototype === null
+        ? new Proxy(result, {
+            ownKeys(target) {
+              finalizations++;
+              return Reflect.ownKeys(target);
+            },
+          })
+        : result;
+    });
     let result;
-    let finalizations;
 
     try {
       result = await scan({
@@ -17,11 +46,8 @@ describe.each([
         grouping: true,
         filter: (_file, _path, extras) => (extras.ext === ".js" ? "js" : true),
       });
-      finalizations = assign.mock.calls.filter(
-        ([target, source]) => "files" in target && Array.isArray(target.files) && source?.js,
-      ).length;
     } finally {
-      assign.mockRestore();
+      create.mockRestore();
     }
 
     expect(result.files.sort()).toEqual(["a.json", "dir1/b.blah", "dir1/d.json"]);

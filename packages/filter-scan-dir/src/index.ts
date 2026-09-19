@@ -285,7 +285,7 @@ export type GroupingResult = { files: string[] } & Record<string, string[]>;
  */
 function getResult(options: InternalOpts): GroupingResult | string[] {
   return options.grouping
-    ? Object.assign({ files: [] }, options.result)
+    ? { files: [], ...options.result }
     : options.result.files || [];
 }
 
@@ -513,7 +513,7 @@ function makeOptions(opts: string | Options): InternalOpts {
     options,
     {
       dir: cwd,
-      result: {},
+      result: Object.create(null),
       ignoreExt: []
         .concat(options.ignoreExt)
         .map(cleanExt)
