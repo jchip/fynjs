@@ -56,7 +56,7 @@ With `grouping: true`, return a string to choose a result group.
 
 `fullStat: false` gets entry types from `readdir` as `Dirent` objects.
 This avoids a separate `lstat` call for every file and directory entry.
-In our warm-cache tests, it was **2.3× faster on fynmesh** than `fullStat: true`.
+In our warm-cache tests, it was **2.3× faster on [fynmesh](https://www.fynmesh.win)** than `fullStat: true`.
 It was **8.1× faster on the 1,000 × 1,000 synthetic tree**.
 
 Use it when names and entry types are enough:
@@ -108,7 +108,7 @@ Test system: Node.js 22.22.2 on macOS, Apple M4 Pro, 24 GB RAM.
 | Tree | Files | Async `fullStat: false` | Async `fullStat: true` |
 | --- | ---: | ---: | ---: |
 | Synthetic: 1,000 directories with 1,000 empty files each | 1,000,000 | 551 ms | 4,483 ms |
-| fynmesh with installed dependencies: 48,347 directories | 292,242 | 949 ms | 2,157 ms |
+| [fynmesh](https://www.fynmesh.win) with installed dependencies: 48,347 directories | 292,242 | 949 ms | 2,157 ms |
 
 The fynmesh scan included `node_modules` and `.git`.
 Its directory count includes the root.
