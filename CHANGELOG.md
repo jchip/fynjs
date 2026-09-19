@@ -1,3 +1,148 @@
+# 9/19/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/cli-args@1.1.4` `(1.1.3 => 1.1.4)`
+-   `@fynjs/run@1.1.5` `(1.1.4 => 1.1.5)`
+-   `@fynjs/ts-resolve@1.0.3` `(1.0.2 => 1.0.3)`
+-   `@fynpo/base@2.1.5` `(2.1.4 => 2.1.5)`
+-   `@jchip/error@2.1.4` `(2.1.3 => 2.1.4)`
+-   `aveazul@2.1.5` `(2.1.4 => 2.1.5)`
+-   `chalker@2.1.4` `(2.1.3 => 2.1.4)`
+-   `check-pkg-new-version@1.1.4` `(1.1.3 => 1.1.4)`
+-   `check-pkg-new-version-engine@2.1.4` `(2.1.3 => 2.1.4)`
+-   `filter-scan-dir@2.1.5` `(2.1.4 => 2.1.5)`
+-   `item-queue@2.1.6` `(2.1.5 => 2.1.6)`
+-   `publish-util@3.1.4` `(3.1.3 => 3.1.4)`
+-   `visual-exec@1.1.6` `(1.1.5 => 1.1.6)`
+-   `visual-logger@2.1.5` `(2.1.4 => 2.1.5)`
+-   `xaa@3.1.4` `(3.1.3 => 3.1.4)`
+-   `xsh@1.1.5` `(1.1.4 => 1.1.5)`
+
+### Fynpo Updated
+
+-   `@fynjs/fetch@1.0.3` `(1.0.2 => 1.0.3)`
+-   `fyn@3.1.6` `(3.1.5 => 3.1.6)`
+-   `fynpo@3.1.6` `(3.1.5 => 3.1.6)`
+-   `fynpo-cli@3.1.6` `(3.1.5 => 3.1.6)`
+-   `munchy@2.0.4` `(2.0.3 => 2.0.4)`
+-   `optional-import@1.1.4` `(1.1.3 => 1.1.4)`
+-   `pkg-preper@0.3.4` `(0.3.3 => 0.3.4)`
+-   `run-verify@2.1.5` `(2.1.4 => 2.1.5)`
+-   `string-array@2.1.4` `(2.1.3 => 2.1.4)`
+-   `unwrap-npm-cmd@2.1.4` `(2.1.3 => 2.1.4)`
+-   `xenv-config@2.1.4` `(2.1.3 => 2.1.4)`
+-   `xflight@3.1.5` `(3.1.4 => 3.1.5)`
+
+## Commits
+
+-   `packages/cli-args`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+    -   FCA-6: Check public fixed and variadic array metadata [commit](https://github.com/jchip/fynjs/commit/482908d57c0a3e27548efb489664a6f79763acf1)
+    -   FCA-3: Synchronize generated camelCase aliases after config updates [commit](https://github.com/jchip/fynjs/commit/6d389ca39fced2ebc695654ede3de35b710515de)
+    -   FCA-2: use a supported string default in the metadata regression [commit](https://github.com/jchip/fynjs/commit/c79ec8bcef83204ad74a030daf5be9f8ee893178)
+    -   FCA-9: require narrowing of arbitrary coerced argument values [commit](https://github.com/jchip/fynjs/commit/305ca6ac725200df82e388f424dbba00211a9c4c)
+    -   FCA-8: Ignore inherited members during command and option lookup [commit](https://github.com/jchip/fynjs/commit/5665dcdd3e4ceacbdfe59fcefebf5b32009d337f)
+    -   FCA-7: Enforce fallback command argument limits after first value [commit](https://github.com/jchip/fynjs/commit/d7e9bc52a4fc19aab8eae5f6422a1eb542e84d09)
+    -   FCA-6: Preserve fixed-size argument arrays and inline values [commit](https://github.com/jchip/fynjs/commit/a86cf133d87f4c151b14a1e232d9638ebb4ff11d)
+    -   FCA-2: Refresh command and ancestor metadata after config changes [commit](https://github.com/jchip/fynjs/commit/95c2fd680a2285b84b273bc22e9206360fbcebba)
+    -   FCA-5: Preserve commands after empty inline option values [commit](https://github.com/jchip/fynjs/commit/04a990f380fc1e495bee9847e69c6c44e6883ae9)
+    -   FCA-4: preserve explicit commands after implicit boolean flags [commit](https://github.com/jchip/fynjs/commit/5b55136f6cc7f4d1b6d9eb01d2149ff955f1b72d)
+    -   FCA-13: add failing regression tests for P2 cli-args issues [commit](https://github.com/jchip/fynjs/commit/8add0eea5bfd26676ae476c6abb7ae5b8b9a49d1)
+
+-   `packages/xarc-run`
+
+    -   FXR-1: reach full branch coverage for @fynjs/run [commit](https://github.com/jchip/fynjs/commit/5f56d1260f39e2a41b69b71ee22d90f5dfcd0929)
+
+-   `packages/ts-resolve`
+
+    -   FTSR-1: cover ts-resolve installation and enforce full coverage [commit](https://github.com/jchip/fynjs/commit/45c378db08df58c27daf97205e84c5aac6a4bc37)
+
+-   `packages/fynpo-base`
+
+    -   FPB-1: cover straightforward base utility and configuration behavior [commit](https://github.com/jchip/fynjs/commit/3182f77cb15b4c38c61dc6911ecbeb241f3a435f)
+
+-   `packages/error`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+
+-   `packages/aveazul`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+
+-   `packages/chalker`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+
+-   `packages/check-pkg-new-version`
+
+    -   CPV-1: cover version-check defaults and enforce full coverage [commit](https://github.com/jchip/fynjs/commit/65024cb14e6ed8f83660d765dc25c3888c79c5d3)
+
+-   `packages/check-pkg-new-version-engine`
+
+    -   CPE-5: remove unused notification timestamp default [commit](https://github.com/jchip/fynjs/commit/2b64aa90529f17ee134c0d0aee5eace385536ec3)
+    -   CPE-1: cover all version-check engine source and enforce full coverage [commit](https://github.com/jchip/fynjs/commit/f8448d2d133cd00a56edb73db64c05c53fd273cf)
+
+-   `packages/filter-scan-dir`
+
+    -   FSD-12: add early filtering and preserve metadata callbacks [commit](https://github.com/jchip/fynjs/commit/6e5c982300e13a2a5834ccbece7a86dca7ad9d09)
+    -   FSD-13: align package and README directory crawling descriptions [commit](https://github.com/jchip/fynjs/commit/ad4c537ce268eac8737a029ad618e915ae11d2d5)
+    -   FSD-11: cover concurrent failures and enforce full per-file coverage [commit](https://github.com/jchip/fynjs/commit/85ae05695ecbedb46d95bca61db62dd6e2d42489)
+    -   FJM-203: add missing filter-scan-dir README copyright notice [commit](https://github.com/jchip/fynjs/commit/61e2b9b378b73d0df4ddd7c087751b802eebe5b5)
+    -   FSD-10: identify fynmesh benchmark as a repository scan [commit](https://github.com/jchip/fynjs/commit/a40bae280221b4dc060d56aa6b975656ec7a9aca)
+    -   FSD-10: link fynmesh in performance measurements [commit](https://github.com/jchip/fynjs/commit/2237b0232213e37e31faf8f29969a05b8dea866a)
+    -   FSD-10: highlight measured million-file scan throughput [commit](https://github.com/jchip/fynjs/commit/d368fc5608456712f626d0156b7164f870c55bfd)
+    -   FSD-10: explain Dirent speed advantage before benchmark results [commit](https://github.com/jchip/fynjs/commit/7636dbf32e18ebfa66aec3b5490e8b276604e6c2)
+    -   FSD-10: clarify Node.js package description [commit](https://github.com/jchip/fynjs/commit/47b84dac5e4df6d19ac31f84bfb0fcc1d46773b8)
+    -   FSD-10: highlight fast Node.js directory scanning [commit](https://github.com/jchip/fynjs/commit/f59293b432c3f71c828b1b44af19953b17d4809e)
+    -   FSD-10: document full-stat timings and filter capabilities [commit](https://github.com/jchip/fynjs/commit/6272f3111bbd39388dc0bbc480881838b2e31b0e)
+    -   FSD-9: add measured synthetic and installed-repository scan times [commit](https://github.com/jchip/fynjs/commit/89780f5d153477ef138aa2b9f0069577ca483702)
+    -   FSD-9: document scan performance and metadata tradeoffs [commit](https://github.com/jchip/fynjs/commit/9be0ea90e243a9a3a948173d92b1d62f9b19ce24)
+    -   FSD-2: remove package-local GitHub workflow directory [commit](https://github.com/jchip/fynjs/commit/8fbb9334bc9598cbd24c15e8980e0a8a2c23814f)
+    -   FSD-6: bound active directory reads and metadata work [commit](https://github.com/jchip/fynjs/commit/0fd968c67a7c4b36df746c40fa763dfa068095a2)
+    -   FSD-5: drain started walks before settling scan errors [commit](https://github.com/jchip/fynjs/commit/e08fe42ebb82d0b360ca02563601a240a971137a)
+    -   FSD-4: stop all scan branches after a filter requests stop [commit](https://github.com/jchip/fynjs/commit/6702fbba25f7c2b9daed091769a2c78628f91ea9)
+    -   FSD-7: preserve groups named after Object prototype properties [commit](https://github.com/jchip/fynjs/commit/62e34b8b2e8250c1dbcbd83655f1ea51734a2ef6)
+    -   FSD-3: finalize grouped scan results only once [commit](https://github.com/jchip/fynjs/commit/bd5855f99b367f5812a048d141f3773e5259d13f)
+
+-   `packages/item-queue`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+
+-   `packages/publish-util`
+
+    -   FPU-7: remove redundant private cleanup guard [commit](https://github.com/jchip/fynjs/commit/161217597659b0d0d4d5eb9db1dd44c85e917776)
+    -   FPU-2: cover package utilities and enforce coverage thresholds [commit](https://github.com/jchip/fynjs/commit/6e7397ba160072164a55c5c5159589b89435d60b)
+    -   FPU-4: cover publish lifecycle options and failures [commit](https://github.com/jchip/fynjs/commit/1267f5a365903faec57dcf0be74598cab791f0e3)
+    -   FPU-3: cover publish command orchestration and cleanup [commit](https://github.com/jchip/fynjs/commit/c1feacbda0f729b7b7a14f8aef7c9172111f4a5f)
+
+-   `packages/visual-exec`
+
+    -   VEX-15: complete lifecycle logger mock for CI [commit](https://github.com/jchip/fynjs/commit/320502261d5b31563354ae5dc9dc81f5563c6a28)
+    -   VEX-11: reach and enforce full visual-exec coverage [commit](https://github.com/jchip/fynjs/commit/77e89c63597dfbcbcff735bb60c6cf8138bb4610)
+    -   VEX-12: simplify private guards and annotate redundant coverage paths [commit](https://github.com/jchip/fynjs/commit/45320f6c09d6f25dd01108bb3211117c7d93dd4a)
+
+-   `packages/visual-logger`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+    -   VLG-1: reach and enforce full visual-logger coverage [commit](https://github.com/jchip/fynjs/commit/91c25bfb7a526a8e175d67072c01338bed5ff5a5)
+    -   VLG-2: erase the cursor cell in terminal helper line clearing [commit](https://github.com/jchip/fynjs/commit/8023baf4730a9969656f451657564c7ab1c95b6f)
+
+-   `packages/xaa`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+
+-   `packages/xsh`
+
+    -   XSH-1: cover platform-specific PATH key selection [commit](https://github.com/jchip/fynjs/commit/5df8a22208150f7bc088e187cac4b00fe59fa758)
+
+-   `notes`
+
+    -   FJM-201: remove migrated package GitHub directories [commit](https://github.com/jchip/fynjs/commit/b3b98b4718738471d8b36214d4353322f8df6ae7)
+
 # 9/17/2026
 
 ## Packages
