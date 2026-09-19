@@ -132,6 +132,7 @@ export type GroupingOptions = {
 /** internal options and data */
 type InternalOpts = GroupingOptions & {
   _concurrentCount?: number;
+  _stopped: boolean;
   /** path separator to use for joining paths */
   _sep: string;
   result: Record<string, string[]>;
@@ -312,10 +313,9 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
     }
 
     const dirs = [];
-    let stop = false;
 
     // process files first
-    for (let ix = 0; !stop && ix < files.length; ix++) {
+    for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
       let extras: ExtrasData;
 
@@ -338,16 +338,17 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
       if (extras.stat.isDirectory()) {
         dirs.push(extras);
       } else {
-        stop = processFile(options, extras);
+        options._stopped = !!processFile(options, extras);
       }
     }
 
     // now process dirs
-    if (!stop && dirs.length > 0) {
-      for (let ix = 0; ix < dirs.length; ix++) {
+    if (!options._stopped && dirs.length > 0) {
+      for (let ix = 0; !options._stopped && ix < dirs.length; ix++) {
         const extras = dirs[ix];
         const flags = processDir(options, extras);
         if (flags.stop) {
+          options._stopped = true;
           break;
         }
         if (!flags.skip && level < options.maxLevel) {
@@ -390,16 +391,16 @@ async function walk(path: string, options: InternalOpts, level = 0) {
     }
 
     const dirs = [];
-    let stop = false;
 
     // process files first
-    for (let ix = 0; !stop && ix < files.length; ix++) {
+    for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
       let extras;
 
       if (options.fullStat) {
         const fullFile = join2(options._sep, dir, file as string);
         const stat = await asyncLStat(fullFile);
+        if (options._stopped) break;
         extras = makeExtrasData(file as string, fullFile, path, stat, files, options);
       } else {
         const fullFile = join2(options._sep, dir, (file as Dirent).name);
@@ -416,18 +417,19 @@ async function walk(path: string, options: InternalOpts, level = 0) {
       if (extras.stat.isDirectory()) {
         dirs.push(extras);
       } else {
-        stop = processFile(options, extras);
+        options._stopped = !!processFile(options, extras);
       }
     }
 
     // now process dirs
-    if (!stop && dirs.length > 0) {
+    if (!options._stopped && dirs.length > 0) {
       let promises = [];
 
-      for (let ix = 0; ix < dirs.length; ix++) {
+      for (let ix = 0; !options._stopped && ix < dirs.length; ix++) {
         const extras = dirs[ix];
         const flags = processDir(options, extras);
         if (flags.stop) {
+          options._stopped = true;
           break;
         }
         if (!flags.skip && level < options.maxLevel) {
@@ -523,6 +525,7 @@ function makeOptions(opts: string | Options): InternalOpts {
         .map(cleanExt)
         .filter((x) => x),
       _concurrentCount: 0,
+      _stopped: false,
     },
   );
 
