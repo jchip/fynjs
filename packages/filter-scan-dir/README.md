@@ -9,6 +9,8 @@
 
 Extremely fast recursive directory scanning and filtering for Node.js.
 Returns a flat array of file paths.
+It can scan 1 million files in about half a second with a warm OS cache and `fullStat: false`.
+See [Performance](#performance) for the measured setup.
 
 - Supports super fast concurrent mode in async version.
 
