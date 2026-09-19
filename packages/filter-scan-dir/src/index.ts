@@ -34,7 +34,7 @@ export type FilterInfo = {
   group?: string;
   /** if `true` then skip the file or directory, else add it */
   skip?: boolean;
-  /** stop the scanning and return the result immediately. */
+  /** stop all filtering; async scans drain reads already in flight before returning. */
   stop?: boolean;
   /** if not `undefined`, then use this as the value to add to the output */
   formatName?: string;
@@ -90,7 +90,8 @@ export type Options = {
    */
   fullStat?: boolean;
   /**
-   * for async version only - numer of directories to process concurrently. *Default*: `50`
+   * for async version only - maximum directories reading entries or metadata concurrently.
+   * *Default*: `50`. Ancestors waiting for child directories do not consume a slot.
    *
    * - Set this to `0` or `1` to disable concurrent mode
    *
@@ -131,7 +132,9 @@ export type GroupingOptions = {
 
 /** internal options and data */
 type InternalOpts = GroupingOptions & {
-  _concurrentCount?: number;
+  _concurrentCount: number;
+  _waiting: (() => void)[];
+  _waitIndex: number;
   _stopped: boolean;
   _error?: { cause: unknown };
   /** path separator to use for joining paths */
@@ -369,6 +372,20 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
 const asyncReaddir = Util.promisify(Fs.readdir);
 const asyncLStat = Util.promisify(Fs.lstat);
 
+// Transfer a directory slot to the next waiter without shifting the queue.
+function releaseDirectory(options: InternalOpts) {
+  if (options._waitIndex < options._waiting.length) {
+    const resume = options._waiting[options._waitIndex++];
+    if (options._waitIndex === options._waiting.length) {
+      options._waiting = [];
+      options._waitIndex = 0;
+    }
+    resume();
+  } else {
+    options._concurrentCount--;
+  }
+}
+
 /**
  * async version of dir walk
  *
@@ -379,7 +396,18 @@ const asyncLStat = Util.promisify(Fs.lstat);
  */
 async function walk(path: string, options: InternalOpts, level = 0) {
   let promises = [];
+  let hasSlot = false;
   try {
+    if (options.concurrency > 1) {
+      if (options._concurrentCount >= options.concurrency) {
+        await new Promise<void>((resolve) => options._waiting.push(resolve));
+      } else {
+        options._concurrentCount++;
+      }
+      hasSlot = true;
+    }
+    if (options._stopped) return undefined;
+
     // Use Path.join to normalize the directory path once at entry
     const dir = Path.join(options.dir, path);
     let files: (string | Dirent)[] = await asyncReaddir(dir, options.readdirOpts);
@@ -423,6 +451,12 @@ async function walk(path: string, options: InternalOpts, level = 0) {
       }
     }
 
+    // The slot covers readdir and all lstats, but not waiting for descendants.
+    if (hasSlot) {
+      releaseDirectory(options);
+      hasSlot = false;
+    }
+
     // now process dirs
     if (!options._stopped && dirs.length > 0) {
       for (let ix = 0; !options._stopped && ix < dirs.length; ix++) {
@@ -435,16 +469,11 @@ async function walk(path: string, options: InternalOpts, level = 0) {
         if (!flags.skip && level < options.maxLevel) {
           const walkP = walk(extras.dirFile, options, level + 1);
           if (options.concurrency > 1) {
-            if (options._concurrentCount < options.concurrency) {
-              options._concurrentCount++;
-              promises.push(walkP);
-            } else if (promises.length) {
+            promises.push(walkP);
+            // Bound eager child walks as well as active directory operations.
+            if (promises.length >= options.concurrency) {
               await Promise.all(promises);
-              options._concurrentCount -= promises.length;
-              promises = [walkP];
-              options._concurrentCount++;
-            } else {
-              await walkP;
+              promises = [];
             }
           } else {
             await walkP;
@@ -459,10 +488,10 @@ async function walk(path: string, options: InternalOpts, level = 0) {
       options._stopped = true;
     }
   } finally {
+    if (hasSlot) releaseDirectory(options);
     // A callback can throw after siblings have started. Drain them before returning.
     if (promises.length) {
       await Promise.all(promises);
-      options._concurrentCount -= promises.length;
     }
   }
 
@@ -528,6 +557,8 @@ function makeOptions(opts: string | Options): InternalOpts {
         .map(cleanExt)
         .filter((x) => x),
       _concurrentCount: 0,
+      _waiting: [],
+      _waitIndex: 0,
       _stopped: false,
       _error: undefined,
     },
