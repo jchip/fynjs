@@ -7,7 +7,7 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
-Extremely fast recursive directory scanning and filtering, optimized for Node.js.
+Extremely fast recursive directory scanning and filtering for Node.js.
 Returns a flat array of file paths.
 
 - Supports super fast concurrent mode in async version.
