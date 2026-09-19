@@ -115,6 +115,8 @@ Its directory count includes the root.
 
 # License
 
+Copyright (c) 2022-2026 Joel Chen
+
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 [npm-version-svg]: https://badge.fury.io/js/filter-scan-dir.svg
