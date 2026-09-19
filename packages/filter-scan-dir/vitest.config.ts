@@ -18,6 +18,7 @@ export default defineConfig({
         '**/*.test.ts'
       ],
       thresholds: {
+        perFile: true,
         lines: 100,
         branches: 100,
         functions: 100,

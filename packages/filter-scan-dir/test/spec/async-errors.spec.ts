@@ -96,6 +96,64 @@ describe("async error settlement", () => {
     }
   }
 
+  it("preserves the first concurrent failure and drains all started reads", async () => {
+    const cwd = Path.resolve("virtual-concurrent-errors");
+    const firstError = new Error("b failed first");
+    const laterError = new Error("a failed later");
+    const reads = new Map<string, (error?: Error) => void>();
+    let active = 0;
+    let settled = false;
+
+    vi.spyOn(Fs, "readdir").mockImplementation(((path, _options, callback) => {
+      const dir = String(path);
+      if (dir === cwd) {
+        callback(null, ["a", "b", "c"].map((name) => ({
+          name,
+          isDirectory: () => true,
+        })));
+      } else {
+        active++;
+        reads.set(Path.basename(dir), (error) => {
+          active--;
+          callback(error ?? null, []);
+        });
+      }
+    }) as typeof Fs.readdir);
+
+    const { filterScanDir } = await import("../../src/index.js");
+    const scan = filterScanDir({ cwd, fullStat: false, concurrency: 3, rethrowError: true });
+    const outcome = scan.then(
+      (files) => {
+        settled = true;
+        return { files, error: undefined };
+      },
+      (error: unknown) => {
+        settled = true;
+        return { files: undefined, error };
+      },
+    );
+
+    await nextTurn();
+    expect([...reads.keys()]).toEqual(["a", "b", "c"]);
+    expect(active).toBe(3);
+
+    reads.get("b")!(firstError);
+    await nextTurn();
+    expect(active).toBe(2);
+    expect(settled).toBe(false);
+
+    reads.get("a")!(laterError);
+    await nextTurn();
+    expect(active).toBe(1);
+    expect(settled).toBe(false);
+
+    reads.get("c")!();
+    const result = await outcome;
+    expect(active).toBe(0);
+    expect(result.error).toBe(firstError);
+    expect(result.files).toBeUndefined();
+  });
+
   it("attaches rejection handlers before starting another directory", async () => {
     const cwd = Path.resolve("virtual-rejections");
     const error = new Error("third directory failed");
