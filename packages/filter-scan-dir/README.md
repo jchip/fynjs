@@ -75,6 +75,22 @@ Scan times depend on storage, directory layout, and OS cache state.
 Warm-cache measurements do not predict cold-cache performance.
 Scanning lists entries without reading file contents.
 
+## Example measurements
+
+These are medians from seven warm-cache runs.
+Both scans used `fullStat: false` with concurrency `50`.
+No filters or sorting were enabled. Symlinks were excluded.
+
+Test system: Node.js 22.22.2 on macOS, Apple M4 Pro, 24 GB RAM.
+
+| Tree | Files | Async scan |
+| --- | ---: | ---: |
+| Synthetic: 1,000 directories with 1,000 empty files each | 1,000,000 | 318 ms |
+| fynmesh with installed dependencies: 48,347 directories | 292,242 | 920 ms |
+
+The fynmesh scan included `node_modules` and `.git`.
+These timings do not include full file metadata.
+
 # License
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
