@@ -361,7 +361,7 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
     }
   }
 
-  return getResult(options);
+  return level === 0 ? getResult(options) : undefined;
 }
 
 const asyncReaddir = Util.promisify(Fs.readdir);
@@ -462,7 +462,7 @@ async function walk(path: string, options: InternalOpts, level = 0) {
     }
   }
 
-  return getResult(options);
+  return level === 0 ? getResult(options) : undefined;
 }
 
 /**
