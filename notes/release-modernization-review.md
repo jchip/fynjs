@@ -226,3 +226,13 @@ would buy directory tidiness at the cost of rewriting 79 files.
 `fynpo.json` `packages` glob, so fynpo manages them, but neither declares a `type` field and §11 never
 mentioned them. No decision has been made about whether the ESM-only policy applies to vendored forks.
 Flagged here as an open question rather than settled either way.
+
+## 13. Decision — GitHub configuration belongs at the monorepo root (2026-09-18)
+
+Packages migrated into this monorepo must not retain their own `.github` directories.
+During migration, move any needed workflows, templates, or other GitHub configuration
+to the root `.github`, then remove the package-local directory. Package-specific build
+and test commands belong in package scripts invoked by root CI.
+
+The remaining seven package-local workflow directories were removed after confirming
+their build and test steps are covered by the current package scripts and root CI.
