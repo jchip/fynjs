@@ -52,8 +52,11 @@ With `grouping: true`, return a string to choose a result group.
 
 # Performance
 
-`fullStat: false` was **2.3× faster on fynmesh** than full-stat mode in our warm-cache tests.
+`fullStat: false` gets entry types from `readdir` as `Dirent` objects.
+This avoids a separate `lstat` call for every file and directory entry.
+In our warm-cache tests, it was **2.3× faster on fynmesh** than `fullStat: true`.
 It was **8.1× faster on the 1,000 × 1,000 synthetic tree**.
+
 Use it when names and entry types are enough:
 
 ```ts
@@ -62,7 +65,6 @@ const files = await filterScanDir({ cwd: "src", fullStat: false });
 
 Filter callbacks receive `Dirent` objects instead of `Stats` objects.
 Sizes, timestamps, and permissions are unavailable.
-This avoids an `lstat` call for every file and directory entry.
 
 The default concurrency is `50`.
 Higher concurrency is not always faster. `concurrency: Infinity` removes the limit.
