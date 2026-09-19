@@ -1,5 +1,6 @@
 import { PassThrough } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
+import stripAnsi from "strip-ansi";
 import VisualLogger from "visual-logger";
 import { VisualExec, type VisualExecOptions } from "../src/visual-exec.js";
 
@@ -16,6 +17,10 @@ function setup(options: Partial<VisualExecOptions> = {}) {
   return { exec, logger };
 }
 
+function recordedText(logger: VisualLogger): string {
+  return stripAnsi(logger.logData.join("\n")).replace(/^> /gm, "");
+}
+
 describe("final output", () => {
   it.each([
     { output: undefined, expected: "No output from Running test" },
@@ -26,7 +31,7 @@ describe("final output", () => {
 
     exec.logFinalOutput(null, output!);
 
-    expect(logger.logData.join("\n")).toContain(expected);
+    expect(recordedText(logger)).toContain(expected);
   });
 
   it("uses the chosen level for stderr when forceStderr is disabled", () => {
@@ -38,7 +43,7 @@ describe("final output", () => {
 
     expect(info).toHaveBeenCalledOnce();
     expect(error).not.toHaveBeenCalled();
-    expect(logger.logData.join("\n")).toContain("diagnostic");
+    expect(recordedText(logger)).toContain("diagnostic");
   });
 
   it("ignores unsupported error-pattern values supplied by JavaScript callers", () => {
@@ -52,7 +57,7 @@ describe("final output", () => {
     // @ts-expect-error Exercise the public runtime fallback for a non-string command.
     const { exec, logger } = setup({ command: 42, cwd: "" });
     exec.logFinalOutput(null, { stdout: "", stderr: "" });
-    expect(logger.logData.join("\n")).toContain("No output from Running user command");
+    expect(recordedText(logger)).toContain("No output from Running user command");
   });
 });
 

@@ -24,13 +24,11 @@ describe("task-file", function() {
   let testEnv;
   let saveCwd;
   let xrun;
-  let counter = 0;
   let originalWrapProcess;
   let mockProcess;
 
   beforeEach(() => {
-    testDir = Path.join(os.tmpdir(), `xarc-run-test-${Date.now()}-${counter++}`);
-    fs.mkdirSync(testDir, { recursive: true });
+    testDir = fs.mkdtempSync(Path.join(os.tmpdir(), "xarc-run-test-"));
     saveCwd = process.cwd();
     process.chdir(testDir);
 
