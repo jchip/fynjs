@@ -5,8 +5,8 @@ $pkg:
  dep:
   vite-node: ^6.0.0
  dev:
-  fyn: ^3.1.5
-  fynpo: ^3.1.5
+  fyn: ^3.1.6
+  fynpo: ^3.1.6
   run-verify: ./packages/run-verify
   semver: ^7.8.5
 '@oxc-project/types':
@@ -228,23 +228,23 @@ fsevents:
   os:
    - darwin
 fyn:
- _latest: 3.1.5
+ _latest: 3.1.6
  _:
-  ^3.1.5: 3.1.5
- 3.1.5:
+  ^3.1.6: 3.1.6
+ 3.1.6:
   top: 1
-  $: sha512-1UUD3C+Dz7yEWxnkCS9XqYx5FkeIJx+hVMKF+Hq+qpT/PS10IEgtQD2/EMKSmn7hlzhSthdyNmMN9dS9x/smkQ==
-  _: 'https://registry.npmjs.org/fyn/-/fyn-3.1.5.tgz'
+  $: sha512-nlyfGHBbROwWj9MX/Gj85Rpb1U3zgcq9KTalE8DIJ5kGE9z1CyzLBrQ49iw6cj1it0nVVXRHwr0JLTqkHNoa5g==
+  _: 'https://registry.npmjs.org/fyn/-/fyn-3.1.6.tgz'
 fynpo:
- _latest: 3.1.5
+ _latest: 3.1.6
  _:
-  ^3.1.5: 3.1.5
- 3.1.5:
+  ^3.1.6: 3.1.6
+ 3.1.6:
   top: 1
-  $: sha512-l759U8zKaNmnM7tAT3LwZ5OGBV6wnqZlzaTjWi7ugAkyx77hgI0ZEvnAxizh2bdu+365qZJisCvF1IAY9/aCFA==
-  _: 'https://registry.npmjs.org/fynpo/-/fynpo-3.1.5.tgz'
+  $: sha512-oaQ4QtQqKwNTtRaNA/CwznwEeema/UPtNw3SJ+t0Pv//LUzqX8pjpM1KlARdmR90ZBz8PAyM2UushCCGrjKlUA==
+  _: 'https://registry.npmjs.org/fynpo/-/fynpo-3.1.6.tgz'
   dependencies:
-   fyn: ^3.1.5
+   fyn: ^3.1.6
    import-fresh: ^4.0.0
    resolve-from: ^5.0.0
    resolve-global: ^2.0.0
@@ -502,10 +502,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.4-fynlocal_h
+ _latest: 2.1.5-fynlocal_h
  _:
-  ./packages/run-verify: 2.1.4-fynlocal_h
- 2.1.4-fynlocal_h:
+  ./packages/run-verify: 2.1.5-fynlocal_h
+ 2.1.5-fynlocal_h:
   top: 1
   $: local
   _: ./packages/run-verify
