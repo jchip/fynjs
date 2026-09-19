@@ -7,13 +7,13 @@ import { direntCmp, join2 } from "./util.js";
 /**
  * type of the 3rd argument for the filter callback
  */
-export type ExtrasData = {
+export type ExtrasData<Stat extends Dirent | Stats = Dirent | Stats> = {
   /** name of the file being considered */
   file: string;
   /** path to the directory being processed that contains the file  */
   path: string;
   /** result from fs.lstat or readdir */
-  stat: Dirent | Stats;
+  stat: Stat;
   /** full path with cwd + path + file  */
   fullFile: string;
   /** path to file without cwd: path + file */
@@ -57,12 +57,16 @@ export type FilterResult = boolean | string | FilterInfo;
  *    first level directory.
  * @param extras - extras data
  */
-export type FilterCallback = (file: string, path: string, extras: ExtrasData) => FilterResult;
+export type FilterCallback<Stat extends Dirent | Stats = Dirent | Stats> = (
+  file: string,
+  path: string,
+  extras: ExtrasData<Stat>,
+) => FilterResult;
 
 /**
  * Options for filterScanDir
  */
-export type Options = {
+export type Options<FullStat extends boolean = boolean> = {
   /** current working directory to start scanning */
   cwd?: string;
   /**
@@ -88,7 +92,7 @@ export type Options = {
    * - *Default*: `true` - for significant performance improvement, set this to `false`
    *
    */
-  fullStat?: boolean;
+  fullStat?: FullStat;
   /**
    * for async version only - maximum directories reading entries or metadata concurrently.
    * *Default*: `50`. Ancestors waiting for child directories do not consume a slot.
@@ -103,9 +107,16 @@ export type Options = {
   /** set to `true` to throw errors instead of ignoring them */
   rethrowError?: boolean;
   /** callback to filter files. */
-  filter?: FilterCallback;
+  filter?: FilterCallback<FullStat extends false ? Dirent : Stats>;
   /** callback to filter directories. */
-  filterDir?: FilterCallback;
+  filterDir?: FilterCallback<FullStat extends false ? Dirent : Stats>;
+  /** directory basenames to skip at every depth, before reading metadata or children */
+  ignoreDirs?: string | string[];
+  /**
+   * synchronous entry filter before lstat; returning false also prunes directories.
+   * Requires fullStat to be true (the default). Throws when fullStat is false.
+   */
+  prefilter?: (file: string, path: string, entry: Dirent) => boolean;
   /** array or string of extensions to ignore. ext must include `.`, ie: `".js"` */
   ignoreExt?: string | string[];
   /** array or string of extensions to include only, apply after `ignoreExt` */
@@ -117,21 +128,25 @@ export type Options = {
    * - If you didn't specify this, then `cwd` is automatically converted to use `/`.
    */
   pathSep?: string;
-};
+} & ([FullStat] extends [false] ? { fullStat: false } : {});
 
 /**
  * options specifically to set grouping flag `true` to enable grouping of files
  */
-export type GroupingOptions = {
+export type GroupingOptions<FullStat extends boolean = boolean> = {
   /**
    * enable grouping of files
    * This is default to disabled, so it's only expecting `true` to enable it.
    */
   grouping: true;
-} & Options;
+} & Options<FullStat>;
+
+type ScanOptions = Options | Options<true> | Options<false>;
 
 /** internal options and data */
 type InternalOpts = GroupingOptions & {
+  _earlyFilter: boolean;
+  _ignoreDirs: Set<string>;
   _concurrentCount: number;
   _waiting: (() => void)[];
   _waitIndex: number;
@@ -254,14 +269,6 @@ function processFile(options, extras) {
     return false;
   }
 
-  if (options.ignoreExt.length > 0 && options.ignoreExt.indexOf(extras.ext) >= 0) {
-    return false;
-  }
-
-  if (options.filterExt.length > 0 && options.filterExt.indexOf(extras.ext) < 0) {
-    return false;
-  }
-
   const filterResult = options.filter ? options.filter(extras.file, extras.path, extras) : true; // default to include
 
   if (filterResult) {
@@ -272,6 +279,22 @@ function processFile(options, extras) {
   }
 
   return false;
+}
+
+// Reject entries before allocating callback extras or requesting full metadata.
+function acceptEntry(options: InternalOpts, entry: Dirent, path: string): boolean {
+  const isDirectory = entry.isDirectory();
+  if (isDirectory && options._ignoreDirs.has(entry.name)) return false;
+  if (options.prefilter && !options.prefilter(entry.name, path, entry)) return false;
+  if (isDirectory) return true;
+
+  if (options.ignoreExt.length || options.filterExt.length) {
+    const ix = entry.name.lastIndexOf(".");
+    const ext = ix > 0 ? entry.name.substring(ix) : "";
+    if (options.ignoreExt.indexOf(ext) >= 0) return false;
+    if (options.filterExt.length && options.filterExt.indexOf(ext) < 0) return false;
+  }
+  return true;
 }
 
 /**
@@ -309,7 +332,7 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
     let files: (string | Dirent)[] = Fs.readdirSync(dir, options.readdirOpts);
 
     if (options.sortFiles) {
-      if (options.fullStat) {
+      if (!options.readdirOpts) {
         files = files.sort();
       } else {
         files = (files as Dirent[]).sort(direntCmp);
@@ -317,16 +340,22 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
     }
 
     const dirs = [];
+    const extrasFiles =
+      options.fullStat && options._earlyFilter && (options.filter || options.filterDir)
+        ? (files as Dirent[]).map((entry) => entry.name)
+        : files;
 
     // process files first
     for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
+      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path)) continue;
       let extras: ExtrasData;
 
       if (options.fullStat) {
-        const fullFile = join2(options._sep, dir, file as string);
+        const name = options._earlyFilter ? (file as Dirent).name : (file as string);
+        const fullFile = join2(options._sep, dir, name);
         const stat = Fs.lstatSync(fullFile);
-        extras = makeExtrasData(file as string, fullFile, path, stat, files, options);
+        extras = makeExtrasData(name, fullFile, path, stat, extrasFiles, options);
       } else {
         const fullFile = join2(options._sep, dir, (file as Dirent).name);
         extras = makeExtrasData(
@@ -413,7 +442,7 @@ async function walk(path: string, options: InternalOpts, level = 0) {
     let files: (string | Dirent)[] = await asyncReaddir(dir, options.readdirOpts);
 
     if (options.sortFiles) {
-      if (options.fullStat) {
+      if (!options.readdirOpts) {
         files = files.sort();
       } else {
         files = (files as Dirent[]).sort(direntCmp);
@@ -421,17 +450,23 @@ async function walk(path: string, options: InternalOpts, level = 0) {
     }
 
     const dirs = [];
+    const extrasFiles =
+      options.fullStat && options._earlyFilter && (options.filter || options.filterDir)
+        ? (files as Dirent[]).map((entry) => entry.name)
+        : files;
 
     // process files first
     for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
+      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path)) continue;
       let extras;
 
       if (options.fullStat) {
-        const fullFile = join2(options._sep, dir, file as string);
+        const name = options._earlyFilter ? (file as Dirent).name : (file as string);
+        const fullFile = join2(options._sep, dir, name);
         const stat = await asyncLStat(fullFile);
         if (options._stopped) break;
-        extras = makeExtrasData(file as string, fullFile, path, stat, files, options);
+        extras = makeExtrasData(name, fullFile, path, stat, extrasFiles, options);
       } else {
         const fullFile = join2(options._sep, dir, (file as Dirent).name);
         extras = makeExtrasData(
@@ -505,8 +540,13 @@ async function walk(path: string, options: InternalOpts, level = 0) {
  * @param opts
  * @returns
  */
-function makeOptions(opts: string | Options): InternalOpts {
-  const options = typeof opts === "string" ? { cwd: opts } : opts;
+function makeOptions(opts: string | ScanOptions): InternalOpts {
+  // Walkers select the matching callback metadata from fullStat at runtime.
+  const options = (typeof opts === "string" ? { cwd: opts } : opts) as Options;
+
+  if (options.prefilter && options.fullStat === false) {
+    throw new TypeError("prefilter requires fullStat: true");
+  }
 
   const sep = options.pathSep || Path.posix.sep;
 
@@ -547,6 +587,7 @@ function makeOptions(opts: string | Options): InternalOpts {
     options,
     {
       dir: cwd,
+      fullStat: options.fullStat === undefined ? true : options.fullStat,
       result: Object.create(null),
       ignoreExt: []
         .concat(options.ignoreExt)
@@ -561,10 +602,18 @@ function makeOptions(opts: string | Options): InternalOpts {
       _waitIndex: 0,
       _stopped: false,
       _error: undefined,
+      _earlyFilter: false,
+      _ignoreDirs: new Set<string>([].concat(options.ignoreDirs || [])),
     },
   );
 
-  if (!opts2.fullStat) {
+  opts2._earlyFilter =
+    !!opts2.prefilter ||
+    opts2._ignoreDirs.size > 0 ||
+    opts2.ignoreExt.length > 0 ||
+    opts2.filterExt.length > 0;
+
+  if (!opts2.fullStat || opts2._earlyFilter) {
     opts2.readdirOpts = { withFileTypes: true };
   }
 
@@ -577,18 +626,26 @@ function makeOptions(opts: string | Options): InternalOpts {
  * @returns
  */
 export function filterScanDir(options?: string): Promise<string[]>;
+export function filterScanDir(options: GroupingOptions<true>): Promise<GroupingResult>;
+export function filterScanDir(options: GroupingOptions<false>): Promise<GroupingResult>;
+export function filterScanDir(options: GroupingOptions): Promise<GroupingResult>;
+export function filterScanDir(options: Options<true>): Promise<string[]>;
+export function filterScanDir(options: Options<false>): Promise<string[]>;
 export function filterScanDir(options?: Options): Promise<string[]>;
-export function filterScanDir(options?: GroupingOptions): Promise<GroupingResult>;
-export function filterScanDir(options: string | Options = {}): Promise<string[] | GroupingResult> {
+export function filterScanDir(options: string | ScanOptions = {}): Promise<string[] | GroupingResult> {
   const options2 = makeOptions(options);
   return walk(options2.prefix, options2);
 }
 
 /** sync version of filter scan dir */
 export function filterScanDirSync(options?: string): string[];
+export function filterScanDirSync(options: GroupingOptions<true>): GroupingResult;
+export function filterScanDirSync(options: GroupingOptions<false>): GroupingResult;
+export function filterScanDirSync(options: GroupingOptions): GroupingResult;
+export function filterScanDirSync(options: Options<true>): string[];
+export function filterScanDirSync(options: Options<false>): string[];
 export function filterScanDirSync(options?: Options): string[];
-export function filterScanDirSync(options?: GroupingOptions): GroupingResult;
-export function filterScanDirSync(options: string | Options = {}): string[] | GroupingResult {
+export function filterScanDirSync(options: string | ScanOptions = {}): string[] | GroupingResult {
   const options2 = makeOptions(options);
   return walkSync(options2.prefix, options2);
 }

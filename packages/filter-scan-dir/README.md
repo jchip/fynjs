@@ -41,16 +41,39 @@ console.log(await filterScanDir({ cwd: "test" }));
 
 | Option | Purpose |
 | --- | --- |
+| `ignoreDirs` | Skip exact directory basenames at every depth. Accepts a string or array. |
+| `prefilter` | Reject entries before `lstat`. Requires `fullStat: true`. |
 | `filterExt` | Include only matching extensions. |
 | `ignoreExt` | Exclude matching extensions. |
 | `filter` | Decide whether to include each file. |
 | `filterDir` | Skip directories before scanning their children. |
 
-Callbacks receive `(name, relativeDir, extras)`.
+`filter` and `filterDir` receive `(name, relativeDir, extras)`.
 Return `true` to accept an entry or `false` to skip it.
 Directories enter the output only with `includeDir: true`.
 Return `{ stop: true }` to stop the scan.
 With `grouping: true`, return a string to choose a result group.
+
+Use `prefilter` when only some entries need full metadata:
+
+```ts
+const files = await filterScanDir({
+  cwd: ".",
+  fullStat: true,
+  ignoreDirs: ["node_modules", ".git"],
+  prefilter: (name, _dir, entry) => entry.isDirectory() || name.endsWith(".ts"),
+  filter: (_name, _dir, { stat }) => stat.size < 100_000,
+});
+```
+
+`prefilter` receives `(name, relativeDir, Dirent)` and runs synchronously.
+Return `false` to reject an entry. Rejecting a directory skips its entire subtree.
+`prefilter` with `fullStat: false` throws before scanning, regardless of `rethrowError`.
+
+The order is `ignoreDirs`, `prefilter`, extension filters, `lstat`, then `filter` or `filterDir`.
+Extension filters apply only to non-directory entries.
+Early rejections avoid `lstat`, so rejected entries cannot report `lstat` errors.
+`ignoreDirs` matches names, not paths or glob patterns. Symlinks are never followed.
 
 # Performance
 
@@ -80,12 +103,12 @@ const files = await filterScanDir({
   cwd: ".",
   fullStat: false,
   filterExt: [".js", ".ts"],
-  filterDir: (name) => name !== "node_modules" && name !== ".git",
+  ignoreDirs: ["node_modules", ".git"],
 });
 ```
 
 - `filterDir` can skip entire subtrees.
-- `filterExt` still reads every visited directory. It does not avoid stats in full-stat mode.
+- Extension filters still read every visited directory. Rejected entries skip `lstat` in full-stat mode.
 - Custom callbacks add work per entry.
 - `sortFiles: true` adds sorting work per directory.
 
