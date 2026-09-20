@@ -148,6 +148,9 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
       for (let i = parts.length - 1; i > 0; i--) {
         const pkg = byPath[parts.slice(0, i).join("/")];
         if (pkg) {
+          if (pkg.managed === false) {
+            return { unmanaged: true };
+          }
           return { name: pkg.name, dirName: pkg.pkgDir || pkg.path };
         }
       }
@@ -208,6 +211,9 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
       };
 
       const ownerPkg = findPkgForFile(x);
+      if (ownerPkg?.unmanaged) {
+        return a;
+      }
       if (ownerPkg) {
         // not part of this selective release
         if (selection && !selection.has(ownerPkg.name)) {

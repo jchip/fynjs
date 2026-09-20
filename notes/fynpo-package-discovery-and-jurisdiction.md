@@ -48,7 +48,11 @@ excludes. Gitignore enters in two narrower places, below.
 ```jsonc
 "packages": {
   // Walk the whole repo looking for package.json. Default: on. Stays on when include is set.
-  "autoSearch": true | { "enable": true, "respectGitignore": false },
+  "autoSearch": true | {
+    "enable": true,
+    "respectGitignore": false,
+    "stopOnPackageJsonFound": false
+  },
 
   // Filters what the scan found. With autoSearch off, becomes the scan patterns instead.
   "include": ["packages/*", "_w/*"],
@@ -90,7 +94,28 @@ config is carried through and resolved by the discovery code.
 | `{ autoSearch: false, include: ["libs/*"] }` | scan `libs/*` | everything discovered |
 
 - `autoSearch` defaults **on**; `respectGitignore` defaults **off**.
+- Auto-search continues below directories containing `package.json` by default.
+- `stopOnPackageJsonFound: true` restores the old first-package-boundary traversal.
 - With auto-search off and no `include`, `include` falls back to `["packages/*"]`.
+
+### Nested packages
+
+Recursive auto-search separates graph membership from command participation:
+
+- A package found below another accepted package remains in the graph for local dependency
+  resolution.
+- It is **unmanaged** by default, so `fynpo run`, changelog, version and publish skip it.
+- A direct `include` match promotes the nested package to managed. Matching only its ancestor
+  does not promote it.
+- `fynpo prepare` is the exception: it rewrites an unmanaged package's ranges when a released
+  local dependency changes, without bumping the nested package's version or changing its
+  `publishConfig`.
+- Manifest `"private": true` remains independent. A managed private package may participate
+  in lifecycle commands but is still not publishable.
+
+The graph exposes this distinction as `managed` and `nested` metadata. Neither field is
+written to `package.json`. Explicit-pattern discovery with auto-search disabled keeps every
+matched package managed.
 
 ### The array shape
 
@@ -212,10 +237,10 @@ packages in a repo laid out any other way.
 
 ## Bootstrap scope — decided
 
-**Bootstrap spans the discovery set** (unchanged from today). `_w/xsh` and any other
-discovered-but-unmanaged package keeps getting its own dependencies installed, which is what
-the `_w/` workflow relies on. Jurisdiction narrows only what gets versioned, changelogged and
-published.
+**Bootstrap spans the discovery set** (unchanged from today). `_w/xsh`, implicitly nested
+packages, and any other discovered-but-unmanaged package keep getting their own dependencies
+installed, which is what local-link workflows rely on. Jurisdiction narrows lifecycle runs and
+release commands; prepare still performs dependency-range maintenance across the discovery set.
 
 A dedicated bootstrap-scope config is worth considering if a repo ever wants bootstrap narrowed
 independently of discovery. Deliberately not built yet — no evidence two repos want different

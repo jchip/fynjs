@@ -76,6 +76,7 @@ export class Prepare {
   _fynpoRc;
   _graph;
   _packages;
+  _allPackages;
   _markers;
   _versions;
   _tags;
@@ -99,9 +100,17 @@ export class Prepare {
     // at several paths; take the first, which is what `graph.getPackageByName` does and what
     // the changelog/version path has always done (FJM-25).
     //
-    this._packages = _.mapValues(_.get(graph, "packages.byName", {}), (infos: any) =>
-      _.first(infos as any[])
+    const byName = _.get(graph, "packages.byName", {});
+    this._packages = _.pickBy(
+      _.mapValues(byName, (infos: any) =>
+        (infos as any[]).find((pkg) => pkg.managed !== false)
+      ),
+      Boolean
     );
+    const byPath = _.get(graph, "packages.byPath", {});
+    this._allPackages = _.isEmpty(byPath)
+      ? _.flatten(Object.values(byName) as any[][])
+      : Object.values(byPath);
     this._versions = {};
     this._tags = [];
 
@@ -173,7 +182,9 @@ export class Prepare {
       return undefined;
     }
 
-    const packages = [];
+    const packages = new Set<string>();
+    const changedPackages = new Map<string, any>();
+    const releasedPaths = new Set<string>();
     const updatedPackages: string[] = [];
 
     _.each(this._packages, (pkg, name) => {
@@ -198,7 +209,9 @@ export class Prepare {
 
       // pkg.path is where the file actually is - a hardcoded "packages" prefix
       // staged the wrong path for any repo not laid out under packages/
-      packages.push(Path.join(pkg.path, "package.json"));
+      packages.add(Path.join(pkg.path, "package.json"));
+      changedPackages.set(pkg.path, pkg);
+      releasedPaths.add(pkg.path);
       updatedPackages.push(`${name}@${newV}`);
     });
 
@@ -218,10 +231,8 @@ export class Prepare {
     // `updatedPackages`, so they stay out of the commit body - and publish.ts requires BOTH
     // the changed path and the name in that body, so they are not published.
     //
-    _.each(this._packages, (pkg, name) => {
-      if (this._versions.hasOwnProperty(name)) {
-        return; // released above, its own deps were already rewritten
-      }
+    _.each(this._allPackages, (pkg) => {
+      if (releasedPaths.has(pkg.path)) return;
 
       const touched = _.map(this._versions, (ver, relName) =>
         this.updateDep(pkg.pkgJson, relName, ver)
@@ -229,7 +240,8 @@ export class Prepare {
 
       if (touched) {
         printWarning(`Updated ${pkg.name} dependency range - not released, will bump next time`);
-        packages.push(Path.join(pkg.path, "package.json"));
+        packages.add(Path.join(pkg.path, "package.json"));
+        changedPackages.set(pkg.path, pkg);
       }
     });
 
@@ -237,13 +249,14 @@ export class Prepare {
 
     // all updated, write to disk. FynpoPackageInfo carries no `pkgFile`, so compose it from
     // `path` the same way utils/update-package-versions.ts does (FJM-25).
-    _.each(this._packages, (pkg) => {
+    changedPackages.forEach((pkg) => {
       writeJsonSync(Path.join(this._cwd, pkg.path, "package.json"), pkg.pkgJson);
     });
 
-    const { committed, tagged } = await this.commitAndTagUpdates(packages);
+    const packageFiles = [...packages];
+    const { committed, tagged } = await this.commitAndTagUpdates(packageFiles);
 
-    const outcome = prepareOutcome(updatedPackages.length, packages.length, committed, tagged);
+    const outcome = prepareOutcome(updatedPackages.length, packageFiles.length, committed, tagged);
     if (outcome.level === "success") {
       printSuccess(outcome.message);
     } else {

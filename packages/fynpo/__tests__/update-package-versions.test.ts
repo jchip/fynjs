@@ -145,6 +145,34 @@ describe("updatePackageVersions", () => {
     expect(result.packages).not.toContain(path.join("packages", "pkg-p", "package.json"));
   });
 
+  it("rewrites an unmanaged nested package's ranges without bumping it", async () => {
+    const nestedFile = path.join(cwd, "packages/pkg-a/examples/nested/package.json");
+    writeJson(nestedFile, {
+      name: "nested",
+      version: "0.1.0",
+      dependencies: { "pkg-a": "^1.0.0" },
+      publishConfig: { tag: "next" },
+    });
+
+    const graph = new FynpoDepGraph({ cwd, packages: ["packages/*"] });
+    await graph.resolve();
+    expect(graph.getPackageByName("nested").managed).toBe(false);
+
+    const result: any = await updatePackageVersions({
+      versions: { "pkg-a": "2.0.0" },
+      tags: [],
+      collated: { opts: { graph, cwd, fynpoRc: {} } },
+    });
+
+    const nested = readJson(nestedFile);
+    expect(nested.dependencies["pkg-a"]).toBe("^2.0.0");
+    expect(nested.version).toBe("0.1.0");
+    expect(nested.publishConfig).toEqual({ tag: "next" });
+    expect(result.packages).toContain(
+      path.join("packages", "pkg-a", "examples", "nested", "package.json")
+    );
+  });
+
   it("returns undefined when there are no versions", async () => {
     const collated = await makeCollated();
     const result = await updatePackageVersions({ versions: {}, tags: [], collated });

@@ -16,6 +16,8 @@ export type AutoSearchConfig = {
   enable: boolean;
   /** when true, auto-search skips gitignored paths. Does NOT affect the publish veto. */
   respectGitignore: boolean;
+  /** when true, do not search below a directory containing package.json */
+  stopOnPackageJsonFound: boolean;
 };
 
 /** the `packages` config, after defaults are applied */
@@ -58,7 +60,7 @@ const asPathRef = (ref: string): string =>
 
 const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
   if (val === false) {
-    return { enable: false, respectGitignore: false };
+    return { enable: false, respectGitignore: false, stopOnPackageJsonFound: false };
   }
 
   if (val && typeof val === "object") {
@@ -66,11 +68,12 @@ const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
     return {
       enable: obj.enable !== false,
       respectGitignore: obj.respectGitignore === true,
+      stopOnPackageJsonFound: obj.stopOnPackageJsonFound === true,
     };
   }
 
   // undefined, true, or anything else -> on
-  return { enable: true, respectGitignore: false };
+  return { enable: true, respectGitignore: false, stopOnPackageJsonFound: false };
 };
 
 /**
@@ -92,7 +95,7 @@ export function resolvePackagesConfig(packages?: unknown): PackagesConfig {
   if (Array.isArray(packages)) {
     const list = toList(packages);
     return {
-      autoSearch: { enable: true, respectGitignore: false },
+      autoSearch: { enable: true, respectGitignore: false, stopOnPackageJsonFound: false },
       // both sets: the array narrows what fynpo manages AND what it may publish, which keeps
       // the historical shape behavior-preserving
       include: list,

@@ -63,7 +63,10 @@ export const determinePackageVersions = (collated) => {
       .map((name) => collated.packages[name])
       .map((x) => x.updateType);
     const minBumpType = _.max(updateTypes);
-    const pkgNames = Object.keys(_.get(collated, "opts.graph.packages.byName", {}));
+    const byName = _.get(collated, "opts.graph.packages.byName", {});
+    const pkgNames = Object.keys(byName).filter((name) =>
+      [].concat(byName[name] || []).some((pkg: any) => pkg.managed !== false)
+    );
 
     for (const name of pkgNames) {
       if (!collated.realPackages.includes(name)) {

@@ -1,8 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { verify } from "run-verify";
 import { FynpoDepGraph, getDepSection } from "../src/index.js";
 import path from "path";
 import Fs from "fs";
+import os from "os";
 
 describe("getDepSection", function () {
   it("should return dep for dependencies", () => {
@@ -305,5 +306,76 @@ describe("fynpo dep graph", () => {
         // cir1 should NOT have cir2 as local dep (skipped by no-fyn-local string)
         expect(cir1Data.localDepsByPath).not.toHaveProperty("packages/cir2");
       });
+  });
+});
+
+describe("nested package discovery", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = Fs.mkdtempSync(path.join(os.tmpdir(), "fynpo-nested-"));
+    const writePkg = (dir: string, pkg: Record<string, unknown>) => {
+      Fs.mkdirSync(path.join(tmpDir, dir), { recursive: true });
+      Fs.writeFileSync(path.join(tmpDir, dir, "package.json"), JSON.stringify(pkg));
+    };
+
+    writePkg("packages/host", { name: "host", version: "1.0.0" });
+    writePkg("packages/host/src", { type: "module" });
+    writePkg("packages/host/examples/child", {
+      name: "child",
+      version: "1.0.0",
+      dependencies: { sibling: "^1.0.0" },
+    });
+    writePkg("packages/sibling", { name: "sibling", version: "1.0.0" });
+  });
+
+  afterEach(() => {
+    Fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("retains implicitly nested packages as unmanaged graph members", async () => {
+    const graph = new FynpoDepGraph({ cwd: tmpDir, packages: ["packages/*"] });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["child", "host", "sibling"]);
+    expect(graph.packages.byPath).not.toHaveProperty("packages/host/src");
+    expect(graph.getPackageByName("host")).toMatchObject({ managed: true, nested: false });
+    expect(graph.getPackageByName("child")).toMatchObject({ managed: false, nested: true });
+    expect(graph.depMapByPath["packages/host/examples/child"].localDepsByPath).toHaveProperty(
+      "packages/sibling"
+    );
+  });
+
+  it("promotes a nested package directly matched by include", async () => {
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: ["packages/*", "packages/*/examples/*"],
+    });
+    await graph.resolve();
+
+    expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: true });
+  });
+
+  it("restores package-boundary pruning when stopOnPackageJsonFound is true", async () => {
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: { autoSearch: { stopOnPackageJsonFound: true }, include: ["packages/*"] },
+    });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["host", "sibling"]);
+  });
+
+  it("keeps explicit-pattern discoveries managed when auto-search is disabled", async () => {
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: {
+        autoSearch: false,
+        include: ["packages/**"],
+      },
+    });
+    await graph.resolve();
+
+    expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: false });
   });
 });

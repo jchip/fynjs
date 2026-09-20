@@ -220,6 +220,10 @@ export type FynpoPackageInfo = PackageBasicInfo & {
   /** peerDependencies from package.json */
   peerDependencies: Record<string, string>;
   private: boolean;
+  /** whether fynpo lifecycle and release commands manage this package */
+  managed: boolean;
+  /** whether this package was discovered below another package */
+  nested: boolean;
   /**
    * The package dir name only
    *
@@ -551,7 +555,7 @@ export class FynpoDepGraph {
     }
 
     const foundInAutoSearch = (path: string) => {
-      if (!autoSearch) {
+      if (!autoSearch || !pkgConfig.autoSearch.stopOnPackageJsonFound) {
         return false;
       }
       for (const e of autoSearchFound) {
@@ -603,13 +607,54 @@ export class FynpoDepGraph {
       files.push(scanned);
     }
 
-    const allFiles: string[] = [].concat(...files)
-      .filter((f: string) => isIncluded(Path.dirname(f)))
-      .sort();
+    const allFiles: string[] = ([] as string[]).concat(...files);
+    const filesByDepth = [...allFiles].sort((a, b) => {
+      const depth = (file: string) => posixify(Path.dirname(file)).split("/").length;
+      return depth(a) - depth(b) || a.localeCompare(b);
+    });
 
-    // Read each package.json and generate PackageInfo for it
-    for (const pkgFile of allFiles) {
-      await this.addPackageByFile(pkgFile);
+    // Classify nesting after the concurrent scan. Callback completion order must not decide
+    // whether a package is nested or managed.
+    const packageRoots: string[] = [];
+    const accepted: Array<{
+      pkgFile: string;
+      pkgPath: string;
+      pkgStr: string;
+      pkgJson: Record<string, any>;
+      managed: boolean;
+      nested: boolean;
+    }> = [];
+    for (const pkgFile of filesByDepth) {
+      const pkgPath = posixify(Path.dirname(pkgFile));
+      const nested = autoSearch && packageRoots.some((root) => isPathInside(pkgPath, root));
+      const included = isIncluded(pkgPath);
+
+      // Preserve include's historical filtering for ordinary package roots. Descendants of
+      // an accepted package stay in the graph so fyn can resolve them locally and prepare can
+      // maintain their dependency ranges.
+      if (!included && !nested) {
+        continue;
+      }
+
+      const managed = !autoSearch || !nested || (includeMms.length > 0 && included);
+      const pkgStr = await Fs.readFile(Path.join(cwd, pkgFile), "utf-8");
+      const pkgJson = JSON.parse(pkgStr);
+      if (pkgJson.fynpo === false) continue;
+      // package.json is also used as a Node module-scope marker. Discovery should only
+      // classify actual packages; direct addPackage callers still fail fast on missing names.
+      if (!pkgJson.name) continue;
+
+      accepted.push({ pkgFile, pkgPath, pkgStr, pkgJson, managed, nested });
+      packageRoots.push(pkgPath);
+    }
+
+    // Preserve the historical lexical insertion order so existing topology ordering and
+    // snapshots do not churn merely because classification needs a depth-first view.
+    for (const pkg of accepted.sort((a, b) => a.pkgFile.localeCompare(b.pkgFile))) {
+      this.addPackage(pkg.pkgJson, pkg.pkgPath, pkg.pkgStr, {
+        managed: pkg.managed,
+        nested: pkg.nested,
+      });
     }
 
     this.updateAuxPackageData();
@@ -622,10 +667,13 @@ export class FynpoDepGraph {
    *
    * @param pkgFile - path to the package.json file
    */
-  async addPackageByFile(pkgFile: string) {
+  async addPackageByFile(
+    pkgFile: string,
+    management: { managed?: boolean; nested?: boolean } = {}
+  ): Promise<FynpoPackageInfo | undefined> {
     const pkgStr = await Fs.readFile(Path.join(this._options.cwd, pkgFile), "utf-8");
     const pkgJson = JSON.parse(pkgStr);
-    this.addPackage(pkgJson, Path.dirname(pkgFile), pkgStr);
+    return this.addPackage(pkgJson, posixify(Path.dirname(pkgFile)), pkgStr, management);
   }
 
   /**
@@ -636,9 +684,14 @@ export class FynpoDepGraph {
    * @param pkgStr - string form of package.json
    * @returns
    */
-  addPackage(pkgJson: Record<string, any>, pkgPath: string, pkgStr?: string) {
+  addPackage(
+    pkgJson: Record<string, any>,
+    pkgPath: string,
+    pkgStr?: string,
+    management: { managed?: boolean; nested?: boolean } = {}
+  ): FynpoPackageInfo | undefined {
     if (pkgJson.fynpo === false) {
-      return;
+      return undefined;
     }
 
     assert(pkgJson.name, `package at ${pkgPath} doesn't have name`);
@@ -669,6 +722,8 @@ export class FynpoDepGraph {
     Object.defineProperties(pkgInfo, {
       pkgStr: { enumerable: false },
       pkgJson: { enumerable: false },
+      managed: { value: management.managed !== false, enumerable: false },
+      nested: { value: management.nested === true, enumerable: false },
     });
 
     const { byName } = this.packages;
@@ -678,6 +733,8 @@ export class FynpoDepGraph {
     } else {
       byName[pkgJson.name] = [pkgInfo];
     }
+
+    return pkgInfo;
   }
 
   /**
@@ -694,14 +751,19 @@ export class FynpoDepGraph {
 
     // create package map byPath and byId
     for (const name in byName) {
+      byName[name].sort((a, b) => {
+        const versionOrder = Semver.compare(b.version, a.version);
+        if (versionOrder !== 0) return versionOrder;
+        if (a.managed !== b.managed) return a.managed === false ? 1 : -1;
+        return a.path.localeCompare(b.path);
+      });
       byName[name].forEach((pkg) => {
         byPath[pkg.path] = pkg;
-        byId[`${pkg.name}@${pkg.version}`] = pkg;
+        const id = `${pkg.name}@${pkg.version}`;
+        if (!byId[id] || (byId[id].managed === false && pkg.managed !== false)) {
+          byId[id] = pkg;
+        }
       });
-      // sort package with multiple versions from latest to oldest
-      if (byName[name].length > 1) {
-        byName[name].sort((a, b) => Semver.compare(b.version, a.version));
-      }
     }
   }
 

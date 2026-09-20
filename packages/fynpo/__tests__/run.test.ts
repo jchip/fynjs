@@ -206,6 +206,19 @@ describe("selectPackagesToRun (FPO-35)", () => {
     ]);
   });
 
+  it("never selects an unmanaged nested package", () => {
+    const nested = {
+      ...pkg("nested", "packages/a/examples/nested"),
+      pkgInfo: {
+        ...pkg("nested", "packages/a/examples/nested").pkgInfo,
+        managed: false,
+      },
+    } as any;
+
+    expect(names(selectPackagesToRun([...all, nested], {}))).not.toContain("nested");
+    expect(selectPackagesToRun([nested], { only: ["nested"] })).toEqual([]);
+  });
+
   it("narrows to the selected package", () => {
     expect(names(selectPackagesToRun(all, { only: ["pkg-solo"] }))).toEqual(["pkg-solo"]);
   });

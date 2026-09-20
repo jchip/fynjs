@@ -12,7 +12,11 @@ describe("resolvePackagesConfig", () => {
   it("defaults to auto-search on, respectGitignore off, nothing else set", () => {
     const c = resolvePackagesConfig(undefined);
 
-    expect(c.autoSearch).toEqual({ enable: true, respectGitignore: false });
+    expect(c.autoSearch).toEqual({
+      enable: true,
+      respectGitignore: false,
+      stopOnPackageJsonFound: false,
+    });
     expect(c.include).toEqual([]);
     expect(c.exclude).toEqual([]);
     expect(c.publishInclude).toEqual([]);
@@ -28,19 +32,27 @@ describe("resolvePackagesConfig", () => {
     expect(c.publishInclude).toEqual(["path:packages/*", "path:_w/*"]);
     // and kept raw for discovery filtering, so the array form preserves the old package set
     expect(c.include).toEqual(["packages/*", "_w/*"]);
-    expect(c.autoSearch).toEqual({ enable: true, respectGitignore: false });
+    expect(c.autoSearch).toEqual({
+      enable: true,
+      respectGitignore: false,
+      stopOnPackageJsonFound: false,
+    });
   });
 
   it("reads the object form", () => {
     const c = resolvePackagesConfig({
-      autoSearch: { enable: true, respectGitignore: true },
+      autoSearch: { enable: true, respectGitignore: true, stopOnPackageJsonFound: true },
       include: ["libs/*"],
       exclude: ["**/fixtures/**"],
       publishInclude: ["libs/a"],
       publishExclude: ["libs/b"],
     });
 
-    expect(c.autoSearch).toEqual({ enable: true, respectGitignore: true });
+    expect(c.autoSearch).toEqual({
+      enable: true,
+      respectGitignore: true,
+      stopOnPackageJsonFound: true,
+    });
     expect(c.include).toEqual(["libs/*"]);
     expect(c.exclude).toEqual(["**/fixtures/**"]);
     expect(c.publishInclude).toEqual(["libs/a"]);
@@ -56,6 +68,16 @@ describe("resolvePackagesConfig", () => {
     expect(resolvePackagesConfig({ autoSearch: { enable: true } }).autoSearch.respectGitignore).toBe(
       false
     );
+  });
+
+  it("recurses below packages by default and accepts the legacy-boundary flag", () => {
+    expect(resolvePackagesConfig({ autoSearch: true }).autoSearch.stopOnPackageJsonFound).toBe(
+      false
+    );
+    expect(
+      resolvePackagesConfig({ autoSearch: { stopOnPackageJsonFound: true } }).autoSearch
+        .stopOnPackageJsonFound
+    ).toBe(true);
   });
 
   it("falls back to packages/* when auto-search is off and no include is given", () => {
@@ -200,4 +222,3 @@ describe("packageScope", () => {
     expect(packageScope(undefined as any)).toBeUndefined();
   });
 });
-

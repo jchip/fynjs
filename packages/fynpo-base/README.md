@@ -30,7 +30,14 @@ console.log(Object.keys(graph.packages.byName));
 
 Reads the repo's packages and builds the dependency graph between them - direct and indirect, across `dependencies`, `devDependencies`, `optionalDependencies` and `peerDependencies`. Gives you topological ordering for running tasks in dependency order, and resolves a `name@<semver>` reference to the local `name@version` that satisfies it.
 
-Its `autoSearched` flag records whether packages had to be discovered by searching every directory (because the config declared no `packages` patterns) - worth surfacing, since a repo that keeps packages outside the default location behaves differently in commands that don't auto-search.
+Its `autoSearched` flag records whether packages were discovered by walking the repository
+rather than explicit scan patterns. Auto-search continues below package directories by default.
+Nested packages remain in the local dependency graph, but carry `managed: false` unless their
+path directly matches `packages.include`; fynpo skips those packages for lifecycle and release
+commands while still maintaining their local dependency ranges during `prepare`.
+
+Set `packages.autoSearch.stopOnPackageJsonFound: true` to restore package directories as
+traversal boundaries. This affects discovery only; it has no effect when auto-search is disabled.
 
 ### `FynpoConfigManager`
 

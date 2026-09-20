@@ -155,9 +155,12 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
   // nothing in the workspace satisfying it, and the next install fails to resolve it.
   // Nothing about the package itself changes - no version, no publishConfig.
   //
-  _.each(_.get(graph, "packages.byName", {}), (infos: any) => {
-    const pkg = _.first(infos as any[]);
-    if (!pkg || pkg.private !== true) {
+  const byPath = Object.values(_.get(graph, "packages.byPath", {})) as any[];
+  const rangeCandidates = byPath.length
+    ? byPath
+    : _.flatten(Object.values(_.get(graph, "packages.byName", {})) as any[][]);
+  _.each(rangeCandidates, (pkg: any) => {
+    if (!pkg || (pkg.private !== true && pkg.managed !== false)) {
       return;
     }
 
@@ -170,7 +173,7 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
       return;
     }
 
-    logger.info("updated workspace dep ranges in private package", pkg.name);
+    logger.info("updated workspace dep ranges in non-released package", pkg.name);
     updated.push(pkg);
     packages.push(Path.join(pkg.path, "package.json"));
   });

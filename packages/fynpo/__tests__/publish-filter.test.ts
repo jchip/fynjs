@@ -118,6 +118,15 @@ describe("makePublishFilter", () => {
     expect(filter(undefined as any)).toBe(false);
   });
 
+  it("rejects unmanaged packages independently of publish include rules", () => {
+    const unmanaged = { ...demoApp, managed: false };
+    expect(makePublishFilter({}, NO_GIT)(unmanaged)).toBe(false);
+    expect(
+      makePublishFilter(rc({ publishInclude: ["path:demo/**"] }), NO_GIT)(unmanaged)
+    ).toBe(false);
+    expect(makePublishFilter({}, NO_GIT)({ ...demoApp, managed: true })).toBe(true);
+  });
+
   it("the fynmesh config publishes exactly its five packages", () => {
     const filter = makePublishFilter(
       rc({

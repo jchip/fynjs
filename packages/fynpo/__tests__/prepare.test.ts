@@ -191,6 +191,71 @@ describe("fynpo prepare", () => {
     expect(prepare._tags).toStrictEqual(["pkg1@3.0.1", "pkg2@2.0.0"]);
     expect(prepare._versions).toStrictEqual({ pkg1: "3.0.1", pkg2: "2.0.0" });
   });
+
+  it("rewrites an unmanaged nested dependent without releasing it", async () => {
+    const managedPath = "packages/managed";
+    const nestedPath = "packages/managed/examples/nested";
+    const managedFile = path.join(dir, managedPath, "package.json");
+    const nestedFile = path.join(dir, nestedPath, "package.json");
+    const managedJson = { name: "managed", version: "1.0.0" };
+    const nestedJson = {
+      name: "nested",
+      version: "0.1.0",
+      dependencies: { managed: "^1.0.0" },
+      publishConfig: { tag: "next" },
+    };
+
+    fs.mkdirSync(path.dirname(managedFile), { recursive: true });
+    fs.mkdirSync(path.dirname(nestedFile), { recursive: true });
+    fs.writeFileSync(managedFile, JSON.stringify(managedJson));
+    fs.writeFileSync(nestedFile, JSON.stringify(nestedJson));
+
+    const managed = {
+      name: "managed",
+      version: "1.0.0",
+      path: managedPath,
+      managed: true,
+      pkgJson: managedJson,
+    };
+    const nested = {
+      name: "nested",
+      version: "0.1.0",
+      path: nestedPath,
+      managed: false,
+      pkgJson: nestedJson,
+    };
+    const nestedGraph = {
+      packages: {
+        byName: { managed: [managed], nested: [nested] },
+        byPath: { [managedPath]: managed, [nestedPath]: nested },
+      },
+    };
+
+    try {
+      const nestedPrepare: any = new Prepare({ cwd: dir, commit: false }, nestedGraph);
+      nestedPrepare._versions = { managed: "2.0.0", nested: "9.0.0" };
+      nestedPrepare.readChangelog = () => undefined;
+      nestedPrepare.checkGitClean = async () => true;
+      nestedPrepare.commitAndTagUpdates = vi.fn().mockResolvedValue({
+        committed: false,
+        tagged: 0,
+      });
+
+      await nestedPrepare.exec();
+
+      expect(JSON.parse(fs.readFileSync(managedFile, "utf8")).version).toBe("2.0.0");
+      const writtenNested = JSON.parse(fs.readFileSync(nestedFile, "utf8"));
+      expect(writtenNested.version).toBe("0.1.0");
+      expect(writtenNested.dependencies.managed).toBe("^2.0.0");
+      expect(writtenNested.publishConfig).toEqual({ tag: "next" });
+      expect(nestedPrepare.commitAndTagUpdates).toHaveBeenCalledWith([
+        path.join(managedPath, "package.json"),
+        path.join(nestedPath, "package.json"),
+      ]);
+    } finally {
+      fs.rmSync(path.join(dir, "packages/managed"), { recursive: true, force: true });
+    }
+  });
 });
 
 describe("prepareOutcome (FPO-49)", () => {

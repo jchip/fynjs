@@ -80,7 +80,9 @@ export function selectPackagesToRun(
   const ignore = [].concat(opts.ignore || []).filter(Boolean);
   const only = [].concat(opts.only || []).filter(Boolean);
 
-  const kept = candidates.filter((d) => !refsOf(d).some((r) => ignore.includes(r)));
+  const kept = candidates.filter(
+    (d) => d.pkgInfo.managed !== false && !refsOf(d).some((r) => ignore.includes(r))
+  );
 
   if (only.length === 0) {
     return kept;
