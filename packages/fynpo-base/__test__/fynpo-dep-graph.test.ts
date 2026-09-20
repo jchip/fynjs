@@ -356,6 +356,28 @@ describe("nested package discovery", () => {
     expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: true });
   });
 
+  it("resolves dependencies for every path with the same package name and version", async () => {
+    Fs.mkdirSync(path.join(tmpDir, "packages/child"));
+    Fs.writeFileSync(
+      path.join(tmpDir, "packages/child/package.json"),
+      JSON.stringify({ name: "child", version: "1.0.0", dependencies: { host: "^1.0.0" } })
+    );
+    const graph = new FynpoDepGraph({ cwd: tmpDir, packages: ["packages/*"] });
+    await graph.resolve();
+
+    expect(graph.packages.byId["child@1.0.0"].path).toEqual("packages/child");
+    const topo = graph.getTopoSortPackagePaths();
+    expect(topo.circulars).toEqual([]);
+    for (const [pkgPath, depPath] of [
+      ["packages/child", "packages/host"],
+      ["packages/host/examples/child", "packages/sibling"],
+    ]) {
+      expect(Object.keys(graph.depMapByPath[pkgPath].localDepsByPath)).toEqual([depPath]);
+      expect(graph.depMapByPath[depPath].dependentsByPath).toHaveProperty(pkgPath);
+      expect(topo.sorted.indexOf(pkgPath)).toBeGreaterThan(topo.sorted.indexOf(depPath));
+    }
+  });
+
   it("restores package-boundary pruning when stopOnPackageJsonFound is true", async () => {
     const graph = new FynpoDepGraph({
       cwd: tmpDir,

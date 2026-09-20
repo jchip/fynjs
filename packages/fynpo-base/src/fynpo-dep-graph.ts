@@ -865,8 +865,8 @@ export class FynpoDepGraph {
       }
     }
 
-    for (const id in byId) {
-      const pkgInfo = byId[id];
+    for (const path in byPath) {
+      const pkgInfo = byPath[path];
       const depData = depMapByPath[pkgInfo.path];
       doResolve(depData, pkgInfo.dependencies, "dep");
       doResolve(depData, pkgInfo.devDependencies, "dev");
