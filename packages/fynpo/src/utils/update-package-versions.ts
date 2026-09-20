@@ -6,7 +6,7 @@ import Chalk from "chalk";
 import assert from "assert";
 import semver from "semver";
 import { logger } from "../logger.ts";
-import { makePublishFilter } from "../utils.ts";
+import { getManagedPackage, makePublishFilter } from "../utils.ts";
 
 export const checkNupdateTag = (pkg, newV, opts) => {
   const { pkgJson } = pkg;
@@ -123,7 +123,7 @@ export const updatePackageVersions = ({ versions, tags, collated }) => {
   const publishFilter = makePublishFilter(_.get(collated, "opts.fynpoRc"));
 
   _.each(versions, (newV, name) => {
-    const pkg = graph && graph.getPackageByName(name);
+    const pkg = getManagedPackage(graph, name);
     if (!pkg || newV === pkg.version) return;
 
     if (pkg.private === true) {

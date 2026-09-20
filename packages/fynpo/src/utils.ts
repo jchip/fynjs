@@ -549,6 +549,11 @@ export function makePublishFilter(
   };
 }
 
+/** Select the managed release representative without changing local semver resolution. */
+export function getManagedPackage(graph: FynpoDepGraph, name: string): FynpoPackageInfo | undefined {
+  return graph?.packages.byName[name]?.find((pkg) => pkg.managed !== false);
+}
+
 /**
  * match versionLocks config to packages and generate the
  * mapping of locked packages.

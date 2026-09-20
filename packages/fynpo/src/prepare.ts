@@ -96,15 +96,12 @@ export class Prepare {
     this._graph = graph;
     //
     // prepare matches CHANGELOG.md entries against package names, so it wants one package
-    // per name. `byName` holds an array per name, since a monorepo may carry the same name
-    // at several paths; take the first, which is what `graph.getPackageByName` does and what
-    // the changelog/version path has always done (FJM-25).
+    // per name. Use the same managed representative as the changelog/version path, since
+    // the graph may also contain higher-version unmanaged copies of that name.
     //
     const byName = _.get(graph, "packages.byName", {});
     this._packages = _.pickBy(
-      _.mapValues(byName, (infos: any) =>
-        (infos as any[]).find((pkg) => pkg.managed !== false)
-      ),
+      _.mapValues(byName, (_infos, name) => utils.getManagedPackage(graph, name)),
       Boolean
     );
     const byPath = _.get(graph, "packages.byPath", {});

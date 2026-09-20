@@ -6,7 +6,7 @@ import { logger } from "../logger.ts";
 
 const findVersion = (name, updateType, collated) => {
   const types = ["patch", "minor", "major"];
-  const pkg = collated.opts.graph.getPackageByName(name);
+  const pkg = utils.getManagedPackage(collated.opts.graph, name);
   const pkgJson = _.get(pkg, "pkgJson", {});
   collated.packages[name] = collated.packages[name] || {};
 
@@ -179,6 +179,9 @@ export const determinePackageVersions = (collated) => {
     }
     logger.info("version locks:", pkgName, verLocks);
     for (const lockPkgName of _.without(verLocks, pkgName)) {
+      if (!utils.getManagedPackage(opts.graph, lockPkgName)) {
+        continue;
+      }
       if (
         !indirectBumps.includes(lockPkgName) &&
         !indirectLockBumps.includes(lockPkgName) &&

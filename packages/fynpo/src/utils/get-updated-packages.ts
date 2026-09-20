@@ -12,6 +12,7 @@ import {
   makePublishFilter,
   makeForeignRepoDetector,
   expandSelection,
+  getManagedPackage,
 } from "../utils.ts";
 
 const ifTagExists = (opts) => {
@@ -125,11 +126,15 @@ const resolveSince = (opts): { sha: string; commitCount: string } | undefined =>
 };
 
 const addDependents = (name, changed, graph: FynpoDepGraph, canPublish) => {
-  const pkg = graph.getPackageByName(name);
+  const pkg = getManagedPackage(graph, name);
   const dependentsByPath = graph.depMapByPath[pkg.path].dependentsByPath;
 
   Object.keys(dependentsByPath).forEach((path) => {
-    const dep = graph.packages.byPath[path].name;
+    const dependent = graph.packages.byPath[path];
+    const dep = dependent.name;
+    if (dependent !== getManagedPackage(graph, dep)) {
+      return;
+    }
     // a dependent that can't be published must not be pulled back into the
     // changed set just because something it depends on changed
     if (!canPublish(dep)) {
@@ -315,7 +320,7 @@ export const getUpdatedPackages = (graph: FynpoDepGraph, opts) => {
     };
 
     const isChanged = (name) => {
-      const pkg = packages[name][0];
+      const pkg = getManagedPackage(graph, name);
 
       const args = ["diff", "--name-only", `${latestTag}...HEAD`];
       // `pkg.path` is repo-relative, so it has to be resolved against the repo before being

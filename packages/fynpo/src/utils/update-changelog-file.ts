@@ -3,7 +3,7 @@ import Path from "path";
 import Fs from "fs";
 import semver from "semver";
 import * as _ from "lodash-es";
-import { makePublishFilter } from "../utils.ts";
+import { getManagedPackage, makePublishFilter } from "../utils.ts";
 import { createRequire } from "node:module";
 
 const xrequire = createRequire(import.meta.url);
@@ -69,9 +69,8 @@ export const updateChangelog = (collated) => {
 
   const publishFilter = makePublishFilter(opts.fynpoRc);
   const canPublish = (name: string): boolean => {
-    const info = opts.graph?.getPackageByName?.(name);
     // no graph to resolve against - leave the decision to the upstream filter
-    return !info || publishFilter(info);
+    return !opts.graph || publishFilter(getManagedPackage(opts.graph, name));
   };
 
   const emitPackageMsg = (p, packages) => {
