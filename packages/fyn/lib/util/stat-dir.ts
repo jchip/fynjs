@@ -1,12 +1,13 @@
 
 import Fs from "./file-ops";
 import Path from "path";
-import { minimatch as mm } from "minimatch";
+import { Minimatch } from "minimatch";
 import { filterScanDir, type ExtrasData } from "filter-scan-dir";
 import type { Stats } from "fs";
 
 async function _scanFileStats(dir: string, ignores: string[], baseDir: string = "") {
-  const ignore = (fullPath: string) => ignores.find(pattern => mm(fullPath, pattern, { dot: true }));
+  const patterns = ignores.map(pattern => new Minimatch(pattern, { dot: true }));
+  const ignore = (fullPath: string) => patterns.find(pattern => pattern.match(fullPath));
 
   let latestMtimeMs = 0;
   let latestFile = "";
