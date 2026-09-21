@@ -42,6 +42,7 @@ console.log(await filterScanDir({ cwd: "test" }));
 | Option | Purpose |
 | --- | --- |
 | `ignoreDirs` | Skip exact directory basenames at every depth. Accepts a string or array. |
+| `gitignore` | Caller-supplied parser for repository and nested `.gitignore` rules. Disabled when omitted. |
 | `prefilter` | Reject entries before `lstat`. Requires `fullStat: true`. |
 | `filterExt` | Include only matching extensions. |
 | `ignoreExt` | Exclude matching extensions. |
@@ -70,10 +71,30 @@ const files = await filterScanDir({
 Return `false` to reject an entry. Rejecting a directory skips its entire subtree.
 `prefilter` with `fullStat: false` throws before scanning, regardless of `rethrowError`.
 
-The order is `ignoreDirs`, `prefilter`, extension filters, `lstat`, then `filter` or `filterDir`.
+The order is `ignoreDirs`, `.gitignore` rules, `prefilter`, extension filters, `lstat`, then `filter` or `filterDir`.
 Extension filters apply only to non-directory entries.
 Early rejections avoid `lstat`, so rejected entries cannot report `lstat` errors.
 `ignoreDirs` matches names, not paths or glob patterns. Symlinks are never followed.
+
+Supply `gitignore: contents => ignore().add(contents)` with the caller's own `ignore` package
+to read `.gitignore` files from the nearest ancestor repository
+(a `.git` directory or file) through the scan root, then from each visited directory.
+Without an ancestor repository, rules start at the scan root. Patterns keep their directory
+scope, including anchored paths, directory-only patterns and negations. Ignored directories
+are pruned before reading their metadata or children. An explicitly requested scan root
+inside an ignored tree starts a fresh rule scope at the ignored ancestor, so its own files
+and rules can still be scanned. `cwd` plus `prefix` determines that scan root.
+
+This option works in sync and async scans with either `fullStat` mode. It reads rules anew
+for each scan and follows the normal `rethrowError` setting for rule-file read errors.
+It applies ignore patterns to all entries, including tracked files; it does not consult the
+Git index, `.git/info/exclude`, or global Git excludes. `.git` is not automatically excluded;
+use `ignoreDirs: ".git"` when needed. Default scans do not read ignore files.
+
+The scanner has no parser dependency. Any parser returning a `GitignoreMatcher` can be used:
+its `test(path)` method receives a POSIX path relative to that rule file, with a trailing `/`
+for directories, and returns `{ ignored: boolean, unignored: boolean }`. Both values are
+false when no rule matches; `unignored: true` explicitly overrides an ancestor's match.
 
 # Performance
 

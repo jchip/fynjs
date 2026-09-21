@@ -3,6 +3,8 @@ import Fs, { Dirent, Stats } from "fs";
 import Path from "path";
 import Util from "util";
 import { direntCmp, join2 } from "./util.js";
+import { GitignoreRules, type GitignoreParser } from "./gitignore.js";
+export type { GitignoreMatcher, GitignoreParser } from "./gitignore.js";
 
 /**
  * type of the 3rd argument for the filter callback
@@ -112,6 +114,8 @@ export type Options<FullStat extends boolean = boolean> = {
   filterDir?: FilterCallback<FullStat extends false ? Dirent : Stats>;
   /** directory basenames to skip at every depth, before reading metadata or children */
   ignoreDirs?: string | string[];
+  /** parse ancestor repository and nested .gitignore rules; disabled when omitted */
+  gitignore?: GitignoreParser;
   /**
    * synchronous entry filter before lstat; returning false also prunes directories.
    * Requires fullStat to be true (the default). Throws when fullStat is false.
@@ -282,9 +286,15 @@ function processFile(options, extras) {
 }
 
 // Reject entries before allocating callback extras or requesting full metadata.
-function acceptEntry(options: InternalOpts, entry: Dirent, path: string): boolean {
+function acceptEntry(
+  options: InternalOpts,
+  entry: Dirent,
+  path: string,
+  gitignore?: GitignoreRules,
+): boolean {
   const isDirectory = entry.isDirectory();
   if (isDirectory && options._ignoreDirs.has(entry.name)) return false;
+  if (gitignore?.ignores(Path.resolve(options.dir, path, entry.name), isDirectory)) return false;
   if (options.prefilter && !options.prefilter(entry.name, path, entry)) return false;
   if (isDirectory) return true;
 
@@ -325,10 +335,13 @@ function getResult(options: InternalOpts): GroupingResult | string[] {
  * @param level
  * @returns
  */
-function walkSync(path: string, options: InternalOpts, level = 0) {
+function walkSync(path: string, options: InternalOpts, level = 0, parentRules?: GitignoreRules) {
   try {
     // Use Path.join to normalize the directory path once at entry
     const dir = Path.join(options.dir, path);
+    const gitignore = options.gitignore
+      ? GitignoreRules.loadSync(Path.resolve(dir), options.gitignore, parentRules)
+      : undefined;
     let files: (string | Dirent)[] = Fs.readdirSync(dir, options.readdirOpts);
 
     if (options.sortFiles) {
@@ -348,7 +361,7 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
     // process files first
     for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
-      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path)) continue;
+      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path, gitignore)) continue;
       let extras: ExtrasData;
 
       if (options.fullStat) {
@@ -385,7 +398,7 @@ function walkSync(path: string, options: InternalOpts, level = 0) {
           break;
         }
         if (!flags.skip && level < options.maxLevel) {
-          walkSync(extras.dirFile, options, level + 1);
+          walkSync(extras.dirFile, options, level + 1, gitignore);
         }
       }
     }
@@ -423,7 +436,7 @@ function releaseDirectory(options: InternalOpts) {
  * @param level
  * @returns
  */
-async function walk(path: string, options: InternalOpts, level = 0) {
+async function walk(path: string, options: InternalOpts, level = 0, parentRules?: GitignoreRules) {
   let promises = [];
   let hasSlot = false;
   try {
@@ -439,6 +452,9 @@ async function walk(path: string, options: InternalOpts, level = 0) {
 
     // Use Path.join to normalize the directory path once at entry
     const dir = Path.join(options.dir, path);
+    const gitignore = options.gitignore
+      ? await GitignoreRules.load(Path.resolve(dir), options.gitignore, parentRules)
+      : undefined;
     let files: (string | Dirent)[] = await asyncReaddir(dir, options.readdirOpts);
 
     if (options.sortFiles) {
@@ -458,7 +474,7 @@ async function walk(path: string, options: InternalOpts, level = 0) {
     // process files first
     for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
-      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path)) continue;
+      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path, gitignore)) continue;
       let extras;
 
       if (options.fullStat) {
@@ -502,7 +518,7 @@ async function walk(path: string, options: InternalOpts, level = 0) {
           break;
         }
         if (!flags.skip && level < options.maxLevel) {
-          const walkP = walk(extras.dirFile, options, level + 1);
+          const walkP = walk(extras.dirFile, options, level + 1, gitignore);
           if (options.concurrency > 1) {
             promises.push(walkP);
             // Bound eager child walks as well as active directory operations.
@@ -608,6 +624,7 @@ function makeOptions(opts: string | ScanOptions): InternalOpts {
   );
 
   opts2._earlyFilter =
+    !!opts2.gitignore ||
     !!opts2.prefilter ||
     opts2._ignoreDirs.size > 0 ||
     opts2.ignoreExt.length > 0 ||
