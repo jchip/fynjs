@@ -424,13 +424,46 @@ describe("nested package discovery", () => {
     );
     const graph = new FynpoDepGraph({
       cwd: tmpDir,
-      packages: { include: ["packages/*", pattern] },
+      packages: { include: [pattern] },
     });
     await graph.resolve();
 
     expect(graph.autoSearched).toBe(true);
     expect(Object.keys(graph.packages.byName).sort()).toEqual(["child", "host", "sibling"]);
     expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: true });
+    expect(graph.getPackageByName("host")).toMatchObject({ managed: true, nested: false });
+    expect(graph.depMapByPath["packages/host/examples/child"].localDepsByPath).toHaveProperty(
+      "packages/sibling"
+    );
+  });
+
+  it.each([
+    { label: "boolean", packages: { autoSearch: true, include: ["packages/*/examples/*"] } },
+    { label: "object", packages: { autoSearch: { enable: true }, include: ["packages/*/examples/*"] } },
+    { label: "legacy array", packages: ["packages/*/examples/*"] },
+  ])("keeps automatic roots with only nested includes in $label config", async ({ packages }) => {
+    const graph = new FynpoDepGraph({ cwd: tmpDir, packages });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["child", "host", "sibling"]);
+    expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: true });
+  });
+
+  it("keeps automatic roots when no include matches", async () => {
+    const graph = new FynpoDepGraph({ cwd: tmpDir, packages: { include: ["missing/*"] } });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["host", "sibling"]);
+  });
+
+  it("discovers only explicit includes when auto-search is off", async () => {
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: { autoSearch: false, include: ["packages/host/examples/*"] },
+    });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName)).toEqual(["child"]);
   });
 
   it("keeps excludes effective for explicitly included nested packages", async () => {

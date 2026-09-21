@@ -34,9 +34,15 @@ Its `autoSearched` flag records whether packages were discovered by walking the 
 rather than explicit scan patterns. Auto-search is enabled by default and stops at package
 directories, so nested demos and test fixtures are not discovered automatically.
 
-Explicit `packages.include` paths (or entries in the legacy `packages` array) can cross these
-boundaries. For example, include `dev-tools/create-fynapp/examples/*` to manage those examples
-while keeping automatic discovery bounded elsewhere. Excludes still apply.
+With auto-search enabled, `packages.include` adds explicit paths without filtering out
+automatically discovered packages. These paths can cross package boundaries. For example,
+include only `dev-tools/create-fynapp/examples/*` to manage those examples alongside the
+ordinary packages auto-search finds. Excludes still apply to all packages.
+
+With `packages.autoSearch: false`, `include` supplies the exclusive scan patterns instead,
+defaulting to `packages/*` when empty. The legacy `packages` array supplies both additive
+includes and the publish allow list; its discovery scope can therefore widen. To preserve a
+restricted discovery set, use object-form excludes or disable auto-search explicitly.
 
 Set `packages.autoSearch.stopOnPackageJsonFound: false` to continue below package directories.
 With this opt-in, nested packages remain in the local dependency graph, but carry

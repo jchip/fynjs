@@ -232,7 +232,10 @@ describe("fynpo prepare", () => {
     const nestedGraph = privateNested
       ? new FynpoDepGraph({
           cwd: dir,
-          packages: ["packages/*", "packages/managed/examples/*"],
+          packages: {
+            autoSearch: true,
+            include: ["packages/managed/examples/*"],
+          },
         })
       : {
           packages: {
@@ -244,6 +247,7 @@ describe("fynpo prepare", () => {
     try {
       if (nestedGraph instanceof FynpoDepGraph) {
         await nestedGraph.resolve();
+        expect(nestedGraph.packages.byPath[managedPath]).toMatchObject({ managed: true });
         expect(nestedGraph.packages.byPath[nestedPath]).toMatchObject({
           managed: true,
           nested: true,

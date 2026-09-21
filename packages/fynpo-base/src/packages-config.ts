@@ -12,7 +12,7 @@
 
 /** auto-search settings, after defaults are applied */
 export type AutoSearchConfig = {
-  /** search the whole repo for package.json when no explicit `include` patterns are given */
+  /** search the whole repo for package.json, independently of explicit `include` patterns */
   enable: boolean;
   /** when true, auto-search skips gitignored paths. Does NOT affect the publish veto. */
   respectGitignore: boolean;
@@ -23,7 +23,7 @@ export type AutoSearchConfig = {
 /** the `packages` config, after defaults are applied */
 export type PackagesConfig = {
   autoSearch: AutoSearchConfig;
-  /** explicit discovery patterns. Empty means "not specified" */
+  /** adds to auto-search; defines the scan paths when auto-search is disabled */
   include: string[];
   /** applies to every package, auto-searched or explicitly matched */
   exclude: string[];
@@ -81,8 +81,8 @@ const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
  *
  * Accepts both shapes:
  *
- * - **array** - the historical form. Treated as `publishInclude`, with auto-search on and
- *   `respectGitignore` off. It no longer narrows discovery.
+ * - **array** - the historical form. Treated as additive `include` and `publishInclude`,
+ *   with auto-search on and `respectGitignore` off. It no longer narrows discovery.
  * - **object** - `{ autoSearch, include, exclude, publishInclude, publishExclude }`.
  *
  * Defaults: `autoSearch` on, `respectGitignore` off, stop at package.json. With auto-search
@@ -96,8 +96,7 @@ export function resolvePackagesConfig(packages?: unknown): PackagesConfig {
     const list = toList(packages);
     return {
       autoSearch: { enable: true, respectGitignore: false, stopOnPackageJsonFound: true },
-      // both sets: the array narrows what fynpo manages AND what it may publish, which keeps
-      // the historical shape behavior-preserving
+      // Array paths add to discovery and retain their existing publish allow list.
       include: list,
       exclude: [],
       publishInclude: list.map(asPathRef),
@@ -166,9 +165,9 @@ export function outOfScopePackages(scopes: unknown, names: string[]): string[] {
  * Decide how to scan for packages.
  *
  * `include` does NOT turn auto-search off - auto-search is on by default and stays on, so it
- * still decides *how the tree is walked*. `include` then filters what the walk found, via
- * {@link includeFilter}. Only with auto-search off does `include` become the scan patterns
- * themselves, falling back to `packages/*`.
+ * still decides *how the tree is walked*. `include` adds explicit paths below package
+ * boundaries. Only with auto-search off does `include` restrict the scan paths,
+ * falling back to `packages/*`.
  *
  * @param config - resolved packages config
  * @returns `null` to auto-search the whole repo, otherwise the patterns to scan
@@ -182,9 +181,8 @@ export function scanPatterns(config: PackagesConfig): string[] | null {
 }
 
 /**
- * The patterns a discovered package must match to be kept.
- *
- * Empty means keep everything the scan found.
+ * Explicit inclusion patterns, used to add nested paths and promote them to managed packages.
+ * With auto-search disabled, they restrict discovery to the declared paths.
  *
  * @param config - resolved packages config
  * @returns patterns to match a package path against

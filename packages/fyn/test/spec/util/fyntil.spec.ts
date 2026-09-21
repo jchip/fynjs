@@ -64,6 +64,7 @@ describe("fyntil", function () {
       const { graph } = await fyntil.loadFynpo(cwd);
       expect(graph.autoSearched).toBe(true);
       expect(Object.keys(graph.packages.byPath).sort()).toEqual([
+        "other/outside",
         "packages/excluded",
         "packages/host"
       ]);
@@ -82,6 +83,7 @@ describe("fyntil", function () {
       const { graph } = await fyntil.loadFynpo(cwd);
       expect(graph.autoSearched).toBe(true);
       expect(Object.keys(graph.packages.byPath).sort()).toEqual([
+        "other/outside",
         "packages/excluded",
         "packages/host",
         "packages/host/example"

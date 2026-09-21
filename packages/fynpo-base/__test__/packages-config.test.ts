@@ -23,14 +23,13 @@ describe("resolvePackagesConfig", () => {
     expect(c.publishExclude).toEqual([]);
   });
 
-  // FPO-17: the historical shape. It now feeds BOTH sets, so an existing config keeps the
-  // package set it had while also gaining a publish allow list.
+  // The historical array supplies additive discovery paths and a publish allow list.
   it("treats an array as both include and publishInclude, auto-search still on", () => {
     const c = resolvePackagesConfig(["packages/*", "_w/*"]);
 
     // entries are coerced to path refs for publish - see the dedicated describe below for why
     expect(c.publishInclude).toEqual(["path:packages/*", "path:_w/*"]);
-    // and kept raw for discovery filtering, so the array form preserves the old package set
+    // Keep raw paths for discovery and path refs for publishing.
     expect(c.include).toEqual(["packages/*", "_w/*"]);
     expect(c.autoSearch).toEqual({
       enable: true,
@@ -124,16 +123,14 @@ describe("scanPatterns / includeFilter", () => {
     expect(includeFilter(c)).toEqual([]);
   });
 
-  // FPO-17: include does NOT switch auto-search off. The scan still walks the whole repo;
-  // include filters what it found. That is what makes the array form a no-op for discovery.
-  it("still auto-searches with an include, and filters on it", () => {
+  it("still auto-searches with supplemental include patterns", () => {
     const c = resolvePackagesConfig({ include: ["libs/*"] });
 
     expect(scanPatterns(c)).toBeNull();
     expect(includeFilter(c)).toEqual(["libs/*"]);
   });
 
-  it("array form scans everything but filters to its own patterns", () => {
+  it("array form auto-searches and supplies supplemental include patterns", () => {
     const c = resolvePackagesConfig(["packages/*", "_w/*"]);
 
     expect(scanPatterns(c)).toBeNull();

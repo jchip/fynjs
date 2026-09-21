@@ -529,7 +529,7 @@ export class FynpoDepGraph {
     const pkgConfig = resolvePackagesConfig(this._options.packages);
     const resolved = isEmpty(patterns) ? scanPatterns(pkgConfig) : patterns;
 
-    // `include` filters discoveries and opens explicit paths below package boundaries.
+    // `include` adds paths below package boundaries without narrowing automatic discovery.
     const includeMms = (isEmpty(patterns) ? includeFilter(pkgConfig) : []).map(
       (p) => new Minimatch(p)
     );
@@ -629,10 +629,9 @@ export class FynpoDepGraph {
       const nested = autoSearch && packageRoots.some((root) => isPathInside(pkgPath, root));
       const included = isIncluded(pkgPath);
 
-      // Preserve include's historical filtering for ordinary package roots. Descendants of
-      // an accepted package stay in the graph so fyn can resolve them locally and prepare can
-      // maintain their dependency ranges.
-      if (!included && !nested) {
+      // Auto-search keeps ordinary roots and adds explicit nested includes. Without
+      // auto-search, only declared paths participate.
+      if (!autoSearch && !included) {
         continue;
       }
 

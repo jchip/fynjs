@@ -196,9 +196,14 @@ describe("updatePackageVersions", () => {
     });
     const graph = new FynpoDepGraph({
       cwd,
-      packages: ["packages/*", "packages/pkg-a/examples/*"],
+      packages: {
+        autoSearch: true,
+        include: ["packages/pkg-a/examples/*"],
+      },
     });
     await graph.resolve();
+    expect(graph.getPackageByName("pkg-a")).toMatchObject({ managed: true });
+    expect(graph.getPackageByName("pkg-b")).toMatchObject({ managed: true });
     expect(graph.getPackageByName("nested")).toMatchObject({ managed: true, nested: true });
 
     const result = await updatePackageVersions({

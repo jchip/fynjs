@@ -186,7 +186,7 @@ describe("implicitDiscoveryNotice (FPO-48)", () => {
 
     expect(notice.level).toBe("info");
     expect(notice.message).not.toContain(`No "packages"`);
-    expect(notice.message).toContain("filters discovery but leaves auto-search on");
+    expect(notice.message).toContain('"packages" include paths add to discovered packages');
     expect(notice.message).toContain("found 32");
   });
 

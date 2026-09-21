@@ -54,7 +54,7 @@ directories and explicit config excludes. Gitignore enters in two narrower place
     "stopOnPackageJsonFound": true
   },
 
-  // Filters discoveries and opens explicit paths below package boundaries.
+  // Adds explicit paths below package boundaries; ordinary auto-search results remain.
   // With autoSearch off, becomes the scan patterns instead.
   "include": ["packages/*", "_w/*"],
 
@@ -68,16 +68,17 @@ directories and explicit config excludes. Gitignore enters in two narrower place
 }
 ```
 
-### `include` filters, it does not replace the scan
+### `include` adds to auto-search
 
-This is the rule that makes everything else work. `autoSearch` is on by default and **stays
-on** when `include` is set. Auto-search decides *how the tree is walked*, allowing explicit
-include paths through package boundaries; `include` then filters what the walk found.
+`autoSearch` is on by default and **stays on** when `include` is set. Ordinary packages remain
+discoverable regardless of `include`. Includes add explicit paths through package boundaries
+and promote directly matched nested packages to managed membership. A repo can therefore list
+only `dev-tools/create-fynapp/examples/*` and still discover its ordinary packages automatically.
 
 | | auto-search on (default) | auto-search off |
 |---|---|---|
-| **scan** | search for `package.json`, stopping at package directories by default | scan `include` patterns, or `packages/*` |
-| **filter** | keep only paths matching `include` (empty = keep all), then drop `exclude` | drop `exclude` |
+| **scan** | search for `package.json`, stopping at package directories by default, plus explicit `include` paths | scan `include` patterns, or `packages/*` |
+| **filter** | drop `exclude` from all discovered packages | drop `exclude` |
 
 Aliasing `include` onto the old `patterns` option would break this — `patterns` scans by glob
 directly and never auto-searches, so the alias would silently turn auto-search off for every
@@ -89,8 +90,8 @@ config is carried through and resolved by the discovery code.
 | Config | Discovery | Publish |
 |---|---|---|
 | absent | auto-search, everything | everything discovered |
-| `["packages/*"]` (array) | auto-search, filtered to `packages/*` | only `path:packages/*` |
-| `{ include: ["libs/*"] }` | auto-search, filtered to `libs/*` | everything discovered |
+| `["packages/*"]` (array) | auto-search plus explicit `packages/*` matches | only `path:packages/*` |
+| `{ include: ["libs/*"] }` | auto-search plus explicit `libs/*` matches | everything discovered |
 | `{ autoSearch: false }` | scan `packages/*` | everything discovered |
 | `{ autoSearch: false, include: ["libs/*"] }` | scan `libs/*` | everything discovered |
 
@@ -124,14 +125,13 @@ matched package managed.
 ### The array shape
 
 `packages` as an array is the historical shape and feeds **both** sets: `include` (raw, for
-discovery filtering) and `publishInclude` (for the publish allow list).
+additive discovery) and `publishInclude` (for the publish allow list).
 
-Feeding both is what makes it a no-op for existing repos. Had the array only meant
-`publishInclude`, auto-search would have run unfiltered and every repo whose array was
-narrowing discovery would have silently widened — this repo goes from 32 packages to 35,
-picking up `docusaurus` and two `testing/monorepo-test/packages/*` fixtures and pulling them
-into bootstrap. Verified: with the array feeding both, discovery is byte-identical to the old
-pattern scan at 32 packages, and no config needs to change.
+The publish allow list remains unchanged, but additive includes can widen discovery compared
+with the old filtering behavior. Repos that relied on their array to restrict discovery must
+use the object form with `exclude`, or set `autoSearch: false` and retain their paths in
+`include`. Keep the corresponding `publishInclude` entries when converting to preserve the
+publish allow list.
 
 `publishInclude` entries are coerced to `path:` refs; `include` entries are left raw. That
 asymmetry is deliberate. Array entries have always been path globs (`"packages/*"`), and
@@ -168,9 +168,9 @@ support `name:`, `id:`, `path:`, `/regex/` and globs.
 
 ## The object form requires an upgraded fyn/fynpo
 
-No migration is required — the array form is a no-op, so existing configs keep working
-unchanged. But **adopting the object form requires upgrading fyn and fynpo first.** This is
-accepted: a user who opts into the new shape is expected to upgrade.
+**Adopting the object form requires upgrading fyn and fynpo first.** The array form is still
+accepted, but repos that need its former restricted discovery scope must migrate as described
+above.
 
 The published `fyn` bundles its own older copy of `@fynpo/base`, which does
 `patterns = config.packages` and then `patterns.map(...)`. Handing it an object kills every fyn
@@ -193,27 +193,29 @@ The ordering constraint is therefore: **publish fyn and fynpo carrying the new `
 before adopting the object form in a repo config.** Old tooling and new config are not
 compatible, and nothing can be done about the already-published copies.
 
-This repo stays on the array form for now:
+For example, an existing array config:
 
 ```jsonc
 "packages": ["packages/*", "_w/*"]
 ```
 
-which needs no change — discovery is unchanged at 32 packages, and the array now also supplies
-the publish allow list. An optional later move to the object form would be:
+can keep auto-search enabled while excluding unwanted directories and preserving its publish
+allow list:
 
 ```jsonc
 "packages": {
   "include": ["packages/*", "_w/*"],
-  "exclude": ["docusaurus", "testing/**"]
+  "exclude": ["docusaurus", "testing/**"],
+  "publishInclude": ["path:packages/*", "path:_w/*"]
 }
 ```
 
-where `exclude` documents the two directories that must stay out if anyone ever drops
-`include` and lets auto-search run unfiltered.
+Here `exclude` limits automatic discovery; `include` does not filter it. To retain exclusive
+pattern discovery instead, set `autoSearch: false` with the same includes and publish allow
+list.
 
 Publish jurisdiction is now: everything discovered, minus the gitignored `_w/*` clones.
-Verified directly against the real `fynpo.json`:
+The original publish-filter inspection against `fynpo.json` produced:
 
 ```
 PUBLISHABLE  fyn          ->  packages/fyn
