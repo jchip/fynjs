@@ -48,7 +48,7 @@ function scanFileStats(dir: string, options: { ignores?: string | string[]; more
     `**/?(node_modules|_fyn|.vscode|.DS_Store|coverage|.nyc_output|.fynpo|.git|.github|.gitignore)`,
     "**/*.?(log|md)"
   ]
-    .concat(options.ignores || `**/?(docs|docusaurus|packages|tmp|.etmp|samples|dist)`)
+    .concat(options.ignores || `**/?(docs|docusaurus|packages|tmp|.temp|.etmp|samples|dist)`)
     .concat(options.moreIgnores)
     .filter(x => x);
 
