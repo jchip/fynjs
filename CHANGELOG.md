@@ -1,3 +1,28 @@
+# 9/21/2026
+
+## Packages
+
+-   `@fynpo/base@2.1.6` `(2.1.5 => 2.1.6)`
+-   `fyn@3.1.7` `(3.1.6 => 3.1.7)`
+-   `fynpo@3.1.7` `(3.1.6 => 3.1.7)`
+-   `fynpo-cli@3.1.7` `(3.1.6 => 3.1.7)`
+
+## Commits
+
+-   `packages/fynpo-base`
+
+    -   FPO-78: resolve dependency edges for every discovered package path [commit](https://github.com/jchip/fynjs/commit/f7aaaa1c3d3be86eb92dcf6b885a9a8a3e670225)
+    -   fynpo: discover and manage nested packages [commit](https://github.com/jchip/fynjs/commit/bd308822a3bd2a0e7119111db7ecf8354d7a0f14)
+
+-   `packages/fynpo`
+
+    -   FPO-77: select managed package representatives throughout releases [commit](https://github.com/jchip/fynjs/commit/1ef987c76aa97d9f2c1e2859a4f7d22a88c55be6)
+    -   fynpo: discover and manage nested packages [commit](https://github.com/jchip/fynjs/commit/bd308822a3bd2a0e7119111db7ecf8354d7a0f14)
+
+-   `notes`
+
+    -   fynpo: discover and manage nested packages [commit](https://github.com/jchip/fynjs/commit/bd308822a3bd2a0e7119111db7ecf8354d7a0f14)
+
 # 9/19/2026
 
 ## Packages
