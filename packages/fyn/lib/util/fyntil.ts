@@ -159,7 +159,7 @@ const fyntil: Fyntil = {
       }
       const graph = new FynpoDepGraph({
         cwd: fcm.topDir,
-        patterns: config.packages,
+        packages: config.packages,
         noFynLocal: config.noFynLocal,
       });
       await graph.resolve();

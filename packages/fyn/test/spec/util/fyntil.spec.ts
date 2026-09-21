@@ -7,6 +7,71 @@ import { verify } from "run-verify";
 import fyntil from "../../../lib/util/fyntil";
 
 describe("fyntil", function () {
+  describe("loadFynpo", () => {
+    let cwd: string;
+    let savedFynpoDir: string | undefined;
+
+    beforeEach(async () => {
+      await fs.mkdir(Path.join(process.cwd(), ".temp"), { recursive: true });
+      cwd = await fs.mkdtemp(Path.join(process.cwd(), ".temp/fyntil-discovery-"));
+      savedFynpoDir = process.env.FYN_FYNPO_DIR;
+      fyntil.resetFynpo();
+      for (const [dir, name] of [
+        ["packages/host", "host"],
+        ["packages/host/example", "example"],
+        ["packages/excluded", "excluded"],
+        ["other/outside", "outside"]
+      ]) {
+        await fs.mkdir(Path.join(cwd, dir), { recursive: true });
+        await fs.writeFile(
+          Path.join(cwd, dir, "package.json"),
+          JSON.stringify({ name, version: "1.0.0" })
+        );
+      }
+    });
+
+    afterEach(async () => {
+      fyntil.resetFynpo();
+      if (savedFynpoDir === undefined) {
+        delete process.env.FYN_FYNPO_DIR;
+      } else {
+        process.env.FYN_FYNPO_DIR = savedFynpoDir;
+      }
+      await fs.rm(cwd, { recursive: true, force: true });
+    });
+
+    it("honors object discovery settings and exclusions", async () => {
+      await fs.writeFile(
+        Path.join(cwd, "fynpo.json"),
+        JSON.stringify({
+          packages: {
+            autoSearch: false,
+            include: ["packages/*"],
+            exclude: ["packages/excluded"]
+          }
+        })
+      );
+      const { graph } = await fyntil.loadFynpo(cwd);
+      expect(graph.autoSearched).toBe(false);
+      expect(Object.keys(graph.packages.byPath)).toEqual(["packages/host"]);
+    });
+
+    it("retains nested packages as unmanaged when using the legacy array", async () => {
+      await fs.writeFile(
+        Path.join(cwd, "fynpo.json"),
+        JSON.stringify({ packages: ["packages/*"] })
+      );
+      const { graph } = await fyntil.loadFynpo(cwd);
+      expect(graph.autoSearched).toBe(true);
+      expect(Object.keys(graph.packages.byPath).sort()).toEqual([
+        "packages/excluded",
+        "packages/host",
+        "packages/host/example"
+      ]);
+      expect(graph.packages.byPath["packages/host/example"].managed).toBe(false);
+    });
+  });
+
   describe("missPipe", () => {
     it("returns a native promise that waits for the destination to finish", async () => {
       const chunks: string[] = [];
