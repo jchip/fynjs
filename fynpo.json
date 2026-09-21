@@ -1,5 +1,9 @@
 {
-  "packages": ["packages/*", "_w/*"],
+  "packages": {
+    "autoSearch": false,
+    "include": ["packages/*", "_w/*"],
+    "publishInclude": ["path:packages/*", "path:_w/*"]
+  },
   "fyn": {
     "options": {
       "allowScripts": {

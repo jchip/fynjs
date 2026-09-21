@@ -37,8 +37,8 @@
     "url": "https://github.com/jchip/fynjs/issues"
   },
   "devDependencies": {
-    "fyn": "^3.1.6",
-    "fynpo": "^3.1.6",
+    "fyn": "^3.1.7",
+    "fynpo": "^3.1.7",
     "run-verify": "^2.1.5",
     "semver": "^7.8.5"
   },
@@ -47,8 +47,8 @@
   },
   "fyn": {
     "devDependencies": {
-      "fyn": false,
-      "fynpo": false
+      "fyn": "./packages/fyn",
+      "fynpo": "./packages/fynpo"
     }
   }
 }
