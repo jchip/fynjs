@@ -16,6 +16,12 @@ cd <your-project>
 fyn
 ```
 
+On an existing install, fyn checks file modification times before reinstalling. This scan
+prunes directories and files matched by repository and nested `.gitignore` rules, alongside
+its built-in exclusions. The rules apply even to tracked source files; manifests, lockfiles,
+install configuration and changes to the consulted ignore rules are still checked.
+Use `fyn --fi` to bypass this freshness check and force installation.
+
 Want to add a package on your local disk as a dependency to your project? Do this:
 
 ```sh
