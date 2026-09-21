@@ -154,7 +154,13 @@ describe("updatePackageVersions", () => {
       publishConfig: { tag: "next" },
     });
 
-    const graph = new FynpoDepGraph({ cwd, packages: ["packages/*"] });
+    const graph = new FynpoDepGraph({
+      cwd,
+      packages: {
+        autoSearch: { stopOnPackageJsonFound: false },
+        include: ["packages/*"],
+      },
+    });
     await graph.resolve();
     expect(graph.getPackageByName("nested").managed).toBe(false);
 

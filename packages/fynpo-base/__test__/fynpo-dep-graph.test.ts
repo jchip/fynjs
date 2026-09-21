@@ -333,8 +333,11 @@ describe("nested package discovery", () => {
     Fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("retains implicitly nested packages as unmanaged graph members", async () => {
-    const graph = new FynpoDepGraph({ cwd: tmpDir, packages: ["packages/*"] });
+  it("retains implicitly nested packages as unmanaged graph members when recursion is enabled", async () => {
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: { autoSearch: { stopOnPackageJsonFound: false }, include: ["packages/*"] },
+    });
     await graph.resolve();
 
     expect(Object.keys(graph.packages.byName).sort()).toEqual(["child", "host", "sibling"]);
@@ -349,7 +352,10 @@ describe("nested package discovery", () => {
   it("promotes a nested package directly matched by include", async () => {
     const graph = new FynpoDepGraph({
       cwd: tmpDir,
-      packages: ["packages/*", "packages/*/examples/*"],
+      packages: {
+        autoSearch: { stopOnPackageJsonFound: false },
+        include: ["packages/*", "packages/*/examples/*"],
+      },
     });
     await graph.resolve();
 
@@ -362,7 +368,10 @@ describe("nested package discovery", () => {
       path.join(tmpDir, "packages/child/package.json"),
       JSON.stringify({ name: "child", version: "1.0.0", dependencies: { host: "^1.0.0" } })
     );
-    const graph = new FynpoDepGraph({ cwd: tmpDir, packages: ["packages/*"] });
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: { autoSearch: { stopOnPackageJsonFound: false }, include: ["packages/*"] },
+    });
     await graph.resolve();
 
     expect(graph.packages.byId["child@1.0.0"].path).toEqual("packages/child");
@@ -378,7 +387,20 @@ describe("nested package discovery", () => {
     }
   });
 
-  it("restores package-boundary pruning when stopOnPackageJsonFound is true", async () => {
+  it.each([
+    { label: "omitted packages", packages: undefined },
+    { label: "legacy arrays", packages: ["packages/*"] },
+    { label: "boolean autoSearch", packages: { autoSearch: true, include: ["packages/*"] } },
+    { label: "object autoSearch", packages: { autoSearch: {}, include: ["packages/*"] } },
+  ])("stops at package boundaries by default with $label", async ({ packages }) => {
+    const graph = new FynpoDepGraph({ cwd: tmpDir, packages });
+    await graph.resolve();
+
+    expect(graph.autoSearched).toBe(true);
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["host", "sibling"]);
+  });
+
+  it("stops at package boundaries when stopOnPackageJsonFound is explicitly true", async () => {
     const graph = new FynpoDepGraph({
       cwd: tmpDir,
       packages: { autoSearch: { stopOnPackageJsonFound: true }, include: ["packages/*"] },

@@ -40,18 +40,18 @@ monorepo, so it should skip gitignored paths." That is wrong, and the distinctio
   link. Skipping it by default would break the workflow the directory exists for.
 - What is wrong is that discovering it also made it publishable.
 
-So gitignored paths are **discovered by default**. Auto-search is bounded by explicit config
-excludes. Gitignore enters in two narrower places, below.
+So gitignored paths are **eligible for discovery by default**. Auto-search is bounded by package
+directories and explicit config excludes. Gitignore enters in two narrower places, below.
 
 ## The config
 
 ```jsonc
 "packages": {
-  // Walk the whole repo looking for package.json. Default: on. Stays on when include is set.
+  // Search for package.json, stopping at package directories. Default: on. Stays on with include.
   "autoSearch": true | {
     "enable": true,
     "respectGitignore": false,
-    "stopOnPackageJsonFound": false
+    "stopOnPackageJsonFound": true
   },
 
   // Filters what the scan found. With autoSearch off, becomes the scan patterns instead.
@@ -75,7 +75,7 @@ filters what the walk found. Two separate stages:
 
 | | auto-search on (default) | auto-search off |
 |---|---|---|
-| **scan** | walk the whole repo for `package.json` | scan `include` patterns, or `packages/*` |
+| **scan** | search for `package.json`, stopping at package directories by default | scan `include` patterns, or `packages/*` |
 | **filter** | keep only paths matching `include` (empty = keep all), then drop `exclude` | drop `exclude` |
 
 Aliasing `include` onto the old `patterns` option would break this — `patterns` scans by glob
@@ -94,13 +94,14 @@ config is carried through and resolved by the discovery code.
 | `{ autoSearch: false, include: ["libs/*"] }` | scan `libs/*` | everything discovered |
 
 - `autoSearch` defaults **on**; `respectGitignore` defaults **off**.
-- Auto-search continues below directories containing `package.json` by default.
-- `stopOnPackageJsonFound: true` restores the old first-package-boundary traversal.
+- Auto-search stops at directories containing `package.json` by default.
+- `stopOnPackageJsonFound: false` explicitly enables discovery below package directories.
 - With auto-search off and no `include`, `include` falls back to `["packages/*"]`.
 
 ### Nested packages
 
-Recursive auto-search separates graph membership from command participation:
+With `packages.autoSearch.stopOnPackageJsonFound: false`, recursive auto-search separates
+graph membership from command participation:
 
 - A package found below another accepted package remains in the graph for local dependency
   resolution.
@@ -237,10 +238,11 @@ packages in a repo laid out any other way.
 
 ## Bootstrap scope — decided
 
-**Bootstrap spans the discovery set** (unchanged from today). `_w/xsh`, implicitly nested
-packages, and any other discovered-but-unmanaged package keep getting their own dependencies
-installed, which is what local-link workflows rely on. Jurisdiction narrows lifecycle runs and
-release commands; prepare still performs dependency-range maintenance across the discovery set.
+**Bootstrap spans the discovery set** (unchanged from today). `_w/xsh`, nested packages found
+when recursive discovery is explicitly enabled, and any other discovered-but-unmanaged package
+get their own dependencies installed, which is what local-link workflows rely on. Jurisdiction
+narrows lifecycle runs and release commands; prepare still performs dependency-range maintenance
+across the discovery set.
 
 A dedicated bootstrap-scope config is worth considering if a repo ever wants bootstrap narrowed
 independently of discovery. Deliberately not built yet — no evidence two repos want different

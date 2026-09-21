@@ -56,10 +56,28 @@ describe("fyntil", function () {
       expect(Object.keys(graph.packages.byPath)).toEqual(["packages/host"]);
     });
 
-    it("retains nested packages as unmanaged when using the legacy array", async () => {
+    it("stops at package boundaries when using the legacy array", async () => {
       await fs.writeFile(
         Path.join(cwd, "fynpo.json"),
         JSON.stringify({ packages: ["packages/*"] })
+      );
+      const { graph } = await fyntil.loadFynpo(cwd);
+      expect(graph.autoSearched).toBe(true);
+      expect(Object.keys(graph.packages.byPath).sort()).toEqual([
+        "packages/excluded",
+        "packages/host"
+      ]);
+    });
+
+    it("retains nested packages as unmanaged when explicitly continuing discovery", async () => {
+      await fs.writeFile(
+        Path.join(cwd, "fynpo.json"),
+        JSON.stringify({
+          packages: {
+            autoSearch: { stopOnPackageJsonFound: false },
+            include: ["packages/*"]
+          }
+        })
       );
       const { graph } = await fyntil.loadFynpo(cwd);
       expect(graph.autoSearched).toBe(true);

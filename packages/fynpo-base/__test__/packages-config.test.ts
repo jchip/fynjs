@@ -15,7 +15,7 @@ describe("resolvePackagesConfig", () => {
     expect(c.autoSearch).toEqual({
       enable: true,
       respectGitignore: false,
-      stopOnPackageJsonFound: false,
+      stopOnPackageJsonFound: true,
     });
     expect(c.include).toEqual([]);
     expect(c.exclude).toEqual([]);
@@ -35,7 +35,7 @@ describe("resolvePackagesConfig", () => {
     expect(c.autoSearch).toEqual({
       enable: true,
       respectGitignore: false,
-      stopOnPackageJsonFound: false,
+      stopOnPackageJsonFound: true,
     });
   });
 
@@ -70,14 +70,27 @@ describe("resolvePackagesConfig", () => {
     );
   });
 
-  it("recurses below packages by default and accepts the legacy-boundary flag", () => {
-    expect(resolvePackagesConfig({ autoSearch: true }).autoSearch.stopOnPackageJsonFound).toBe(
-      false
-    );
+  it.each([
+    undefined,
+    {},
+    { autoSearch: true },
+    { autoSearch: false },
+    { autoSearch: {} },
+    { autoSearch: { enable: true } },
+    ["packages/*"],
+  ].map((packages) => [packages]))("defaults to package boundaries for %j", (packages) => {
+    expect(resolvePackagesConfig(packages).autoSearch.stopOnPackageJsonFound).toBe(true);
+  });
+
+  it("accepts explicit package-boundary and recursive settings", () => {
     expect(
       resolvePackagesConfig({ autoSearch: { stopOnPackageJsonFound: true } }).autoSearch
         .stopOnPackageJsonFound
     ).toBe(true);
+    expect(
+      resolvePackagesConfig({ autoSearch: { stopOnPackageJsonFound: false } }).autoSearch
+        .stopOnPackageJsonFound
+    ).toBe(false);
   });
 
   it("falls back to packages/* when auto-search is off and no include is given", () => {

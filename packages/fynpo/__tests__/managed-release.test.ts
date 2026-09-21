@@ -73,7 +73,13 @@ describe("releasing a managed package with a higher-version unmanaged duplicate"
     git(cwd, "add", "-A");
     git(cwd, "commit", "-q", "-m", "fix: update widget");
 
-    graph = new FynpoDepGraph({ cwd, packages: ["packages/*"] });
+    graph = new FynpoDepGraph({
+      cwd,
+      packages: {
+        autoSearch: { stopOnPackageJsonFound: false },
+        include: ["packages/*"],
+      },
+    });
     await graph.resolve();
   });
 
@@ -111,7 +117,13 @@ describe("releasing a managed package with a higher-version unmanaged duplicate"
       version: "9.0.0",
       dependencies: { widget: "^1.0.0" },
     });
-    graph = new FynpoDepGraph({ cwd, packages: ["packages/*"] });
+    graph = new FynpoDepGraph({
+      cwd,
+      packages: {
+        autoSearch: { stopOnPackageJsonFound: false },
+        include: ["packages/*"],
+      },
+    });
     await graph.resolve();
 
     const changed = getUpdatedPackages(graph, {
@@ -158,7 +170,13 @@ describe("releasing a managed package with a higher-version unmanaged duplicate"
       name: "locked-fixture",
       version: "1.0.0",
     });
-    graph = new FynpoDepGraph({ cwd, packages: ["packages/*"] });
+    graph = new FynpoDepGraph({
+      cwd,
+      packages: {
+        autoSearch: { stopOnPackageJsonFound: false },
+        include: ["packages/*"],
+      },
+    });
     await graph.resolve();
     const input = makeCollated();
     input.opts.versionLockMap = { consumer: ["consumer", "locked-fixture"] };

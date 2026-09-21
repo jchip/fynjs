@@ -2,7 +2,6 @@
   "packages": {
     "autoSearch": true,
     "include": ["packages/*", "_w/*"],
-    "exclude": ["packages/*/test/**", "packages/*/__test__/**"],
     "publishInclude": ["path:packages/*", "path:_w/*"]
   },
   "fyn": {

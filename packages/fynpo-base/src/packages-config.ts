@@ -16,7 +16,7 @@ export type AutoSearchConfig = {
   enable: boolean;
   /** when true, auto-search skips gitignored paths. Does NOT affect the publish veto. */
   respectGitignore: boolean;
-  /** when true, do not search below a directory containing package.json */
+  /** stop below package.json by default; false opts into recursive discovery */
   stopOnPackageJsonFound: boolean;
 };
 
@@ -60,7 +60,7 @@ const asPathRef = (ref: string): string =>
 
 const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
   if (val === false) {
-    return { enable: false, respectGitignore: false, stopOnPackageJsonFound: false };
+    return { enable: false, respectGitignore: false, stopOnPackageJsonFound: true };
   }
 
   if (val && typeof val === "object") {
@@ -68,12 +68,12 @@ const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
     return {
       enable: obj.enable !== false,
       respectGitignore: obj.respectGitignore === true,
-      stopOnPackageJsonFound: obj.stopOnPackageJsonFound === true,
+      stopOnPackageJsonFound: obj.stopOnPackageJsonFound !== false,
     };
   }
 
   // undefined, true, or anything else -> on
-  return { enable: true, respectGitignore: false, stopOnPackageJsonFound: false };
+  return { enable: true, respectGitignore: false, stopOnPackageJsonFound: true };
 };
 
 /**
@@ -85,8 +85,8 @@ const resolveAutoSearch = (val: unknown): AutoSearchConfig => {
  *   `respectGitignore` off. It no longer narrows discovery.
  * - **object** - `{ autoSearch, include, exclude, publishInclude, publishExclude }`.
  *
- * Defaults: `autoSearch` on, `respectGitignore` off. With auto-search off and no `include`,
- * `include` falls back to `["packages/*"]`.
+ * Defaults: `autoSearch` on, `respectGitignore` off, stop at package.json. With auto-search
+ * off and no `include`, `include` falls back to `["packages/*"]`.
  *
  * @param packages - the raw `packages` value from fynpo.json / fynpo.config.js
  * @returns the resolved config, every field populated
@@ -95,7 +95,7 @@ export function resolvePackagesConfig(packages?: unknown): PackagesConfig {
   if (Array.isArray(packages)) {
     const list = toList(packages);
     return {
-      autoSearch: { enable: true, respectGitignore: false, stopOnPackageJsonFound: false },
+      autoSearch: { enable: true, respectGitignore: false, stopOnPackageJsonFound: true },
       // both sets: the array narrows what fynpo manages AND what it may publish, which keeps
       // the historical shape behavior-preserving
       include: list,
