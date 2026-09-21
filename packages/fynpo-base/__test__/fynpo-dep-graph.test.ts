@@ -410,6 +410,58 @@ describe("nested package discovery", () => {
     expect(Object.keys(graph.packages.byName).sort()).toEqual(["host", "sibling"]);
   });
 
+  it.each([
+    "packages/host/examples/*",
+    "packages/*/examples/*",
+    "packages/host/examples/child",
+  ])("discovers explicit nested include %s with default boundaries", async (pattern) => {
+    Fs.mkdirSync(path.join(tmpDir, "packages/host/fixtures"));
+    Fs.writeFileSync(path.join(tmpDir, "packages/host/fixtures/package.json"), "invalid JSON");
+    Fs.mkdirSync(path.join(tmpDir, "packages/host/examples/child/fixture"));
+    Fs.writeFileSync(
+      path.join(tmpDir, "packages/host/examples/child/fixture/package.json"),
+      "invalid JSON"
+    );
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: { include: ["packages/*", pattern] },
+    });
+    await graph.resolve();
+
+    expect(graph.autoSearched).toBe(true);
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["child", "host", "sibling"]);
+    expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: true });
+  });
+
+  it("keeps excludes effective for explicitly included nested packages", async () => {
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: {
+        include: ["packages/*", "packages/host/examples/*"],
+        exclude: ["packages/host/examples/*"],
+      },
+    });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(["host", "sibling"]);
+  });
+
+  it.each([true, false])("respects gitignore opt-in %s for explicit nested includes", async (respectGitignore) => {
+    Fs.writeFileSync(path.join(tmpDir, ".gitignore"), "packages/host/examples/\n");
+    const graph = new FynpoDepGraph({
+      cwd: tmpDir,
+      packages: {
+        autoSearch: { stopOnPackageJsonFound: true, respectGitignore },
+        include: ["packages/*", "packages/host/examples/*"],
+      },
+    });
+    await graph.resolve();
+
+    expect(Object.keys(graph.packages.byName).sort()).toEqual(
+      respectGitignore ? ["host", "sibling"] : ["child", "host", "sibling"]
+    );
+  });
+
   it("keeps explicit-pattern discoveries managed when auto-search is disabled", async () => {
     const graph = new FynpoDepGraph({
       cwd: tmpDir,

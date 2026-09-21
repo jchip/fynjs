@@ -34,6 +34,10 @@ Its `autoSearched` flag records whether packages were discovered by walking the 
 rather than explicit scan patterns. Auto-search is enabled by default and stops at package
 directories, so nested demos and test fixtures are not discovered automatically.
 
+Explicit `packages.include` paths (or entries in the legacy `packages` array) can cross these
+boundaries. For example, include `dev-tools/create-fynapp/examples/*` to manage those examples
+while keeping automatic discovery bounded elsewhere. Excludes still apply.
+
 Set `packages.autoSearch.stopOnPackageJsonFound: false` to continue below package directories.
 With this opt-in, nested packages remain in the local dependency graph, but carry
 `managed: false` unless their path directly matches `packages.include`; fynpo skips those

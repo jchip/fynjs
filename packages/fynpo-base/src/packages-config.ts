@@ -16,7 +16,7 @@ export type AutoSearchConfig = {
   enable: boolean;
   /** when true, auto-search skips gitignored paths. Does NOT affect the publish veto. */
   respectGitignore: boolean;
-  /** stop below package.json by default; false opts into recursive discovery */
+  /** stop below package.json except explicit includes; false opts into recursive discovery */
   stopOnPackageJsonFound: boolean;
 };
 

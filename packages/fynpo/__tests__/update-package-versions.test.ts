@@ -184,4 +184,35 @@ describe("updatePackageVersions", () => {
     const result = await updatePackageVersions({ versions: {}, tags: [], collated });
     expect(result).toBeUndefined();
   });
+
+  it("rewrites explicitly included private examples with default discovery boundaries", async () => {
+    const nestedPath = "packages/pkg-a/examples/nested";
+    const nestedFile = path.join(cwd, nestedPath, "package.json");
+    writeJson(nestedFile, {
+      name: "nested",
+      version: "0.1.0",
+      private: true,
+      devDependencies: { "pkg-a": "^1.0.0", "pkg-b": "~1.0.0" },
+    });
+    const graph = new FynpoDepGraph({
+      cwd,
+      packages: ["packages/*", "packages/pkg-a/examples/*"],
+    });
+    await graph.resolve();
+    expect(graph.getPackageByName("nested")).toMatchObject({ managed: true, nested: true });
+
+    const result = await updatePackageVersions({
+      versions: { "pkg-a": "2.0.0", "pkg-b": "1.1.0" },
+      tags: [],
+      collated: { opts: { graph, cwd, fynpoRc: {} } },
+    });
+
+    expect(readJson(nestedFile)).toEqual({
+      name: "nested",
+      version: "0.1.0",
+      private: true,
+      devDependencies: { "pkg-a": "^2.0.0", "pkg-b": "~1.1.0" },
+    });
+    expect(result.packages).toContain(path.join(nestedPath, "package.json"));
+  });
 });

@@ -529,7 +529,7 @@ export class FynpoDepGraph {
     const pkgConfig = resolvePackagesConfig(this._options.packages);
     const resolved = isEmpty(patterns) ? scanPatterns(pkgConfig) : patterns;
 
-    // `include` filters what the scan found - it does not replace the scan (FPO-17)
+    // `include` filters discoveries and opens explicit paths below package boundaries.
     const includeMms = (isEmpty(patterns) ? includeFilter(pkgConfig) : []).map(
       (p) => new Minimatch(p)
     );
@@ -554,13 +554,14 @@ export class FynpoDepGraph {
       groups = groupMM(mms, {});
     }
 
-    const foundInAutoSearch = (path: string) => {
+    const foundInAutoSearch = (path: string, partial = false) => {
       if (!autoSearch || !pkgConfig.autoSearch.stopOnPackageJsonFound) {
         return false;
       }
       for (const e of autoSearchFound) {
         if (isPathInside(path, e)) {
-          return true;
+          // Directory prefixes may lead to an explicit include; package files must match fully.
+          return !includeMms.some((m) => m.match(posixify(path), partial));
         }
       }
       return false;
@@ -581,8 +582,7 @@ export class FynpoDepGraph {
               //
               // We ignore dir with package.json if:
               // 1. It's a fynpo root dir, ie: `fynpo.json` exists
-              // 2. In auto search, if we've found a package.json in a dir, we don't want to
-              //    search any other package.json further under that dir
+              // 2. Auto-search stops below package.json unless include explicitly matches.
               //
               return false;
             }
@@ -593,7 +593,7 @@ export class FynpoDepGraph {
         },
         filterDir: (dir: string, path: string, extras: any) => {
           if (dir !== "node_modules") {
-            if (foundInAutoSearch(path) || isExcluded(path) || skipForAutoSearch(path)) {
+            if (foundInAutoSearch(extras.dirFile, true) || isExcluded(path) || skipForAutoSearch(path)) {
               return false;
             }
             return prefix === "." && groups[prefix] === null

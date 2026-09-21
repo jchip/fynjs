@@ -54,7 +54,8 @@ directories and explicit config excludes. Gitignore enters in two narrower place
     "stopOnPackageJsonFound": true
   },
 
-  // Filters what the scan found. With autoSearch off, becomes the scan patterns instead.
+  // Filters discoveries and opens explicit paths below package boundaries.
+  // With autoSearch off, becomes the scan patterns instead.
   "include": ["packages/*", "_w/*"],
 
   // Applies to every package, auto-searched or explicitly matched.
@@ -70,8 +71,8 @@ directories and explicit config excludes. Gitignore enters in two narrower place
 ### `include` filters, it does not replace the scan
 
 This is the rule that makes everything else work. `autoSearch` is on by default and **stays
-on** when `include` is set. Auto-search decides *how the tree is walked*; `include` then
-filters what the walk found. Two separate stages:
+on** when `include` is set. Auto-search decides *how the tree is walked*, allowing explicit
+include paths through package boundaries; `include` then filters what the walk found.
 
 | | auto-search on (default) | auto-search off |
 |---|---|---|
@@ -95,6 +96,8 @@ config is carried through and resolved by the discovery code.
 
 - `autoSearch` defaults **on**; `respectGitignore` defaults **off**.
 - Auto-search stops at directories containing `package.json` by default.
+- Explicit `include` matches can cross package boundaries; only paths leading to those
+  matches are traversed below a package, and matched nested packages are managed.
 - `stopOnPackageJsonFound: false` explicitly enables discovery below package directories.
 - With auto-search off and no `include`, `include` falls back to `["packages/*"]`.
 

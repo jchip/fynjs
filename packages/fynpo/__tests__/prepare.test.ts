@@ -3,6 +3,7 @@ import { Prepare, prepareOutcome } from "../src/prepare";
 import path from "path";
 import fs from "fs";
 import shell from "shelljs";
+import { FynpoDepGraph } from "@fynpo/base";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo prepare", () => {
@@ -192,7 +193,10 @@ describe("fynpo prepare", () => {
     expect(prepare._versions).toStrictEqual({ pkg1: "3.0.1", pkg2: "2.0.0" });
   });
 
-  it("rewrites an unmanaged nested dependent without releasing it", async () => {
+  it.each([
+    { label: "an unmanaged nested dependent", privateNested: false },
+    { label: "an explicitly included private nested dependent", privateNested: true },
+  ])("rewrites $label without releasing it", async ({ privateNested }) => {
     const managedPath = "packages/managed";
     const nestedPath = "packages/managed/examples/nested";
     const managedFile = path.join(dir, managedPath, "package.json");
@@ -201,6 +205,7 @@ describe("fynpo prepare", () => {
     const nestedJson = {
       name: "nested",
       version: "0.1.0",
+      private: privateNested,
       dependencies: { managed: "^1.0.0" },
       publishConfig: { tag: "next" },
     };
@@ -224,14 +229,27 @@ describe("fynpo prepare", () => {
       managed: false,
       pkgJson: nestedJson,
     };
-    const nestedGraph = {
-      packages: {
-        byName: { managed: [managed], nested: [nested] },
-        byPath: { [managedPath]: managed, [nestedPath]: nested },
-      },
-    };
+    const nestedGraph = privateNested
+      ? new FynpoDepGraph({
+          cwd: dir,
+          packages: ["packages/*", "packages/managed/examples/*"],
+        })
+      : {
+          packages: {
+            byName: { managed: [managed], nested: [nested] },
+            byPath: { [managedPath]: managed, [nestedPath]: nested },
+          },
+        };
 
     try {
+      if (nestedGraph instanceof FynpoDepGraph) {
+        await nestedGraph.resolve();
+        expect(nestedGraph.packages.byPath[nestedPath]).toMatchObject({
+          managed: true,
+          nested: true,
+          private: true,
+        });
+      }
       const nestedPrepare: any = new Prepare({ cwd: dir, commit: false }, nestedGraph);
       nestedPrepare._versions = { managed: "2.0.0", nested: "9.0.0" };
       nestedPrepare.readChangelog = () => undefined;
