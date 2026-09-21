@@ -153,10 +153,10 @@ $pkg:
   $: local
   _: ../ts-resolve
 '@fynpo/base':
- _latest: 2.1.5-fynlocal_h
+ _latest: 2.1.6-fynlocal_h
  _:
-  ../fynpo-base: 2.1.5-fynlocal_h
- 2.1.5-fynlocal_h:
+  ../fynpo-base: 2.1.6-fynlocal_h
+ 2.1.6-fynlocal_h:
   top: 1
   $: local
   _: ../fynpo-base

@@ -1,7 +1,7 @@
 {
   "name": "fyn",
   "type": "module",
-  "version": "3.1.6",
+  "version": "3.1.7",
   "description": "fyn is a node.js package manager, and supports fynpo -- a zero setup monorepo tool",
   "main": "./bin/index.mjs",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fyn",
@@ -88,7 +88,7 @@
     "Walmart GTP.js Team and Contributors"
   ],
   "dependencies": {
-    "@fynpo/base": "^2.1.5",
+    "@fynpo/base": "^2.1.6",
     "@jchip/error": "^2.1.4",
     "@npmcli/arborist": "^10.0.2",
     "@npmcli/run-script": "^11.0.0",
