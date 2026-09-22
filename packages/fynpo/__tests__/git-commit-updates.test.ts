@@ -89,6 +89,31 @@ describe("checkGitClean", () => {
 });
 
 describe("commitAndTagUpdates", () => {
+  it("skips git add, commit, and tags when a repeated prepare has no changed files", () => {
+    const { sh } = makeSh();
+    return verify({ timeout: 2000 })
+      .step(() => commitAndTagUpdates(baseCtx(sh), {
+        packages: [],
+        tags: ["fyn@3.1.9", "fynpo@3.1.9", "fynpo-cli@3.1.9"],
+      }))
+      .step(result => {
+        expect(result).toEqual({ committed: false, tagged: 0 });
+        expect(sh).not.toHaveBeenCalled();
+      });
+  });
+
+  it("still commits an explicitly supplied changelog without package changes", () => {
+    const { sh, calls } = makeSh();
+    return verify({ timeout: 2000 })
+      .step(() => commitAndTagUpdates(baseCtx(sh, { changeLogFile: "CHANGELOG.md" }), {
+        packages: [], tags: [],
+      }))
+      .step(result => {
+        expect(result.committed).toBe(true);
+        expect(calls[0]).toBe("git add -- 'CHANGELOG.md'");
+      });
+  });
+
   beforeEach(() => vi.clearAllMocks());
 
   it("skips everything when commit is disabled", async () => {

@@ -59,6 +59,10 @@ export const commitAndTagUpdates = async (
   }
 
   const files = ctx.changeLogFile ? [ctx.changeLogFile, ...packages] : packages;
+  if (files.length === 0) {
+    logger.info("No release files changed; skipping commit and tags.");
+    return didNothing;
+  }
   const staged = files.map((x) => `'${x.replace(/'/g, "'\\''")}'`).join(" ");
 
   const addOutput = await ctx.sh(`git add -- ${staged}`);
