@@ -210,4 +210,57 @@ describe("commitAndTagUpdates", () => {
     expect(calls.filter((c) => c.startsWith("git tag"))).toHaveLength(0);
     expect(result).toEqual({ committed: true, tagged: 0 });
   });
+
+  it("amends without changing its message and moves only matching lightweight tags", () => {
+    const sh = vi.fn(async (command: string) => ({
+      stdout: command.startsWith("git for-each-ref")
+        ? "a@1.0.0 old-head\nunrelated old-head\nb@2.0.0 other-head\nannotated@1.0.0 tag-object\n"
+        : command === "git rev-parse HEAD" ? "new-head\n" : "",
+    }));
+    return verify({ timeout: 2000 })
+      .step(() => commitAndTagUpdates(baseCtx(sh, { amend: "old-head", tag: false }), {
+        packages: ["generated.txt"],
+        tags: ["a@1.0.0", "b@2.0.0", "annotated@1.0.0", "missing@3.0.0"],
+      }))
+      .step(result => {
+        expect(result).toEqual({ committed: true, tagged: 0, amended: true });
+        expect(sh).toHaveBeenCalledWith("git commit -n --amend --no-edit");
+        expect(sh.mock.calls.map(([command]) => command).filter(command => command.startsWith("git update-ref")))
+          .toEqual(["git update-ref 'refs/tags/a@1.0.0' new-head old-head"]);
+        expect(sh.mock.calls.some(([command]) => command.startsWith("git tag "))).toBe(false);
+      });
+  });
+
+  it("creates missing requested tags when amending with tagging enabled", () => {
+    const sh = vi.fn(async (command: string) => ({
+      stdout: command.startsWith("git for-each-ref") ? "a@1.0.0 old-head\n"
+        : command === "git rev-parse HEAD" ? "new-head\n" : "",
+    }));
+    return verify({ timeout: 2000 })
+      .step(() => commitAndTagUpdates(baseCtx(sh, { amend: "old-head" }), {
+        packages: ["generated.txt"], tags: ["a@1.0.0", "b@2.0.0"],
+      }))
+      .step(result => {
+        expect(result).toEqual({ committed: true, tagged: 1, amended: true });
+        expect(sh).toHaveBeenCalledWith("git update-ref 'refs/tags/a@1.0.0' new-head old-head");
+        expect(sh.mock.calls.map(([command]) => command).filter(command => command.startsWith("git tag ")))
+          .toEqual(["git tag b@2.0.0"]);
+      });
+  });
+
+  it.each(["other-head", "annotated-tag-object"])(
+    "refuses a requested tag at %s before staging or amending",
+    objectId => {
+      const sh = vi.fn(async (_command: string) => ({ stdout: `a@1.0.0 ${objectId}\n` }));
+      return verify({ timeout: 2000 })
+        .expectErrorHas("a@1.0.0")
+        .step(() => commitAndTagUpdates(baseCtx(sh, { amend: "old-head" }), {
+          packages: ["generated.txt"], tags: ["a@1.0.0"],
+        }))
+        .step(() => {
+          expect(sh).toHaveBeenCalledTimes(1);
+          expect(sh.mock.calls[0][0]).toContain("git for-each-ref");
+        });
+    },
+  );
 });

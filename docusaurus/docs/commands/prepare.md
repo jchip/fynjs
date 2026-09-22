@@ -44,6 +44,8 @@ The hook runs after bootstrap, so it sees the updated dependencies and lockfiles
 
 Run bootstrap and `fynpo:prepare` hooks even when no versions or dependent ranges need updating. A clean working tree is still required. Resulting file changes are committed normally; if no files change, no commit or tags are created.
 
+If HEAD is a `[Publish]` or `[Publish][Selective]` commit listing the same package versions, and no known remote branch contains it, prepare amends that commit when the rerun changes files. It preserves the release message and moves matching lightweight package-version tags from the old commit to the amended commit, even if the rerun omits `--tag`. Unrelated tags remain unchanged. Otherwise, prepare creates a new commit. The remote check uses local remote-tracking refs; fetch first if those refs may be stale.
+
 ```
 fynpo prepare --force
 ```
@@ -63,5 +65,4 @@ If `--tag` option is passed, `prepare` will create individual tags for each chan
 ```
 fynpo prepare --tag
 ```
-
 

@@ -17,6 +17,7 @@ import { Run } from "./run.ts";
 import {
   checkGitClean as gitIsClean,
   commitAndTagUpdates as commitAndTag,
+  ReleaseTagConflictError,
 } from "./utils/git-commit-updates.ts";
 import {
   printHeader,
@@ -52,7 +53,8 @@ export const prepareOutcome = (
   versionCount: number,
   fileCount: number,
   committed: boolean,
-  tagged: number
+  tagged: number,
+  amended = false
 ): { level: "success" | "warning"; message: string } => {
   const count = (n: number, what: string) => `${n} ${what}${n === 1 ? "" : "s"}`;
 
@@ -69,9 +71,12 @@ export const prepareOutcome = (
     return { level: "warning", message: `${updated} - not committed` };
   }
 
+  const action = amended ? "release commit amended" : "committed";
   return {
     level: "success",
-    message: tagged > 0 ? `${updated}, committed and ${count(tagged, "tag")} created` : `${updated} and committed`,
+    message: tagged > 0
+      ? `${updated}, ${action} and ${count(tagged, "tag")} ${amended ? "set" : "created"}`
+      : `${updated} and ${action}`,
   };
 };
 
@@ -154,6 +159,9 @@ export class Prepare {
   // no explicit Promise<> annotation: `Promise` here is aveazul's, and TypeScript requires the
   // global one as an async return type. Inference gives the right shape anyway.
   commitAndTagUpdates = async (packages) => {
+    const amend = this._options.commit && this._gitClean && packages.length
+      ? await this.getCommitToAmend()
+      : undefined;
     return commitAndTag(
       {
         sh: this._sh.bind(this),
@@ -161,10 +169,28 @@ export class Prepare {
         tag: this._options.tag === true,
         gitClean: this._gitClean,
         isSelective: utils.isSelectiveRelease(this._options),
+        amend,
       },
       { packages, tags: this._tags }
-    );
+    ).catch(err => {
+      if (err instanceof ReleaseTagConflictError) throw new PrepareError(err.message);
+      throw err;
+    });
   };
+
+  async getCommitToAmend() {
+    const { stdout } = await this._sh("git log -1 --format=%H%n%s%n%b");
+    const [hash, subject, ...body] = stdout.trimEnd().split("\n");
+    if (!["[Publish]", utils.selectivePublishSubject].includes(subject) || !this._tags.length) {
+      return undefined;
+    }
+    const entries = body.map(line => line.trim()).filter(Boolean).sort();
+    const expected = this._tags.map(tag => `- ${tag}`).sort();
+    if (!_.isEqual(entries, expected)) return undefined;
+
+    const remote = await this._sh("git for-each-ref --contains=HEAD --format='%(refname)' refs/remotes");
+    return remote.stdout.trim() ? undefined : hash;
+  }
 
   async bootstrapAndRunHooks() {
     // Release selection must not exclude dependents whose ranges were rewritten.
@@ -309,11 +335,11 @@ export class Prepare {
     await this.bootstrapAndRunHooks();
 
     const packageFiles = await this.getReleaseFiles();
-    const { committed, tagged } = packageFiles.length
+    const { committed, tagged, amended } = packageFiles.length
       ? await this.commitAndTagUpdates(packageFiles)
-      : { committed: false, tagged: 0 };
+      : { committed: false, tagged: 0, amended: false };
 
-    const outcome = prepareOutcome(updatedPackages.length, packageFiles.length, committed, tagged);
+    const outcome = prepareOutcome(updatedPackages.length, packageFiles.length, committed, tagged, amended);
     if (outcome.level === "success") {
       printSuccess(outcome.message);
     } else {

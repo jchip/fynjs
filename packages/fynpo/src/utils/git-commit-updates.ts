@@ -1,6 +1,8 @@
 import { logger } from "../logger.ts";
 import * as utils from "../utils.ts";
 
+export class ReleaseTagConflictError extends Error {}
+
 /** Runs a shell command in the command's cwd - each command class passes its own `_sh`. */
 export type ShellRunner = (command: string) => any;
 
@@ -14,6 +16,8 @@ export type CommitAndTagContext = {
   gitClean: boolean;
   /** whether --only narrowed the release, which changes the commit subject */
   isSelective: boolean;
+  /** Existing prepare commit to amend, after the caller matched its release metadata. */
+  amend?: string;
   /**
    * Staged ahead of the release file paths. `version` and `changelog` stage CHANGELOG.md
    * along with the packages; `prepare` supplies all files changed during preparation.
@@ -23,6 +27,7 @@ export type CommitAndTagContext = {
 
 export type CommitAndTagResult = {
   committed: boolean;
+  amended?: boolean;
   /** how many tags were actually created - 0 when --tag is off (FPO-49) */
   tagged: number;
 };
@@ -63,27 +68,53 @@ export const commitAndTagUpdates = async (
     logger.info("No release files changed; skipping commit and tags.");
     return didNothing;
   }
+  const existingTags = new Map<string, string>();
+  if (ctx.amend) {
+    const { stdout } = await ctx.sh(
+      "git for-each-ref --format='%(refname:strip=2) %(objectname)' refs/tags"
+    );
+    for (const line of stdout.trim().split("\n").filter(Boolean)) {
+      const [tag, objectId] = line.split(" ");
+      existingTags.set(tag, objectId);
+    }
+    if (ctx.tag) {
+      const conflict = tags.find(tag => existingTags.has(tag) && existingTags.get(tag) !== ctx.amend);
+      if (conflict) {
+        throw new ReleaseTagConflictError(`Cannot amend prepare: tag ${conflict} already points elsewhere.`);
+      }
+    }
+  }
   const staged = files.map((x) => `'${x.replace(/'/g, "'\\''")}'`).join(" ");
 
   const addOutput = await ctx.sh(`git add -- ${staged}`);
   logger.info("git add", addOutput);
 
   const commitOutput = await ctx.sh(
-    `git commit -n -m "${utils.makePublishCommitSubject(ctx.isSelective)}"` +
+    ctx.amend ? "git commit -n --amend --no-edit" :
+      `git commit -n -m "${utils.makePublishCommitSubject(ctx.isSelective)}"` +
       ` -m " - ${tags.join("\n - ")}"`
   );
   logger.info("git commit", commitOutput);
 
+  if (ctx.amend) {
+    const { stdout } = await ctx.sh("git rev-parse HEAD");
+    for (const tag of tags.filter(tag => existingTags.get(tag) === ctx.amend)) {
+      const ref = `refs/tags/${tag}`.replace(/'/g, "'\\''");
+      await ctx.sh(`git update-ref '${ref}' ${stdout.trim()} ${ctx.amend}`);
+    }
+  }
+  const result = { committed: true, tagged: 0, ...(ctx.amend ? { amended: true } : {}) };
   if (!ctx.tag) {
-    return { committed: true, tagged: 0 };
+    return result;
   }
 
   // sequential on purpose - git refuses concurrent index access
-  for (const tag of tags) {
+  for (const tag of tags.filter(tag => !existingTags.has(tag))) {
     logger.info("tagging", tag);
     const tagOut = await ctx.sh(`git tag ${tag}`);
     logger.info("tag", tag, "output", tagOut);
+    result.tagged++;
   }
 
-  return { committed: true, tagged: tags.length };
+  return result;
 };

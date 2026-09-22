@@ -286,6 +286,12 @@ describe("fynpo prepare", () => {
 });
 
 describe("prepareOutcome (FPO-49)", () => {
+  it("reports an amended release commit", () => {
+    expect(prepareOutcome(0, 1, true, 0, true).message).toBe(
+      "Updated 0 package versions across 1 file and release commit amended"
+    );
+  });
+
   it("does not claim a commit that was skipped", () => {
     // --no-commit and a dirty tree both land here, right after commitAndTagUpdates warned
     const outcome = prepareOutcome(3, 5, false, 0);

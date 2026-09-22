@@ -4,7 +4,7 @@ import Path from "path";
 import { execFileSync } from "node:child_process";
 import { FynpoDepGraph } from "@fynpo/base";
 import { verify } from "run-verify";
-import { Prepare } from "../src/prepare";
+import { Prepare, PrepareError } from "../src/prepare";
 import { Bootstrap } from "../src/bootstrap";
 import { Run } from "../src/run";
 
@@ -88,6 +88,100 @@ describe("prepare bootstrap and package hooks", () => {
     process.exitCode = originalExitCode;
     Fs.rmSync(cwd, { recursive: true, force: true });
   });
+
+  const makeForcedRerun = async (options = {}) => {
+    const graph = new FynpoDepGraph(prepare._options);
+    await graph.resolve();
+    const next = new Prepare({ ...prepare._options, force: true, tag: false, ...options }, graph);
+    next.readChangelog = () => {
+      next._versions = { a: "2.0.0" };
+      next._tags = ["a@2.0.0"];
+    };
+    vi.mocked(Run.prototype.runScript).mockImplementation(async () => {
+      write("packages/b/generated.txt", "regenerated");
+      return { stdout: "", stderr: "" };
+    });
+    return next;
+  };
+
+  it("amends the matching local release and moves its prepare tag when rerun output changes", () =>
+    verify({ timeout: 3000 })
+      .step(() => prepare.exec())
+      .step(async () => {
+        const before = git("rev-parse", "HEAD");
+        const parent = git("rev-parse", "HEAD^");
+        const message = git("log", "-1", "--format=%B");
+        git("tag", "unrelated");
+        const next = await makeForcedRerun({ only: undefined });
+        return { next, before, parent, message };
+      })
+      .keep.step(({ next }) => next.exec())
+      .step(({ before, parent, message }) => {
+        expect(git("rev-parse", "HEAD")).not.toBe(before);
+        expect(git("rev-parse", "HEAD^")).toBe(parent);
+        expect(git("log", "-1", "--format=%B")).toBe(message);
+        expect(git("show", "HEAD:packages/b/generated.txt")).toBe("regenerated");
+        expect(git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD")).toContain("packages/a/package.json");
+        expect(git("rev-parse", "a@2.0.0")).toBe(git("rev-parse", "HEAD"));
+        expect(git("rev-parse", "unrelated")).toBe(before);
+        expect(git("status", "--porcelain")).toBe("");
+      }));
+
+  it.each(["unrelated", "different version", "additional package", "known remote"])(
+    "creates a new commit when HEAD is %s",
+    (kind) => verify({ timeout: 3000 })
+      .step(() => prepare.exec())
+      .step(async () => {
+        if (kind === "known remote") git("update-ref", "refs/remotes/origin/main", "HEAD");
+        else {
+          const subject = kind === "unrelated" ? "Unrelated change" : "[Publish]";
+          const body = kind === "different version" ? " - a@2.0.1" : " - a@2.0.0\n - other@1.0.0";
+          git("commit", "--allow-empty", "-qm", subject, "-m", body);
+        }
+        return { next: await makeForcedRerun(), before: git("rev-parse", "HEAD") };
+      })
+      .keep.step(({ next }) => next.exec())
+      .step(({ before }) => {
+        expect(git("rev-parse", "HEAD^")).toBe(before);
+        expect(git("show", "HEAD:packages/b/generated.txt")).toBe("regenerated");
+        expect(git("status", "--porcelain")).toBe("");
+      }),
+  );
+
+  it("leaves the matching commit and tags alone with --no-commit", () =>
+    verify({ timeout: 3000 })
+      .step(() => prepare.exec())
+      .step(async () => ({
+        next: await makeForcedRerun({ commit: false }),
+        before: git("rev-parse", "HEAD"),
+      }))
+      .keep.step(({ next }) => next.exec())
+      .step(({ before }) => {
+        expect(git("rev-parse", "HEAD")).toBe(before);
+        expect(git("rev-parse", "a@2.0.0")).toBe(before);
+        expect(Fs.readFileSync(Path.join(cwd, "packages/b/generated.txt"), "utf8")).toBe("regenerated");
+      }));
+
+  it("reports conflicting prepare tags before staging or amending", () =>
+    verify({ timeout: 3000 })
+      .step(() => prepare.exec())
+      .step(async () => {
+        git("tag", "-f", "a@2.0.0", "HEAD^");
+        return {
+          next: await makeForcedRerun({ tag: true }),
+          before: git("rev-parse", "HEAD"),
+          tag: git("rev-parse", "a@2.0.0"),
+        };
+      })
+      .keep.step(({ next }) => verify({ timeout: 2000 })
+        .expectErrorHas("already points elsewhere")
+        .step(() => next.exec())
+        .step(error => expect(error).toBeInstanceOf(PrepareError)))
+      .step(({ before, tag }) => {
+        expect(git("rev-parse", "HEAD")).toBe(before);
+        expect(git("rev-parse", "a@2.0.0")).toBe(tag);
+        expect(git("diff", "--cached", "--name-only")).toBe("");
+      }));
 
   it("bootstraps updated versions, runs dependent hooks, then commits lockfiles and tracked output", () =>
     verify({ timeout: 3000 })
