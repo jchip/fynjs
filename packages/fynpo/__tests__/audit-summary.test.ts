@@ -15,6 +15,7 @@ import { FynpoDepGraph } from "@fynpo/base";
 
 import { Bootstrap } from "../src/bootstrap";
 import { logger } from "../src/logger";
+import { InstallDeps } from "../src/install-deps";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 /** chalk may or may not emit colors depending on the environment */
@@ -42,9 +43,11 @@ describe("Bootstrap.aggregateAuditResults (FPO-1)", () => {
     );
   };
 
-  const writeAudit = (name: string, report: unknown) => {
+  const writeAudit = (name: string, report: unknown, targetDir = "node_modules") => {
+    const auditDir = Path.join(dir, "packages", name, targetDir, ".f");
+    Fs.mkdirSync(auditDir, { recursive: true });
     Fs.writeFileSync(
-      Path.join(dir, "packages", name, ".fyn-audit.json"),
+      Path.join(auditDir, ".fyn-audit.json"),
       typeof report === "string" ? report : JSON.stringify(report)
     );
   };
@@ -72,6 +75,38 @@ describe("Bootstrap.aggregateAuditResults (FPO-1)", () => {
     await bootstrap.aggregateAuditResults();
 
     expect(logged()).toContain("No audit reports found from bootstrap");
+  });
+
+  it("ignores stale reports in package roots", async () => {
+    Fs.writeFileSync(
+      Path.join(dir, "packages", "pkg1", ".fyn-audit.json"),
+      JSON.stringify({ vulnerabilities: [vuln("critical")], metadata: { totalDependencies: 99 } })
+    );
+    writeAudit("pkg2", { vulnerabilities: [], metadata: { totalDependencies: 4 } });
+
+    await (await makeBootstrap()).aggregateAuditResults();
+
+    expect(logged()).toContain("audited 4 packages across 1 workspaces");
+    expect(logged()).toContain("No vulnerabilities found");
+  });
+
+  it("reads reports from each package's configured install directory", async () => {
+    Fs.writeFileSync(Path.join(dir, "packages", "pkg1", ".fynrc"), "targetDir=custom_modules\n");
+    writeAudit("pkg1", { vulnerabilities: [], metadata: { totalDependencies: 5 } }, "custom_modules");
+    writeAudit("pkg2", { vulnerabilities: [], metadata: { totalDependencies: 7 } });
+
+    await (await makeBootstrap()).aggregateAuditResults();
+
+    expect(logged()).toContain("audited 12 packages across 2 workspaces");
+  });
+
+  it("uses the install options when reading reports", async () => {
+    Fs.writeFileSync(Path.join(dir, "packages", "pkg1", ".fynrc"), "targetDir=custom_modules\n");
+    writeAudit("pkg1", { vulnerabilities: [], metadata: { totalDependencies: 5 } });
+
+    await (await makeBootstrap()).aggregateAuditResults(new InstallDeps(dir, ["--no-rcfile"]));
+
+    expect(logged()).toContain("audited 5 packages across 1 workspaces");
   });
 
   it("skips a missing report without warning - ENOENT is the normal case", async () => {

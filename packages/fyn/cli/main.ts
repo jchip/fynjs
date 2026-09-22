@@ -26,9 +26,10 @@ import myPkg from "./mypkg";
 import loadRc from "./load-rc";
 import defaultRc from "./default-rc";
 import fynTil from "../lib/util/fyntil";
-import { isFynpoConfigError, formatFynpoConfigError } from "@fynpo/base";
+import { FynpoConfigManager, isFynpoConfigError, formatFynpoConfigError } from "@fynpo/base";
 import { runInitPackage } from "init-package";
 import FynGlobal from "../lib/fyn-global";
+import Fyn from "../lib/fyn";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 
 /** Environment variable mapping entry */
@@ -196,6 +197,22 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
   if (allOpts.progress) logger.setItemType(allOpts.progress as string);
 
   return { opts: allOpts as FynCliOpts, rcData, _cliSource: meta.source, _fynpo: fynpo };
+};
+
+/** Resolve bootstrap's generated report without resolving the package graph or installing. */
+const getAuditFilePath = async (
+  cwd: string,
+  { rcfile = true }: { rcfile?: boolean } = {}
+): Promise<string> => {
+  cwd = Path.resolve(cwd);
+  const manager = new FynpoConfigManager({ cwd });
+  await manager.load();
+  const rc = loadRc(rcfile ? cwd : false, manager.topDir);
+  const fyn = new Fyn({
+    opts: { ...(rc.all || defaultRc), cwd },
+    _fynpo: false
+  });
+  return fyn.getFvDir(".fyn-audit.json");
 };
 
 // Build a FynGlobal using the same fully-merged options (root flags + command
@@ -1033,5 +1050,5 @@ const nodeGyp = (): void => {
   import("node-gyp/bin/node-gyp");
 };
 
-export { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir, reportFynpoLoadError };
-export default { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir, reportFynpoLoadError };
+export { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir, reportFynpoLoadError, getAuditFilePath };
+export default { run, fun, nodeGyp, getRunExitCode, pickEnvOptions, setLockfile, hardLinkDir, reportFynpoLoadError, getAuditFilePath };

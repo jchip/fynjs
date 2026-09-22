@@ -5,6 +5,7 @@ import * as _ from "lodash-es";
 import { logger } from "./logger.ts";
 import type { FynpoPackageInfo } from "@fynpo/base";
 import { getFynExecutable, startFynMetaMemoizer } from "./utils.ts";
+import { getAuditFilePath } from "fyn";
 
 export class InstallDeps {
   fynOptArgs: string[];
@@ -22,18 +23,31 @@ export class InstallDeps {
       logLevelOpts,
       `install`,
       `--sl`,
-      `--no-build-local`,
-      `--audit-file .fyn-audit.json`
+      `--no-build-local`
     );
+  }
+
+  async getAuditFilePath(pkgInfo: FynpoPackageInfo): Promise<string> {
+    return getAuditFilePath(Path.join(this.topDir, pkgInfo.path), {
+      rcfile: !this.fynOptArgs.includes("--no-rcfile"),
+    });
   }
 
   /**
    * Get the command to run fyn install
    * @returns
    */
-  async getInstallCommand() {
+  async getInstallCommand(pkgInfo: FynpoPackageInfo) {
+    const auditPath = await this.getAuditFilePath(pkgInfo);
+    const auditArg = process.platform === "win32"
+      ? `"${auditPath}"`
+      : `'${auditPath.replace(/'/g, "'\\''")}'`;
     const command = [process.argv[0], getFynExecutable()]
-      .concat(this.fynOptArgs, await startFynMetaMemoizer())
+      .concat(
+        this.fynOptArgs,
+        `--audit-file ${auditArg}`,
+        await startFynMetaMemoizer()
+      )
       .filter((x) => x)
       .join(" ");
 
@@ -50,7 +64,7 @@ export class InstallDeps {
     const ve = new VisualExec({
       displayTitle,
       cwd: pkgDir,
-      command: await this.getInstallCommand(),
+      command: await this.getInstallCommand(pkgInfo),
       visualLogger: logger,
     });
 
@@ -61,7 +75,7 @@ export class InstallDeps {
     } catch (err: any) {
       // Ensure error has command context for better error reporting
       if (err && !err.command) {
-        err.command = await this.getInstallCommand();
+        err.command = await this.getInstallCommand(pkgInfo);
       }
       // the install runs with --sl, so the whole output is already on disk - say where.
       // What VisualExec shows is only the tail.

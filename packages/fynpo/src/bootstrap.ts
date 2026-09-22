@@ -244,7 +244,7 @@ export class Bootstrap {
     });
   }
 
-  async aggregateAuditResults(): Promise<void> {
+  async aggregateAuditResults(installDeps = new InstallDeps(this.cwd, [])): Promise<void> {
     const reports: {
       pkgInfo: FynpoPackageInfo;
       report: {
@@ -255,8 +255,8 @@ export class Bootstrap {
 
     for (const depData of this.topoPkgs.sorted) {
       const pkgInfo = depData.pkgInfo;
-      const auditPath = Path.join(this.cwd, pkgInfo.path, ".fyn-audit.json");
       try {
+        const auditPath = await installDeps.getAuditFilePath(pkgInfo);
         const content = await Fs.promises.readFile(auditPath, "utf8");
         const report = JSON.parse(content);
         reports.push({ pkgInfo, report });
@@ -427,6 +427,6 @@ export class Bootstrap {
       stopOnError: true,
     });
 
-    await this.aggregateAuditResults();
+    await this.aggregateAuditResults(installDeps);
   }
 }

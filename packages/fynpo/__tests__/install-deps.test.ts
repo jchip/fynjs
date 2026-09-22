@@ -1,14 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Path from "path";
 
 const execute = vi.fn();
+const visualExecOptions = vi.fn();
 
 vi.mock("visual-exec", () => ({
   // a class, not vi.fn(arrow) - install-deps constructs it with `new`
   default: class FakeVisualExec {
+    constructor(options: unknown) {
+      visualExecOptions(options);
+    }
     logFinalOutput: any;
     execute = execute;
   },
+}));
+
+vi.mock("fyn", () => ({
+  getAuditFilePath: vi.fn(async (cwd: string) => Path.join(cwd, "node_modules", ".f", ".fyn-audit.json")),
 }));
 
 vi.mock("../src/logger", () => ({
@@ -23,6 +31,8 @@ vi.mock("../src/utils", () => ({
 
 import { InstallDeps } from "../src/install-deps";
 import { logger } from "../src/logger";
+import { getAuditFilePath } from "fyn";
+import { execFileSync } from "node:child_process";
 
 describe("InstallDeps.runVisualInstall", () => {
   const topDir = Path.join(Path.sep, "repo");
@@ -30,6 +40,11 @@ describe("InstallDeps.runVisualInstall", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(process, "platform", "get").mockReturnValue("linux");
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("names the package and its debug log when the install fails", async () => {
@@ -61,5 +76,44 @@ describe("InstallDeps.runVisualInstall", () => {
     await install.runVisualInstall(pkgInfo, "installing");
 
     expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it("writes the report under the package installation metadata directory", async () => {
+    const install = new InstallDeps(topDir, []);
+    await install.runVisualInstall(pkgInfo, "installing");
+
+    expect(getAuditFilePath).toHaveBeenCalledWith(Path.join(topDir, pkgInfo.path), { rcfile: true });
+    expect(visualExecOptions).toHaveBeenCalledWith(expect.objectContaining({
+      cwd: Path.join(topDir, pkgInfo.path),
+      command: expect.stringContaining(`--audit-file '${Path.join(topDir, pkgInfo.path, "node_modules", ".f", ".fyn-audit.json")}'`),
+    }));
+  });
+
+  it("uses the same configured report path for the command and summary reader", async () => {
+    const auditPath = Path.join(topDir, pkgInfo.path, "custom modules", ".f", ".fyn-audit.json");
+    vi.mocked(getAuditFilePath).mockResolvedValueOnce(auditPath).mockResolvedValueOnce(auditPath);
+    const install = new InstallDeps(topDir, ["--no-rcfile"]);
+
+    expect(await install.getAuditFilePath(pkgInfo)).toBe(auditPath);
+    expect(await install.getInstallCommand(pkgInfo)).toContain(`--audit-file '${auditPath}'`);
+    expect(getAuditFilePath).toHaveBeenLastCalledWith(Path.join(topDir, pkgInfo.path), { rcfile: false });
+  });
+
+  it.skipIf(process.platform === "win32")("passes a report path containing shell metacharacters literally", async () => {
+    const auditPath = Path.join(topDir, "it's $HOME `pwd` $(pwd)", ".f", ".fyn-audit.json");
+    vi.mocked(getAuditFilePath).mockResolvedValueOnce(auditPath);
+    const command = await new InstallDeps(topDir, []).getInstallCommand(pkgInfo);
+    const auditArg = command.slice(command.indexOf("--audit-file ") + "--audit-file ".length);
+
+    expect(execFileSync("sh", ["-c", `printf '%s' ${auditArg}`], { encoding: "utf8" })).toBe(auditPath);
+  });
+
+  it("quotes the audit path for the Windows command shell", async () => {
+    vi.spyOn(process, "platform", "get").mockReturnValue("win32");
+    const auditPath = "C:\\my repo\\node_modules\\.f\\.fyn-audit.json";
+    vi.mocked(getAuditFilePath).mockResolvedValueOnce(auditPath);
+
+    expect(await new InstallDeps(topDir, []).getInstallCommand(pkgInfo))
+      .toContain(`--audit-file "${auditPath}"`);
   });
 });

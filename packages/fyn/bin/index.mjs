@@ -40,4 +40,7 @@ export const run = async (...args) => (await load()).run(...args);
  */
 export const fun = async (...args) => (await load()).fun(...args);
 
-export default { run, fun };
+/** Resolve the generated audit report path using fyn's installation configuration. */
+export const getAuditFilePath = async (...args) => (await load()).getAuditFilePath(...args);
+
+export default { run, fun, getAuditFilePath };
