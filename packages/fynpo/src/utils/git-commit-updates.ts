@@ -15,9 +15,8 @@ export type CommitAndTagContext = {
   /** whether --only narrowed the release, which changes the commit subject */
   isSelective: boolean;
   /**
-   * Staged ahead of the package.json paths. `version` and `changelog` stage CHANGELOG.md
-   * along with the packages; `prepare` stages only the packages, since the changelog was
-   * already committed by then.
+   * Staged ahead of the release file paths. `version` and `changelog` stage CHANGELOG.md
+   * along with the packages; `prepare` supplies all files changed during preparation.
    */
   changeLogFile?: string;
 };
@@ -28,18 +27,15 @@ export type CommitAndTagResult = {
   tagged: number;
 };
 
-/**
- * Is the working tree clean? `git diff --quiet` exits non-zero when it is not, which xsh
- * surfaces as a rejection, so the answer is which branch we land in.
- */
+/** Include staged, unstaged, and nonignored untracked files in the clean-tree check. */
 export const checkGitClean = (sh: ShellRunner): Promise<boolean> =>
-  sh(`git diff --quiet`).then(
-    () => true,
+  sh(`git status --porcelain --untracked-files=all`).then(
+    ({ stdout }) => stdout.trim().length === 0,
     () => false
   );
 
 /**
- * Commit the updated package.json files (plus the changelog, for the commands that stage it)
+ * Commit the updated release files (plus the changelog, for the commands that stage it)
  * and tag the release.
  *
  * Shared by `prepare`, `version` and `update-changelog`, which had three copies of this
@@ -62,11 +58,10 @@ export const commitAndTagUpdates = async (
     return didNothing;
   }
 
-  // the changelog path is deliberately unquoted, as it was in all three originals
-  const quotedPackages = packages.map((x) => `"${x}"`).join(" ");
-  const staged = ctx.changeLogFile ? `${ctx.changeLogFile} ${quotedPackages}` : quotedPackages;
+  const files = ctx.changeLogFile ? [ctx.changeLogFile, ...packages] : packages;
+  const staged = files.map((x) => `'${x.replace(/'/g, "'\\''")}'`).join(" ");
 
-  const addOutput = await ctx.sh(`git add ${staged}`);
+  const addOutput = await ctx.sh(`git add -- ${staged}`);
   logger.info("git add", addOutput);
 
   const commitOutput = await ctx.sh(
