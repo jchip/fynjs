@@ -29,6 +29,9 @@ import {
 } from "./release-output.ts";
 // prepare packages for publish
 
+/** An expected prepare failure whose actionable message is enough for CLI output. */
+export class PrepareError extends Error {}
+
 /**
  * What to report at the end of a prepare run.
  *
@@ -178,10 +181,15 @@ export class Prepare {
       const bootstrap = new Bootstrap(this._graph, opts);
       try {
         await bootstrap.exec({ fynOpts: opts.fynOpts, concurrency: opts.concurrency });
+      } catch (err) {
+        if (!bootstrap.failed) throw err;
+        throw new PrepareError("Prepare bootstrap failed; no release commit or tags were created.");
       } finally {
         bootstrap.logErrors();
       }
-      if (bootstrap.failed) throw new Error("Prepare bootstrap failed");
+      if (bootstrap.failed) {
+        throw new PrepareError("Prepare bootstrap failed; no release commit or tags were created.");
+      }
       const after = await utils.readFynpoData(this._cwd);
       if (after.__timestamp === before.__timestamp) break;
     }
@@ -192,7 +200,9 @@ export class Prepare {
       { script: "fynpo:prepare" },
       this._graph
     ).exec();
-    if (Number(process.exitCode)) throw new Error("fynpo:prepare hook failed");
+    if (Number(process.exitCode)) {
+      throw new PrepareError("fynpo:prepare hook failed; no release commit or tags were created.");
+    }
   }
 
   async getReleaseFiles() {
@@ -207,7 +217,9 @@ export class Prepare {
     printHeader("Prepare Packages for Publish");
 
     if (!(await this.checkGitClean())) {
-      throw new Error("Cannot prepare with a dirty working tree. Commit or stash your changes first.");
+      throw new PrepareError(
+        "Cannot prepare with a dirty working tree. Run 'git status --short' to inspect it. Commit or stash your changes first."
+      );
     }
 
     this.readChangelog();

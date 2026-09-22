@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { verify } from "run-verify";
+import { PrepareError } from "../src/prepare";
+import { logger } from "../src/logger";
 
 // Mock the @fynjs/cli-args module
 vi.mock("@fynjs/cli-args", () => {
@@ -18,6 +21,7 @@ import {
   fynpoMain,
   implicitDiscoveryNotice,
   resolveRunExitCode,
+  reportPrepareError,
 } from "../src/index";
 import fsMod from "fs";
 import pathMod from "path";
@@ -93,6 +97,32 @@ describe("resolveRunExitCode", () => {
   it("exits 0 on success (no failure code anywhere)", () => {
     expect(resolveRunExitCode(0, 0)).toBe(0);
     expect(resolveRunExitCode(0, undefined)).toBe(0);
+  });
+});
+
+describe("expected prepare errors", () => {
+  const originalExitCode = process.exitCode;
+  afterEach(() => {
+    process.exitCode = originalExitCode;
+    vi.restoreAllMocks();
+  });
+
+  it.each([undefined, 7])("prints only the action message and preserves failure code %s", (code) => {
+    const log = vi.spyOn(logger, "error").mockImplementation(() => logger);
+    return verify({ timeout: 500 })
+      .step(() => { process.exitCode = code; })
+      .step(() => reportPrepareError(new PrepareError("Fix the failing prepare hook.")))
+      .step(() => {
+        expect(log).toHaveBeenCalledExactlyOnceWith("Fix the failing prepare hook.");
+        expect(process.exitCode).toBe(code || 1);
+      });
+  });
+
+  it("preserves unexpected exceptions for the CLI stack report", () => {
+    const error = new TypeError("unexpected bug");
+    return verify({ timeout: 500 }).expectError
+      .step(() => reportPrepareError(error))
+      .step(caught => expect(caught).toBe(error));
   });
 });
 

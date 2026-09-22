@@ -3,7 +3,7 @@
 import Path from "path";
 import { NixClap } from "@fynjs/cli-args";
 import { Bootstrap } from "./bootstrap.ts";
-import { Prepare } from "./prepare.ts";
+import { Prepare, PrepareError } from "./prepare.ts";
 import Changelog from "./update-changelog.ts";
 import Publish from "./publish.ts";
 import { Run } from "./run.ts";
@@ -246,7 +246,13 @@ const execPrepare = async (cmd, _parsed) => {
   // prepare only applies at top level, so switch CWD there
   process.chdir(opts.cwd);
 
-  return new Prepare(opts, await makeDepGraph(opts)).exec();
+  return new Prepare(opts, await makeDepGraph(opts)).exec().catch(reportPrepareError);
+};
+
+export const reportPrepareError = (err: unknown): void => {
+  if (!(err instanceof PrepareError)) throw err;
+  logger.error(err.message);
+  process.exitCode = Number(process.exitCode) || 1;
 };
 
 const execChangelog = async (cmd, _parsed) => {
