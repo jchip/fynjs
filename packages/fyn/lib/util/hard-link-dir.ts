@@ -412,6 +412,7 @@ async function linkPackTree({
   dest,
   sym1,
   sourceMaps,
+  preserveInstall = false,
   isRoot = false
 }: {
   tree: any;
@@ -419,16 +420,23 @@ async function linkPackTree({
   dest: string;
   sym1?: boolean;
   sourceMaps?: boolean;
+  preserveInstall?: boolean;
   isRoot?: boolean;
 }) {
   const files = tree[SYM_FILES];
 
   const destFiles = await prepDestDir(dest);
+  if (isRoot && preserveInstall) {
+    // A refresh runs after manifest stamping and dependency linking.
+    destFiles["package.json"] = true;
+    destFiles["node_modules"] = true;
+  }
 
   //
   // create hardlinks to files (or symlinks if source is a symlink)
   //
   for (const file of files) {
+    if (isRoot && preserveInstall && file === "package.json") continue;
     // In non-CI mode, skip linking .js/.mjs source maps here because handleSourceMap
     // rewrites+copies the ones referenced by their sibling script. Other maps
     // (.d.ts.map, .css.map, ...) are NOT handled there, so they must be linked
@@ -463,6 +471,7 @@ async function linkPackTree({
   //
   const dirs = Object.keys(tree).sort();
   for (const dir of dirs) {
+    if (isRoot && preserveInstall && dir.split("/")[0] === "node_modules") continue;
     // in case the tree is generated without top level dir by itself
     // tree is generated to always use / for path separator
     destFiles[dir.split("/")[0]] = true;
@@ -483,10 +492,10 @@ async function linkPackTree({
   await cleanExtraDest(dest, destFiles, isRoot);
 }
 
-async function link(src, dest, { sourceMaps = true } = {}) {
+async function link(src, dest, { sourceMaps = true, preserveInstall = false } = {}) {
   const tree = await generatePackTree(src);
 
-  return await linkPackTree({ tree, src, dest, sourceMaps, isRoot: true });
+  return await linkPackTree({ tree, src, dest, sourceMaps, preserveInstall, isRoot: true });
 }
 
 // Source freshness excludes build outputs. Inspect the packed files separately so a

@@ -645,6 +645,19 @@ class FynCli {
             depInfo: { name: pkg.name, version: pkg.version, dir: this.fyn.cwd }
           });
         }
+        if (scripts.length > 0 || (this.fyn._options.autoRun && fynpoNpmScripts.length > 0)) {
+          // Lifecycle builds can replace local output after the installer hardlinked it.
+          // Refresh packed files without discarding installed metadata or dependency links.
+          const localPkgLinks = this.fyn._installConfig.localPkgLinks || {};
+          for (const vdir in localPkgLinks) {
+            const localPkg = localPkgLinks[vdir];
+            await hardLinkDir.link(
+              Path.join(this.fyn.cwd, localPkg.srcDir),
+              Path.join(this.fyn.cwd, vdir),
+              { sourceMaps: Boolean(localPkg.sourceMaps), preserveInstall: true }
+            );
+          }
+        }
       })
       .then(async () => {
         logger.removeItem(INSTALL_PACKAGE);
