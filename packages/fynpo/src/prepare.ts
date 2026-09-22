@@ -12,6 +12,8 @@ import assert from "assert";
 import semver from "semver";
 import * as utils from "./utils.ts";
 import { checkNupdateTag, updateDep } from "./utils/update-package-versions.ts";
+import { Bootstrap } from "./bootstrap.ts";
+import { Run } from "./run.ts";
 import {
   checkGitClean as gitIsClean,
   commitAndTagUpdates as commitAndTag,
@@ -38,7 +40,7 @@ import {
  * Pure so it can be tested directly; {@link Prepare.exec} picks the printer from `level`.
  *
  * @param versionCount - how many packages had their own version bumped
- * @param fileCount - how many package.json files were staged, including dependency-range-only ones
+ * @param fileCount - how many release files changed, including bootstrap and hook output
  * @param committed - whether a commit was actually made
  * @param tagged - how many tags were created
  * @returns the message and whether it is a success or a warning
@@ -141,7 +143,7 @@ export class Prepare {
   }
 
   /**
-   * Commit the updated package.json files, and tag if asked to.
+   * Commit the release's changed files, and tag if asked to.
    *
    * @param packages - paths of the files to stage
    * @returns what actually happened, so the caller can say so rather than assume (FPO-49)
@@ -161,8 +163,52 @@ export class Prepare {
     );
   };
 
+  async bootstrapAndRunHooks() {
+    // Release selection must not exclude dependents whose ranges were rewritten.
+    const opts = {
+      ...this._options,
+      cwd: this._cwd,
+      only: undefined,
+      ignore: undefined,
+      scope: undefined,
+    };
+    const before = await utils.readFynpoData(this._cwd);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      this._graph = await utils.resolveDepGraph(opts);
+      const bootstrap = new Bootstrap(this._graph, opts);
+      try {
+        await bootstrap.exec({ fynOpts: opts.fynOpts, concurrency: opts.concurrency });
+      } finally {
+        bootstrap.logErrors();
+      }
+      if (bootstrap.failed) throw new Error("Prepare bootstrap failed");
+      const after = await utils.readFynpoData(this._cwd);
+      if (after.__timestamp === before.__timestamp) break;
+    }
+
+    this._graph = await utils.resolveDepGraph(opts);
+    await new Run(
+      { concurrency: 6, prefix: true, ...opts, sort: true, bail: true, cache: false, parallel: false },
+      { script: "fynpo:prepare" },
+      this._graph
+    ).exec();
+    if (Number(process.exitCode)) throw new Error("fynpo:prepare hook failed");
+  }
+
+  async getReleaseFiles() {
+    const root = await this._sh("git rev-parse --show-toplevel");
+    const tracked = await this._sh("git diff HEAD --no-relative --name-only -z");
+    const created = await this._sh("git ls-files --others --exclude-standard --full-name -z -- :/");
+    return [...new Set(`${tracked.stdout}\0${created.stdout}`.split("\0").filter(Boolean))]
+      .map(file => Path.join(root.stdout.trim(), file));
+  }
+
   async exec() {
     printHeader("Prepare Packages for Publish");
+
+    if (!(await this.checkGitClean())) {
+      throw new Error("Cannot prepare with a dirty working tree. Commit or stash your changes first.");
+    }
 
     this.readChangelog();
     if (_.isEmpty(this._versions)) {
@@ -179,7 +225,6 @@ export class Prepare {
       return undefined;
     }
 
-    const packages = new Set<string>();
     const changedPackages = new Map<string, any>();
     const releasedPaths = new Set<string>();
     const updatedPackages: string[] = [];
@@ -204,9 +249,6 @@ export class Prepare {
         this.updateDep(pkg.pkgJson, name2, ver);
       });
 
-      // pkg.path is where the file actually is - a hardcoded "packages" prefix
-      // staged the wrong path for any repo not laid out under packages/
-      packages.add(Path.join(pkg.path, "package.json"));
       changedPackages.set(pkg.path, pkg);
       releasedPaths.add(pkg.path);
       updatedPackages.push(`${name}@${newV}`);
@@ -237,12 +279,9 @@ export class Prepare {
 
       if (touched) {
         printWarning(`Updated ${pkg.name} dependency range - not released, will bump next time`);
-        packages.add(Path.join(pkg.path, "package.json"));
         changedPackages.set(pkg.path, pkg);
       }
     });
-
-    await this.checkGitClean();
 
     // all updated, write to disk. FynpoPackageInfo carries no `pkgFile`, so compose it from
     // `path` the same way utils/update-package-versions.ts does (FJM-25).
@@ -250,8 +289,12 @@ export class Prepare {
       writeJsonSync(Path.join(this._cwd, pkg.path, "package.json"), pkg.pkgJson);
     });
 
-    const packageFiles = [...packages];
-    const { committed, tagged } = await this.commitAndTagUpdates(packageFiles);
+    await this.bootstrapAndRunHooks();
+
+    const packageFiles = await this.getReleaseFiles();
+    const { committed, tagged } = packageFiles.length
+      ? await this.commitAndTagUpdates(packageFiles)
+      : { committed: false, tagged: 0 };
 
     const outcome = prepareOutcome(updatedPackages.length, packageFiles.length, committed, tagged);
     if (outcome.level === "success") {

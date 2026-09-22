@@ -16,6 +16,30 @@ const xrequire = createRequire(import.meta.url);
 
 const optionalRequire = makeOptionalRequire(xrequire);
 
+export const readFynpoData = async (cwd) => {
+  try {
+    return JSON.parse(Fs.readFileSync(Path.join(cwd, ".fynpo-data.json"), "utf-8"));
+  } catch (_err) {
+    return { indirects: {} };
+  }
+};
+
+/** Read current manifests and recorded indirect dependencies into a fresh graph. */
+export const resolveDepGraph = async (opts) => {
+  const graph = new FynpoDepGraph(opts);
+  await graph.resolve();
+  const data = await readFynpoData(opts.cwd);
+  if (!_.isEmpty(data.indirects)) {
+    const noFynLocal = opts.noFynLocal || [];
+    _.each(data.indirects, (relations) => {
+      const filtered = relations.filter((rel) => !noFynLocal.includes(rel.onPkg.name));
+      if (filtered.length) graph.addDepRelations(filtered);
+    });
+    graph.updateDepMap();
+  }
+  return graph;
+};
+
 /**
  * Make a publish tag from template
  * - template is a string with special tokens in `{}`

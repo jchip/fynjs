@@ -12,7 +12,6 @@ import { Updated } from "./updated.ts";
 import { Commitlint } from "./commitlint.ts";
 import { Version } from "./version.ts";
 import {
-  FynpoDepGraph,
   outOfScopePackages,
   isFynpoConfigError,
   formatFynpoConfigError,
@@ -115,14 +114,7 @@ const noticeImplicitDiscovery = (autoSearched: boolean, found: number, packages?
   }
 };
 
-const readFynpoData = async (cwd) => {
-  try {
-    const data = Fs.readFileSync(Path.join(cwd, ".fynpo-data.json"), "utf-8");
-    return JSON.parse(data);
-  } catch (_err) {
-    return { indirects: {} };
-  }
-};
+const { readFynpoData } = utils;
 
 const makeOpts = async (cmd, _parsed) => {
   // In @fynjs/cli-args, merge root command opts with subcommand opts
@@ -147,8 +139,7 @@ const makeOpts = async (cmd, _parsed) => {
 };
 
 const makeDepGraph = async (opts) => {
-  const graph = new FynpoDepGraph(opts);
-  await graph.resolve();
+  const graph = await utils.resolveDepGraph(opts);
   noticeImplicitDiscovery(
     graph.autoSearched,
     Object.keys(graph.packages.byName || {}).length,
@@ -166,21 +157,6 @@ const makeDepGraph = async (opts) => {
   if (outOfScope.length > 0) {
     opts.ignore = [].concat(opts.ignore || [], outOfScope);
   }
-  const fynpoData = await readFynpoData(opts.cwd);
-  if (!_.isEmpty(fynpoData.indirects)) {
-    const noFynLocal = opts.noFynLocal || [];
-    _.each(fynpoData.indirects, (relations) => {
-      // Filter out relations where onPkg is in noFynLocal
-      const filtered = relations.filter(
-        (rel) => !noFynLocal.includes(rel.onPkg.name)
-      );
-      if (filtered.length) {
-        graph.addDepRelations(filtered);
-      }
-    });
-    graph.updateDepMap();
-  }
-
   return graph;
 };
 

@@ -258,6 +258,11 @@ describe("fynpo prepare", () => {
       nestedPrepare._versions = { managed: "2.0.0", nested: "9.0.0" };
       nestedPrepare.readChangelog = () => undefined;
       nestedPrepare.checkGitClean = async () => true;
+      nestedPrepare.bootstrapAndRunHooks = vi.fn().mockResolvedValue(undefined);
+      nestedPrepare.getReleaseFiles = vi.fn().mockResolvedValue([
+        path.join(managedPath, "package.json"),
+        path.join(nestedPath, "package.json"),
+      ]);
       nestedPrepare.commitAndTagUpdates = vi.fn().mockResolvedValue({
         committed: false,
         tagged: 0,
