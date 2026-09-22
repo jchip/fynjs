@@ -61,26 +61,18 @@ describe("AveAzul.prototype.spread", () => {
       ...args: unknown[]
     ) => unknown;
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.resolve([1, 2, 3]).spread(notAFunction))
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("expecting a function but");
-      });
+      .expectErrorHas("expecting a function but").step(() =>
+        AveAzul.resolve([1, 2, 3]).spread(notAFunction)
+      );
   });
 
   test("should propagate errors from the handler function", async () => {
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorHas("handler error").step(() =>
         AveAzul.resolve([1, 2, 3]).spread(() => {
           throw new Error("handler error");
         })
-      )
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("handler error");
-      });
+      );
   });
 
   test("should handle asynchronous handler functions", async () => {

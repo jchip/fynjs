@@ -85,16 +85,11 @@ describe("static methods", () => {
 
   test("try() should handle errors", async () => {
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorHas("test error").step(() =>
         AveAzul.try(() => {
           throw new Error("test error");
         })
-      )
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("test error");
-      });
+      );
   });
 
   test("props() should resolve object properties", async () => {

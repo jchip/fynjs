@@ -5,20 +5,24 @@ import AveAzul from "./promise-lib.ts";
 
 describe("Disposer", () => {
   test("should be exported as a class", () =>
-    verify({ timeout: 1000 }).step(() => {
-      expect(typeof Disposer).toBe("function");
-    }));
+    verify({ timeout: 1000 })
+      .step(() => typeof Disposer)
+      .step((type) => {
+        expect(type).toBe("function");
+      }));
 
   test("should throw if disposer function is not a function", () =>
-    verify({ timeout: 1000 }).step(() => {
-      expect(() => {
+    verify({ timeout: 1000 })
+      .expectError.step(() => {
         // Deliberately the wrong type: the runtime check under test is what throws.
         const notAFunction = "not a function" as unknown as (
           resource: unknown,
         ) => void;
         AveAzul.resolve({}).disposer(notAFunction);
-      }).toThrow(TypeError);
-    }));
+      })
+      .step((error) => {
+        expect(error).toBeInstanceOf(TypeError);
+      }));
 
   //
   // Asserts the disposer CONTRACT rather than the object's identity. `toBeInstanceOf(Disposer)`
@@ -33,12 +37,16 @@ describe("Disposer", () => {
     const cleanup = vi.fn();
     return verify({ timeout: 1000 })
       .step(() =>
-        AveAzul.using(AveAzul.resolve(resource).disposer(cleanup), (r) => {
-          expect(cleanup).not.toHaveBeenCalled(); // not before the body runs
-          return r;
-        }),
+        AveAzul.using<{
+          resource: typeof resource;
+          cleanupCallsDuringBody: number;
+        }>(AveAzul.resolve(resource).disposer(cleanup), (r) => ({
+          resource: r,
+          cleanupCallsDuringBody: cleanup.mock.calls.length,
+        })),
       )
-      .step((seen) => {
+      .step(({ resource: seen, cleanupCallsDuringBody }) => {
+        expect(cleanupCallsDuringBody).toBe(0);
         expect(seen).toBe(resource);
         expect(cleanup).toHaveBeenCalledTimes(1);
         expect(cleanup.mock.calls[0][0]).toBe(resource);

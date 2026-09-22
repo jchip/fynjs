@@ -36,71 +36,74 @@ describe("operational-error internal functions", () => {
 
   describe("isOperationalError", () => {
     test("should return true for OperationalError instances", () => {
-      const error = new OperationalError("test");
-
-      return verify({ timeout: 1000 }).step(() => {
-        expect(isOperationalError(error)).toBe(true);
-      });
+      return verify({ timeout: 1000 })
+        .step(() => new OperationalError("test"))
+        .step((error) => isOperationalError(error))
+        .step((result) => {
+          expect(result).toBe(true);
+        });
     });
 
     test("should return true for errors with isOperational property", () => {
-      const error: Error & { isOperational?: boolean } = new Error("test");
-
       return verify({ timeout: 1000 })
         .step(() => {
+          const error: Error & { isOperational?: boolean } = new Error("test");
           error.isOperational = true;
+          return error;
         })
-        .step(() => {
-          expect(isOperationalError(error)).toBe(true);
+        .step((error) => isOperationalError(error))
+        .step((result) => {
+          expect(result).toBe(true);
         });
     });
 
     test("should return false for other errors", () => {
-      return verify({ timeout: 1000 }).step(() => {
-        expect(isOperationalError(new Error("test"))).toBe(false);
-        expect(isOperationalError(new TypeError("test"))).toBe(false);
-        expect(isOperationalError(null)).toBe(false);
-        expect(isOperationalError(undefined)).toBe(false);
-        expect(isOperationalError("string error")).toBe(false);
-        expect(isOperationalError(42)).toBe(false);
-      });
+      return verify({ timeout: 1000 })
+        .step(() => [
+          new Error("test"),
+          new TypeError("test"),
+          null,
+          undefined,
+          "string error",
+          42,
+        ])
+        .step((errors) => errors.map((error) => isOperationalError(error)))
+        .step((results) => {
+          expect(results).toEqual([false, false, false, false, false, false]);
+        });
     });
   });
 
   describe("isProgrammerError", () => {
     test("should return true for non-operational errors", () => {
-      return verify({ timeout: 1000 }).step(() => {
-        expect(isProgrammerError(new Error("test"))).toBe(true);
-        expect(isProgrammerError(new TypeError("test"))).toBe(true);
-      });
+      return verify({ timeout: 1000 })
+        .step(() => [new Error("test"), new TypeError("test")])
+        .step((errors) => errors.map((error) => isProgrammerError(error)))
+        .step((results) => {
+          expect(results).toEqual([true, true]);
+        });
     });
 
     test("should return false for operational errors", () => {
-      const error = new OperationalError("test");
-      let error2: Error & { isOperational?: boolean };
-
       return verify({ timeout: 1000 })
         .step(() => {
-          expect(isProgrammerError(error)).toBe(false);
+          const error: Error & { isOperational?: boolean } = new Error("test");
+          error.isOperational = true;
+          return [new OperationalError("test"), error];
         })
-        .step(() => {
-          error2 = new Error("test");
-        })
-        .step(() => {
-          error2.isOperational = true;
-        })
-        .step(() => {
-          expect(isProgrammerError(error2)).toBe(false);
+        .step((errors) => errors.map((error) => isProgrammerError(error)))
+        .step((results) => {
+          expect(results).toEqual([false, false]);
         });
     });
 
     test("should return false for non-objects", () => {
-      return verify({ timeout: 1000 }).step(() => {
-        expect(isProgrammerError(null)).toBe(false);
-        expect(isProgrammerError(undefined)).toBe(false);
-        expect(isProgrammerError("string error")).toBe(false);
-        expect(isProgrammerError(42)).toBe(false);
-      });
+      return verify({ timeout: 1000 })
+        .step(() => [null, undefined, "string error", 42])
+        .step((errors) => errors.map((error) => isProgrammerError(error)))
+        .step((results) => {
+          expect(results).toEqual([false, false, false, false]);
+        });
     });
   });
 });

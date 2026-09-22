@@ -63,12 +63,9 @@ describe("AveAzul.prototype.call", () => {
       },
     };
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.resolve(errorObj).call("problematic"))
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("Something went wrong");
-      });
+      .expectErrorHas("Something went wrong").step(() =>
+        AveAzul.resolve(errorObj).call("problematic")
+      );
   });
 
   test("should reject if the method doesn't exist", () => {

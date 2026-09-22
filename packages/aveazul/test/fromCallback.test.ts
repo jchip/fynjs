@@ -23,12 +23,9 @@ describe("AveAzul.fromCallback", () => {
       }, 10);
     }
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.fromCallback(failingCallback))
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("operation failed");
-      });
+      .expectErrorHas("operation failed").step(() =>
+        AveAzul.fromCallback(failingCallback)
+      );
   });
 
   test("should handle multiple arguments with multiArgs option", () => {
@@ -53,12 +50,9 @@ describe("AveAzul.fromCallback", () => {
       throw new Error("sync error");
     }
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.fromCallback(throwingCallback))
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("sync error");
-      });
+      .expectErrorHas("sync error").step(() =>
+        AveAzul.fromCallback(throwingCallback)
+      );
   });
 
   test("should handle fromNode alias", () => {

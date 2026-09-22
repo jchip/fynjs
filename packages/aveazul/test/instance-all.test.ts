@@ -29,18 +29,13 @@ describe("AveAzul.prototype.all", () => {
     const error = new Error("Test error");
 
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorHas("Test error").step(() =>
         AveAzul.resolve([
           AveAzul.resolve(1),
           AveAzul.reject(error),
           AveAzul.resolve(3),
         ]).all()
-      )
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("Test error");
-      });
+      );
   });
 
   test("should handle empty arrays", async () => {
@@ -64,9 +59,9 @@ describe("AveAzul.prototype.all", () => {
     return verify({ timeout: 1000 })
       .expectError.step(() => AveAzul.resolve(123).all())
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(/expecting an array or an iterable object/);
+        expect((error as Error).message).toMatch(
+          /expecting an array or an iterable object/
+        );
       });
   });
 

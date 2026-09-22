@@ -78,21 +78,15 @@ describe("AveAzul.prototype.any", () => {
     return verify({ timeout: 1000 })
       .expectError.step(() => TestPromise.resolve(notIterable).any())
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       })
       .expectError.step(() => TestPromise.resolve(null).any())
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       })
       .expectError.step(() => TestPromise.resolve(undefined).any())
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       });
   });
 
@@ -182,21 +176,15 @@ describe("AveAzul.any", () => {
         TestPromise.any(123 as unknown as Iterable<unknown>)
       )
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       })
       .expectError.step(() => TestPromise.any(null))
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       })
       .expectError.step(() => TestPromise.any(undefined))
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       });
   });
 

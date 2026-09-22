@@ -22,19 +22,26 @@ describe("AveAzul.prototype.asCallback", () => {
   });
 
   test("should return the same promise instance", () =>
-    verify({ timeout: 1000 }).step(() => {
-      const promise = AveAzul.resolve("value");
-      const returnValue = promise.asCallback(() => {});
-      expect(returnValue).toBe(promise);
-    }));
+    verify({ timeout: 1000 })
+      .step(() => {
+        const promise = AveAzul.resolve("value");
+        return { promise, returnValue: promise.asCallback(() => {}) };
+      })
+      .keep.step(({ promise, returnValue }) => {
+        expect(returnValue).toBe(promise);
+      })
+      .step(({ promise }) => promise));
 
   test("should ignore non-function callbacks", () =>
-    verify({ timeout: 1000 }).step(() => {
-      // Should not throw
-      const promise = AveAzul.resolve("value");
-      const returnValue = promise.asCallback(null);
-      expect(returnValue).toBe(promise);
-    }));
+    verify({ timeout: 1000 })
+      .step(() => {
+        const promise = AveAzul.resolve("value");
+        return { promise, returnValue: promise.asCallback(null) };
+      })
+      .keep.step(({ promise, returnValue }) => {
+        expect(returnValue).toBe(promise);
+      })
+      .step(({ promise }) => promise));
 
   test("should spread array values with spread option", () => {
     const spread = signal<{ err: Error | null; values: number[] }>();

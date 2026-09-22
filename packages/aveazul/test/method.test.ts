@@ -13,11 +13,18 @@ describe("AveAzul.method", () => {
   });
 
   test("should return AveAzul instances", () =>
-    verify({ timeout: 1000 }).step(() => {
-      const fn = AveAzul.method(() => 42);
-      const promise = fn();
-      expect(promise).toBeInstanceOf(AveAzul);
-    }));
+    verify({ timeout: 1000 })
+      .step(() => {
+        const fn = AveAzul.method(() => 42);
+        return { promise: fn() };
+      })
+      .keep.step(({ promise }) => {
+        expect(promise).toBeInstanceOf(AveAzul);
+      })
+      .step(({ promise }) => promise)
+      .step((result) => {
+        expect(result).toBe(42);
+      }));
 
   test("should preserve 'this' context", () => {
     const obj = {
@@ -41,9 +48,7 @@ describe("AveAzul.method", () => {
     return verify({ timeout: 1000 })
       .expectError.step(() => throwingFn())
       .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow(error);
+        expect(caught).toBe(error);
       });
   });
 
@@ -62,9 +67,7 @@ describe("AveAzul.method", () => {
     return verify({ timeout: 1000 })
       .expectError.step(() => asyncFn())
       .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow(error);
+        expect(caught).toBe(error);
       });
   });
 

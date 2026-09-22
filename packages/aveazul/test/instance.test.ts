@@ -67,12 +67,7 @@ describe("instance methods", () => {
       setTimeout(() => resolve(42), 100)
     ).timeout(50);
     return verify({ timeout: 1000 })
-      .expectError.step(() => promise)
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("operation timed out");
-      });
+      .expectErrorHas("operation timed out").step(() => promise);
   });
 
   test("timeout() should resolve if operation completes in time", () => {
@@ -119,11 +114,8 @@ describe("instance methods", () => {
       reject(new Error("test"))
     ).tapCatch(sideEffect);
     return verify({ timeout: 1000 })
-      .expectError.step(() => promise)
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("test");
+      .expectErrorHas("test").step(() => promise)
+      .step(() => {
         expect(sideEffect).toHaveBeenCalled();
       });
   });
@@ -200,12 +192,7 @@ describe("instance methods", () => {
       new Error("test")
     );
     return verify({ timeout: 1000 })
-      .expectError.step(() => promise)
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("test");
-      });
+      .expectErrorHas("test").step(() => promise);
   });
 
   test("catchThrow() should catch and throw new error", () => {
@@ -213,12 +200,7 @@ describe("instance methods", () => {
       reject(new Error("original"))
     ).catchThrow(new Error("new error"));
     return verify({ timeout: 1000 })
-      .expectError.step(() => promise)
-      .step((caught) => {
-        expect(() => {
-          throw caught;
-        }).toThrow("new error");
-      });
+      .expectErrorHas("new error").step(() => promise);
   });
 
   test("catchReturn() should catch and return value", () => {

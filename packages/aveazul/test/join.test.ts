@@ -44,33 +44,23 @@ describe("AveAzul.join", () => {
 
   test("should reject if any input promise rejects", async () => {
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorHas("test error").step(() =>
         AveAzul.join(
           AveAzul.resolve(1),
           AveAzul.reject(new Error("test error")),
           AveAzul.resolve(3),
           (a, b, c) => a + b + c
         )
-      )
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("test error");
-      });
+      );
   });
 
   test("should reject with error from handler function", async () => {
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorHas("handler error").step(() =>
         AveAzul.join(AveAzul.resolve(1), AveAzul.resolve(2), () => {
           throw new Error("handler error");
         })
-      )
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("handler error");
-      });
+      );
   });
 
   test("should handle asynchronous handler functions", async () => {
@@ -124,19 +114,14 @@ describe("AveAzul.join", () => {
     });
 
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorHas("thrown error").step(() =>
         AveAzul.join(
           AveAzul.resolve(1),
           throwingPromise,
           AveAzul.resolve(3),
           (a, b, c) => a + b + c
         )
-      )
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow("thrown error");
-      });
+      );
   });
 
   test("should behave like Promise.all when last argument is not a function", async () => {

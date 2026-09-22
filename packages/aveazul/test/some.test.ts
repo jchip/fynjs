@@ -55,12 +55,7 @@ describe("AveAzul.some", () => {
 
     // Both implementations reject, but with different error messages
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.some(promises, 2))
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow();
-      });
+      .expectError.step(() => AveAzul.some(promises, 2));
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
@@ -72,15 +67,13 @@ describe("AveAzul.some", () => {
     return verify({ timeout: 1000 })
       .expectError.step(() => AveAzul.some(nonIterable, 2))
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       })
       .expectError.step(() => AveAzul.some(nonIterable, 2))
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(/expecting an array or an iterable object/);
+        expect((error as Error).message).toMatch(
+          /expecting an array or an iterable object/
+        );
       });
   });
 
@@ -170,12 +163,7 @@ describe("AveAzul.prototype.some", () => {
 
     // Both implementations reject, but with different error messages
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.resolve(promises).some(2))
-      .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow();
-      });
+      .expectError.step(() => AveAzul.resolve(promises).some(2));
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
@@ -186,15 +174,13 @@ describe("AveAzul.prototype.some", () => {
     return verify({ timeout: 1000 })
       .expectError.step(() => AveAzul.resolve(nonIterable).some(2))
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(TypeError);
+        expect(error).toBeInstanceOf(TypeError);
       })
       .expectError.step(() => AveAzul.resolve(nonIterable).some(2))
       .step((error) => {
-        expect(() => {
-          throw error;
-        }).toThrow(/expecting an array or an iterable object/);
+        expect((error as Error).message).toMatch(
+          /expecting an array or an iterable object/
+        );
       });
   });
 
