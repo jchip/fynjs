@@ -1,3 +1,4 @@
+import { verify } from "run-verify";
 import { describe, test, expect } from "vitest";
 import AveAzul from "./promise-lib.ts";
 const isBluebird = process.env.USE_BLUEBIRD === "true";
@@ -11,14 +12,16 @@ describe("AveAzul.some", () => {
       Promise.resolve(3),
     ];
 
-    const results = await AveAzul.some(promises, 2);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.some(promises, 2))
+      .step((results) => {
+        expect(Array.isArray(results)).toBe(true);
+        expect(results.length).toBe(2);
 
-    expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBe(2);
-
-    // Both implementations should include values from successful promises
-    // but we don't test the exact contents as the order may vary
-    expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+        // Both implementations should include values from successful promises
+        // but we don't test the exact contents as the order may vary
+        expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+      });
   });
 
   test("should work with iterable objects", async () => {
@@ -30,14 +33,16 @@ describe("AveAzul.some", () => {
       Promise.resolve(3),
     ]);
 
-    const results = await AveAzul.some(iterable, 2);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.some(iterable, 2))
+      .step((results) => {
+        expect(Array.isArray(results)).toBe(true);
+        expect(results.length).toBe(2);
 
-    expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBe(2);
-
-    // Both implementations should include values from successful promises
-    // but we don't test the exact contents as the order may vary
-    expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+        // Both implementations should include values from successful promises
+        // but we don't test the exact contents as the order may vary
+        expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+      });
   });
 
   test("should reject when too many promises reject", async () => {
@@ -49,7 +54,13 @@ describe("AveAzul.some", () => {
     ];
 
     // Both implementations reject, but with different error messages
-    await expect(AveAzul.some(promises, 2)).rejects.toThrow();
+    return verify({ timeout: 1000 })
+      .expectError.step(() => AveAzul.some(promises, 2))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow();
+      });
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
@@ -58,10 +69,19 @@ describe("AveAzul.some", () => {
     const nonIterable = { foo: "bar" } as unknown as Iterable<unknown>;
 
     // Should throw a TypeError
-    await expect(AveAzul.some(nonIterable, 2)).rejects.toThrow(TypeError);
-    await expect(AveAzul.some(nonIterable, 2)).rejects.toThrow(
-      /expecting an array or an iterable object/
-    );
+    return verify({ timeout: 1000 })
+      .expectError.step(() => AveAzul.some(nonIterable, 2))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      })
+      .expectError.step(() => AveAzul.some(nonIterable, 2))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(/expecting an array or an iterable object/);
+      });
   });
 
   test("should resolve immediately when there are enough non-promise values", async () => {
@@ -78,21 +98,23 @@ describe("AveAzul.some", () => {
     ];
 
     // Request just 3 values (we have 3 non-promises)
-    const results = await AveAzul.some(values, 3);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.some(values, 3))
+      .step((results) => {
+        const endTime = Date.now();
+        const elapsed = endTime - startTime;
 
-    const endTime = Date.now();
-    const elapsed = endTime - startTime;
+        // Should complete in < 50ms because it doesn't need to wait for promises
+        expect(elapsed).toBeLessThan(50);
 
-    // Should complete in < 50ms because it doesn't need to wait for promises
-    expect(elapsed).toBeLessThan(50);
+        expect(Array.isArray(results)).toBe(true);
+        expect(results.length).toBe(3);
 
-    expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBe(3);
-
-    // Results should be just the non-promise values
-    expect(results).toContain(10);
-    expect(results).toContain(20);
-    expect(results).toContain(30);
+        // Results should be just the non-promise values
+        expect(results).toContain(10);
+        expect(results).toContain(20);
+        expect(results).toContain(30);
+      });
   });
 });
 
@@ -105,14 +127,16 @@ describe("AveAzul.prototype.some", () => {
       Promise.resolve(3),
     ];
 
-    const results = await AveAzul.resolve(promises).some(2);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve(promises).some(2))
+      .step((results) => {
+        expect(Array.isArray(results)).toBe(true);
+        expect(results.length).toBe(2);
 
-    expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBe(2);
-
-    // Both implementations should include values from successful promises
-    // but we don't test the exact contents as the order may vary
-    expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+        // Both implementations should include values from successful promises
+        // but we don't test the exact contents as the order may vary
+        expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+      });
   });
 
   test("should work with iterable objects", async () => {
@@ -124,14 +148,16 @@ describe("AveAzul.prototype.some", () => {
       Promise.resolve(3),
     ]);
 
-    const results = await AveAzul.resolve(iterable).some(2);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve(iterable).some(2))
+      .step((results) => {
+        expect(Array.isArray(results)).toBe(true);
+        expect(results.length).toBe(2);
 
-    expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBe(2);
-
-    // Both implementations should include values from successful promises
-    // but we don't test the exact contents as the order may vary
-    expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+        // Both implementations should include values from successful promises
+        // but we don't test the exact contents as the order may vary
+        expect(results.every((r) => [1, 2, 3].includes(r))).toBe(true);
+      });
   });
 
   test("should reject when too many promises reject", async () => {
@@ -143,7 +169,13 @@ describe("AveAzul.prototype.some", () => {
     ];
 
     // Both implementations reject, but with different error messages
-    await expect(AveAzul.resolve(promises).some(2)).rejects.toThrow();
+    return verify({ timeout: 1000 })
+      .expectError.step(() => AveAzul.resolve(promises).some(2))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow();
+      });
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
@@ -151,12 +183,19 @@ describe("AveAzul.prototype.some", () => {
     const nonIterable = { foo: "bar" };
 
     // Should throw a TypeError
-    await expect(AveAzul.resolve(nonIterable).some(2)).rejects.toThrow(
-      TypeError
-    );
-    await expect(AveAzul.resolve(nonIterable).some(2)).rejects.toThrow(
-      /expecting an array or an iterable object/
-    );
+    return verify({ timeout: 1000 })
+      .expectError.step(() => AveAzul.resolve(nonIterable).some(2))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      })
+      .expectError.step(() => AveAzul.resolve(nonIterable).some(2))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(/expecting an array or an iterable object/);
+      });
   });
 
   test("should resolve immediately when there are enough non-promise values", async () => {
@@ -173,20 +212,22 @@ describe("AveAzul.prototype.some", () => {
     ];
 
     // Request just 3 values (we have 3 non-promises)
-    const results = await AveAzul.resolve(values).some(3);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve(values).some(3))
+      .step((results) => {
+        const endTime = Date.now();
+        const elapsed = endTime - startTime;
 
-    const endTime = Date.now();
-    const elapsed = endTime - startTime;
+        // Should complete in < 50ms because it doesn't need to wait for promises
+        expect(elapsed).toBeLessThan(50);
 
-    // Should complete in < 50ms because it doesn't need to wait for promises
-    expect(elapsed).toBeLessThan(50);
+        expect(Array.isArray(results)).toBe(true);
+        expect(results.length).toBe(3);
 
-    expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBe(3);
-
-    // Results should be just the non-promise values
-    expect(results).toContain(10);
-    expect(results).toContain(20);
-    expect(results).toContain(30);
+        // Results should be just the non-promise values
+        expect(results).toContain(10);
+        expect(results).toContain(20);
+        expect(results).toContain(30);
+      });
   });
 });

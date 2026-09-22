@@ -20,17 +20,18 @@ const captureUncaught = () => {
   const thrown = signal<unknown>();
   let calls = 0;
 
-  AveAzul.___throwUncaughtError = (err: unknown) => {
-    calls += 1;
-    thrown.resolve(err);
-  };
-
   return {
     thrown,
+    install: () => {
+      AveAzul.___throwUncaughtError = (err: unknown) => {
+        calls += 1;
+        thrown.resolve(err);
+      };
+    },
     callCount: () => calls,
     restore: () => {
       AveAzul.___throwUncaughtError = original;
-    }
+    },
   };
 };
 
@@ -42,8 +43,9 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     return verify({
       timeout: 500,
       signals: { thrown: captured.thrown },
-      cleanup: captured.restore
+      cleanup: captured.restore,
     })
+      .step(captured.install)
       .step(() => {
         AveAzul.resolve("value").asCallback(() => {
           throw callbackError;
@@ -63,8 +65,9 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     return verify({
       timeout: 500,
       signals: { thrown: captured.thrown },
-      cleanup: captured.restore
+      cleanup: captured.restore,
     })
+      .step(captured.install)
       .step(() => {
         AveAzul.reject(new Error("rejection")).asCallback(() => {
           throw callbackError;
@@ -96,8 +99,9 @@ describe("AveAzul.prototype.asCallback error handling", () => {
     return verify({
       timeout: 500,
       signals: { thrown: captured.thrown },
-      cleanup: captured.restore
+      cleanup: captured.restore,
     })
+      .step(captured.install)
       .step(() => {
         AveAzul.resolve("value").asCallback(() => {
           throw callbackError;

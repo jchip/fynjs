@@ -1,3 +1,4 @@
+import { verify } from "run-verify";
 import { describe, test, expect, vi } from "vitest";
 // Imports AveAzul from src directly rather than through promise-lib, so this always exercises
 // the AveAzul implementation even under USE_BLUEBIRD=true - same convention as the other files
@@ -16,10 +17,16 @@ describe("AveAzul.prototype.disposer internals", () => {
     const resource = { value: "test" };
     const cleanup = vi.fn();
 
-    const disposer = AveAzul.resolve(resource).disposer(cleanup);
+    let disposer;
 
-    expect(disposer).toBeInstanceOf(Disposer);
-    expect(disposer._data).toBe(cleanup);
-    expect(disposer._promise).toBeInstanceOf(AveAzul);
+    return verify({ timeout: 1000 })
+      .step(() => {
+        disposer = AveAzul.resolve(resource).disposer(cleanup);
+      })
+      .step(() => {
+        expect(disposer).toBeInstanceOf(Disposer);
+        expect(disposer._data).toBe(cleanup);
+        expect(disposer._promise).toBeInstanceOf(AveAzul);
+      });
   });
 });

@@ -3,30 +3,33 @@ import { verify } from "run-verify";
 import AveAzul from "./promise-lib.ts";
 
 describe("OperationalError", () => {
-  test("should be a constructor", () => {
-    expect(typeof AveAzul.OperationalError).toBe("function");
-    expect(new AveAzul.OperationalError("test")).toBeInstanceOf(Error);
-    expect(new AveAzul.OperationalError("test")).toBeInstanceOf(
-      AveAzul.OperationalError
-    );
-  });
+  test("should be a constructor", () =>
+    verify({ timeout: 1000 }).step(() => {
+      expect(typeof AveAzul.OperationalError).toBe("function");
+      expect(new AveAzul.OperationalError("test")).toBeInstanceOf(Error);
+      expect(new AveAzul.OperationalError("test")).toBeInstanceOf(
+        AveAzul.OperationalError,
+      );
+    }));
 
-  test("should have isOperational property", () => {
-    const error = new AveAzul.OperationalError("test");
-    expect(error.isOperational).toBe(true);
-  });
+  test("should have isOperational property", () =>
+    verify({ timeout: 1000 }).step(() => {
+      const error = new AveAzul.OperationalError("test");
+      expect(error.isOperational).toBe(true);
+    }));
 
-  test("should have correct name and message", () => {
-    const error = new AveAzul.OperationalError("test message");
-    expect(error.name).toBe("OperationalError");
-    expect(error.message).toBe("test message");
-  });
+  test("should have correct name and message", () =>
+    verify({ timeout: 1000 }).step(() => {
+      const error = new AveAzul.OperationalError("test message");
+      expect(error.name).toBe("OperationalError");
+      expect(error.message).toBe("test message");
+    }));
 });
 
 describe("AveAzul.prototype.error", () => {
   test("should catch operational errors", () => {
     const promise = AveAzul.reject(
-      new AveAzul.OperationalError("test operational error")
+      new AveAzul.OperationalError("test operational error"),
     );
 
     return verify({ timeout: 500 })
@@ -35,7 +38,7 @@ describe("AveAzul.prototype.error", () => {
           expect(err).toBeInstanceOf(AveAzul.OperationalError);
           expect(err.message).toBe("test operational error");
           return "handled";
-        })
+        }),
       )
       .step((result) => {
         expect(result).toBe("handled");
@@ -44,7 +47,7 @@ describe("AveAzul.prototype.error", () => {
 
   test("should catch errors marked as operational", () => {
     const error: Error & { isOperational?: boolean } = new Error(
-      "marked as operational"
+      "marked as operational",
     );
     error.isOperational = true;
 
@@ -60,7 +63,7 @@ describe("AveAzul.prototype.error", () => {
           expect(marked.isOperational).toBe(true);
           expect(err.message).toBe("marked as operational");
           return "handled";
-        })
+        }),
       )
       .step((result) => {
         expect(result).toBe("handled");
@@ -86,7 +89,7 @@ describe("AveAzul.prototype.error", () => {
       .step(() =>
         promise.error(() => {
           throw new Error("error from handler");
-        })
+        }),
       )
       .step((err) => {
         expect(err).toBeInstanceOf(Error);
@@ -119,7 +122,7 @@ describe("AveAzul.prototype.error", () => {
           expect(err).toBeInstanceOf(AveAzul.OperationalError);
           expect(err.message).toBe("operational in then");
           return "handled in chain";
-        })
+        }),
       )
       .step((result) => {
         expect(result).toBe("handled in chain");

@@ -1,29 +1,31 @@
+import { verify } from "run-verify";
 import { describe, test, expect } from "vitest";
-import { addStaticAny } from "../src/any.ts";
-import { AveAzul } from "../src/index.ts";
 import TestPromise from "./promise-lib.ts";
-
-if (TestPromise === AveAzul) {
-  addStaticAny(AveAzul, true);
-}
 
 describe("AveAzul.prototype.any", () => {
   test("should resolve with the first resolved promise", async () => {
     const slowPromise = TestPromise.delay(50).then(() => "slow");
     const fastPromise = TestPromise.delay(10).then(() => "fast");
 
-    const result = await TestPromise.resolve([slowPromise, fastPromise]).any();
-    expect(result).toBe("fast");
+    return verify({ timeout: 1000 })
+      .step(() => TestPromise.resolve([slowPromise, fastPromise]).any())
+      .step((result) => {
+        expect(result).toBe("fast");
+      });
   });
 
   test("should work with array of values and promises", async () => {
-    const result = await TestPromise.resolve([
-      TestPromise.delay(30).then(() => "delayed"),
-      "immediate",
-      TestPromise.delay(10).then(() => "fast"),
-    ]).any();
-
-    expect(result).toBe("immediate");
+    return verify({ timeout: 1000 })
+      .step(() =>
+        TestPromise.resolve([
+          TestPromise.delay(30).then(() => "delayed"),
+          "immediate",
+          TestPromise.delay(10).then(() => "fast"),
+        ]).any()
+      )
+      .step((result) => {
+        expect(result).toBe("immediate");
+      });
   });
 
   test("should work with iterable objects", async () => {
@@ -35,8 +37,11 @@ describe("AveAzul.prototype.any", () => {
       },
     };
 
-    const result = await TestPromise.resolve(iterable).any();
-    expect(result).toBe("second");
+    return verify({ timeout: 1000 })
+      .step(() => TestPromise.resolve(iterable).any())
+      .step((result) => {
+        expect(result).toBe("second");
+      });
   });
 
   test("should reject with an error when all promises reject", async () => {
@@ -46,9 +51,11 @@ describe("AveAzul.prototype.any", () => {
       TestPromise.reject(new Error("error 3")),
     ];
 
-    await expect(TestPromise.resolve(promises).any()).rejects.toBeInstanceOf(
-      Error
-    );
+    return verify({ timeout: 1000 })
+      .expectError.step(() => TestPromise.resolve(promises).any())
+      .step((error) => {
+        expect(error).toBeInstanceOf(Error);
+      });
   });
 
   test("should resolve with value even if some promises reject", async () => {
@@ -58,24 +65,43 @@ describe("AveAzul.prototype.any", () => {
       TestPromise.reject(new Error("error 2")),
     ];
 
-    const result = await TestPromise.resolve(promises).any();
-    expect(result).toBe("success");
+    return verify({ timeout: 1000 })
+      .step(() => TestPromise.resolve(promises).any())
+      .step((result) => {
+        expect(result).toBe("success");
+      });
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
     // Deliberately invalid input: the runtime check under test is what rejects it.
     const notIterable = 123 as unknown as Iterable<unknown>;
-    await expect(TestPromise.resolve(notIterable).any()).rejects.toThrow(
-      TypeError
-    );
-    await expect(TestPromise.resolve(null).any()).rejects.toThrow(TypeError);
-    await expect(TestPromise.resolve(undefined).any()).rejects.toThrow(
-      TypeError
-    );
+    return verify({ timeout: 1000 })
+      .expectError.step(() => TestPromise.resolve(notIterable).any())
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      })
+      .expectError.step(() => TestPromise.resolve(null).any())
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      })
+      .expectError.step(() => TestPromise.resolve(undefined).any())
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      });
   });
 
   test("should reject empty array with an error", async () => {
-    await expect(TestPromise.resolve([]).any()).rejects.toBeInstanceOf(Error);
+    return verify({ timeout: 1000 })
+      .expectError.step(() => TestPromise.resolve([]).any())
+      .step((error) => {
+        expect(error).toBeInstanceOf(Error);
+      });
   });
 });
 
@@ -84,18 +110,25 @@ describe("AveAzul.any", () => {
     const slowPromise = TestPromise.delay(50).then(() => "slow");
     const fastPromise = TestPromise.delay(10).then(() => "fast");
 
-    const result = await TestPromise.any([slowPromise, fastPromise]);
-    expect(result).toBe("fast");
+    return verify({ timeout: 1000 })
+      .step(() => TestPromise.any([slowPromise, fastPromise]))
+      .step((result) => {
+        expect(result).toBe("fast");
+      });
   });
 
   test("should work with array of values and promises", async () => {
-    const result = await TestPromise.any([
-      TestPromise.delay(30).then(() => "delayed"),
-      "immediate",
-      TestPromise.delay(10).then(() => "fast"),
-    ]);
-
-    expect(result).toBe("immediate");
+    return verify({ timeout: 1000 })
+      .step(() =>
+        TestPromise.any([
+          TestPromise.delay(30).then(() => "delayed"),
+          "immediate",
+          TestPromise.delay(10).then(() => "fast"),
+        ])
+      )
+      .step((result) => {
+        expect(result).toBe("immediate");
+      });
   });
 
   test("should work with iterable objects", async () => {
@@ -107,8 +140,11 @@ describe("AveAzul.any", () => {
       },
     };
 
-    const result = await TestPromise.any(iterable);
-    expect(result).toBe("second");
+    return verify({ timeout: 1000 })
+      .step(() => TestPromise.any(iterable))
+      .step((result) => {
+        expect(result).toBe("second");
+      });
   });
 
   test("should reject with an error when all promises reject", async () => {
@@ -118,7 +154,11 @@ describe("AveAzul.any", () => {
       TestPromise.reject(new Error("error 3")),
     ];
 
-    await expect(TestPromise.any(promises)).rejects.toBeInstanceOf(Error);
+    return verify({ timeout: 1000 })
+      .expectError.step(() => TestPromise.any(promises))
+      .step((error) => {
+        expect(error).toBeInstanceOf(Error);
+      });
   });
 
   test("should resolve with value even if some promises reject", async () => {
@@ -128,20 +168,43 @@ describe("AveAzul.any", () => {
       TestPromise.reject(new Error("error 2")),
     ];
 
-    const result = await TestPromise.any(promises);
-    expect(result).toBe("success");
+    return verify({ timeout: 1000 })
+      .step(() => TestPromise.any(promises))
+      .step((result) => {
+        expect(result).toBe("success");
+      });
   });
 
   test("should throw TypeError when input is neither array nor iterable", async () => {
     // Deliberately invalid input: the runtime check under test is what rejects it.
-    await expect(
-      TestPromise.any(123 as unknown as Iterable<unknown>)
-    ).rejects.toThrow(TypeError);
-    await expect(TestPromise.any(null)).rejects.toThrow(TypeError);
-    await expect(TestPromise.any(undefined)).rejects.toThrow(TypeError);
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        TestPromise.any(123 as unknown as Iterable<unknown>)
+      )
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      })
+      .expectError.step(() => TestPromise.any(null))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      })
+      .expectError.step(() => TestPromise.any(undefined))
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow(TypeError);
+      });
   });
 
   test("should reject empty array with an error", async () => {
-    await expect(TestPromise.any([])).rejects.toBeInstanceOf(Error);
+    return verify({ timeout: 1000 })
+      .expectError.step(() => TestPromise.any([]))
+      .step((error) => {
+        expect(error).toBeInstanceOf(Error);
+      });
   });
 });

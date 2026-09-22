@@ -1,3 +1,4 @@
+import { verify } from "run-verify";
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   createInstanceNotImplemented,
@@ -45,107 +46,137 @@ describe("not-implemented", () => {
   describe("createInstanceNotImplemented", () => {
     test("should add not implemented methods to prototype", () => {
       // Create a fresh MockClass with no methods
-      createInstanceNotImplemented(MockClass);
 
-      // Methods should be added
-      expect(typeof MockClass.prototype.spread).toBe("function");
-      expect(typeof MockClass.prototype.bind).toBe("function");
-
-      // Test that a method throws with the correct error message
-      expect(() => {
-        const instance = new MockClass();
-        instance.spread();
-      }).toThrow("instance spread Not implemented in aveazul");
-
-      // Verify console.error was called
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "instance spread Not implemented in aveazul"
-      );
+      return verify({ timeout: 1000 })
+        .step(() => {
+          createInstanceNotImplemented(MockClass);
+        })
+        .step(() => {
+          expect(typeof MockClass.prototype.spread).toBe("function");
+        })
+        .step(() => {
+          expect(typeof MockClass.prototype.bind).toBe("function");
+        })
+        .expectErrorToBe("instance spread Not implemented in aveazul")
+        .step(() => {
+          const instance = new MockClass();
+          instance.spread();
+        })
+        .step(() => {
+          expect(consoleErrorSpy).toHaveBeenCalledWith(
+            "instance spread Not implemented in aveazul"
+          );
+        });
     });
 
     test("should not override existing methods", () => {
       // Create a MockClass with an existing method
-      MockClass.prototype.tap = function () {
-        return "original tap";
-      };
-      const originalTap = MockClass.prototype.tap;
+      let originalTap;
 
-      createInstanceNotImplemented(MockClass);
-
-      // Original method should remain untouched
-      expect(MockClass.prototype.tap).toBe(originalTap);
-
-      const instance = new MockClass();
-      expect(instance.tap()).toBe("original tap");
-
-      // Other methods should be added
-      expect(typeof MockClass.prototype.spread).toBe("function");
+      return verify({ timeout: 1000 })
+        .step(() => {
+          MockClass.prototype.tap = function () {
+            return "original tap";
+          };
+        })
+        .step(() => {
+          originalTap = MockClass.prototype.tap;
+        })
+        .step(() => {
+          createInstanceNotImplemented(MockClass);
+        })
+        .step(() => {
+          expect(MockClass.prototype.tap).toBe(originalTap);
+        })
+        .step(() => ({ instance: new MockClass() }))
+        .step(({ instance }) => {
+          expect(instance.tap()).toBe("original tap");
+          expect(typeof MockClass.prototype.spread).toBe("function");
+        });
     });
   });
 
   describe("createStaticNotImplemented", () => {
     test("should add not implemented static methods to class", () => {
       // Start with clean MockClass
-      createStaticNotImplemented(MockClass);
 
-      // Methods should be added
-      expect(typeof MockClass.join).toBe("function");
-      expect(typeof MockClass.try).toBe("function");
-      expect(typeof MockClass.method).toBe("function");
-
-      // Test that a method throws with the correct error message
-      expect(() => {
-        MockClass.join();
-      }).toThrow("static join Not implemented in aveazul");
-
-      // Verify console.error was called
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "static join Not implemented in aveazul"
-      );
+      return verify({ timeout: 1000 })
+        .step(() => {
+          createStaticNotImplemented(MockClass);
+        })
+        .step(() => {
+          expect(typeof MockClass.join).toBe("function");
+        })
+        .step(() => {
+          expect(typeof MockClass.try).toBe("function");
+        })
+        .step(() => {
+          expect(typeof MockClass.method).toBe("function");
+        })
+        .expectErrorToBe("static join Not implemented in aveazul")
+        .step(() => {
+          MockClass.join();
+        })
+        .step(() => {
+          expect(consoleErrorSpy).toHaveBeenCalledWith(
+            "static join Not implemented in aveazul"
+          );
+        });
     });
 
     test("should not override existing static methods", () => {
       // Create a MockClass with an existing static method
-      MockClass.all = function () {
-        return "original all";
-      };
-      const originalAll = MockClass.all;
+      let originalAll;
 
-      createStaticNotImplemented(MockClass);
-
-      // Original method should remain untouched
-      expect(MockClass.all).toBe(originalAll);
-      expect(MockClass.all()).toBe("original all");
-
-      // Other methods should be added
-      expect(typeof MockClass.join).toBe("function");
+      return verify({ timeout: 1000 })
+        .step(() => {
+          MockClass.all = function () {
+            return "original all";
+          };
+        })
+        .step(() => {
+          originalAll = MockClass.all;
+        })
+        .step(() => {
+          createStaticNotImplemented(MockClass);
+        })
+        .step(() => {
+          expect(MockClass.all).toBe(originalAll);
+          expect(MockClass.all()).toBe("original all");
+          expect(typeof MockClass.join).toBe("function");
+        });
     });
   });
 
   test("not implemented methods should log to console and throw", () => {
-    createInstanceNotImplemented(MockClass);
+    let mockInstance;
 
-    // Create a new instance
-    const mockInstance = new MockClass();
-
-    // Method should throw and log
-    expect(() => {
-      mockInstance.spread("test");
-    }).toThrow("instance spread Not implemented in aveazul");
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "instance spread Not implemented in aveazul"
-    );
-
-    // Static method should also throw and log
-    createStaticNotImplemented(MockClass);
-    expect(() => {
-      MockClass.any([]);
-    }).toThrow("static any Not implemented in aveazul");
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "static any Not implemented in aveazul"
-    );
+    return verify({ timeout: 1000 })
+      .step(() => {
+        createInstanceNotImplemented(MockClass);
+      })
+      .step(() => {
+        mockInstance = new MockClass();
+      })
+      .expectErrorToBe("instance spread Not implemented in aveazul")
+      .step(() => mockInstance.spread("test"))
+      .step(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "instance spread Not implemented in aveazul"
+        );
+      })
+      .step(() => {
+        createStaticNotImplemented(MockClass);
+      })
+      .expectErrorToBe("static any Not implemented in aveazul")
+      .step(() => {
+        MockClass.any([]);
+      })
+      .step(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "static any Not implemented in aveazul"
+        );
+      });
   });
 });
 
@@ -177,19 +208,22 @@ describe("AveAzul not implemented methods", () => {
 
     // Dynamically create tests for all not implemented instance methods
     notImplementedInstanceMethods.forEach((methodName) => {
-      test(`should throw when calling instance.${methodName}()`, async () => {
+      test(`should throw when calling instance.${methodName}()`, () => {
         // Verify the method exists on the prototype
-        expect(typeof promise[methodName]).toBe("function");
 
-        // Verify calling the method throws the expected error
-        expect(() => {
-          promise[methodName]();
-        }).toThrow(`instance ${methodName} Not implemented in aveazul`);
-
-        // Verify console.error was called with the expected message
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          `instance ${methodName} Not implemented in aveazul`
-        );
+        return verify({ timeout: 1000 })
+          .step(() => {
+            expect(typeof promise[methodName]).toBe("function");
+          })
+          .expectErrorToBe(`instance ${methodName} Not implemented in aveazul`)
+          .step(() => {
+            promise[methodName]();
+          })
+          .step(() => {
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+              `instance ${methodName} Not implemented in aveazul`
+            );
+          });
       });
     });
   });
@@ -203,17 +237,20 @@ describe("AveAzul not implemented methods", () => {
     notImplementedStaticMethods.forEach((methodName) => {
       test(`should throw when calling AveAzul.${methodName}()`, () => {
         // Verify the method exists on AveAzul
-        expect(typeof AveAzul[methodName]).toBe("function");
 
-        // Verify calling the method throws the expected error
-        expect(() => {
-          AveAzul[methodName]();
-        }).toThrow(`static ${methodName} Not implemented in aveazul`);
-
-        // Verify console.error was called with the expected message
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          `static ${methodName} Not implemented in aveazul`
-        );
+        return verify({ timeout: 1000 })
+          .step(() => {
+            expect(typeof AveAzul[methodName]).toBe("function");
+          })
+          .expectErrorToBe(`static ${methodName} Not implemented in aveazul`)
+          .step(() => {
+            AveAzul[methodName]();
+          })
+          .step(() => {
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+              `static ${methodName} Not implemented in aveazul`
+            );
+          });
       });
     });
   });

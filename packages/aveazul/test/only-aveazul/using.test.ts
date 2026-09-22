@@ -1,4 +1,5 @@
-import { describe, test, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { signal, verify } from "run-verify";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { AveAzul } from "../../src/index.ts";
 import { AggregateError } from "@jchip/error";
 import Bluebird from "bluebird";
@@ -27,66 +28,71 @@ describe("AveAzul.using", () => {
    *  errors. If it's not possible to sensibly handle the error, letting the process crash is the next best
    *  option.
    */
-  test("should throw exception if a disposer throws", async () => {
+  test("should throw exception if a disposer throws", () => {
     const cleanupCalled = [false, false, false];
     const resources = [{ id: 1 }, { id: 2 }, { id: 3 }];
-    let uncaughtError;
-    vi.spyOn(AveAzul, "___throwUncaughtError").mockImplementation((err) => {
-      uncaughtError = err;
-    });
-
-    const disposer1 = AveAzul.resolve(resources[0]).disposer(() => {
-      cleanupCalled[0] = true;
-    });
-
-    const disposer2 = AveAzul.resolve(resources[1]).disposer(() => {
-      cleanupCalled[1] = true;
-      return AveAzul.delay(500).throw(new Error("Cleanup error"));
-    });
-
-    const disposer3 = AveAzul.resolve(resources[2]).disposer(() => {
-      cleanupCalled[2] = true;
-    });
-
-    let errorThrown = false;
-    // Should not throw even though a disposer throws
-    // test using ...args syntax with multiple disposers
-    const result = await AveAzul.using(
-      disposer1,
-      disposer2,
-      disposer3,
-      () => "success"
-    ).catch(() => {
-      errorThrown = true;
-    });
-
-    expect(result).toBe("success");
-    expect(cleanupCalled).toEqual([true, true, true]);
-    expect(uncaughtError).toBeInstanceOf(AggregateError);
-    expect(uncaughtError.message).toBe("cleanup resources failed");
-    expect(uncaughtError.errors).toEqual([new Error("Cleanup error")]);
+    const thrown = signal<unknown>();
+    let restore = () => {};
+    return verify({
+      timeout: 1000,
+      signals: { thrown },
+      cleanup: () => restore(),
+    })
+      .step(() => {
+        const spy = vi
+          .spyOn(AveAzul, "___throwUncaughtError")
+          .mockImplementation((error) => thrown.resolve(error));
+        restore = () => spy.mockRestore();
+      })
+      .step(() => {
+        const disposers = resources.map((resource, index) =>
+          AveAzul.resolve(resource).disposer(() => {
+            cleanupCalled[index] = true;
+            if (index === 1)
+              return AveAzul.delay(10).throw(new Error("Cleanup error"));
+            return undefined;
+          })
+        );
+        return AveAzul.using(
+          disposers[0],
+          disposers[1],
+          disposers[2],
+          () => "success"
+        );
+      })
+      .step((result) => {
+        expect(result).toBe("success");
+        expect(cleanupCalled).toEqual([true, true, true]);
+      })
+      .awaiting(thrown)
+      .step((error) => {
+        expect(error).toBeInstanceOf(AggregateError);
+        const aggregate = error as AggregateError;
+        expect(aggregate.message).toBe("cleanup resources failed");
+        expect(aggregate.errors).toEqual([new Error("Cleanup error")]);
+      });
   });
 
-  test("should throw for invalid or missing arguments", async () => {
+  test("should throw for invalid or missing arguments", () => {
     // Called with no arguments on purpose, to exercise the runtime guard. The
     // signature requires at least one argument, so the call goes through a
     // deliberately widened view of the static.
     const usingUnchecked = AveAzul.using as (...args: unknown[]) => unknown;
-    expect(() => usingUnchecked()).toThrow(
-      "resrouces and handler function required"
-    );
-    expect(() => AveAzul.using([])).toThrow(
-      "resrouces and handler function required"
-    );
-    expect(() => AveAzul.using([], () => {}, "blah")).toThrow(
-      "only two arguments are allowed when passing an array of resources"
-    );
-    expect(() => AveAzul.using([], "blah")).toThrow(
-      "handler must be a function"
-    );
+
+    return verify({ timeout: 1000 })
+      .expectErrorToBe("resrouces and handler function required")
+      .step(() => usingUnchecked())
+      .expectErrorToBe("resrouces and handler function required")
+      .step(() => AveAzul.using([]))
+      .expectErrorToBe(
+        "only two arguments are allowed when passing an array of resources"
+      )
+      .step(() => AveAzul.using([], () => {}, "blah"))
+      .expectErrorToBe("handler must be a function")
+      .step(() => AveAzul.using([], "blah"));
   });
 
-  test("should work with objects that look like Disposers but aren't instances of Disposer class", async () => {
+  test("should work with objects that look like Disposers but aren't instances of Disposer class", () => {
     // Create an object that has the same interface as a Disposer but isn't an instance
     const resource = { value: "test resource", disposed: false };
 
@@ -99,20 +105,24 @@ describe("AveAzul.using", () => {
       },
     };
 
-    const result = await AveAzul.using([disposerLike], (res) => {
-      expect(res[0]).toBe(resource);
-      expect(res[0].disposed).toBe(false);
-      return "success with disposer-like object";
-    });
-
-    expect(resource.disposed).toBe(true);
-    expect(result).toBe("success with disposer-like object");
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.using([disposerLike], (res) => {
+          expect(res[0]).toBe(resource);
+          expect(res[0].disposed).toBe(false);
+          return "success with disposer-like object";
+        })
+      )
+      .step((result) => {
+        expect(resource.disposed).toBe(true);
+        expect(result).toBe("success with disposer-like object");
+      });
   });
 });
 
 // Add test for Bluebird interoperability
 describe("AveAzul.using with Bluebird", () => {
-  test("should work with disposers created by Bluebird", async () => {
+  test("should work with disposers created by Bluebird", () => {
     // Create a resource
     const resource = { value: "bluebird resource", disposed: false };
 
@@ -122,20 +132,24 @@ describe("AveAzul.using with Bluebird", () => {
     });
 
     // Use the Bluebird disposer with AveAzul's using
-    const result = await AveAzul.using([bluebirdDisposer], (res) => {
-      // Verify we received the resource properly
-      expect(res[0]).toBe(resource);
-      expect(res[0].value).toBe("bluebird resource");
-      expect(res[0].disposed).toBe(false);
-      return "success with bluebird disposer";
-    });
 
-    // Verify the disposer function was called
-    expect(resource.disposed).toBe(true);
-    expect(result).toBe("success with bluebird disposer");
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.using([bluebirdDisposer], (res) => {
+          // Verify we received the resource properly
+          expect(res[0]).toBe(resource);
+          expect(res[0].value).toBe("bluebird resource");
+          expect(res[0].disposed).toBe(false);
+          return "success with bluebird disposer";
+        })
+      )
+      .step((result) => {
+        expect(resource.disposed).toBe(true);
+        expect(result).toBe("success with bluebird disposer");
+      });
   });
 
-  test("should handle multiple Bluebird disposers", async () => {
+  test("should handle multiple Bluebird disposers", () => {
     // Create multiple resources
     const resources = [
       { id: 1, disposed: false },
@@ -154,28 +168,30 @@ describe("AveAzul.using with Bluebird", () => {
     const usageOrder = [];
 
     // Use the Bluebird disposers with AveAzul's using
-    await AveAzul.using(disposers, (res) => {
-      // Record usage order
-      res.forEach((r) => usageOrder.push(r.id));
 
-      // Verify none are disposed yet
-      expect(res[0].disposed).toBe(false);
-      expect(res[1].disposed).toBe(false);
-      expect(res[2].disposed).toBe(false);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.using(disposers, (res) => {
+          // Record usage order
+          res.forEach((r) => usageOrder.push(r.id));
 
-      return "success";
-    });
+          // Verify none are disposed yet
+          expect(res[0].disposed).toBe(false);
+          expect(res[1].disposed).toBe(false);
+          expect(res[2].disposed).toBe(false);
 
-    // Verify all disposers were called
-    expect(resources[0].disposed).toBe(true);
-    expect(resources[1].disposed).toBe(true);
-    expect(resources[2].disposed).toBe(true);
-
-    // Verify usage order matches resource order
-    expect(usageOrder).toEqual([1, 2, 3]);
+          return "success";
+        })
+      )
+      .step(() => {
+        expect(resources[0].disposed).toBe(true);
+        expect(resources[1].disposed).toBe(true);
+        expect(resources[2].disposed).toBe(true);
+        expect(usageOrder).toEqual([1, 2, 3]);
+      });
   });
 
-  test("should handle errors in handler with Bluebird disposers", async () => {
+  test("should handle errors in handler with Bluebird disposers", () => {
     // Create a resource
     const resource = { value: "error test", disposed: false };
 
@@ -186,13 +202,18 @@ describe("AveAzul.using with Bluebird", () => {
 
     // Handler throws error
     const error = new Error("Handler error");
-    await expect(
-      AveAzul.using([bluebirdDisposer], () => {
-        throw error;
-      })
-    ).rejects.toThrow(error);
 
-    // Verify cleanup still happened
-    expect(resource.disposed).toBe(true);
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        AveAzul.using([bluebirdDisposer], () => {
+          throw error;
+        })
+      )
+      .step((caught) => {
+        expect(caught).toBe(error);
+      })
+      .step(() => {
+        expect(resource.disposed).toBe(true);
+      });
   });
 });

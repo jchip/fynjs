@@ -1,21 +1,24 @@
+import { verify } from "run-verify";
 import { describe, test, expect, vi } from "vitest";
 import { Disposer } from "../src/disposer.ts";
 import AveAzul from "./promise-lib.ts";
 
 describe("Disposer", () => {
-  test("should be exported as a class", () => {
-    expect(typeof Disposer).toBe("function");
-  });
+  test("should be exported as a class", () =>
+    verify({ timeout: 1000 }).step(() => {
+      expect(typeof Disposer).toBe("function");
+    }));
 
-  test("should throw if disposer function is not a function", () => {
-    expect(() => {
-      // Deliberately the wrong type: the runtime check under test is what throws.
-      const notAFunction = "not a function" as unknown as (
-        resource: unknown
-      ) => void;
-      AveAzul.resolve({}).disposer(notAFunction);
-    }).toThrow(TypeError);
-  });
+  test("should throw if disposer function is not a function", () =>
+    verify({ timeout: 1000 }).step(() => {
+      expect(() => {
+        // Deliberately the wrong type: the runtime check under test is what throws.
+        const notAFunction = "not a function" as unknown as (
+          resource: unknown,
+        ) => void;
+        AveAzul.resolve({}).disposer(notAFunction);
+      }).toThrow(TypeError);
+    }));
 
   //
   // Asserts the disposer CONTRACT rather than the object's identity. `toBeInstanceOf(Disposer)`
@@ -25,20 +28,20 @@ describe("Disposer", () => {
   // then runs the cleanup with it. The aveazul-internal shape is pinned separately, in
   // test/only-aveazul/disposer-internal.test.ts.
   //
-  test("should produce a disposer that using() disposes with the resource", async () => {
+  test("should produce a disposer that using() disposes with the resource", () => {
     const resource = { value: "test" };
     const cleanup = vi.fn();
-
-    const seen = await AveAzul.using(
-      AveAzul.resolve(resource).disposer(cleanup),
-      (r) => {
-        expect(cleanup).not.toHaveBeenCalled(); // not before the body runs
-        return r;
-      }
-    );
-
-    expect(seen).toBe(resource);
-    expect(cleanup).toHaveBeenCalledTimes(1);
-    expect(cleanup.mock.calls[0][0]).toBe(resource);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.using(AveAzul.resolve(resource).disposer(cleanup), (r) => {
+          expect(cleanup).not.toHaveBeenCalled(); // not before the body runs
+          return r;
+        }),
+      )
+      .step((seen) => {
+        expect(seen).toBe(resource);
+        expect(cleanup).toHaveBeenCalledTimes(1);
+        expect(cleanup.mock.calls[0][0]).toBe(resource);
+      });
   });
 });

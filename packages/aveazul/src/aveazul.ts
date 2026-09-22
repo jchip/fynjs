@@ -251,8 +251,8 @@ class AveAzul<T> extends Promise<T> {
    * @param ms - Milliseconds to delay
    * @returns Promise that resolves after the delay
    */
-  delay(ms: number): AveAzul<void> {
-    return xaa.delay(ms) as unknown as AveAzul<void>;
+  delay(ms: number): AveAzul<T> {
+    return this.then((value) => AveAzul.delay(ms, value));
   }
 
   /**
@@ -296,8 +296,8 @@ class AveAzul<T> extends Promise<T> {
    * @returns Promise that maintains the rejection
    */
   tapCatch(fn: (err: Error) => unknown): AveAzul<T> {
-    return this.catch((err: Error) => {
-      fn(err);
+    return this.catch(async (err: Error) => {
+      await fn(err);
       throw err;
     }) as AveAzul<T>;
   }
@@ -345,7 +345,9 @@ class AveAzul<T> extends Promise<T> {
    * @returns Promise that rejects with the given reason
    */
   throw(reason: unknown): AveAzul<never> {
-    return AveAzul.reject(reason) as AveAzul<never>;
+    return this.then(() => {
+      throw reason;
+    });
   }
 
   /**
@@ -418,6 +420,13 @@ class AveAzul<T> extends Promise<T> {
   }
 
   some(count: number): AveAzul<any[]> {
+    if ((count | 0) !== count || count < 0) {
+      return AveAzul.reject(new TypeError("expecting a non-negative integer"));
+    }
+    if (count === 0) {
+      return AveAzul.resolve([]);
+    }
+
     return this.then((args) => {
       const arr = toArray(args as Iterable<unknown>);
 
@@ -432,6 +441,13 @@ class AveAzul<T> extends Promise<T> {
         const len = arr.length;
 
         let settled = false;
+
+        if (count > len) {
+          settled = true;
+          reject(new RangeError(
+            `Input array must contain at least ${count} items but contains only ${len} items`
+          ));
+        }
 
         const addDone = (result: any): void => {
           if (settled) return;
@@ -822,7 +838,7 @@ class AveAzul<T> extends Promise<T> {
 
 // Setup the any method
 import { addStaticAny } from "./any.js";
-addStaticAny(AveAzul as unknown as AveAzulClass);
+addStaticAny(AveAzul as unknown as AveAzulClass, true);
 
 // Setup the not implemented methods
 import { setupNotImplemented } from "./not-implemented.js";

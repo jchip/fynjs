@@ -1,29 +1,40 @@
+import { verify } from "run-verify";
 import { describe, test, expect } from "vitest";
 import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.mapSeries", () => {
   test("should transform array elements", async () => {
-    const result = await AveAzul.mapSeries([1, 2, 3], (x) => x * 2);
-    expect(result).toEqual([2, 4, 6]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.mapSeries([1, 2, 3], (x) => x * 2))
+      .step((result) => {
+        expect(result).toEqual([2, 4, 6]);
+      });
   });
 
   test("should handle empty arrays", async () => {
-    const result = await AveAzul.mapSeries([], (x) => x * 2);
-    expect(result).toEqual([]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.mapSeries([], (x) => x * 2))
+      .step((result) => {
+        expect(result).toEqual([]);
+      });
   });
 
   test("should handle array with promise values", async () => {
     const input = [Promise.resolve(1), 2, AveAzul.resolve(3)];
 
-    const result = await AveAzul.mapSeries(input, (x) => x * 2);
-    expect(result).toEqual([2, 4, 6]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.mapSeries(input, (x) => x * 2))
+      .step((result) => {
+        expect(result).toEqual([2, 4, 6]);
+      });
   });
 
   test("should handle mapper function returning promises", async () => {
-    const result = await AveAzul.mapSeries([1, 2, 3], (x) =>
-      Promise.resolve(x * 2)
-    );
-    expect(result).toEqual([2, 4, 6]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.mapSeries([1, 2, 3], (x) => Promise.resolve(x * 2)))
+      .step((result) => {
+        expect(result).toEqual([2, 4, 6]);
+      });
   });
 
   test("should process items in series (one after another)", async () => {
@@ -49,52 +60,68 @@ describe("AveAzul.mapSeries", () => {
     };
 
     // Map items with the asyncMapper
-    const result = await AveAzul.mapSeries([3, 1, 2], asyncMapper);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.mapSeries([3, 1, 2], asyncMapper))
+      .step((result) => {
+        // Verify correct result values
+        expect(result).toEqual([6, 2, 4]);
 
-    // Verify correct result values
-    expect(result).toEqual([6, 2, 4]);
+        // Verify serial execution - each item should start only after the previous one ends
+        expect(executionOrder).toEqual([
+          "start-3",
+          "end-3", // First item starts and completes
+          "start-1",
+          "end-1", // Second item starts only after first is done
+          "start-2",
+          "end-2", // Third item starts only after second is done
+        ]);
 
-    // Verify serial execution - each item should start only after the previous one ends
-    expect(executionOrder).toEqual([
-      "start-3",
-      "end-3", // First item starts and completes
-      "start-1",
-      "end-1", // Second item starts only after first is done
-      "start-2",
-      "end-2", // Third item starts only after second is done
-    ]);
-
-    // Additional verification by checking timestamps
-    for (let i = 1; i < startTimes.length; i++) {
-      // Each item should start after the previous item ends
-      expect(startTimes[i].time).toBeGreaterThanOrEqual(endTimes[i - 1].time);
-    }
+        // Additional verification by checking timestamps
+        for (let i = 1; i < startTimes.length; i++) {
+          // Each item should start after the previous item ends
+          expect(startTimes[i].time).toBeGreaterThanOrEqual(
+            endTimes[i - 1].time
+          );
+        }
+      });
   });
 });
 
 describe("AveAzul.prototype.mapSeries", () => {
   test("should transform array elements", async () => {
-    const result = await AveAzul.resolve([1, 2, 3]).mapSeries((x) => x * 2);
-    expect(result).toEqual([2, 4, 6]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve([1, 2, 3]).mapSeries((x) => x * 2))
+      .step((result) => {
+        expect(result).toEqual([2, 4, 6]);
+      });
   });
 
   test("should handle empty arrays", async () => {
-    const result = await AveAzul.resolve([]).mapSeries((x) => x * 2);
-    expect(result).toEqual([]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve([]).mapSeries((x) => x * 2))
+      .step((result) => {
+        expect(result).toEqual([]);
+      });
   });
 
   test("should handle array with promise values", async () => {
     const input = [Promise.resolve(1), 2, AveAzul.resolve(3)];
 
-    const result = await AveAzul.resolve(input).mapSeries((x) => x * 2);
-    expect(result).toEqual([2, 4, 6]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve(input).mapSeries((x) => x * 2))
+      .step((result) => {
+        expect(result).toEqual([2, 4, 6]);
+      });
   });
 
   test("should handle mapper function returning promises", async () => {
-    const result = await AveAzul.resolve([1, 2, 3]).mapSeries((x) =>
-      Promise.resolve(x * 2)
-    );
-    expect(result).toEqual([2, 4, 6]);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.resolve([1, 2, 3]).mapSeries((x) => Promise.resolve(x * 2))
+      )
+      .step((result) => {
+        expect(result).toEqual([2, 4, 6]);
+      });
   });
 
   test("should process items in series (one after another)", async () => {
@@ -120,25 +147,29 @@ describe("AveAzul.prototype.mapSeries", () => {
     };
 
     // Map items with the asyncMapper
-    const result = await AveAzul.resolve([3, 1, 2]).mapSeries(asyncMapper);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve([3, 1, 2]).mapSeries(asyncMapper))
+      .step((result) => {
+        // Verify correct result values
+        expect(result).toEqual([6, 2, 4]);
 
-    // Verify correct result values
-    expect(result).toEqual([6, 2, 4]);
+        // Verify serial execution - each item should start only after the previous one ends
+        expect(executionOrder).toEqual([
+          "start-3",
+          "end-3", // First item starts and completes
+          "start-1",
+          "end-1", // Second item starts only after first is done
+          "start-2",
+          "end-2", // Third item starts only after second is done
+        ]);
 
-    // Verify serial execution - each item should start only after the previous one ends
-    expect(executionOrder).toEqual([
-      "start-3",
-      "end-3", // First item starts and completes
-      "start-1",
-      "end-1", // Second item starts only after first is done
-      "start-2",
-      "end-2", // Third item starts only after second is done
-    ]);
-
-    // Additional verification by checking timestamps
-    for (let i = 1; i < startTimes.length; i++) {
-      // Each item should start after the previous item ends
-      expect(startTimes[i].time).toBeGreaterThanOrEqual(endTimes[i - 1].time);
-    }
+        // Additional verification by checking timestamps
+        for (let i = 1; i < startTimes.length; i++) {
+          // Each item should start after the previous item ends
+          expect(startTimes[i].time).toBeGreaterThanOrEqual(
+            endTimes[i - 1].time
+          );
+        }
+      });
   });
 });

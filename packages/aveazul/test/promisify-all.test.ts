@@ -1,3 +1,4 @@
+import { verify } from "run-verify";
 import { describe, test, expect } from "vitest";
 import AveAzul from "./promise-lib.ts";
 import fsModule from "node:fs";
@@ -27,7 +28,7 @@ type PromisifiedDir = Dir &
 const fs: typeof fsModule & Partial<FsAsync> = fsModule;
 
 describe("AveAzul.promisifyAll", () => {
-  test("should promisify all methods of an object", async () => {
+  test("should promisify all methods of an object", () => {
     // The `Partial<...>` half declares what promisifyAll() adds at runtime; it is
     // optional so the plain literal still assigns, and so the tests below can also
     // assert that a member was *not* added.
@@ -51,17 +52,22 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj);
-
-    const result1 = await obj.method1Async();
-    const result2 = await obj.method2Async(1, 2);
-
-    expect(result1).toBe("result1");
-    expect(result2).toBe(3);
-    expect(obj._privateMethodAsync).toBeUndefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj);
+      })
+      .step(() => obj.method1Async())
+      .step((result1) => {
+        expect(result1).toBe("result1");
+      })
+      .step(() => obj.method2Async(1, 2))
+      .step((result2) => {
+        expect(result2).toBe(3);
+        expect(obj._privateMethodAsync).toBeUndefined();
+      });
   });
 
-  test("should promisify all methods of a class prototype", async () => {
+  test("should promisify all methods of a class prototype", () => {
     class MyClass {
       method1(cb: NodeCallback) {
         cb(null, "result1");
@@ -80,16 +86,22 @@ describe("AveAzul.promisifyAll", () => {
         method2Async(a: number, b: number): Promise<number>;
         _privateMethodAsync(): Promise<string>;
       }> = new MyClass();
-    AveAzul.promisifyAll(instance);
-    const result1 = await instance.method1Async();
-    const result2 = await instance.method2Async(1, 2);
-
-    expect(result1).toBe("result1");
-    expect(result2).toBe(3);
-    expect(instance._privateMethodAsync).toBeUndefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(instance);
+      })
+      .step(() => instance.method1Async())
+      .step((result1) => {
+        expect(result1).toBe("result1");
+      })
+      .step(() => instance.method2Async(1, 2))
+      .step((result2) => {
+        expect(result2).toBe(3);
+        expect(instance._privateMethodAsync).toBeUndefined();
+      });
   });
 
-  test("should respect custom suffix option", async () => {
+  test("should respect custom suffix option", () => {
     const obj: {
       method(cb: NodeCallback): void;
     } & Partial<{
@@ -101,14 +113,18 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, { suffix: "Promise" });
-
-    const result = await obj.methodPromise();
-    expect(result).toBe("result");
-    expect(obj.methodAsync).toBeUndefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, { suffix: "Promise" });
+      })
+      .step(() => obj.methodPromise())
+      .step((result) => {
+        expect(result).toBe("result");
+        expect(obj.methodAsync).toBeUndefined();
+      });
   });
 
-  test("should respect custom filter option", async () => {
+  test("should respect custom filter option", () => {
     const obj: {
       method1(cb: NodeCallback): void;
       method2(cb: NodeCallback): void;
@@ -124,16 +140,20 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, {
-      filter: (name) => name === "method1",
-    });
-
-    const result = await obj.method1Async();
-    expect(result).toBe("result1");
-    expect(obj.method2Async).toBeUndefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, {
+          filter: (name) => name === "method1",
+        });
+      })
+      .step(() => obj.method1Async())
+      .step((result) => {
+        expect(result).toBe("result1");
+        expect(obj.method2Async).toBeUndefined();
+      });
   });
 
-  test("should handle multiArgs option", async () => {
+  test("should handle multiArgs option", () => {
     const obj: {
       method(cb: NodeCallback): void;
     } & Partial<{ methodAsync(): Promise<string[]> }> = {
@@ -142,20 +162,29 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, { multiArgs: true });
-
-    const [result1, result2] = await obj.methodAsync();
-    expect(result1).toBe("result1");
-    expect(result2).toBe("result2");
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, { multiArgs: true });
+      })
+      .step(() => obj.methodAsync())
+      .step(([result1, result2]) => {
+        expect(result1).toBe("result1");
+        expect(result2).toBe("result2");
+      });
   });
 
   test("should throw on invalid target", () => {
     // expect(() => AveAzul.promisifyAll(null)).toThrow(TypeError);
-    expect(() => AveAzul.promisifyAll(undefined)).toThrow(TypeError);
-    // Deliberately the wrong type: the runtime check under test is what throws.
-    expect(() => AveAzul.promisifyAll(42 as unknown as object)).toThrow(
-      TypeError
-    );
+
+    return verify({ timeout: 1000 })
+      .expectError.step(() => AveAzul.promisifyAll(undefined))
+      .step((caught) => {
+        expect(caught).toBeInstanceOf(TypeError);
+      })
+      .expectError.step(() => AveAzul.promisifyAll(42 as unknown as object))
+      .step((caught) => {
+        expect(caught).toBeInstanceOf(TypeError);
+      });
   });
 
   test("should throw when methods end in Async", () => {
@@ -167,9 +196,12 @@ describe("AveAzul.promisifyAll", () => {
         cb(null, "result");
       },
     };
-    expect(() => AveAzul.promisifyAll(obj)).toThrow(
-      "Cannot promisify an API that has normal methods with 'Async'-suffix"
-    );
+
+    return verify({ timeout: 1000 })
+      .expectErrorHas(
+        "Cannot promisify an API that has normal methods with 'Async'-suffix"
+      )
+      .step(() => AveAzul.promisifyAll(obj));
   });
 
   test("should not promisify invalid JavaScript identifiers", () => {
@@ -192,13 +224,19 @@ describe("AveAzul.promisifyAll", () => {
         cb(null, "result");
       },
     };
-    AveAzul.promisifyAll(obj);
-    expect(obj["123methodAsync"]).toBeUndefined();
-    expect(obj["method-nameAsync"]).toBeUndefined();
-    expect(obj["method.nameAsync"]).toBeUndefined();
+
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj);
+      })
+      .step(() => {
+        expect(obj["123methodAsync"]).toBeUndefined();
+        expect(obj["method-nameAsync"]).toBeUndefined();
+        expect(obj["method.nameAsync"]).toBeUndefined();
+      });
   });
 
-  test("should support custom promisifier", async () => {
+  test("should support custom promisifier", () => {
     const obj: {
       method(a: number, b: number, cb: NodeCallback): void;
     } & Partial<{ methodAsync(a: number, b: number): Promise<number> }> = {
@@ -207,24 +245,28 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, {
-      promisifier: (fn) => {
-        return (...args) => {
-          return new AveAzul((resolve) => {
-            fn(...args, (err, result) => {
-              // Custom promisifier that ignores errors
-              resolve(result * 2);
-            });
-          });
-        };
-      },
-    });
-
-    const result = await obj.methodAsync(2, 3);
-    expect(result).toBe(10); // (2 + 3) * 2
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, {
+          promisifier: (fn) => {
+            return (...args) => {
+              return new AveAzul((resolve) => {
+                fn(...args, (err, result) => {
+                  // Custom promisifier that ignores errors
+                  resolve(result * 2);
+                });
+              });
+            };
+          },
+        });
+      })
+      .step(() => obj.methodAsync(2, 3))
+      .step((result) => {
+        expect(result).toBe(10);
+      });
   });
 
-  test("should return AveAzul instances", async () => {
+  test("should return AveAzul instances", () => {
     const obj: {
       method(cb: NodeCallback): void;
     } & Partial<{ methodAsync(): Promise<string[]> }> = {
@@ -233,17 +275,26 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, { multiArgs: true });
+    let promise;
 
-    const promise = obj.methodAsync();
-    expect(promise).toBeInstanceOf(AveAzul);
-
-    const [result1, result2] = await promise;
-    expect(result1).toBe("result1");
-    expect(result2).toBe("result2");
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, { multiArgs: true });
+      })
+      .step(() => {
+        promise = obj.methodAsync();
+      })
+      .step(() => {
+        expect(promise).toBeInstanceOf(AveAzul);
+      })
+      .step(() => promise)
+      .step(([result1, result2]) => {
+        expect(result1).toBe("result1");
+        expect(result2).toBe("result2");
+      });
   });
 
-  test("should handle multiArgs option with error", async () => {
+  test("should handle multiArgs option with error", () => {
     const error = new Error("test error");
     const obj: {
       method(cb: NodeCallback): void;
@@ -253,13 +304,17 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, { multiArgs: true });
-
-    // bluebird rejects OperationError that wraps the error as cause
-    await expect(obj.methodAsync()).rejects.toBeInstanceOf(Error);
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, { multiArgs: true });
+      })
+      .expectError.step(() => obj.methodAsync())
+      .step((error) => {
+        expect(error).toBeInstanceOf(Error);
+      });
   });
 
-  test("should handle multiArgs option with custom promisifier", async () => {
+  test("should handle multiArgs option with custom promisifier", () => {
     const obj: {
       method(cb: NodeCallback): void;
     } & Partial<{ methodAsync(): Promise<string[]> }> = {
@@ -268,25 +323,35 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    AveAzul.promisifyAll(obj, {
-      multiArgs: true,
-      promisifier: (fn, context, multiArgs) => {
-        return (...args) => {
-          return new AveAzul((resolve, reject) => {
-            args.push((err, ...results) => {
-              if (err) reject(err);
-              else resolve(results.map((r) => r.toUpperCase()));
-            });
-            fn.apply(context, args);
-          });
-        };
-      },
-    });
+    let promise;
 
-    const promise = obj.methodAsync();
-    expect(promise).toBeInstanceOf(AveAzul);
-    const results = await promise;
-    expect(results).toEqual(["RESULT1", "RESULT2", "RESULT3"]);
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj, {
+          multiArgs: true,
+          promisifier: (fn, context, multiArgs) => {
+            return (...args) => {
+              return new AveAzul((resolve, reject) => {
+                args.push((err, ...results) => {
+                  if (err) reject(err);
+                  else resolve(results.map((r) => r.toUpperCase()));
+                });
+                fn.apply(context, args);
+              });
+            };
+          },
+        });
+      })
+      .step(() => {
+        promise = obj.methodAsync();
+      })
+      .step(() => {
+        expect(promise).toBeInstanceOf(AveAzul);
+      })
+      .step(() => promise)
+      .step((results) => {
+        expect(results).toEqual(["RESULT1", "RESULT2", "RESULT3"]);
+      });
   });
 
   test("should throw RangeError when suffix is not a valid identifier", () => {
@@ -296,43 +361,60 @@ describe("AveAzul.promisifyAll", () => {
       },
     };
 
-    expect(() => AveAzul.promisifyAll(obj, { suffix: "Invalid-Suffix" })).toThrow(RangeError);
-    expect(() => AveAzul.promisifyAll(obj, { suffix: "123" })).toThrow(RangeError);
-    expect(() => AveAzul.promisifyAll(obj, { suffix: "$valid" })).not.toThrow();
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        AveAzul.promisifyAll(obj, { suffix: "Invalid-Suffix" })
+      )
+      .step((caught) => {
+        expect(caught).toBeInstanceOf(RangeError);
+      })
+      .expectError.step(() => AveAzul.promisifyAll(obj, { suffix: "123" }))
+      .step((caught) => {
+        expect(caught).toBeInstanceOf(RangeError);
+      })
+      .step(() => AveAzul.promisifyAll(obj, { suffix: "$valid" }));
   });
 
   test("should handle methods in standard prototypes like Array", () => {
     // Try to promisify an array
     const arr: number[] &
       Partial<
-        Record<"mapAsync" | "filterAsync" | "forEachAsync" | "reduceAsync", unknown>
+        Record<
+          "mapAsync" | "filterAsync" | "forEachAsync" | "reduceAsync",
+          unknown
+        >
       > = [1, 2, 3];
-    AveAzul.promisifyAll(arr);
-
-    // Array's standard methods should not have Async versions
-    expect(arr.mapAsync).toBeUndefined();
-    expect(arr.filterAsync).toBeUndefined();
-    expect(arr.forEachAsync).toBeUndefined();
-    expect(arr.reduceAsync).toBeUndefined();
-
-    // Create a custom object with an Array property
-    const objWithArrayProp: {
+    let objWithArrayProp: {
       myArray: number[];
       arrayMethod(cb: NodeCallback): void;
-    } & Partial<{ arrayMethodAsync(): Promise<number[]> }> = {
-      myArray: arr,
-      arrayMethod(cb) {
-        cb(null, this.myArray);
-      },
-    };
+    } & Partial<{ arrayMethodAsync(): Promise<number[]> }>;
 
-    // The object itself should be promisified, but not affect the Array
-    AveAzul.promisifyAll(objWithArrayProp);
-    expect(objWithArrayProp.arrayMethodAsync).toBeDefined();
-    expect(typeof objWithArrayProp.arrayMethodAsync).toBe("function");
-
-    // Array methods should still not be promisified
-    expect(arr.mapAsync).toBeUndefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(arr);
+      })
+      .step(() => {
+        expect(arr.mapAsync).toBeUndefined();
+        expect(arr.filterAsync).toBeUndefined();
+        expect(arr.forEachAsync).toBeUndefined();
+        expect(arr.reduceAsync).toBeUndefined();
+      })
+      .step(() => {
+        objWithArrayProp = {
+          myArray: arr,
+          arrayMethod(cb) {
+            cb(null, this.myArray);
+          },
+        };
+      })
+      .step(() => {
+        AveAzul.promisifyAll(objWithArrayProp);
+      })
+      .step(() => {
+        expect(objWithArrayProp.arrayMethodAsync).toBeDefined();
+        expect(typeof objWithArrayProp.arrayMethodAsync).toBe("function");
+        expect(arr.mapAsync).toBeUndefined();
+      });
   });
 
   test("should not promisify methods of a class that extends Array", () => {
@@ -346,20 +428,25 @@ describe("AveAzul.promisifyAll", () => {
     // Built via push rather than `new MyArray(1, 2, 3)`: the inherited Array
     // construct signature takes a length, not elements.
     const myArr: MyArray &
-      Partial<Record<"mapAsync" | "filterAsync" | "myCustomMethodAsync", unknown>> =
-      new MyArray();
-    myArr.push(1, 2, 3);
-    AveAzul.promisifyAll(myArr);
+      Partial<
+        Record<"mapAsync" | "filterAsync" | "myCustomMethodAsync", unknown>
+      > = new MyArray();
 
-    // The standard Array methods should not have Async versions
-    expect(myArr.mapAsync).toBeUndefined();
-    expect(myArr.filterAsync).toBeUndefined();
-
-    // But custom methods should be promisified
-    expect(myArr.myCustomMethodAsync).toBeDefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        myArr.push(1, 2, 3);
+      })
+      .step(() => {
+        AveAzul.promisifyAll(myArr);
+      })
+      .step(() => {
+        expect(myArr.mapAsync).toBeUndefined();
+        expect(myArr.filterAsync).toBeUndefined();
+        expect(myArr.myCustomMethodAsync).toBeDefined();
+      });
   });
 
-  test("should have no effect when called multiple times on the same object", async () => {
+  test("should have no effect when called multiple times on the same object", () => {
     const obj: {
       method(cb: NodeCallback): void;
       otherMethod(a: number, cb: NodeCallback): void;
@@ -376,33 +463,43 @@ describe("AveAzul.promisifyAll", () => {
     };
 
     // First promisification
-    AveAzul.promisifyAll(obj);
+    let methodAsync;
+    let otherMethodAsync;
+    let properties;
 
-    // Capture the state after first promisification
-    const methodAsync = obj.methodAsync;
-    const otherMethodAsync = obj.otherMethodAsync;
-    const properties = Object.getOwnPropertyNames(obj);
-
-    // Second promisification
-    AveAzul.promisifyAll(obj);
-
-    // Verify no new properties were added
-    const newProperties = Object.getOwnPropertyNames(obj);
-    expect(newProperties).toEqual(properties);
-
-    // Verify methods are the same objects (idempotent operation)
-    expect(obj.methodAsync).toBe(methodAsync);
-    expect(obj.otherMethodAsync).toBe(otherMethodAsync);
-
-    // Verify the methods still function correctly
-    const result1 = await obj.methodAsync();
-    expect(result1).toBe("result");
-
-    const result2 = await obj.otherMethodAsync(5);
-    expect(result2).toBe(6);
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj);
+      })
+      .step(() => {
+        methodAsync = obj.methodAsync;
+      })
+      .step(() => {
+        otherMethodAsync = obj.otherMethodAsync;
+      })
+      .step(() => {
+        properties = Object.getOwnPropertyNames(obj);
+      })
+      .step(() => {
+        AveAzul.promisifyAll(obj);
+      })
+      .step(() => Object.getOwnPropertyNames(obj))
+      .step((newProperties) => {
+        expect(newProperties).toEqual(properties);
+        expect(obj.methodAsync).toBe(methodAsync);
+        expect(obj.otherMethodAsync).toBe(otherMethodAsync);
+      })
+      .step(() => obj.methodAsync())
+      .step((result1) => {
+        expect(result1).toBe("result");
+      })
+      .step(() => obj.otherMethodAsync(5))
+      .step((result2) => {
+        expect(result2).toBe(6);
+      });
   });
 
-  test("should preserve 'this' binding in promisified methods", async () => {
+  test("should preserve 'this' binding in promisified methods", () => {
     // Object with methods that use 'this'
     const obj: {
       name: string;
@@ -437,97 +534,89 @@ describe("AveAzul.promisifyAll", () => {
     };
 
     // Promisify all methods
-    AveAzul.promisifyAll(obj);
 
-    // Verify 'this' is preserved in promisified methods
-    const name = await obj.getNameAsync();
-    expect(name).toBe("test-object");
-
-    const value = await obj.getValueAsync();
-    expect(value).toBe(42);
-
-    // Verify 'this' is modified correctly in promisified methods
-    const result = await obj.setValuesAsync("new-name", 100);
-    expect(result).toEqual({ name: "new-name", value: 100 });
-    expect(obj.name).toBe("new-name");
-    expect(obj.value).toBe(100);
+    return verify({ timeout: 1000 })
+      .step(() => {
+        AveAzul.promisifyAll(obj);
+      })
+      .step(() => obj.getNameAsync())
+      .step((name) => {
+        expect(name).toBe("test-object");
+      })
+      .step(() => obj.getValueAsync())
+      .step((value) => {
+        expect(value).toBe(42);
+      })
+      .step(() => obj.setValuesAsync("new-name", 100))
+      .step((result) => {
+        expect(result).toEqual({ name: "new-name", value: 100 });
+        expect(obj.name).toBe("new-name");
+        expect(obj.value).toBe(100);
+      });
   });
 
-  test("should promisify fs object methods", async () => {
-    // Create a copy of fs to avoid modifying the original
+  test("should promisify fs object methods", () => {
     const fsCopy: typeof fsModule & Partial<FsAsync> = { ...fsModule };
-
-    // Promisify all fs methods
-    AveAzul.promisifyAll(fsCopy);
-
-    // Test that readFile is promisified
-    expect(fsCopy.readFileAsync).toBeDefined();
-    expect(typeof fsCopy.readFileAsync).toBe("function");
-
-    // Test that writeFile is promisified
-    expect(fsCopy.writeFileAsync).toBeDefined();
-    expect(typeof fsCopy.writeFileAsync).toBe("function");
-
-    // Test that stat is promisified
-    expect(fsCopy.statAsync).toBeDefined();
-    expect(typeof fsCopy.statAsync).toBe("function");
-
-    // Test that opendir is promisified
-    expect(fsCopy.opendirAsync).toBeDefined();
-    expect(typeof fsCopy.opendirAsync).toBe("function");
-
-    // Test reading package.json file
-    const packageJsonPath = path.join(import.meta.dirname, "..", "package.json");
-    const content = await fsCopy.readFileAsync(packageJsonPath, "utf8");
-
-    // Parse and verify it's a valid JSON with expected properties
-    const packageJson = JSON.parse(content);
-    expect(packageJson.name).toBe("aveazul");
-    expect(packageJson.description).toContain("Bluebird");
-
-    // Test that promisified methods return AveAzul instances
-    const promise = fsCopy.readFileAsync(packageJsonPath, "utf8");
-    expect(promise).toBeInstanceOf(AveAzul);
-
-    // Test stat functionality
-    const stats = await fsCopy.statAsync(packageJsonPath);
-    expect(stats.isFile()).toBe(true);
-    expect(stats.size).toBeGreaterThan(0);
-
-    // Test Dir object promisification
+    const packageJsonPath = path.join(
+      import.meta.dirname,
+      "..",
+      "package.json"
+    );
     const testDir = path.join(import.meta.dirname, "..");
-    const dir = await fsCopy.opendirAsync(testDir);
+    let dir: PromisifiedDir | undefined;
 
-    // Test that Dir.read is promisified
-    expect(dir.readAsync).toBeDefined();
-    expect(typeof dir.readAsync).toBe("function");
-
-    // Test that Dir.close is promisified
-    expect(dir.closeAsync).toBeDefined();
-    expect(typeof dir.closeAsync).toBe("function");
-
-    // Test reading a directory entry
-    const dirent = await dir.readAsync();
-    if (dirent) {
-      // Dirent should have synchronous methods like isFile(), isDirectory()
-      expect(typeof dirent.isFile).toBe("function");
-      expect(typeof dirent.isDirectory).toBe("function");
-      expect(typeof dirent.name).toBe("string");
-
-      // Test that Dirent methods work
-      const isFile = dirent.isFile();
-      const isDirectory = dirent.isDirectory();
-      expect(typeof isFile).toBe("boolean");
-      expect(typeof isDirectory).toBe("boolean");
-    }
-
-    // Close the directory
-    await dir.closeAsync();
-
-    // Verify original fs object is not modified
-    expect(fs.readFileAsync).toBeUndefined();
-    expect(fs.writeFileAsync).toBeUndefined();
-    expect(fs.statAsync).toBeUndefined();
-    expect(fs.opendirAsync).toBeUndefined();
+    return verify({
+      timeout: 1000,
+      cleanup: async () => {
+        if (dir) await dir.close();
+      },
+    })
+      .step(() => AveAzul.promisifyAll(fsCopy))
+      .step(() => {
+        expect(typeof fsCopy.readFileAsync).toBe("function");
+        expect(typeof fsCopy.writeFileAsync).toBe("function");
+        expect(typeof fsCopy.statAsync).toBe("function");
+        expect(typeof fsCopy.opendirAsync).toBe("function");
+      })
+      .step(() => ({ promise: fsCopy.readFileAsync(packageJsonPath, "utf8") }))
+      .keep.step(({ promise }) => expect(promise).toBeInstanceOf(AveAzul))
+      .step(({ promise }) => promise)
+      .step((content) => JSON.parse(content))
+      .step((packageJson) => {
+        expect(packageJson.name).toBe("aveazul");
+        expect(packageJson.description).toContain("Bluebird");
+      })
+      .step(() => fsCopy.statAsync(packageJsonPath))
+      .step((stats) => {
+        expect(stats.isFile()).toBe(true);
+        expect(stats.size).toBeGreaterThan(0);
+      })
+      .step(() =>
+        fsCopy.opendirAsync(testDir).then((opened) => {
+          dir = opened;
+        })
+      )
+      .step(() => {
+        expect(typeof dir.readAsync).toBe("function");
+        expect(typeof dir.closeAsync).toBe("function");
+      })
+      .step(() => dir.readAsync())
+      .step((dirent) => {
+        expect(dirent).not.toBeNull();
+        expect(typeof dirent.name).toBe("string");
+        expect(typeof dirent.isFile()).toBe("boolean");
+        expect(typeof dirent.isDirectory()).toBe("boolean");
+      })
+      .step(() =>
+        dir.closeAsync().then(() => {
+          dir = undefined;
+        })
+      )
+      .step(() => {
+        expect(fs.readFileAsync).toBeUndefined();
+        expect(fs.writeFileAsync).toBeUndefined();
+        expect(fs.statAsync).toBeUndefined();
+        expect(fs.opendirAsync).toBeUndefined();
+      });
   });
 });

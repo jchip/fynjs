@@ -3,11 +3,15 @@ import { verify } from "run-verify";
 import AveAzul from "./promise-lib.ts";
 
 describe("promisify", () => {
-  test("should work with callback-style functions", async () => {
+  test("should work with callback-style functions", () => {
     const fn = (cb) => cb(null, "success");
-    const promisified = AveAzul.promisify(fn);
-    const result = await promisified();
-    expect(result).toBe("success");
+
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.promisify(fn))
+      .step((promisified) => promisified())
+      .step((result) => {
+        expect(result).toBe("success");
+      });
   });
 
   test("should handle errors in callback-style functions", () => {
@@ -22,156 +26,170 @@ describe("promisify", () => {
       });
   });
 
-  test("should handle functions with multiple arguments", async () => {
+  test("should handle functions with multiple arguments", () => {
     const fn = (a, b, cb) => cb(null, a + b);
-    const promisified = AveAzul.promisify(fn);
-    const result = await promisified(1, 2);
-    expect(result).toBe(3);
+
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.promisify(fn))
+      .step((promisified) => promisified(1, 2))
+      .step((result) => {
+        expect(result).toBe(3);
+      });
   });
 
-  test("should handle functions with no arguments", async () => {
+  test("should handle functions with no arguments", () => {
     const sig = "success " + Math.random();
 
     const original = function noArgs(cb) {
       cb(null, sig);
     };
 
-    Object.defineProperty(original, "length", {
-      value: 1,
-      writable: false,
-      configurable: false,
-    });
-    Object.defineProperty(original, "name", {
-      value: "noArgs",
-      writable: false,
-      configurable: false,
-    });
-    const promisified = AveAzul.promisify(original);
-
-    const result = await promisified();
-    expect(result).toBe(sig);
-
-    //
-    // bluebird returns 3 and "ret", so not verifying these
-    //
-    // expect(promisified.length).toBe(1);
-    // expect(promisified.name).toBe("noArgs");
+    return verify({ timeout: 1000 })
+      .step(() => {
+        Object.defineProperty(original, "length", {
+          value: 1,
+          writable: false,
+          configurable: false,
+        });
+      })
+      .step(() => {
+        Object.defineProperty(original, "name", {
+          value: "noArgs",
+          writable: false,
+          configurable: false,
+        });
+      })
+      .step(() => AveAzul.promisify(original))
+      .step((promisified) => promisified())
+      .step((result) => {
+        expect(result).toBe(sig);
+      });
   });
 
   test("should handle non-configurable properties", () => {
     const original = function testFn(cb) {};
-    Object.defineProperty(original, "nonConfigurable", {
-      value: "test",
-      configurable: false,
-      writable: false,
-    });
 
-    // This should not throw even though the property can't be copied
-    const promisified = AveAzul.promisify(original);
-    expect(promisified).toBeDefined();
+    return verify({ timeout: 1000 })
+      .step(() => {
+        Object.defineProperty(original, "nonConfigurable", {
+          value: "test",
+          configurable: false,
+          writable: false,
+        });
+      })
+      .step(() => AveAzul.promisify(original))
+      .step((promisified) => {
+        expect(promisified).toBeDefined();
+      });
   });
 
   test("should throw on non-function arguments", () => {
-    expect(() => AveAzul.promisify(null)).toThrow(TypeError);
-    expect(() => AveAzul.promisify(undefined)).toThrow(TypeError);
-    // Deliberately the wrong types: the runtime check under test is what throws.
-    const notFunctions = [42, "not a function", {}] as unknown as ((
-      ...args: any[]
-    ) => void)[];
-    for (const notAFunction of notFunctions) {
-      expect(() => AveAzul.promisify(notAFunction)).toThrow(TypeError);
-    }
+    const notFunctions = [
+      null,
+      undefined,
+      42,
+      "not a function",
+      {},
+    ] as unknown as ((...args: any[]) => void)[];
+    return verify({ timeout: 1000 }).asyncStep(() =>
+      notFunctions.map((notAFunction) =>
+        verify({ timeout: 500 })
+          .expectError.step(() => AveAzul.promisify(notAFunction))
+          .step((error) => expect(error).toBeInstanceOf(TypeError))
+      )
+    );
   });
 
-  test("should handle context option", async () => {
+  test("should handle context option", () => {
     const obj = {
       value: 42,
       method(cb) {
         cb(null, this.value);
       },
     };
-    const promisified = AveAzul.promisify(obj.method, { context: obj });
-    const result = await promisified();
-    expect(result).toBe(42);
+
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.promisify(obj.method, { context: obj }))
+      .step((promisified) => promisified())
+      .step((result) => {
+        expect(result).toBe(42);
+      });
   });
 
   test("should preserve properties from original function", () => {
-    const original = function testFn(a, b, cb) {};
-    original.someProperty = "value";
-    original.anotherProperty = 42;
-    original.nested = {
-      prop: "nested value",
-    };
-
-    // promisify() copies the original function's own properties onto the result;
-    // the Partial<...> half declares the ones this test reads back.
-    const promisified: ((...args: any[]) => Promise<unknown>) &
+    const original = Object.assign(function testFn(a, b, cb) {}, {
+      someProperty: "value",
+      anotherProperty: 42,
+      nested: { prop: "nested value" },
+    });
+    let promisified: ((...args: any[]) => Promise<unknown>) &
       Partial<{
         someProperty: string;
         anotherProperty: number;
         nested: { prop: string };
-      }> = AveAzul.promisify(original);
+      }>;
 
-    // Test basic properties
-    expect(promisified.someProperty).toBe("value");
-    expect(promisified.anotherProperty).toBe(42);
-
-    // Test nested properties
-    expect(promisified.nested).toBeDefined();
-    expect(promisified.nested.prop).toBe("nested value");
-
-    // Test function properties
-    // expect(promisified.length).toBe(3); // Original function's length
-
-    // bluebird returns "ret" - not verifying this
-    // expect(promisified.name).toBe("testFn"); // Original function's name
-
-    // Test that the promisified function still works
-    expect(typeof promisified).toBe("function");
+    return verify({ timeout: 1000 })
+      .step(() => {
+        promisified = AveAzul.promisify(original);
+      })
+      .step(() => {
+        expect(promisified.someProperty).toBe("value");
+        expect(promisified.anotherProperty).toBe(42);
+        expect(promisified.nested).toBeDefined();
+        expect(promisified.nested.prop).toBe("nested value");
+        expect(typeof promisified).toBe("function");
+      });
   });
 
   test("should preserve properties from fs.readFile-like functions", () => {
     const original = function readFile(path, options, cb) {};
-    Object.defineProperty(original, "length", {
-      value: 3,
-      writable: false,
-      configurable: false,
-    });
-    Object.defineProperty(original, "name", {
-      value: "readFile",
-      writable: false,
-      configurable: false,
-    });
-    const promisified = AveAzul.promisify(original);
 
-    // expect(promisified.length).toBe(3);
-    // bluebird returns "ret" - not verifying this
-    // expect(promisified.name).toBe("readFile");
+    return verify({ timeout: 1000 })
+      .step(() => {
+        Object.defineProperty(original, "length", {
+          value: 3,
+          writable: false,
+          configurable: false,
+        });
+      })
+      .step(() => {
+        Object.defineProperty(original, "name", {
+          value: "readFile",
+          writable: false,
+          configurable: false,
+        });
+      })
+      .step(() => AveAzul.promisify(original))
+      .step((promisified) => expect(typeof promisified).toBe("function"));
   });
 
-  test("should preserve properties from functions with no arguments", async () => {
+  test("should preserve properties from functions with no arguments", () => {
     const sig = "success " + Math.random();
     const original = function noArgs(cb) {
       cb(null, sig);
     };
-    Object.defineProperty(original, "length", {
-      value: 1,
-      writable: false,
-      configurable: false,
-    });
-    Object.defineProperty(original, "name", {
-      value: "noArgs",
-      writable: false,
-      configurable: false,
-    });
-    const promisified = AveAzul.promisify(original);
 
-    const result = await promisified();
-    expect(result).toBe(sig);
-
-    // bluebird returns 3 and "ret", so not verifying these
-    // expect(promisified.length).toBe(1);
-    // expect(promisified.name).toBe("noArgs");
+    return verify({ timeout: 1000 })
+      .step(() => {
+        Object.defineProperty(original, "length", {
+          value: 1,
+          writable: false,
+          configurable: false,
+        });
+      })
+      .step(() => {
+        Object.defineProperty(original, "name", {
+          value: "noArgs",
+          writable: false,
+          configurable: false,
+        });
+      })
+      .step(() => AveAzul.promisify(original))
+      .step((promisified) => promisified())
+      .step((result) => {
+        expect(result).toBe(sig);
+      });
   });
 
   it("should return the same function if already promisified", () => {
@@ -181,11 +199,8 @@ describe("promisify", () => {
     // Promisify again
     const doublePromisifiedFn = AveAzul.promisify(promisifiedFn);
 
-    // Should be the same function reference
-    expect(doublePromisifiedFn).toBe(promisifiedFn);
-
-    // Should still work correctly
     return verify({ timeout: 500 })
+      .step(() => expect(doublePromisifiedFn).toBe(promisifiedFn))
       .step(() => doublePromisifiedFn("test"))
       .step((result) => {
         expect(result).toBe("test");
@@ -215,12 +230,8 @@ describe("promisify", () => {
     // Second promisification should create a new function since __isPromisified__ throws
     const promisified2 = AveAzul.promisify(promisified1);
 
-    // They should be different function references since each promisification creates a new wrapper
-    expect(promisified2).not.toBe(promisified1);
-
-    // Both should work correctly. Neither call starts until the step is
-    // reached, and the array resolves element-wise.
     return verify({ timeout: 500 })
+      .step(() => expect(promisified2).not.toBe(promisified1))
       .asyncStep(() => [promisified1(), promisified2()])
       .step(([result1, result2]) => {
         expect(result1).toBe("success");
@@ -241,8 +252,8 @@ describe("promisify", () => {
       .step((defaultResult) => {
         // Should only return the first result
         expect(defaultResult).toBe("result1");
-        return multiArgsPromisified();
       })
+      .step(() => multiArgsPromisified())
       .step((multiArgsResult) => {
         // Should return all results as an array
         expect(Array.isArray(multiArgsResult)).toBe(true);

@@ -1,96 +1,132 @@
+import { verify } from "run-verify";
 import { describe, test, expect, vi } from "vitest";
 import AveAzul from "./promise-lib.ts";
 
 describe("static methods", () => {
   test("reduce() should handle empty array without initial value and return undefined", async () => {
     const fn = vi.fn();
-    const result = await AveAzul.reduce([], fn);
-    expect(fn).not.toHaveBeenCalled();
-    expect(result).toBe(undefined);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([], fn))
+      .step((result) => {
+        expect(fn).not.toHaveBeenCalled();
+        expect(result).toBe(undefined);
+      });
   });
 
   test("reduce() should handle empty array with initial value", async () => {
-    const result = await AveAzul.reduce([], (acc, val) => acc + val, 10);
-    expect(result).toBe(10);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([], (acc, val) => acc + val, 10))
+      .step((result) => {
+        expect(result).toBe(10);
+      });
   });
 
   test("reduce() should handle array with one element without initial value", async () => {
     const fn = vi.fn(() => {});
-    const result = await AveAzul.reduce([42], fn);
-    expect(fn).not.toHaveBeenCalled();
-    expect(result).toBe(42);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([42], fn))
+      .step((result) => {
+        expect(fn).not.toHaveBeenCalled();
+        expect(result).toBe(42);
+      });
   });
 
   test("reduce() should handle array with one element with initial value", async () => {
     const fn = vi.fn((acc, val) => acc + val);
-    const result = await AveAzul.reduce([42], fn, 10);
-    expect(fn).toHaveBeenCalledWith(10, 42, 0, 1);
-    expect(fn).toHaveBeenCalledTimes(1);
-    expect(result).toBe(52);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([42], fn, 10))
+      .step((result) => {
+        expect(fn).toHaveBeenCalledWith(10, 42, 0, 1);
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(result).toBe(52);
+      });
   });
 
   test("reduce() should handle array with multiple elements without initial value", async () => {
     const fn = vi.fn((acc, val) => (acc === undefined ? val : acc + val));
-    const result = await AveAzul.reduce([1, 2, 3], fn);
-    expect(fn).toHaveBeenCalledTimes(2);
-    expect(fn).toHaveBeenNthCalledWith(1, 1, 2, 1, 3);
-    expect(fn).toHaveBeenNthCalledWith(2, 3, 3, 2, 3);
-    expect(result).toBe(6);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([1, 2, 3], fn))
+      .step((result) => {
+        expect(fn).toHaveBeenCalledTimes(2);
+        expect(fn).toHaveBeenNthCalledWith(1, 1, 2, 1, 3);
+        expect(fn).toHaveBeenNthCalledWith(2, 3, 3, 2, 3);
+        expect(result).toBe(6);
+      });
   });
 
   test("reduce() should handle array with multiple elements with initial value", async () => {
     const fn = vi.fn((acc, val) => acc + val);
-    const result = await AveAzul.reduce([1, 2, 3], fn, 10);
-    expect(fn).toHaveBeenCalledTimes(3);
-    expect(fn).toHaveBeenNthCalledWith(1, 10, 1, 0, 3);
-    expect(fn).toHaveBeenNthCalledWith(2, 11, 2, 1, 3);
-    expect(fn).toHaveBeenNthCalledWith(3, 13, 3, 2, 3);
-    expect(result).toBe(16);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([1, 2, 3], fn, 10))
+      .step((result) => {
+        expect(fn).toHaveBeenCalledTimes(3);
+        expect(fn).toHaveBeenNthCalledWith(1, 10, 1, 0, 3);
+        expect(fn).toHaveBeenNthCalledWith(2, 11, 2, 1, 3);
+        expect(fn).toHaveBeenNthCalledWith(3, 13, 3, 2, 3);
+        expect(result).toBe(16);
+      });
   });
 
   test("try() should handle synchronous functions", async () => {
-    const result = await AveAzul.try(() => 42);
-    expect(result).toBe(42);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.try(() => 42))
+      .step((result) => {
+        expect(result).toBe(42);
+      });
   });
 
   test("try() should handle asynchronous functions", async () => {
-    const result = await AveAzul.try(() => Promise.resolve(42));
-    expect(result).toBe(42);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.try(() => Promise.resolve(42)))
+      .step((result) => {
+        expect(result).toBe(42);
+      });
   });
 
   test("try() should handle errors", async () => {
-    const promise = AveAzul.try(() => {
-      throw new Error("test error");
-    });
-    await expect(promise).rejects.toThrow("test error");
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        AveAzul.try(() => {
+          throw new Error("test error");
+        })
+      )
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow("test error");
+      });
   });
 
   test("props() should resolve object properties", async () => {
-    const result = await AveAzul.props({
-      a: Promise.resolve(1),
-      b: Promise.resolve(2),
-      c: 3,
-    });
-
-    expect(result).toEqual({ a: 1, b: 2, c: 3 });
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.props({
+          a: Promise.resolve(1),
+          b: Promise.resolve(2),
+          c: 3,
+        })
+      )
+      .step((result) => {
+        expect(result).toEqual({ a: 1, b: 2, c: 3 });
+      });
   });
 
   test("reduce() should reduce array elements", async () => {
-    const result = await AveAzul.reduce(
-      [1, 2, 3, 4],
-      (acc, val) => acc + val,
-      0
-    );
-    expect(result).toBe(10);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.reduce([1, 2, 3, 4], (acc, val) => acc + val, 0))
+      .step((result) => {
+        expect(result).toBe(10);
+      });
   });
 
   test("reduce() should work without initial value", async () => {
-    const result = await AveAzul.reduce(
-      [1, 2, 3, 4],
-      (acc, val) => acc + val,
-      0
-    );
-    expect(result).toBe(10);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.reduce<number, number>([1, 2, 3, 4], (acc, val) => acc + val)
+      )
+      .step((result) => {
+        expect(result).toBe(10);
+      });
   });
 
   test("reduce() should handle array with promise elements", async () => {
@@ -103,39 +139,49 @@ describe("static methods", () => {
       Promise.resolve(5),
     ];
 
-    const result = await AveAzul.reduce(
-      array,
-      (acc, val) => {
-        // Verify the promises are resolved before reaching the reducer function
-        expect(typeof val).toBe("number");
-        return acc + val;
-      },
-      0
+    return (
+      verify({ timeout: 1000 })
+        .step(() =>
+          AveAzul.reduce(
+            array,
+            (acc, val) => {
+              // Verify the promises are resolved before reaching the reducer function
+              expect(typeof val).toBe("number");
+              return acc + val;
+            },
+            0
+          )
+        )
+        .step((result) => expect(result).toBe(15))
+
+        // Test without initial value
+        .step(() =>
+          AveAzul.reduce<number, number>(array, (acc, val) => {
+            // Verify the promises are resolved
+            expect(typeof val).toBe("number");
+            expect(typeof acc).toBe("number");
+            return acc + val;
+          })
+        )
+        .step((result) => expect(result).toBe(15))
     );
-
-    expect(result).toBe(15); // 1+2+3+4+5 = 15
-
-    // Test without initial value
-    const result2 = await AveAzul.reduce<number, number>(array, (acc, val) => {
-      // Verify the promises are resolved
-      expect(typeof val).toBe("number");
-      expect(typeof acc).toBe("number");
-      return acc + val;
-    });
-
-    expect(result2).toBe(15); // 1+2+3+4+5 = 15
   });
 
   test("defer() should create a deferred promise", async () => {
-    const deferred = AveAzul.defer();
-    expect(deferred.promise).toBeInstanceOf(AveAzul);
-    expect(typeof deferred.resolve).toBe("function");
-    expect(typeof deferred.reject).toBe("function");
-
-    // Test resolving
-    deferred.resolve(42);
-    const result = await deferred.promise;
-    expect(result).toBe(42);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.defer())
+      .keep.step((deferred) => {
+        expect(deferred.promise).toBeInstanceOf(AveAzul);
+        expect(typeof deferred.resolve).toBe("function");
+        expect(typeof deferred.reject).toBe("function");
+      })
+      .step((deferred) => {
+        deferred.resolve(42);
+        return deferred.promise;
+      })
+      .step((result) => {
+        expect(result).toBe(42);
+      });
   });
 
   test("each() should handle array with promise elements", async () => {
@@ -151,20 +197,24 @@ describe("static methods", () => {
     const processedValues = [];
 
     // Call each() and collect processed values
-    const result = await AveAzul.each(items, (value, index, length) => {
-      // Verify each value is resolved
-      expect(typeof value).toBe("number");
-      processedValues.push(value);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.each(items, (value, index, length) => {
+          // Verify each value is resolved
+          expect(typeof value).toBe("number");
+          processedValues.push(value);
 
-      // Verify the correct index and length are passed
-      expect(index).toBe(processedValues.length - 1);
-      expect(length).toBe(items.length);
-    });
+          // Verify the correct index and length are passed
+          expect(index).toBe(processedValues.length - 1);
+          expect(length).toBe(items.length);
+        })
+      )
+      .step((result) => {
+        // Verify all values were correctly resolved and processed
+        expect(processedValues).toEqual([1, 2, 3, 4, 5]);
 
-    // Verify all values were correctly resolved and processed
-    expect(processedValues).toEqual([1, 2, 3, 4, 5]);
-
-    // Verify the original array is returned
-    expect(result).toEqual([1, 2, 3, 4, 5]);
+        // Verify the original array is returned
+        expect(result).toEqual([1, 2, 3, 4, 5]);
+      });
   });
 });

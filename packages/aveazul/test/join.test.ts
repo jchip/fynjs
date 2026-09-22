@@ -1,65 +1,89 @@
+import { verify } from "run-verify";
 import { describe, test, expect, vi } from "vitest";
 import AveAzul from "./promise-lib.ts";
 
 describe("AveAzul.join", () => {
   test("should wait for all promises and pass their values to the handler", async () => {
-    const result = await AveAzul.join(
-      AveAzul.resolve(1),
-      AveAzul.resolve(2),
-      AveAzul.resolve(3),
-      (a, b, c) => a + b + c
-    );
-
-    expect(result).toBe(6);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(
+          AveAzul.resolve(1),
+          AveAzul.resolve(2),
+          AveAzul.resolve(3),
+          (a, b, c) => a + b + c
+        )
+      )
+      .step((result) => {
+        expect(result).toBe(6);
+      });
   });
 
   test("should handle a mix of promises and values", async () => {
-    const result = await AveAzul.join(
-      AveAzul.resolve(1),
-      2,
-      AveAzul.resolve(3),
-      (a, b, c) => a + b + c
-    );
-
-    expect(result).toBe(6);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(
+          AveAzul.resolve(1),
+          2,
+          AveAzul.resolve(3),
+          (a, b, c) => a + b + c
+        )
+      )
+      .step((result) => {
+        expect(result).toBe(6);
+      });
   });
 
   test("should handle zero promises with only a handler", async () => {
     const fn = () => 42;
-    const result = await AveAzul.join(fn);
-    expect(result).toEqual([fn]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.join(fn))
+      .step((result) => {
+        expect(result).toEqual([fn]);
+      });
   });
 
   test("should reject if any input promise rejects", async () => {
-    await expect(
-      AveAzul.join(
-        AveAzul.resolve(1),
-        AveAzul.reject(new Error("test error")),
-        AveAzul.resolve(3),
-        (a, b, c) => a + b + c
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        AveAzul.join(
+          AveAzul.resolve(1),
+          AveAzul.reject(new Error("test error")),
+          AveAzul.resolve(3),
+          (a, b, c) => a + b + c
+        )
       )
-    ).rejects.toThrow("test error");
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow("test error");
+      });
   });
 
   test("should reject with error from handler function", async () => {
-    await expect(
-      AveAzul.join(AveAzul.resolve(1), AveAzul.resolve(2), () => {
-        throw new Error("handler error");
-      })
-    ).rejects.toThrow("handler error");
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        AveAzul.join(AveAzul.resolve(1), AveAzul.resolve(2), () => {
+          throw new Error("handler error");
+        })
+      )
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow("handler error");
+      });
   });
 
   test("should handle asynchronous handler functions", async () => {
-    const result = await AveAzul.join(
-      AveAzul.resolve(1),
-      AveAzul.resolve(2),
-      async (a, b) => {
-        const c = await AveAzul.resolve(3);
-        return a + b + c;
-      }
-    );
-
-    expect(result).toBe(6);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(AveAzul.resolve(1), AveAzul.resolve(2), async (a, b) => {
+          const c = await AveAzul.resolve(3);
+          return a + b + c;
+        })
+      )
+      .step((result) => {
+        expect(result).toBe(6);
+      });
   });
 
   test("should maintain the order of values passed to handler", async () => {
@@ -70,21 +94,27 @@ describe("AveAzul.join", () => {
     );
     const p3 = new AveAzul((resolve) => setTimeout(() => resolve("third"), 20));
 
-    const result = await AveAzul.join(p1, p2, p3, (a, b, c) => [a, b, c]);
-
-    // Order should be maintained regardless of resolution timing
-    expect(result).toEqual(["first", "second", "third"]);
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.join(p1, p2, p3, (a, b, c) => [a, b, c]))
+      .step((result) => {
+        // Order should be maintained regardless of resolution timing
+        expect(result).toEqual(["first", "second", "third"]);
+      });
   });
 
   test("should correctly handle promises that resolve to undefined or null", async () => {
-    const result = await AveAzul.join(
-      AveAzul.resolve(undefined),
-      AveAzul.resolve(null),
-      AveAzul.resolve(42),
-      (a, b, c) => ({ a, b, c })
-    );
-
-    expect(result).toEqual({ a: undefined, b: null, c: 42 });
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(
+          AveAzul.resolve(undefined),
+          AveAzul.resolve(null),
+          AveAzul.resolve(42),
+          (a, b, c) => ({ a, b, c })
+        )
+      )
+      .step((result) => {
+        expect(result).toEqual({ a: undefined, b: null, c: 42 });
+      });
   });
 
   test("should catch errors thrown in promises", async () => {
@@ -93,27 +123,33 @@ describe("AveAzul.join", () => {
       throw new Error("thrown error");
     });
 
-    await expect(
-      AveAzul.join(
-        AveAzul.resolve(1),
-        throwingPromise,
-        AveAzul.resolve(3),
-        (a, b, c) => a + b + c
+    return verify({ timeout: 1000 })
+      .expectError.step(() =>
+        AveAzul.join(
+          AveAzul.resolve(1),
+          throwingPromise,
+          AveAzul.resolve(3),
+          (a, b, c) => a + b + c
+        )
       )
-    ).rejects.toThrow("thrown error");
+      .step((error) => {
+        expect(() => {
+          throw error;
+        }).toThrow("thrown error");
+      });
   });
 
   test("should behave like Promise.all when last argument is not a function", async () => {
     // When the last argument is not a function, join should behave like Promise.all
-    const result = await AveAzul.join(
-      AveAzul.resolve(1),
-      AveAzul.resolve(2),
-      AveAzul.resolve(3)
-    );
-
-    // Should return an array of results, just like Promise.all
-    expect(Array.isArray(result)).toBe(true);
-    expect(result).toEqual([1, 2, 3]);
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(AveAzul.resolve(1), AveAzul.resolve(2), AveAzul.resolve(3))
+      )
+      .step((result) => {
+        // Should return an array of results, just like Promise.all
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toEqual([1, 2, 3]);
+      });
   });
 
   test("should process all promises even when handler takes fewer parameters", async () => {
@@ -124,22 +160,18 @@ describe("AveAzul.join", () => {
     const spy4 = vi.fn().mockResolvedValue(4);
 
     // Handler only uses the first two values
-    const result = await AveAzul.join(
-      spy1(),
-      spy2(),
-      spy3(),
-      spy4(),
-      (a, b) => a + b
-    );
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.join(spy1(), spy2(), spy3(), spy4(), (a, b) => a + b))
+      .step((result) => {
+        // Result should be the sum of first two values
+        expect(result).toBe(3);
 
-    // Result should be the sum of first two values
-    expect(result).toBe(3);
-
-    // All spies should have been called, showing all promises were processed
-    expect(spy1).toHaveBeenCalled();
-    expect(spy2).toHaveBeenCalled();
-    expect(spy3).toHaveBeenCalled();
-    expect(spy4).toHaveBeenCalled();
+        // All spies should have been called, showing all promises were processed
+        expect(spy1).toHaveBeenCalled();
+        expect(spy2).toHaveBeenCalled();
+        expect(spy3).toHaveBeenCalled();
+        expect(spy4).toHaveBeenCalled();
+      });
   });
 
   test("should handle nested join calls", async () => {
@@ -164,25 +196,29 @@ describe("AveAzul.join", () => {
     );
 
     // Outer join that combines results from the inner joins
-    const result = await AveAzul.join(
-      innerJoin,
-      secondInnerJoin,
-      thirdPromise,
-      (sum, product, value) => ({
-        sum,
-        product,
-        value,
-        total: sum + product + value,
-      })
-    );
-
-    // Verify the expected results
-    expect(result).toEqual({
-      sum: 6, // 1 + 2 + 3 from the first inner join
-      product: 20, // 4 * 5 from the second inner join
-      value: 10, // From the third promise
-      total: 36, // 6 + 20 + 10 = 36
-    });
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(
+          innerJoin,
+          secondInnerJoin,
+          thirdPromise,
+          (sum, product, value) => ({
+            sum,
+            product,
+            value,
+            total: sum + product + value,
+          })
+        )
+      )
+      .step((result) => {
+        // Verify the expected results
+        expect(result).toEqual({
+          sum: 6, // 1 + 2 + 3 from the first inner join
+          product: 20, // 4 * 5 from the second inner join
+          value: 10, // From the third promise
+          total: 36, // 6 + 20 + 10 = 36
+        });
+      });
   });
 
   test("should handle complex nested joins with 5 promises where 3 are inner joins", async () => {
@@ -217,32 +253,36 @@ describe("AveAzul.join", () => {
     const regularValue = 42;
 
     // Final join combining all five promises
-    const result = await AveAzul.join(
-      avgJoin,
-      strJoin,
-      nestedJoin,
-      delayedPromise,
-      regularValue,
-      (avg, str, nested, delayed, regular) => ({
-        average: avg,
-        greeting: str,
-        nestedResult: nested,
-        delayedValue: delayed,
-        regularValue: regular,
-        summary: `Average: ${avg}, Greeting: ${str}, Nested: ${nested}, Delayed: ${delayed}, Regular: ${regular}`,
-      })
-    );
-
-    // Verify all the expected results
-    expect(result).toEqual({
-      average: 20, // (10 + 20 + 30) / 3
-      greeting: "hello world", // Concatenated strings
-      nestedResult: 11, // 5 + (2 * 3)
-      delayedValue: 100, // From the delayed promise
-      regularValue: 42, // Regular value
-      summary:
-        "Average: 20, Greeting: hello world, Nested: 11, Delayed: 100, Regular: 42",
-    });
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(
+          avgJoin,
+          strJoin,
+          nestedJoin,
+          delayedPromise,
+          regularValue,
+          (avg, str, nested, delayed, regular) => ({
+            average: avg,
+            greeting: str,
+            nestedResult: nested,
+            delayedValue: delayed,
+            regularValue: regular,
+            summary: `Average: ${avg}, Greeting: ${str}, Nested: ${nested}, Delayed: ${delayed}, Regular: ${regular}`,
+          })
+        )
+      )
+      .step((result) => {
+        // Verify all the expected results
+        expect(result).toEqual({
+          average: 20, // (10 + 20 + 30) / 3
+          greeting: "hello world", // Concatenated strings
+          nestedResult: 11, // 5 + (2 * 3)
+          delayedValue: 100, // From the delayed promise
+          regularValue: 42, // Regular value
+          summary:
+            "Average: 20, Greeting: hello world, Nested: 11, Delayed: 100, Regular: 42",
+        });
+      });
   });
 
   test("should handle deeply nested join calls with multiple inner joins", async () => {
@@ -308,74 +348,80 @@ describe("AveAzul.join", () => {
     const regularValue = delayedResolve({ type: "constant", value: 42 });
 
     // Final join combining all five promises with varying depths of nesting
-    const result = await AveAzul.join(
-      deepNestedJoin1,
-      deepNestedJoin2,
-      simpleInnerJoin,
-      delayedPromise,
-      regularValue,
-      (firstNested, secondNested, simpleResult, delayed, regular) => {
-        const endTime = Date.now();
-        return {
-          nestedObject: firstNested,
-          nestedString: secondNested,
-          multiplication: simpleResult,
-          delayedData: delayed,
-          constant: regular,
-          // Create a summary property that combines all results
+    return verify({ timeout: 1000 })
+      .step(() =>
+        AveAzul.join(
+          deepNestedJoin1,
+          deepNestedJoin2,
+          simpleInnerJoin,
+          delayedPromise,
+          regularValue,
+          (firstNested, secondNested, simpleResult, delayed, regular) => {
+            const endTime = Date.now();
+            return {
+              nestedObject: firstNested,
+              nestedString: secondNested,
+              multiplication: simpleResult,
+              delayedData: delayed,
+              constant: regular,
+              // Create a summary property that combines all results
+              combined: {
+                numericSum: firstNested.total + simpleResult,
+                stringRepresentation: `${secondNested} (total: ${firstNested.total}, product: ${simpleResult})`,
+                metaData: {
+                  hasTimestamp: !!delayed.timestamp,
+                  constantValue: regular.value,
+                  totalExecutionTime: endTime - startTime,
+                },
+              },
+            };
+          }
+        )
+      )
+      .step((result) => {
+        // Verify complex nested structure
+        expect(result).toMatchObject({
+          nestedObject: {
+            values: [10, 15, 20],
+            total: 45,
+          },
+          nestedString: "first: nested deeply value",
+          multiplication: 20000,
+          delayedData: expect.objectContaining({
+            timestamp: expect.any(Number),
+          }),
+          constant: {
+            type: "constant",
+            value: 42,
+          },
           combined: {
-            numericSum: firstNested.total + simpleResult,
-            stringRepresentation: `${secondNested} (total: ${firstNested.total}, product: ${simpleResult})`,
+            numericSum: 20045,
+            stringRepresentation:
+              "first: nested deeply value (total: 45, product: 20000)",
             metaData: {
-              hasTimestamp: !!delayed.timestamp,
-              constantValue: regular.value,
-              totalExecutionTime: endTime - startTime,
+              hasTimestamp: true,
+              constantValue: 42,
+              totalExecutionTime: expect.any(Number),
             },
           },
-        };
-      }
-    );
+        });
 
-    // Verify complex nested structure
-    expect(result).toMatchObject({
-      nestedObject: {
-        values: [10, 15, 20],
-        total: 45,
-      },
-      nestedString: "first: nested deeply value",
-      multiplication: 20000,
-      delayedData: expect.objectContaining({
-        timestamp: expect.any(Number),
-      }),
-      constant: {
-        type: "constant",
-        value: 42,
-      },
-      combined: {
-        numericSum: 20045,
-        stringRepresentation:
-          "first: nested deeply value (total: 45, product: 20000)",
-        metaData: {
-          hasTimestamp: true,
-          constantValue: 42,
-          totalExecutionTime: expect.any(Number),
-        },
-      },
-    });
+        // The execution should be faster than if we ran all promises sequentially
+        // Even with deeply nested joins, the library should handle parallelization
+        expect(result.combined.metaData.totalExecutionTime).toBeLessThan(1500);
 
-    // The execution should be faster than if we ran all promises sequentially
-    // Even with deeply nested joins, the library should handle parallelization
-    expect(result.combined.metaData.totalExecutionTime).toBeLessThan(1500);
+        // Now that the clock covers the async work, the floor is the shortest delay any of these
+        // promises can draw (10ms) - not the 30ms ceiling, which nothing guarantees.
+        expect(
+          result.combined.metaData.totalExecutionTime
+        ).toBeGreaterThanOrEqual(10);
 
-    // Now that the clock covers the async work, the floor is the shortest delay any of these
-    // promises can draw (10ms) - not the 30ms ceiling, which nothing guarantees.
-    expect(result.combined.metaData.totalExecutionTime).toBeGreaterThanOrEqual(10);
-
-    // Only log execution time when DEBUG environment variable is set
-    if (process.env.DEBUG) {
-      console.log(
-        `Total execution time: ${result.combined.metaData.totalExecutionTime}ms`
-      );
-    }
+        // Only log execution time when DEBUG environment variable is set
+        if (process.env.DEBUG) {
+          console.log(
+            `Total execution time: ${result.combined.metaData.totalExecutionTime}ms`
+          );
+        }
+      });
   });
 });
