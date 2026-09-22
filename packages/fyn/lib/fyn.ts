@@ -152,6 +152,7 @@ interface InstallConfig {
   time: number;
   centralDir?: string | false;
   production?: boolean;
+  fynlocal?: boolean;
   layout?: string;
   shortPkgDir?: boolean;
   localPkgLinks?: Record<string, LocalPkgLink>;
@@ -928,6 +929,7 @@ class Fyn {
         time: Date.now() + 5,
         centralDir,
         production: this.production,
+        fynlocal: Boolean(this.fynlocal),
         layout: this._options.layout,
         shortPkgDir: this._shortPkgDir,
         blockedScripts: this._blockedScripts || this._installConfig.blockedScripts || [],

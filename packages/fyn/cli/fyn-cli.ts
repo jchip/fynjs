@@ -552,6 +552,7 @@ class FynCli {
         if (
           !this.fyn._changeProdMode &&
           !this.fyn._options.forceInstall &&
+          this.fyn._installConfig.fynlocal === Boolean(this.fyn.fynlocal) &&
           this.fyn._installConfig.time
         ) {
           const stats = await scanFileStats(this.fyn.cwd, {
