@@ -38,6 +38,17 @@ function parseRules(contents: string) {
 }
 
 describe("gitignore parser", () => {
+  it("does not pass the rule directory itself to the matcher", async () => {
+    const { GitignoreRules } = await import("../../src/gitignore.js");
+    const matcher = { test: vi.fn(() => ({ ignored: true, unignored: false })) };
+    const rules = new GitignoreRules([{ dir: cwd, matcher }]);
+
+    expect(rules.ignores(cwd, true)).toBe(false);
+    expect(matcher.test).not.toHaveBeenCalled();
+    expect(rules.ignores(Path.join(cwd, "source.ts"), false)).toBe(true);
+    expect(matcher.test).toHaveBeenCalledExactlyOnceWith("source.ts");
+  });
+
   for (const mode of ["sync", "async"] as const) {
     for (const fullStat of [true, false]) {
       const loadScan = async () => {
@@ -169,6 +180,22 @@ describe("gitignore parser", () => {
             })
           ).sort(),
         ).toEqual([".gitignore", "source.ts"]);
+      });
+
+      it(`${mode}, fullStat=${fullStat}: scopes rules to the scan root outside a repository`, async () => {
+        writeRules(".gitignore", { "standalone/source.ts": true });
+        writeRules("standalone/.gitignore", { "output/": true });
+        write("standalone/source.ts");
+        write("standalone/output/generated.ts");
+        const scan = await loadScan();
+        // The fixture lives inside this repository; simulate no .git in its ancestry.
+        vi.spyOn(Fs, "existsSync").mockReturnValue(false);
+        const parser = vi.fn(parseRules);
+
+        expect(
+          (await scan({ ...options(), cwd: Path.join(cwd, "standalone"), gitignore: parser })).sort(),
+        ).toEqual([".gitignore", "source.ts"]);
+        expect(parser).toHaveBeenCalledExactlyOnceWith(JSON.stringify({ "output/": true }));
       });
 
       it(`${mode}, fullStat=${fullStat}: scans directories without rule files`, async () => {
