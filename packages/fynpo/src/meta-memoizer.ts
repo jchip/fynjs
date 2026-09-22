@@ -43,6 +43,8 @@ export async function startMetaMemoizer(): Promise<Server> {
   const port: number = await new Promise((resolve) => {
     server.listen(0, () => resolve((server.address() as any).port));
   });
+  // Install subprocesses keep the command alive; this helper must not outlive them.
+  server.unref();
 
   const server2 = server as Server;
   server2.info = { port };
