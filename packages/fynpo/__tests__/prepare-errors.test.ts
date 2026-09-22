@@ -26,11 +26,11 @@ describe("prepare CLI errors", () => {
 
   afterEach(() => Fs.rmSync(cwd, { recursive: true, force: true }));
 
-  it("reports a dirty tree with recovery guidance and no internal stack", () =>
+  it.each([[], ["--force"]])("reports a dirty tree with recovery guidance for prepare %j", (...args) =>
     verify({ timeout: 3000 })
       .step(() => Fs.writeFileSync(Path.join(cwd, "user-work.txt"), "unfinished"))
       .expectError
-      .step(() => exec(process.execPath, [bin, "prepare"], { cwd, timeout: 2000 }))
+      .step(() => exec(process.execPath, [bin, "prepare", ...args], { cwd, timeout: 2000 }))
       .step((error: any) => {
         expect(error.code).toBe(1);
         const output = error.stdout + error.stderr;

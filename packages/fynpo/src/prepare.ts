@@ -295,6 +295,11 @@ export class Prepare {
       }
     });
 
+    if (changedPackages.size === 0 && !this._options.force) {
+      printWarning(prepareOutcome(0, 0, false, 0).message);
+      return;
+    }
+
     // all updated, write to disk. FynpoPackageInfo carries no `pkgFile`, so compose it from
     // `path` the same way utils/update-package-versions.ts does (FJM-25).
     changedPackages.forEach((pkg) => {

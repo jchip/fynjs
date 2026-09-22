@@ -247,7 +247,7 @@ describe("prepare bootstrap and package hooks", () => {
         expect(git("show", "HEAD:outside.txt")).toBe("outside");
       }));
 
-  it("runs bootstrap and hooks but makes no empty commit when versions and output are unchanged", () =>
+  it.each([false, true])("handles unchanged versions and dependency ranges with force=%s", (force) =>
     verify({ timeout: 3000 })
       .step(() => prepare.exec())
       .step(async () => {
@@ -255,17 +255,47 @@ describe("prepare bootstrap and package hooks", () => {
         events = [];
         const graph = new FynpoDepGraph(prepare._options);
         await graph.resolve();
-        const next = new Prepare(prepare._options, graph);
+        const next = new Prepare({ ...prepare._options, force }, graph);
         vi.spyOn(next, "readChangelog").mockImplementation(() => {
           next._versions = { a: "2.0.0" };
           next._tags = ["a@2.0.0"];
         });
+        vi.spyOn(next, "bootstrapAndRunHooks");
+        vi.spyOn(next, "getReleaseFiles");
+        vi.spyOn(next, "commitAndTagUpdates");
         return { next, before };
       })
       .keep.step(({ next }) => next.exec())
-      .step(({ before }) => {
-        expect(events).toEqual(["bootstrap", "hook"]);
+      .step(({ next, before }) => {
+        expect(events).toEqual(force ? ["bootstrap", "hook"] : []);
+        expect(next.bootstrapAndRunHooks).toHaveBeenCalledTimes(force ? 1 : 0);
+        expect(next.getReleaseFiles).toHaveBeenCalledTimes(force ? 1 : 0);
+        expect(next.commitAndTagUpdates).not.toHaveBeenCalled();
         expect(git("rev-parse", "HEAD")).toBe(before);
+        expect(git("status", "--porcelain")).toBe("");
+      }));
+
+  it("still bootstraps and runs hooks when only a dependent range needs updating", () =>
+    verify({ timeout: 3000 })
+      .step(async () => {
+        write("packages/a/package.json", JSON.stringify({ name: "a", version: "2.0.0" }));
+        git("add", ".");
+        git("commit", "-qm", "producer already updated");
+        const graph = new FynpoDepGraph(prepare._options);
+        await graph.resolve();
+        const next = new Prepare(prepare._options, graph);
+        next.readChangelog = () => {
+          next._versions = { a: "2.0.0" };
+          next._tags = ["a@2.0.0"];
+        };
+        return next;
+      })
+      .step(next => next.exec())
+      .step(() => {
+        expect(events).toEqual(["bootstrap", "hook"]);
+        const pkg = JSON.parse(git("show", "HEAD:packages/b/package.json"));
+        expect(pkg.version).toBe("1.0.0");
+        expect(pkg.dependencies.a).toBe("^2.0.0");
         expect(git("status", "--porcelain")).toBe("");
       }));
 });

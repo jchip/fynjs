@@ -467,6 +467,9 @@ export const fynpoMain = () => {
       desc: "Prepare packages versions for publish",
       exec: execPrepare,
       options: {
+        force: {
+          desc: "run bootstrap and prepare hooks even when versions and dependency ranges are unchanged",
+        },
         tag: {
           desc: "create tags for individual packages",
         },
