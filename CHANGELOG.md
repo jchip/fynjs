@@ -1,3 +1,57 @@
+# 9/22/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynpo/base@2.1.7` `(2.1.6 => 2.1.7)`
+-   `filter-scan-dir@2.1.6` `(2.1.5 => 2.1.6)`
+-   `fyn@3.1.8` `(3.1.7 => 3.1.8)`
+-   `fynpo@3.1.8` `(3.1.7 => 3.1.8)`
+-   `fynpo-cli@3.1.8` `(3.1.7 => 3.1.8)`
+
+### Fynpo Updated
+
+
+## Commits
+
+-   `packages/fynpo-base`
+
+    -   FPO-84: make package includes additive with auto-search [commit](https://github.com/jchip/fynjs/commit/59fbdb5d1ae6cda3af5f1ab32d7164e0e5cbcd06)
+    -   FPO-82: honor explicit includes below package discovery boundaries [commit](https://github.com/jchip/fynjs/commit/1ff7e0a555175e5b6af937b328b1e5667ce3bf37)
+    -   FPB-6: stop auto-search at package boundaries by default [commit](https://github.com/jchip/fynjs/commit/f939faf2606a47fba80c99effb92d0518a5b2620)
+
+-   `packages/filter-scan-dir`
+
+    -   FSD-17: restore full gitignore coverage [commit](https://github.com/jchip/fynjs/commit/e3079381564dfeaa1dba0292f0f4d1711dcdd3ee)
+    -   FSD-16: support caller-supplied gitignore parsers in directory scans [commit](https://github.com/jchip/fynjs/commit/28eaa287db701bd8f6e311c90dc5e5f4dda67fb2)
+
+-   `packages/fyn`
+
+    -   FPO-84: make package includes additive with auto-search [commit](https://github.com/jchip/fynjs/commit/59fbdb5d1ae6cda3af5f1ab32d7164e0e5cbcd06)
+    -   FPB-6: stop auto-search at package boundaries by default [commit](https://github.com/jchip/fynjs/commit/f939faf2606a47fba80c99effb92d0518a5b2620)
+    -   FPM-168: honor gitignore rules in install freshness scans [commit](https://github.com/jchip/fynjs/commit/ef3305429ff76cee0d7ed41e472a049be39243c5)
+    -   FPM-169: compile timestamp scan ignore patterns once [commit](https://github.com/jchip/fynjs/commit/6e0257056fb61385de6aead84d47416a28622d6c)
+    -   FPM-167: pass fynpo package discovery config through correctly [commit](https://github.com/jchip/fynjs/commit/d0c3a5975f1e5f9fbb5fd0b7dec5c2fcac3f90f5)
+
+-   `packages/fynpo`
+
+    -   FPO-84: make package includes additive with auto-search [commit](https://github.com/jchip/fynjs/commit/59fbdb5d1ae6cda3af5f1ab32d7164e0e5cbcd06)
+    -   FPO-82: honor explicit includes below package discovery boundaries [commit](https://github.com/jchip/fynjs/commit/1ff7e0a555175e5b6af937b328b1e5667ce3bf37)
+    -   FPB-6: stop auto-search at package boundaries by default [commit](https://github.com/jchip/fynjs/commit/f939faf2606a47fba80c99effb92d0518a5b2620)
+
+-   `notes`
+
+    -   FPO-84: make package includes additive with auto-search [commit](https://github.com/jchip/fynjs/commit/59fbdb5d1ae6cda3af5f1ab32d7164e0e5cbcd06)
+    -   FPO-82: honor explicit includes below package discovery boundaries [commit](https://github.com/jchip/fynjs/commit/1ff7e0a555175e5b6af937b328b1e5667ce3bf37)
+    -   FPB-6: stop auto-search at package boundaries by default [commit](https://github.com/jchip/fynjs/commit/f939faf2606a47fba80c99effb92d0518a5b2620)
+
+-   `MISC`
+
+    -   FPO-85: exclude repo fixtures from automatic package discovery [commit](https://github.com/jchip/fynjs/commit/a93c3ddd97149e6bf559e0c03f5951331fc063fb)
+    -   FPO-81: enable auto-search for fynjs self-bootstrap [commit](https://github.com/jchip/fynjs/commit/e454aa0e9ec897795433dfca47d1e12595d37144)
+    -   FPO-79: bootstrap fynjs with local fyn and explicit package scope [commit](https://github.com/jchip/fynjs/commit/75fec0bb99d79c915080eda3ae3d2e2f43ab011a)
+
 # 9/21/2026
 
 ## Packages
