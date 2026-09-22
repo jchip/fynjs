@@ -281,7 +281,7 @@ class LocalPkgBuilder {
     // need to be installed also, even if its own files didn't change.
     // Generally this is unnecessary, except if its build process may
     // depend on that downstream local package.
-    if (!checkPkg.localBuild) {
+    if (!checkPkg.localBuild && !(this._fyn._options.forceInstall && checkPkg.hasScript)) {
       logger.debug(`local pkg at ${item.fullPath} doesn't need build`, checkPkg);
       return;
     }
@@ -346,7 +346,8 @@ class LocalPkgBuilder {
       this._fyn._options.registry && `--reg=${this._fyn._options.registry}`,
       "-q=d --pg=simple --no-build-local --sl=fyn-debug.log",
       !this._fyn._options.sourceMaps && "--no-source-maps",
-      "install --no-audit"
+      "install --no-audit",
+      this._fyn._options.forceInstall && "--force-install"
     ]
       .filter(x => x)
       .join(" ");
