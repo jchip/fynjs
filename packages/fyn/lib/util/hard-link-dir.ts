@@ -489,6 +489,58 @@ async function link(src, dest, { sourceMaps = true } = {}) {
   return await linkPackTree({ tree, src, dest, sourceMaps, isRoot: true });
 }
 
+// Source freshness excludes build outputs. Inspect the packed files separately so a
+// rebuild that replaces their inodes cannot leave a consumer linked to old output.
+async function localLinkNeedsRefresh(src: string, dest: string, installedAt: number) {
+  const tree = await generatePackTree(src);
+  const copyMode = fynTil.strToBool(process.env.FYN_LOCAL_COPY_MODE);
+  const inspectTree = async (tree, srcDir: string, destDir: string): Promise<boolean> => {
+    for (const file of tree[SYM_FILES]) {
+      const srcFile = Path.join(srcDir, file);
+      const srcStat = await Fs.lstat(srcFile);
+      // The installed manifest is stamped; JS maps can be rewritten or omitted.
+      if (
+        (srcDir === src && file === "package.json") ||
+        (!ci.isCI && /\.(js|mjs)\.map$/.test(file))
+      ) {
+        if (srcStat.mtimeMs > installedAt) return true;
+        continue;
+      }
+
+      const destFile = Path.join(destDir, file);
+      let destStat;
+      try {
+        destStat = await Fs.lstat(destFile);
+      } catch (err) {
+        if (err.code === "ENOENT" || err.code === "ENOTDIR") return true;
+        throw err;
+      }
+
+      if (srcStat.isSymbolicLink()) {
+        if (
+          !destStat.isSymbolicLink() ||
+          (await Fs.readlink(srcFile)) !== (await Fs.readlink(destFile))
+        ) {
+          return true;
+        }
+      } else if (!destStat.isFile()) {
+        return true;
+      } else if (copyMode) {
+        // Copied JS may contain generated source-map annotations absent from the source.
+        if (srcStat.mtimeMs > installedAt) return true;
+      } else if (srcStat.dev !== destStat.dev || srcStat.ino !== destStat.ino) {
+        return true;
+      }
+    }
+
+    for (const dir of Object.keys(tree)) {
+      if (await inspectTree(tree[dir], Path.join(srcDir, dir), Path.join(destDir, dir))) return true;
+    }
+    return false;
+  };
+  return inspectTree(tree, src, dest);
+}
+
 async function linkSym1(src, dest) {
   const tree = await generatePackTree(src);
 
@@ -497,6 +549,7 @@ async function linkSym1(src, dest) {
 
 export {
   link,
+  localLinkNeedsRefresh,
   cleanExtraDest,
   linkFile,
   cloneFile,

@@ -16,6 +16,7 @@ import fynTil from "./util/fyntil";
 import FynCentral from "./fyn-central";
 import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
+import { localLinkNeedsRefresh } from "./util/hard-link-dir";
 import lockfile from "lockfile";
 import ck from "chalker/chalk";
 import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson, type FynpoGraph, type PkgVersionInfo } from "./types";
@@ -871,6 +872,9 @@ class Fyn {
       const localPkg = localPkgs[nmDir];
       const fullPath = Path.join(this._cwd, localPkg.srcDir);
       if ((await this.getLocalPkgInstall(fullPath)).changed) {
+        return true;
+      }
+      if (await localLinkNeedsRefresh(fullPath, Path.join(this._cwd, nmDir), this._installConfig.time)) {
         return true;
       }
     }
