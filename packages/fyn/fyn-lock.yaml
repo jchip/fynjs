@@ -154,15 +154,15 @@ $pkg:
   $: local
   _: ../ts-resolve
 '@fynpo/base':
- _latest: 2.1.6-fynlocal_h
+ _latest: 2.1.7-fynlocal_h
  _:
-  ../fynpo-base: 2.1.6-fynlocal_h
- 2.1.6-fynlocal_h:
+  ../fynpo-base: 2.1.7-fynlocal_h
+ 2.1.7-fynlocal_h:
   top: 1
   $: local
   _: ../fynpo-base
   dependencies:
-   filter-scan-dir: ^2.1.5
+   filter-scan-dir: ^2.1.6
    ignore: ^7.0.6
    lodash-es: ^4.18.1
    minimatch: ^10.0.3
@@ -1608,10 +1608,10 @@ fill-range:
   dependencies:
    to-regex-range: ^5.0.1
 filter-scan-dir:
- _latest: 2.1.5-fynlocal_h
+ _latest: 2.1.6-fynlocal_h
  _:
-  ../filter-scan-dir: 2.1.5-fynlocal_h
- 2.1.5-fynlocal_h:
+  ../filter-scan-dir: 2.1.6-fynlocal_h
+ 2.1.6-fynlocal_h:
   top: 1
   $: local
   _: ../filter-scan-dir

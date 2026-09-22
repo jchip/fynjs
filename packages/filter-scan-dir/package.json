@@ -1,6 +1,6 @@
 {
   "name": "filter-scan-dir",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "Extremely fast recursive directory crawling and filtering for Node.js.",
   "type": "module",
   "types": "./dist/index.d.ts",
