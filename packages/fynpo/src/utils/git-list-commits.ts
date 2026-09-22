@@ -93,13 +93,7 @@ export const getNewCommits = (opts, changed) => {
     { ids: [] }
   );
 
-  return Promise.resolve(commitIds).then((commitObj) => {
-    if (opts.changeLog.indexOf(commitObj.ids[0]) >= 0) {
-      logger.error("change log already contain a commit from new commits");
-      process.exit(1);
-    }
-    return { commits: commitObj, changed, opts, selectiveBaselines };
-  });
+  return Promise.resolve({ commits: commitIds, changed, opts, selectiveBaselines });
 };
 
 export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaselines = {} }) => {
@@ -185,10 +179,20 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
         .filter((x) => x.trim().length > 0)
     : [];
 
+  const changelogPath = Path.relative(
+    opts.cwd || process.cwd(),
+    opts.changeLogFile || Path.resolve(opts.cwd || process.cwd(), "CHANGELOG.md")
+  ).split(Path.sep).join("/");
+
   records.forEach((record) => {
     const [idLine, ...fileLines] = record.split("\n");
     const id = idLine.trim();
     let files = fileLines.filter((x) => x.trim().length > 0);
+
+    // A generated changelog commit must not make its own entry look new on a rerun.
+    if (commits[id] === "Update changelog" && files.length === 1 && files[0] === changelogPath) {
+      return;
+    }
 
     if (filterFunctions.length) {
       for (const filerFn of filterFunctions) {

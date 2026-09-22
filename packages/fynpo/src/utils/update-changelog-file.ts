@@ -144,6 +144,12 @@ export const updateChangelog = (collated) => {
   outputCommitMsgs(filesItems, "");
 
   const updateText = output.join("");
+  const previousEntry = opts.changeLog.split(/(?=^# \d{1,2}\/\d{1,2}\/\d{4}\r?$)/m)[0];
+  const withoutDate = (text: string) => text.replace(/^# \d{1,2}\/\d{1,2}\/\d{4}\r?\n/, "");
+  // The date alone should not create another pending release entry.
+  if (withoutDate(previousEntry) === withoutDate(updateText)) {
+    return Promise.resolve({ versions, tags, collated, changed: false });
+  }
   Fs.writeFileSync(opts.changeLogFile, `${updateText}${opts.changeLog}`);
-  return Promise.resolve({ versions, tags, collated });
+  return Promise.resolve({ versions, tags, collated, changed: true });
 };

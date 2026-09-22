@@ -197,6 +197,10 @@ export default class Changelog {
         if (opts.publish) {
           return this.preparePackages(output);
         }
+        if (!output.changed) {
+          printSuccess("Changelog is already up to date; no changes to commit");
+          return Promise.resolve();
+        }
         return this.commitChangeLogFile().then((committed) => {
           if (committed) {
             printSuccess("Changelog updated and committed");
