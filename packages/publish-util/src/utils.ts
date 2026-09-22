@@ -144,9 +144,10 @@ async function exists(file: string): Promise<boolean> {
  * The fix cannot be temp-file + rename: fyn hardlinks package files into node_modules,
  * and rename swaps the directory entry, so the installed copies would silently keep the
  * old content on the old inode.  Instead this opens "r+" (no O_TRUNC), writes the new
- * bytes first, and only then truncates to the new length.  The inode - and therefore
- * every hardlink to it - is preserved, and the file never passes through empty: an
- * interrupted write leaves old trailing bytes, never nothing.
+ * bytes first, and only then truncates to the new length. Shorter replacements are
+ * padded with JSON whitespace in the same write, so readers between the write and
+ * truncate do not see old trailing bytes. The inode - and therefore every hardlink
+ * to it - is preserved, and the file never passes through empty.
  *
  * The write is skipped entirely when the content already matches, which is the common
  * case for postinstall - it used to rewrite the manifest byte for byte on every install.
@@ -172,7 +173,11 @@ export async function writePkgFile(file: string, content: string | Buffer): Prom
 
   const fh = await Fs.open(file, "r+");
   try {
-    await fh.write(data, 0, data.length, 0);
+    const padded = data.length < existing.length ? Buffer.alloc(existing.length, " ") : data;
+    if (padded !== data) {
+      data.copy(padded);
+    }
+    await fh.write(padded, 0, padded.length, 0);
     await fh.truncate(data.length);
   } finally {
     await fh.close();

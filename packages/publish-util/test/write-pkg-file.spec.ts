@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as Fs from "fs";
+import * as FsPromises from "fs/promises";
 import * as Os from "os";
 import * as Path from "path";
 import { writePkgFile } from "../src/utils.js";
+
+vi.mock("fs/promises", async importOriginal => {
+  const actual = await importOriginal<typeof import("fs/promises")>();
+  return { ...actual, open: vi.fn(actual.open) };
+});
 
 //
 // FPM-66: publish-util rewrote a package.json with a plain writeFile, which opens the
@@ -55,6 +61,38 @@ describe("writePkgFile", () => {
 
     expect(Fs.readFileSync(pkgFile, "utf8")).toBe(`{}\n`);
     expect(Fs.statSync(pkgFile).size).toBe(3);
+  });
+
+  it("should remain readable through hardlinks before a shorter manifest is truncated", async () => {
+    Fs.writeFileSync(pkgFile, `{ "name": "a much longer manifest", "description": "café" }\n`);
+    const linked = Path.join(dir, "linked.json");
+    Fs.linkSync(pkgFile, linked);
+    const before = Fs.statSync(pkgFile);
+    const content = Buffer.from(`{ "name": "café" }\n`);
+    const actual = await vi.importActual<typeof import("fs/promises")>("fs/promises");
+    let inspected = false;
+
+    vi.mocked(FsPromises.open).mockImplementationOnce(async (...args) => {
+      const fh = await actual.open(...args);
+      const truncate = fh.truncate.bind(fh);
+      fh.truncate = async length => {
+        expect(Fs.statSync(pkgFile).size).toBe(before.size);
+        for (const file of [pkgFile, linked]) {
+          expect(JSON.parse(Fs.readFileSync(file, "utf8"))).toEqual({ name: "café" });
+        }
+        inspected = true;
+        return truncate(length);
+      };
+      return fh;
+    });
+
+    expect(await writePkgFile(pkgFile, content)).toBe(true);
+
+    expect(inspected).toBe(true);
+    for (const file of [pkgFile, linked]) {
+      expect(Fs.readFileSync(file)).toEqual(content);
+      expect(Fs.statSync(file).ino).toBe(before.ino);
+    }
   });
 
   it("should accept a Buffer", async () => {
