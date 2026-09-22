@@ -185,14 +185,14 @@ $pkg:
   $: local
   _: ./packages/fetch
 '@fynpo/base':
- _latest: 2.1.6-fynlocal_h
+ _latest: 2.1.7-fynlocal_h
  _:
-  ../fynpo-base: 2.1.6-fynlocal_h
- 2.1.6-fynlocal_h:
+  ../fynpo-base: 2.1.7-fynlocal_h
+ 2.1.7-fynlocal_h:
   $: local
   _: ./packages/fynpo-base
   dependencies:
-   filter-scan-dir: ^2.1.5
+   filter-scan-dir: ^2.1.6
    ignore: ^7.0.6
    lodash-es: ^4.18.1
    minimatch: ^10.0.3
@@ -792,10 +792,10 @@ fill-range:
   dependencies:
    to-regex-range: ^5.0.1
 filter-scan-dir:
- _latest: 2.1.5-fynlocal_h
+ _latest: 2.1.6-fynlocal_h
  _:
-  ../filter-scan-dir: 2.1.5-fynlocal_h
- 2.1.5-fynlocal_h:
+  ../filter-scan-dir: 2.1.6-fynlocal_h
+ 2.1.6-fynlocal_h:
   $: local
   _: ./packages/filter-scan-dir
 fs-extra:
@@ -819,18 +819,18 @@ fsevents:
   os:
    - darwin
 fyn:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  '../fyn,./packages/fyn': 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  '../fyn,./packages/fyn': 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fyn
 fynpo:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ./packages/fynpo: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ./packages/fynpo: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fynpo
@@ -842,7 +842,7 @@ fynpo:
    '@commitlint/resolve-extends': ^21.2.2
    '@fynjs/cli-args': ^1.1.4
    '@fynjs/fetch': ^1.0.3
-   '@fynpo/base': ^2.1.6
+   '@fynpo/base': ^2.1.7
    '@jchip/error': ^2.1.4
    aveazul: ^2.1.5
    boxen: ^8.0.1
@@ -852,7 +852,7 @@ fynpo:
    env-paths: ^4.0.0
    execa: ^10.0.0
    fs-extra: ^11.3.0
-   fyn: ^3.1.7
+   fyn: ^3.1.8
    get-stdin: ^10.0.0
    import-fresh: ^4.0.0
    item-queue: ^2.1.6
