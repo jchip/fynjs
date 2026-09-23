@@ -54,6 +54,17 @@ describe("exec", function () {
     });
   });
 
+  it("should retain the 20 MiB default maxBuffer", () => {
+    const script = "process.stdout.write('x'.repeat(1024 * 1024 + 1))";
+    const command = `"${process.execPath}" -e "${script}"`;
+
+    return verify()
+      .step((xsh.exec(true, command) as ExecResult).promise)
+      .step(output => {
+        expect(output.stdout).toHaveLength(1024 * 1024 + 1);
+      });
+  });
+
   it("should failed for empty arguments", () => {
     expect(() => (xsh.exec as any)()).toThrow(Error);
   });

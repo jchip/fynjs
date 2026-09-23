@@ -1,7 +1,8 @@
-import shell from "shelljs";
 import assert from "node:assert";
-import type { ChildProcess } from "node:child_process";
+import { exec as childExec, type ChildProcess } from "node:child_process";
 import { util } from "./util.ts";
+
+const DEFAULT_MAX_BUFFER = 20 * 1024 * 1024;
 
 export interface ExecOutput {
   stdout: string;
@@ -16,7 +17,7 @@ export interface ExecError extends Error {
 export type ExecCallback = (err: ExecError | null, output: ExecOutput) => void;
 
 /**
- * Options passed through to shelljs `exec` (`async: true` is always set).
+ * Options passed through to Node.js `child_process.exec`.
  * A plain boolean is shorthand for `{ silent: boolean }`.
  */
 export interface ExecOptions {
@@ -45,13 +46,13 @@ export interface ExecResult {
 }
 
 /**
- * Execute a shell command with shelljs `exec` in async mode.
+ * Execute a shell command with Node.js `child_process.exec`.
  *
  * Arguments can be any mix of command fragments (strings / arrays of strings,
  * joined with `" "`), one options object or boolean (silent shorthand) as the
  * first, last, or second to last argument, and a callback as the last argument.
  *
- * Returns the shelljs child process when a callback is given, else an
+ * Returns the child process when a callback is given, else an
  * {@link ExecResult} thenable.
  */
 export function exec(...args: Array<ExecFragment | ExecOptions | boolean>): ExecResult;
@@ -114,16 +115,36 @@ export function exec(...args: ExecArg[]): ExecResult | ChildProcess {
     return a;
   }, "");
 
-  const doExec = (xcb: ExecCallback): ChildProcess =>
-    shell.exec(
+  const doExec = (xcb: ExecCallback): ChildProcess => {
+    const { silent = false, async: _async, fatal: _fatal, ...execOptions } = options;
+    const child = childExec(
       cmd,
-      Object.assign({ async: true }, options),
-      (code: number, stdout: string, stderr: string) => {
-        const output = { stdout, stderr };
-        const err = code === 0 ? null : error(cmd, code, output);
+      Object.assign(
+        {
+          cwd: process.cwd(),
+          env: process.env,
+          maxBuffer: DEFAULT_MAX_BUFFER,
+          encoding: "utf8"
+        },
+        execOptions
+      ),
+      (execErr, stdout, stderr) => {
+        const output = { stdout, stderr } as unknown as ExecOutput;
+        const code = execErr ? execErr.code : 0;
+        /* v8 ignore next -- @preserve Node execution errors normally provide a code. */
+        const exitCode = code === undefined ? 1 : code;
+        const err = exitCode === 0 ? null : error(cmd, exitCode as number, output);
         xcb(err, output);
       }
-    ) as unknown as ChildProcess;
+    );
+
+    if (!silent) {
+      child.stdout?.pipe(process.stdout);
+      child.stderr?.pipe(process.stderr);
+    }
+
+    return child;
+  };
 
   if (cb) {
     return doExec(cb);

@@ -3,7 +3,6 @@ import Fs from "fs";
 import Http from "http";
 import * as Yaml from "js-yaml";
 import Path from "path";
-import xsh from "xsh";
 import cacache from "cacache";
 import { verify } from "run-verify";
 import Fyn from "../../lib/fyn";
@@ -35,7 +34,7 @@ describe("pkg-src-manager", function () {
   });
 
   afterEach(() => {
-    xsh.$.rm("-rf", fynCacheDir);
+    Fs.rmSync(fynCacheDir, { recursive: true, force: true });
   });
 
   it.skip("should save meta cache with etag", () => {

@@ -1892,8 +1892,6 @@ xsh:
  1.1.6-fynlocal_h:
   $: local
   _: ./packages/xsh
-  dependencies:
-   shelljs: ^0.10.0
 yoctocolors:
  _latest: 2.2.0
  _:

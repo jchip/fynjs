@@ -23,7 +23,7 @@ own `README.md`. Stale documents move to `notes/archive/`.
 | [run-verify-assessment.md](run-verify-assessment.md) | Independent review: what the library is worth against modern Node, the source-text inference flaw, ranked API improvements, why a frontier model misread the API, and measured results from a chain-typing prototype |
 | [run-verify-explicit-api-proposal.md](run-verify-explicit-api-proposal.md) | Proposed explicit `.step` chain API built as a facade over the positional runtime: design constraints, verified prototype results, coexistence instead of migration, the `xrun.spec.js` trial, and rejected alternatives |
 | [run-verify-migration-findings.md](run-verify-migration-findings.md) | What converting existing packages' tests to run-verify found — the anti-pattern catalog (assert-inside-callback, catch-only assertions, unguarded intercept cleanup) and real defects vs. style-parity churn, per package: `xarc-run`, `munchy`, `xsh`, `item-queue` |
-| [xsh-shelljs-exec-analysis.md](xsh-shelljs-exec-analysis.md) | Why ShellJS synchronous `exec` uses temporary files, why `xsh.exec` does not, measured overhead, and incremental file-free alternatives |
+| [xsh-shelljs-exec-analysis.md](xsh-shelljs-exec-analysis.md) | Why ShellJS synchronous `exec` uses temporary files, measured overhead, and the decision to move `xsh.exec` to Node and remove `$` |
 
 ## Conventions
 

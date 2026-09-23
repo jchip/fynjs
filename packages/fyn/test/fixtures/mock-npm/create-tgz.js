@@ -7,7 +7,6 @@ const Yml = require("js-yaml");
 const _ = require("lodash-es");
 const Promise = require("aveazul");
 const Tar = require("tar");
-const xsh = require("xsh");
 const writeFile = Promise.promisify(Fs.writeFile);
 const optionalRequire = require("optional-require")(require);
 const metas = Fs.readdirSync(Path.join(__dirname, "metas"));
@@ -86,7 +85,14 @@ const createTgz = () => {
             );
             console.log("package dir", pkgDir);
             if (Fs.existsSync(pkgDir)) {
-              xsh.$.cp("-Rf", `${pkgDir}/*`, tmpDir);
+              Fs.readdirSync(pkgDir)
+                .filter(name => !name.startsWith("."))
+                .forEach(name => {
+                  Fs.cpSync(Path.join(pkgDir, name), Path.join(tmpDir, name), {
+                    recursive: true,
+                    force: true
+                  });
+                });
             }
           })
           .then(() => {

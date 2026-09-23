@@ -5,7 +5,6 @@ import Path from "path";
 import Fyn from "../../lib/fyn";
 import mockNpm from "../fixtures/mock-npm";
 import PkgDepLinker from "../../lib/pkg-dep-linker";
-import xsh from "xsh";
 import logger from "../../lib/logger";
 
 // vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
@@ -24,7 +23,7 @@ describe("pkg-dist-fetcher", function () {
   });
 
   afterAll(() => {
-    xsh.$.rm("-rf", fynDir);
+    Fs.rmSync(fynDir, { recursive: true, force: true });
     if (server) {
       return server.stop();
     }

@@ -28,8 +28,6 @@ const xsh = require("xsh");
 xsh.exec("echo hello");
 ```
 
-The shell commands under `xsh.$` come from [shelljs](https://www.npmjs.com/package/shelljs).
-
 ## API
 
 ### `Promise`
@@ -63,7 +61,10 @@ Both return the string `"echo hello"`.
 xsh.exec(shellCommand, [options], [callback] );
 ```
 
-Use [shelljs `exec`] to execute `shellCommand` in `async` mode.
+Execute `shellCommand` asynchronously with Node.js
+[`child_process.exec`](https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback).
+`xsh.exec` adds flexible command fragments, a callback/error shape, and a thenable result that
+also exposes the child process and its output streams.
 
 #### Arguments
 
@@ -72,8 +73,9 @@ Use [shelljs `exec`] to execute `shellCommand` in `async` mode.
 -   `options` - optional `options`
 
     -   If it's either `true` or `false`, it sets `silent` flag for output to console.
-    -   It can also be an object that's passed to [NodeJS exec](https://nodejs.org/api/child_process.html#child_process_child_process_exec_command_options_callback).
-        -   For example, it can be `{silent: true}`
+    -   It can also be an object with `silent` and any option accepted by
+        [Node.js `exec`](https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback).
+    -   `maxBuffer` defaults to 20 MiB.
     -   This can be the first, last, or second to last (if last is the callback) argument.
 
 -   `callback` - optional, if provided, it will be called as follows:
@@ -161,25 +163,8 @@ If `path` doesn't exist in `process.env.PATH` then it's added to the end.
 
 If you don't want to operate on `process.env` you can pass in a second argument that's either an object or a string that's the path to change.
 
-### [`$`](#)
-
-An instance of [shelljs].
-
-```js
-const xsh = require("xsh");
-xsh.$.cd("/tmp");
-```
-
-[shelljs `exec`]: http://documentup.com/shelljs/shelljs#execcommand--options--callback
-
-[shelljs]: https://github.com/shelljs/shelljs
-
-
-
 [npm-image]: https://badge.fury.io/js/xsh.svg
 
 [npm-url]: https://npmjs.org/package/xsh
-
-
 
 

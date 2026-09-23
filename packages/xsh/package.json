@@ -40,18 +40,13 @@
   "keywords": [
     "shell",
     "exec",
-    "shelljs",
     "env",
     "PATH"
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
-  "dependencies": {
-    "shelljs": "^0.10.0"
-  },
   "devDependencies": {
     "@types/node": "^26.4.1",
-    "@types/shelljs": "^0.10.0",
     "@vitest/coverage-v8": "^5.0.0",
     "aveazul": "^2.1.6",
     "publish-util": "^3.1.5",

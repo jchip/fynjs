@@ -1,4 +1,3 @@
-import shell from "shelljs";
 import { util } from "./util.ts";
 import { exec } from "./exec.ts";
 import { env } from "./env.ts";
@@ -25,8 +24,6 @@ export interface Xsh {
   mkCmd: typeof mkCmd;
   pathCwd: typeof pathCwd;
   pathCwdNm: typeof pathCwdNm;
-  /** the shelljs instance xsh uses */
-  $: typeof shell;
   /** Promise implementation used by exec - set to null to restore native Promise */
   Promise: PromiseConstructor;
 }
@@ -37,8 +34,7 @@ const xsh = {
   envPath,
   mkCmd,
   pathCwd,
-  pathCwdNm,
-  $: shell
+  pathCwdNm
 } as Xsh;
 
 Object.defineProperty(xsh, "Promise", {
@@ -49,7 +45,6 @@ Object.defineProperty(xsh, "Promise", {
 });
 
 export { exec, env, envPath, mkCmd, pathCwd, pathCwdNm };
-export const $ = shell;
 
 export default xsh;
 

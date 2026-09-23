@@ -8,9 +8,4 @@ describe("xsh", function () {
     (xsh as any).Promise = null;
     expect(xsh.Promise).toBe(Promise);
   });
-
-  it("should expose shelljs as $", () => {
-    expect(xsh.$).toBeTruthy();
-    expect(typeof xsh.$.exec).toBe("function");
-  });
 });

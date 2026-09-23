@@ -2,16 +2,18 @@
 
 Date: 2026-09-23
 
-## Conclusion
+## Conclusion and decision
 
 ShellJS's temporary files belong only to its synchronous `exec` path. `xsh.exec` always supplies
 `async: true`, so calls through `xsh.exec` do not create those files. Replacing the ShellJS call
-inside `xsh.exec` with `node:child_process.exec` is feasible and small, but it is unlikely to make
-individual commands materially faster. A larger startup improvement requires a lightweight entry
-point that does not load ShellJS, because the main `xsh` entry point still exports ShellJS as `$`.
+inside `xsh.exec` with `node:child_process.exec` is feasible and small. It is unlikely to make
+individual commands materially faster, but removing the `$` export at the same time eliminates
+ShellJS's cold-load cost and dependency tree from `xsh`.
 
-No runtime change is proposed in this note. Removing or changing `$` would affect the public API
-and requires an explicit migration decision.
+Decision on 2026-09-23: the repository is the only consumer of the current `xsh` major, so `$` was
+removed and its three test/fixture call sites moved to Node filesystem APIs. `xsh.exec` now calls
+`node:child_process.exec` directly while retaining the 20 MiB default buffer, live output,
+callback/error shape, thenable, child process, streams, and custom Promise behavior.
 
 ## What the temporary files do
 
@@ -110,7 +112,7 @@ should cover output larger than Node's 1 MiB default, nonzero exit, signal termi
 custom shell, buffer encoding, live output, and child cancellation in addition to the current
 suite.
 
-## Options and recommendation
+## Options considered
 
 ### 1. Replace only the `shell.exec` call
 
@@ -124,17 +126,12 @@ Implement the direct adapter and expose it through a subpath that does not impor
 Callers that only need command execution can opt into lower startup cost without breaking `$`.
 This is the best incremental design if cold CLI startup matters.
 
-### 3. Remove ShellJS and `$`
+### 3. Remove ShellJS and `$` — selected
 
-This yields the cleanest package and removes the roughly 44 ms cold import observed locally, but
-it is a public API break. Repository code has a few test/fixture uses of `xsh.$`, and external use
-is unknown. This option requires an explicit migration decision before implementation.
-
-Recommendation: first benchmark the real slow command through `xsh.exec` and native
-`child_process.exec`. If the concern is the visible temporary files, no `xsh.exec` change is needed
-because that path does not create them. If cold startup is the concern, pursue option 2. If
-synchronous `shell.exec` calls are the concern, replace those call sites with either async execution
-or native `execSync` after choosing whether live output or captured output is required.
+This yields the cleanest package and removes the roughly 44 ms cold import observed locally. The
+public API change was accepted because all consumers of the current major are in this repository.
+The three repository uses were test/fixture operations and moved to `node:fs`; no production caller
+used `$`.
 
 ## Sources
 
