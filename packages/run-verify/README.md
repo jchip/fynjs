@@ -106,6 +106,20 @@ matching methods retain requirements from earlier calls, so every requirement mu
 pass. Omitting `code` adds no code constraint and preserves earlier ones. The existing
 `expectErrorToBe` and `expectErrorHas` methods remain available with their current semantics.
 
+The positional API also exports `expectErrorMatch(fn, matcher, code?)` and
+`expectErrorInstanceMatch(fn, ConstructorOrArray, matcher?, code?)`:
+
+```js
+import { asyncVerify, expectErrorInstanceMatch, expectErrorMatch } from "run-verify";
+
+await asyncVerify(
+  expectErrorMatch(() => loadTask("missing"), "not found", "TASK_NOT_FOUND")
+);
+await asyncVerify(
+  expectErrorInstanceMatch(() => parseInput(), TypeError, /^invalid input$/, "E_BAD")
+);
+```
+
 Modifiers affect only the next step method. You can combine modifiers.
 
 ## Deadlines and cleanup
