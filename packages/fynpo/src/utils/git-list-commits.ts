@@ -6,6 +6,8 @@ import { logger } from "../logger.ts";
 import { execSync } from "../child-process.ts";
 import { selectivePublishSubject, parsePublishedPackageNames, expandSelection } from "../utils.ts";
 import { createRequire } from "node:module";
+import { CommitParser } from "conventional-commits-parser";
+import { filterRevertedCommitsSync } from "conventional-commits-filter";
 
 const xrequire = createRequire(import.meta.url);
 
@@ -68,35 +70,62 @@ export const getNewCommits = (opts, changed) => {
 
   let args;
   if (tag) {
-    args = ["log", `${tag}..HEAD`, "--pretty=format:'%H %s'"];
+    args = ["log", `${tag}..HEAD`, "--format=%x1e%H%x00%s%x00%B"];
   } else {
-    args = ["log", "--pretty=format:'%H %s'"];
+    args = ["log", "--format=%x1e%H%x00%s%x00%B"];
   }
 
   const stdout = execSync("git", args, execOpts);
-  const commits = stdout
-    .split("\n")
-    .map((x) => x.replace(/['"]+/g, ""))
+  const parser = new CommitParser();
+  const records = stdout
+    .split("\x1e")
+    .filter((x) => x.length > 0)
+    .map((record, order) => {
+      const [id, rawSubject, body] = record.split("\x00");
+      const subject = rawSubject.replace(/['"]+/g, "");
+      return {
+        id,
+        subject,
+        line: `${id} ${subject}`,
+        parsed: {
+          id,
+          order,
+          raw: { header: rawSubject, hash: id },
+          revert: parser.parse(body).revert,
+        },
+      };
+    })
     .filter(
-      (x) => x.length > 0 && !x.startsWith("Merge pull request #") && !x.includes("[no-changelog]")
+      (record) =>
+        record.line.length > 0 &&
+        !record.line.startsWith("Merge pull request #") &&
+        !record.line.includes("[no-changelog]"),
     );
 
-  const selectiveBaselines = collectSelectiveBaselines(commits, execOpts);
-  const commitIds = commits.reduce(
-    (a, x) => {
-      const idx = x.indexOf(" ");
-      const id = x.substring(0, idx);
-      a.ids.push(id);
-      a[id] = x.substring(idx + 1);
+  const selectiveBaselines = collectSelectiveBaselines(
+    records.map((record) => record.line),
+    execOpts,
+  );
+  const commitIds = records.reduce(
+    (a, record) => {
+      a.ids.push(record.id);
+      a[record.id] = record.subject;
       return a;
     },
-    { ids: [] }
+    { ids: [] },
   );
+  const parsedCommits = Object.fromEntries(records.map((record) => [record.id, record.parsed]));
 
-  return Promise.resolve({ commits: commitIds, changed, opts, selectiveBaselines });
+  return Promise.resolve({ commits: commitIds, changed, opts, selectiveBaselines, parsedCommits });
 };
 
-export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaselines = {} }) => {
+export const collateCommitsPackages = ({
+  commits,
+  changed,
+  opts,
+  selectiveBaselines = {},
+  parsedCommits = {},
+}) => {
   const commitIds = commits.ids;
   const execOpts = {
     cwd: opts.cwd,
@@ -242,6 +271,30 @@ export const collateCommitsPackages = ({ commits, changed, opts, selectiveBaseli
       return a;
     }, collated);
   });
+
+  for (const group of ["packages", "samples", "others", "files"]) {
+    for (const [key, value] of Object.entries(collated[group])) {
+      const messages = (value as any).msgs || [];
+      const parsed = messages
+        .map((message) => parsedCommits[message.id])
+        .filter(Boolean)
+        .sort((a, b) => a.order - b.order);
+
+      if (parsed.length === messages.length) {
+        const survivingIds = new Set(
+          Array.from(filterRevertedCommitsSync(parsed), (commit: any) => commit.id),
+        );
+        (value as any).msgs = messages.filter((message) => survivingIds.has(message.id));
+      }
+
+      if ((value as any).msgs.length === 0) {
+        delete collated[group][key];
+        if (group === "packages") {
+          collated.realPackages = collated.realPackages.filter((name) => name !== key);
+        }
+      }
+    }
+  }
 
   return Promise.resolve(collated);
 };

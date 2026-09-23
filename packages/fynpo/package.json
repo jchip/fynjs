@@ -86,6 +86,8 @@
     "boxen": "^8.0.1",
     "ci-info": "^4.4.0",
     "chalk": "^6.0.0",
+    "conventional-commits-filter": "^6.0.1",
+    "conventional-commits-parser": "^7.1.2",
     "deep-object-diff": "^1.1.7",
     "env-paths": "^4.0.0",
     "execa": "^10.0.0",

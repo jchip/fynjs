@@ -213,7 +213,7 @@ describe("collectSelectiveBaselines", () => {
 describe("getNewCommits boundary range", () => {
   it("collects only commits reachable from HEAD after the boundary", async () => {
     execSync.mockReset();
-    execSync.mockReturnValue("abc123 change after boundary");
+    execSync.mockReturnValue("\x1eabc123\x00change after boundary\x00change after boundary");
 
     await getNewCommits(
       { cwd: ".", changeLog: "" },
@@ -222,7 +222,7 @@ describe("getNewCommits boundary range", () => {
 
     expect(execSync).toHaveBeenCalledWith(
       "git",
-      ["log", "base123..HEAD", "--pretty=format:'%H %s'"],
+      ["log", "base123..HEAD", "--format=%x1e%H%x00%s%x00%B"],
       { cwd: "." }
     );
   });

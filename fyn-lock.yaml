@@ -604,10 +604,17 @@ conventional-changelog-angular:
   _: 'https://registry.npmjs.org/conventional-changelog-angular/-/conventional-changelog-angular-9.4.0.tgz'
   dependencies:
    '@conventional-changelog/template': ^1.4.0
+conventional-commits-filter:
+ _latest: 6.0.1
+ _:
+  ^6.0.1: 6.0.1
+ 6.0.1:
+  $: sha512-cs+LadpH7Kpw0M3k8wurk+sOVVDAENA0iK4OBOrkL94j5lEVYRJ4j3zd2bhY9qgzyrPqthdcYT3axzRN7AliMg==
+  _: 'https://registry.npmjs.org/conventional-commits-filter/-/conventional-commits-filter-6.0.1.tgz'
 conventional-commits-parser:
  _latest: 7.1.2
  _:
-  ^7.0.0: 7.1.2
+  '^7.0.0,^7.1.2': 7.1.2
  7.1.2:
   $: sha512-O+x4N2yH+ijvqWlIyTHsXTAP+algNWgGbjY2duCe8w2vUMvUB95cLRslCPfTMQyLAKlet3bhZTdu6ozn4M+QJQ==
   _: 'https://registry.npmjs.org/conventional-commits-parser/-/conventional-commits-parser-7.1.2.tgz'
@@ -848,6 +855,8 @@ fynpo:
    boxen: ^8.0.1
    ci-info: ^4.4.0
    chalk: ^6.0.0
+   conventional-commits-filter: ^6.0.1
+   conventional-commits-parser: ^7.1.2
    deep-object-diff: ^1.1.7
    env-paths: ^4.0.0
    execa: ^10.0.0
