@@ -16,7 +16,7 @@ module.exports = {
     const debugLog = (await Fs.readFile(Path.join(cwd, "fyn-debug-step-02.log"))).toString();
     assert(
       debugLog.includes("nothing to be done"),
-      "fyn-debug-step-02.log doesn't contain string 'nothing to be done'"
+      `fyn-debug-step-02.log doesn't contain string 'nothing to be done':\n${debugLog}`
     );
   }
 };

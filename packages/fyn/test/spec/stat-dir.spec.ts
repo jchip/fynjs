@@ -107,6 +107,26 @@ describe("scanFileStats", () => {
     });
   });
 
+  it("ignores unrelated sibling changes when inherited rules still exist", async () => {
+    Fs.mkdirSync(Path.join(cwd, ".git"));
+    const pkg = Path.join(cwd, "pkg");
+    Fs.mkdirSync(pkg);
+    const rules = Path.join(cwd, ".gitignore");
+    Fs.writeFileSync(rules, "generated/\n");
+    const source = Path.join(pkg, "index.ts");
+    Fs.writeFileSync(source, "source\n");
+    Fs.mkdirSync(Path.join(cwd, "unrelated"));
+    Fs.utimesSync(source, new Date(2000), new Date(2000));
+    Fs.utimesSync(rules, new Date(1000), new Date(1000));
+    Fs.utimesSync(pkg, new Date(1000), new Date(1000));
+    Fs.utimesSync(cwd, new Date(3000), new Date(3000));
+
+    expect(await scanFileStats(pkg)).toStrictEqual({
+      latestMtimeMs: 2000,
+      latestFile: source
+    });
+  });
+
   it("detects edits to nested rules even when those rules ignore themselves", async () => {
     const sourceDir = Path.join(cwd, "src");
     Fs.mkdirSync(sourceDir);

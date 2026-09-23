@@ -63,8 +63,12 @@ async function _scanFileStats(dir: string, ignores: string[], baseDir: string = 
     ancestor = parent;
   }
   for (const ruleDir of ruleDirs) {
-    inspectFile(ruleDir); // Also detect deletion of an inherited .gitignore.
-    inspectFile(Path.join(ruleDir, ".gitignore"));
+    const ruleFile = Path.join(ruleDir, ".gitignore");
+    if (Fs.existsSync(ruleFile)) {
+      inspectFile(ruleFile);
+    } else {
+      inspectFile(ruleDir); // Detect deletion of an inherited .gitignore.
+    }
   }
 
   await filterScanDir({
