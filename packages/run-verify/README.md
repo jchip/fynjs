@@ -83,6 +83,7 @@ await verify({ timeout: 500 })
 | --- | --- |
 | `.expectError` | The next step must fail. A throw or rejection counts. A callback error also counts. |
 | `.expectErrorToBe(message, code?)` | The top-level message must equal `message`. A supplied `code` must also match. |
+| `.expectErrorToBe(Constructor, code?)` | The failure must be an instance of `Constructor`; the next step receives that instance type. A supplied `code` must also match. |
 | `.expectErrorHas(message, code?)` | The top-level message must contain `message`. A supplied `code` must also match. |
 | `.keep` | The next step must finish. Its input remains the chain value. |
 

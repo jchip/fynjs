@@ -28,13 +28,12 @@
 import {
   _asyncVerifyFrom,
   expectError as wrapExpectError,
-  expectErrorHas as wrapExpectErrorHas,
-  expectErrorToBe as wrapExpectErrorToBe,
   runDefer,
   runFinally,
   runTimeout,
   type DeferObject,
-  type ErrorCode
+  type ErrorCode,
+  type ErrorClass
 } from "./index.js";
 
 /** Unwraps a Promise or any other thenable, leaving other types alone. */
@@ -61,6 +60,7 @@ interface Mods {
   errMode?: "has" | "toBe";
   /** Optional exact match for the top-level error's `code`. */
   errCode?: ErrorCode;
+  errClass?: ErrorClass;
 }
 
 /**
@@ -143,7 +143,9 @@ type NotAFunction<V> = V extends (...args: any[]) => any ? [never] : [];
 
 /** What the chain's value becomes after an ordinary step. */
 type StepOut<In, N, M extends Mods> = M["err"] extends true
-  ? unknown
+  ? M extends { errClass: infer C extends ErrorClass }
+    ? InstanceType<C>
+    : unknown
   : M["keep"] extends true
     ? In
     : Await<N>;
@@ -153,7 +155,9 @@ type StepOut<In, N, M extends Mods> = M["err"] extends true
  * it is, so unlike a returned value it is not awaited.
  */
 type CallbackOut<In, N, M extends Mods> = M["err"] extends true
-  ? unknown
+  ? M extends { errClass: infer C extends ErrorClass }
+    ? InstanceType<C>
+    : unknown
   : M["keep"] extends true
     ? In
     : N;
@@ -273,12 +277,16 @@ export interface Chain<Out, M extends Mods = {}, S extends SignalMap = SignalMap
   readonly expectError: Chain<Out, M & { err: true }, S>;
 
   /**
-   * Like {@link expectError}, and also require the error message to equal
-   * `message`. When `code` is given, require the top-level error code to equal
-   * it too. A shorthand for expecting the failure and checking its primary
-   * fields in one step, matching `expectErrorToBe` in the positional API.
+   * Like {@link expectError}, and also require an exact message or an instance of
+   * the supplied class. A class narrows the next step's input to its instance type.
+   * Message and class requirements compose. When `code` is given, require the
+   * top-level error code to equal it too.
    */
-  expectErrorToBe(message: string, code?: ErrorCode): Chain<Out, M & { err: true }, S>;
+  expectErrorToBe<E extends string | ErrorClass>(expected: E, code?: ErrorCode): Chain<
+    Out,
+    E extends ErrorClass ? Omit<M, "errClass"> & { err: true; errClass: E } : M & { err: true },
+    S
+  >;
 
   /**
    * Like {@link expectError}, and also require the error message to contain
@@ -376,9 +384,11 @@ function build(fn: (...args: any[]) => any, mods: Mods, isCallback: boolean): un
   }
 
   if (!mods.err) return step;
-  if (mods.errMode === "toBe") return wrapExpectErrorToBe(step, mods.errMsg!, mods.errCode);
-  if (mods.errMode === "has") return wrapExpectErrorHas(step, mods.errMsg!, mods.errCode);
-  return wrapExpectError(step);
+  const wrap = wrapExpectError(step);
+  if (mods.errClass) wrap.expectErrorToBe!(mods.errClass, mods.errCode);
+  if (mods.errMode === "toBe") return wrap.expectErrorToBe!(mods.errMsg!, mods.errCode);
+  if (mods.errMode === "has") return wrap.expectErrorHas!(mods.errMsg!, mods.errCode);
+  return wrap;
 }
 
 /**
@@ -487,9 +497,15 @@ function makeChain<Out, M extends Mods, S extends SignalMap>(
     get expectError() {
       return derive<Out, M & { err: true }>({ mods: { ...mods, err: true } });
     },
-    expectErrorToBe(message: string, code?: ErrorCode) {
-      return derive<Out, M & { err: true }>({
-        mods: { ...mods, err: true, errMode: "toBe", errMsg: message, errCode: code }
+    expectErrorToBe<E extends string | ErrorClass>(expected: E, code?: ErrorCode) {
+      return derive<
+        Out,
+        E extends ErrorClass ? Omit<M, "errClass"> & { err: true; errClass: E } : M & { err: true }
+      >({
+        mods:
+          typeof expected === "string"
+            ? { ...mods, err: true, errMode: "toBe", errMsg: expected, errCode: code }
+            : { ...mods, err: true, errClass: expected, errCode: code ?? mods.errCode }
       });
     },
     expectErrorHas(message: string, code?: ErrorCode) {

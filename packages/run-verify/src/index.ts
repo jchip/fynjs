@@ -57,6 +57,7 @@ export type CheckFunction = (...args: any[]) => any;
 export type DoneCallback = (err?: Error | null, result?: any) => void;
 export type NextCallback = (err?: Error | null, result?: any) => void;
 export type ErrorCode = string | number;
+export type ErrorClass = abstract new (...args: any[]) => object;
 
 export interface DeferHandlers {
   resolve: Array<(value: any) => void>;
@@ -105,6 +106,7 @@ export interface WrapObject {
   _expectError?: boolean | "has" | "toBe";
   _expectErrorMsg?: string;
   _expectErrorCode?: ErrorCode;
+  _expectErrorClass?: ErrorClass;
   _withCallback?: boolean;
   _onFailVerify?: boolean;
   _timeout?: number;
@@ -112,7 +114,7 @@ export interface WrapObject {
   withCallback?: WrapObject;
   onFailVerify?: WrapObject;
   expectErrorHas?(msg: string, code?: ErrorCode): WrapObject;
-  expectErrorToBe?(msg: string, code?: ErrorCode): WrapObject;
+  expectErrorToBe?(expected: string | ErrorClass, code?: ErrorCode): WrapObject;
   runTimeout?(delay: number): WrapObject;
 }
 
@@ -375,6 +377,14 @@ run check function number ${stepNum(index - 1)}`
     };
 
     const invokeWithExpectError = (err: Error): any => {
+      if (wrap._expectErrorClass && !(err instanceof wrap._expectErrorClass)) {
+        return invokeFinally(
+          errorMsg(
+            errorFromCall,
+            `runVerify expecting error to be instance of '${wrap._expectErrorClass.name}'`
+          )
+        );
+      }
       if (wrap._expectError === "has") {
         if (err.message.indexOf(wrap._expectErrorMsg!) < 0) {
           return invokeFinally(
@@ -574,10 +584,16 @@ export const wrapCheck = (fn: CheckFunction): WrapObject => {
     return wrap;
   };
 
-  wrap.expectErrorToBe = (msg: string, code?: ErrorCode) => {
-    wrap._expectError = "toBe";
-    wrap._expectErrorMsg = msg;
-    wrap._expectErrorCode = code;
+  wrap.expectErrorToBe = (expected: string | ErrorClass, code?: ErrorCode) => {
+    if (typeof expected === "string") {
+      wrap._expectError = "toBe";
+      wrap._expectErrorMsg = expected;
+      wrap._expectErrorCode = code;
+    } else {
+      wrap._expectError ||= true;
+      wrap._expectErrorClass = expected;
+      if (code !== undefined) wrap._expectErrorCode = code;
+    }
     return wrap;
   };
 
@@ -605,11 +621,15 @@ export const expectErrorHas = (fn: CheckFunction, msg: string, code?: ErrorCode)
   return wrapCheck(fn).expectErrorHas!(msg, code);
 };
 
-/** Like {@link expectError}, and also require the error message to equal `msg`. When
- * `code` is given, require the top-level error code to equal it. The error is still passed
- * on as the next step's input. */
-export const expectErrorToBe = (fn: CheckFunction, msg: string, code?: ErrorCode): WrapObject => {
-  return wrapCheck(fn).expectErrorToBe!(msg, code);
+/** Like {@link expectError}, and also require an exact message or an instance of the
+ * supplied class. When `code` is given, require the top-level error code to equal it.
+ * The original error is passed on as the next step's input. */
+export const expectErrorToBe = (
+  fn: CheckFunction,
+  expected: string | ErrorClass,
+  code?: ErrorCode
+): WrapObject => {
+  return wrapCheck(fn).expectErrorToBe!(expected, code);
 };
 
 /**

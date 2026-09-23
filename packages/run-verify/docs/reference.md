@@ -164,6 +164,30 @@ Like `.expectError`. The top-level error's `message` must equal `message`. A sup
 Like `.expectError`. The top-level error's `message` must contain `text`. The optional
 `code` check matches `.expectErrorToBe()`.
 
+### `.expectErrorToBe(Constructor, code?)`
+
+Requires the next step to fail with a value that satisfies `instanceof Constructor`,
+including subclasses. A supplied `code` must also match with strict equality. The
+original failure becomes the next value, typed as the constructor's instance type.
+Throws, Promise rejections, and callback errors use the same check. Returning an
+instance successfully does not satisfy the expectation.
+
+Constructor and message requirements compose in either order:
+
+```ts
+await verify()
+  .expectErrorToBe(TypeError)
+  .expectErrorHas("invalid input")
+  .step(() => parseInput())
+  .step(error => {
+    // error is typed TypeError
+    expect(error.message).toContain("invalid input");
+  });
+```
+
+Repeating a constructor requirement replaces the previous constructor. Modifiers
+apply only to the next step. `.expectError` without a constructor still yields `unknown`.
+
 Use `.expectError` followed by an inspection step for custom predicates. Examples
 include regular expressions and nested causes.
 
@@ -319,6 +343,7 @@ These wrap one positional step:
 | --- | --- |
 | `expectError(fn)` | The step must fail. A throw or rejection counts. A callback error also counts. |
 | `expectErrorToBe(fn, message, code?)` | Require an exact top-level message. Optionally require an exact code. |
+| `expectErrorToBe(fn, Constructor, code?)` | Require an instance of `Constructor`. Optionally require an exact code. Also available on `wrapCheck(fn)`. |
 | `expectErrorHas(fn, text, code?)` | Require a top-level message substring. Optionally require an exact code. |
 
 When the requirement passes, the failure value goes to the next positional step.
