@@ -29,7 +29,6 @@ class LocalPkgBuilder {
   declare _failedItems: Record<string, any>;
   declare _promiseQ: PromiseQueue;
   declare _started: any;
-  declare _defer: any;
   declare _startError: any;
 
   constructor(options) {
@@ -224,18 +223,6 @@ class LocalPkgBuilder {
       this._failedItems[data.item.fullPath] = itemRes;
     });
 
-    this._defer = xaa.makeDefer();
-
-    this._promiseQ.on("done", () => {
-      if (!this._promiseQ.isPending) {
-        this._defer.resolve();
-      }
-    });
-
-    this._promiseQ.on("fail", data => {
-      this._defer.reject(new AggregateError([data.error], `failed to build local packages`));
-    });
-
     //
     // localsByDepth is array of array: level 1 depths, level 2 packages
     //
@@ -330,8 +317,9 @@ class LocalPkgBuilder {
     return {};
   }
 
-  waitForDone() {
-    return this._promiseQ?.isPending && this._defer?.promise;
+  async waitForDone() {
+    await this._started?.promise;
+    await this._promiseQ?.wait();
   }
 
   async processItem(item) {
