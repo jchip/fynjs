@@ -40,6 +40,16 @@
 
 import { EventEmitter } from "events";
 import { WRAPPED_FN, IS_FINALLY, DEFER_EVENT, DEFER_WAIT, DEFER_OBJ } from "./symbols.js";
+import {
+  errorMatchFailure,
+  instanceRequirement,
+  type ErrorCode,
+  type ErrorClass,
+  type ErrorClasses,
+  type ErrorMatcher,
+  type ErrorMatchRequirement
+} from "./error-match.js";
+export type { ErrorCode, ErrorClass, ErrorClasses, ErrorMatcher } from "./error-match.js";
 
 export { WRAPPED_FN, IS_FINALLY, DEFER_EVENT, DEFER_WAIT, DEFER_OBJ } from "./symbols.js";
 
@@ -56,8 +66,6 @@ export type { Chain, ChainConfig, Signal, SignalMap, StepCallback, VerifyFn } fr
 export type CheckFunction = (...args: any[]) => any;
 export type DoneCallback = (err?: Error | null, result?: any) => void;
 export type NextCallback = (err?: Error | null, result?: any) => void;
-export type ErrorCode = string | number;
-export type ErrorClass = abstract new (...args: any[]) => object;
 
 export interface DeferHandlers {
   resolve: Array<(value: any) => void>;
@@ -107,6 +115,7 @@ export interface WrapObject {
   _expectErrorMsg?: string;
   _expectErrorCode?: ErrorCode;
   _expectErrorClass?: ErrorClass;
+  _errorMatches?: readonly ErrorMatchRequirement[];
   _withCallback?: boolean;
   _onFailVerify?: boolean;
   _timeout?: number;
@@ -115,6 +124,8 @@ export interface WrapObject {
   onFailVerify?: WrapObject;
   expectErrorHas?(msg: string, code?: ErrorCode): WrapObject;
   expectErrorToBe?(expected: string | ErrorClass, code?: ErrorCode): WrapObject;
+  expectErrorMatch?(matcher: ErrorMatcher, code?: ErrorCode): WrapObject;
+  expectErrorInstanceMatch?(types: ErrorClasses, matcher?: ErrorMatcher, code?: ErrorCode): WrapObject;
   runTimeout?(delay: number): WrapObject;
 }
 
@@ -377,6 +388,15 @@ run check function number ${stepNum(index - 1)}`
     };
 
     const invokeWithExpectError = (err: Error): any => {
+      for (const requirement of wrap._errorMatches ?? []) {
+        let mismatch: string | undefined;
+        try {
+          mismatch = errorMatchFailure(err, requirement);
+        } catch (error) {
+          return invokeFinally(error as Error);
+        }
+        if (mismatch) return invokeFinally(errorMsg(errorFromCall, mismatch));
+      }
       if (wrap._expectErrorClass && !(err instanceof wrap._expectErrorClass)) {
         return invokeFinally(
           errorMsg(
@@ -597,6 +617,19 @@ export const wrapCheck = (fn: CheckFunction): WrapObject => {
     return wrap;
   };
 
+  wrap.expectErrorMatch = (matcher: ErrorMatcher, code?: ErrorCode) => {
+    wrap._expectError ||= true;
+    wrap._errorMatches = [...(wrap._errorMatches ?? []), { matcher, code }];
+    return wrap;
+  };
+
+  wrap.expectErrorInstanceMatch = (types: ErrorClasses, matcher?: ErrorMatcher, code?: ErrorCode) => {
+    const requirement = instanceRequirement(types, matcher, code);
+    wrap._expectError ||= true;
+    wrap._errorMatches = [...(wrap._errorMatches ?? []), requirement];
+    return wrap;
+  };
+
   wrap.runTimeout = (delay: number) => {
     wrap._timeout = delay;
     return wrap;
@@ -631,6 +664,21 @@ export const expectErrorToBe = (
 ): WrapObject => {
   return wrapCheck(fn).expectErrorToBe!(expected, code);
 };
+
+/** Require failure with a message substring or regex, and an optional exact code. */
+export const expectErrorMatch = (
+  fn: CheckFunction,
+  matcher: ErrorMatcher,
+  code?: ErrorCode
+): WrapObject => wrapCheck(fn).expectErrorMatch!(matcher, code);
+
+/** Require failure with an instance of any supplied class, plus optional message/code checks. */
+export const expectErrorInstanceMatch = (
+  fn: CheckFunction,
+  types: ErrorClasses,
+  matcher?: ErrorMatcher,
+  code?: ErrorCode
+): WrapObject => wrapCheck(fn).expectErrorInstanceMatch!(types, matcher, code);
 
 /**
  * A step that runs only if the run failed at its spot in the list. While the run is

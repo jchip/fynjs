@@ -151,8 +151,57 @@ Requires the next step to fail. A throw, rejection, or callback error satisfies 
 requirement. Successful completion fails the run. Returning an `Error` counts as
 success, so it does not satisfy the requirement.
 
-The failure becomes the next value. It has the `unknown` type because JavaScript may
-throw any value.
+The original failure becomes the next value. Without an instance requirement it has
+the `unknown` type because JavaScript may throw any value. Adding `.expectError` to an
+instance requirement preserves its inferred instance type.
+
+### `.expectErrorMatch(matcher, code?)`
+
+Requires the next step to fail with a matching top-level `message`. A string matcher
+checks for a substring; a `RegExp` tests the message. Use anchors for an exact message,
+such as `/^invalid input$/`. A failure without a string message does not match.
+
+A supplied `code` must equal the top-level error's `code` with strict equality. Codes
+may be strings or numbers. Omitting `code` adds no constraint and preserves any earlier
+requirements. The original failure becomes the next value; an existing instance
+requirement retains its inferred type.
+
+Repeated calls to either new matching method add requirements. Every requirement must
+pass; a later matching call does not replace an earlier message, instance, or code
+requirement. Regular expression checks do not change the supplied expression's
+`lastIndex`, and repeated checks have the same result for global or sticky expressions.
+
+### `.expectErrorInstanceMatch(ConstructorOrArray, matcher?, code?)`
+
+Requires the next step to fail with a value satisfying `instanceof` the supplied
+constructor, including subclasses. Alternatively, supply a nonempty array of
+constructors: an instance of any listed constructor satisfies that call's instance
+requirement. An optional message matcher and code use the same rules as
+`.expectErrorMatch()`. To require just an instance and code, omit the matcher explicitly:
+
+```ts
+await verify()
+  .expectErrorInstanceMatch(TypeError, undefined, "E_BAD")
+  .step(() => parseInput());
+```
+
+The original failure becomes the next value, typed as the constructor's instance type
+or the union of the array's instance types:
+
+```ts
+await verify()
+  .expectErrorInstanceMatch([TypeError, RangeError], /invalid/i, "E_BAD")
+  .step(() => parseInput())
+  .step(error => {
+    // error is typed TypeError | RangeError
+    expect(error.message).toMatch(/invalid/i);
+  });
+```
+
+Separate instance-matching calls must all pass and narrow the value accordingly.
+Throws, Promise rejections, and callback errors use the same requirements. Successful
+completion, even returning an instance, fails the expectation. Both matching methods
+apply only to the next step and take precedence over `.keep`.
 
 ### `.expectErrorToBe(message, code?)`
 
@@ -188,8 +237,10 @@ await verify()
 Repeating a constructor requirement replaces the previous constructor. Modifiers
 apply only to the next step. `.expectError` without a constructor still yields `unknown`.
 
-Use `.expectError` followed by an inspection step for custom predicates. Examples
-include regular expressions and nested causes.
+Use `.expectError` followed by an inspection step for custom predicates, such as
+inspecting nested causes. The existing `expectErrorToBe` and `expectErrorHas` methods
+retain their current semantics; the new matching methods add requirements rather than
+replacing earlier ones.
 
 ## Signals
 
@@ -342,12 +393,17 @@ These wrap one positional step:
 | Helper | Requirement |
 | --- | --- |
 | `expectError(fn)` | The step must fail. A throw or rejection counts. A callback error also counts. |
+| `expectErrorMatch(fn, matcher, code?)` | Require a top-level message substring or regex match. Optionally require an exact code. |
+| `expectErrorInstanceMatch(fn, ConstructorOrArray, matcher?, code?)` | Require an instance of one constructor or any constructor in a nonempty array. Optionally require a message match and exact code. |
 | `expectErrorToBe(fn, message, code?)` | Require an exact top-level message. Optionally require an exact code. |
 | `expectErrorToBe(fn, Constructor, code?)` | Require an instance of `Constructor`. Optionally require an exact code. Also available on `wrapCheck(fn)`. |
 | `expectErrorHas(fn, text, code?)` | Require a top-level message substring. Optionally require an exact code. |
 
 When the requirement passes, the failure value goes to the next positional step.
 Returning an `Error` as a value does not satisfy the requirement.
+Both matching methods are also available on `wrapCheck(fn)` with the same arguments
+after the function. Repeated matching calls on a wrapper retain every requirement,
+just as they do on a fluent chain.
 
 ### `withCallback(fn)`
 

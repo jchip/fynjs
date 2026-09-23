@@ -74,7 +74,7 @@ Add an expected-error modifier immediately before the step that must fail:
 
 ```js
 await verify({ timeout: 500 })
-  .expectErrorHas("not found", "TASK_NOT_FOUND")
+  .expectErrorMatch("not found", "TASK_NOT_FOUND")
   .step(() => loadTask("missing"))
   .step(error => assert.equal(error.task, "missing"));
 ```
@@ -82,13 +82,29 @@ await verify({ timeout: 500 })
 | Modifier | Requirement |
 | --- | --- |
 | `.expectError` | The next step must fail. A throw or rejection counts. A callback error also counts. |
+| `.expectErrorMatch(matcher, code?)` | The top-level message must contain a string matcher or match a regex. A supplied `code` must also match exactly. |
+| `.expectErrorInstanceMatch(ConstructorOrArray, matcher?, code?)` | The failure must be an instance of the constructor or any constructor in a nonempty array. Optional message and code constraints also apply. |
 | `.expectErrorToBe(message, code?)` | The top-level message must equal `message`. A supplied `code` must also match. |
 | `.expectErrorToBe(Constructor, code?)` | The failure must be an instance of `Constructor`; the next step receives that instance type. A supplied `code` must also match. |
 | `.expectErrorHas(message, code?)` | The top-level message must contain `message`. A supplied `code` must also match. |
 | `.keep` | The next step must finish. Its input remains the chain value. |
 
 A successful step fails an expected-error requirement. A matching failure becomes the
-next value. That value has the `unknown` type. JavaScript can throw any value.
+next value, retaining its original identity. Without an instance requirement, that value
+has the `unknown` type because JavaScript can throw any value. An instance requirement
+infers its constructor's instance type; an array infers the union of its instance types.
+
+```ts
+await verify({ timeout: 500 })
+  .expectErrorInstanceMatch([TypeError, RangeError], /^invalid input$/, "E_BAD")
+  .step(() => parseInput())
+  .step(error => assert.equal(error.message, "invalid input"));
+```
+
+String matchers check substrings; use an anchored regex for an exact message. Both new
+matching methods retain requirements from earlier calls, so every requirement must
+pass. Omitting `code` adds no code constraint and preserves earlier ones. The existing
+`expectErrorToBe` and `expectErrorHas` methods remain available with their current semantics.
 
 Modifiers affect only the next step method. You can combine modifiers.
 

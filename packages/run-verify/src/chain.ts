@@ -35,6 +35,13 @@ import {
   type ErrorCode,
   type ErrorClass
 } from "./index.js";
+import {
+  instanceRequirement,
+  type ErrorClasses,
+  type ErrorClassOf,
+  type ErrorMatcher,
+  type ErrorMatchRequirement
+} from "./error-match.js";
 
 /** Unwraps a Promise or any other thenable, leaving other types alone. */
 type Await<T> = Awaited<T>;
@@ -61,6 +68,9 @@ interface Mods {
   /** Optional exact match for the top-level error's `code`. */
   errCode?: ErrorCode;
   errClass?: ErrorClass;
+  errMatches?: readonly ErrorMatchRequirement[];
+  /** Type-only result of the accumulated instance requirements. */
+  errInstance?: object;
 }
 
 /**
@@ -141,11 +151,13 @@ export interface ChainConfig<S extends SignalMap = SignalMap> {
  */
 type NotAFunction<V> = V extends (...args: any[]) => any ? [never] : [];
 
+type ExpectedError<M extends Mods> =
+  (M extends { errClass: infer C extends ErrorClass } ? InstanceType<C> : unknown) &
+  (M extends { errInstance: infer I } ? I : unknown);
+
 /** What the chain's value becomes after an ordinary step. */
 type StepOut<In, N, M extends Mods> = M["err"] extends true
-  ? M extends { errClass: infer C extends ErrorClass }
-    ? InstanceType<C>
-    : unknown
+  ? ExpectedError<M>
   : M["keep"] extends true
     ? In
     : Await<N>;
@@ -155,9 +167,7 @@ type StepOut<In, N, M extends Mods> = M["err"] extends true
  * it is, so unlike a returned value it is not awaited.
  */
 type CallbackOut<In, N, M extends Mods> = M["err"] extends true
-  ? M extends { errClass: infer C extends ErrorClass }
-    ? InstanceType<C>
-    : unknown
+  ? ExpectedError<M>
   : M["keep"] extends true
     ? In
     : N;
@@ -276,6 +286,16 @@ export interface Chain<Out, M extends Mods = {}, S extends SignalMap = SignalMap
    */
   readonly expectError: Chain<Out, M & { err: true }, S>;
 
+  /** Require a message substring or regex and optional exact code. New requirements accumulate. */
+  expectErrorMatch(matcher: ErrorMatcher, code?: ErrorCode): Chain<Out, M & { err: true }, S>;
+
+  /** Require an instance of any listed class, plus optional message/code checks; infer its type. */
+  expectErrorInstanceMatch<const C extends ErrorClasses>(
+    types: C,
+    matcher?: ErrorMatcher,
+    code?: ErrorCode
+  ): Chain<Out, M & { err: true; errInstance: InstanceType<ErrorClassOf<C>> }, S>;
+
   /**
    * Like {@link expectError}, and also require an exact message or an instance of
    * the supplied class. A class narrows the next step's input to its instance type.
@@ -385,6 +405,7 @@ function build(fn: (...args: any[]) => any, mods: Mods, isCallback: boolean): un
 
   if (!mods.err) return step;
   const wrap = wrapExpectError(step);
+  wrap._errorMatches = mods.errMatches;
   if (mods.errClass) wrap.expectErrorToBe!(mods.errClass, mods.errCode);
   if (mods.errMode === "toBe") return wrap.expectErrorToBe!(mods.errMsg!, mods.errCode);
   if (mods.errMode === "has") return wrap.expectErrorHas!(mods.errMsg!, mods.errCode);
@@ -496,6 +517,21 @@ function makeChain<Out, M extends Mods, S extends SignalMap>(
     },
     get expectError() {
       return derive<Out, M & { err: true }>({ mods: { ...mods, err: true } });
+    },
+    expectErrorMatch(matcher: ErrorMatcher, code?: ErrorCode) {
+      return derive<Out, M & { err: true }>({
+        mods: { ...mods, err: true, errMatches: [...(mods.errMatches ?? []), { matcher, code }] }
+      });
+    },
+    expectErrorInstanceMatch<const C extends ErrorClasses>(
+      types: C,
+      matcher?: ErrorMatcher,
+      code?: ErrorCode
+    ) {
+      const requirement = instanceRequirement(types, matcher, code);
+      return derive<Out, M & { err: true; errInstance: InstanceType<ErrorClassOf<C>> }>({
+        mods: { ...mods, err: true, errMatches: [...(mods.errMatches ?? []), requirement] }
+      });
     },
     expectErrorToBe<E extends string | ErrorClass>(expected: E, code?: ErrorCode) {
       return derive<
