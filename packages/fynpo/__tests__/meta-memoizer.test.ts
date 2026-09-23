@@ -9,14 +9,14 @@ const run = (script: string) => execFileAsync(process.execPath, [
   "--input-type=module",
   "--eval",
   `import { startMetaMemoizer } from ${JSON.stringify(moduleUrl)};\n${script}`,
-], { timeout: 3000 });
+], { timeout: 3000, env: { ...process.env, FORCE_COLOR: "1" } });
 
 describe("metadata memoizer lifecycle", () => {
   it("does not keep a completed command alive", () =>
     verify({ timeout: 5000 })
       .step(() => run(`
         const server = await startMetaMemoizer();
-        console.log(server.info.port);
+        console.log(String(server.info.port));
       `))
       .step(({ stdout }) => {
         expect(Number(stdout.trim())).toBeGreaterThan(0);
