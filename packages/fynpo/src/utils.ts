@@ -3,7 +3,6 @@ const pFs = Fs.promises;
 import Path from "path";
 import { logger } from "./logger.ts";
 import * as _ from "lodash-es";
-import shell from "shelljs";
 import { makeOptionalRequire } from "optional-require";
 import { FynpoConfigManager, FynpoDepGraph, type FynpoPackageInfo, type PackageBasicInfo, PackageRef, resolvePackagesConfig, makeGitignoreMatcher, writeJsonSync, readJsonSync } from "@fynpo/base";
 import os from "os";
@@ -362,7 +361,7 @@ export const loadConfig = (cwd = process.cwd(), commitlint = false) => {
       const srcTmplDir = Path.join(import.meta.dirname, "../templates");
       const src = Path.join(srcTmplDir, fileName);
       if (Fs.existsSync(src)) {
-        shell.cp(src, dest);
+        Fs.copyFileSync(src, dest);
         fynpoRc = optionalRequire(src) || {};
       }
     } else {

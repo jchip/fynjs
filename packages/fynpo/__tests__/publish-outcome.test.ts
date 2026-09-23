@@ -17,11 +17,6 @@ vi.mock("../src/release-output", () => ({
 
 vi.mock("fyn/bin/index.mjs", () => ({ default: { run: vi.fn() } }));
 
-const shellRm = vi.fn();
-vi.mock("shelljs", () => ({
-  default: { pushd: vi.fn(), popd: vi.fn(), rm: (...args: any[]) => shellRm(...args) },
-}));
-
 /** commands the code ran, in order */
 const cmds: string[] = [];
 /** what a given command does - return output, or throw to make it fail */
@@ -39,7 +34,13 @@ const runCmd = (_opts: any, cmd: string) => {
     catch: (a: any) => promise.catch(a),
   };
 };
-vi.mock("xsh", () => ({ default: { exec: (...args: any[]) => (runCmd as any)(...args) } }));
+vi.mock("xsh", () => ({
+  default: {
+    exec: (...args: any[]) => (runCmd as any)(...args),
+    pushd: vi.fn(),
+    popd: vi.fn(),
+  },
+}));
 
 /** packages the topo runner hands to the pack phase */
 let topoPackages: any[] = [];
@@ -59,6 +60,11 @@ import Os from "os";
 import Path from "path";
 import Publish from "../src/publish";
 import { isAlreadyPublishedError } from "../src/utils";
+
+// call-through spy: _cleanupFile's target under /repo doesn't exist so this still throws and
+// gets swallowed same as before, but the real implementation runs for the temp-dir cleanup in
+// this file's own afterEach hooks.
+const rmSyncSpy = vi.spyOn(Fs, "rmSync");
 
 const pkg = (name: string, version: string) => ({
   name,
@@ -143,7 +149,7 @@ describe("publishPackages outcome", () => {
 
   beforeEach(() => {
     cmds.length = 0;
-    shellRm.mockReset();
+    rmSyncSpy.mockClear();
     topoPackages = [a, b];
     handler = () => ({});
   });
@@ -200,7 +206,7 @@ describe("publishPackages outcome", () => {
 
     await makePublish().publishPackages();
 
-    expect(shellRm.mock.calls.map((c) => Path.basename(c[0])).sort()).toEqual(
+    expect(rmSyncSpy.mock.calls.map((c) => Path.basename(c[0] as string)).sort()).toEqual(
       [tgzOf(a), tgzOf(b)].sort()
     );
   });
@@ -241,7 +247,7 @@ describe("publish exit code and release tag", () => {
     );
 
     cmds.length = 0;
-    shellRm.mockReset();
+    rmSyncSpy.mockClear();
     topoPackages = [a, b];
 
     // process.exit does not return, so throwing stands in for it and lets the test see the code

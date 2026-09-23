@@ -18,8 +18,13 @@ vi.mock("../src/release-output", () => ({
 }));
 
 vi.mock("fyn/bin/index.mjs", () => ({ default: { run: vi.fn() } }));
-vi.mock("shelljs", () => ({ default: { pushd: vi.fn(), popd: vi.fn(), rm: vi.fn() } }));
-vi.mock("xsh", () => ({ default: { exec: () => ({ promise: Promise.resolve({ stdout: "" }) }) } }));
+vi.mock("xsh", () => ({
+  default: {
+    exec: () => ({ promise: Promise.resolve({ stdout: "" }) }),
+    pushd: vi.fn(),
+    popd: vi.fn(),
+  },
+}));
 
 import Fs from "fs";
 import Os from "os";

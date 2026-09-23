@@ -5,6 +5,7 @@ import { envPath } from "./env-path.ts";
 import { mkCmd } from "./mkcmd.ts";
 import { pathCwd } from "./path-cwd.ts";
 import { pathCwdNm } from "./path-cwd-nm.ts";
+import { pushd, popd } from "./pushd.ts";
 
 export type {
   ExecOutput,
@@ -24,6 +25,8 @@ export interface Xsh {
   mkCmd: typeof mkCmd;
   pathCwd: typeof pathCwd;
   pathCwdNm: typeof pathCwdNm;
+  pushd: typeof pushd;
+  popd: typeof popd;
   /** Promise implementation used by exec - set to null to restore native Promise */
   Promise: PromiseConstructor;
 }
@@ -34,7 +37,9 @@ const xsh = {
   envPath,
   mkCmd,
   pathCwd,
-  pathCwdNm
+  pathCwdNm,
+  pushd,
+  popd
 } as Xsh;
 
 Object.defineProperty(xsh, "Promise", {
@@ -44,7 +49,7 @@ Object.defineProperty(xsh, "Promise", {
   get: () => util.Promise
 });
 
-export { exec, env, envPath, mkCmd, pathCwd, pathCwdNm };
+export { exec, env, envPath, mkCmd, pathCwd, pathCwdNm, pushd, popd };
 
 export default xsh;
 

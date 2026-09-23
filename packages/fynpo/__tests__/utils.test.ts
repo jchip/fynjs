@@ -15,7 +15,6 @@ import { logger } from "../src/logger";
 import path from "path";
 import fs from "fs";
 import os from "os";
-import shell from "shelljs";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
 describe("fynpo utils", () => {

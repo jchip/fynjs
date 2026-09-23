@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { Prepare, prepareOutcome } from "../src/prepare";
 import path from "path";
 import fs from "fs";
-import shell from "shelljs";
 import { FynpoDepGraph } from "@fynpo/base";
 import { makeSampleFixture, removeSampleFixture } from "./helpers/sample-fixture";
 
@@ -40,7 +39,7 @@ describe("fynpo prepare", () => {
   });
 
   afterAll(() => {
-    shell.rm("-f", fynpoConfigFile);
+    fs.rmSync(fynpoConfigFile);
     removeSampleFixture(dir);
   });
 

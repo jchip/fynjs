@@ -7,7 +7,7 @@ import { logger } from "./logger.ts";
 import * as utils from "./utils.ts";
 import * as _ from "lodash-es";
 import fyn from "fyn/bin/index.mjs";
-import shell from "shelljs";
+import xsh from "xsh";
 import { FynpoDepGraph, type FynpoPackageInfo, readPkgJson } from "@fynpo/base";
 import { TopoRunner } from "./topo-runner.ts";
 import { findStaleLocalDeps, formatStaleLocalDeps } from "./utils/check-stale-local-deps.ts";
@@ -172,11 +172,11 @@ export default class Publish {
       const pkgFullDir = Path.join(this._fynpoRc.cwd, pkg.path);
       const savedEnv = process.env.FYNPO_PUBLISH;
       process.env.FYNPO_PUBLISH = "1";
-      shell.pushd(pkgFullDir);
+      xsh.pushd(pkgFullDir);
       try {
         await fyn.run(["run", script, "--cwd", pkgFullDir], 0, false);
       } finally {
-        shell.popd();
+        xsh.popd();
         if (savedEnv === undefined) {
           delete process.env.FYNPO_PUBLISH;
         } else {
@@ -240,7 +240,7 @@ export default class Publish {
 
   _cleanupFile(name: string) {
     try {
-      shell.rm(name);
+      Fs.rmSync(name);
     } catch (_err) {
       //
     }
@@ -258,7 +258,7 @@ export default class Publish {
 
           const pkgFullDir = Path.join(this._fynpoRc.cwd, pkgInfo.path);
 
-          shell.pushd(pkgFullDir);
+          xsh.pushd(pkgFullDir);
 
           try {
             await this.runScript(pkgInfo, "prepublishOnly");
@@ -267,7 +267,7 @@ export default class Publish {
             await this.runScript(pkgInfo, "publish");
             await this.runScript(pkgInfo, "postpublish");
           } finally {
-            shell.popd();
+            xsh.popd();
           }
 
           const outName = pkgInfo.name.replace(/\//g, "-").replace(/@/g, "");

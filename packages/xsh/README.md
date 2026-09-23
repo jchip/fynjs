@@ -163,6 +163,18 @@ If `path` doesn't exist in `process.env.PATH` then it's added to the end.
 
 If you don't want to operate on `process.env` you can pass in a second argument that's either an object or a string that's the path to change.
 
+### [pushd](#pushd) / [popd](#popd)
+
+```js
+xsh.pushd(dir);
+// ...
+xsh.popd();
+```
+
+`pushd` saves `process.cwd()` on a stack, then `chdir`s into `dir`, returning the new cwd.
+`popd` `chdir`s back to the directory most recently saved by `pushd`, returning it. `popd`
+throws if the stack is empty.
+
 [npm-image]: https://badge.fury.io/js/xsh.svg
 
 [npm-url]: https://npmjs.org/package/xsh
