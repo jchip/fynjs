@@ -157,11 +157,11 @@ const debug = false;
       const stepTitle = stepAction.title ? `: ${stepAction.title}` : "";
       let failError;
 
-      //
-      // remove existing debug log file for step
-      //
+      // Precreate the ignored log so saving it later only updates the file. Creating a log
+      // entry after an install would update the scenario directory mtime and look like a
+      // source change to the next step.
       const debugLogFile = `fyn-debug-${step}.log`;
-      Fs.rmSync(Path.join(cwd, debugLogFile), { recursive: true, force: true });
+      Fs.writeFileSync(Path.join(cwd, debugLogFile), "");
 
       const timeout = debug ? 10000000 : stepAction.timeout || undefined;
       const testOptions = timeout ? { timeout } : {};
