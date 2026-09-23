@@ -1,3 +1,92 @@
+# 9/23/2026
+
+## Packages
+
+### Directly Updated
+
+-   `aveazul@2.1.6` `(2.1.5 => 2.1.6)`
+-   `fyn@3.1.9` `(3.1.8 => 3.1.9)`
+-   `fynpo@3.1.9` `(3.1.8 => 3.1.9)`
+-   `fynpo-cli@3.1.9` `(3.1.8 => 3.1.9)`
+-   `publish-util@3.1.5` `(3.1.4 => 3.1.5)`
+-   `run-verify@2.1.6` `(2.1.5 => 2.1.6)`
+-   `xaa@3.1.5` `(3.1.4 => 3.1.5)`
+
+### Fynpo Updated
+
+-   `@fynjs/cli-args@1.1.5` `(1.1.4 => 1.1.5)`
+-   `@fynjs/fetch@1.0.4` `(1.0.3 => 1.0.4)`
+-   `@fynjs/run@1.1.6` `(1.1.5 => 1.1.6)`
+-   `@fynpo/base@2.1.8` `(2.1.7 => 2.1.8)`
+-   `@jchip/error@2.1.5` `(2.1.4 => 2.1.5)`
+-   `chalker@2.1.5` `(2.1.4 => 2.1.5)`
+-   `check-pkg-new-version@1.1.5` `(1.1.4 => 1.1.5)`
+-   `check-pkg-new-version-engine@2.1.5` `(2.1.4 => 2.1.5)`
+-   `filter-scan-dir@2.1.7` `(2.1.6 => 2.1.7)`
+-   `item-queue@2.1.7` `(2.1.6 => 2.1.7)`
+-   `munchy@2.0.5` `(2.0.4 => 2.0.5)`
+-   `optional-import@1.1.5` `(1.1.4 => 1.1.5)`
+-   `pkg-preper@0.3.5` `(0.3.4 => 0.3.5)`
+-   `string-array@2.1.5` `(2.1.4 => 2.1.5)`
+-   `unwrap-npm-cmd@2.1.5` `(2.1.4 => 2.1.5)`
+-   `visual-exec@1.1.7` `(1.1.6 => 1.1.7)`
+-   `visual-logger@2.1.6` `(2.1.5 => 2.1.6)`
+-   `xenv-config@2.1.5` `(2.1.4 => 2.1.5)`
+-   `xflight@3.1.6` `(3.1.5 => 3.1.6)`
+-   `xsh@1.1.6` `(1.1.5 => 1.1.6)`
+
+## Commits
+
+-   `packages/aveazul`
+
+    -   FRV-16: migrate consumer tests to error match modifiers [commit](https://github.com/jchip/fynjs/commit/0a56cfdc0701ae6a89370f9eb90c75fa473499a6)
+    -   test(aveazul): separate actions and assertions with run-verify [commit](https://github.com/jchip/fynjs/commit/fa37a5ba9e160f21c86aa2d7589a3063b666e360)
+    -   fix(aveazul): correct promise behavior and bound test steps [commit](https://github.com/jchip/fynjs/commit/1875e5c725364e66605aa22e790a3a7f01ee917a)
+
+-   `packages/fyn`
+
+    -   FRV-16: migrate consumer tests to error match modifiers [commit](https://github.com/jchip/fynjs/commit/0a56cfdc0701ae6a89370f9eb90c75fa473499a6)
+    -   FPO-97: store bootstrap audit reports in install metadata directory [commit](https://github.com/jchip/fynjs/commit/4d5d35d10c1c085c309f25ab54a3bf604661ab0b)
+    -   FPM-174: refresh local package files after install lifecycle builds [commit](https://github.com/jchip/fynjs/commit/9ca69629eebd0e58c562484103788892e75aabe0)
+    -   FPM-173: honor forced installs for local dependency builds [commit](https://github.com/jchip/fynjs/commit/6593dcd520c9638f950ee804f955b91b2e5aaa01)
+    -   FPM-172: refresh installs when local resolution mode changes [commit](https://github.com/jchip/fynjs/commit/87a76cf500455e357df57a85590566811a5c8044)
+
+-   `packages/fynpo`
+
+    -   FPO-99: stabilize memoizer test under forced color [commit](https://github.com/jchip/fynjs/commit/1da1821ad0a8f744265efbf7463c4e8454a11d13)
+    -   FPO-97: store bootstrap audit reports in install metadata directory [commit](https://github.com/jchip/fynjs/commit/4d5d35d10c1c085c309f25ab54a3bf604661ab0b)
+    -   FPO-94: skip unchanged changelog entries and commits on reruns [commit](https://github.com/jchip/fynjs/commit/d1db5934d3c5681b0b9c732a0aa9d9dd42dc0c59)
+    -   FPO-92: amend matching local release commits on prepare reruns [commit](https://github.com/jchip/fynjs/commit/3d3d26e5e39098a1f45466f7749b2ee77d2b7ee3)
+    -   FPO-91: skip unchanged prepare work unless forced [commit](https://github.com/jchip/fynjs/commit/09fa2c31cc99c1485d695a8bd22bed888a6518fa)
+    -   FPO-90: skip release commits when no files changed [commit](https://github.com/jchip/fynjs/commit/1f336966c094a21f8faced1d797471161969fc3a)
+    -   FPO-89: report expected prepare failures without stack dumps [commit](https://github.com/jchip/fynjs/commit/b5cd167214428533deafe3f44e005933b78b30e0)
+    -   FPO-88: let prepare exit after its bootstrap work completes [commit](https://github.com/jchip/fynjs/commit/f4024d0c5b64ce3c37fbdee4a78c2602fa869db0)
+    -   FPO-86: bootstrap and run package prepare hooks before release commit [commit](https://github.com/jchip/fynjs/commit/50770f126485ec8f80a2a6ced892f82e7624629d)
+    -   FPO-87: detect dirty release trees and quote staged paths safely [commit](https://github.com/jchip/fynjs/commit/d569687ed9c0f4d8efea43f1036546201fe4bb7d)
+
+-   `packages/publish-util`
+
+    -   FPU-8: keep shorter manifest writes readable before truncation [commit](https://github.com/jchip/fynjs/commit/6fe21a5b5e38c15a546350858cc3f1cdf5a6256d)
+
+-   `packages/run-verify`
+
+    -   FRV-11: add message and instance error match modifiers [commit](https://github.com/jchip/fynjs/commit/e84ada6a72273f8362d502f5c1e085eeb0a95473)
+    -   FRV-9: support constructors in expectErrorToBe [commit](https://github.com/jchip/fynjs/commit/5912355203c7c9025a81a39d6bb8c92a86a73a2c)
+
+-   `packages/xaa`
+
+    -   FRV-16: migrate consumer tests to error match modifiers [commit](https://github.com/jchip/fynjs/commit/0a56cfdc0701ae6a89370f9eb90c75fa473499a6)
+
+-   `docusaurus`
+
+    -   FPO-92: amend matching local release commits on prepare reruns [commit](https://github.com/jchip/fynjs/commit/3d3d26e5e39098a1f45466f7749b2ee77d2b7ee3)
+    -   FPO-91: skip unchanged prepare work unless forced [commit](https://github.com/jchip/fynjs/commit/09fa2c31cc99c1485d695a8bd22bed888a6518fa)
+    -   FPO-86: bootstrap and run package prepare hooks before release commit [commit](https://github.com/jchip/fynjs/commit/50770f126485ec8f80a2a6ced892f82e7624629d)
+
+-   `MISC`
+
+    -   update top level lockfile [commit](https://github.com/jchip/fynjs/commit/da4cd27f1f0785ca5089696a39dd99f60cab111c)
+
 # 9/22/2026
 
 ## Packages
