@@ -50,9 +50,37 @@ export interface SaveMeta {
   version?: string;
   pid: number;
   ts: string;
+  activePacks?: number;
 }
 
 export const metaFileOf = (saveFile: string): string => `${saveFile}.meta.json`;
+
+/** Serialize updates to the shared backup and its metadata. */
+export async function withPackLock<T>(saveFile: string, action: () => Promise<T>): Promise<T> {
+  const lockFile = `${saveFile}.lock`;
+  let lock;
+
+  for (let attempt = 0; attempt < 1000; attempt++) {
+    try {
+      lock = await Fs.open(lockFile, "wx");
+      break;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+
+  if (!lock) {
+    throw new Error(`publish-util: timed out waiting for pack lock ${lockFile}`);
+  }
+
+  try {
+    return await action();
+  } finally {
+    await lock.close();
+    await Fs.unlink(lockFile).catch(() => undefined);
+  }
+}
 
 /**
  * Find the package.json that a **pack time** script (prepack/postpack) is operating on.

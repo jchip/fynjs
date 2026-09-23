@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as Fs from "fs";
 import * as Os from "os";
 import * as Path from "path";
@@ -97,6 +97,20 @@ describe("prepack/postpack round trip", () => {
       })
       .step(pack.restore)
       .step(() => expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original));
+  });
+
+  it("preserves the original across overlapping pack lifecycles", async () => {
+    const pkgFile = Path.join(dir, "package.json");
+    const original = Fs.readFileSync(pkgFile, "utf8");
+    vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
+
+    await prePack();
+    await prePack();
+    await postPack();
+    expect(Fs.readFileSync(pkgFile, "utf8")).not.toBe(original);
+    await postPack();
+
+    expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original);
   });
 
   it("records the manifest it modified, and cleans the sidecar up", () => {

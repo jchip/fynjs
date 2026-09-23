@@ -5,6 +5,7 @@ import type { PackageInfo } from "../src/utils.js";
 
 const mocks = vi.hoisted(() => ({
   getPackInfo: vi.fn(),
+  withPackLock: vi.fn((_saveFile, action) => action()),
   writePkgFile: vi.fn(),
   readFile: vi.fn(),
   unlink: vi.fn()
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../src/utils.js", async importOriginal => ({
   ...await importOriginal<typeof import("../src/utils.js")>(),
   getPackInfo: mocks.getPackInfo,
+  withPackLock: mocks.withPackLock,
   writePkgFile: mocks.writePkgFile
 }));
 
@@ -43,6 +45,7 @@ describe("pack lifecycle failures and options", () => {
       pkgFile: "/package/package.json"
     };
     mocks.getPackInfo.mockResolvedValue(info);
+    mocks.readFile.mockRejectedValue(Object.assign(new Error("missing"), { code: "ENOENT" }));
     mocks.writePkgFile.mockResolvedValue(undefined);
     mocks.unlink.mockResolvedValue(undefined);
   });
@@ -63,7 +66,8 @@ describe("pack lifecycle failures and options", () => {
       name: "test-pkg",
       version: "1.0.0",
       pid: process.pid,
-      ts: expect.any(String)
+      ts: expect.any(String),
+      activePacks: 1
     });
     expect(mocks.writePkgFile).toHaveBeenNthCalledWith(3, info.pkgFile, `${JSON.stringify({
       name: "test-pkg", version: "1.0.0", scripts: { postpack: "publish-util-postpack" }
@@ -80,6 +84,32 @@ describe("pack lifecycle failures and options", () => {
     expect(mocks.writePkgFile).toHaveBeenCalledTimes(1);
     expect(console.error).toHaveBeenCalledWith("publish-util-prepack failed", error);
     expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it("refuses to overwrite an active backup for another manifest", async () => {
+    mocks.readFile.mockResolvedValueOnce(JSON.stringify({ pkgFile: "/other/package.json" }));
+
+    await expect(prePack()).rejects.toThrow("exit");
+
+    expect(console.error).toHaveBeenCalledWith(
+      "publish-util-prepack failed",
+      expect.objectContaining({
+        message: expect.stringContaining("/other/package.json is already using backup")
+      })
+    );
+    expect(mocks.writePkgFile).not.toHaveBeenCalled();
+  });
+
+  it("joins an active backup created by an older publish-util", async () => {
+    mocks.readFile.mockResolvedValueOnce(JSON.stringify({ pkgFile: info.pkgFile }));
+
+    await prePack();
+
+    expect(mocks.writePkgFile).toHaveBeenCalledOnce();
+    expect(JSON.parse(mocks.writePkgFile.mock.calls[0][1])).toEqual({
+      pkgFile: info.pkgFile,
+      activePacks: 2
+    });
   });
 
   it("reports restoration failures without deleting the backup", async () => {

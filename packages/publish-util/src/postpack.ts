@@ -1,6 +1,12 @@
 import * as Path from "path";
 import * as Fs from "fs/promises";
-import { getPackInfo, metaFileOf, writePkgFile, type SaveMeta } from "./utils.js";
+import {
+  getPackInfo,
+  metaFileOf,
+  withPackLock,
+  writePkgFile,
+  type SaveMeta
+} from "./utils.js";
 
 /**
  * Restore the manifest prepack saved.
@@ -20,24 +26,33 @@ export async function postPack(): Promise<void> {
     const { pkgFile, saveFile } = await getPackInfo();
     const metaFile = metaFileOf(saveFile);
 
-    const meta = await Fs.readFile(metaFile, "utf8").then(
-      data => JSON.parse(data) as SaveMeta,
-      () => undefined
-    );
+    await withPackLock(saveFile, async () => {
+      const meta = await Fs.readFile(metaFile, "utf8").then(
+        data => JSON.parse(data) as SaveMeta,
+        () => undefined
+      );
 
-    const target = meta?.pkgFile || pkgFile;
+      const activePacks = meta?.activePacks ?? 1;
+      if (meta && activePacks > 1) {
+        meta.activePacks = activePacks - 1;
+        await writePkgFile(metaFile, `${JSON.stringify(meta, null, 2)}\n`);
+        return;
+      }
 
-    if (meta?.pkgFile && meta.pkgFile !== pkgFile) {
-      console.log(`${myName} restoring ${target} as recorded by prepack, not ${pkgFile}`);
-    }
+      const target = meta?.pkgFile || pkgFile;
 
-    console.log(`${myName} saveFile`, saveFile, "pkgFile", target);
+      if (meta?.pkgFile && meta.pkgFile !== pkgFile) {
+        console.log(`${myName} restoring ${target} as recorded by prepack, not ${pkgFile}`);
+      }
 
-    const orig = await Fs.readFile(saveFile);
-    await writePkgFile(target, orig);
+      console.log(`${myName} saveFile`, saveFile, "pkgFile", target);
 
-    await Fs.unlink(saveFile);
-    await Fs.unlink(metaFile).catch(() => undefined);
+      const orig = await Fs.readFile(saveFile);
+      await writePkgFile(target, orig);
+
+      await Fs.unlink(saveFile);
+      await Fs.unlink(metaFile).catch(() => undefined);
+    });
   } catch (err) {
     console.error(`${myName} failed`, err);
     process.exit(1);

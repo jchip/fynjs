@@ -1,4 +1,5 @@
 import * as Path from "path";
+import * as Fs from "fs/promises";
 import {
   getPackInfo,
   metaFileOf,
@@ -6,7 +7,9 @@ import {
   removeFromObj,
   keepStandardFields,
   renameFromObj,
+  withPackLock,
   writePkgFile,
+  type SaveMeta,
   type ExtractSpec,
   type RemoveSpec,
   type RenameSpec,
@@ -79,28 +82,48 @@ export async function prePack(): Promise<void> {
       console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
     }
 
-    await writePkgFile(saveFile, pkgData);
-    // record which manifest was modified so postpack restores that exact file instead of
-    // resolving one on its own and possibly disagreeing.  Written after the save file, so
-    // meta present always implies the backup is there too.
-    await writePkgFile(
-      metaFileOf(saveFile),
-      `${JSON.stringify(
-        {
-          pkgFile,
-          name: pkg.name,
-          version: pkg.version,
-          pid: process.pid,
-          ts: new Date().toISOString()
-        },
-        null,
-        2
-      )}\n`
-    );
+    await withPackLock(saveFile, async () => {
+      const metaFile = metaFileOf(saveFile);
+      const active = await Fs.readFile(metaFile, "utf8").then(
+        data => JSON.parse(data) as SaveMeta,
+        () => undefined
+      );
 
-    prePackObj(pkg, config);
+      if (active) {
+        if (active.pkgFile !== pkgFile) {
+          throw new Error(
+            `publish-util: ${active.pkgFile} is already using backup ${saveFile}`
+          );
+        }
+        active.activePacks = (active.activePacks ?? 1) + 1;
+        await writePkgFile(metaFile, `${JSON.stringify(active, null, 2)}\n`);
+        return;
+      }
 
-    await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+      await writePkgFile(saveFile, pkgData);
+      // Record which manifest was modified so postpack restores that exact file instead of
+      // resolving one on its own and possibly disagreeing. Written after the save file, so
+      // metadata present always implies the backup is there too.
+      await writePkgFile(
+        metaFile,
+        `${JSON.stringify(
+          {
+            pkgFile,
+            name: pkg.name,
+            version: pkg.version,
+            pid: process.pid,
+            ts: new Date().toISOString(),
+            activePacks: 1
+          },
+          null,
+          2
+        )}\n`
+      );
+
+      prePackObj(pkg, config);
+
+      await writePkgFile(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    });
   } catch (err) {
     console.error(`${myName} failed`, err);
     process.exit(1);
