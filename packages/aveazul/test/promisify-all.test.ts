@@ -177,14 +177,10 @@ describe("AveAzul.promisifyAll", () => {
     // expect(() => AveAzul.promisifyAll(null)).toThrow(TypeError);
 
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.promisifyAll(undefined))
-      .step((caught) => {
-        expect(caught).toBeInstanceOf(TypeError);
-      })
-      .expectError.step(() => AveAzul.promisifyAll(42 as unknown as object))
-      .step((caught) => {
-        expect(caught).toBeInstanceOf(TypeError);
-      });
+      .expectErrorInstanceMatch(TypeError)
+      .step(() => AveAzul.promisifyAll(undefined))
+      .expectErrorInstanceMatch(TypeError)
+      .step(() => AveAzul.promisifyAll(42 as unknown as object));
   });
 
   test("should throw when methods end in Async", () => {
@@ -308,10 +304,8 @@ describe("AveAzul.promisifyAll", () => {
       .step(() => {
         AveAzul.promisifyAll(obj, { multiArgs: true });
       })
-      .expectError.step(() => obj.methodAsync())
-      .step((error) => {
-        expect(error).toBeInstanceOf(Error);
-      });
+      .expectErrorInstanceMatch(Error)
+      .step(() => obj.methodAsync());
   });
 
   test("should handle multiArgs option with custom promisifier", () => {
@@ -362,16 +356,12 @@ describe("AveAzul.promisifyAll", () => {
     };
 
     return verify({ timeout: 1000 })
-      .expectError.step(() =>
+      .expectErrorInstanceMatch(RangeError)
+      .step(() =>
         AveAzul.promisifyAll(obj, { suffix: "Invalid-Suffix" })
       )
-      .step((caught) => {
-        expect(caught).toBeInstanceOf(RangeError);
-      })
-      .expectError.step(() => AveAzul.promisifyAll(obj, { suffix: "123" }))
-      .step((caught) => {
-        expect(caught).toBeInstanceOf(RangeError);
-      })
+      .expectErrorInstanceMatch(RangeError)
+      .step(() => AveAzul.promisifyAll(obj, { suffix: "123" }))
       .step(() => AveAzul.promisifyAll(obj, { suffix: "$valid" }));
   });
 

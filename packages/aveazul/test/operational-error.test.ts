@@ -70,29 +70,25 @@ describe("AveAzul.prototype.error", () => {
   test("should not catch programmer errors", () => {
     return verify({ timeout: 500 })
       .expectErrorToBe("programmer error")
+      .expectErrorInstanceMatch(TypeError)
       .step(() =>
         AveAzul.reject(new TypeError("programmer error")).error(
           () => "should not reach here",
         ),
-      )
-      .step((err) => {
-        expect(err).toBeInstanceOf(TypeError);
-      });
+      );
   });
 
   test("should propagate errors from handler", () => {
     return verify({ timeout: 500 })
       .expectErrorToBe("error from handler")
+      .expectErrorInstanceMatch(Error)
       .step(() =>
         AveAzul.reject(new AveAzul.OperationalError("test error")).error(
           () => {
             throw new Error("error from handler");
           },
         ),
-      )
-      .step((err) => {
-        expect(err).toBeInstanceOf(Error);
-      });
+      );
   });
 
   test("should work with resolved promises", () => {

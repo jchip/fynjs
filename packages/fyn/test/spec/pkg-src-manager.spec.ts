@@ -461,7 +461,8 @@ describe("pkg-src-manager", function () {
         pacote.packument = origPackument;
       },
     })
-      .expectError.callbackStep((next) => {
+      .expectErrorInstanceMatch(Error)
+      .callbackStep((next) => {
         mgr.netRetrieveMeta({
           item: { name: "mod-a" },
           packumentUrl: mgr.makePackumentUrl("mod-a"),
@@ -472,8 +473,7 @@ describe("pkg-src-manager", function () {
           },
         });
       })
-      .step((error) => {
-        expect(error).toBeInstanceOf(Error);
+      .step(() => {
         expect(mgr._metaStat.inTx).toBe(0);
       });
   });

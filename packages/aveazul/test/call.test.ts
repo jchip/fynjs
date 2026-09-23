@@ -75,10 +75,8 @@ describe("AveAzul.prototype.call", () => {
       },
     };
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.resolve(obj).call("nonExistentMethod"))
-      .step((caught) => {
-        expect(caught).toBeInstanceOf(Error);
-      });
+      .expectErrorInstanceMatch(Error)
+      .step(() => AveAzul.resolve(obj).call("nonExistentMethod"));
   });
 
   test("should work with array methods", () => {

@@ -13,15 +13,13 @@ describe("Disposer", () => {
 
   test("should throw if disposer function is not a function", () =>
     verify({ timeout: 1000 })
-      .expectError.step(() => {
+      .expectErrorInstanceMatch(TypeError)
+      .step(() => {
         // Deliberately the wrong type: the runtime check under test is what throws.
         const notAFunction = "not a function" as unknown as (
           resource: unknown,
         ) => void;
         AveAzul.resolve({}).disposer(notAFunction);
-      })
-      .step((error) => {
-        expect(error).toBeInstanceOf(TypeError);
       }));
 
   //

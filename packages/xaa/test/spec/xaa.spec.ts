@@ -323,7 +323,8 @@ describe("xaa", () => {
 
     it("should return partial for concurrency 1", () =>
       verify()
-        .expectError.step(() =>
+        .expectErrorInstanceMatch(Error)
+        .step(() =>
           xaa.map(
             [1, 2, 3, 4],
             v => {
@@ -334,7 +335,6 @@ describe("xaa", () => {
           )
         )
         .step((err: any) => {
-          expect(err).toBeInstanceOf(Error);
           expect(err.partial.filter((x: any) => x)).toEqual([3, 6]);
         }));
 
@@ -365,6 +365,7 @@ describe("xaa", () => {
       const doneOrder: number[] = [];
 
       return verify()
+        .expectErrorInstanceMatch(Error)
         .expectErrorToBe("Test error")
         .step(() =>
           xaa.map(
@@ -385,8 +386,7 @@ describe("xaa", () => {
             { concurrency: 3 }
           )
         )
-        .step((err: any) => {
-          expect(err).toBeInstanceOf(Error);
+        .step(() => {
           expect(Date.now() - a).toBeLessThan(150);
           expect(doneOrder).toEqual([1, 3, 4]);
         });
@@ -397,6 +397,7 @@ describe("xaa", () => {
       const doneOrder: number[] = [];
 
       return verify()
+        .expectErrorInstanceMatch(Error)
         .expectErrorToBe("Test error")
         .step(() =>
           xaa.map(
@@ -418,10 +419,9 @@ describe("xaa", () => {
             { concurrency: 3 }
           )
         )
-        .step(async (err: any) => {
+        .step(async () => {
           expect(Date.now() - a).toBeLessThan(100);
           await xaa.delay(50);
-          expect(err).toBeInstanceOf(Error);
           expect(doneOrder).toEqual([2, 1, 3, 4]);
         });
     });
@@ -641,27 +641,23 @@ describe("xaa", () => {
   describe("wrap", function () {
     it("should wrap direct throws into async", () =>
       verify()
+        .expectErrorInstanceMatch(Error)
         .expectErrorToBe("blah")
         .step(() =>
           xaa.wrap(() => {
             throw new Error("blah");
           })
-        )
-        .step(error => {
-          expect(error).toBeInstanceOf(Error);
-        }));
+        ));
 
     it("should wrap async error", () =>
       verify()
+        .expectErrorInstanceMatch(Error)
         .expectErrorToBe("blah")
         .step(() =>
           xaa.wrap(() => {
             return Promise.reject(new Error("blah"));
           })
-        )
-        .step(error => {
-          expect(error).toBeInstanceOf(Error);
-        }));
+        ));
 
     it("should call with args", () => {
       return xaa

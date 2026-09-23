@@ -241,11 +241,11 @@ describe("AveAzul.using", () => {
     const disposers = [disposer, reject1(), reject2()];
 
     return verify({ timeout: 500 })
-      .expectError.step(() => AveAzul.using(disposers, () => "success"))
-      .step((err) => {
+      .expectErrorInstanceMatch(Error)
+      .step(() => AveAzul.using(disposers, () => "success"))
+      .step(() => {
         // Now verify that cleanup happened
         expect(disposed).toBe(true);
-        expect(err).toBeInstanceOf(Error);
       });
   });
 
@@ -269,11 +269,11 @@ describe("AveAzul.using", () => {
     const disposers = [reject1(), disposer, reject2()];
 
     return verify({ timeout: 500 })
-      .expectError.step(() => AveAzul.using(disposers, () => "success"))
-      .step((err) => {
+      .expectErrorInstanceMatch(Error)
+      .step(() => AveAzul.using(disposers, () => "success"))
+      .step(() => {
         // Now verify that cleanup happened
         expect(disposed).toBe(true);
-        expect(err).toBeInstanceOf(Error);
       });
   });
 

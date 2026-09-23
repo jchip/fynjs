@@ -20,10 +20,8 @@ describe("promisify", () => {
     const promisified = AveAzul.promisify(fn);
     return verify({ timeout: 500 })
       .expectErrorToBe("test error")
-      .step(() => promisified())
-      .step((err) => {
-        expect(err).toBeInstanceOf(Error);
-      });
+      .expectErrorInstanceMatch(Error)
+      .step(() => promisified());
   });
 
   test("should handle functions with multiple arguments", () => {
@@ -94,8 +92,8 @@ describe("promisify", () => {
     return verify({ timeout: 1000 }).asyncStep(() =>
       notFunctions.map((notAFunction) =>
         verify({ timeout: 500 })
-          .expectError.step(() => AveAzul.promisify(notAFunction))
-          .step((error) => expect(error).toBeInstanceOf(TypeError))
+          .expectErrorInstanceMatch(TypeError)
+          .step(() => AveAzul.promisify(notAFunction))
       )
     );
   });

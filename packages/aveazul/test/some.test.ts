@@ -65,16 +65,10 @@ describe("AveAzul.some", () => {
 
     // Should throw a TypeError
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.some(nonIterable, 2))
-      .step((error) => {
-        expect(error).toBeInstanceOf(TypeError);
-      })
-      .expectError.step(() => AveAzul.some(nonIterable, 2))
-      .step((error) => {
-        expect((error as Error).message).toMatch(
-          /expecting an array or an iterable object/
-        );
-      });
+      .expectErrorInstanceMatch(TypeError)
+      .step(() => AveAzul.some(nonIterable, 2))
+      .expectErrorMatch(/expecting an array or an iterable object/)
+      .step(() => AveAzul.some(nonIterable, 2));
   });
 
   test("should resolve immediately when there are enough non-promise values", async () => {
@@ -172,16 +166,10 @@ describe("AveAzul.prototype.some", () => {
 
     // Should throw a TypeError
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.resolve(nonIterable).some(2))
-      .step((error) => {
-        expect(error).toBeInstanceOf(TypeError);
-      })
-      .expectError.step(() => AveAzul.resolve(nonIterable).some(2))
-      .step((error) => {
-        expect((error as Error).message).toMatch(
-          /expecting an array or an iterable object/
-        );
-      });
+      .expectErrorInstanceMatch(TypeError)
+      .step(() => AveAzul.resolve(nonIterable).some(2))
+      .expectErrorMatch(/expecting an array or an iterable object/)
+      .step(() => AveAzul.resolve(nonIterable).some(2));
   });
 
   test("should resolve immediately when there are enough non-promise values", async () => {

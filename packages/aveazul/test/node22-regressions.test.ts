@@ -131,27 +131,27 @@ describe("public Promise method regressions", () => {
 
   test("some rejects requests exceeding the input length", () => {
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.some([], 1))
-      .step((error) => expect(error).toBeInstanceOf(RangeError))
-      .expectError.step(() => AveAzul.resolve([1]).some(2))
-      .step((error) => expect(error).toBeInstanceOf(RangeError));
+      .expectErrorInstanceMatch(RangeError)
+      .step(() => AveAzul.some([], 1))
+      .expectErrorInstanceMatch(RangeError)
+      .step(() => AveAzul.resolve([1]).some(2));
   });
 
   test.each([-1, 0.5, NaN, Infinity, 2147483648])(
     "some rejects invalid count %s",
-    (count) => {
-      return verify({ timeout: 1000 })
-        .expectError.step(() => AveAzul.some([1], count))
-        .step((error) => expect(error).toBeInstanceOf(TypeError))
-        .expectError.step(() => AveAzul.resolve([1]).some(count))
-        .step((error) => expect(error).toBeInstanceOf(TypeError));
+    async (count) => {
+      await verify({ timeout: 1000 })
+        .expectErrorInstanceMatch(TypeError)
+        .step(() => AveAzul.some([1], count))
+        .expectErrorInstanceMatch(TypeError)
+        .step(() => AveAzul.resolve([1]).some(count));
     }
   );
 
   test("some observes rejected inputs when the requested count is impossible", () => {
     return verify({ timeout: 1000 })
-      .expectError.step(() => AveAzul.some([Promise.reject(new Error("input failed"))], 2))
-      .step((error) => expect(error).toBeInstanceOf(RangeError))
+      .expectErrorInstanceMatch(RangeError)
+      .step(() => AveAzul.some([Promise.reject(new Error("input failed"))], 2))
       .step(() => nextTurn());
   });
 });

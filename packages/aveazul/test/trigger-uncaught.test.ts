@@ -52,10 +52,8 @@ describe("triggerUncaughtException", () => {
         expect(setTimeoutMock).toHaveBeenCalledTimes(1);
       })
       .expectErrorToBe("Test error string")
-      .step(() => capturedCallback())
-      .step((error) => {
-        expect(error).toBeInstanceOf(Error);
-      }));
+      .expectErrorInstanceMatch(Error)
+      .step(() => capturedCallback()));
 
   test("should use the original Error object if it is an Error", () => {
     const originalError = new Error("Original error");
