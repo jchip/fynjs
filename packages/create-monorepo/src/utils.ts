@@ -2,7 +2,6 @@ import Fs, { mkdirSync } from "node:fs";
 import Path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fromPairs, sortBy, toPairs } from "lodash-es";
-import shell from "shelljs";
 
 const dirname = Path.dirname(fileURLToPath(import.meta.url));
 
@@ -57,7 +56,7 @@ export async function copyTemplate(srcTmplDir, destDir, filesList) {
       const content = file.loader(fullSrc);
       Fs.writeFileSync(destFile(file.destName || name), content);
     } else {
-      shell.cp(fullSrc, destFile(file.destName || name));
+      Fs.copyFileSync(fullSrc, destFile(file.destName || name));
     }
   }
 }
