@@ -331,7 +331,7 @@ class LocalPkgBuilder {
   }
 
   waitForDone() {
-    return this._defer && this._defer.promise;
+    return this._promiseQ?.isPending && this._defer?.promise;
   }
 
   async processItem(item) {

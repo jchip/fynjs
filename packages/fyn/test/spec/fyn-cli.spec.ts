@@ -11,6 +11,27 @@ describe("FynCli", function () {
     vi.restoreAllMocks();
   });
 
+  describe("install cleanup", function () {
+    it("waits for pending local package builds after an install failure", async () => {
+      const installError = new Error("resolution failed");
+      const waitForDone = vi.fn().mockResolvedValue(undefined);
+      const cli: any = Object.create(FynCli.prototype);
+      cli._opts = {};
+      cli._fyn = {
+        _options: { forceInstall: true },
+        _localPkgBuilder: { waitForDone },
+        _initializePkg: vi.fn().mockResolvedValue(undefined),
+        createInstallLock: vi.fn().mockResolvedValue(false),
+        readLockFiles: vi.fn().mockResolvedValue(undefined),
+        _startInstall: vi.fn().mockRejectedValue(installError)
+      };
+      cli.fail = vi.fn().mockResolvedValue(undefined);
+
+      await cli.install({ opts: { audit: false } });
+      expect(waitForDone).toHaveBeenCalledOnce();
+    });
+  });
+
   describe("run --if-present", function () {
     const makeCli = (scripts = {}) => {
       const cli: any = Object.create(FynCli.prototype);

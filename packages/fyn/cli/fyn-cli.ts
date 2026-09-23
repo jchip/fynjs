@@ -693,6 +693,15 @@ class FynCli {
         }
       })
       .finally(async () => {
+        const localPkgBuild = this.fyn._localPkgBuilder?.waitForDone();
+        if (localPkgBuild) {
+          try {
+            await localPkgBuild;
+          } catch (err) {
+            failure ||= err as Error;
+          }
+        }
+
         if (installLocked === true) {
           await this.fyn.removeInstallLock();
         }
