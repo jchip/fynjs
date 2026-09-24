@@ -43,6 +43,7 @@ describe("pkg-dep-resolver fynpo self dep", function () {
       isFynpo: true,
       enforceRegistryDeps: false,
       _shownMissingFiles: new Set(),
+      _localCopiesInfo: [],
       _fynpo: { dir: fynpoDir, graph, indirects },
       checkNoFynLocal: () => false,
     };
