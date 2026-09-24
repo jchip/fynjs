@@ -1,3 +1,87 @@
+# 9/24/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/run@1.1.7` `(1.1.6 => 1.1.7)`
+-   `fyn@3.1.10` `(3.1.9 => 3.1.10)`
+-   `fynpo@3.1.10` `(3.1.9 => 3.1.10)`
+-   `fynpo-cli@3.1.10` `(3.1.9 => 3.1.10)`
+-   `publish-util@3.1.6` `(3.1.5 => 3.1.6)`
+-   `run-verify@2.1.7` `(2.1.6 => 2.1.7)`
+-   `xsh@1.1.7` `(1.1.6 => 1.1.7)`
+
+### Fynpo Updated
+
+-   `@fynjs/cli-args@1.1.6` `(1.1.5 => 1.1.6)`
+-   `@fynjs/fetch@1.0.5` `(1.0.4 => 1.0.5)`
+-   `@fynpo/base@2.1.9` `(2.1.8 => 2.1.9)`
+-   `@jchip/error@2.1.6` `(2.1.5 => 2.1.6)`
+-   `aveazul@2.1.7` `(2.1.6 => 2.1.7)`
+-   `chalker@2.1.6` `(2.1.5 => 2.1.6)`
+-   `check-pkg-new-version@1.1.6` `(1.1.5 => 1.1.6)`
+-   `check-pkg-new-version-engine@2.1.6` `(2.1.5 => 2.1.6)`
+-   `filter-scan-dir@2.1.8` `(2.1.7 => 2.1.8)`
+-   `item-queue@2.1.8` `(2.1.7 => 2.1.8)`
+-   `munchy@2.0.6` `(2.0.5 => 2.0.6)`
+-   `optional-import@1.1.6` `(1.1.5 => 1.1.6)`
+-   `pkg-preper@0.3.6` `(0.3.5 => 0.3.6)`
+-   `string-array@2.1.6` `(2.1.5 => 2.1.6)`
+-   `unwrap-npm-cmd@2.1.6` `(2.1.5 => 2.1.6)`
+-   `visual-exec@1.1.8` `(1.1.7 => 1.1.8)`
+-   `visual-logger@2.1.7` `(2.1.6 => 2.1.7)`
+-   `xaa@3.1.6` `(3.1.5 => 3.1.6)`
+-   `xenv-config@2.1.6` `(2.1.5 => 2.1.6)`
+-   `xflight@3.1.7` `(3.1.6 => 3.1.7)`
+
+## Commits
+
+-   `packages/create-monorepo`
+
+    -   refactor(create-monorepo): drop shelljs, use native fs [commit](https://github.com/jchip/fynjs/commit/8377dc05ae9d13e9056908272261ec9abf17589a)
+
+-   `packages/xarc-run`
+
+    -   feat(xarc-run): set npm-run-like env vars for npm scripts [commit](https://github.com/jchip/fynjs/commit/fee002ebdac57d785298f55a4a3ddcc285eeb032)
+
+-   `packages/fyn`
+
+    -   test(fyn): add _localCopiesInfo to self-dep resolver test mock [commit](https://github.com/jchip/fynjs/commit/918eca994e5262bd503ea55d573eea7579847d04)
+    -   refactor(fyn): aggregate local-copy and skip-build-local log lines [commit](https://github.com/jchip/fynjs/commit/fad42c7b6e3319dd879285555a60a9de3c2ec665)
+    -   refactor(xsh): remove ShellJS `$` and its dependency [commit](https://github.com/jchip/fynjs/commit/896dcf47e18e96c7f15952cd4c12ae0d1e750f16)
+    -   FPM-180: await local build discovery before cleanup [commit](https://github.com/jchip/fynjs/commit/0e2ed6ae14cdf658d3fec94fcc572dad76e1c522)
+    -   FPM-179: ignore unrelated ancestor directory changes [commit](https://github.com/jchip/fynjs/commit/dc0f209b09e0fa88213c35c5ead5d05c58389dd7)
+    -   FPM-178: await pending local package builds [commit](https://github.com/jchip/fynjs/commit/7e719f4fcc0234775ab333988754e52520b82c62)
+    -   FPM-177: prevent scenario logs from changing source state [commit](https://github.com/jchip/fynjs/commit/ec6a071fc2e5c543cc1ff881c464b8efd8fbdbe0)
+
+-   `packages/fynpo`
+
+    -   refactor(fynpo): drop shelljs, use xsh and native fs instead [commit](https://github.com/jchip/fynjs/commit/2f7ef075576cd4efca555a6c785cbab017fe7940)
+    -   FPO-101: filter reverted release commits [commit](https://github.com/jchip/fynjs/commit/17a8b114e57cedf80b4258f5d77c961b2d96b825)
+
+-   `packages/publish-util`
+
+    -   FPU-9: protect overlapping pack lifecycles [commit](https://github.com/jchip/fynjs/commit/699b2c62c0e878e328f821f19f2898c412a56311)
+
+-   `packages/run-verify`
+
+    -   FRV-17: document standalone error match helpers [commit](https://github.com/jchip/fynjs/commit/d9c2ff45442bacabbfea4c1c22fd306663429b55)
+
+-   `packages/xsh`
+
+    -   refactor(fynpo): drop shelljs, use xsh and native fs instead [commit](https://github.com/jchip/fynjs/commit/2f7ef075576cd4efca555a6c785cbab017fe7940)
+    -   refactor(xsh): remove ShellJS `$` and its dependency [commit](https://github.com/jchip/fynjs/commit/896dcf47e18e96c7f15952cd4c12ae0d1e750f16)
+
+-   `notes`
+
+    -   refactor(xsh): remove ShellJS `$` and its dependency [commit](https://github.com/jchip/fynjs/commit/896dcf47e18e96c7f15952cd4c12ae0d1e750f16)
+    -   docs(xsh): analyze ShellJS exec overhead [commit](https://github.com/jchip/fynjs/commit/bb03e3d7ee123f05d62bb1914858b089b93833cb)
+
+-   `MISC`
+
+    -   update lockfile [commit](https://github.com/jchip/fynjs/commit/b0974ee7a2352b1b23e2f061da49b71e948795f4)
+
 # 9/23/2026
 
 ## Packages
