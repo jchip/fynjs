@@ -267,6 +267,7 @@ class Fyn {
   _shownMissingFiles: Set<string>;
   _localCopiesInfo: { pkgName: string; depSec: string; names: string }[];
   _skipBuildLocalPaths: string[];
+  _staleLockEntries: string[];
   _options: FynOptions;
   _cwd: string;
   private _initCwd: string;
@@ -318,6 +319,7 @@ class Fyn {
     this._shownMissingFiles = new Set();
     this._localCopiesInfo = [];
     this._skipBuildLocalPaths = [];
+    this._staleLockEntries = [];
     const options = (this._options = fynConfig(opts) as FynOptions);
 
     this._cwd = options.cwd || process.cwd();
@@ -1515,6 +1517,12 @@ class Fyn {
       );
       logger.info(
         `Following package and their dependencies using local copies from monorepo:\n${lines.join("\n")}`
+      );
+    }
+
+    if (this._staleLockEntries.length > 0) {
+      logger.verbose(
+        `lockfile stale for following entries - refreshing:\n   ${this._staleLockEntries.join(", ")}`
       );
     }
 

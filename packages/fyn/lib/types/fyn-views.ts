@@ -77,6 +77,7 @@ export interface FynForDepLocker {
   _resolutionsMatchers?: Array<{ mm: { match(path: string): boolean }; res: string }>;
   _options?: { ignoreLockUrl?: boolean };
   _shownMissingFiles: Set<string>;
+  _staleLockEntries: string[];
   isFynpo?: boolean;
 }
 

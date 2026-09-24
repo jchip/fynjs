@@ -427,7 +427,12 @@ class PkgDepLocker {
       ([, vpkg]) => vpkg.dependencies && !this._depsResolvable(item, vpkg.dependencies)
     )?.[0];
     if (badDepsVersion) {
-      logger.verbose(`lockfile stale for entry ${item.name}@${badDepsVersion} - refreshing`);
+      const entry = `${item.name}@${badDepsVersion}`;
+      const msgKey = `staleLock:${entry}`;
+      if (!this._fyn._shownMissingFiles.has(msgKey)) {
+        this._fyn._shownMissingFiles.add(msgKey);
+        this._fyn._staleLockEntries.push(entry);
+      }
       return false;
     }
 

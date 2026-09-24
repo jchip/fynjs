@@ -17,8 +17,8 @@ import Fyn from "../../lib/fyn";
 // A directory carrying a newer version then passes as the older one. Its dependency
 // ranges are what a lock entry records (pkg-dep-locker: `meta.dependencies =
 // json.dependencies`), so the lock ends up claiming the older version depends on what the
-// newer one declares. fyn rejects that lock on the next run as "lockfile stale for
-// entry ... - refreshing".
+// newer one declares. fyn rejects that lock on the next run as one of the entries in
+// "lockfile stale for following entries - refreshing".
 //
 describe("loadJsonForPkg version validation", () => {
   let dir: string;

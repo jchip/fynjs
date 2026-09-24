@@ -65,6 +65,8 @@ describe("pkg-dep-locker", function () {
       const locker = new PkgDepLocker(false, true, {
         _pkgSrcMgr: { getRegistryUrl: () => "https://registry.npmjs.org/" },
         _resolutionsMatchers: resolutionsMatchers,
+        _shownMissingFiles: new Set(),
+        _staleLockEntries: [],
       });
       locker._lockData = lockData;
       return locker;
