@@ -8,6 +8,7 @@ const lib = {
   xrunId: "XRUN_ID",
   forceColor: "FORCE_COLOR",
   xrunCwd: "XRUN_CWD",
+  xrunInitCwd: "XRUN_INIT_CWD",
   xrunVersion: "XRUN_VERSION",
   xrunBinDir: "XRUN_BIN_DIR",
   xrunNodeBin: "XRUN_NODE_BIN",

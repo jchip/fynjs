@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import Path from "path";
 import fs from "fs";
 import os from "os";
+import { verify } from "run-verify";
 import npmLoader from "../../../cli/npm-loader.js";
 import env from "../../../cli/env.js";
 import { createXrunInstance } from "../../../lib/xrun-instance.js";
@@ -173,6 +174,73 @@ describe("npm-loader", function() {
       npmLoader(xrun, {});
 
       expect(env.get(env.xrunPackagePath)).toContain(Path.join(testDir, "package.json"));
+    });
+  });
+
+  describe("npm-run-like script env", () => {
+    it("should set npm_* env vars and INIT_CWD on the script's exec spec", () => {
+      const pkg = {
+        name: "my-pkg",
+        version: "9.9.9",
+        scripts: {
+          test: "mocha"
+        }
+      };
+      fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+
+      return verify()
+        .step(() => npmLoader(xrun, {}))
+        .step(() => xrun._tasks._tasks.npm.test.options.env)
+        .step(scriptEnv => {
+          expect(scriptEnv.npm_lifecycle_event).toBe("test");
+          expect(scriptEnv.npm_lifecycle_script).toBe("mocha");
+          expect(scriptEnv.npm_package_name).toBe("my-pkg");
+          expect(scriptEnv.npm_package_version).toBe("9.9.9");
+          expect(fs.realpathSync(scriptEnv.npm_package_json)).toBe(
+            fs.realpathSync(Path.join(testDir, "package.json"))
+          );
+          // XRUN_INIT_CWD is only captured by parseArgs(), which this direct call bypasses
+          expect(scriptEnv.INIT_CWD).toBe(process.cwd());
+        });
+    });
+
+    it("should give pre/post scripts their own npm_lifecycle_event", () => {
+      const pkg = {
+        scripts: {
+          pretest: "eslint",
+          test: "mocha",
+          posttest: "coverage"
+        }
+      };
+      fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+
+      return verify()
+        .step(() => npmLoader(xrun, {}))
+        .step(() => {
+          expect(xrun._tasks._tasks.npm.pretest.options.env.npm_lifecycle_event).toBe("pretest");
+          expect(xrun._tasks._tasks.npm.test[2].options.env.npm_lifecycle_event).toBe("test");
+          expect(xrun._tasks._tasks.npm.posttest.options.env.npm_lifecycle_event).toBe(
+            "posttest"
+          );
+        });
+    });
+
+    it("should use XRUN_INIT_CWD when parseArgs has already captured it", () => {
+      const originalCwd = "/original/invocation/dir";
+      env.set(env.xrunInitCwd, originalCwd);
+
+      const pkg = {
+        scripts: {
+          test: "mocha"
+        }
+      };
+      fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+
+      return verify()
+        .step(() => npmLoader(xrun, {}))
+        .step(() => {
+          expect(xrun._tasks._tasks.npm.test.options.env.INIT_CWD).toBe(originalCwd);
+        });
     });
   });
 });

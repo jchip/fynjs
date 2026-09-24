@@ -31,6 +31,11 @@ Alias for the options:
 
 - `-s`: `--serial`
 
+npm scripts run through `xrun` get the same environment variables `npm run` sets, so scripts
+that branch on them work unchanged: `npm_lifecycle_event`, `npm_lifecycle_script`,
+`npm_package_name`, `npm_package_version`, `npm_package_json`, `npm_execpath`,
+`npm_node_execpath`, `INIT_CWD`.
+
 ## Running JavaScript tasks
 
 You can write your tasks in JavaScript and run them with `xrun`.

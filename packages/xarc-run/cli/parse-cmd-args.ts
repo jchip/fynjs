@@ -104,6 +104,12 @@ async function parseArgs(argv, start) {
   // don't search if user has explicitly set CWD
   const search = !opts.cwd;
 
+  // capture the true invocation directory once, before any chdir below, so npm scripts get an
+  // INIT_CWD that matches npm's semantics even across nested xrun calls in the same process
+  if (!env.has(env.xrunInitCwd)) {
+    env.set(env.xrunInitCwd, WrapProcess.cwd());
+  }
+
   const saveCwd = env.get(env.xrunCwd);
   opts.cwd = updateCwd(opts.cwd);
 

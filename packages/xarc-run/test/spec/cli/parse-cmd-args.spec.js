@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import Path from "path";
 import fs from "fs";
 import os from "os";
+import { verify } from "run-verify";
 import { parseArgs } from "../../../cli/parse-cmd-args.js";
 import env from "../../../cli/env.js";
 import logger from "../../../lib/logger.js";
@@ -198,6 +199,23 @@ describe("parse-cmd-args", function() {
       const args = ["node", "xrun", "task1"];
       const result = await parseArgs(args, 2);
       expect(result.opts.env).toBeUndefined();
+    });
+  });
+
+  describe("XRUN_INIT_CWD capture", () => {
+    it("captures the invocation cwd when not already set", () => {
+      return verify()
+        .step(() => expect(env.has(env.xrunInitCwd)).toBe(false))
+        .step(() => parseArgs(["node", "xrun", "task1"], 2))
+        .step(() => expect(env.get(env.xrunInitCwd)).toBe(process.cwd()));
+    });
+
+    it("does not overwrite an already-captured XRUN_INIT_CWD", () => {
+      env.set(env.xrunInitCwd, "/some/prior/invocation/dir");
+
+      return verify()
+        .step(() => parseArgs(["node", "xrun", "task1"], 2))
+        .step(() => expect(env.get(env.xrunInitCwd)).toBe("/some/prior/invocation/dir"));
     });
   });
 
