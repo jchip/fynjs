@@ -265,6 +265,8 @@ class Fyn {
   //
   private _cliSource: CliSource;
   _shownMissingFiles: Set<string>;
+  _localCopiesInfo: { pkgName: string; depSec: string; names: string }[];
+  _skipBuildLocalPaths: string[];
   _options: FynOptions;
   _cwd: string;
   private _initCwd: string;
@@ -314,6 +316,8 @@ class Fyn {
     this._cliSource = { ..._cliSource };
     // Track shown "not found" messages to avoid duplicates
     this._shownMissingFiles = new Set();
+    this._localCopiesInfo = [];
+    this._skipBuildLocalPaths = [];
     const options = (this._options = fynConfig(opts) as FynOptions);
 
     this._cwd = options.cwd || process.cwd();
@@ -1503,6 +1507,22 @@ class Fyn {
     ) {
       logger.info("changed dependencies and duplicate versions detected => de-duping");
       await doResolve({ buildLocal: false, deDuping: true });
+    }
+
+    if (this._localCopiesInfo.length > 0) {
+      const lines = this._localCopiesInfo.map(
+        ({ pkgName, depSec, names }) => `   ${pkgName} ${depSec}: ${names}`
+      );
+      logger.info(
+        `Following package and their dependencies using local copies from monorepo:\n${lines.join("\n")}`
+      );
+    }
+
+    if (this._skipBuildLocalPaths.length > 0) {
+      const lines = this._skipBuildLocalPaths.map(x => `   ${x}`);
+      logger.info(
+        `installing fynpo top level modules - skip build local for packages at:\n${lines.join("\n")}`
+      );
     }
   }
 

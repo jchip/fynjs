@@ -107,6 +107,8 @@ interface FynForDepResolver {
   _depLocker: PkgDepLocker;
   _distFetcher: PkgDistFetcher;
   _shownMissingFiles: Set<string>;
+  _localCopiesInfo: { pkgName: string; depSec: string; names: string }[];
+  _skipBuildLocalPaths: string[];
   _resolutions?: Record<string, string>;
   _resolutionsMatchers?: ResolutionMatcher[];
   _overridesMatchers?: OverrideMatcher[];
@@ -536,10 +538,7 @@ class PkgDepResolver {
           if (x && this._fyn.isTopLevelFynpoInstall()) {
             const t1 = this._fyn._fynpo!.graph.getPackageAtDir(Path.normalize(x.semverPath!));
             if (t1) {
-              logger.info(
-                "installing fynpo top level modules - skip build local for package at",
-                x.semverPath
-              );
+              this._fyn._skipBuildLocalPaths.push(x.semverPath!);
               return false;
             }
           }
@@ -846,9 +845,7 @@ class PkgDepResolver {
           const msgKey = `localcopies:${pkg.name}:${depSec}:${names}`;
           if (!this._fyn._shownMissingFiles.has(msgKey)) {
             this._fyn._shownMissingFiles.add(msgKey);
-            logger.info(
-              `Using local copies from your monorepo for these packages in ${pkg.name}'s ${depSec}: ${names}`
-            );
+            this._fyn._localCopiesInfo.push({ pkgName: pkg.name, depSec, names });
           }
         }
       }
