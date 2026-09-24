@@ -1,6 +1,6 @@
 {
   "name": "run-verify",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/run-verify",
   "description": "Proper test verifications",
   "type": "module",
@@ -55,7 +55,7 @@
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "prettier": "^3.5.3",
-    "publish-util": "^3.1.5",
+    "publish-util": "^3.1.6",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

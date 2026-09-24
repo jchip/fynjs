@@ -53,7 +53,7 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
-    "munchy": "^2.0.5"
+    "munchy": "^2.0.6"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
