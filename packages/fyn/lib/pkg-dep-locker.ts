@@ -427,10 +427,7 @@ class PkgDepLocker {
       ([, vpkg]) => vpkg.dependencies && !this._depsResolvable(item, vpkg.dependencies)
     )?.[0];
     if (badDepsVersion) {
-      logger.error(
-        `lockfile entry ${item.name}@${badDepsVersion} has dependencies not satisfiable within` +
-          ` the lock (corrupt lock) - ignoring and re-resolving from registry`
-      );
+      logger.verbose(`lockfile stale for entry ${item.name}@${badDepsVersion} - refreshing`);
       return false;
     }
 
