@@ -94,13 +94,7 @@ export type {
   KnownPackage,
   KnownPackageLegacy,
   PkgData,
-  DepthInfoItem,
-  DepthData,
-  DepthResolving,
-  NestedResolution,
-  QueueDepthItem,
-  PromiseItem,
-  ResolveResult
+  NestedResolution
 } from "./resolution";
 
 // Installer types

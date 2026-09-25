@@ -124,11 +124,11 @@ interface PkgInfo extends FynPackageJson {
     localPath?: string;
     fullPath?: string;
   };
-  [DEP_ITEM]?: DepItemRef;
+  [DEP_ITEM]?: FynDepItemRef;
 }
 
-/** Dependency item reference */
-interface DepItemRef {
+/** Dependency item reference stashed on PkgInfo's [DEP_ITEM] symbol */
+interface FynDepItemRef {
   name: string;
   version: string;
   _resolveByLock?: boolean;
@@ -222,7 +222,7 @@ interface NpmLockData {
 }
 
 /** Yarn lock parsed data */
-interface YarnLockData {
+export interface YarnLockData {
   [key: string]: {
     version: string;
     resolved?: string;
@@ -1430,7 +1430,7 @@ class Fyn {
       majVersions.forEach(maj => {
         if (byMaj[maj].length > 1) {
           const removed = byMaj[maj].filter(ver => {
-            const item = (pkg.versions[ver] as PkgVersionInfo)[DEP_ITEM] as DepItemRef | undefined;
+            const item = (pkg.versions[ver] as PkgVersionInfo)[DEP_ITEM] as FynDepItemRef | undefined;
             if (item?._resolveByLock || this._npmLockData) {
               deDupe = true;
               this._depLocker.remove(item!, true);

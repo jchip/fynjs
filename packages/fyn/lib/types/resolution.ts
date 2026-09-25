@@ -124,37 +124,6 @@ export interface PkgData extends PkgDataSymbols {
 }
 
 /**
- * Depth info item for a package at a specific depth
- */
-export interface DepthInfoItem {
-  /** DepItem instances at this depth */
-  items: unknown[]; // DepItem[] - avoid circular import
-  /** Resolved versions */
-  versions?: string[];
-  /** Package dependency items */
-  depItems?: unknown[]; // PkgDepItems[]
-}
-
-/**
- * Depth resolving data for a specific depth level
- */
-export interface DepthData {
-  [pkgName: string]: DepthInfoItem;
-}
-
-/**
- * Depth resolving state tracking
- *
- * Tracks resolution progress at each depth level.
- */
-export interface DepthResolving {
-  /** Current depth being resolved */
-  current?: number;
-  /** Depth data indexed by depth number */
-  [depth: number]: DepthData;
-}
-
-/**
  * Nested resolution tracking for a package
  *
  * Used by DepItem to track nested dependency resolutions.
@@ -164,40 +133,4 @@ export interface NestedResolution {
   _: string[];
   /** Versions indexed by semver range */
   [semver: string]: string | string[];
-}
-
-/**
- * Queue item for depth-based resolution
- */
-export interface QueueDepthItem {
-  /** Package name */
-  name: string;
-  /** Semver range */
-  semver: string;
-  /** Depth level */
-  depth: number;
-}
-
-/**
- * Promise tracking item for async resolution
- */
-export interface PromiseItem {
-  /** The promise */
-  promise: Promise<unknown>;
-  /** Package name */
-  name: string;
-  /** Optional extra data */
-  extra?: unknown;
-}
-
-/**
- * Resolution result from resolver
- */
-export interface ResolveResult {
-  /** Resolved version */
-  version: string;
-  /** Whether it was resolved from cache/lock */
-  fromLock?: boolean;
-  /** Package metadata */
-  meta?: PackageVersionMeta;
 }

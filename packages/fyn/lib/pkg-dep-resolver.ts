@@ -45,10 +45,9 @@ import type {
   FynpoPackage,
   NativePromise
 } from "./types";
-// `FynpoData` stays declared next to `Fyn`, because it carries the whole `fynpo.json`
-// config shape, which is only meaningful there. This is a type-only import, so it adds
-// no module cycle at runtime.
-import type { FynpoData } from "./fyn";
+// `FynpoData` and `YarnLockData` stay declared next to `Fyn`, because they're only
+// meaningful there. This is a type-only import, so it adds no module cycle at runtime.
+import type { FynpoData, YarnLockData } from "./fyn";
 
 /** Depth info item for a package at a specific depth */
 interface DepthInfoItem {
@@ -171,16 +170,6 @@ interface PkgOptResolver {
   add(data: { item: DepItem; meta: PackageMeta; err?: Error }): void;
   /** assigned by us right after construction; we never read it back */
   _depResolver: unknown;
-}
-
-/** Yarn lock parsed data */
-interface YarnLockData {
-  [key: string]: {
-    version: string;
-    resolved?: string;
-    integrity?: string;
-    dependencies?: Record<string, string>;
-  };
 }
 
 /** Constructor options for PkgDepResolver */

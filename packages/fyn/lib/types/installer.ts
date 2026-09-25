@@ -90,11 +90,3 @@ export interface DepInfo extends PkgVersionInfo {
   _removed?: boolean;
 }
 
-/**
- * Resolution data for a dependency (installer view)
- *
- * @deprecated Use ResolutionData from resolution.ts instead
- */
-export interface ResData extends ResolutionData {
-  [key: string]: unknown;
-}
