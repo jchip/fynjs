@@ -28,6 +28,14 @@
       }
     }
   },
+  "commitlint": {
+    "parserPreset": {
+      "parserOpts": {
+        "headerPattern": "^(\\w*)(?:\\((.*)\\))?!?: (.*)$",
+        "headerCorrespondence": ["type", "scope", "subject"]
+      }
+    }
+  },
   "caching": {
     "enable": false,
     "server": "http://localhost:8080/upload",
