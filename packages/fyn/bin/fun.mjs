@@ -7,7 +7,8 @@ const { fun } = await import("./index.mjs");
 
 try {
   await fun();
-  process.exit(0);
+  // no argument, so a code the CLI parser set (e.g. 1 on a parse error) is kept
+  process.exit();
 } catch (err) {
   console.error(err);
   process.exit(1);
