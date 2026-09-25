@@ -47,8 +47,7 @@
     "Walmart GTP.js Team and Contributors"
   ],
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.com/"
+    "access": "public"
   },
   "license": "Apache-2.0",
   "devDependencies": {

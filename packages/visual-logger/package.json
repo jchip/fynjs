@@ -33,9 +33,6 @@
     "url": "git+https://github.com/jchip/fynjs.git",
     "directory": "packages/visual-logger"
   },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
   "keywords": [
     "visual",
     "cli",

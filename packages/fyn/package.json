@@ -36,8 +36,7 @@
   },
   "author": "Joel Chen",
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.com/"
+    "access": "public"
   },
   "files": [
     "bin",

@@ -49,8 +49,7 @@
     "fynpo": "bin/fynpo.js"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.com/"
+    "access": "public"
   },
   "publishUtil": {
     "fynIgnore": true,

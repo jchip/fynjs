@@ -53,8 +53,7 @@
     "dist"
   ],
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.com/"
+    "access": "public"
   },
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"

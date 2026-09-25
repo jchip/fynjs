@@ -41,7 +41,6 @@
     "do-publish": "bin/do-publish.js"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.com/",
     "access": "public"
   },
   "files": [
