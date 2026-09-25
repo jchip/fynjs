@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/run",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "concurrent or serial run npm scripts, javascript tasks, and more",
   "main": "./dist/lib/index.js",
   "types": "./dist/lib/index.d.ts",
@@ -88,29 +88,29 @@
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xarc-run",
   "dependencies": {
     "chalk": "^6.0.0",
-    "chalker": "^2.1.6",
+    "chalker": "^2.2.0",
     "insync": "^2.1.1",
     "jaro-winkler": "^0.2.8",
-    "@fynjs/cli-args": "^1.1.6",
+    "@fynjs/cli-args": "^1.1.7",
     "optional-require": "^2.1.0",
     "read-package-up": "^12.0.0",
-    "string-array": "^2.1.6",
-    "unwrap-npm-cmd": "^2.1.6",
-    "xsh": "^1.1.7"
+    "string-array": "^2.1.7",
+    "unwrap-npm-cmd": "^2.1.7",
+    "xsh": "^1.1.8"
   },
   "devDependencies": {
     "@fynjs/ts-resolve": "^1.0.3",
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
-    "munchy": "^2.0.6",
+    "munchy": "^2.0.7",
     "prettier": "^3.5.3",
-    "publish-util": "^3.1.6",
-    "run-verify": "^2.1.7",
+    "publish-util": "^3.1.7",
+    "run-verify": "^2.1.8",
     "strip-ansi": "^7.2.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
-    "xaa": "^3.1.6",
+    "xaa": "^3.1.7",
     "xstdout": "^0.1.1"
   },
   "@fynjs/run": {
