@@ -98,7 +98,7 @@ export type {
 } from "./resolution";
 
 // Installer types
-export type { InstallPkgJson, InstallDistInfo, DepInfo } from "./installer";
+export type { InstallPkgJson, InstalledPkgJson, InstallDistInfo, DepInfo } from "./installer";
 
 // Lock file types
 export { OPT_FAILED_PLATFORM } from "./lock-file";

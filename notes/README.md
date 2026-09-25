@@ -24,7 +24,7 @@ own `README.md`. Stale documents move to `notes/archive/`.
 | [run-verify-explicit-api-proposal.md](run-verify-explicit-api-proposal.md) | Proposed explicit `.step` chain API built as a facade over the positional runtime: design constraints, verified prototype results, coexistence instead of migration, the `xrun.spec.js` trial, and rejected alternatives |
 | [run-verify-migration-findings.md](run-verify-migration-findings.md) | What converting existing packages' tests to run-verify found — the anti-pattern catalog (assert-inside-callback, catch-only assertions, unguarded intercept cleanup) and real defects vs. style-parity churn, per package: `xarc-run`, `munchy`, `xsh`, `item-queue` |
 | [xsh-shelljs-exec-analysis.md](xsh-shelljs-exec-analysis.md) | Why ShellJS synchronous `exec` uses temporary files, measured overhead, and the decision to move `xsh.exec` to Node and remove `$` |
-| [fyn-data-shapes-audit.md](fyn-data-shapes-audit.md) | Audit of fyn's package/dependency data shapes now that `tsc` is clean - every place `PkgInfo`/`DepInfo`/`ResData`/`YarnLockData`/etc. are independently re-declared instead of shared, confirmed-dead exports in `lib/types/resolution.ts`, and what the FJM-154 precedent already fixed vs. what's still fragmented |
+| [fyn-data-shapes-audit.md](fyn-data-shapes-audit.md) | Audit of fyn's package/dependency data shapes now that `tsc` is clean - every place `PkgInfo`/`DepInfo`/`ResData`/`YarnLockData`/etc. are independently re-declared instead of shared, confirmed-dead exports in `lib/types/resolution.ts`, and what the FJM-154 precedent already fixed vs. what's still fragmented. §6 holds the goal (coherent shapes, never at the cost of runtime efficiency), what was resolved, and the ranked open items |
 
 ## Conventions
 

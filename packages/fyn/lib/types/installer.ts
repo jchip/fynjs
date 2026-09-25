@@ -7,6 +7,7 @@
 
 import type { PackageVersionMeta, PackageScripts } from "./npm-registry";
 import type { PkgVersionInfo, ResolutionData } from "./resolution";
+import type { PackageRawInfoSymbols } from "./symbols";
 
 /**
  * Package.json as modified during installation
@@ -28,6 +29,21 @@ export interface InstallPkgJson extends PackageVersionMeta {
   hasPI?: number;
   /** Package was loaded from lock file */
   fromLocked?: boolean;
+}
+
+/**
+ * package.json read off disk by `Fyn.loadJsonForPkg`. It is stored into `pkg.json`, where
+ * pkg-installer reads it back as `DepInfo.json` (`InstallPkgJson`), so it is that shape plus
+ * the raw-info symbol and the fields only loadJsonForPkg sets. Partial because a
+ * package.json on disk may predate fyn's `_fyn` bookkeeping.
+ */
+export interface InstalledPkgJson extends Partial<InstallPkgJson>, PackageRawInfoSymbols {
+  /** On-disk package doesn't match the version asked for */
+  _invalid?: boolean;
+  /** The package's own version string, before fyn cleaned it into valid semver */
+  _origVersion?: string;
+  /** Package has a binding.gyp */
+  gypfile?: boolean;
 }
 
 /**
@@ -66,6 +82,8 @@ export interface DepInfo extends PkgVersionInfo {
   linkDep?: boolean;
   /** Link counter for nested package linking */
   linked?: number;
+  /** Bins linked into the package's own private `.bin` because they conflicted at top */
+  privateBin?: Record<string, string>;
 
   // Display state
   /** Show deprecation warning for this package */

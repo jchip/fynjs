@@ -6,7 +6,7 @@ import Promise from "./aveazul";
 export const isWin32 = process.platform === "win32";
 
 export function retry<T>(
-  func: () => T | Promise<T>,
+  func: () => T | PromiseLike<T>,
   checks: string[] | ((err: any) => boolean),
   tries: number,
   wait: number

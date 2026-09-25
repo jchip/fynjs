@@ -25,8 +25,7 @@ import {
   type PackageJson,
   type FynpoGraph,
   type PkgVersionInfo,
-  type InstallPkgJson,
-  type PackageRawInfoSymbols
+  type InstalledPkgJson
 } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
@@ -43,8 +42,6 @@ import {
   strictestScriptPolicy,
   DEFAULT_SCRIPT_POLICY
 } from "./util/lifecycle-script-policy";
-
-import type { PkgVersion } from "./dep-data";
 
 /** Value form of an allow-scripts entry: `true`/`"*"` allows all lifecycle
  * scripts; a string or array allows only those script names. */
@@ -109,18 +106,6 @@ interface FynOptions {
   refreshMeta?: boolean;
   metaMemoize?: string;
   [key: string]: unknown;
-}
-
-/**
- * package.json read off disk by `Fyn.loadJsonForPkg`. It is stored into `pkg.json`, where
- * pkg-installer reads it back as `DepInfo.json` (`InstallPkgJson`), so it is that shape plus
- * the raw-info symbol and the fields only loadJsonForPkg sets. Partial because a
- * package.json on disk may predate fyn's `_fyn` bookkeeping.
- */
-interface InstalledPkgJson extends Partial<InstallPkgJson>, PackageRawInfoSymbols {
-  _invalid?: boolean;
-  _origVersion?: string;
-  gypfile?: boolean;
 }
 
 /** Dependency item reference stashed on PkgVersionInfo's [DEP_ITEM] symbol */

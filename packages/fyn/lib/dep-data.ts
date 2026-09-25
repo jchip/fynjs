@@ -28,11 +28,6 @@ export interface DepItemRef {
   optFailed?: boolean | number;
 }
 
-export interface PkgVersion {
-  linked?: number;
-  [key: string]: unknown;
-}
-
 export class DepData {
   /** The dependency tree - maps package name to KnownPackage */
   pkgs: Record<string, KnownPackage>;

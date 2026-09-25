@@ -161,3 +161,103 @@ Grepped `lib/` and `cli/` to confirm what's actually unused before any cleanup:
 - `lib/types/installer.ts`'s `@deprecated ResData` has **zero references anywhere**, including
   no re-export from `lib/types/index.ts`. `lib/pkg-dep-linker.ts`'s own local `ResData` (line 35)
   is a distinct, live interface that does not import it.
+
+## 6. Resolved (2026-09-24)
+
+§1-§5 above are the original snapshot and stay as written. This section records what the
+cleanup commits (`4f4d8d73`, `f84d0cb7`, `65808535`) and their review follow-up changed.
+
+**Goal.** Package and dependency data should end up with coherent, well-defined shapes and little
+duplication. This is a direction, not a gate. Merge a duplicate when it removes a real mismatch
+or a cast. Leave it when merging would mean reshaping runtime flow for a purely cosmetic win.
+
+**Efficiency comes first.** These objects exist once per package version, and resolve and install
+walk thousands of them. Type-level consolidation is free, because interfaces, aliases, and casts
+compile away. Runtime changes are not free. Do not add copies, conversions, wrapper objects, or
+adapter layers just to get a cleaner shape. Mutating one object in place is a deliberate choice.
+All the changes in this section are type-only.
+
+### Design principles
+
+Apply OOD at the type level, where it costs nothing at runtime.
+
+- **Lifecycle phases are a subtype chain.** One object gains fields as it moves through phases:
+  `PkgVersionInfo` → `DepInfo` for the version record, and `PackageVersionMeta` →
+  `InstallPkgJson` → `InstalledPkgJson` for its json. Each phase extends the one before. A new
+  field goes on the phase that first sets it. Liskov holds by construction, because a later
+  phase can always stand in for an earlier one.
+- **Consumers depend on role interfaces (Interface Segregation).** A module that needs only a few
+  fields declares a narrow view. That view is *derived* from the canonical type with `Pick`,
+  never re-declared by hand. The canonical type is then a subtype of every view by construction,
+  not by structural coincidence. `fyn-views.ts` already does this for `Fyn` itself. Name a view
+  for its role (`BinLinkPkg`), never with a canonical name (`DepInfo`).
+- **No escape-hatch index signatures.** `[key: string]: unknown` switches off the contract for the
+  whole type. Keep one only where a shape really is open, such as raw registry json.
+- **Data stays plain objects, and behavior lives in services.** Version records are serialized to
+  the lock file and exist once per version. Wrapping them in classes would add an allocation and
+  a serialization step. `DepItem` is a class because it owns real behavior, the semver analysis
+  behind its getters.
+- **External shapes are boundary types.** `Packument` mirrors pacote. Relate it to `PackageMeta`
+  through `extends` at the type level, not through a runtime adapter.
+
+| Shape from §2/§3 | Outcome |
+|---|---|
+| `QueueDepthItem`, `PromiseItem`, `DepthInfoItem`, `DepthData`, `DepthResolving`, `ResolveResult` in `types/resolution.ts` | Deleted. `pkg-dep-resolver.ts`'s local versions are now the only ones. |
+| `@deprecated ResData` in `types/installer.ts` | Deleted. |
+| Local `ResData` in `pkg-dep-linker.ts` | Deleted. Its `per` field moved into the canonical `ResolutionData`, since `pkg-dep-resolver.ts` really writes `res.per`. |
+| `YarnLockData` x2 | One declaration in `fyn.ts`. `pkg-dep-resolver.ts` type-imports it, like `FynpoData`. |
+| `DepItemRef` in `fyn.ts` | Renamed `FynDepItemRef`, so it no longer collides with `dep-data.ts`'s `DepItemRef`. |
+| `any` in `util/fyntil.ts` | Removed. `PkgJsonData` is `Partial<FynPackageJson>`. `DistInfo` became `InstallDistInfo`. `FynpoConfigData.config` is `FynpoConfig`. |
+| `PkgInfo` + `FvDepInfo` in `pkg-dep-linker.ts` | Replaced by `DepInfo` / `PkgVersionInfo`. The dead `loadPkgDepData` method went with them. |
+| `PkgInfo` in `fyn.ts` | The `pkg` parameter is `PkgVersionInfo`. The json read off disk is `InstalledPkgJson` (see below). |
+| `PkgInfo` in `pkg-src-manager.ts` | The tarball path takes `PkgVersionInfo`. The manifest/pack path is `PkgManifestData`, built on `Partial<PackageVersionMeta>`. |
+| `PkgInfo` in `cli/show-stat.ts` | Replaced by `PkgSummary`, exported from `pkg-stat-provider.ts`. |
+| `DepInfo` in `pkg-bin-linker-base.ts` | Renamed `BinLinkPkg`, a `Pick` of the installer `DepInfo`. `BinList` and `DepSection` are now aliases of the canonical types. `privateBin` moved onto `DepInfo`, since bin linking sets it there at runtime. |
+| `FetchPkg` / `ExtractPkg` | Both derived from `PkgVersionInfo` with `Pick`. The `Fyn` views now return `InstalledPkgJson` instead of `unknown`. The ad hoc re-cast in `pkg-dist-fetcher.ts` is gone. |
+| `VersionPkgData` + `PkgVersion` | Both deleted. `pkg-dep-locker.ts` reads `KnownPackage.versions` as the `PkgVersionInfo` records they already are. |
+
+### Decisions
+
+- **The on-disk json in `loadJsonForPkg` is `InstallPkgJson`-shaped.** It is stored into
+  `pkg.json`. pkg-installer later reads that same slot as `DepInfo.json: InstallPkgJson`. So
+  `InstalledPkgJson` is `Partial<InstallPkgJson>` plus the raw-info symbol and the 3 fields only
+  `loadJsonForPkg` sets (`_invalid`, `_origVersion`, `gypfile`). It is Partial because a
+  package.json on disk may predate fyn's `_fyn` bookkeeping.
+- **`FynPackageJson.hasPI` is `number`, not `boolean`.** Runtime always writes `1`
+  (`pkg-dep-resolver.ts`, `pkg-dep-locker.ts`). `InstallPkgJson` and `PackageVersionMeta` already
+  said `number`. The `boolean` was the only thing forcing `as unknown as PackageVersionMeta`
+  casts in `fyn.ts` and in `pkg-src-manager.ts`'s `LocalMeta`. Both casts are gone.
+- **`PkgSummary.version` is optional.** `findDependents` reports the app itself as
+  `~package.json` with no version. `formatPkgId` and `_getPkgId` check for that name first.
+- **`findPkgsById` keeps its own return type.** It returns full version records from
+  `pkgs[name].versions`, not display summaries.
+
+- **`InstalledPkgJson` lives in `types/installer.ts`**, next to `InstallPkgJson`. It is one phase of
+  the json's subtype chain, and the dist fetcher, dist extractor, and opt resolver all use it.
+- **`FetchPkg` requires only `name` and `version`.** pkg-opt-resolver also passes plain registry
+  meta to `findPkgInNodeModules` and `putPkgInNodeModules`. So the other picked fields are
+  `Partial`. The role interface describes every caller, not just the common one.
+- **`retry` takes `() => T | PromiseLike<T>`.** It used to take aveazul's `Promise<T>`, so a native
+  promise from an `async` method did not fit. The old `unknown` returns hid this.
+- **The hand-written copies had wrong types.** `VersionPkgData` said `local?: boolean` and
+  `hasPI?: boolean`, while runtime stores a string and `1`. It read `hasI` only through its index
+  signature. Deriving from the canonical type fixes this kind of drift for good.
+
+### Still open, ranked by payoff
+
+1. **`Packument` / `LocalMeta` (boundary type).** In `pkg-src-manager.ts` they overlap
+   `PackageMeta`. `Packument` mirrors pacote's external shape, so a type-level `extends` is the
+   most it needs.
+2. **`FynpoConfig` location.** `util/fyntil.ts` type-imports it from `../fyn`. It is type-only,
+   so there is no runtime cycle. Move it to `lib/types/` only when that area is touched anyway.
+
+Not worth chasing:
+
+- **One runtime object, several type names over its lifetime.** `PkgVersionInfo` grows into
+  `DepInfo` in place, which forces `as DepInfo` casts in pkg-installer. Removing the casts would
+  mean building a separate `DepInfo` per package, which costs an allocation and a copy for
+  every version installed. The in-place mutation is the efficient design, and the casts
+  describe it honestly. There are only 5 of them, so a helper that narrows the type at one
+  point would add little.
+- **A typed `DEP_ITEM` accessor.** `getDepItem` exists in `types/symbols.ts` but nothing calls it.
+  Only 2 casts would go away.

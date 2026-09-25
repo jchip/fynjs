@@ -31,7 +31,7 @@ import {
 } from "./types";
 import logger from "./logger";
 import fyntil from "./util/fyntil";
-import type { DepData, PkgVersion } from "./dep-data";
+import type { DepData } from "./dep-data";
 
 /** Lock data with symbol properties (runtime expanded form) */
 interface ConvertedLockData {
@@ -58,34 +58,6 @@ interface LockData {
     | LockPkgDepItemsSerialized
     | Record<string, unknown>
     | undefined;
-}
-
-/** Package metadata from registry */
-/** Version package data from dep-data */
-interface VersionPkgData extends PkgVersion {
-  top?: boolean;
-  optFailed?: number;
-  hasPI?: boolean;
-  local?: boolean;
-  deprecated?: string;
-  json?: {
-    scripts?: { preinstall?: string; install?: string; postinstall?: string; postInstall?: string };
-    dependencies?: Record<string, string>;
-    optionalDependencies?: Record<string, string>;
-    peerDependencies?: Record<string, string>;
-    bundleDependencies?: string[];
-    bundledDependencies?: string[];
-    os?: string[];
-    cpu?: string[];
-    _hasShrinkwrap?: boolean;
-    [key: string]: unknown;
-  };
-  dist?: {
-    tarball?: string;
-    shasum?: string;
-    integrity?: string;
-    fullPath?: string;
-  };
 }
 
 class PkgDepLocker {
@@ -127,7 +99,7 @@ class PkgDepLocker {
 
     const genFrom = (pkgsData: Record<string, KnownPackage>): void => {
       _.each(pkgsData, (kpkg, name) => {
-        const pkg = kpkg.versions as Record<string, VersionPkgData>;
+        const pkg = kpkg.versions;
         if (_.isEmpty(pkg)) return;
         const versions = Object.keys(pkg).sort(simpleSemverCompare);
         // collect all semvers that resolved to the same version

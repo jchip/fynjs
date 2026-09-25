@@ -11,16 +11,12 @@ import Path from "path";
 import xaa from "./util/xaa";
 import type { Readable } from "stream";
 import type { EventEmitter } from "events";
+import type { PkgVersionInfo, InstalledPkgJson } from "./types";
 
 const { retry, missPipe } = fyntil;
 
-/** Package info for extraction */
-interface ExtractPkg {
-  name: string;
-  version: string;
-  promoted?: boolean;
-  extracted?: string;
-}
+/** The slice of a `PkgVersionInfo` that extraction reads and writes */
+type ExtractPkg = Pick<PkgVersionInfo, "name" | "version" | "promoted" | "extracted">;
 
 /** Data passed to processItem */
 interface ExtractData {
@@ -34,9 +30,9 @@ export interface FynForExtractor {
   getInstalledPkgDir(name: string, version: string, opts?: { promoted?: boolean }): string;
   getExtraDir(name?: string): string;
   getFvDir(version: string): string;
-  ensureProperPkgDir(pkg: ExtractPkg, fullOutDir?: string): Promise<unknown>;
+  ensureProperPkgDir(pkg: ExtractPkg, fullOutDir?: string): Promise<InstalledPkgJson | null>;
   createPkgOutDir(dir: string): Promise<void>;
-  loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<unknown>;
+  loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<InstalledPkgJson>;
   isNormalLayout: boolean;
   /** `false` when the central store is off - every read of this guards on it first */
   central:

@@ -3,32 +3,17 @@ import Fs from "./util/file-ops";
 import Path from "path";
 import * as _ from "lodash-es";
 import logger from "./logger";
-import type { FynPkgDirs, FynPkgsData } from "./types";
+import type { FynPkgDirs, FynPkgsData, DepInfo, InstallPkgJson, ResolutionEntry } from "./types";
 
 /** Package JSON bin field type */
-export type BinList = string | Record<string, string>;
+export type BinList = NonNullable<InstallPkgJson["bin"]>;
 
 /** Dependency resolution section */
-export interface DepSection {
-  [depName: string]: {
-    resolved: string;
-  };
-}
+export type DepSection = Record<string, ResolutionEntry>;
 
-/** Dependency info passed to linker methods */
-export interface DepInfo {
-  name: string;
-  version: string;
-  top?: boolean;
-  json?: {
-    name?: string;
-    bin?: BinList;
-  };
-  res?: {
-    dep?: DepSection;
-    opt?: DepSection;
-  };
-  privateBin?: Record<string, string>;
+/** The slice of an installer `DepInfo` that bin linking reads and writes */
+export interface BinLinkPkg extends Pick<DepInfo, "name" | "version" | "top" | "res" | "privateBin"> {
+  json?: Pick<InstallPkgJson, "name" | "bin">;
 }
 
 /** Linked bin tracking */
@@ -158,7 +143,7 @@ class PkgBinLinkerBase {
   // For a package's dependencies that has bin but conflicts with what's in
   // top-level .bin already, need to link them privately.
   //
-  async linkDepBin(depInfo: DepInfo): Promise<void> {
+  async linkDepBin(depInfo: BinLinkPkg): Promise<void> {
     const pkgDir = this._fyn.getInstalledPkgDir(depInfo.name, depInfo.version, depInfo);
     let binDir: string | undefined;
     const privatelyLinked: Record<string, boolean> = {};
@@ -231,7 +216,7 @@ class PkgBinLinkerBase {
     await linkDepOfSection(depInfo.res?.opt);
   }
 
-  async linkBin(depInfo: DepInfo, binList?: BinList): Promise<boolean> {
+  async linkBin(depInfo: BinLinkPkg, binList?: BinList): Promise<boolean> {
     const isPrivate = Boolean(binList);
     const conflicts: Record<string, string> = {};
     const pkgDir = this._fyn.getInstalledPkgDir(depInfo.name, depInfo.version, depInfo);
@@ -300,7 +285,7 @@ class PkgBinLinkerBase {
     return true;
   }
 
-  async _linkPrivateBin(outputDir: string, depInfo: DepInfo, binList: BinList): Promise<void> {
+  async _linkPrivateBin(outputDir: string, depInfo: BinLinkPkg, binList: BinList): Promise<void> {
     const Ctor = this.constructor as new (opts: PkgBinLinkerOptions) => PkgBinLinkerBase;
     const binLinker = new Ctor({ fyn: this._fyn, outputDir });
     await binLinker.linkBin(depInfo, binList);

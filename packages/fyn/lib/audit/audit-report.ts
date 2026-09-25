@@ -19,7 +19,7 @@ import {
   type AuditResult,
   type Advisory
 } from "./audit-cache";
-import type { DepData, PkgVersion } from "../dep-data";
+import type { DepData } from "../dep-data";
 
 /**
  * `--omit` values, and the `src` marker each one excludes.

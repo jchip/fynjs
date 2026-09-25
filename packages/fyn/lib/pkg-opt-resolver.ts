@@ -18,7 +18,7 @@ import { OPTIONAL_RESOLVER } from "./log-items";
 import { DEP_ITEM, SEMVER } from "./symbols";
 import { evaluateScriptPolicy, isScriptAllowed } from "./util/lifecycle-script-policy";
 import type { FetchPkg } from "./pkg-dist-fetcher";
-import { OPT_FAILED_PLATFORM, type PackageMeta, type NativePromise } from "./types";
+import { OPT_FAILED_PLATFORM, type PackageMeta, type NativePromise, type InstalledPkgJson } from "./types";
 
 export { OPT_FAILED_PLATFORM };
 
@@ -96,8 +96,8 @@ interface FynForOptResolver extends FynForDepLinker {
   // NativePromise, not Promise: `Promise` in this module is aveazul's (FPO-41), while the
   // dist fetcher's methods are plain `async` and so return the global one
   _distFetcher: {
-    findPkgInNodeModules(pkg: { name: string; version: string }): NativePromise<{
-      pkgJson?: Record<string, unknown>;
+    findPkgInNodeModules(pkg: FetchPkg): NativePromise<{
+      pkgJson?: InstalledPkgJson;
       existDir?: string;
     }>;
     putPkgInNodeModules(pkg: FetchPkg, check: boolean, optional: boolean): NativePromise<unknown>;
@@ -340,16 +340,16 @@ class PkgOptResolver {
 
     const checkPkg = (
       path: string
-    ): NativePromise<false | { path: string; pkg: Record<string, unknown> }> => {
-      return readPkgJson(path, true).then((pkg: Record<string, unknown>) => {
-        return semverUtil.equal(pkg.version as string, version) && { path, pkg };
+    ): NativePromise<false | { path: string; pkg: InstalledPkgJson }> => {
+      return readPkgJson(path, true).then((pkg: InstalledPkgJson) => {
+        return semverUtil.equal(pkg.version, version) && { path, pkg };
       });
     };
 
     const fvInstalledPath = this._fyn.getInstalledPkgDir(name, version);
 
     const linkLocalPackage = async (): NativePromise<
-      false | { path: string; pkg: Record<string, unknown> }
+      false | { path: string; pkg: InstalledPkgJson }
     > => {
       const meta = data.meta;
       const local = meta.local || _.get(meta, ["versions", version, "local"]);

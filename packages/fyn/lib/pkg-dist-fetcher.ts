@@ -13,25 +13,16 @@ import DepItem from "./dep-item";
 import { MARK_URL_SPEC } from "./constants";
 import EventEmitter from "events";
 import type { Readable } from "stream";
+import type { PkgVersionInfo, InstalledPkgJson } from "./types";
 
 const WATCH_TIME = 2000;
 
-/** Package info for fetching */
-export interface FetchPkg {
-  name: string;
-  version: string;
-  local?: string;
-  promoted?: boolean;
-  extracted?: string;
-  dsrc?: string;
-  src?: string;
-  requests?: string[][];
-  dist?: {
-    tarball?: string;
-    integrity?: string;
-    fullPath?: string;
-  };
-}
+/**
+ * The slice of a `PkgVersionInfo` that fetching reads and writes. Only name and version are
+ * required, because pkg-opt-resolver also passes plain registry meta for optional-dep checks.
+ */
+export type FetchPkg = Pick<PkgVersionInfo, "name" | "version"> &
+  Partial<Pick<PkgVersionInfo, "local" | "promoted" | "extracted" | "dsrc" | "src" | "requests" | "dist">>;
 
 /** Package data structure */
 interface PackageData {
@@ -44,9 +35,9 @@ interface PackageData {
 /** Find result */
 interface FindResult {
   foundAtTop: boolean;
-  search: Array<{ dir: string; pkgJson?: Record<string, unknown> }>;
+  search: Array<{ dir: string; pkgJson?: InstalledPkgJson }>;
   existDir?: string;
-  pkgJson?: Record<string, unknown> & { _invalid?: boolean; name?: string };
+  pkgJson?: InstalledPkgJson;
 }
 
 /** Fyn instance interface for dist fetcher - extends extractor interface */
@@ -272,14 +263,11 @@ class PkgDistFetcher {
 
     const find = async (promoted: boolean): Promise<boolean> => {
       const existDir = this._fyn.getInstalledPkgDir(name, version, { promoted });
-      const x: { dir: string; pkgJson?: Record<string, unknown> } = { dir: existDir };
+      const x: FindResult["search"][number] = { dir: existDir };
       result.search.push(x);
 
       try {
-        const pkgJson = (await this._fyn.loadJsonForPkg(pkg, existDir)) as Record<string, unknown> & {
-          _invalid?: boolean;
-          name?: string;
-        };
+        const pkgJson = await this._fyn.loadJsonForPkg(pkg, existDir);
         x.pkgJson = pkgJson;
         if (!pkgJson._invalid) {
           result.existDir = existDir;
@@ -317,7 +305,7 @@ class PkgDistFetcher {
     pkg: FetchPkg,
     check?: boolean,
     optional?: boolean
-  ): Promise<Record<string, unknown> | undefined> {
+  ): Promise<InstalledPkgJson | undefined> {
     const find: Partial<FindResult> = check ? await this.findPkgInNodeModules(pkg) : {};
     if (find && find.pkgJson) {
       pkg.extracted = find.existDir;
