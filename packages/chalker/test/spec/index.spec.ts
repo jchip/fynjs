@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import chalk, { Chalk, type ColorSupportLevel } from "chalk";
 import ansiColors from "ansi-colors";
+import { verify } from "run-verify";
 import { styleTextColors } from "../../src/style-text.ts";
 import chalker from "../../src/index.ts";
 
@@ -81,38 +82,48 @@ describe("chalker", function () {
         chalker.CHALK = originalChalk;
       });
 
-      it("should support basic colors", () => {
-        const r = chalker(
-          "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>"
-        );
-        expect(r).toBe(BASIC);
-        console.log(r);
-      });
+      it("should support basic colors", () =>
+        verify()
+          .step(() =>
+            chalker(
+              "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>"
+            )
+          )
+          .step(r => {
+            expect(r).toBe(BASIC);
+            console.log(r);
+          }));
 
-      it("should not apply colors if chalk supportsColor is false", () => {
-        const r = chalker(
-          "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>",
-          { supportsColor: false }
-        );
-        expect(r).toBe("red bold textgreen on blue bold");
-      });
+      it("should not apply colors if chalk supportsColor is false", () =>
+        verify()
+          .step(() =>
+            chalker(
+              "<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>",
+              { supportsColor: false }
+            )
+          )
+          .step(r => expect(r).toBe("red bold textgreen on blue bold")));
 
-      it("should support colors module namespace default", () => {
-        const r = chalker("<red>red text</red>", { default: engine.context(1) });
-        expect(r).toBe("\u001b[31mred text\u001b[39m");
-      });
+      it("should support colors module namespace default", () =>
+        verify()
+          .step(() => chalker("<red>red text</red>", { default: engine.context(1) }))
+          .step(r => expect(r).toBe("\u001b[31mred text\u001b[39m")));
 
-      it("should support template string tagging", () => {
-        const x = chalker``;
-        expect(x).toBe(``);
-        const y = "hello world";
-        const b = "<blue>";
-        const x2 = chalker`${b}blue</><red>${y}</red>`;
-        expect(x2).toBe("\u001b[34mblue\u001b[39m\u001b[31mhello world\u001b[39m");
-        const r = chalker`<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>`;
-        expect(r).toBe(BASIC);
-        console.log(r);
-      });
+      it("should support template string tagging", () =>
+        verify()
+          .step(() => expect(chalker``).toBe(``))
+          .step(() => {
+            const y = "hello world";
+            const b = "<blue>";
+            expect(chalker`${b}blue</><red>${y}</red>`).toBe(
+              "\u001b[34mblue\u001b[39m\u001b[31mhello world\u001b[39m"
+            );
+          })
+          .step(() => {
+            const r = chalker`<red.bold>red bold text</red.bold><bgBlue.green.bold>green on blue bold</>`;
+            expect(r).toBe(BASIC);
+            console.log(r);
+          }));
 
       // chalk/ansi-colors rescan a string they're wrapping for embedded reset codes or newlines
       // and reinsert their own open code after each one, so an outer style resumes after an
@@ -122,156 +133,192 @@ describe("chalker", function () {
       // test here) are unaffected and byte-identical.
       it.skipIf(engine.name === "style-text")("should support nesting colors", () => {
         const ctx = engine.context(2);
-        const r = chalker(
-          `plain1 <red>red1<bgBlue> on blue<cyan> cyan on blue</cyan><black> black
+        return verify()
+          .step(() =>
+            chalker(
+              `plain1 <red>red1<bgBlue> on blue<cyan> cyan on blue</cyan><black> black
  on blue</black><green.bg-gold>green on gold</> red2 on
  blue       <orange.bg#0>orange</>           <magenta.bgGreen>
 magenta on green</magenta.bgGreen></bgBlue> red3 </red> plain2<magenta>
 magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
-          ctx
-        );
-
-        expect(r).toBe(engine.expected.nesting);
-        console.log(r);
+              ctx
+            )
+          )
+          .step(r => {
+            expect(r).toBe(engine.expected.nesting);
+            console.log(r);
+          });
       });
 
       it("should support hex colors", () => {
         const ctx = engine.context(2);
-        const r = chalker("<#FFA010.bg#1f9020>hex colors</>", ctx);
-        expect(r).toBe(engine.expected.hex);
-        console.log(r);
+        return verify()
+          .step(() => chalker("<#FFA010.bg#1f9020>hex colors</>", ctx))
+          .step(r => {
+            expect(r).toBe(engine.expected.hex);
+            console.log(r);
+          });
       });
 
       it("should support hex 'bg-#' colors", () => {
         const ctx = engine.context(2);
-        const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
-        expect(r).toBe(engine.expected.hex);
-        console.log(r);
+        return verify()
+          .step(() => chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx))
+          .step(r => {
+            expect(r).toBe(engine.expected.hex);
+            console.log(r);
+          });
       });
 
       it("should support hex 'bg #' colors", () => {
         const ctx = engine.context(2);
-        const r = chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx);
-        expect(r).toBe(engine.expected.hex);
-        console.log(r);
+        return verify()
+          .step(() => chalker("<#FFA010.bg-#1f9020>hex colors</>", ctx))
+          .step(r => {
+            expect(r).toBe(engine.expected.hex);
+            console.log(r);
+          });
       });
 
       it("should support rgb triples", () => {
         const ctx = engine.context(2);
-        const r = chalker("<(255, 10, 20).bg(20,10,255)>rgb red on blue</>", ctx);
-        expect(r).toBe(engine.expected.rgb);
-        console.log(r);
-        const r2 = chalker("<rgb(255, 10, 20).bgRgb(20,10,255)>rgb red on blue</>", ctx);
-        expect(r2).toBe(r);
+        let r: string;
+        return verify()
+          .step(() => {
+            r = chalker("<(255, 10, 20).bg(20,10,255)>rgb red on blue</>", ctx);
+            expect(r).toBe(engine.expected.rgb);
+            console.log(r);
+          })
+          .step(() => chalker("<rgb(255, 10, 20).bgRgb(20,10,255)>rgb red on blue</>", ctx))
+          .step(r2 => expect(r2).toBe(r));
       });
 
       it("should support keyword", () => {
         const ctx = engine.context(2);
-        const r = chalker(
-          "<orange.bgKeyword(`green`)>orange on green</><'green'.bg gold>green on gold</>",
-          ctx
-        );
-        expect(r).toBe(engine.expected.keyword);
-        console.log(r);
-        const r2 = chalker(
-          `<'orange'.bg("green")>orange on green</><(green).bg(gold)>green on gold</>`,
-          ctx
-        );
-        expect(r2).toBe(r);
+        let r: string;
+        return verify()
+          .step(() => {
+            r = chalker(
+              "<orange.bgKeyword(`green`)>orange on green</><'green'.bg gold>green on gold</>",
+              ctx
+            );
+            expect(r).toBe(engine.expected.keyword);
+            console.log(r);
+          })
+          .step(() =>
+            chalker(
+              `<'orange'.bg("green")>orange on green</><(green).bg(gold)>green on gold</>`,
+              ctx
+            )
+          )
+          .step(r2 => expect(r2).toBe(r));
       });
 
       it("should support advanced color methods missing from chalk 5", () => {
         const ctx = createChalk5CompatibleTestDouble();
-        const r = chalker(
-          "<orange.bg(gold).hsl(32,100,50).hsv(32,100,100).hwb(32,0,50)" +
-            ".bgHsl(120,100,25).bgHsv(120,100,50).bgHwb(120,0,50)>text</>",
-          ctx
-        );
-        expect(r).toBe(
-          "rgb(255,165,0)|bgRgb(255,215,0)|rgb(255,136,0)|rgb(255,136,0)|" +
-            "rgb(128,68,0)|bgRgb(0,128,0)|bgRgb(0,128,0)|bgRgb(0,128,0):text"
-        );
+        return verify()
+          .step(() =>
+            chalker(
+              "<orange.bg(gold).hsl(32,100,50).hsv(32,100,100).hwb(32,0,50)" +
+                ".bgHsl(120,100,25).bgHsv(120,100,50).bgHwb(120,0,50)>text</>",
+              ctx
+            )
+          )
+          .step(r =>
+            expect(r).toBe(
+              "rgb(255,165,0)|bgRgb(255,215,0)|rgb(255,136,0)|rgb(255,136,0)|" +
+                "rgb(128,68,0)|bgRgb(0,128,0)|bgRgb(0,128,0)|bgRgb(0,128,0):text"
+            )
+          );
       });
 
       it("should decode html escapes", () => {
         const ctx = engine.context(2);
-        const r = chalker(
-          `<gold.bg-green>&lt;Gold on&gt; &xyz;&nbsp;Green-&quot;&amp;&apos;&copy;&reg;</gold.bg-green>`,
-          ctx
-        );
-        expect(r).toBe(engine.expected.html);
-        console.log(r);
+        return verify()
+          .step(() =>
+            chalker(
+              `<gold.bg-green>&lt;Gold on&gt; &xyz;&nbsp;Green-&quot;&amp;&apos;&copy;&reg;</gold.bg-green>`,
+              ctx
+            )
+          )
+          .step(r => {
+            expect(r).toBe(engine.expected.html);
+            console.log(r);
+          });
       });
 
-      it("should decode html escape code points", () => {
-        const r = chalker("&#x0391; &#x398; &#8201; &#8657; &#x2666; &#xD83D;&#xDC69;");
-        const x = "Α Θ   ⇑ ♦ 👩";
-        expect(r).toBe(x);
-      });
+      it("should decode html escape code points", () =>
+        verify()
+          .step(() => chalker("&#x0391; &#x398; &#8201; &#8657; &#x2666; &#xD83D;&#xDC69;"))
+          .step(r => expect(r).toBe("Α Θ   ⇑ ♦ 👩")));
 
-      it("should fail for mismatched ()", () => {
-        expect(() => chalker("<(10,20,30>bad</>")).toThrow("missing matching ()");
-      });
+      it("should fail for mismatched ()", () =>
+        verify()
+          .expectErrorHas("missing matching ()")
+          .step(() => chalker("<(10,20,30>bad</>")));
 
-      it("should fail if op name is invalid", () => {
-        expect(() => chalker(`<blah(red)>bad</>`)).toThrow("blah is not a chalk function");
-      });
+      it("should fail if op name is invalid", () =>
+        verify()
+          .expectErrorHas("blah is not a chalk function")
+          .step(() => chalker(`<blah(red)>bad</>`)));
 
-      it("should handle chalk api throwing", () => {
-        expect(() =>
-          chalker("<blah(foo)>bar</>", {
-            blah: () => {
-              throw new Error("fake");
-            }
-          })
-        ).toThrow("calling chalk.blah failed with: fake");
-      });
+      it("should handle chalk api throwing", () =>
+        verify()
+          .expectErrorHas("calling chalk.blah failed with: fake")
+          .step(() =>
+            chalker("<blah(foo)>bar</>", {
+              blah: () => {
+                throw new Error("fake");
+              }
+            })
+          ));
 
-      it("should handle empty/null string or strings w/o markers", () => {
-        expect(chalker(null)).toBe("");
-        expect(chalker(undefined)).toBe("");
-        expect(chalker("")).toBe("");
-        expect(chalker("<")).toBe("<");
-        expect(chalker("hello world")).toBe("hello world");
-        expect(chalker("&quot;hello world&quot;")).toBe(`"hello world"`);
-      });
+      it("should handle empty/null string or strings w/o markers", () =>
+        verify()
+          .step(() => expect(chalker(null)).toBe(""))
+          .step(() => expect(chalker(undefined)).toBe(""))
+          .step(() => expect(chalker("")).toBe(""))
+          .step(() => expect(chalker("<")).toBe("<"))
+          .step(() => expect(chalker("hello world")).toBe("hello world"))
+          .step(() => expect(chalker("&quot;hello world&quot;")).toBe(`"hello world"`)));
 
-      it("should fail for invalid keyword", () => {
-        expect(() => chalker(`<blah>bad</blah>`)).toThrow(
-          "blah is not found and invalid as a keyword"
-        );
-      });
+      it("should fail for invalid keyword", () =>
+        verify()
+          .expectErrorHas("blah is not found and invalid as a keyword")
+          .step(() => chalker(`<blah>bad</blah>`)));
 
-      it("should fail for unbalanced markers", () => {
-        expect(() => chalker(`<red>`)).toThrow("unbalanced open/close markers: [<red>]");
-        expect(() => chalker(`oops <red>red<blue></blue>`)).toThrow(
-          "unbalanced open/close markers: oops [<red>]..."
-        );
-        expect(() => chalker(`<red>red<blue><cyan></>`)).toThrow(
-          "unbalanced open/close markers: <red>red[<blue>]..."
-        );
-      });
+      it("should fail for unbalanced markers", () =>
+        verify()
+          .expectErrorHas("unbalanced open/close markers: [<red>]")
+          .step(() => chalker(`<red>`))
+          .expectErrorHas("unbalanced open/close markers: oops [<red>]...")
+          .step(() => chalker(`oops <red>red<blue></blue>`))
+          .expectErrorHas("unbalanced open/close markers: <red>red[<blue>]...")
+          .step(() => chalker(`<red>red<blue><cyan></>`)));
 
-      it("should fail for mismatched markers", () => {
-        expect(() => chalker(`blah <red>red<blue>blue</blue></rad>`)).toThrow(
-          "blah [** <red> **]red<blue>blue</blue>[** </rad> **]"
-        );
-      });
+      it("should fail for mismatched markers", () =>
+        verify()
+          .expectErrorHas("blah [** <red> **]red<blue>blue</blue>[** </rad> **]")
+          .step(() => chalker(`blah <red>red<blue>blue</blue></rad>`)));
 
-      it("should remove markers", () => {
-        const r = chalker.remove(
-          "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>"
-        );
-        expect(r).toBe("red bold text 👩green on blue bold");
-      });
+      it("should remove markers", () =>
+        verify()
+          .step(() =>
+            chalker.remove(
+              "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>"
+            )
+          )
+          .step(r => expect(r).toBe("red bold text 👩green on blue bold")));
 
-      it("should remove markers but keep html escapes if flag is true", () => {
-        const r = chalker.remove(
-          "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>",
-          true
-        );
-        expect(r).toBe("red bold text &#xD83D;&#xDC69;green on blue bold");
-      });
+      it("should remove markers but keep html escapes if flag is true", () =>
+        verify()
+          .step(() =>
+            chalker.remove(
+              "<red.bold>red bold text &#xD83D;&#xDC69;</red.bold><bgBlue.green.bold>green on blue bold</>",
+              true
+            )
+          )
+          .step(r => expect(r).toBe("red bold text &#xD83D;&#xDC69;green on blue bold")));
     });
   });
 
@@ -291,7 +338,23 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
         return undefined;
       };
 
-    it("should load ansi-colors if chalk is not available", async () => {
+    // vi.doMock/vi.resetModules mutate vitest's module registry process-wide, so every
+    // test here restores it through chain cleanup rather than a manual try/finally -
+    // that backstop still runs if the dynamic import or an assertion fails.
+    const mockOptionalImport = (available: Record<string, unknown>, calls: string[]) => {
+      vi.resetModules();
+      vi.doMock("optional-import", () => ({
+        makeOptionalImport: () => makeFakeOptionalImport(available, calls)
+      }));
+      return {
+        cleanup: () => {
+          vi.doUnmock("optional-import");
+          vi.resetModules();
+        }
+      };
+    };
+
+    it("should load ansi-colors if chalk is not available", () => {
       // ansi-colors implements alias() at runtime but omits it from its bundled types
       const colors = ansiColors.create() as ReturnType<typeof ansiColors.create> & {
         alias(name: string, color: (text: string) => string): void;
@@ -301,25 +364,18 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       colors.enabled = true;
       colors.alias("red", (text: string) => `ansi-colors red: ${text}`);
 
-      vi.resetModules();
-      vi.doMock("optional-import", () => ({
-        makeOptionalImport: () => makeFakeOptionalImport({ "ansi-colors": colors }, calls)
-      }));
+      return verify(mockOptionalImport({ "ansi-colors": colors }, calls))
+        .step(() => import("../../src/index.ts"))
+        .step(freshModule => {
+          const freshChalker = freshModule.default;
 
-      try {
-        const freshModule = await import("../../src/index.ts");
-        const freshChalker = freshModule.default;
-
-        expect(calls).toStrictEqual(["chalk", "ansi-colors"]);
-        expect(freshChalker.CHALK).toBe(colors);
-        expect(freshChalker("<red>red text</red>")).toBe("ansi-colors red: red text");
-        expect(freshChalker("<#FFA010>hex text</>")).toBe(
-          "\u001b[38;2;255;160;16mhex text\u001b[39m"
-        );
-      } finally {
-        vi.doUnmock("optional-import");
-        vi.resetModules();
-      }
+          expect(calls).toStrictEqual(["chalk", "ansi-colors"]);
+          expect(freshChalker.CHALK).toBe(colors);
+          expect(freshChalker("<red>red text</red>")).toBe("ansi-colors red: red text");
+          expect(freshChalker("<#FFA010>hex text</>")).toBe(
+            "\u001b[38;2;255;160;16mhex text\u001b[39m"
+          );
+        });
     });
 
     it("should fall back to styleText if neither chalk nor ansi-colors is available", async () => {
@@ -328,39 +384,21 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
       const util = await import("node:util");
       const calls: string[] = [];
 
-      vi.resetModules();
-      vi.doMock("optional-import", () => ({
-        makeOptionalImport: () => makeFakeOptionalImport({ "node:util": util }, calls)
-      }));
+      return verify(mockOptionalImport({ "node:util": util }, calls))
+        .step(() => import("../../src/index.ts"))
+        .step(freshModule => {
+          const freshChalker = freshModule.default;
 
-      try {
-        const freshModule = await import("../../src/index.ts");
-        const freshChalker = freshModule.default;
-
-        expect(calls).toStrictEqual(["chalk", "ansi-colors", "node:util"]);
-        expect(freshChalker("<red>red text</red>")).toBe("\u001b[31mred text\u001b[39m");
-        expect(freshChalker("<#FFA010>hex text</>")).toBe(
-          "\u001b[38;2;255;160;16mhex text\u001b[39m"
-        );
-      } finally {
-        vi.doUnmock("optional-import");
-        vi.resetModules();
-      }
+          expect(calls).toStrictEqual(["chalk", "ansi-colors", "node:util"]);
+          expect(freshChalker("<red>red text</red>")).toBe("\u001b[31mred text\u001b[39m");
+          expect(freshChalker("<#FFA010>hex text</>")).toBe(
+            "\u001b[38;2;255;160;16mhex text\u001b[39m"
+          );
+        });
     });
 
-    it("should fail if no color library is available", async () => {
-      vi.resetModules();
-      vi.doMock("optional-import", () => ({
-        makeOptionalImport: () => makeFakeOptionalImport({}, [])
-      }));
-
-      try {
-        await expect(import("../../src/index.ts")).rejects.toThrow();
-      } finally {
-        vi.doUnmock("optional-import");
-        vi.resetModules();
-      }
-    });
+    it("should fail if no color library is available", () =>
+      verify(mockOptionalImport({}, [])).expectError.step(() => import("../../src/index.ts")));
   });
 });
 
