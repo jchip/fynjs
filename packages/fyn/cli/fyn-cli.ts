@@ -28,6 +28,8 @@ import myPkg from "./mypkg";
 import { cleanErrorStack } from "@jchip/error";
 import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
 import { findFynCli } from "../lib/lifecycle-scripts";
+import { clean } from "../lib/prod-prune";
+import { FV_DIR, FYN_INSTALL_CONFIG_FILE } from "../lib/constants";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
 import type { InstallPkgJson, PackageJson } from "../lib/types";
@@ -111,6 +113,18 @@ interface AuditArgv {
     omit?: string[];
     auditLevel?: string;
     noCache?: boolean;
+  };
+}
+
+/** prod-prune command arguments */
+interface ProdPruneArgv {
+  args: {
+    dir?: string;
+  };
+  opts: {
+    maxKb?: number;
+    maxFiles?: number;
+    force?: boolean;
   };
 }
 
@@ -798,6 +812,37 @@ class FynCli {
     return showAudit(this.fyn, opts).finally(() => {
       return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
     });
+  }
+
+  /**
+   * Remove non-runtime files from a production node_modules. Only runs on demand,
+   * and refuses a tree that did not come from `fyn install --production` unless forced.
+   */
+  async prodPrune(argv: ProdPruneArgv): Promise<void> {
+    const dir = argv.args.dir
+      ? Path.resolve(this.fyn.cwd, argv.args.dir)
+      : this.fyn.getOutputDir();
+    try {
+      if (!argv.opts.force) {
+        const configFile = Path.join(dir, FV_DIR, FYN_INSTALL_CONFIG_FILE);
+        const installConfig = await Fs.readFile(configFile, "utf8")
+          .then((data: string) => JSON.parse(data))
+          .catch(() => ({}));
+        if (installConfig.production !== true) {
+          throw new Error(
+            `${dir} is not from a production install (fyn install --production).` +
+              ` Use --force to prune it anyway.`
+          );
+        }
+      }
+      const result = await clean(dir, argv.opts.maxKb || 0, argv.opts.maxFiles || 0);
+      if (!result.withinBudget) {
+        fyntil.exit(1);
+      }
+    } catch (err) {
+      logger.error((err as Error).message);
+      fyntil.exit(1);
+    }
   }
 
   async runScript(

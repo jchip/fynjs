@@ -754,6 +754,30 @@ const commands: Record<string, CommandSpec> = {
     }
   },
 
+  "prod-prune": {
+    desc: "Remove non-runtime files from a production node_modules",
+    usage: "$0 $1 [dir] [--max-kb <n>] [--max-files <n>] [--force]",
+    args: "[dir string]",
+    exec: async (cmd: CommandNode) => {
+      return new FynCli(await pickOptions(cmd)).prodPrune(cmd.jsonMeta);
+    },
+    options: {
+      "max-kb": {
+        args: "<kb number>",
+        desc: "Fail when the pruned tree exceeds this many kB",
+        argDefault: "0"
+      },
+      "max-files": {
+        args: "<count number>",
+        desc: "Fail when the pruned tree exceeds this many files",
+        argDefault: "0"
+      },
+      force: {
+        args: "<flag boolean>",
+        desc: "Prune even if the tree is not from a production install"
+      }
+    }
+  },
   "sync-local": {
     desc: "Refresh locally linked package files",
     alias: "sl",
