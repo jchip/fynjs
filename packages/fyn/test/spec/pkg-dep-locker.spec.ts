@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
+import { verify } from "run-verify";
 import PkgDepLocker from "../../lib/pkg-dep-locker";
 import { RSEMVERS, OPT_FAILED_PLATFORM } from "../../lib/types";
 
@@ -348,6 +349,116 @@ describe("pkg-dep-locker", function () {
 
     it("should record a failed install (2)", () => {
       expect(genLock(2).optFailed).toBe(2);
+    });
+  });
+
+  describe("installed lock copy", function () {
+    let tmpDir: string;
+
+    const makeTmpDir = () => Fs.mkdtempSync(Path.join(Os.tmpdir(), "fyn-installed-lock-"));
+
+    const sampleLockData = () => ({
+      "mod-a": {
+        _: { "^1.0.0": "1.0.0" },
+        "1.0.0": { $: 0, _: "mod-a.tgz" },
+      },
+    });
+
+    it("saveInstalled writes in lock-only mode, while save() to another path writes nothing", () => {
+      return verify({
+        timeout: 2000,
+        cleanup: () => Fs.rmSync(tmpDir, { recursive: true, force: true }),
+      })
+        .step(() => (tmpDir = makeTmpDir()))
+        .step(() => {
+          const locker = new PkgDepLocker(true, true, { _shownMissingFiles: new Set() });
+          locker._lockData = sampleLockData();
+          locker.saveInstalled(Path.join(tmpDir, "installed.yaml"));
+          locker.save(Path.join(tmpDir, "lock.yaml"));
+        })
+        .step(() => {
+          expect(Fs.existsSync(Path.join(tmpDir, "installed.yaml"))).toBe(true);
+          expect(Fs.existsSync(Path.join(tmpDir, "lock.yaml"))).toBe(false);
+        });
+    });
+
+    it("saveInstalled writes nothing when the lockfile is disabled", () => {
+      return verify({
+        timeout: 2000,
+        cleanup: () => Fs.rmSync(tmpDir, { recursive: true, force: true }),
+      })
+        .step(() => (tmpDir = makeTmpDir()))
+        .step(() => {
+          const locker = new PkgDepLocker(false, false, { _shownMissingFiles: new Set() });
+          locker._lockData = sampleLockData();
+          locker.saveInstalled(Path.join(tmpDir, "installed.yaml"));
+        })
+        .step(() => {
+          expect(Fs.existsSync(Path.join(tmpDir, "installed.yaml"))).toBe(false);
+        });
+    });
+
+    it("round-trips a local package's absolute path through the installed lock copy", () => {
+      let installedFile: string;
+      let localPath: string;
+      return verify({
+        timeout: 2000,
+        cleanup: () => Fs.rmSync(tmpDir, { recursive: true, force: true }),
+      })
+        .step(() => (tmpDir = makeTmpDir()))
+        .step(() => {
+          const dotF = Path.join(tmpDir, "node_modules", ".f");
+          Fs.mkdirSync(dotF, { recursive: true });
+          installedFile = Path.join(dotF, "lock.yaml");
+          localPath = Path.join(tmpDir, "packages", "local-mod");
+
+          const locker = new PkgDepLocker(true, true, { _shownMissingFiles: new Set() });
+          locker._lockData = {
+            "local-mod": {
+              _: { local: "1.0.0-fynlocal" },
+              "1.0.0-fynlocal": { $: "local", _: localPath },
+            },
+          };
+          locker.saveInstalled(installedFile);
+        })
+        .step(() => {
+          const written = Fs.readFileSync(installedFile, "utf8");
+          expect(written).not.toContain(localPath);
+          expect(written).toContain("../../packages/local-mod");
+        })
+        .asyncStep(() => {
+          const locker = new PkgDepLocker(true, true, { _shownMissingFiles: new Set() });
+          return locker.readInstalled(installedFile).then(() => locker);
+        })
+        .step((locker) => {
+          expect(locker._lockData["local-mod"]["1.0.0-fynlocal"]._).toBe(localPath);
+        });
+    });
+
+    it("save() writes again after readInstalled(), even though the data is unchanged", () => {
+      return verify({
+        timeout: 2000,
+        cleanup: () => Fs.rmSync(tmpDir, { recursive: true, force: true }),
+      })
+        .step(() => (tmpDir = makeTmpDir()))
+        .step(() => {
+          const locker = new PkgDepLocker(true, true, { _shownMissingFiles: new Set() });
+          locker._lockData = sampleLockData();
+          locker.saveInstalled(Path.join(tmpDir, "a.yaml"));
+        })
+        .asyncStep(() => {
+          const locker = new PkgDepLocker(false, true, { _shownMissingFiles: new Set() });
+          return locker.readInstalled(Path.join(tmpDir, "a.yaml")).then(() => locker);
+        })
+        .step((locker) => {
+          locker.save(Path.join(tmpDir, "b.yaml"));
+        })
+        .step(() => {
+          expect(Fs.existsSync(Path.join(tmpDir, "b.yaml"))).toBe(true);
+          expect(Fs.readFileSync(Path.join(tmpDir, "a.yaml"), "utf8")).toBe(
+            Fs.readFileSync(Path.join(tmpDir, "b.yaml"), "utf8"),
+          );
+        });
     });
   });
 });

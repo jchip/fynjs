@@ -1,6 +1,7 @@
 node_modules:
   .f:
     .fyn.json: file
+    lock.yaml: file
     _:
       '@scope':
         local-export-producer:

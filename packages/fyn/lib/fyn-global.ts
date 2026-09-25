@@ -1421,15 +1421,16 @@ class FynGlobal {
       await Fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + "\n");
     }
 
-    // Remove old fyn-lock to force fresh resolution
-    const lockPath = Path.join(pkgDir, "fyn-lock.yaml");
-    try {
-      await Fs.unlink(lockPath);
-    } catch (err) {
-      // Lock file may not exist
-    }
-
     const fyn = this._createFyn(pkgDir, targetVersion.local);
+
+    // Remove old fyn-lock and the installed lock copy to force fresh resolution
+    for (const lockPath of [Path.join(pkgDir, "fyn-lock.yaml"), fyn.getInstalledLockFile()]) {
+      try {
+        await Fs.unlink(lockPath);
+      } catch (err) {
+        // Lock file may not exist
+      }
+    }
 
     await fyn.resolveDependencies();
     await fyn.fetchPackages();

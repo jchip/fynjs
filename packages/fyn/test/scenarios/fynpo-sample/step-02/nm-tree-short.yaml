@@ -1,6 +1,7 @@
 node_modules:
   .f:
     .fyn.json: file
+    lock.yaml: file
     _:
       dep-on-pkg1:
         1.0.0-fynlocal_h:

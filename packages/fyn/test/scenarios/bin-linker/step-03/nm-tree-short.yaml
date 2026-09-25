@@ -4,6 +4,7 @@ node_modules:
     binx: '-> ../.f/_/mod-g/4.0.0/mod-g/bin/x.js'
   .f:
     .fyn.json: file
+    lock.yaml: file
     _:
       mod-g:
         4.0.0:

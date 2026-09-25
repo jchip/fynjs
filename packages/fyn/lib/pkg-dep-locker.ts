@@ -668,13 +668,7 @@ class PkgDepLocker {
     }
 
     if (!this._lockOnly) {
-      assert(this._isFynFormat, "can't save lock data that's no longer in fyn format");
-      const basedir = Path.dirname(resolvedFilename);
-      // sort by package names
-      this._lockData.$fyn = this._config;
-      const sortData = sortObjKeys(this._lockData);
-      this._relativeLocalPath(basedir, sortData);
-      const data = Yaml.stringify(sortData, 4, 1);
+      const data = this._stringify(Path.dirname(resolvedFilename));
       const shaSum = this.shasum(data);
       if (shaSum !== this._shaSum) {
         logger.info("saving lock file", resolvedFilename);
@@ -683,6 +677,40 @@ class PkgDepLocker {
         logger.verbose("lock data didn't change");
       }
     }
+  }
+
+  /**
+   * Save the lock copy that tracks what's installed in node_modules. Unlike save,
+   * it always writes, even in lock-only mode, so it matches every install.
+   */
+  saveInstalled(filename: string): void {
+    if (!this._enable) {
+      return;
+    }
+
+    Fs.writeFileSync(filename, this._stringify(Path.dirname(filename)));
+  }
+
+  /**
+   * Read the lock copy the last install saved in node_modules. The outside lockfile
+   * is missing, so reset the checksum to make save write it again.
+   */
+  async readInstalled(filename: string): Promise<boolean> {
+    const found = await this.read(filename);
+    this._shaSum = Date.now();
+    return found;
+  }
+
+  /**
+   * Serialize lock data, with local package paths relative to basedir
+   */
+  _stringify(basedir: string): string {
+    assert(this._isFynFormat, "can't save lock data that's no longer in fyn format");
+    // sort by package names
+    this._lockData.$fyn = this._config;
+    const sortData = sortObjKeys(this._lockData);
+    this._relativeLocalPath(basedir, sortData);
+    return Yaml.stringify(sortData, 4, 1);
   }
 
   /**

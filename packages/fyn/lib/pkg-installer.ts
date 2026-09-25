@@ -16,6 +16,7 @@ import {
   resolveLocalExportsConfig
 } from "./local-exports";
 import { INSTALL_PACKAGE } from "./log-items";
+import { FYN_LOCK_FILE } from "./constants";
 import { InstallScripts } from "./install-scripts";
 import { runNpmScript } from "./util/run-npm-script";
 import {
@@ -108,6 +109,7 @@ interface FynForInstaller extends FynForDepLinker, FynForBinLinker, FynForDepLoc
   isNormalLayout: boolean;
   getOutputDir(): string;
   getFvDir(x?: string): string;
+  getInstalledLockFile(): string;
   // NativePromise: `Promise` here is aveazul's (FPO-41), Fyn's method returns the global one
   loadFvVersions(): NativePromise<FvVersions>;
   setLocalPkgLinks(links: Record<string, LocalLinkInfo>): void;
@@ -167,6 +169,9 @@ class PkgInstaller {
     this._stepTime = Date.now();
 
     this.timeCheck("beginning");
+    // node_modules is about to change, so drop the installed lock copy until the
+    // install finishes and saves a new one.  A failed install then leaves no stale copy.
+    await Fs.unlink(this._fyn.getInstalledLockFile()).catch(() => undefined);
     const outputDir = this._fyn.getOutputDir();
     this._binLinker = new PkgBinLinker({ outputDir, fyn: this._fyn });
     // /*deprecated*/ const fynRes = await this._depLinker.readAppFynRes(outputDir);
@@ -1138,11 +1143,12 @@ class PkgInstaller {
   }
 
   _saveLockData(): void {
+    const locker = this._fyn._depLocker || new PkgDepLocker(false, true, this._fyn);
+    locker.generate(this._fyn._data);
     if (!this._fyn.lockOnly) {
-      const locker = this._fyn._depLocker || new PkgDepLocker(false, true, this._fyn);
-      locker.generate(this._fyn._data);
-      locker.save(Path.join(this._fyn.cwd, "fyn-lock.yaml"));
+      locker.save(Path.join(this._fyn.cwd, FYN_LOCK_FILE));
     }
+    locker.saveInstalled(this._fyn.getInstalledLockFile());
   }
 }
 

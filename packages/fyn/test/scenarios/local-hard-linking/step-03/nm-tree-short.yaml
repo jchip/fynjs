@@ -4,6 +4,7 @@ node_modules:
     bin2: '-> ../.f/_/mod-h/1.0.0/mod-h/bin/bin2.js'
   .f:
     .fyn.json: file
+    lock.yaml: file
     _:
       mod-h:
         1.0.0:

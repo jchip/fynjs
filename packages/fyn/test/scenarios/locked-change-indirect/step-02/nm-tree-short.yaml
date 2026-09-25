@@ -2,6 +2,7 @@ node_modules:
   .bin: {}
   .f:
     .fyn.json: file
+    lock.yaml: file
     _:
       mod-g:
         3.0.11:

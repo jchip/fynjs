@@ -1,6 +1,7 @@
 node_modules:
   .f:
     .fyn.json: file
+    lock.yaml: file
     _:
       pkg2:
         1.0.0-fynlocal_h:

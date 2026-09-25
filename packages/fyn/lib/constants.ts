@@ -14,3 +14,9 @@ export const FYN_INSTALL_CONFIG_FILE = ".fyn.json";
 export const FV_DIR = ".f";
 
 export const FYN_LOCK_FILE = "fyn-lock.yaml";
+
+/**
+ * Copy of the lock data saved under FV_DIR. It always matches what is installed in
+ * node_modules. Install uses it when FYN_LOCK_FILE is missing.
+ */
+export const FYN_INSTALLED_LOCK_FILE = "lock.yaml";

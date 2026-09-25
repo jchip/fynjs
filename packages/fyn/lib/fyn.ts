@@ -27,7 +27,13 @@ import {
   type PkgVersionInfo,
   type InstalledPkgJson
 } from "./types";
-import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
+import {
+  FYN_LOCK_FILE,
+  FYN_INSTALLED_LOCK_FILE,
+  FYN_INSTALL_CONFIG_FILE,
+  FV_DIR,
+  PACKAGE_FYN_JSON
+} from "./constants";
 import { parseYarnLock } from "../yarn";
 import { Minimatch } from "minimatch";
 import npmConfigEnv from "./util/npm-config-env";
@@ -378,7 +384,16 @@ class Fyn {
 
     this._depLocker = new PkgDepLocker(Boolean(this.lockOnly), Boolean(this._options.lockfile), this);
 
-    const foundLock = await this._depLocker.read(Path.join(this._cwd, FYN_LOCK_FILE));
+    let foundLock = await this._depLocker.read(Path.join(this._cwd, FYN_LOCK_FILE));
+    if (!foundLock && !this.lockOnly && this._options.lockfile) {
+      foundLock = await this._depLocker.readInstalled(this.getInstalledLockFile());
+      if (foundLock) {
+        logger.info(
+          `${FYN_LOCK_FILE} not found - using lock data from last install.` +
+            ` Remove ${this._options.targetDir} to resolve everything again.`
+        );
+      }
+    }
     this.updateConfigInLockfile("layout", this._options.layout);
     this.updateConfigInLockfile("flattenTop", this._options.flattenTop);
     this.checkLayoutOption();
@@ -888,6 +903,10 @@ class Fyn {
 
   getInstallConfigFile(): string {
     return Path.join(this.getFvDir(FYN_INSTALL_CONFIG_FILE));
+  }
+
+  getInstalledLockFile(): string {
+    return this.getFvDir(FYN_INSTALLED_LOCK_FILE);
   }
 
   setLocalPkgLinks(localLinks: Record<string, LocalPkgLink>): void {
