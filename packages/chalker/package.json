@@ -18,6 +18,10 @@
       "types": "./dist/ansi-colors.d.ts",
       "default": "./dist/ansi-colors.js"
     },
+    "./style-text": {
+      "types": "./dist/style-text.d.ts",
+      "default": "./dist/style-text.js"
+    },
     "./core": {
       "types": "./dist/core.d.ts",
       "default": "./dist/core.js"

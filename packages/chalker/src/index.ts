@@ -28,6 +28,15 @@ async function loadColors(): Promise<any> {
   let colors = (await optionalImport("chalk")) || (await optionalImport("ansi-colors"));
 
   if (!colors) {
+    // neither peer dep is installed - fall back to node:util's built-in styleText rather than
+    // failing outright, on any Node new enough to have it stable
+    const util = await optionalImport("node:util");
+    if (util && typeof util.styleText === "function") {
+      colors = (await import("./style-text.ts")).styleTextColors;
+    }
+  }
+
+  if (!colors) {
     // just go for chalk and let its module-not-found error propagate
     colors = await optionalImport("chalk", {
       notFound: err => {

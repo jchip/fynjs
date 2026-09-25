@@ -3,6 +3,7 @@ import chalk from "chalk";
 import ansiColors from "ansi-colors";
 import ckChalk, { makeChalker } from "../../src/chalk.ts";
 import ckAnsi from "../../src/ansi-colors.ts";
+import ckStyleText from "../../src/style-text.ts";
 import ckAuto from "../../src/index.ts";
 
 // FORCE_COLOR is set via vitest.config.ts `test.env` - see index.spec.ts.
@@ -35,6 +36,18 @@ describe("static entries", () => {
 
     it("should use the very same ansi-colors instance the consumer imported", () => {
       expect(ckAnsi.CHALK).toBe(ansiColors);
+    });
+  });
+
+  describe("chalker/style-text", () => {
+    it("should colorize using node:util's built-in styleText", () => {
+      expect(ckStyleText(MARKUP)).toBe(BASIC);
+    });
+
+    it("should not depend on any external colors module", () => {
+      // the point of this entry: no chalk, no ansi-colors, no peer dependency at all
+      expect(ckStyleText.CHALK).not.toBe(chalk);
+      expect(ckStyleText.CHALK).not.toBe(ansiColors);
     });
   });
 
