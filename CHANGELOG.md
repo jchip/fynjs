@@ -1,3 +1,118 @@
+# 9/25/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/run@1.1.8` `(1.1.7 => 1.1.8)`
+-   `@fynpo/base@2.1.10` `(2.1.9 => 2.1.10)`
+-   `@jchip/error@2.1.7` `(2.1.6 => 2.1.7)`
+-   `chalker@2.2.0` `(2.1.6 => 2.2.0)`
+-   `filter-scan-dir@2.1.9` `(2.1.8 => 2.1.9)`
+-   `fyn@3.2.0` `(3.1.10 => 3.2.0)`
+-   `fynpo@3.2.0` `(3.1.10 => 3.2.0)`
+-   `fynpo-cli@3.2.0` `(3.1.10 => 3.2.0)`
+-   `munchy@2.0.7` `(2.0.6 => 2.0.7)`
+-   `pkg-preper@0.3.7` `(0.3.6 => 0.3.7)`
+-   `publish-util@3.1.7` `(3.1.6 => 3.1.7)`
+-   `unwrap-npm-cmd@2.1.7` `(2.1.6 => 2.1.7)`
+-   `visual-logger@2.1.8` `(2.1.7 => 2.1.8)`
+
+### Fynpo Updated
+
+-   `@fynjs/cli-args@1.1.7` `(1.1.6 => 1.1.7)`
+-   `@fynjs/fetch@1.0.6` `(1.0.5 => 1.0.6)`
+-   `aveazul@2.1.8` `(2.1.7 => 2.1.8)`
+-   `check-pkg-new-version@1.1.7` `(1.1.6 => 1.1.7)`
+-   `check-pkg-new-version-engine@2.1.7` `(2.1.6 => 2.1.7)`
+-   `item-queue@2.1.9` `(2.1.8 => 2.1.9)`
+-   `optional-import@1.1.7` `(1.1.6 => 1.1.7)`
+-   `run-verify@2.1.8` `(2.1.7 => 2.1.8)`
+-   `string-array@2.1.7` `(2.1.6 => 2.1.7)`
+-   `visual-exec@1.1.9` `(1.1.8 => 1.1.9)`
+-   `xaa@3.1.7` `(3.1.6 => 3.1.7)`
+-   `xenv-config@2.1.7` `(2.1.6 => 2.1.7)`
+-   `xflight@3.1.8` `(3.1.7 => 3.1.8)`
+-   `xsh@1.1.8` `(1.1.7 => 1.1.8)`
+
+## Commits
+
+-   `packages/xarc-run`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/fynpo-base`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/error`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/chalker`
+
+    -   test(chalker): convert specs to run-verify [commit](https://github.com/jchip/fynjs/commit/d5622f0b11b6f3e780499f0b5e1f1bb9239ce3b5)
+    -   feat(chalker): add util.styleText fallback backend [commit](https://github.com/jchip/fynjs/commit/6e364d1d617ec5ae7324a309442f7c044ec0856b)
+
+-   `packages/filter-scan-dir`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/fyn`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+    -   fix(fyn): keep the exit code the CLI parser sets [commit](https://github.com/jchip/fynjs/commit/231e34e4127d30259f10de77eec82e832a9dd3bc)
+    -   feat(fyn): add on-demand prod-prune command [commit](https://github.com/jchip/fynjs/commit/0f0a4efe7f43b3811c7862926dd45ff25f37565e)
+    -   feat(fyn): keep an installed lock copy in node_modules/.f/lock.yaml [commit](https://github.com/jchip/fynjs/commit/d8273bc7a91569085ce55ec5fd74a6820ea73995)
+    -   fix(fyn): make --concurrency reach pacotes socket pool [commit](https://github.com/jchip/fynjs/commit/47df1737d1b5128ff37ab6b361bd87c9a795488b)
+    -   refactor(fyn): remove unused SemverSymbols type [commit](https://github.com/jchip/fynjs/commit/ffe6f19bb0bcf51d444e9240293be92046432119)
+    -   refactor(fyn): make PackageVersionMeta extend PackageJson [commit](https://github.com/jchip/fynjs/commit/d6301119b0948218cd762f4d2a82062613b2aaaf)
+    -   build(fyn): replace deprecated inlineDynamicImports with codeSplitting [commit](https://github.com/jchip/fynjs/commit/9fbdd20409ffed3fd8a1b1d1046f076f19bd9f60)
+    -   refactor(fyn): remove dead and inconsistent in-memory package fields [commit](https://github.com/jchip/fynjs/commit/56d385dcff8435569564f35ceb4bc543c50bf7f3)
+    -   refactor(fyn): derive role interfaces from canonical package types [commit](https://github.com/jchip/fynjs/commit/8ff59f7b14e63534b85468a73e52bf59662efb74)
+    -   refactor(fyn): fix review findings on the PkgInfo consolidation [commit](https://github.com/jchip/fynjs/commit/85ccb5787dbc29ed6ebe475a17d117d0c4ccf5ec)
+    -   refactor(fyn): consolidate the 4 independent PkgInfo shapes [commit](https://github.com/jchip/fynjs/commit/551936e453b2f576de4ea7464152d2b006d4b793)
+    -   refactor(fyn): remove explicit any from fyntil.ts [commit](https://github.com/jchip/fynjs/commit/fd87385fd5f08fdf03f8e163d47d2e6204f5070c)
+    -   refactor(fyn): remove dead types and dedupe YarnLockData/DepItemRef [commit](https://github.com/jchip/fynjs/commit/e8f7fd8d15ac6b812f863c113abdbe91e7ae5acd)
+    -   refactor(fyn): aggregate stale-lock-entry log lines [commit](https://github.com/jchip/fynjs/commit/c168b681274df1b9b0ce153466d351523a10d0d8)
+
+-   `packages/fynpo`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/munchy`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/pkg-preper`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/publish-util`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `packages/visual-logger`
+
+    -   chore: drop publishConfig.registry from packages [commit](https://github.com/jchip/fynjs/commit/ddd71d41cf921c37a11091b05d8c0a914adee926)
+
+-   `notes`
+
+    -   docs(notes): record pnpm benchmark replication findings [commit](https://github.com/jchip/fynjs/commit/5aee1a083d913dfb64272b9fc57832636c5f89a4)
+    -   refactor(fyn): make PackageVersionMeta extend PackageJson [commit](https://github.com/jchip/fynjs/commit/d6301119b0948218cd762f4d2a82062613b2aaaf)
+    -   refactor(fyn): remove dead and inconsistent in-memory package fields [commit](https://github.com/jchip/fynjs/commit/56d385dcff8435569564f35ceb4bc543c50bf7f3)
+    -   refactor(fyn): derive role interfaces from canonical package types [commit](https://github.com/jchip/fynjs/commit/8ff59f7b14e63534b85468a73e52bf59662efb74)
+    -   docs(fyn): audit package/dependency data-shape duplication [commit](https://github.com/jchip/fynjs/commit/b60d95a06d3a17bef4a5e3c6a8589afefc289e5e)
+
+-   `MISC`
+
+    -   fix(fynpo): parse Conventional Commits header for version bumps [commit](https://github.com/jchip/fynjs/commit/1502a93e538bf43d07557be1afe173fd17a0ba0d)
+    -   update lockfile [commit](https://github.com/jchip/fynjs/commit/b21c4759c93a5155e4afd791229b0269fb4994b6)
+
 # 9/24/2026
 
 ## Packages
