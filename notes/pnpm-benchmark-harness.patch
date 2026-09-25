@@ -1,0 +1,397 @@
+diff --git a/benchmarkFixture.js b/benchmarkFixture.js
+index 32d57b2..cbd3f31 100644
+--- a/benchmarkFixture.js
++++ b/benchmarkFixture.js
+@@ -17,7 +17,8 @@ const lockfileNameByPM = {
+   npm: 'package-lock.json',
+   pnpm: 'pnpm-lock.yaml',
+   yarn: 'yarn.lock',
+-  bun: 'bun.lock'
++  bun: 'bun.lock',
++  fyn: 'fyn-lock.yaml'
+ }
+ 
+ export function createEnv (managersDir) {
+@@ -71,6 +72,26 @@ export function applyPnprServerRegistry (env, registry) {
+   env.PACQUET_BENCHMARK_PNPR_TARBALL_REWRITE_FROM = registry
+ }
+ 
++// LOCAL RUN: lock data a manager keeps inside node_modules. `cleanLockfile` removes
++// only the top-level lockfile, so a "no lockfile" row still hands npm and pnpm their
++// full lock data. fyn keeps none (`node_modules/.f/.fyn.json` is install config).
++const hiddenLockDataByPM = {
++  npm: ['node_modules/.package-lock.json'],
++  pnpm: ['node_modules/.pnpm/lock.yaml'],
++  fyn: []
++}
++
++/** Removes the top-level lockfile and every copy of lock data under node_modules. */
++async function removeAllLockData (pm, cwd, env) {
++  cleanLockfile(pm, cwd, env)
++  for (const rel of hiddenLockDataByPM[pm.name] ?? []) {
++    const file = path.join(cwd, rel)
++    const existed = await fs.stat(file).then(() => true, () => false)
++    console.log(`# removing hidden lock data ${rel} (existed: ${existed})`)
++    rimraf.sync(file)
++  }
++}
++
+ function cleanLockfile (pm, cwd, env) {
+   const lockfileName = lockfileNameByPM[pm.name]
+   rimraf.sync(path.join(cwd, lockfileName))
+@@ -260,6 +281,13 @@ export default async function benchmark (pm, fixture, opts) {
+     // pnpm 11's --cache-dir, so wiping cache/ means what it says.
+     env.PNPM_CONFIG_CACHE_DIR = path.join(cwd, 'cache', 'cache')
+   }
++  if (pm.fynEnv) {
++    // LOCAL RUN: fyn keeps its cache under FYN_DIR (default ~/.fyn); pin it inside
++    // cache/ so wiping cache/ goes cold, like every other column.
++    env.FYN_DIR = path.join(cwd, 'cache', 'fyn')
++    // The central store is on only for the central row, and lives in cache/ too.
++    env.FYN_CENTRAL_DIR = pm.fynCentral ? path.join(cwd, 'cache', 'fyn-central') : 'false'
++  }
+   if (opts.pnprServerRegistry) {
+     applyPnprServerRegistry(env, opts.pnprServerRegistry)
+   }
+@@ -372,12 +400,20 @@ export default async function benchmark (pm, fixture, opts) {
+   let withWarmCacheAndModules
+   let withWarmModulesAndLockfile
+   let withWarmModules
++  let withWarmCacheAndModulesNoLockData
++  let withWarmModulesNoLockData
+   let size
+   if (modules) {
+     console.log('# with warm cache and modules')
+ 
+     withWarmCacheAndModules = measureInstall(pm, cwd, env)
+ 
++    // LOCAL RUN: the same state with the lock data truly gone, hidden copies too.
++    // The install above rewrote the lockfile, so the next row still has one.
++    console.log('# with warm cache and modules, no lock data at all')
++    await removeAllLockData(pm, cwd, env)
++    withWarmCacheAndModulesNoLockData = measureInstall(pm, cwd, env)
++
+     rimraf.sync(path.join(cwd, 'cache'))
+ 
+     console.log('# with warm modules and lockfile')
+@@ -391,11 +427,18 @@ export default async function benchmark (pm, fixture, opts) {
+ 
+     withWarmModules = measureInstall(pm, cwd, env)
+ 
++    console.log('# with warm modules, no lock data at all')
++    rimraf.sync(path.join(cwd, 'cache'))
++    await removeAllLockData(pm, cwd, env)
++    withWarmModulesNoLockData = measureInstall(pm, cwd, env)
++
+     size = await getFolderSize.loose(modules)
+   } else {
+     withWarmCacheAndModules =
+       withWarmModulesAndLockfile =
+-      withWarmModules = 0
++      withWarmModules =
++      withWarmCacheAndModulesNoLockData =
++      withWarmModulesNoLockData = 0
+     size = await getFolderSize.loose(path.join(cwd, 'cache'))
+   }
+ 
+@@ -470,6 +513,8 @@ export default async function benchmark (pm, fixture, opts) {
+     withWarmCacheAndModules,
+     withWarmModulesAndLockfile,
+     withWarmModules,
++    withWarmCacheAndModulesNoLockData,
++    withWarmModulesNoLockData,
+     updatedDependencies,
+     size
+   }
+@@ -492,9 +537,12 @@ function measureInstall (cmd, cwd, env) {
+   const startTime = Date.now()
+ 
+   console.log(`> ${cmd.name} ${cmd.args.join(' ')}`)
++  // LOCAL RUN: timestamps to line installs up with pnpr's request log.
++  console.log(`# t-start ${new Date(startTime).toISOString()}`)
+   spawnSyncOrThrow(cmd, { env, cwd, stdio: "inherit" });
+ 
+   const endTime = Date.now()
++  console.log(`# t-end ${new Date(endTime).toISOString()} (${endTime - startTime}ms)`)
+ 
+   return endTime - startTime
+ }
+diff --git a/benchmarkRegistry.js b/benchmarkRegistry.js
+index 529c4e2..2650b49 100644
+--- a/benchmarkRegistry.js
++++ b/benchmarkRegistry.js
+@@ -20,8 +20,9 @@ const DIRNAME = path.dirname(fileURLToPath(import.meta.url))
+ // client-to-server latency is deliberately the same as the client-to-registry
+ // latency: a faster link to pnpr would flatter it for free, so whatever it
+ // wins has to come from making fewer round trips rather than cheaper ones.
+-export const ROUND_TRIP_MS = 50
+-export const BANDWIDTH_MBPS = 200
++// LOCAL RUN: overridable to test how the ratios move with the link.
++export const ROUND_TRIP_MS = Number(process.env.BENCH_RTT_MS ?? 50)
++export const BANDWIDTH_MBPS = Number(process.env.BENCH_MBPS ?? 200)
+ 
+ // Results measured here are recorded under their own name. A registry of our
+ // own across an emulated link is a different measurement than the public
+diff --git a/commandsMap.js b/commandsMap.js
+index 75a898f..bfe4e33 100644
+--- a/commandsMap.js
++++ b/commandsMap.js
+@@ -83,6 +83,20 @@ export default {
+       nodeLinker: 'hoisted',
+     },
+   },
++  // LOCAL RUN: pnpm 12 with plain copies instead of APFS clones, to test whether
++  // per-file clonefile is what makes its cold rows slow on macOS.
++  pnpm12_copy: {
++    scenario: 'pnpm12_copy',
++    rustEngine: true,
++    name: 'pnpm',
++    args: [
++      'install',
++      '--ignore-scripts',
++    ],
++    workspaceSettings: {
++      packageImportMethod: 'copy',
++    },
++  },
+   // The command is pnpm 12's, unchanged: what makes this scenario different
+   // from the one above is the `pnprServer` the fixture is configured with,
+   // which moves dependency resolution onto the registry.
+@@ -95,6 +109,49 @@ export default {
+       '--ignore-scripts',
+     ]
+   },
++  // LOCAL RUN: fyn from the fynjs working tree. `--script-policy=off` is its
++  // `--ignore-scripts`. Its cache (and, for the central row, its store) is
++  // pinned inside the fixture's cache/ dir through env in benchmarkFixture.js.
++  fyn: {
++    scenario: 'fyn',
++    fynEnv: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
++  // LOCAL RUN: fyn with pnpm's network concurrency. pnpm computes
++  // clamp(workers * 3, 64, 96), which is 64 on this 14-core machine; fyn defaults to 15.
++  fyn_cc64: {
++    scenario: 'fyn_cc64',
++    fynEnv: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--concurrency=64',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
++  fyn_central: {
++    scenario: 'fyn_central',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
+   yarn: {
+     scenario: 'yarn',
+     name: 'yarn',
+diff --git a/fixtures.js b/fixtures.js
+index 2e3e7d6..1104d0d 100644
+--- a/fixtures.js
++++ b/fixtures.js
+@@ -9,8 +9,11 @@
+ // at all. Every entry needs a reason recorded here: a column that quietly
+ // stops being measured is worse than one that is slow, because a reader
+ // cannot tell the difference from the numbers.
++// LOCAL RUN: alotta-files only.
+ export const fixtures = [
+   { name: 'alotta-files' },
++]
++const _upstreamOtherFixtures = [
+   {
+     // A dependency graph big enough for the graph-shaped costs to show.
+     // On `alotta-files` they cancel out: what a package manager saves by
+diff --git a/index.js b/index.js
+index 5784d14..153e0d8 100644
+--- a/index.js
++++ b/index.js
+@@ -38,21 +38,17 @@ const VERSIONS_FILE = path.join(DIRNAME, 'versions.json')
+ // key means to a reader — and whether a reader is shown it at all — is the
+ // reading side's business. pnpm.io publishes npm and the pnpm columns; the
+ // rest are measured for comparisons of our own and reported just the same.
++// LOCAL RUN: the published npm / pnpm 11 / pnpm 12 columns, plus fyn in its
++// default copy layout and in its central-store (hardlink) mode.
+ const pmConfigs = [
+   { key: 'npm' },
+   { key: 'pnpm11' },
+   { key: 'pnpm12' },
+-  // The same pnpm 12 again, linking differently: a virtual store shared
+-  // between projects, and a flat `node_modules` with no virtual store at all.
+-  { key: 'pnpm12_global_virtual_store' },
+-  { key: 'pnpm12_hoisted' },
+-  // The same pnpm 12 as the row above, resolving the dependency graph on the
+-  // registry instead of walking it itself, so pnpr is the only difference
+-  // between the two.
+-  { key: 'pnpm_pnpr' },
+-  { key: 'yarn' },
+-  { key: 'bun' },
+-]
++  { key: 'pnpm12_copy' },
++  { key: 'fyn' },
++  { key: 'fyn_cc64' },
++  { key: 'fyn_central' },
++].filter(({ key }) => !process.env.BENCH_ONLY || process.env.BENCH_ONLY.split(',').includes(key))
+ 
+ const tests = [
+   'firstInstall',
+@@ -63,7 +59,10 @@ const tests = [
+   'withWarmCacheAndLockfile',
+   'withWarmModulesAndLockfile',
+   'repeatInstall',
+-  'updatedDependencies'
++  'updatedDependencies',
++  // LOCAL RUN: warm node_modules with no lock data anywhere, hidden copies included.
++  'withWarmCacheAndModulesNoLockData',
++  'withWarmModulesNoLockData',
+ ]
+ 
+ // The scenarios the Node.js version managers are measured on. They live in
+@@ -190,7 +189,7 @@ function writeVersionsManifest ({ pmCommands, registryVersion }) {
+ async function measure () {
+   const tmpDir = tempy.directory()
+   const managersDirs = {}
+-  for (const pm of ['npm', 'pnpm11', 'pnpm12', 'yarn', 'bun', 'fnm', 'nvm', 'pnpr']) {
++  for (const pm of ['npm', 'pnpm11', 'pnpm12', 'yarn', 'bun', 'fnm', 'nvm', 'pnpr', 'fyn']) {
+     managersDirs[pm] = path.join(tmpDir, pm)
+   }
+   await Promise.allSettled([
+@@ -211,7 +210,8 @@ async function measure () {
+   // installer provisions everything the benchmark measures.
+   const installerPnpm = bootstrapInstaller(path.join(tmpDir, 'setup'))
+   provisionPackageManagers(installerPnpm, managersDirs)
+-  cloneNvm(managersDirs.nvm)
++  // LOCAL RUN: fyn is the working-tree build of fynjs, put on PATH through a shim.
++  provisionLocalFyn(managersDirs.fyn)
+   // Every package manager installs through the same registry of our own,
+   // reached across an emulated network link. A registry on the benchmark
+   // machine itself would hide what resolving a dependency graph costs, which is
+@@ -234,6 +234,7 @@ async function measure () {
+     pnpm12: { managersDir: managersDirs.pnpm12 },
+     pnpm12_global_virtual_store: { managersDir: managersDirs.pnpm12 },
+     pnpm12_hoisted: { managersDir: managersDirs.pnpm12 },
++    pnpm12_copy: { managersDir: managersDirs.pnpm12 },
+     pnpm_pnpr: {
+       managersDir: managersDirs.pnpm12,
+       pnprServer: registry.resolverUrl,
+@@ -242,6 +243,9 @@ async function measure () {
+     },
+     yarn: { managersDir: managersDirs.yarn },
+     bun: { managersDir: managersDirs.bun },
++    fyn: { managersDir: managersDirs.fyn },
++    fyn_cc64: { managersDir: managersDirs.fyn },
++    fyn_central: { managersDir: managersDirs.fyn },
+   }
+   // A manager with nowhere to install from would otherwise fail eight minutes
+   // into the run, on the one it was mistyped for.
+@@ -278,22 +282,21 @@ async function measure () {
+     registry.stop()
+   }
+ 
+-  const nodeManagers = await collectNodeVersionManagers({
+-    runManager: (pm) => benchmark(pm, 'node-versions', {
+-      limitRuns: LIMIT_RUNS,
+-      managersDir: managersDirs[pm.scenario],
+-      getVersion: readManagerVersion,
+-      benchmarkFn: (manager, _fixture, opts) => benchmarkNodeVersions(manager, opts),
+-    }),
+-  })
++  // LOCAL RUN: the Node.js version-manager section is skipped, and the results
++  // go to a file of our own instead of overwriting the published manifest.
++  fs.writeFileSync(
++    path.join(DIRNAME, 'local-results.json'),
++    `${JSON.stringify({ node: process.version, registryVersion: registry.version, fixtures: measuredFixtures }, null, 2)}\n`,
++    'utf8'
++  )
++}
+ 
+-  writeVersionsManifest({ pmCommands, registryVersion: registry.version })
+-  writeManifest({
+-    node: process.version,
+-    registryVersion: registry.version,
+-    fixtures: measuredFixtures,
+-    nodeManagers,
+-  })
++/** Puts the fynjs working-tree fyn on the scenarios' PATH. */
++function provisionLocalFyn (managersDir) {
++  const bin = path.join(managersDir, 'bin')
++  fs.mkdirSync(bin, { recursive: true })
++  const fynMain = process.env.LOCAL_FYN_BIN ?? '/Users/joel.chen/dev/fynjs/packages/fyn/bin/fyn.mjs'
++  fs.writeFileSync(path.join(bin, 'fyn'), `#!/bin/sh\nexec "${process.execPath}" "${fynMain}" "$@"\n`, { mode: 0o755 })
+ }
+ 
+ /**
+diff --git a/setupPackageManagers.js b/setupPackageManagers.js
+index 055d672..2f3b14a 100644
+--- a/setupPackageManagers.js
++++ b/setupPackageManagers.js
+@@ -60,8 +60,7 @@ export function provisionPackageManagers (installerPnpm, managersDirs) {
+   // `yarn@6` rather than `yarn@latest`: a specifier that doesn't commit to a
+   // major resolves to Yarn Berry from npm, while the benchmark measures the
+   // current Yarn line — the Rust rewrite released on GitHub.
+-  provision(installerPnpm, managersDirs.yarn, ['add', '--global', 'yarn@6'])
+-  provision(installerPnpm, managersDirs.bun, ['add', '--global', 'bun@latest'])
++  // LOCAL RUN: Yarn and Bun are not measured.
+ }
+ 
+ /**
+diff --git a/count-requests.mjs b/count-requests.mjs
+new file mode 100644
+index 0000000..a67a5e7
+--- /dev/null
++++ b/count-requests.mjs
+@@ -0,0 +1,33 @@
++// Counts registry requests per timed install: packuments vs tarballs.
++// usage: node count-requests.mjs <run log> <pnpr.log>
++import fs from 'fs'
++
++const [runLog, pnprLog] = process.argv.slice(2)
++
++const windows = []
++let section = ''
++let cmd = ''
++let start = null
++for (const line of fs.readFileSync(runLog, 'utf8').split('\n')) {
++  if (line.startsWith('# t-start ')) start = Date.parse(line.slice(10))
++  else if (line.startsWith('# t-end ')) {
++    windows.push({ section, cmd, start, end: Date.parse(line.slice(8, 32)) })
++  } else if (line.startsWith('# ')) section = line.slice(2)
++  else if (line.startsWith('> ') && / install/.test(line)) cmd = line.slice(2, 60)
++}
++
++const reqs = []
++const re = /^(\S+Z)\s.*latency_ms=(\d+) method=(\w+) uri=(\S+)/
++for (const line of fs.readFileSync(pnprLog, 'utf8').split('\n')) {
++  const m = re.exec(line)
++  if (m) reqs.push({ t: Date.parse(m[1]), latency: Number(m[2]), method: m[3], uri: m[4] })
++}
++
++for (const w of windows) {
++  const inWin = reqs.filter((r) => r.t >= w.start && r.t <= w.end + 50)
++  const tgz = inWin.filter((r) => r.uri.includes('/-/') && r.uri.endsWith('.tgz'))
++  const meta = inWin.filter((r) => r.method === 'GET' && !r.uri.includes('/-/'))
++  const other = inWin.length - tgz.length - meta.length
++  const secs = ((w.end - w.start) / 1000).toFixed(2)
++  console.log(`${w.section.padEnd(48)} ${secs.padStart(6)}s  packuments=${String(meta.length).padStart(5)}  tarballs=${String(tgz.length).padStart(5)}  other=${other}`)
++}
