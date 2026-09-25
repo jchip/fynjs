@@ -105,8 +105,8 @@ export interface FynPackageJson extends PackageJson {
   _id?: string;
   /** Deprecation notice */
   _deprecated?: string;
-  /** Has preinstall script marker */
-  hasPI?: boolean;
+  /** Has preinstall script marker - encoded as `1`, like `InstallPkgJson.hasPI` */
+  hasPI?: number;
   /** Distribution info */
   dist?: PackageDist;
 }

@@ -37,7 +37,8 @@ const OMIT_SECTION: Record<string, string> = {
  */
 export interface PkgSummary {
   name: string;
-  version: string;
+  /** Absent for the app itself, which `findDependents` reports as `~package.json` */
+  version?: string;
   promoted: boolean;
 }
 
@@ -171,7 +172,7 @@ class PkgStatProvider {
    * @param ask - Package info { name, version, local? }
    * @returns Array of dependent packages
    */
-  findDependents(ask: { name: string; version: string; local?: boolean }): Array<{ name: string; version: string; promoted: boolean }> {
+  findDependents(ask: { name: string; version: string; local?: boolean }): PkgSummary[] {
     const pkgs = this._fyn._data?.pkgs;
     if (!pkgs) return [];
 
@@ -211,7 +212,7 @@ class PkgStatProvider {
   /**
    * Get the package ID string.
    */
-  private _getPkgId(pkg: { name: string; version: string }): string {
+  private _getPkgId(pkg: PkgSummary): string {
     if (pkg.name === PACKAGE_JSON) {
       return pkg.name;
     }

@@ -13,7 +13,6 @@ import fynConfig from "./fyn-config";
 import * as semverUtil from "./util/semver";
 import Fs from "./util/file-ops";
 import fynTil from "./util/fyntil";
-import type { PkgJsonData } from "./util/fyntil";
 import FynCentral from "./fyn-central";
 import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
@@ -26,7 +25,8 @@ import {
   type PackageJson,
   type FynpoGraph,
   type PkgVersionInfo,
-  type PackageVersionMeta
+  type InstallPkgJson,
+  type PackageRawInfoSymbols
 } from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
@@ -112,15 +112,14 @@ interface FynOptions {
 }
 
 /**
- * package.json read fresh off disk during install-time verification
- * (`Fyn.loadJsonForPkg`), decorated with fyn's own bookkeeping fields.
- * A different domain than `PkgVersionInfo.json` (`PackageVersionMeta`, the
- * registry-shaped meta from resolution) - this is the raw, on-disk shape.
+ * package.json read off disk by `Fyn.loadJsonForPkg`. It is stored into `pkg.json`, where
+ * pkg-installer reads it back as `DepInfo.json` (`InstallPkgJson`), so it is that shape plus
+ * the raw-info symbol and the fields only loadJsonForPkg sets. Partial because a
+ * package.json on disk may predate fyn's `_fyn` bookkeeping.
  */
-interface InstalledPkgJson extends PkgJsonData {
+interface InstalledPkgJson extends Partial<InstallPkgJson>, PackageRawInfoSymbols {
   _invalid?: boolean;
   _origVersion?: string;
-  _hasShrinkwrap?: boolean;
   gypfile?: boolean;
 }
 
@@ -1834,10 +1833,7 @@ class Fyn {
       }
     } catch (err) {}
 
-    // `json` is the raw on-disk package.json shape; `pkg.json` is typed for the
-    // registry-shaped resolve-time meta - genuinely different domains for the same
-    // slot, same as the existing `as DepInfo`/`as FynpoData` casts elsewhere in fyn.
-    pkg.json = json as unknown as PackageVersionMeta;
+    pkg.json = json;
 
     return json;
   }

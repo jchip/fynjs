@@ -128,7 +128,7 @@ interface PkgManifestData extends Partial<PackageVersionMeta>, PackageRawInfoSym
   _shasum?: string;
   _id?: string;
   _shrinkwrap?: Record<string, unknown>;
-  [DEP_ITEM]?: DepItem & { urlType?: string; semver?: string };
+  [DEP_ITEM]?: DepItem;
   [key: string]: unknown;
 }
 
@@ -223,6 +223,9 @@ interface PublishUtilConfig {
   silent?: boolean;
   [key: string]: unknown;
 }
+
+/** A local package's package.json, as read by `readPkgJson` */
+type LocalPkgJson = PkgJsonData & { publishUtil?: PublishUtilConfig };
 
 const { readPkgJson, missPipe } = fyntil;
 
@@ -491,10 +494,7 @@ class PkgSrcManager {
     return Object.assign({}, extra, this._pacoteOpts);
   }
 
-  getPublishUtil(
-    json: PkgJsonData & { publishUtil?: PublishUtilConfig },
-    fullPath: string
-  ): PublishUtilConfig | undefined {
+  getPublishUtil(json: LocalPkgJson, fullPath: string): PublishUtilConfig | undefined {
     let config: PublishUtilConfig | undefined;
     let pkgInfo: FynpoPackage | undefined;
     let configFromFynpo: PublishUtilConfig | undefined;
@@ -555,7 +555,7 @@ class PkgSrcManager {
       return Promise.resolve(existLocalMeta);
     }
 
-    return readPkgJson(fullPath, true, true).then((json: PkgJsonData & { publishUtil?: PublishUtilConfig }) => {
+    return readPkgJson(fullPath, true, true).then((json: LocalPkgJson) => {
       const publishUtilConfig = this.getPublishUtil(json, fullPath);
       if (publishUtilConfig && !publishUtilConfig.fynIgnore) {
         logger.debug(
@@ -570,18 +570,14 @@ class PkgSrcManager {
         localPath,
         fullPath
       };
-      // `json` is the raw on-disk package.json shape; `LocalMeta.json`/`.versions` are typed
-      // for the registry-shaped meta the resolver expects (`PackageMeta`/`PackageVersionMeta`)
-      // - same same-slot-different-domain reinterpretation used in fyn.ts's loadJsonForPkg.
-      const registryMeta = json as unknown as PackageVersionMeta;
       const localMeta: LocalMeta = {
         local: item.localType!,
         localId: version,
         name,
-        json: registryMeta,
+        json,
         jsonStr: getPackageRawInfo(json)!.str,
         versions: {
-          [version]: registryMeta
+          [version]: json
         },
         "dist-tags": {
           latest: version
@@ -1335,7 +1331,7 @@ class PkgSrcManager {
   }
 
   tarballFetchId(pkgInfo: PkgVersionInfo): string {
-    const di = pkgInfo[DEP_ITEM] as (DepItem & { urlType?: string; semver?: string }) | undefined;
+    const di = pkgInfo[DEP_ITEM] as DepItem | undefined;
     if (di && di.urlType) return `${di.name}@${di.semver}`;
 
     return `${pkgInfo.name}@${pkgInfo.version}`;
