@@ -177,7 +177,6 @@ class PkgInstaller {
     this.blockedScripts = [];
     this.pendingScripts = [];
     this._blockedDeps = [];
-    this._data.cleanLinked();
     this._fyn._depResolver.resolvePkgPeerDep(this._fyn._pkg, "your app", this._data);
     // go through each package and insert
     // _depResolutions into its package.json

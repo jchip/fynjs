@@ -1029,7 +1029,6 @@ class PkgDepResolver {
       };
       if (item.specifier) newPkgV.specifier = item.specifier;
       pkgV = kpkg.versions[resolved] = newPkgV;
-      if (meta[LOCK_RSEMVERS]) pkgV.fromLock = true;
       const scripts = metaJson.scripts || {};
       if (metaJson.hasPI || scripts.preinstall || (scripts as Record<string, string>).preInstall) {
         pkgV.hasPI = 1;

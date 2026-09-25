@@ -6,7 +6,7 @@
  */
 
 import type { PackageDist, PackageVersionMeta } from "./npm-registry";
-import type { KnownPackageSymbols, PkgVersionInfoSymbols, PkgDataSymbols } from "./symbols";
+import type { KnownPackageSymbols, PkgVersionInfoSymbols } from "./symbols";
 
 /**
  * Resolution data for a dependency's nested dependencies
@@ -55,16 +55,12 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   requests: string[][];
   /** Package was promoted to top level */
   promoted?: boolean;
-  /** Number of links created for this version; reset before linking again. */
-  linked?: number;
   /** Package is a direct dependency */
   top?: boolean;
   /** Extraction directory path (set when tarball is extracted) */
   extracted?: string;
-  /** Local package path */
+  /** Local package link type ("hard", "sym", "sym1"); the path is in `dist.fullPath` */
   local?: string;
-  /** Local package link type ("hard", "sym", "sym1") */
-  localType?: string;
   /** Installation directory */
   dir?: string;
   /** Cached string representation */
@@ -77,8 +73,6 @@ export interface PkgVersionInfo extends PkgVersionInfoSymbols {
   preInstalled?: boolean;
   /** Optional dependency failure code */
   optFailed?: number;
-  /** Resolved from lock file */
-  fromLock?: boolean;
   /** Has preinstall script (encoded) */
   hasPI?: number;
   /** Has install script (encoded) */
@@ -111,18 +105,6 @@ export interface KnownPackage extends KnownPackageSymbols {
  */
 export interface KnownPackageLegacy extends KnownPackageSymbols {
   [version: string]: PkgVersionInfo | string | string[] | Record<string, string | string[]> | undefined;
-}
-
-/**
- * Package data with symbol properties
- *
- * Used in pkg-installer for tracking package state.
- */
-export interface PkgData extends PkgDataSymbols {
-  /** Package was promoted */
-  promoted?: boolean;
-  /** Linked to node_modules */
-  linked?: number;
 }
 
 /**

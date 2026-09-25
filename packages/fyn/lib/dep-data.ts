@@ -24,8 +24,8 @@ export interface DepDataInit {
  */
 export interface DepItemRef {
   name: string;
-  /** Optional dependency failure flag (truthy = failed, number for failure code) */
-  optFailed?: boolean | number;
+  /** Optional dependency failure code (truthy = failed) */
+  optFailed?: number;
 }
 
 export class DepData {
@@ -61,12 +61,6 @@ export class DepData {
       .forEach(x => (this.pkgs[x] = pkgs[x]));
   }
 
-  cleanLinked(): void {
-    this.eachVersion(pkg => {
-      pkg.linked = 0;
-    });
-  }
-
   getPkgsData(bad?: boolean): Record<string, KnownPackage> {
     return bad ? this.badPkgs : this.pkgs;
   }
@@ -85,16 +79,6 @@ export class DepData {
     const kpkg = this.getPkgsData()[name];
     if (!kpkg) return undefined;
     return version ? kpkg.versions[version] : kpkg;
-  }
-
-  eachVersion(cb: (pkg: PkgVersionInfo, version: string, kpkg: KnownPackage) => void): void {
-    const pkgs = this.pkgs;
-    Object.keys(pkgs).forEach(name => {
-      const kpkg = pkgs[name];
-      Object.entries(kpkg.versions).forEach(([version, pkg]) => {
-        cb(pkg, version, kpkg);
-      });
-    });
   }
 }
 

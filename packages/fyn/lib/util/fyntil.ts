@@ -12,7 +12,7 @@ import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
 import { isWin32, retry } from "./base-util";
 import type { FynpoConfig } from "../fyn";
 import type { FynPackageJson } from "../types/package-json";
-import type { InstallDistInfo } from "../types/installer";
+import type { PackageDist } from "../types/npm-registry";
 
 export interface FynpoConfigData {
   config?: FynpoConfig;
@@ -114,7 +114,7 @@ export interface Fyntil {
   validateExistSymlink(linkName: string, targetPath: string, relative?: boolean): Promise<boolean>;
   checkValueSatisfyRules: typeof checkValueSatisfyRules;
   shaToIntegrity(ss?: string | number | null): string | undefined;
-  distIntegrity(dist?: InstallDistInfo): string | undefined;
+  distIntegrity(dist?: PackageDist): string | undefined;
   checkPkgOsCpu(pkg?: PkgOsCpu): true | string;
   strToBool(v: unknown): boolean;
   isTrueStr(v: unknown): boolean;
@@ -396,7 +396,7 @@ const fyntil: Fyntil = {
     return `sha1-${Buffer.from(ss, "hex").toString("base64")}`;
   },
 
-  distIntegrity(dist: InstallDistInfo = {}): string | undefined {
+  distIntegrity(dist: PackageDist = {}): string | undefined {
     if (dist.integrity) {
       return dist.integrity;
     }

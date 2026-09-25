@@ -124,7 +124,7 @@ class AuditReport {
         if (this.isOmitted(pkgInfo)) return;
 
         // Skip local packages (file: or link: dependencies)
-        if (pkgInfo.local || pkgInfo.localType) return;
+        if (pkgInfo.local) return;
 
         if (!payload[name]) {
           payload[name] = [];

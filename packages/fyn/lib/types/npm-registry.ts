@@ -65,7 +65,7 @@ export interface PackageVersionMeta {
   bundledDependencies?: string[];
 
   // fyn-specific extensions
-  /** Local package path */
+  /** Local package link type ("hard", "sym", "sym1"); the path is in `dist.fullPath` */
   local?: string;
   /** Has preinstall script (encoded as number) */
   hasPI?: number;

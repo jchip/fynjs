@@ -47,16 +47,6 @@ export interface InstalledPkgJson extends Partial<InstallPkgJson>, PackageRawInf
 }
 
 /**
- * Distribution info for a package during installation
- */
-export interface InstallDistInfo {
-  tarball?: string;
-  shasum?: string;
-  integrity?: string;
-  fullPath?: string;
-}
-
-/**
  * Dependency info for installation
  *
  * Extends PkgVersionInfo with installation-specific state.
@@ -70,8 +60,6 @@ export interface InstallDistInfo {
 export interface DepInfo extends PkgVersionInfo {
   /** Package.json contents (extended with install fields) */
   json?: InstallPkgJson;
-  /** Distribution info */
-  dist?: InstallDistInfo;
   /** Resolution data for this package's dependencies */
   res?: ResolutionData;
 
@@ -80,8 +68,6 @@ export interface DepInfo extends PkgVersionInfo {
   linkLocal?: boolean;
   /** Package dependencies were linked */
   linkDep?: boolean;
-  /** Link counter for nested package linking */
-  linked?: number;
   /** Bins linked into the package's own private `.bin` because they conflicted at top */
   privateBin?: Record<string, string>;
 

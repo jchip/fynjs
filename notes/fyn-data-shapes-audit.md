@@ -197,6 +197,11 @@ Apply OOD at the type level, where it costs nothing at runtime.
   the lock file and exist once per version. Wrapping them in classes would add an allocation and
   a serialization step. `DepItem` is a class because it owns real behavior, the semver analysis
   behind its getters.
+- **Runtime fields may change when that's what coherence needs.** Type work alone cannot fix a
+  field that is encoded inconsistently at runtime, such as a flag that is sometimes `true` and
+  sometimes `1`. Changing the objects is allowed. Serialized fields are the exception: anything
+  written to `fyn-lock.yaml` or into an installed `package.json` stays as it is for now, because
+  existing installs already hold the old form. Changing one needs an agreed migration plan.
 - **External shapes are boundary types.** `Packument` mirrors pacote. Relate it to `PackageMeta`
   through `extends` at the type level, not through a runtime adapter.
 
@@ -215,6 +220,13 @@ Apply OOD at the type level, where it costs nothing at runtime.
 | `DepInfo` in `pkg-bin-linker-base.ts` | Renamed `BinLinkPkg`, a `Pick` of the installer `DepInfo`. `BinList` and `DepSection` are now aliases of the canonical types. `privateBin` moved onto `DepInfo`, since bin linking sets it there at runtime. |
 | `FetchPkg` / `ExtractPkg` | Both derived from `PkgVersionInfo` with `Pick`. The `Fyn` views now return `InstalledPkgJson` instead of `unknown`. The ad hoc re-cast in `pkg-dist-fetcher.ts` is gone. |
 | `VersionPkgData` + `PkgVersion` | Both deleted. `pkg-dep-locker.ts` reads `KnownPackage.versions` as the `PkgVersionInfo` records they already are. |
+| `PkgVersionInfo.fromLock` | Deleted. It was written once and never read. `fromLocked` on the meta is the live field for the same fact. |
+| numeric `linked` on `PkgVersionInfo` / `DepInfo` | Deleted, with `DepData.cleanLinked()` and `eachVersion()`. Nothing ever incremented or read it, and the reset walked every version on each install. |
+| `PkgVersionInfo.localType` | Deleted. It was never written. Resolution copies the link type into `local`. |
+| `PkgData` + `PkgDataSymbols` | Deleted. Neither was used as a type anywhere. |
+| `InstallDistInfo` | Deleted. `DepInfo.dist` inherits `PackageDist`, and `distIntegrity` takes `PackageDist`. |
+| `DepItemRef.optFailed` | Narrowed to `number`. Every write is a number. |
+| `local` doc comments | Corrected. The field holds a link type (`"hard"`, `"sym"`, `"sym1"`), not a path. |
 
 ### Decisions
 
@@ -242,6 +254,23 @@ Apply OOD at the type level, where it costs nothing at runtime.
 - **The hand-written copies had wrong types.** `VersionPkgData` said `local?: boolean` and
   `hasPI?: boolean`, while runtime stores a string and `1`. It read `hasI` only through its index
   signature. Deriving from the canonical type fixes this kind of drift for good.
+
+### Deferred: serialized fields
+
+These are real inconsistencies, but each is written to `fyn-lock.yaml` or an installed
+`package.json`. They stay as they are until a migration is agreed.
+
+- **`top`** is `true` in memory and `1` in the lock. The lock value is write-only: loading
+  discards it and top-ness is recomputed from the parent's depth.
+- **`_hasShrinkwrap`** is `boolean` in memory and `number | boolean` in the lock. `pkg-dep-locker.ts`
+  bridges the two with `Boolean()`.
+- **`LockVersionMeta._valid`** is read but fyn never writes it. It may be meant for hand-marked
+  entries.
+- **`PackageDist.localPath`** is set on a local package's json dist. That json can reach the
+  installed `package.json`, so it counts as serialized.
+- **`FynConfig.centralStore` / `lockOnly` / `saveExact` / `fynlocal`** are declared `fyn` config
+  keys in the user's `package.json` that fyn never reads. They are user-facing, so removing them
+  is a product call.
 
 ### Still open, ranked by payoff
 

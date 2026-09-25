@@ -29,7 +29,6 @@ export {
   type PackageMetaSymbols,
   type KnownPackageSymbols,
   type PkgVersionInfoSymbols,
-  type PkgDataSymbols,
   type PackageRawInfoSymbols,
   type DepItemSymbols,
   type SemverSymbols,
@@ -93,12 +92,11 @@ export type {
   PkgVersionInfo,
   KnownPackage,
   KnownPackageLegacy,
-  PkgData,
   NestedResolution
 } from "./resolution";
 
 // Installer types
-export type { InstallPkgJson, InstalledPkgJson, InstallDistInfo, DepInfo } from "./installer";
+export type { InstallPkgJson, InstalledPkgJson, DepInfo } from "./installer";
 
 // Lock file types
 export { OPT_FAILED_PLATFORM } from "./lock-file";

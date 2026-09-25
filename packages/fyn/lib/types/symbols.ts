@@ -95,13 +95,6 @@ export interface PkgVersionInfoSymbols {
   [DEP_ITEM]: unknown; // DepItem - avoid circular import
 }
 
-/** Symbol properties for PkgData */
-export interface PkgDataSymbols {
-  [RSEMVERS]?: Record<string, string | string[]>;
-  [LOCK_RSEMVERS]?: Record<string, string | string[]>;
-  [RESOLVE_ORDER]?: string[];
-}
-
 /** Symbol properties for objects with PACKAGE_RAW_INFO */
 export interface PackageRawInfoSymbols {
   [PACKAGE_RAW_INFO]?: { dir: string; str: string };
