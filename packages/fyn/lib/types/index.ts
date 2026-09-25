@@ -76,7 +76,6 @@ export type {
 // Package.json types
 export type {
   PackageJson,
-  FynPackageJson,
   PersonInfo,
   PublishConfig,
   PackageExports,

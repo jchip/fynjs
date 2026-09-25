@@ -5,12 +5,14 @@
  * standard npm fields and fyn-specific extensions.
  */
 
-import type { PackageScripts, PackageDist } from "./npm-registry";
+import type { PackageScripts, PeerDependencyMeta } from "./npm-registry";
 
 /**
  * Standard package.json structure
  *
- * Covers the common fields used by npm and fyn.
+ * Covers the common fields used by npm and fyn. This is the root of the package json subtype
+ * chain: `PackageVersionMeta` (registry + resolve) → `InstallPkgJson` (install bookkeeping) →
+ * `InstalledPkgJson` (read back off disk).
  */
 export interface PackageJson {
   /** Package name (required) */
@@ -40,7 +42,7 @@ export interface PackageJson {
   /** Peer dependencies */
   peerDependencies?: Record<string, string>;
   /** Peer dependency metadata */
-  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+  peerDependenciesMeta?: Record<string, PeerDependencyMeta>;
   /** Bundle dependencies */
   bundleDependencies?: string[];
   /** Bundle dependencies (alternate) */
@@ -89,26 +91,6 @@ export interface PackageJson {
   fyn?: FynConfig;
   /** Publish utility configuration */
   publishUtil?: Record<string, unknown>;
-}
-
-/**
- * Package.json with fyn-specific extensions
- *
- * Extended fields added by fyn during installation.
- */
-export interface FynPackageJson extends PackageJson {
-  /** fyn tracking flags for scripts that have run */
-  _fyn?: Record<string, boolean>;
-  /** Origin of the package (for npm ls) */
-  _from?: string;
-  /** Package identifier (name@version) */
-  _id?: string;
-  /** Deprecation notice */
-  _deprecated?: string;
-  /** Has preinstall script marker - encoded as `1`, like `InstallPkgJson.hasPI` */
-  hasPI?: number;
-  /** Distribution info */
-  dist?: PackageDist;
 }
 
 /**

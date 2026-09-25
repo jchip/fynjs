@@ -6,6 +6,7 @@
  */
 
 import type { PackageMetaSymbols } from "./symbols";
+import type { PackageJson } from "./package-json";
 
 /**
  * Package distribution info from registry
@@ -29,45 +30,21 @@ export interface PackageDist {
  * Package version metadata from registry
  *
  * Represents the metadata for a single version of a package.
- * This is the data stored in versions[x] of the packument.
+ * This is the data stored in versions[x] of the packument: the published package.json, plus
+ * the fields the registry and fyn add. Every package.json field is optional here, including
+ * name and version, because the partial metas fyn synthesizes (lock entries keyed by version,
+ * opt-failure placeholders) leave them out.
  */
-export interface PackageVersionMeta {
-  /** Package name - absent from the partial metas fyn synthesizes (lock entries, opt failures) */
-  name?: string;
-  /** Package version - absent from the partial metas fyn synthesizes (lock entries keyed
-   * by version, opt-failure placeholders) */
-  version?: string;
+export interface PackageVersionMeta extends Partial<PackageJson> {
   /** Distribution info */
   dist?: PackageDist;
-  /** npm scripts */
-  scripts?: PackageScripts;
-  /** Executables the package installs, as a path or a name -> path map */
-  bin?: string | Record<string, string>;
-  /** Supported operating systems */
-  os?: string[];
-  /** Supported CPU architectures */
-  cpu?: string[];
   /** Deprecation message if deprecated */
   deprecated?: string;
-  /** Production dependencies */
-  dependencies?: Record<string, string>;
-  /** Development dependencies */
-  devDependencies?: Record<string, string>;
-  /** Optional dependencies */
-  optionalDependencies?: Record<string, string>;
-  /** Peer dependencies */
-  peerDependencies?: Record<string, string>;
-  /** Peer dependency metadata */
-  peerDependenciesMeta?: Record<string, PeerDependencyMeta>;
-  /** Bundle dependencies (legacy) */
-  bundleDependencies?: string[];
-  /** Bundle dependencies (alternate spelling) */
-  bundledDependencies?: string[];
 
   // fyn-specific extensions
   /** Local package link type ("hard", "sym", "sym1"); the path is in `dist.fullPath` */
   local?: string;
-  /** Has preinstall script (encoded as number) */
+  /** Has preinstall script - encoded as `1`, and only ever read for truth */
   hasPI?: number;
   /** Has install script (encoded as number) */
   hasI?: number;

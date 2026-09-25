@@ -30,7 +30,7 @@ import { setupNodeGypEnv } from "../lib/util/setup-node-gyp";
 import { findFynCli } from "../lib/lifecycle-scripts";
 import * as hardLinkDir from "../lib/util/hard-link-dir";
 import xsh from "xsh";
-import type { FynPackageJson, PackageJson } from "../lib/types";
+import type { InstallPkgJson, PackageJson } from "../lib/types";
 import {
   FETCH_META,
   FETCH_PACKAGE,
@@ -151,7 +151,7 @@ interface AddItem {
 }
 
 /** Package.json with optional fields for partial loading */
-type CliPackageJson = Partial<FynPackageJson>;
+type CliPackageJson = Partial<InstallPkgJson>;
 
 function checkNewVersion(npmConfig: any): void {
   checkPkgNewVersionEngine({

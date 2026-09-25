@@ -11,8 +11,9 @@ import { PACKAGE_FYN_JSON } from "../constants";
 import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
 import { isWin32, retry } from "./base-util";
 import type { FynpoConfig } from "../fyn";
-import type { FynPackageJson } from "../types/package-json";
 import type { PackageDist } from "../types/npm-registry";
+import type { InstallPkgJson } from "../types/installer";
+import type { PackageRawInfoSymbols } from "../types/symbols";
 
 export interface FynpoConfigData {
   config?: FynpoConfig;
@@ -22,14 +23,8 @@ export interface FynpoConfigData {
   [key: string]: unknown;
 }
 
-export interface RawPkgInfo {
-  dir: string;
-  str: string;
-}
-
-export type PkgJsonData = Partial<FynPackageJson> & {
-  [PACKAGE_RAW_INFO]?: RawPkgInfo;
-};
+/** Any package.json fyn reads off disk, which may carry its install bookkeeping */
+export type PkgJsonData = Partial<InstallPkgJson & PackageRawInfoSymbols>;
 
 export interface PkgOsCpu {
   os?: string | readonly string[];

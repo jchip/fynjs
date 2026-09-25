@@ -24,11 +24,6 @@ export interface InstallPkgJson extends PackageVersionMeta {
   _id?: string;
   /** Deprecation message (copied from deprecated for persistence) */
   _deprecated?: string;
-  /** Has preinstall script - encoded as `1`, like `PackageVersionMeta.hasPI`, and only
-   * ever read for truth. It was declared `boolean` here, which nothing ever assigns. */
-  hasPI?: number;
-  /** Package was loaded from lock file */
-  fromLocked?: boolean;
 }
 
 /**
@@ -42,8 +37,6 @@ export interface InstalledPkgJson extends Partial<InstallPkgJson>, PackageRawInf
   _invalid?: boolean;
   /** The package's own version string, before fyn cleaned it into valid semver */
   _origVersion?: string;
-  /** Package has a binding.gyp */
-  gypfile?: boolean;
 }
 
 /**

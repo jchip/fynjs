@@ -182,7 +182,7 @@ All the changes in this section are type-only.
 Apply OOD at the type level, where it costs nothing at runtime.
 
 - **Lifecycle phases are a subtype chain.** One object gains fields as it moves through phases:
-  `PkgVersionInfo` → `DepInfo` for the version record, and `PackageVersionMeta` →
+  `PkgVersionInfo` → `DepInfo` for the version record, and `PackageJson` → `PackageVersionMeta` →
   `InstallPkgJson` → `InstalledPkgJson` for its json. Each phase extends the one before. A new
   field goes on the phase that first sets it. Liskov holds by construction, because a later
   phase can always stand in for an earlier one.
@@ -227,6 +227,8 @@ Apply OOD at the type level, where it costs nothing at runtime.
 | `InstallDistInfo` | Deleted. `DepInfo.dist` inherits `PackageDist`, and `distIntegrity` takes `PackageDist`. |
 | `DepItemRef.optFailed` | Narrowed to `number`. Every write is a number. |
 | `local` doc comments | Corrected. The field holds a link type (`"hard"`, `"sym"`, `"sym1"`), not a path. |
+| `PackageJson` vs `PackageVersionMeta` | One chain. `PackageVersionMeta` extends `Partial<PackageJson>` and keeps only what the registry and fyn add (`dist`, `deprecated`, resolve fields). Its 12 re-declared package.json fields are gone. |
+| `FynPackageJson` | Deleted. It re-declared `InstallPkgJson`'s bookkeeping fields. `PkgJsonData` is now `Partial<InstallPkgJson & PackageRawInfoSymbols>`. `InstallPkgJson` drops its redundant `hasPI`/`fromLocked`, and `InstalledPkgJson` drops `gypfile`. All three are inherited now. |
 
 ### Decisions
 
