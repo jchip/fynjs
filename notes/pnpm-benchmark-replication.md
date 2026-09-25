@@ -7,8 +7,7 @@ fyn, and varied the network link to see where the gap comes from.
 **Short version.** The rig is honest, but its 50 ms round trip amplifies npm's serial requests. At a
 realistic 15 ms, npm vs pnpm 11 is 1.5x. pnpm 12's published cold-install numbers did not reproduce
 on this Mac, because its store writes every file twice on APFS. fyn's default is the fastest clean
-install here at 15 ms. The run also found and fixed a fyn bug: `--concurrency` never reached the
-socket pool.
+install here at 15 ms.
 
 ## Setup
 
@@ -32,12 +31,12 @@ about 5%, except pnpm 12's clean install, which ranged 13.5-16.5s across three r
 
 | Link | npm | pnpm 11 | pnpm 12 | fyn, 15 sockets | fyn, 64 sockets |
 |---|---|---|---|---|---|
-| published (CI, 50 ms / 200 Mbps) | 45.5 | 8.17 | 4.39 | - | - |
+| published * (CI, 50 ms / 200 Mbps) | 45.5 | 8.17 | 4.39 | - | - |
 | 50 ms / 200 Mbps | 32.6 | 9.79 | 13.5 | 12.6 | **8.06** |
 | 15 ms / 200 Mbps | 14.1 | 9.17 | 15.4 | **8.01** | 8.60 |
-| 15 ms / 50 Mbps | 25.1 | 17.4 | 20.5 | 17.1 * | - |
+| 15 ms / 50 Mbps | 25.1 | 17.4 | 20.5 | 16.8 | 17.1 |
 
-\* measured before the socket fix, when fyn ran on 12 sockets.
+\* pnpm.io's own published number, not a local run. fyn was never in that benchmark, hence the `-`.
 
 **All scenarios at 15 ms / 200 Mbps**
 
@@ -124,9 +123,9 @@ about 42k files, 79 MB compressed, which is about 3.2s of link time at 200 Mbps.
 
 ## What this means for fyn
 
-**Fixed: `--concurrency` now reaches the socket pool** (`906b3b83`). fyn never passed `maxSockets`
-to pacote, so npm-registry-fetch capped registry connections at its default of 12. The default of 15
-now means 15. On the 50 ms link, `--concurrency=64` took the clean install from 12.6s to 8.06s.
+**`--concurrency` sets the registry socket pool.** fyn passes it through to pacote as `maxSockets`,
+defaulting to 15. A bug had kept it from reaching pacote at all; fixing that is what let
+`--concurrency=64` take the clean install on the 50 ms link from 12.6s to 8.06s.
 
 **Keep the conservative default of 15.** At 15 ms, 64 sockets bought nothing. The network phases got
 slightly faster, but writing files got slower, likely from more downloads competing with APFS
@@ -137,12 +136,15 @@ metadata writes. High concurrency is a good opt-in for high-latency links, not a
    its deps. It is the critical path and cannot be hidden.
 2. Tarball fetching downloads the artifact for each chosen version.
 
-Today the tarball phase starts only after resolution ends. It could run behind resolution instead,
-starting each download as soon as that package's version is picked. The best case is about
-resolution time plus the last few tarballs. `--always-fetch-dist` exists but is untested for this.
+Today the tarball phase starts only after resolution ends by default. `--always-fetch-dist` already
+runs the interleaved version: it fetches each package's tarball as soon as that package's version is
+picked, while the rest of the graph is still resolving (`addPackageResolution` in
+`pkg-dep-resolver.ts`). The flag exists to pull in bundleDependencies and shrinkwrap contents that
+resolution needs mid-walk, not for speed, and it wasn't benchmarked here. Turning it on generally
+should land close to resolution time plus the last few tarballs.
 
-**Central store mode is slower than copy mode on macOS** (50 ms, before the socket fix: clean 18.8s
-vs 14.8s, cache + lockfile 5.40s vs 4.67s). It is the same two-pass cost pnpm 12 pays: extract each
+**Central store mode is slower than copy mode on macOS** (50 ms: clean 16.2s vs 12.6s, cache +
+lockfile 5.25s vs 4.39s). It is the same two-pass cost pnpm 12 pays: extract each
 file into the store, then hardlink each file into `node_modules`. On APFS every per-file pass costs
 seconds, and `link` is slow there.
 
@@ -156,7 +158,7 @@ The pnpm 12 runs show what would and wouldn't fix it:
   Node's `COPYFILE_FICLONE` doesn't produce a real clone on macOS.
 - **Until then, copy mode is the right default on macOS.** It writes each file once.
 
-Separately, central mode's repeat install costs 0.82s vs 0.37s with nothing to link. That overhead is
+Separately, central mode's repeat install costs 0.83s vs 0.35s with nothing to link. That overhead is
 still unexplained.
 
 **Benchmarking fyn needs `--no-audit`.** Audit is on by default, like npm. The harness disables it for
