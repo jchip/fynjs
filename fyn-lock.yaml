@@ -171,38 +171,38 @@ $pkg:
   $: sha512-aalGyl7dbB5PArRebDIX43ZvBlXrYm9uWzGJ26t+4SzJVPsOuvfILGGbw5X4yX7i50YEmJ8zvbiWnqH/AAnZqg==
   _: 'https://registry.npmjs.org/@conventional-changelog/template/-/template-1.4.0.tgz'
 '@fynjs/cli-args':
- _latest: 1.1.5-fynlocal_h
+ _latest: 1.1.6-fynlocal_h
  _:
-  ../cli-args: 1.1.5-fynlocal_h
- 1.1.5-fynlocal_h:
+  ../cli-args: 1.1.6-fynlocal_h
+ 1.1.6-fynlocal_h:
   $: local
   _: ./packages/cli-args
 '@fynjs/fetch':
- _latest: 1.0.4-fynlocal_h
+ _latest: 1.0.5-fynlocal_h
  _:
-  ../fetch: 1.0.4-fynlocal_h
- 1.0.4-fynlocal_h:
+  ../fetch: 1.0.5-fynlocal_h
+ 1.0.5-fynlocal_h:
   $: local
   _: ./packages/fetch
 '@fynpo/base':
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.1.9-fynlocal_h
  _:
-  ../fynpo-base: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../fynpo-base: 2.1.9-fynlocal_h
+ 2.1.9-fynlocal_h:
   $: local
   _: ./packages/fynpo-base
   dependencies:
-   filter-scan-dir: ^2.1.7
+   filter-scan-dir: ^2.1.8
    ignore: ^7.0.6
    lodash-es: ^4.18.1
    minimatch: ^10.0.3
-   optional-import: ^1.1.5
+   optional-import: ^1.1.6
    semver: ^7.7.2
 '@jchip/error':
- _latest: 2.1.5-fynlocal_h
+ _latest: 2.1.6-fynlocal_h
  _:
-  ../error: 2.1.5-fynlocal_h
- 2.1.5-fynlocal_h:
+  ../error: 2.1.6-fynlocal_h
+ 2.1.6-fynlocal_h:
   $: local
   _: ./packages/error
 '@oxc-project/types':
@@ -470,15 +470,15 @@ argue-cli:
   $: sha512-VipTB0gXgGIFO2Rg9yEVN5wLt2AurJcZqDbgmYSwPwsykhLrQhs240/bfceev4w68lI8JshoOJIk9uW7tFzROw==
   _: 'https://registry.npmjs.org/argue-cli/-/argue-cli-3.2.0.tgz'
 aveazul:
- _latest: 2.1.6-fynlocal_h
+ _latest: 2.1.7-fynlocal_h
  _:
-  ../aveazul: 2.1.6-fynlocal_h
- 2.1.6-fynlocal_h:
+  ../aveazul: 2.1.7-fynlocal_h
+ 2.1.7-fynlocal_h:
   $: local
   _: ./packages/aveazul
   dependencies:
-   '@jchip/error': ^2.1.5
-   xaa: ^3.1.5
+   '@jchip/error': ^2.1.6
+   xaa: ^3.1.6
 balanced-match:
  _latest: 4.0.4
  _:
@@ -707,10 +707,10 @@ figures:
   dependencies:
    is-unicode-supported: ^2.0.0
 filter-scan-dir:
- _latest: 2.1.7-fynlocal_h
+ _latest: 2.1.8-fynlocal_h
  _:
-  ../filter-scan-dir: 2.1.7-fynlocal_h
- 2.1.7-fynlocal_h:
+  ../filter-scan-dir: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
   $: local
   _: ./packages/filter-scan-dir
 fs-extra:
@@ -734,18 +734,18 @@ fsevents:
   os:
    - darwin
 fyn:
- _latest: 3.1.9-fynlocal_h
+ _latest: 3.1.10-fynlocal_h
  _:
-  '../fyn,./packages/fyn': 3.1.9-fynlocal_h
- 3.1.9-fynlocal_h:
+  '../fyn,./packages/fyn': 3.1.10-fynlocal_h
+ 3.1.10-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fyn
 fynpo:
- _latest: 3.1.9-fynlocal_h
+ _latest: 3.1.10-fynlocal_h
  _:
-  ./packages/fynpo: 3.1.9-fynlocal_h
- 3.1.9-fynlocal_h:
+  ./packages/fynpo: 3.1.10-fynlocal_h
+ 3.1.10-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fynpo
@@ -755,11 +755,11 @@ fynpo:
    '@commitlint/lint': ^21.2.2
    '@commitlint/read': ^21.2.1
    '@commitlint/resolve-extends': ^21.2.2
-   '@fynjs/cli-args': ^1.1.5
-   '@fynjs/fetch': ^1.0.4
-   '@fynpo/base': ^2.1.8
-   '@jchip/error': ^2.1.5
-   aveazul: ^2.1.6
+   '@fynjs/cli-args': ^1.1.6
+   '@fynjs/fetch': ^1.0.5
+   '@fynpo/base': ^2.1.9
+   '@jchip/error': ^2.1.6
+   aveazul: ^2.1.7
    boxen: ^8.0.1
    ci-info: ^4.4.0
    chalk: ^6.0.0
@@ -769,10 +769,10 @@ fynpo:
    env-paths: ^4.0.0
    execa: ^10.0.0
    fs-extra: ^11.3.0
-   fyn: ^3.1.9
+   fyn: ^3.1.10
    get-stdin: ^10.0.0
    import-fresh: ^4.0.0
-   item-queue: ^2.1.7
+   item-queue: ^2.1.8
    lodash-es: ^4.18.1
    minimatch: ^10.0.3
    npm-packlist: ^11.3.0
@@ -782,10 +782,10 @@ fynpo:
    semver: ^7.3.5
    slash: ^5.1.0
    strong-log-transformer: ^2.1.0
-   visual-exec: ^1.1.7
-   visual-logger: ^2.1.6
-   xaa: ^3.1.5
-   xsh: ^1.1.6
+   visual-exec: ^1.1.8
+   visual-logger: ^2.1.7
+   xaa: ^3.1.6
+   xsh: ^1.1.7
 get-east-asian-width:
  _latest: 1.7.0
  _:
@@ -935,14 +935,14 @@ is-unicode-supported:
   $: sha512-mE00Gnza5EEB3Ds0HfMyllZzbBrmLOX3vfWoj9A9PEnTfratQ/BcaJOuMhnkhjXvb2+FkY3VuHqtAGpTPmglFQ==
   _: 'https://registry.npmjs.org/is-unicode-supported/-/is-unicode-supported-2.1.0.tgz'
 item-queue:
- _latest: 2.1.7-fynlocal_h
+ _latest: 2.1.8-fynlocal_h
  _:
-  ../item-queue: 2.1.7-fynlocal_h
- 2.1.7-fynlocal_h:
+  ../item-queue: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
   $: local
   _: ./packages/item-queue
   dependencies:
-   xflight: ^3.1.6
+   xflight: ^3.1.7
 json-schema-traverse:
  _latest: 1.0.0
  _:
@@ -1206,10 +1206,10 @@ onetime:
   dependencies:
    mimic-function: ^5.0.0
 optional-import:
- _latest: 1.1.5-fynlocal_h
+ _latest: 1.1.6-fynlocal_h
  _:
-  ../optional-import: 1.1.5-fynlocal_h
- 1.1.5-fynlocal_h:
+  ../optional-import: 1.1.6-fynlocal_h
+ 1.1.6-fynlocal_h:
   $: local
   _: ./packages/optional-import
 optional-require:
@@ -1351,10 +1351,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.6-fynlocal_h
+ _latest: 2.1.7-fynlocal_h
  _:
-  ./packages/run-verify: 2.1.6-fynlocal_h
- 2.1.6-fynlocal_h:
+  ./packages/run-verify: 2.1.7-fynlocal_h
+ 2.1.7-fynlocal_h:
   top: 1
   $: local
   _: ./packages/run-verify
@@ -1502,10 +1502,10 @@ universalify:
   $: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==
   _: 'https://registry.npmjs.org/universalify/-/universalify-2.0.1.tgz'
 visual-exec:
- _latest: 1.1.7-fynlocal_h
+ _latest: 1.1.8-fynlocal_h
  _:
-  ../visual-exec: 1.1.7-fynlocal_h
- 1.1.7-fynlocal_h:
+  ../visual-exec: 1.1.8-fynlocal_h
+ 1.1.8-fynlocal_h:
   $: local
   _: ./packages/visual-exec
   dependencies:
@@ -1513,13 +1513,13 @@ visual-exec:
    ci-info: ^4.4.0
    has-ansi: ^6.0.2
    strip-ansi: ^7.2.0
-   visual-logger: ^2.1.6
-   xsh: ^1.1.6
+   visual-logger: ^2.1.7
+   xsh: ^1.1.7
 visual-logger:
- _latest: 2.1.6-fynlocal_h
+ _latest: 2.1.7-fynlocal_h
  _:
-  ../visual-logger: 2.1.6-fynlocal_h
- 2.1.6-fynlocal_h:
+  ../visual-logger: 2.1.7-fynlocal_h
+ 2.1.7-fynlocal_h:
   $: local
   _: ./packages/visual-logger
   dependencies:
@@ -1602,24 +1602,24 @@ wrap-ansi:
    string-width: ^7.0.0
    strip-ansi: ^7.1.0
 xaa:
- _latest: 3.1.5-fynlocal_h
+ _latest: 3.1.6-fynlocal_h
  _:
-  ../xaa: 3.1.5-fynlocal_h
- 3.1.5-fynlocal_h:
+  ../xaa: 3.1.6-fynlocal_h
+ 3.1.6-fynlocal_h:
   $: local
   _: ./packages/xaa
 xflight:
- _latest: 3.1.6-fynlocal_h
+ _latest: 3.1.7-fynlocal_h
  _:
-  ../xflight: 3.1.6-fynlocal_h
- 3.1.6-fynlocal_h:
+  ../xflight: 3.1.7-fynlocal_h
+ 3.1.7-fynlocal_h:
   $: local
   _: ./packages/xflight
 xsh:
- _latest: 1.1.6-fynlocal_h
+ _latest: 1.1.7-fynlocal_h
  _:
-  ../xsh: 1.1.6-fynlocal_h
- 1.1.6-fynlocal_h:
+  ../xsh: 1.1.7-fynlocal_h
+ 1.1.7-fynlocal_h:
   $: local
   _: ./packages/xsh
 yoctocolors:
