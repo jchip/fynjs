@@ -413,7 +413,10 @@ class PkgSrcManager {
         email: this._options.email,
         alwaysAuth: this._options["always-auth"],
         username: this._options.username,
-        password: this._options.password
+        password: this._options.password,
+        // Without this, npm-registry-fetch caps sockets at its own default of 12, so
+        // raising `concurrency` only lengthens the queue in front of the same 12.
+        maxSockets: this._fyn.concurrency
       },
       authTokens,
       registryData
