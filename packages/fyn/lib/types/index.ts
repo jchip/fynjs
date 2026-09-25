@@ -31,7 +31,6 @@ export {
   type PkgVersionInfoSymbols,
   type PackageRawInfoSymbols,
   type DepItemSymbols,
-  type SemverSymbols,
   // Type-safe accessor functions
   getSemver,
   setSemver,

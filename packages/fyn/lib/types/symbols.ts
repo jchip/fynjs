@@ -105,11 +105,6 @@ export interface DepItemSymbols {
   [DEP_ITEM]?: unknown; // DepItem - avoid circular import
 }
 
-/** Symbol properties for objects with SEMVER */
-export interface SemverSymbols {
-  [SEMVER]?: string;
-}
-
 // =============================================================================
 // Type-Safe Accessor Functions
 // =============================================================================
