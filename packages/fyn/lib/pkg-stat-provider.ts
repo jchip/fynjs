@@ -32,6 +32,16 @@ const OMIT_SECTION: Record<string, string> = {
 };
 
 /**
+ * Thinned display summary of a package version - not a resolve-pipeline record,
+ * just the fields `fyn stat` needs to render.
+ */
+export interface PkgSummary {
+  name: string;
+  version: string;
+  promoted: boolean;
+}
+
+/**
  * Result from getPackageStat for a specific package version.
  */
 interface PkgStatResult {
@@ -42,7 +52,7 @@ interface PkgStatResult {
   /** Whether this version is promoted (hoisted to top) */
   promoted: boolean;
   /** List of dependents (packages that depend on this) */
-  dependents: Array<{ name: string; version: string; promoted: boolean }>;
+  dependents: PkgSummary[];
   /** All dependency paths from root to this package */
   allPaths: string[][];
   /** Filtered significant paths (reduced from allPaths) */
@@ -58,7 +68,7 @@ interface MatchingVersionsResult {
   /** The searched package ID (name or name@semver) */
   searchId: string;
   /** Matching installed versions */
-  versions: Array<{ name: string; version: string; promoted: boolean }>;
+  versions: PkgSummary[];
 }
 
 class PkgStatProvider {

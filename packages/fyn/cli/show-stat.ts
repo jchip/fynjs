@@ -3,23 +3,16 @@ import CliLogger from "../lib/cli-logger";
 import logger from "../lib/logger";
 import AveAzul from "aveazul";
 import logFormat from "../lib/util/log-format";
-import PkgStatProvider from "../lib/pkg-stat-provider";
+import PkgStatProvider, { type PkgSummary } from "../lib/pkg-stat-provider";
 import { FETCH_META } from "../lib/log-items";
 
 const PACKAGE_JSON = "~package.json";
-
-/** Package info structure */
-interface PkgInfo {
-  name: string;
-  version?: string;
-  promoted?: boolean;
-}
 
 /** Package stat result */
 interface PkgStat {
   name: string;
   version: string;
-  dependents: PkgInfo[];
+  dependents: PkgSummary[];
   circularDeps?: string[][];
   allPaths: string[][];
   significantPaths: string[][];
@@ -31,7 +24,7 @@ interface FynForStat {
   resolveDependencies(): Promise<void>;
 }
 
-const formatPkgId = (pkg: PkgInfo): string => {
+const formatPkgId = (pkg: PkgSummary): string => {
   if (pkg.name === PACKAGE_JSON) {
     return chalk.cyan(pkg.name);
   }

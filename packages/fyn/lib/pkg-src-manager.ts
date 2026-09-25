@@ -29,6 +29,7 @@ import { LONG_WAIT_META, FETCH_META, FETCH_PACKAGE } from "./log-items";
 import PkgPreper from "pkg-preper";
 import { VisualExec } from "visual-exec";
 import fyntil from "./util/fyntil";
+import type { PkgJsonData } from "./util/fyntil";
 import { MARK_URL_SPEC } from "./constants";
 import { AggregateError } from "@jchip/error";
 import { prePackObj } from "publish-util";
@@ -38,7 +39,13 @@ import Arborist from "@npmcli/arborist";
 // call time — tests stub childProcess.execFileSync on the CJS module object.
 import childProcess from "child_process";
 import { fynFetch, drain } from "@fynjs/fetch";
-import type { NativePromise, PackageRawInfoSymbols, FynpoPackage } from "./types";
+import type {
+  NativePromise,
+  PackageRawInfoSymbols,
+  FynpoPackage,
+  PkgVersionInfo,
+  PackageVersionMeta
+} from "./types";
 import type { DepItem } from "./dep-item";
 // type-only, so it adds no module cycle: `FynpoData` is declared next to `Fyn` because it
 // carries the whole fynpo.json config shape
@@ -107,20 +114,15 @@ interface FetchItem {
   [DEP_ITEM]?: DepItem;
 }
 
-/** Package distribution info */
-interface PkgDist {
-  integrity?: string;
-  shasum?: string;
-  tarball?: string;
-  localPath?: string;
-  fullPath?: string;
-}
-
-/** Package info/manifest */
-interface PkgInfo extends PackageRawInfoSymbols {
+/**
+ * A pacote/registry manifest, or a raw on-disk package.json read via `readPkgJson`,
+ * augmented with fyn's own pack/publish-time tracking fields. This is the
+ * publish/pack-tooling domain, distinct from the resolve pipeline's
+ * `PkgVersionInfo`/`PackageVersionMeta` - kept as its own type rather than merged.
+ */
+interface PkgManifestData extends Partial<PackageVersionMeta>, PackageRawInfoSymbols {
   name: string;
   version: string;
-  dist?: PkgDist;
   _resolved?: string;
   _integrity?: string;
   _shasum?: string;
@@ -133,12 +135,12 @@ interface PkgInfo extends PackageRawInfoSymbols {
 /** npm packument (package document) */
 interface Packument {
   name: string;
-  versions: Record<string, PkgInfo>;
+  versions: Record<string, PkgManifestData>;
   "dist-tags": Record<string, string>;
   readme?: string;
   _contentLength?: number;
   _cached?: boolean;
-  urlVersions?: Record<string, PkgInfo>;
+  urlVersions?: Record<string, PkgManifestData>;
   [key: string]: unknown;
 }
 
@@ -147,9 +149,9 @@ interface LocalMeta {
   local: string;
   localId: string;
   name: string;
-  json: PkgInfo;
+  json: PackageVersionMeta;
   jsonStr: string;
-  versions: Record<string, PkgInfo>;
+  versions: Record<string, PackageVersionMeta>;
   "dist-tags": Record<string, string>;
   [LOCAL_VERSION_MAPS]: Record<string, string>;
 }
@@ -210,7 +212,7 @@ interface TarballFetchResult {
 
 /** Cache info with refresh time */
 interface CacheInfoWithRefreshTime {
-  metadata?: PkgInfo & { _resolved?: string; dist?: PkgDist };
+  metadata?: PkgManifestData;
   integrity?: string;
   refreshTime?: number;
 }
@@ -489,7 +491,10 @@ class PkgSrcManager {
     return Object.assign({}, extra, this._pacoteOpts);
   }
 
-  getPublishUtil(json: PkgInfo, fullPath: string): PublishUtilConfig | undefined {
+  getPublishUtil(
+    json: PkgJsonData & { publishUtil?: PublishUtilConfig },
+    fullPath: string
+  ): PublishUtilConfig | undefined {
     let config: PublishUtilConfig | undefined;
     let pkgInfo: FynpoPackage | undefined;
     let configFromFynpo: PublishUtilConfig | undefined;
@@ -550,7 +555,7 @@ class PkgSrcManager {
       return Promise.resolve(existLocalMeta);
     }
 
-    return readPkgJson(fullPath, true, true).then((json: PkgInfo) => {
+    return readPkgJson(fullPath, true, true).then((json: PkgJsonData & { publishUtil?: PublishUtilConfig }) => {
       const publishUtilConfig = this.getPublishUtil(json, fullPath);
       if (publishUtilConfig && !publishUtilConfig.fynIgnore) {
         logger.debug(
@@ -565,14 +570,18 @@ class PkgSrcManager {
         localPath,
         fullPath
       };
+      // `json` is the raw on-disk package.json shape; `LocalMeta.json`/`.versions` are typed
+      // for the registry-shaped meta the resolver expects (`PackageMeta`/`PackageVersionMeta`)
+      // - same same-slot-different-domain reinterpretation used in fyn.ts's loadJsonForPkg.
+      const registryMeta = json as unknown as PackageVersionMeta;
       const localMeta: LocalMeta = {
         local: item.localType!,
         localId: version,
         name,
-        json,
+        json: registryMeta,
         jsonStr: getPackageRawInfo(json)!.str,
         versions: {
-          [version]: json
+          [version]: registryMeta
         },
         "dist-tags": {
           latest: version
@@ -722,7 +731,7 @@ class PkgSrcManager {
     }).execute();
   }
 
-  _getPacoteDirPacker(): (manifest: PkgInfo, dir: string) => Readable {
+  _getPacoteDirPacker(): (manifest: PkgManifestData, dir: string) => Readable {
     const pkgPrep = new PkgPreper({
       tmpDir: this._cacheDir,
       installDependencies: this.pkgPreperInstallDep
@@ -730,13 +739,13 @@ class PkgSrcManager {
     return pkgPrep.getDirPackerCb();
   }
 
-  _packDir(manifest: PkgInfo, dir: string): Readable {
+  _packDir(manifest: PkgManifestData, dir: string): Readable {
     return this._getPacoteDirPacker()(manifest, dir);
   }
 
   fetchUrlSemverMeta(item: FetchItem): Promise<Packument> {
-    type DirPackerError = Error & { capDir?: string; manifest?: PkgInfo };
-    let dirPacker: (manifest: PkgInfo, dir: string) => Promise<never> | Readable;
+    type DirPackerError = Error & { capDir?: string; manifest?: PkgManifestData };
+    let dirPacker: (manifest: PkgManifestData, dir: string) => Promise<never> | Readable;
 
     if (item.urlType!.startsWith("git")) {
       //
@@ -753,7 +762,7 @@ class PkgSrcManager {
       // 2. Only repacking if there are new commits OR cache is stale by time (24h fallback)
       // 3. Time-based staleness is a fallback when ls-remote fails or for commit hashes
       //
-      dirPacker = (manifest: PkgInfo, dir: string): Promise<never> => {
+      dirPacker = (manifest: PkgManifestData, dir: string): Promise<never> => {
         const err: DirPackerError = new Error("interrupt pacote");
         const capDir = `${dir}-fyn`;
         return Fs.rename(dir, capDir).then(() => {
@@ -773,7 +782,7 @@ class PkgSrcManager {
 
     return pacote
       .manifest(`${item.name}@${item.semver}`, this.getPacoteOpts(pacoteOpts))
-      .then((manifest: PkgInfo) => {
+      .then((manifest: PkgManifestData) => {
         manifest = Object.assign({}, manifest);
         return {
           name: item.name,
@@ -792,7 +801,7 @@ class PkgSrcManager {
       });
   }
 
-  async _prepPkgDirForManifest(item: FetchItem, manifest: PkgInfo, dir: string): NativePromise<Packument> {
+  async _prepPkgDirForManifest(item: FetchItem, manifest: PkgManifestData, dir: string): NativePromise<Packument> {
     //
     // The full git url with commit hash should be available in manifest._resolved
     // use that as cache key to lookup cached manifest
@@ -802,7 +811,7 @@ class PkgSrcManager {
     const tgzCacheKey = `fyn-tarball-for-${item.semver}`;
     const tgzCacheInfo = await getCacheInfoWithRefreshTime(this._cacheDir, tgzCacheKey) as CacheInfoWithRefreshTime | null;
 
-    let pkg: PkgInfo | undefined;
+    let pkg: PkgManifestData | PkgJsonData | undefined;
     let integrity: string | undefined;
     let shouldRefresh = false;
 
@@ -894,7 +903,7 @@ class PkgSrcManager {
         packStream.on("prepared", resolve);
         packStream.on("error", reject);
       });
-      pkg = (await readPkgJson(dir)) as PkgInfo;
+      pkg = await readPkgJson(dir);
       logger.debug("gitdep package", pkg.name, "prepared", manifest._resolved);
       //
       // cache tgz (use manifest._resolved as cache key)
@@ -1221,7 +1230,7 @@ class PkgSrcManager {
     return this._inflights.meta.add(pkgKey, promise);
   }
 
-  pacotePrefetch(pkgId: string, pkgInfo: PkgInfo, integrity?: string): Promise<void> {
+  pacotePrefetch(pkgId: string, pkgInfo: PkgVersionInfo, integrity?: string): Promise<void> {
     const stream: PassThrough | PromiseLike<void> = this.pacoteTarballStream(pkgId, pkgInfo, integrity);
 
     const defer = Promise.defer<void>();
@@ -1250,7 +1259,7 @@ class PkgSrcManager {
     return cacache.get.stream.byDigest(this._cacheDir, integrity);
   }
 
-  pacoteTarballStream(pkgId: string, pkgInfo: PkgInfo, integrity?: string): PassThrough {
+  pacoteTarballStream(pkgId: string, pkgInfo: PkgVersionInfo, integrity?: string): PassThrough {
     const tarballUrl = _.get(pkgInfo, "dist.tarball") as string | undefined;
 
     // pacote >= 21 changed the API - use RemoteFetcher with tarball URL to avoid manifest lookup
@@ -1311,7 +1320,7 @@ class PkgSrcManager {
     return passthrough;
   }
 
-  getIntegrity(item: PkgInfo): string | undefined {
+  getIntegrity(item: PkgVersionInfo): string | undefined {
     const integrity = _.get(item, "dist.integrity") as string | undefined;
     if (integrity) return integrity;
 
@@ -1325,14 +1334,14 @@ class PkgSrcManager {
     return undefined;
   }
 
-  tarballFetchId(pkgInfo: PkgInfo): string {
-    const di = pkgInfo[DEP_ITEM];
+  tarballFetchId(pkgInfo: PkgVersionInfo): string {
+    const di = pkgInfo[DEP_ITEM] as (DepItem & { urlType?: string; semver?: string }) | undefined;
     if (di && di.urlType) return `${di.name}@${di.semver}`;
 
     return `${pkgInfo.name}@${pkgInfo.version}`;
   }
 
-  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgInfo): NativePromise<string | Readable> {
+  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgVersionInfo): NativePromise<string | Readable> {
     const { central, copy } = this._fyn;
 
     const tarId = this.tarballFetchId(pkgInfo);
@@ -1385,7 +1394,7 @@ class PkgSrcManager {
     return tarStream();
   }
 
-  fetchTarball(pkgInfo: PkgInfo): TarballFetchResult {
+  fetchTarball(pkgInfo: PkgVersionInfo): TarballFetchResult {
     const startTime = Date.now();
     const pkgId = this.tarballFetchId(pkgInfo);
     const integrity = this.getIntegrity(pkgInfo);
@@ -1453,8 +1462,6 @@ export type {
   PkgSrcManagerOptions,
   FynForSrcManager,
   FetchItem,
-  PkgDist,
-  PkgInfo,
   Packument,
   LocalMeta,
   TarballFetchResult

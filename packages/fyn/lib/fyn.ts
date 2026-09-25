@@ -13,13 +13,21 @@ import fynConfig from "./fyn-config";
 import * as semverUtil from "./util/semver";
 import Fs from "./util/file-ops";
 import fynTil from "./util/fyntil";
+import type { PkgJsonData } from "./util/fyntil";
 import FynCentral from "./fyn-central";
 import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import { localLinkNeedsRefresh } from "./util/hard-link-dir";
 import lockfile from "lockfile";
 import ck from "chalker/chalk";
-import { PACKAGE_RAW_INFO, DEP_ITEM, type PackageJson, type FynpoGraph, type PkgVersionInfo } from "./types";
+import {
+  PACKAGE_RAW_INFO,
+  DEP_ITEM,
+  type PackageJson,
+  type FynpoGraph,
+  type PkgVersionInfo,
+  type PackageVersionMeta
+} from "./types";
 import { FYN_LOCK_FILE, FYN_INSTALL_CONFIG_FILE, FV_DIR, PACKAGE_FYN_JSON } from "./constants";
 import { parseYarnLock } from "../yarn";
 import { Minimatch } from "minimatch";
@@ -103,31 +111,20 @@ interface FynOptions {
   [key: string]: unknown;
 }
 
-/** Package.json with raw info symbol for fyn core */
-interface FynPackageJson extends PackageJson {
-  [PACKAGE_RAW_INFO]?: { dir: string; str: string };
-}
-
-/** Package info with metadata */
-interface PkgInfo extends FynPackageJson {
-  promoted?: boolean;
-  dir?: string;
-  str?: string;
-  json?: PackageJson;
-  _id?: string;
+/**
+ * package.json read fresh off disk during install-time verification
+ * (`Fyn.loadJsonForPkg`), decorated with fyn's own bookkeeping fields.
+ * A different domain than `PkgVersionInfo.json` (`PackageVersionMeta`, the
+ * registry-shaped meta from resolution) - this is the raw, on-disk shape.
+ */
+interface InstalledPkgJson extends PkgJsonData {
   _invalid?: boolean;
   _origVersion?: string;
   _hasShrinkwrap?: boolean;
-  dist?: {
-    integrity?: string;
-    tarball?: string;
-    localPath?: string;
-    fullPath?: string;
-  };
-  [DEP_ITEM]?: FynDepItemRef;
+  gypfile?: boolean;
 }
 
-/** Dependency item reference stashed on PkgInfo's [DEP_ITEM] symbol */
+/** Dependency item reference stashed on PkgVersionInfo's [DEP_ITEM] symbol */
 interface FynDepItemRef {
   name: string;
   version: string;
@@ -1582,7 +1579,7 @@ class Fyn {
    *
    * @returns dir for package
    */
-  getInstalledPkgDir(name = "", version = "", pkg?: PkgInfo): string {
+  getInstalledPkgDir(name = "", version = "", pkg?: PkgVersionInfo): string {
     // in normal layout, promoted package should go to top node_modules dir directly
     if (this.isNormalLayout && pkg && pkg.promoted) {
       return Path.join(this.getOutputDir(), name);
@@ -1711,7 +1708,7 @@ class Fyn {
     }
   }
 
-  async moveToFv(dir: string, pkg: PkgInfo, pkgJson: PackageJson): Promise<void> {
+  async moveToFv(dir: string, pkg: PkgVersionInfo, pkgJson: InstalledPkgJson): Promise<void> {
     const toDir = this.getInstalledPkgDir(pkgJson.name, pkgJson.version);
 
     try {
@@ -1743,7 +1740,7 @@ class Fyn {
   // If dir exist with proper package.json, then returns it,
   // else returns undefined.
   //
-  async ensureProperPkgDir(pkg: PkgInfo, dir?: string): Promise<PkgInfo | null> {
+  async ensureProperPkgDir(pkg: PkgVersionInfo, dir?: string): Promise<InstalledPkgJson | null> {
     const fullOutDir = dir || this.getInstalledPkgDir(pkg.name, pkg.version, pkg);
 
     let ostat: Awaited<ReturnType<typeof Fs.lstat>>;
@@ -1774,9 +1771,9 @@ class Fyn {
     return null;
   }
 
-  async loadJsonForPkg(pkg: PkgInfo, dir?: string): Promise<PkgInfo> {
+  async loadJsonForPkg(pkg: PkgVersionInfo, dir?: string): Promise<InstalledPkgJson> {
     const fullOutDir = dir || this.getInstalledPkgDir(pkg.name, pkg.version, pkg);
-    const json = (await fynTil.readPkgJson(fullOutDir, true)) as PkgInfo;
+    const json = (await fynTil.readPkgJson(fullOutDir, true)) as InstalledPkgJson;
 
     const pkgId = `${pkg.name}@${pkg.version}`;
     const id = `${json.name}@${json.version}`;
@@ -1837,7 +1834,10 @@ class Fyn {
       }
     } catch (err) {}
 
-    pkg.json = json;
+    // `json` is the raw on-disk package.json shape; `pkg.json` is typed for the
+    // registry-shaped resolve-time meta - genuinely different domains for the same
+    // slot, same as the existing `as DepInfo`/`as FynpoData` casts elsewhere in fyn.
+    pkg.json = json as unknown as PackageVersionMeta;
 
     return json;
   }
@@ -1858,7 +1858,6 @@ export type {
   FynOptions,
   FynConstructorOptions,
   PackageJson,
-  PkgInfo,
   InstallConfig,
   LocalPkgLink,
   FynpoData,

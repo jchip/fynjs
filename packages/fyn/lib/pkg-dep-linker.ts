@@ -6,49 +6,13 @@ import * as _ from "lodash-es";
 import logger from "./logger";
 import logFormat from "./util/log-format";
 import fynTil from "./util/fyntil";
-import type {
-  DepInfo,
-  InstallPkgJson,
-  ResolutionData,
-  ResolutionEntry,
-  FynPkgDirs,
-  FynPkgsData
-} from "./types";
-
-/**
- * Package info for linking
- *
- * Uses a subset of DepInfo properties needed for linking operations.
- */
-interface PkgInfo {
-  name: string;
-  version: string;
-  promoted?: boolean;
-  local?: string;
-  json?: InstallPkgJson | Record<string, unknown>;
-  linkDep?: boolean;
-  res?: ResolutionData | ResData;
-  fynLinkData?: Record<string, boolean> | { targetPath?: string };
-}
-
-/** Resolution data structure (extends ResolutionData with peer deps) */
-interface ResData extends ResolutionData {
-  per?: Record<string, ResolutionEntry>;
-  [key: string]: unknown;
-}
+import type { DepInfo, PkgVersionInfo, FynPkgDirs, FynPkgsData } from "./types";
 
 /** Fyn instance interface for dep linker */
 export interface FynForDepLinker extends FynPkgDirs, FynPkgsData {
   /** stashed on `Fyn.localPkgWithNestedDep` as-is; nothing reads the shape back */
   addLocalPkgWithNestedDep(depInfo: unknown): void;
   cwd: string;
-}
-
-/** FV dependency info */
-interface FvDepInfo {
-  name: string;
-  version: string;
-  promoted?: boolean;
 }
 
 /*
@@ -89,7 +53,7 @@ class PkgDepLinker {
     throw new Error("fyn resolutions deprecated.");
   }
 
-  async addSubNodeModules(depInfo: PkgInfo, fvDeps: FvDepInfo[]): Promise<void> {
+  async addSubNodeModules(depInfo: DepInfo, fvDeps: PkgVersionInfo[]): Promise<void> {
     if (fvDeps.length <= 0) return;
 
     if (depInfo.local && depInfo.local === "sym1") {
@@ -136,7 +100,7 @@ class PkgDepLinker {
     }
   }
 
-  async addPackageRes(depInfo: PkgInfo): Promise<boolean> {
+  async addPackageRes(depInfo: DepInfo): Promise<boolean> {
     const depRes: Record<string, { resolved: string; type: string }> = {};
 
     const resData = depInfo.res;
@@ -144,7 +108,7 @@ class PkgDepLinker {
     if (_.isEmpty(resData)) return true;
 
     const pkgs = this._fyn._data.getPkgsData();
-    const fvDeps: FvDepInfo[] = [];
+    const fvDeps: PkgVersionInfo[] = [];
 
     _.each(["dep", "per", "opt"], (section: "dep" | "per" | "opt") => {
       const dep = (resData?.[section] || {}) as Record<string, { resolved: string }>;
@@ -175,7 +139,7 @@ class PkgDepLinker {
   }
 
   async linkPackage(depInfo: DepInfo): Promise<boolean> {
-    depInfo.linkDep = await this.addPackageRes(depInfo as PkgInfo);
+    depInfo.linkDep = await this.addPackageRes(depInfo);
     return depInfo.linkDep;
   }
 
@@ -216,35 +180,6 @@ class PkgDepLinker {
     throw new Error("symlink local package is deprecated, only hard linking.");
   }
 
-  //
-  // Take a pkg dep info and load previously saved dep data into it
-  // Used by fyn stat command
-  //
-  async loadPkgDepData(depInfo: PkgInfo): Promise<void> {
-    // a normal installed package's dep data are saved to its package.json
-    // so loading that is usually enough
-    const installedDir = this._fyn.getInstalledPkgDir(depInfo.name, depInfo.version, depInfo);
-
-    if (!depInfo.json) {
-      const fname = Path.join(installedDir, "package.json");
-      depInfo.json = JSON.parse(await Fs.readFile(fname));
-    }
-
-    // for a locally linked package, the dep data is in the __fyn_link__ JSON file
-    if (depInfo.local === "sym") {
-      throw new Error("sym linking local package deprecated. only hard linking.");
-
-      // await this.loadLocalPackageAppFynLink(depInfo, installedDir);
-      // const targetFynlinkFile = Path.join(
-      //   depInfo.fynLinkData.targetPath,
-      //   "node_modules",
-      //   FYN_LINK_JSON
-      // );
-
-      // const depRes = JSON.parse(await Fs.readFile(targetFynlinkFile));
-      // depInfo.json._depResolutions = depRes[this._fyn.cwd]._depResolutions;
-    }
-  }
 }
 
 export default PkgDepLinker;

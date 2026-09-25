@@ -26,6 +26,8 @@ export interface ResolutionData {
   dep?: Record<string, ResolutionEntry>;
   /** Optional dependency resolutions */
   opt?: Record<string, ResolutionEntry>;
+  /** Peer dependency resolutions */
+  per?: Record<string, ResolutionEntry>;
 }
 
 /**
