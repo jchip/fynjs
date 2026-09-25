@@ -131,6 +131,6 @@ export default defineConfig({
     format: "esm",
     banner,
     minify: false,
-    inlineDynamicImports: true
+    codeSplitting: false
   }
 });
