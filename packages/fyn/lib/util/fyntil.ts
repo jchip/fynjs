@@ -2,20 +2,24 @@
 import Fs from "./file-ops";
 import * as _ from "lodash-es";
 import Path from "path";
+import type { Stats } from "fs";
 import logger from "../logger";
 import type { NativePromise } from "../types/native-promise";
-import { pipeline, type PipelineOptions } from "stream/promises";
+import { pipeline } from "stream/promises";
 import { PACKAGE_RAW_INFO } from "../symbols";
 import { PACKAGE_FYN_JSON } from "../constants";
 import { FynpoConfigManager, FynpoDepGraph, posixify } from "@fynpo/base";
 import { isWin32, retry } from "./base-util";
+import type { FynpoConfig } from "../fyn";
+import type { FynPackageJson } from "../types/package-json";
+import type { InstallDistInfo } from "../types/installer";
 
 export interface FynpoConfigData {
-  config?: any;
+  config?: FynpoConfig;
   dir?: string;
   graph?: FynpoDepGraph;
-  indirects?: any[];
-  [key: string]: any;
+  indirects?: unknown[];
+  [key: string]: unknown;
 }
 
 export interface RawPkgInfo {
@@ -23,20 +27,13 @@ export interface RawPkgInfo {
   str: string;
 }
 
-export type PkgJsonData = Record<string, any> & {
+export type PkgJsonData = Partial<FynPackageJson> & {
   [PACKAGE_RAW_INFO]?: RawPkgInfo;
 };
-
-export interface DistInfo {
-  integrity?: string;
-  shasum?: string;
-  [key: string]: any;
-}
 
 export interface PkgOsCpu {
   os?: string | readonly string[];
   cpu?: string | readonly string[];
-  [key: string]: any;
 }
 
 /**
@@ -44,12 +41,9 @@ export interface PkgOsCpu {
  * Replaces mississippi.pipe with node:stream/promises pipeline.
  */
 export const missPipe = (
-  ...streams: [
-    NodeJS.ReadableStream,
-    NodeJS.WritableStream,
-    ...(NodeJS.ReadWriteStream | NodeJS.WritableStream | PipelineOptions)[]
-  ]
-): NativePromise<void> => (pipeline as any)(...streams);
+  source: NodeJS.ReadableStream,
+  destination: NodeJS.WritableStream
+): NativePromise<void> => pipeline(source, destination);
 
 const DIR_SYMLINK_TYPE: "junction" | "dir" = isWin32 ? "junction" : "dir";
 
@@ -110,9 +104,9 @@ export interface Fyntil {
   resetFynpo(): void;
   loadFynpo(cwd?: string): Promise<FynpoConfigData | Record<string, never>>;
   resolveGitMainWorktreeDir(dir: string): Promise<string>;
-  removeAuthInfo(rcObj: Record<string, any>): Record<string, any>;
+  removeAuthInfo(rcObj: Record<string, unknown>): Record<string, unknown>;
   exit(err?: number | Error | string | boolean | null): never;
-  readJson<T = any>(file: string, defaultData?: T): Promise<T>;
+  readJson<T = Record<string, unknown>>(file: string, defaultData?: T): Promise<T>;
   relativePath(from: string, to: string, shouldPosixify?: boolean): string;
   readPkgJson(dirOrFile: string, keepRaw?: boolean, packageFyn?: boolean): Promise<PkgJsonData>;
   symlinkDir(linkName: string, targetName: string, relative?: boolean): Promise<void>;
@@ -120,7 +114,7 @@ export interface Fyntil {
   validateExistSymlink(linkName: string, targetPath: string, relative?: boolean): Promise<boolean>;
   checkValueSatisfyRules: typeof checkValueSatisfyRules;
   shaToIntegrity(ss?: string | number | null): string | undefined;
-  distIntegrity(dist?: DistInfo): string | undefined;
+  distIntegrity(dist?: InstallDistInfo): string | undefined;
   checkPkgOsCpu(pkg?: PkgOsCpu): true | string;
   strToBool(v: unknown): boolean;
   isTrueStr(v: unknown): boolean;
@@ -194,15 +188,15 @@ const fyntil: Fyntil = {
     // walk up to locate the .git entry for the tree containing `dir`
     let treeTop = startDir;
     let gitPath: string | undefined;
-    let gitStat: any;
+    let gitStat: Stats | undefined;
     for (;;) {
       try {
         const p = Path.join(treeTop, ".git");
         gitStat = await Fs.stat(p);
         gitPath = p;
         break;
-      } catch (err: any) {
-        if (err.code !== "ENOENT") {
+      } catch (err: unknown) {
+        if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
           throw err;
         }
       }
@@ -214,7 +208,7 @@ const fyntil: Fyntil = {
     }
 
     // not in a git repo, or .git is a real directory (main / normal worktree)
-    if (!gitPath || gitStat.isDirectory()) {
+    if (!gitPath || gitStat?.isDirectory()) {
       return dir;
     }
 
@@ -246,14 +240,14 @@ const fyntil: Fyntil = {
       // preserve dir's position relative to its own worktree root
       const rel = Path.relative(treeTop, startDir);
       return Path.join(mainTreeTop, rel);
-    } catch (err: any) {
-      logger.debug(`resolveGitMainWorktreeDir failed for ${dir}: ${err.message}`);
+    } catch (err: unknown) {
+      logger.debug(`resolveGitMainWorktreeDir failed for ${dir}: ${(err as Error).message}`);
       return dir;
     }
   },
 
-  removeAuthInfo(rcObj: Record<string, any>): Record<string, any> {
-    const rmObj: Record<string, any> = {};
+  removeAuthInfo(rcObj: Record<string, unknown>): Record<string, unknown> {
+    const rmObj: Record<string, unknown> = {};
     for (const key in rcObj) {
       const lower = key.toLowerCase();
       if (!lower.includes("auth") && !lower.includes("password") && !lower.includes("otp")) {
@@ -273,13 +267,13 @@ const fyntil: Fyntil = {
     return process.exit(err ? 1 : 0);
   },
 
-  async readJson<T = any>(file: string, defaultData?: T): Promise<T> {
+  async readJson<T = Record<string, unknown>>(file: string, defaultData?: T): Promise<T> {
     try {
       const data = await Fs.readFile(file, "utf8");
       return JSON.parse(data);
-    } catch (err: any) {
-      if (err.code !== "ENOENT") {
-        const msg = `Failed to read JSON file ${file} - ${err.message}`;
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        const msg = `Failed to read JSON file ${file} - ${(err as Error).message}`;
         logger.error(msg);
         throw new Error(msg);
       }
@@ -314,9 +308,9 @@ const fyntil: Fyntil = {
         if (keepRaw && fname !== PACKAGE_FYN_JSON) {
           finalJson[PACKAGE_RAW_INFO] = { dir, str };
         }
-      } catch (err: any) {
-        if (fname !== PACKAGE_FYN_JSON || err.code !== "ENOENT") {
-          throw new Error(`Failed Reading ${file}: ${err.message}`);
+      } catch (err: unknown) {
+        if (fname !== PACKAGE_FYN_JSON || (err as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw new Error(`Failed Reading ${file}: ${(err as Error).message}`);
         }
       }
     }
@@ -367,8 +361,8 @@ const fyntil: Fyntil = {
             ? Path.relative(Path.dirname(linkName), targetPath)
             : targetPath;
       }
-    } catch (e: any) {
-      existTarget = e.code !== "ENOENT";
+    } catch (e: unknown) {
+      existTarget = (e as NodeJS.ErrnoException).code !== "ENOENT";
     }
 
     // If it exist but doesn't match targetDir
@@ -379,7 +373,7 @@ const fyntil: Fyntil = {
       try {
         // try to unlink it as a symlink/file first
         await Fs.unlink(linkName);
-      } catch (e: any) {
+      } catch {
         // else remove the directory
         await Fs.$.rimraf(linkName);
       }
@@ -402,7 +396,7 @@ const fyntil: Fyntil = {
     return `sha1-${Buffer.from(ss, "hex").toString("base64")}`;
   },
 
-  distIntegrity(dist: DistInfo = {}): string | undefined {
+  distIntegrity(dist: InstallDistInfo = {}): string | undefined {
     if (dist.integrity) {
       return dist.integrity;
     }

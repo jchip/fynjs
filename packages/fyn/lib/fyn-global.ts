@@ -517,7 +517,7 @@ class FynGlobal {
       const resolvedPath = Path.resolve(packageSpec.replace(/^file:/, ""));
       const pkgJsonPath = Path.join(resolvedPath, "package.json");
       try {
-        const pkgJson = await fynTil.readJson(pkgJsonPath);
+        const pkgJson = await fynTil.readJson<{ name: string }>(pkgJsonPath);
         return pkgJson.name;
       } catch (err) {
         throw new Error(`Cannot read package.json from ${resolvedPath}: ${err.message}`);
