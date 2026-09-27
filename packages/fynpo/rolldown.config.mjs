@@ -1,5 +1,5 @@
 import Path from "node:path";
-import { createRequire } from "node:module";
+import { createRequire, isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rolldown";
 
@@ -125,10 +125,31 @@ for (const spec of subpathExternals) {
 
 const externals = [...pkgJson.publishUtil.keep[0].dependencies, ...subpathExternals];
 
+/**
+ * Rolldown only warns on an unresolved import and leaves it in the bundle as an external. The
+ * published package strips every dependency not in `externals`, so any other external fails at
+ * runtime - e.g. a workspace dep whose dist/ is missing.
+ *
+ * Check here rather than in onLog: rolldown emits the UNRESOLVED_IMPORT log after it has already
+ * written dist/bundle.mjs, so failing there still leaves the broken bundle on disk. Throwing in
+ * generateBundle stops the write.
+ */
+const noExternalsPlugin = {
+  name: "no-externals",
+  generateBundle(_options, bundle) {
+    const unexpected = Object.values(bundle)
+      .flatMap(chunk => (chunk.type === "chunk" ? chunk.imports : []))
+      .filter(id => !isBuiltin(id) && !externals.includes(id));
+    if (unexpected.length > 0) {
+      throw new Error(`no-externals: unresolved imports left in bundle: ${unexpected.join(", ")}`);
+    }
+  }
+};
+
 export default defineConfig({
   input: Path.resolve("src/index.ts"),
   platform: "node",
-  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin],
+  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin, noExternalsPlugin],
   //
   // import-fresh and resolve-global manipulate require and cannot be bundled; they stay in
   // dependencies via publishUtil. fyn is resolved at runtime from the install.
