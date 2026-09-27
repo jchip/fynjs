@@ -1,5 +1,5 @@
 import Path from "node:path";
-import { createRequire } from "node:module";
+import { createRequire, isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rolldown";
 
@@ -91,10 +91,31 @@ const shcmdCommandsPlugin = {
   }
 };
 
+/**
+ * Rolldown only warns on an unresolved import and leaves it in the bundle as an external. fyn
+ * ships as a single bundle with its dependencies stripped (publishUtil.remove), so any external
+ * other than a node builtin fails at runtime - e.g. a workspace dep whose dist/ is missing.
+ *
+ * Check here rather than in onLog: rolldown emits the UNRESOLVED_IMPORT log after it has already
+ * written dist/fyn.mjs, so failing there still leaves the broken bundle on disk. Throwing in
+ * generateBundle stops the write.
+ */
+const noExternalsPlugin = {
+  name: "no-externals",
+  generateBundle(_options, bundle) {
+    const externals = Object.values(bundle)
+      .flatMap(chunk => (chunk.type === "chunk" ? chunk.imports : []))
+      .filter(id => !isBuiltin(id));
+    if (externals.length > 0) {
+      throw new Error(`no-externals: unresolved imports left in bundle: ${externals.join(", ")}`);
+    }
+  }
+};
+
 export default defineConfig({
   input: Path.resolve("cli/main.ts"),
   platform: "node",
-  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin],
+  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin, noExternalsPlugin],
   resolve: {
     extensions: [".ts", ".js", ".json"],
     symlinks: true,
