@@ -917,7 +917,7 @@ class FynGlobal {
       // Ensure global/bin symlink points to current version's bin
       await this.ensureBinSymlink();
 
-      logger.info(`${packageName}@${installedVersion || depVersion} installed globally`);
+      logger.info(`${packageName}@${installedVersion || depVersion} installed globally. Tag: ${gId}`);
       if (Object.keys(bins).length > 0) {
         logger.info(`Binaries available: ${Object.keys(bins).join(", ")}`);
       }
