@@ -606,6 +606,36 @@ describe("fyn-global methods", function() {
       expect(result.map(r => r.package)).toStrictEqual(["foo", "foo"]);
     });
 
+    it("prints one line per entry, linked entry first, sorted by tag", async () => {
+      const g = makeGlobal();
+      const t1 = new Date(2025, 11, 17, 11, 55, 38).toISOString();
+      const t2 = new Date(2026, 2, 18, 22, 28, 7).toISOString();
+      await g.writeInstalledJson({
+        packages: {
+          foo: {
+            versions: [
+              { version: "2.0.0", dir: "g8", installedAt: t1, linked: false, semver: "latest", bins: ["foo", "foo-d"] },
+              { version: "1.0.0", dir: "g12", installedAt: t2, linked: true, local: true, semver: "file:/x" },
+              { version: "3.0.0", dir: "g7", installedAt: t1, linked: false }
+            ]
+          },
+          bar: { versions: [{ version: "1.0.0", dir: "g9", installedAt: t1, linked: true }] }
+        }
+      });
+      const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await g.listGlobalPackages();
+        expect(spy.mock.calls.map(c => c[0])).toStrictEqual([
+          "g9 bar@1.0.0 2025-12-17 11:55",
+          "g12 foo@1.0.0 file:/x 2026-03-18 22:28",
+          "  g7 3.0.0 2025-12-17 11:55",
+          "  g8 2.0.0 latest 2025-12-17 11:55 [foo, foo-d]"
+        ]);
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
     it("filters by name", async () => {
       const g = makeGlobal();
       await g.writeInstalledJson({

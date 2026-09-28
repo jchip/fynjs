@@ -1156,55 +1156,42 @@ class FynGlobal {
 
     const result = [];
 
-    // Sort package names
-    namesToShow.sort();
+    // tag dirs are g<N>; compare them numerically so g12 sorts after g9
+    const tagNum = (v: VersionInfo) => parseInt(v.dir.slice(1), 10);
 
-    for (const packageName of namesToShow) {
-      const pkgInfo = registry.packages[packageName];
-      const versions = pkgInfo.versions || [];
+    // Per package: linked (active) entry first, then the rest by tag
+    const packages = namesToShow
+      .map(name => ({
+        name,
+        entries: [...(registry.packages[name].versions || [])].sort((a, b) => {
+          if (a.linked !== b.linked) {
+            return a.linked ? -1 : 1;
+          }
+          return tagNum(a) - tagNum(b);
+        })
+      }))
+      .filter(p => p.entries.length > 0)
+      // packages ordered by the tag on their first line
+      .sort((a, b) => tagNum(a.entries[0]) - tagNum(b.entries[0]));
 
-      if (versions.length === 0) continue;
+    const home = Os.homedir();
+    const pad = (n: number) => String(n).padStart(2, "0");
 
-      // Group entries by version
-      const byVersion = {};
-      for (const v of versions) {
-        const key = v.version;
-        if (!byVersion[key]) {
-          byVersion[key] = [];
-        }
-        byVersion[key].push(v);
-      }
-
-      // Sort version keys by semver (newest first)
-      const sortedVersions = Object.keys(byVersion).sort((a, b) => {
-        if (semver.valid(a) && semver.valid(b)) {
-          return semver.rcompare(a, b);
-        }
-        return a.localeCompare(b);
+    for (const { name: packageName, entries } of packages) {
+      entries.forEach((v, ix) => {
+        const d = new Date(v.installedAt);
+        const time = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        const fields = [
+          v.dir,
+          ix === 0 ? `${packageName}@${v.version}` : v.version,
+          v.semver?.replace(`file:${home}`, "file:~"),
+          time,
+          v.bins?.length > 0 ? `[${v.bins.join(", ")}]` : ""
+        ].filter(Boolean);
+        console.log(`${ix === 0 ? "" : "  "}${fields.join(" ")}`);
+        result.push({ package: packageName, ...v });
       });
-
-      console.log(`\n${packageName}:`);
-
-      for (const version of sortedVersions) {
-        const entries = byVersion[version];
-
-        // Show all tags for this version
-        for (const v of entries) {
-          const tagLinked = v.linked ? " *" : "";
-          const local = v.local ? " (local)" : "";
-          const bins = v.bins?.length > 0 ? ` [${v.bins.join(", ")}]` : "";
-          const fromSemver = v.semver ? `(from '${v.semver}')` : "";
-          const installedDate = new Date(v.installedAt);
-          const dateStr = installedDate.toLocaleDateString();
-          const timeStr = installedDate.toLocaleTimeString([], { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-          console.log(`  ${v.dir} (${v.version})${tagLinked}${local}${bins}${fromSemver ? ` ${fromSemver}` : ""}`);
-          console.log(`    installed ${dateStr} ${timeStr}`);
-          result.push({ package: packageName, ...v });
-        }
-      }
     }
-
-    console.log("\n* = linked (active) version");
 
     return result;
   }
