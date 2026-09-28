@@ -558,20 +558,21 @@ class FynGlobal {
   }
 
   /**
-   * Get next global package ID by reading directory
+   * Get next global package ID by reading directory.
+   * Reuses the lowest gN freed by a removed package.
    */
   async getNextGlobalId(): Promise<string> {
     try {
       const dirs = await Fs.readdir(this.packagesDir);
 
       // Find all gN directories and extract numbers
-      const numbers = dirs
-        .filter(d => /^g\d+$/.test(d))
-        .map(d => parseInt(d.substring(1), 10))
-        .filter(n => !isNaN(n));
+      const used = new Set(
+        dirs.filter(d => /^g\d+$/.test(d)).map(d => parseInt(d.substring(1), 10))
+      );
 
-      // Get next number
-      const nextNum = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+      // Get lowest unused number
+      let nextNum = 1;
+      while (used.has(nextNum)) nextNum++;
       return `g${nextNum}`;
     } catch (err) {
       // Directory doesn't exist yet, start at g1

@@ -339,12 +339,19 @@ describe("fyn-global methods", function() {
       expect(await g.getNextGlobalId()).toBe("g1");
     });
 
-    it("returns the next id past the highest existing gN", async () => {
+    it("reuses the lowest freed gN", async () => {
       const g = makeGlobal();
       fs.mkdirSync(path.join(packagesDir, "g1"), { recursive: true });
       fs.mkdirSync(path.join(packagesDir, "g5"), { recursive: true });
       fs.mkdirSync(path.join(packagesDir, "not-a-pkg"), { recursive: true });
-      expect(await g.getNextGlobalId()).toBe("g6");
+      expect(await g.getNextGlobalId()).toBe("g2");
+    });
+
+    it("returns the next id past the highest when there are no gaps", async () => {
+      const g = makeGlobal();
+      fs.mkdirSync(path.join(packagesDir, "g1"), { recursive: true });
+      fs.mkdirSync(path.join(packagesDir, "g2"), { recursive: true });
+      expect(await g.getNextGlobalId()).toBe("g3");
     });
   });
 
