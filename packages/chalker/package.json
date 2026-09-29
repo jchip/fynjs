@@ -1,6 +1,6 @@
 {
   "name": "chalker",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Set ansi colors in strings using XML and chalk",
   "type": "module",
   "types": "./dist/index.d.ts",

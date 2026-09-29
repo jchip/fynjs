@@ -1,6 +1,6 @@
 {
   "name": "filter-scan-dir",
-  "version": "2.1.9",
+  "version": "2.1.10",
   "description": "Extremely fast recursive directory crawling and filtering for Node.js.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -60,7 +60,7 @@
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir",
   "dependencies": {},
   "devDependencies": {
-    "@fynjs/run": "^1.1.8",
+    "@fynjs/run": "^1.1.9",
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "@vitest/ui": "^5.0.0",
