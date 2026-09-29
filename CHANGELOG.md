@@ -1,3 +1,53 @@
+# 9/29/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/run@1.1.9` `(1.1.8 => 1.1.9)`
+-   `chalker@2.2.1` `(2.2.0 => 2.2.1)`
+-   `fyn@3.2.1` `(3.2.0 => 3.2.1)`
+-   `fynpo@3.2.1` `(3.2.0 => 3.2.1)`
+-   `fynpo-cli@3.2.1` `(3.2.0 => 3.2.1)`
+-   `visual-logger@2.1.9` `(2.1.8 => 2.1.9)`
+
+### Fynpo Updated
+
+-   `@fynpo/base@2.1.11` `(2.1.10 => 2.1.11)`
+-   `filter-scan-dir@2.1.10` `(2.1.9 => 2.1.10)`
+-   `item-queue@2.1.10` `(2.1.9 => 2.1.10)`
+-   `visual-exec@1.1.10` `(1.1.9 => 1.1.10)`
+-   `xflight@3.1.9` `(3.1.8 => 3.1.9)`
+
+## Commits
+
+-   `packages/xarc-run`
+
+    -   clean ci files [commit](https://github.com/jchip/fynjs/commit/11a39c76fddd1c0869edfe6af17e1f1fcfc3e490)
+
+-   `packages/chalker`
+
+    -   clean ci files [commit](https://github.com/jchip/fynjs/commit/11a39c76fddd1c0869edfe6af17e1f1fcfc3e490)
+
+-   `packages/fyn`
+
+    -   feat(fyn): show tag in global add output [commit](https://github.com/jchip/fynjs/commit/56761bf7fcbad94833070410f616f2adc0e101cd)
+    -   fix(fyn): reuse freed tags in global add [commit](https://github.com/jchip/fynjs/commit/f48242c8a84c2d19ecea2ac9b228be387ee590ff)
+    -   feat(fyn): compact one-line-per-entry output for global ls [commit](https://github.com/jchip/fynjs/commit/1f8dc3569627dd1290e9ba60cae5088f20accb52)
+    -   fix(fyn): fail the bundle build on unresolved imports [commit](https://github.com/jchip/fynjs/commit/3d1825b1b36e8ba888d4e02d710e4bec5a932753)
+
+-   `packages/fynpo`
+
+    -   fix(fynpo): fail the bundle build on unresolved imports [commit](https://github.com/jchip/fynjs/commit/3b128a944045996ca3c9c90d10d925a8cbdb20b2)
+
+-   `packages/visual-logger`
+
+    -   clean ci files [commit](https://github.com/jchip/fynjs/commit/11a39c76fddd1c0869edfe6af17e1f1fcfc3e490)
+
+-   `MISC`
+
+    -   update top level lockfile [commit](https://github.com/jchip/fynjs/commit/9ad8791f22704479ea3bbdcd630e00db716a0666)
+
 # 9/25/2026
 
 ## Packages
