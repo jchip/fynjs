@@ -473,6 +473,10 @@ export const fynpoMain = () => {
         tag: {
           desc: "create tags for individual packages",
         },
+        "indirect-bumps": {
+          args: "[flag boolean]",
+          desc: "release dependents listed under Fynpo Updated (use --no-indirect-bumps to skip them, or set `indirectBumps: false` in the fynpo config)",
+        },
       },
     },
     updated: {

@@ -2,7 +2,11 @@
 import Fs from "fs";
 import Path from "path";
 
-export function readChangelogVersions(dir, packages, markers) {
+/**
+ * @param skipHeading - a line (e.g. `### Fynpo Updated`) whose section is ignored, up to the
+ *   next `###` heading
+ */
+export function readChangelogVersions(dir, packages, markers, skipHeading?: string) {
   const tags = [];
   const versions = {};
 
@@ -24,7 +28,13 @@ export function readChangelogVersions(dir, packages, markers) {
 
   if (ix1 >= 0 && ix2 > ix1) {
     const lines = clLines.slice(ix1, ix2);
-    lines.forEach(check);
+    let skipping = false;
+    lines.forEach((l) => {
+      if (l.startsWith("### ")) {
+        skipping = l.trim() === skipHeading;
+      }
+      if (!skipping) check(l);
+    });
   }
 
   return { tags, versions };

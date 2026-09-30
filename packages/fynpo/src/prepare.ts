@@ -355,7 +355,10 @@ export class Prepare {
   }
 
   readChangelog() {
-    const fromCl = readChangelogVersions(this._cwd, this._packages, this._markers);
+    // `### Fynpo Updated` lists dependents bumped only because a dependency moved. Skipped
+    // ones fall through to the range-only update below and are picked up next release.
+    const skipHeading = this._options.indirectBumps === false ? "### Fynpo Updated" : undefined;
+    const fromCl = readChangelogVersions(this._cwd, this._packages, this._markers, skipHeading);
     this._versions = fromCl.versions;
     this._tags = fromCl.tags;
     if (this._tags.length) {
