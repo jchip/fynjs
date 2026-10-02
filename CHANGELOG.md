@@ -1,3 +1,20 @@
+# 10/2/2026
+
+## Packages
+
+-   `fyn@3.2.2` `(3.2.1 => 3.2.2)`
+-   `fynpo@3.2.2` `(3.2.1 => 3.2.2)`
+-   `fynpo-cli@3.2.2` `(3.2.1 => 3.2.2)`
+
+## Commits
+
+-   `packages/fyn`
+
+    -   fix(fyn): explain a changed central store copy instead of an error banner [commit](https://github.com/jchip/fynjs/commit/f23fc88b12347bcfa8b148c7b85a19bc436afbf2)
+    -   fix(fyn): pass root option sources to Fyn [commit](https://github.com/jchip/fynjs/commit/840efca8174c2b902b10fdca00585840771ed823)
+    -   feat(fyn): hardlink central store files by default [commit](https://github.com/jchip/fynjs/commit/9e08812ef5f3ee0be7a5e450e8d5dfa95198ef3a)
+    -   perf(fyn): copy into new destinations with COPYFILE_EXCL [commit](https://github.com/jchip/fynjs/commit/28d2b087719306bbfde47633b21bd02fbfa6b246)
+
 # 9/29/2026
 
 ## Packages
