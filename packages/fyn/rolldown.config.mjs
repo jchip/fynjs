@@ -92,6 +92,29 @@ const shcmdCommandsPlugin = {
 };
 
 /**
+ * arborist turns on its debug-only assertions when `process.cwd()` is its own package dir,
+ * which it finds as `path.resolve(__dirname, "..")`. Bundled, `__dirname` is dist/, so that
+ * dir becomes fyn's own package, and running fyn there makes loadActual throw on fyn's layout
+ * ("dev edges on non-top node"). Drop just that clause; ARBORIST_DEBUG=1 still opts in.
+ */
+const arboristDebugPlugin = {
+  name: "arborist-debug-cwd",
+  transform(code, id) {
+    if (!id.replace(/\\/g, "/").endsWith("/@npmcli/arborist/lib/debug.js")) {
+      return null;
+    }
+
+    const clause = "process.cwd() === require('node:path').resolve(__dirname, '..')";
+    if (!code.includes(clause)) {
+      // fail loudly rather than ship a bundle where running fyn in its own dir breaks again
+      throw new Error("arborist-debug-cwd: cwd clause not found in @npmcli/arborist/lib/debug.js");
+    }
+
+    return { code: code.replace(clause, "false") };
+  }
+};
+
+/**
  * Rolldown only warns on an unresolved import and leaves it in the bundle as an external. fyn
  * ships as a single bundle with its dependencies stripped (publishUtil.remove), so any external
  * other than a node builtin fails at runtime - e.g. a workspace dep whose dist/ is missing.
@@ -115,7 +138,7 @@ const noExternalsPlugin = {
 export default defineConfig({
   input: Path.resolve("cli/main.ts"),
   platform: "node",
-  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin, noExternalsPlugin],
+  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin, arboristDebugPlugin, noExternalsPlugin],
   resolve: {
     extensions: [".ts", ".js", ".json"],
     symlinks: true,
