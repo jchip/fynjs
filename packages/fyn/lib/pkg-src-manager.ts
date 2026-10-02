@@ -1370,13 +1370,14 @@ class PkgSrcManager {
         if (hasCentral) {
           const valid = await central.validate(integrity);
           if (!valid) {
+            // Usually a file edited in some project's node_modules, which is hardlinked to the
+            // store. Projects keep their edits on purpose; only the store copy is replaced.
             const contentPath = await central.getContentPath(integrity);
-            logger.error(`Corrupted central store package detected
-  -- CORRUPTED CENTRAL STORE PACKAGE DETECTED, removing --
-  ID: ${verId}
-  integrity: ${integrity}
-  path: '${contentPath}'
-`);
+            logger.info(
+              `central store copy of ${dispId} has changed, likely from an edit under a project's node_modules. ` +
+                `fyn is replacing it with a clean copy. Projects installed earlier keep their edited files.`
+            );
+            logger.debug(`replacing central store package ${verId} integrity ${integrity} at '${contentPath}'`);
             await central.delete(integrity);
             hasCentral = false;
           }
