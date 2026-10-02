@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import Path from "path";
 import fs from "fs";
 import os from "os";
@@ -139,6 +139,28 @@ describe("hard-link-dir - never writes through an existing hardlink (FPM-52)", f
       await hardLinkDir.copyFile(src, Path.join(dir, "dest2"));
       expect(fs.readFileSync(Path.join(dir, "dest2"), "utf8")).toBe("content");
     } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // replicate writes into a cleared dir, so a new destination must not pay for an unlink first
+  it("unlinks only when the destination already exists", async () => {
+    const dir = fs.mkdtempSync(Path.join(os.tmpdir(), "fpm52-excl-"));
+    const unlink = vi.spyOn(Fs, "unlink");
+    try {
+      const src = Path.join(dir, "src");
+      fs.writeFileSync(src, "content");
+
+      await hardLinkDir.cloneFile(src, Path.join(dir, "new1"));
+      await hardLinkDir.copyFile(src, Path.join(dir, "new2"));
+      expect(unlink).not.toHaveBeenCalled();
+
+      await hardLinkDir.cloneFile(src, Path.join(dir, "new1"));
+      await hardLinkDir.copyFile(src, Path.join(dir, "new2"));
+      expect(unlink).toHaveBeenCalledTimes(2);
+      expect(fs.readFileSync(Path.join(dir, "new2"), "utf8")).toBe("content");
+    } finally {
+      unlink.mockRestore();
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });

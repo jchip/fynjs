@@ -87,6 +87,29 @@ async function unlinkDest(destFp) {
 }
 
 /**
+ * Copy with COPYFILE_EXCL, so a new destination takes one call instead of an unlink and a copy.
+ * An existing destination is unlinked and copied again, never written through - see
+ * {@link unlinkDest}. replicate writes into a cleared dir, so the retry is rare.
+ *
+ * @param {*} srcFp
+ * @param {*} destFp
+ * @param {*} mode - extra copyFile flags, such as COPYFILE_FICLONE
+ * @returns
+ */
+async function copyNew(srcFp, destFp, mode = 0) {
+  try {
+    return await fs.promises.copyFile(srcFp, destFp, mode | fs.constants.COPYFILE_EXCL);
+  } catch (err) {
+    if (err.code !== "EEXIST") {
+      throw err;
+    }
+  }
+
+  await unlinkDest(destFp);
+  return fs.promises.copyFile(srcFp, destFp, mode | fs.constants.COPYFILE_EXCL);
+}
+
+/**
  * Copy a file, replacing the destination rather than writing through it.
  *
  * @param {*} srcFp
@@ -94,19 +117,19 @@ async function unlinkDest(destFp) {
  * @returns
  */
 async function copyFile(srcFp, destFp) {
-  await unlinkDest(destFp);
-
   if (Fs.copyFile) {
-    return Fs.copyFile(srcFp, destFp);
+    return copyNew(srcFp, destFp);
   } else {
+    await unlinkDest(destFp);
     const srcData = await Fs.readFile(srcFp);
     return Fs.writeFile(destFp, srcData);
   }
 }
 
 /**
- * Clone a file using copy-on-write if supported (macOS APFS, Linux btrfs/xfs).
- * Falls back to regular copy if CoW is not available.
+ * Clone a file using copy-on-write if supported (Linux btrfs/xfs).
+ * Falls back to regular copy if CoW is not available. libuv has no clonefile on macOS, so
+ * there it is always a full copy.
  *
  * Replaces the destination rather than writing through it - see {@link unlinkDest}.
  *
@@ -115,9 +138,7 @@ async function copyFile(srcFp, destFp) {
  * @returns
  */
 async function cloneFile(srcFp, destFp) {
-  await unlinkDest(destFp);
-
-  return fs.promises.copyFile(srcFp, destFp, fs.constants.COPYFILE_FICLONE);
+  return copyNew(srcFp, destFp, fs.constants.COPYFILE_FICLONE);
 }
 
 async function prepDestDir(dest) {
