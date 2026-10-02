@@ -6,8 +6,9 @@ import gitignore from "ignore";
 import { filterScanDir, type ExtrasData } from "filter-scan-dir";
 import type { Stats } from "fs";
 
-async function _scanFileStats(dir: string, ignores: string[], baseDir: string = "") {
+async function _scanFileStats(dir: string, ignores: string[], baseDir: string = "", skipDirs: string[] = []) {
   const patterns = ignores.map(pattern => new Minimatch(pattern, { dot: true }));
+  const skipDirSet = new Set(skipDirs.map(d => Path.resolve(d)));
   const ignore = (fullPath: string) => patterns.find(pattern => pattern.match(fullPath));
 
   let latestMtimeMs = 0;
@@ -77,7 +78,7 @@ async function _scanFileStats(dir: string, ignores: string[], baseDir: string = 
     gitignore: rules => gitignore().add(rules),
     filter,
     filterDir: (file, path, extras) => {
-      if (!filter(file, path, extras)) return false;
+      if (skipDirSet.has(extras.fullFile) || !filter(file, path, extras)) return false;
       // Inspect rules even when the rules themselves are ignored (for example by '*').
       inspectFile(Path.join(extras.fullFile, ".gitignore"));
       return true;
@@ -89,7 +90,11 @@ async function _scanFileStats(dir: string, ignores: string[], baseDir: string = 
   return { latestMtimeMs, latestFile };
 }
 
-function scanFileStats(dir: string, options: { ignores?: string | string[]; moreIgnores?: string | string[] } = {}) {
+/** `skipDirs` are exact paths, not patterns, pruned with their contents */
+function scanFileStats(
+  dir: string,
+  options: { ignores?: string | string[]; moreIgnores?: string | string[]; skipDirs?: string[] } = {}
+) {
   // TODO: make this more flexible and configurable
   const ignores = [
     `**/?(node_modules|_fyn|.vscode|.DS_Store|coverage|.nyc_output|.fynpo|.git|.github|.gitignore)`,
@@ -99,7 +104,7 @@ function scanFileStats(dir: string, options: { ignores?: string | string[]; more
     .concat(options.moreIgnores)
     .filter(x => x);
 
-  return _scanFileStats(dir, ignores, "");
+  return _scanFileStats(dir, ignores, "", options.skipDirs);
 }
 
 export { scanFileStats };

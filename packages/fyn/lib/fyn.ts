@@ -960,10 +960,11 @@ class Fyn {
   // save the config to outputDir
   async saveInstallConfig(): Promise<void> {
     const outputDir = this.getOutputDir();
-    // a skipped store is still saved, so turning linking back on brings it back
-    const centralDir = (_.get(this, "_central._centralDir") ?? this._skippedCentralDir ?? false) as
-      | string
-      | false;
+    // a skipped store is still saved, so turning linking back on brings it back.
+    // _central is unset when a no-change install exits early, so keep the saved dir.
+    const centralDir = ((this._central === undefined
+      ? this._installConfig.centralDir
+      : (_.get(this, "_central._centralDir") ?? this._skippedCentralDir)) ?? false) as string | false;
     const filename = this.getInstallConfigFile();
 
     if (!(await Fs.exists(outputDir))) {

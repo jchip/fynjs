@@ -570,7 +570,9 @@ class FynCli {
           this.fyn._installConfig.time
         ) {
           const stats = await scanFileStats(this.fyn.cwd, {
-            moreIgnores: localExportsScanIgnores(this.fyn._pkg)
+            moreIgnores: localExportsScanIgnores(this.fyn._pkg),
+            // fyn's cache and store may sit inside the project, and walking them is slow
+            skipDirs: [this.fyn.fynDir, this.fyn._installConfig.centralDir].filter(Boolean) as string[]
           });
           const { latestMtimeMs } = stats;
           logger.debug(

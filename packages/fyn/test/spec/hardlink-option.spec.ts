@@ -84,6 +84,13 @@ describe("hardlink option", function () {
     it("writes hardlink: false after --no-hardlink", async () => {
       expect(await save(false)).toBe(false);
     });
+
+    it("keeps the saved centralDir when the store was never set up", async () => {
+      const fyn: any = new Fyn({ opts: { cwd: tmpRoot, targetDir: "node_modules" } });
+      fyn._installConfig.centralDir = "/saved/store";
+      await fyn.saveInstallConfig();
+      expect(JSON.parse(Fs.readFileSync(fynJsonPath(), "utf8")).centralDir).toBe("/saved/store");
+    });
   });
 
   //

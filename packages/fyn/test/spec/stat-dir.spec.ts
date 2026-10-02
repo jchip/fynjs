@@ -72,6 +72,27 @@ describe("scanFileStats", () => {
     });
   });
 
+  it("prunes skipDirs by exact path but still scans their siblings", async () => {
+    const store = Path.join(cwd, "cache/store");
+    const sibling = Path.join(cwd, "cache/other");
+    for (const dir of [store, sibling]) Fs.mkdirSync(dir, { recursive: true });
+    const storeFile = Path.join(store, "index.js");
+    const siblingFile = Path.join(sibling, "index.js");
+    Fs.writeFileSync(storeFile, "store\n");
+    Fs.writeFileSync(siblingFile, "sibling\n");
+    Fs.utimesSync(storeFile, new Date(3000), new Date(3000));
+    Fs.utimesSync(store, new Date(3000), new Date(3000));
+    Fs.utimesSync(siblingFile, new Date(2000), new Date(2000));
+    for (const dir of [sibling, Path.join(cwd, "cache"), cwd]) {
+      Fs.utimesSync(dir, new Date(1000), new Date(1000));
+    }
+
+    expect(await scanFileStats(cwd, { skipDirs: [store] })).toStrictEqual({
+      latestMtimeMs: 2000,
+      latestFile: siblingFile
+    });
+  });
+
   it.each(["package.json", "fyn-lock.yaml", "package-fyn.json", "fynpo.config.json"])("still inspects gitignored install input %s", async name => {
     Fs.writeFileSync(Path.join(cwd, ".gitignore"), `${name}\n`);
     const file = Path.join(cwd, name);
