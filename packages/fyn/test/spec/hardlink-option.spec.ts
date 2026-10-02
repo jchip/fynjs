@@ -1,7 +1,9 @@
-import { describe, it, beforeEach, afterEach, afterAll, expect } from "vitest";
+import { describe, it, beforeEach, afterEach, afterAll, expect, vi } from "vitest";
 import Fs from "fs";
 import Path from "path";
 import Fyn from "../../lib/fyn";
+import FynCentral from "../../lib/fyn-central";
+import FsOps from "../../lib/util/file-ops";
 
 //
 // The central store hardlinks by default. --no-hardlink or FYN_HARDLINK=false turns it off,
@@ -81,6 +83,80 @@ describe("hardlink option", function () {
 
     it("writes hardlink: false after --no-hardlink", async () => {
       expect(await save(false)).toBe(false);
+    });
+  });
+
+  //
+  // Copying out of the central store writes every file twice, so fyn skips the store when it
+  // knows linking can't happen. .fyn.json still keeps the store dir.
+  //
+  describe("skipping a copy-only central store", () => {
+    const tmpRoot = Path.join(__dirname, "..", "..", ".temp", "central-skip-spec");
+    const centralDir = Path.join(tmpRoot, "store");
+    let saveCentralEnv: string | undefined;
+    let savePlatform: PropertyDescriptor;
+
+    beforeEach(() => {
+      Fs.rmSync(tmpRoot, { recursive: true, force: true });
+      Fs.mkdirSync(Path.join(tmpRoot, "node_modules", ".f"), { recursive: true });
+      saveCentralEnv = process.env.FYN_CENTRAL_DIR;
+      process.env.FYN_CENTRAL_DIR = centralDir;
+      savePlatform = Object.getOwnPropertyDescriptor(process, "platform")!;
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+      Object.defineProperty(process, "platform", savePlatform);
+      if (saveCentralEnv === undefined) {
+        delete process.env.FYN_CENTRAL_DIR;
+      } else {
+        process.env.FYN_CENTRAL_DIR = saveCentralEnv;
+      }
+    });
+    afterAll(() => {
+      Fs.rmSync(tmpRoot, { recursive: true, force: true });
+    });
+
+    const setPlatform = (platform: string) =>
+      Object.defineProperty(process, "platform", { ...savePlatform, value: platform });
+    const init = async (hardlink?: boolean) => {
+      const fyn: any = new Fyn({ opts: { cwd: tmpRoot, targetDir: "node_modules", hardlink } });
+      const central = await fyn._initCentralStore();
+      await fyn.saveInstallConfig();
+      const saved = JSON.parse(
+        Fs.readFileSync(Path.join(tmpRoot, "node_modules", ".f", ".fyn.json"), "utf8")
+      );
+      return { central, savedDir: saved.centralDir };
+    };
+
+    it.each(["darwin", "win32"])("skips it on %s when hardlink is off", async platform => {
+      setPlatform(platform);
+      const { central, savedDir } = await init(false);
+      expect(central).toBe(false);
+      expect(savedDir).toBe(centralDir);
+    });
+
+    it("keeps it on linux when hardlink is off, where copies may clone", async () => {
+      setPlatform("linux");
+      const { central } = await init(false);
+      expect(central).toBeInstanceOf(FynCentral);
+    });
+
+    it("keeps it when hardlink is on and the store is on the project's volume", async () => {
+      const { central, savedDir } = await init();
+      expect(central).toBeInstanceOf(FynCentral);
+      expect(savedDir).toBe(centralDir);
+    });
+
+    it("skips it when the store is on a different volume", async () => {
+      const realStat = FsOps.stat;
+      vi.spyOn(FsOps, "stat").mockImplementation(async (p: string) => {
+        const st = await realStat(p);
+        return p.startsWith(centralDir) ? { ...st, dev: st.dev + 1 } : st;
+      });
+      Fs.mkdirSync(centralDir, { recursive: true });
+      const { central, savedDir } = await init();
+      expect(central).toBe(false);
+      expect(savedDir).toBe(centralDir);
     });
   });
 });

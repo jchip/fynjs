@@ -273,7 +273,7 @@ const options: Record<string, OptionSpec> = {
   hardlink: {
     args: "<flag boolean>",
     // no argDefault: unset means use FYN_HARDLINK or the choice saved in .fyn.json
-    desc: "hardlink central store files into node_modules (default). --no-hardlink copies them, and is remembered"
+    desc: "hardlink central store files into node_modules (default). --no-hardlink is remembered, and skips the central store on macOS and Windows, where it would only copy"
   },
   copy: {
     args: "[packages string..]",

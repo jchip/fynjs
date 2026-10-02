@@ -278,6 +278,8 @@ class Fyn {
   /** set in `resolveDependencies`, before any collaborator that reads it exists */
   _data!: DepData;
   private _central?: FynCentral | false;
+  /** the configured central dir, kept in .fyn.json when this install skipped the store */
+  private _skippedCentralDir?: string;
   private _npmLockData?: NpmLockData | null;
   private _yarnLock?: YarnLockData;
   _runNpm?: any;
@@ -475,7 +477,42 @@ class Fyn {
       logger.info(`Enabling central store by fynpo monorepo using dir ${centralDir}`);
     }
 
+    const reason = await this._centralCopyOnlyReason(centralDir);
+    if (reason) {
+      logger.info(`Skipping central store at ${centralDir}: ${reason}, so it would only copy files`);
+      this._skippedCentralDir = centralDir;
+      return (this._central = false);
+    }
+
     return (this._central = new FynCentral({ centralDir, hardlink: this.hardlink }));
+  }
+
+  /**
+   * The central store only pays off when node_modules links to it. Copying out of it writes
+   * every file twice, so it's skipped when linking is known to be impossible.
+   */
+  async _centralCopyOnlyReason(centralDir: string): Promise<string | undefined> {
+    // libuv never clones on macOS or Windows, so with linking off replicate copies
+    if (!this.hardlink && ["darwin", "win32"].includes(process.platform)) {
+      return "hardlink is off";
+    }
+    // the store dir may not exist yet, so stat its closest existing parent
+    const deviceOf = async (dir: string): Promise<number> => {
+      for (;;) {
+        try {
+          return (await Fs.stat(dir)).dev;
+        } catch {
+          const parent = Path.dirname(dir);
+          if (parent === dir) return -1;
+          dir = parent;
+        }
+      }
+    };
+    const [storeDev, projectDev] = await Promise.all([deviceOf(centralDir), deviceOf(this.cwd)]);
+    if (storeDev !== projectDev) {
+      return "it's on a different volume than the project";
+    }
+    return undefined;
   }
 
   async _initialize({ noLock = false }: { noLock?: boolean } = {}): Promise<void> {
@@ -923,7 +960,10 @@ class Fyn {
   // save the config to outputDir
   async saveInstallConfig(): Promise<void> {
     const outputDir = this.getOutputDir();
-    const centralDir = _.get(this, "_central._centralDir", false) as string | false;
+    // a skipped store is still saved, so turning linking back on brings it back
+    const centralDir = (_.get(this, "_central._centralDir") ?? this._skippedCentralDir ?? false) as
+      | string
+      | false;
     const filename = this.getInstallConfigFile();
 
     if (!(await Fs.exists(outputDir))) {
