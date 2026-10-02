@@ -196,7 +196,10 @@ const pickOptions = async (cmd: CommandNode, checkFynpo = true): Promise<PickedO
   setLogLevel(allOpts.logLevel as string | undefined);
   if (allOpts.progress) logger.setItemType(allOpts.progress as string);
 
-  return { opts: allOpts as FynCliOpts, rcData, _cliSource: meta.source, _fynpo: fynpo };
+  // root options (--production, --layout, --cwd, ...) record their source on the root command
+  const _cliSource = { ...cmd.rootCmd?.jsonMeta.source, ...meta.source };
+
+  return { opts: allOpts as FynCliOpts, rcData, _cliSource, _fynpo: fynpo };
 };
 
 /** Resolve bootstrap's generated report without resolving the package graph or installing. */

@@ -62,6 +62,37 @@ describe("cli/main", function() {
     });
   });
 
+  describe("option sources", function() {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    // root options belong to the root command, so their sources must reach Fyn too
+    const sourcesFor = async (args: string[]) => {
+      let source: Record<string, unknown> = {};
+      vi.spyOn(FynCli.prototype, "install").mockImplementation(async function (this: any) {
+        source = this._config._cliSource;
+      });
+      await runCli(args, 0);
+      return source;
+    };
+
+    it("marks an omitted root option as default", async () => {
+      const source = await sourcesFor(["install"]);
+      expect(source.production).toBe("default");
+      expect(source.layout).toBe("default");
+    });
+
+    it("marks a root option given before or after the command as cli", async () => {
+      expect((await sourcesFor(["install", "--production"])).production).toBe("cli");
+      expect((await sourcesFor(["--production", "install"])).production).toBe("cli");
+    });
+
+    it("keeps the command's own option sources", async () => {
+      expect((await sourcesFor(["install"])).audit).toBe("default");
+    });
+  });
+
   describe("setLockfile", function() {
     it("updates the nested option consumed by Fyn and returns its previous value", () => {
       const config = { opts: { lockfile: true } };
