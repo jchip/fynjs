@@ -175,6 +175,30 @@ describe("commitAndTagUpdates", () => {
     expect(calls[1]).toContain(`-m " - a@1.0.0\n - b@2.0.0"`);
   });
 
+  it("adds the quoted extra message after the package list", async () => {
+    const { sh, calls } = makeSh();
+    await commitAndTagUpdates(baseCtx(sh, { commitMsg: "it's `x` $y" }), {
+      packages: ["a/package.json"],
+      tags: ["a@1.0.0"],
+    });
+    expect(calls[1]).toContain(`-m " - a@1.0.0" -m 'it'\\''s \`x\` $y'`);
+  });
+
+  it("rewrites the message when amending with an extra message", () => {
+    const sh = vi.fn(async (command: string) => ({
+      stdout: command === "git rev-parse HEAD" ? "new-head\n" : "",
+    }));
+    return verify({ timeout: 2000 })
+      .step(() => commitAndTagUpdates(baseCtx(sh, { amend: "old-head", tag: false, commitMsg: "notes" }), {
+        packages: ["generated.txt"],
+        tags: ["a@1.0.0"],
+      }))
+      .step(() => {
+        const commit = sh.mock.calls.map(([command]) => command).find(c => c.startsWith("git commit"));
+        expect(commit).toBe(`git commit -n --amend -m "[Publish]" -m " - a@1.0.0" -m 'notes'`);
+      });
+  });
+
   it("marks a selective release in the commit subject", async () => {
     const { sh, calls } = makeSh();
     await commitAndTagUpdates(baseCtx(sh, { isSelective: true }), {

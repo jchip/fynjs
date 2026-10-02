@@ -477,6 +477,10 @@ export const fynpoMain = () => {
           args: "[flag boolean]",
           desc: "release dependents listed under Fynpo Updated (use --no-indirect-bumps to skip them, or set `indirectBumps: false` in the fynpo config)",
         },
+        "commit-msg": {
+          args: "<msg string>",
+          desc: "extra message to add to the [Publish] commit body",
+        },
       },
     },
     updated: {

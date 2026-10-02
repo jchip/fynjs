@@ -127,6 +127,23 @@ describe("prepare bootstrap and package hooks", () => {
         expect(git("status", "--porcelain")).toBe("");
       }));
 
+  it("adds an extra commit message and still amends that release on rerun", () =>
+    verify({ timeout: 3000 })
+      .step(() => {
+        prepare._options.commitMsg = "first `note` $HOME";
+        return prepare.exec();
+      })
+      .step(async () => {
+        expect(git("log", "-1", "--format=%B")).toBe("[Publish][Selective]\n\n - a@2.0.0\n\nfirst `note` $HOME\n\n");
+        const parent = git("rev-parse", "HEAD^");
+        return { next: await makeForcedRerun({ commitMsg: "second note" }), parent };
+      })
+      .keep.step(({ next }) => next.exec())
+      .step(({ parent }) => {
+        expect(git("rev-parse", "HEAD^")).toBe(parent);
+        expect(git("log", "-1", "--format=%B")).toBe("[Publish][Selective]\n\n - a@2.0.0\n\nsecond note\n\n");
+      }));
+
   it.each(["unrelated", "different version", "additional package", "known remote"])(
     "creates a new commit when HEAD is %s",
     (kind) => verify({ timeout: 3000 })

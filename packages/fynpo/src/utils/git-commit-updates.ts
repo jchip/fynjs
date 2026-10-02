@@ -18,6 +18,8 @@ export type CommitAndTagContext = {
   isSelective: boolean;
   /** Existing prepare commit to amend, after the caller matched its release metadata. */
   amend?: string;
+  /** Extra text added to the commit body after the package list. */
+  commitMsg?: string;
   /**
    * Staged ahead of the release file paths. `version` and `changelog` stage CHANGELOG.md
    * along with the packages; `prepare` supplies all files changed during preparation.
@@ -89,10 +91,13 @@ export const commitAndTagUpdates = async (
   const addOutput = await ctx.sh(`git add -- ${staged}`);
   logger.info("git add", addOutput);
 
+  const extra = ctx.commitMsg ? ` -m '${ctx.commitMsg.replace(/'/g, "'\\''")}'` : "";
+  const message = `-m "${utils.makePublishCommitSubject(ctx.isSelective)}"` +
+    ` -m " - ${tags.join("\n - ")}"${extra}`;
+  // an amend keeps its message, unless a new extra message replaces it
   const commitOutput = await ctx.sh(
-    ctx.amend ? "git commit -n --amend --no-edit" :
-      `git commit -n -m "${utils.makePublishCommitSubject(ctx.isSelective)}"` +
-      ` -m " - ${tags.join("\n - ")}"`
+    !ctx.amend ? `git commit -n ${message}` :
+      extra ? `git commit -n --amend ${message}` : "git commit -n --amend --no-edit"
   );
   logger.info("git commit", commitOutput);
 

@@ -170,6 +170,7 @@ export class Prepare {
         gitClean: this._gitClean,
         isSelective: utils.isSelectiveRelease(this._options),
         amend,
+        commitMsg: this._options.commitMsg,
       },
       { packages, tags: this._tags }
     ).catch(err => {
@@ -184,7 +185,9 @@ export class Prepare {
     if (!["[Publish]", utils.selectivePublishSubject].includes(subject) || !this._tags.length) {
       return undefined;
     }
-    const entries = body.map(line => line.trim()).filter(Boolean).sort();
+    // the package list is the first paragraph, any --commit-msg text follows it
+    const blank = body.findIndex(line => !line.trim());
+    const entries = body.slice(0, blank < 0 ? undefined : blank).map(line => line.trim()).sort();
     const expected = this._tags.map(tag => `- ${tag}`).sort();
     if (!_.isEqual(entries, expected)) return undefined;
 
