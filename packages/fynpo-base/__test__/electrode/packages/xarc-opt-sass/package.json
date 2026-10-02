@@ -30,7 +30,7 @@
     "prepare": "shx cp node_modules/opt-archetype-check/xarc-opt-check.js ."
   },
   "dependencies": {
-    "node-sass": "^4.9.3",
+    "node-sass": "^9.0.0",
     "sass-loader": "^6.0.6"
   },
   "devDependencies": {
