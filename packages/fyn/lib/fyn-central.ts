@@ -4,7 +4,7 @@ import Fs from "./util/file-ops";
 import ssri from "ssri";
 import * as Tar from "tar";
 import fyntil from "./util/fyntil";
-import { cloneFile, copyFile } from "./util/hard-link-dir";
+import { cloneFile, copyFile, linkFile } from "./util/hard-link-dir";
 import logger from "./logger";
 import { AggregateError } from "@jchip/error";
 import { filterScanDir, type ExtrasData } from "filter-scan-dir";
@@ -67,7 +67,12 @@ function isTreeFileContent(obj: unknown): obj is TreeFileContent {
 /** Options for FynCentral constructor */
 interface FynCentralOptions {
   centralDir?: string;
+  /** hardlink replicated files to the store, falling back to a copy where links fail */
+  hardlink?: boolean;
 }
+
+/** link errors that mean the filesystem can't hardlink from the store at all */
+const NO_LINK_CODES = ["EXDEV", "EPERM", "ENOTSUP", "EOPNOTSUPP", "ENOSYS"];
 
 /**
  * Convert a directory tree structure to a flatten one like:
@@ -112,10 +117,12 @@ function flattenTree(tree: TreeNode, output: FlattenedTree, baseDir: string): Fl
 class FynCentral {
   private _centralDir: string;
   private _map: Map<string, PackageInfo>;
+  private _hardlink: boolean;
 
-  constructor({ centralDir = ".fyn/_central-storage" }: FynCentralOptions = {}) {
+  constructor({ centralDir = ".fyn/_central-storage", hardlink = true }: FynCentralOptions = {}) {
     this._centralDir = Path.resolve(centralDir);
     this._map = new Map();
+    this._hardlink = hardlink;
   }
 
   _analyze(integrity: string): PackageInfo {
@@ -352,7 +359,7 @@ class FynCentral {
           if (file === "package.json") {
             return copyFile(src, dest);
           }
-          return cloneFile(src, dest);
+          return this._hardlink ? this._linkFile(src, dest) : cloneFile(src, dest);
         },
         { concurrency: 5 }
       );
@@ -360,6 +367,29 @@ class FynCentral {
       const msg = `fyn-central can't replicate package at ${destDir} for integrity ${integrity}`;
       throw new AggregateError([err as Error], msg);
     }
+  }
+
+  /**
+   * Hardlink a file from the store, or clone it where the filesystem can't link it, such as a
+   * store on another volume. That failure turns linking off for the rest of the run.
+   */
+  async _linkFile(src: string, dest: string): Promise<void> {
+    try {
+      await linkFile(src, dest);
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code!;
+      if (NO_LINK_CODES.includes(code)) {
+        if (this._hardlink) {
+          this._hardlink = false;
+          logger.info(`fyn-central: can't hardlink from ${this._centralDir} (${code}), copying instead`);
+        }
+      } else if (code !== "EMLINK") {
+        // EMLINK: this one file has too many links, so copy just it
+        throw err;
+      }
+    }
+    await cloneFile(src, dest);
   }
 
   _untarStream(tarStream: Readable, targetDir: string): Promise<TreeNode> {

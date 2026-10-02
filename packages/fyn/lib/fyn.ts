@@ -83,6 +83,7 @@ interface FynOptions {
   ignoreLockUrl?: boolean;
   copy?: string[];
   centralStore?: boolean;
+  hardlink?: boolean;
   forceCache?: boolean;
   offline?: boolean;
   fynlocal?: boolean;
@@ -149,6 +150,8 @@ interface InstallConfig {
   blockedScripts?: BlockedScriptRecord[];
   /** packages that would need approval under "review", from --allow-scripts-pending */
   pendingScripts?: BlockedScriptRecord[];
+  /** false when the central store copies files instead of hardlinking them */
+  hardlink?: boolean;
   [key: string]: unknown;
 }
 
@@ -472,7 +475,7 @@ class Fyn {
       logger.info(`Enabling central store by fynpo monorepo using dir ${centralDir}`);
     }
 
-    return (this._central = new FynCentral({ centralDir }));
+    return (this._central = new FynCentral({ centralDir, hardlink: this.hardlink }));
   }
 
   async _initialize({ noLock = false }: { noLock?: boolean } = {}): Promise<void> {
@@ -938,6 +941,7 @@ class Fyn {
         fynlocal: Boolean(this.fynlocal),
         layout: this._options.layout,
         shortPkgDir: this._shortPkgDir,
+        hardlink: this.hardlink,
         blockedScripts: this._blockedScripts || this._installConfig.blockedScripts || [],
         pendingScripts: this._pendingScripts || this._installConfig.pendingScripts || []
         // not a good idea to save --run-npm options to install config because
@@ -1353,6 +1357,21 @@ class Fyn {
 
   get production(): boolean | undefined {
     return this._options.production;
+  }
+
+  /**
+   * Whether the central store hardlinks files into node_modules. --no-hardlink or
+   * FYN_HARDLINK=false turns it off, and .fyn.json keeps the choice for later installs.
+   * Precedence: CLI or rc, then env, then .fyn.json, then on.
+   */
+  get hardlink(): boolean {
+    if (this._options.hardlink !== undefined) {
+      return this._options.hardlink !== false;
+    }
+    if (process.env.FYN_HARDLINK !== undefined) {
+      return fynTil.strToBool(process.env.FYN_HARDLINK);
+    }
+    return this._installConfig.hardlink !== false;
   }
 
   get concurrency(): number | undefined {

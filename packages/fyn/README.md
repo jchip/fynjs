@@ -75,6 +75,7 @@ progress: normal
 logLevel: info
 production: false
 centralStore: false
+hardlink: true
 ```
 
 Or as an ini:
@@ -89,6 +90,7 @@ progress=normal
 logLevel=info
 production=false
 centralStore=false
+hardlink=true
 ```
 
 ### Local source exports (`fyn.localExports`)
