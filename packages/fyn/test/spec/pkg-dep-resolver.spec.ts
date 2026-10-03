@@ -207,15 +207,12 @@ describe("pkg-dep-resolver", function () {
         cwd: fynDir,
       },
     });
+    // the meta was fetched fine, so the error is not wrapped as a meta retrieval failure
     return verify({ timeout: 9000 })
-      .expectErrorHas("Unable to retrieve meta for package mod-a")
+      .expectErrorHas("Unable to find a version from lock data that satisfied semver mod-a@^14.0.0")
       .step(() => fyn.resolveDependencies())
       .step((error) => {
-        expect(error.errors).toEqual(expect.anything());
-        const message = error.errors.map((e) => e.message).join("\n");
-        expect(message).toContain(
-          `Unable to find a version from lock data that satisfied semver mod-a@^14.0.0`,
-        );
+        expect(error.message).not.toContain("Unable to retrieve meta");
       });
   });
 
@@ -236,14 +233,10 @@ describe("pkg-dep-resolver", function () {
       },
     });
     return verify({ timeout: 9000 })
-      .expectErrorHas("Unable to retrieve meta for package mod-a")
+      .expectErrorHas("Unable to find a version from lock data that satisfied semver mod-a@blah")
       .step(() => fyn.resolveDependencies())
       .step((error) => {
-        expect(error.errors).toEqual(expect.anything());
-        const message = error.errors.map((e) => e.message).join("\n");
-        expect(message).toContain(
-          `Unable to find a version from lock data that satisfied semver mod-a@blah`,
-        );
+        expect(error.message).not.toContain("Unable to retrieve meta");
       });
   });
 

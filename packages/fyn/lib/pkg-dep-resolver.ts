@@ -231,6 +231,12 @@ export function lockedMetaNeedsFetch(
 const failMetaMsg = name =>
   `Unable to retrieve meta for package ${name} - If you've updated its version recently, try to run fyn with '--refresh-meta' again`;
 
+/**
+ * The meta was retrieved, but no version can be resolved from it. This is reported as is, not
+ * wrapped in the "Unable to retrieve meta" error, whose --refresh-meta hint doesn't apply.
+ */
+class ResolveError extends Error {}
+
 /*
  * Package dependencies resolver
  *
@@ -904,7 +910,7 @@ class PkgDepResolver {
         const lockTime = this._fyn.lockTime;
         const published = lockTime && meta.time && meta.time[version];
         if (published && new Date(published).getTime() > lockTime.getTime()) {
-          throw new Error(
+          throw new ResolveError(
             `${meta.name}@${semver} is ${version}, published ${published}, after the lock time ${lockTime.toISOString()}`
           );
         }
@@ -1392,7 +1398,7 @@ class PkgDepResolver {
   }
 
   _failUnsatisfySemver(item: DepItem): never {
-    throw new Error(
+    throw new ResolveError(
       `Unable to find a version from lock data that satisfied semver ${item.name}@${item.semver}
 ${item.depPath.join(" > ")}`
     );
@@ -1813,7 +1819,7 @@ ${item.depPath.join(" > ")}`
             // elsewhere in this file — testing `!== "opt"` wrongly treated
             // devOptDependencies as required and hard-aborted the install.
             if (!item.dsrc || !item.dsrc.includes("opt")) {
-              if (err.message.includes("Unable to retrieve meta")) {
+              if (err instanceof ResolveError || err.message.includes("Unable to retrieve meta")) {
                 throw err;
               } else {
                 throw new AggregateError([err], failMetaMsg(item.name));
