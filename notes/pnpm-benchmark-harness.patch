@@ -1,5 +1,5 @@
 diff --git a/benchmarkFixture.js b/benchmarkFixture.js
-index 32d57b2..cbd3f31 100644
+index 32d57b2..81eef99 100644
 --- a/benchmarkFixture.js
 +++ b/benchmarkFixture.js
 @@ -17,7 +17,8 @@ const lockfileNameByPM = {
@@ -39,7 +39,7 @@ index 32d57b2..cbd3f31 100644
  function cleanLockfile (pm, cwd, env) {
    const lockfileName = lockfileNameByPM[pm.name]
    rimraf.sync(path.join(cwd, lockfileName))
-@@ -260,6 +281,13 @@ export default async function benchmark (pm, fixture, opts) {
+@@ -260,6 +281,16 @@ export default async function benchmark (pm, fixture, opts) {
      // pnpm 11's --cache-dir, so wiping cache/ means what it says.
      env.PNPM_CONFIG_CACHE_DIR = path.join(cwd, 'cache', 'cache')
    }
@@ -48,12 +48,15 @@ index 32d57b2..cbd3f31 100644
 +    // cache/ so wiping cache/ goes cold, like every other column.
 +    env.FYN_DIR = path.join(cwd, 'cache', 'fyn')
 +    // The central store is on only for the central row, and lives in cache/ too.
-+    env.FYN_CENTRAL_DIR = pm.fynCentral ? path.join(cwd, 'cache', 'fyn-central') : 'false'
++    // fynDefault leaves it unset, so fyn picks its own default: clones from a store under FYN_DIR on macOS.
++    if (!pm.fynDefault) {
++      env.FYN_CENTRAL_DIR = pm.fynCentral ? path.join(cwd, 'cache', 'fyn-central') : 'false'
++    }
 +  }
    if (opts.pnprServerRegistry) {
      applyPnprServerRegistry(env, opts.pnprServerRegistry)
    }
-@@ -372,12 +400,20 @@ export default async function benchmark (pm, fixture, opts) {
+@@ -372,12 +403,20 @@ export default async function benchmark (pm, fixture, opts) {
    let withWarmCacheAndModules
    let withWarmModulesAndLockfile
    let withWarmModules
@@ -74,7 +77,7 @@ index 32d57b2..cbd3f31 100644
      rimraf.sync(path.join(cwd, 'cache'))
  
      console.log('# with warm modules and lockfile')
-@@ -391,11 +427,18 @@ export default async function benchmark (pm, fixture, opts) {
+@@ -391,11 +430,18 @@ export default async function benchmark (pm, fixture, opts) {
  
      withWarmModules = measureInstall(pm, cwd, env)
  
@@ -94,7 +97,7 @@ index 32d57b2..cbd3f31 100644
      size = await getFolderSize.loose(path.join(cwd, 'cache'))
    }
  
-@@ -470,6 +513,8 @@ export default async function benchmark (pm, fixture, opts) {
+@@ -470,6 +516,8 @@ export default async function benchmark (pm, fixture, opts) {
      withWarmCacheAndModules,
      withWarmModulesAndLockfile,
      withWarmModules,
@@ -103,7 +106,7 @@ index 32d57b2..cbd3f31 100644
      updatedDependencies,
      size
    }
-@@ -492,9 +537,12 @@ function measureInstall (cmd, cwd, env) {
+@@ -492,9 +540,12 @@ function measureInstall (cmd, cwd, env) {
    const startTime = Date.now()
  
    console.log(`> ${cmd.name} ${cmd.args.join(' ')}`)
@@ -133,7 +136,7 @@ index 529c4e2..2650b49 100644
  // Results measured here are recorded under their own name. A registry of our
  // own across an emulated link is a different measurement than the public
 diff --git a/commandsMap.js b/commandsMap.js
-index 75a898f..bfe4e33 100644
+index 75a898f..621cce8 100644
 --- a/commandsMap.js
 +++ b/commandsMap.js
 @@ -83,6 +83,20 @@ export default {
@@ -157,7 +160,7 @@ index 75a898f..bfe4e33 100644
    // The command is pnpm 12's, unchanged: what makes this scenario different
    // from the one above is the `pnprServer` the fixture is configured with,
    // which moves dependency resolution onto the registry.
-@@ -95,6 +109,49 @@ export default {
+@@ -95,6 +109,161 @@ export default {
        '--ignore-scripts',
      ]
    },
@@ -204,6 +207,118 @@ index 75a898f..bfe4e33 100644
 +      '--registry=https://registry.npmjs.org/',
 +    ]
 +  },
++  // LOCAL RUN: central store with linking off, so replicate copies every file.
++  fyn_central_copy: {
++    scenario: 'fyn_central_copy',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--no-hardlink',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
++  // LOCAL RUN: central store with the rlink branch's fyn, which clones files.
++  fyn_central_rlink: {
++    scenario: 'fyn_central_rlink',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
++  // LOCAL RUN: direct and clone only, with tarball fetches overlapping resolution
++  // (--always-fetch-dist) or with pnpm's network concurrency (--concurrency=64).
++  fyn_afd: {
++    scenario: 'fyn_afd',
++    fynEnv: true,
++    name: 'fyn',
++    args: ['install', '--script-policy=off', '--progress=none', '--no-audit', '--always-fetch-dist',
++      '--registry=https://registry.npmjs.org/']
++  },
++  fyn_central_clone_afd: {
++    scenario: 'fyn_central_clone_afd',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: ['install', '--script-policy=off', '--progress=none', '--no-audit', '--no-hardlink',
++      '--no-copy-fallback', '--always-fetch-dist', '--registry=https://registry.npmjs.org/']
++  },
++  fyn_cc32: {
++    scenario: 'fyn_cc32',
++    fynEnv: true,
++    name: 'fyn',
++    args: ['install', '--script-policy=off', '--progress=none', '--no-audit', '--concurrency=32',
++      '--registry=https://registry.npmjs.org/']
++  },
++  // LOCAL RUN: fyn with no store setting, so it uses its platform default.
++  fyn_default: {
++    scenario: 'fyn_default',
++    fynEnv: true,
++    fynDefault: true,
++    name: 'fyn',
++    args: ['install', '--script-policy=off', '--progress=none', '--no-audit',
++      '--registry=https://registry.npmjs.org/']
++  },
++  fyn_central_clone_cc32: {
++    scenario: 'fyn_central_clone_cc32',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: ['install', '--script-policy=off', '--progress=none', '--no-audit', '--no-hardlink',
++      '--no-copy-fallback', '--concurrency=32', '--registry=https://registry.npmjs.org/']
++  },
++  fyn_central_clone_cc64: {
++    scenario: 'fyn_central_clone_cc64',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: ['install', '--script-policy=off', '--progress=none', '--no-audit', '--no-hardlink',
++      '--no-copy-fallback', '--concurrency=64', '--registry=https://registry.npmjs.org/']
++  },
++  // LOCAL RUN: central store, hardlink only. rlink isn't used, and any file that can't be
++  // hardlinked fails the install instead of being cloned or copied.
++  fyn_central_hardlink: {
++    scenario: 'fyn_central_hardlink',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--no-reflink',
++      '--no-copy-fallback',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
++  // LOCAL RUN: central store, clone only. With rlink loaded every file must clone, and any
++  // file that can't fails the install instead of being copied or hardlinked.
++  fyn_central_clone: {
++    scenario: 'fyn_central_clone',
++    fynEnv: true,
++    fynCentral: true,
++    name: 'fyn',
++    args: [
++      'install',
++      '--script-policy=off',
++      '--progress=none',
++      '--no-audit',
++      '--no-hardlink',
++      '--no-copy-fallback',
++      '--registry=https://registry.npmjs.org/',
++    ]
++  },
    yarn: {
      scenario: 'yarn',
      name: 'yarn',
@@ -224,10 +339,10 @@ index 2e3e7d6..1104d0d 100644
      // A dependency graph big enough for the graph-shaped costs to show.
      // On `alotta-files` they cancel out: what a package manager saves by
 diff --git a/index.js b/index.js
-index 5784d14..153e0d8 100644
+index 5784d14..8439273 100644
 --- a/index.js
 +++ b/index.js
-@@ -38,21 +38,17 @@ const VERSIONS_FILE = path.join(DIRNAME, 'versions.json')
+@@ -38,21 +38,27 @@ const VERSIONS_FILE = path.join(DIRNAME, 'versions.json')
  // key means to a reader — and whether a reader is shown it at all — is the
  // reading side's business. pnpm.io publishes npm and the pnpm columns; the
  // rest are measured for comparisons of our own and reported just the same.
@@ -252,11 +367,21 @@ index 5784d14..153e0d8 100644
 +  { key: 'fyn' },
 +  { key: 'fyn_cc64' },
 +  { key: 'fyn_central' },
++  { key: 'fyn_central_copy' },
++  { key: 'fyn_central_rlink' },
++  { key: 'fyn_central_clone' },
++  { key: 'fyn_central_hardlink' },
++  { key: 'fyn_afd' },
++  { key: 'fyn_central_clone_afd' },
++  { key: 'fyn_central_clone_cc64' },
++  { key: 'fyn_cc32' },
++  { key: 'fyn_central_clone_cc32' },
++  { key: 'fyn_default' },
 +].filter(({ key }) => !process.env.BENCH_ONLY || process.env.BENCH_ONLY.split(',').includes(key))
  
  const tests = [
    'firstInstall',
-@@ -63,7 +59,10 @@ const tests = [
+@@ -63,7 +69,10 @@ const tests = [
    'withWarmCacheAndLockfile',
    'withWarmModulesAndLockfile',
    'repeatInstall',
@@ -268,26 +393,28 @@ index 5784d14..153e0d8 100644
  ]
  
  // The scenarios the Node.js version managers are measured on. They live in
-@@ -190,7 +189,7 @@ function writeVersionsManifest ({ pmCommands, registryVersion }) {
+@@ -190,7 +199,7 @@ function writeVersionsManifest ({ pmCommands, registryVersion }) {
  async function measure () {
    const tmpDir = tempy.directory()
    const managersDirs = {}
 -  for (const pm of ['npm', 'pnpm11', 'pnpm12', 'yarn', 'bun', 'fnm', 'nvm', 'pnpr']) {
-+  for (const pm of ['npm', 'pnpm11', 'pnpm12', 'yarn', 'bun', 'fnm', 'nvm', 'pnpr', 'fyn']) {
++  for (const pm of ['npm', 'pnpm11', 'pnpm12', 'yarn', 'bun', 'fnm', 'nvm', 'pnpr', 'fyn', 'fyn_rlink']) {
      managersDirs[pm] = path.join(tmpDir, pm)
    }
    await Promise.allSettled([
-@@ -211,7 +210,8 @@ async function measure () {
+@@ -211,7 +220,10 @@ async function measure () {
    // installer provisions everything the benchmark measures.
    const installerPnpm = bootstrapInstaller(path.join(tmpDir, 'setup'))
    provisionPackageManagers(installerPnpm, managersDirs)
 -  cloneNvm(managersDirs.nvm)
 +  // LOCAL RUN: fyn is the working-tree build of fynjs, put on PATH through a shim.
 +  provisionLocalFyn(managersDirs.fyn)
++  provisionLocalFyn(managersDirs.fyn_rlink,
++    process.env.LOCAL_FYN_RLINK_BIN ?? '/Users/joel.chen/dev/fynjs-rlink/packages/fyn/bin/fyn.mjs')
    // Every package manager installs through the same registry of our own,
    // reached across an emulated network link. A registry on the benchmark
    // machine itself would hide what resolving a dependency graph costs, which is
-@@ -234,6 +234,7 @@ async function measure () {
+@@ -234,6 +246,7 @@ async function measure () {
      pnpm12: { managersDir: managersDirs.pnpm12 },
      pnpm12_global_virtual_store: { managersDir: managersDirs.pnpm12 },
      pnpm12_hoisted: { managersDir: managersDirs.pnpm12 },
@@ -295,17 +422,27 @@ index 5784d14..153e0d8 100644
      pnpm_pnpr: {
        managersDir: managersDirs.pnpm12,
        pnprServer: registry.resolverUrl,
-@@ -242,6 +243,9 @@ async function measure () {
+@@ -242,6 +255,19 @@ async function measure () {
      },
      yarn: { managersDir: managersDirs.yarn },
      bun: { managersDir: managersDirs.bun },
 +    fyn: { managersDir: managersDirs.fyn },
 +    fyn_cc64: { managersDir: managersDirs.fyn },
 +    fyn_central: { managersDir: managersDirs.fyn },
++    fyn_central_copy: { managersDir: managersDirs.fyn },
++    fyn_central_rlink: { managersDir: managersDirs.fyn_rlink },
++    fyn_central_clone: { managersDir: managersDirs.fyn },
++    fyn_central_hardlink: { managersDir: managersDirs.fyn },
++    fyn_afd: { managersDir: managersDirs.fyn },
++    fyn_central_clone_afd: { managersDir: managersDirs.fyn },
++    fyn_central_clone_cc64: { managersDir: managersDirs.fyn },
++    fyn_cc32: { managersDir: managersDirs.fyn },
++    fyn_central_clone_cc32: { managersDir: managersDirs.fyn },
++    fyn_default: { managersDir: managersDirs.fyn },
    }
    // A manager with nowhere to install from would otherwise fail eight minutes
    // into the run, on the one it was mistyped for.
-@@ -278,22 +282,21 @@ async function measure () {
+@@ -278,22 +304,21 @@ async function measure () {
      registry.stop()
    }
  
@@ -334,10 +471,10 @@ index 5784d14..153e0d8 100644
 -    nodeManagers,
 -  })
 +/** Puts the fynjs working-tree fyn on the scenarios' PATH. */
-+function provisionLocalFyn (managersDir) {
++function provisionLocalFyn (managersDir,
++  fynMain = process.env.LOCAL_FYN_BIN ?? '/Users/joel.chen/dev/fynjs/packages/fyn/bin/fyn.mjs') {
 +  const bin = path.join(managersDir, 'bin')
 +  fs.mkdirSync(bin, { recursive: true })
-+  const fynMain = process.env.LOCAL_FYN_BIN ?? '/Users/joel.chen/dev/fynjs/packages/fyn/bin/fyn.mjs'
 +  fs.writeFileSync(path.join(bin, 'fyn'), `#!/bin/sh\nexec "${process.execPath}" "${fynMain}" "$@"\n`, { mode: 0o755 })
  }
  
