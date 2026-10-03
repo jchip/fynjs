@@ -4,7 +4,7 @@ import * as utils from "../utils.ts";
 import semver from "semver";
 import { logger } from "../logger.ts";
 
-const findVersion = (name, updateType, collated) => {
+export const findVersion = (name, updateType, collated) => {
   const types = ["patch", "minor", "major"];
   const pkg = utils.getManagedPackage(collated.opts.graph, name);
   const pkgJson = _.get(pkg, "pkgJson", {});
@@ -33,7 +33,7 @@ const findUpdateType = (name, collated, minBumpType = 0) => {
   collated.packages[name] = collated.packages[name] || {};
   const msgs = collated.packages[name].msgs || [];
 
-  const updateType = msgs.reduce((a, x) => {
+  const ownUpdateType = msgs.reduce((a, x) => {
     const parsed: any = utils.lintParser(x.m, parserOpts);
     if ((parsed.type && majorTypes.includes(parsed.type)) || x.m.indexOf("[maj") >= 0) {
       if (a < 2) {
@@ -45,9 +45,11 @@ const findUpdateType = (name, collated, minBumpType = 0) => {
       }
     }
     return a;
-  }, minBumpType);
+  }, 0);
 
-  collated.packages[name].updateType = updateType;
+  // ownUpdateType is what the package's own commits ask for, before locks and dependencies
+  collated.packages[name].ownUpdateType = ownUpdateType;
+  collated.packages[name].updateType = Math.max(ownUpdateType, minBumpType);
 };
 
 export const determinePackageVersions = (collated) => {

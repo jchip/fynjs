@@ -499,6 +499,12 @@ export const fynpoMain = () => {
         tag: {
           desc: "create tags for individual packages",
         },
+        "confirm-version-bumps": {
+          alias: "cvb",
+          args: "[flag boolean]",
+          argDefault: "true",
+          desc: "confirm minor and major version bumps (use --no-confirm-version-bumps or --no-cvb to skip)",
+        },
       },
     },
     run: {

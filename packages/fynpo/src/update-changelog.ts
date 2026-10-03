@@ -43,6 +43,7 @@ import {
 } from "./utils/git-list-commits.ts";
 import { determinePackageVersions } from "./utils/get-package-version.ts";
 import { updateChangelog } from "./utils/update-changelog-file.ts";
+import { confirmVersionBumps } from "./utils/confirm-version-bumps.ts";
 import { updatePackageVersions } from "./utils/update-package-versions.ts";
 import { getCurrentBranch } from "./utils/get-current-branch.ts";
 
@@ -189,34 +190,39 @@ export default class Changelog {
 
     await this.checkGitClean();
 
-    await getNewCommits(opts, changed)
+    const collated = await getNewCommits(opts, changed)
       .then(collateCommitsPackages)
-      .then(determinePackageVersions)
-      .then(updateChangelog)
-      .then((output) => {
-        if (opts.publish) {
-          return this.preparePackages(output);
+      .then(determinePackageVersions);
+
+    if (opts.confirmVersionBumps !== false && !(await confirmVersionBumps(collated))) {
+      process.exitCode = 1;
+      return;
+    }
+
+    await updateChangelog(collated).then((output) => {
+      if (opts.publish) {
+        return this.preparePackages(output);
+      }
+      if (!output.changed) {
+        printSuccess("Changelog is already up to date; no changes to commit");
+        return Promise.resolve();
+      }
+      return this.commitChangeLogFile().then((committed) => {
+        if (committed) {
+          printSuccess("Changelog updated and committed");
+          printNextSteps([
+            `Review the changes: ${printCommand("git diff HEAD~1 CHANGELOG.md")}`,
+            `Check git status: ${printCommand("git status")}`,
+            `Prepare packages: ${printCommand("fynpo prepare")}`,
+          ]);
+        } else {
+          printWarning("Changelog updated but not committed");
+          printNextSteps([
+            `Review the changes: ${printCommand("git diff CHANGELOG.md")}`,
+            `Prepare packages: ${printCommand("fynpo prepare")}`,
+          ]);
         }
-        if (!output.changed) {
-          printSuccess("Changelog is already up to date; no changes to commit");
-          return Promise.resolve();
-        }
-        return this.commitChangeLogFile().then((committed) => {
-          if (committed) {
-            printSuccess("Changelog updated and committed");
-            printNextSteps([
-              `Review the changes: ${printCommand("git diff HEAD~1 CHANGELOG.md")}`,
-              `Check git status: ${printCommand("git status")}`,
-              `Prepare packages: ${printCommand("fynpo prepare")}`,
-            ]);
-          } else {
-            printWarning("Changelog updated but not committed");
-            printNextSteps([
-              `Review the changes: ${printCommand("git diff CHANGELOG.md")}`,
-              `Prepare packages: ${printCommand("fynpo prepare")}`,
-            ]);
-          }
-        });
       });
+    });
   }
 }
