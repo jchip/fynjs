@@ -1,6 +1,6 @@
 {
   "name": "check-pkg-new-version",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Help npm CLI packages to check newer version",
   "type": "module",
   "types": "./dist/index.d.ts",
