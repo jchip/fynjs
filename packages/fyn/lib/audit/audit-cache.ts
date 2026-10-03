@@ -1,8 +1,8 @@
 /**
  * Audit cache utilities for storing/retrieving npm security advisory data.
  *
- * Advisories are immutable - once an advisory exists for a specific package@version,
- * it doesn't change. Therefore we cache indefinitely (no TTL check needed).
+ * New advisories get published against versions that already exist, and a pinned lockfile
+ * keeps the same cache key for a long time. So entries expire after AUDIT_CACHE_TTL.
  *
  * Cache key is generated from SHA256 hash of the sorted bulk request payload,
  * ensuring different dependency sets get different cache entries.
@@ -37,6 +37,9 @@ export interface AuditResult {
 
 const AUDIT_CACHE_PREFIX = "fyn-audit-";
 
+/** How long a cached audit result stays fresh, in ms. */
+const AUDIT_CACHE_TTL = 30 * 60 * 1000;
+
 /**
  * Generate a deterministic cache key from the bulk request payload.
  * Sorts package names and versions to ensure same dependencies = same key.
@@ -70,12 +73,23 @@ async function cacheAuditResult(cacheDir: string, key: string, result: AuditResu
 
 /**
  * Retrieve cached audit result.
- * Returns null if not found (cache miss).
+ * Returns null if not found, or if `maxAge` (ms) is given and the entry is older than that.
  */
-async function getCachedAuditResult(cacheDir: string, key: string): Promise<AuditResult | null> {
+async function getCachedAuditResult(
+  cacheDir: string,
+  key: string,
+  maxAge?: number
+): Promise<AuditResult | null> {
   const auditCacheDir = Path.join(cacheDir, "audit");
+  const cacache = await loadCacache();
   try {
-    const { data } = await (await loadCacache()).get(auditCacheDir, key);
+    if (maxAge !== undefined) {
+      const info = await cacache.get.info(auditCacheDir, key);
+      if (!info || Date.now() - info.time > maxAge) {
+        return null;
+      }
+    }
+    const { data } = await cacache.get(auditCacheDir, key);
     return JSON.parse(data.toString()) as AuditResult;
   } catch (err: unknown) {
     const code = (err as NodeJS.ErrnoException).code;
@@ -101,6 +115,7 @@ async function hasAuditCache(cacheDir: string, key: string): Promise<boolean> {
 
 export {
   AUDIT_CACHE_PREFIX,
+  AUDIT_CACHE_TTL,
   generateCacheKey,
   cacheAuditResult,
   getCachedAuditResult,

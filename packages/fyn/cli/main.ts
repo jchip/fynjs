@@ -632,9 +632,10 @@ const commands: Record<string, CommandSpec> = {
         desc: "Minimum severity level to report (info, low, moderate, high, critical)",
         argDefault: "info"
       },
-      "no-cache": {
+      cache: {
         args: "<flag boolean>",
-        desc: "Bypass the audit cache and fetch fresh data"
+        desc: "use the audit cache (use --no-cache to fetch fresh data)",
+        argDefault: "true"
       }
     }
   },

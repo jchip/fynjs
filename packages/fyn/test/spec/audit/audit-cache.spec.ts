@@ -4,13 +4,14 @@
  * Tests cache key generation and storage/retrieval of advisory data.
  */
 
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { describe, it, beforeAll, afterAll, afterEach, vi, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
 import {
   AUDIT_CACHE_PREFIX,
+  AUDIT_CACHE_TTL,
   generateCacheKey,
   cacheAuditResult,
   getCachedAuditResult,
@@ -126,6 +127,44 @@ describe("audit-cache", () => {
 
       expect(cached).toStrictEqual(result);
       expect(cached.advisories["5678"].severity).toBe("critical");
+    });
+  });
+
+  describe("getCachedAuditResult() with maxAge", () => {
+    const result = { advisories: {}, metadata: { totalDependencies: 1 } };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("should return an entry younger than maxAge", async () => {
+      await cacheAuditResult(testCache, "test-ttl-fresh", result);
+
+      const cached = await getCachedAuditResult(testCache, "test-ttl-fresh", AUDIT_CACHE_TTL);
+      expect(cached).toStrictEqual(result);
+    });
+
+    it("should return null for an entry older than maxAge", async () => {
+      await cacheAuditResult(testCache, "test-ttl-expired", result);
+      const now = Date.now();
+      vi.spyOn(Date, "now").mockReturnValue(now + AUDIT_CACHE_TTL + 1000);
+
+      const cached = await getCachedAuditResult(testCache, "test-ttl-expired", AUDIT_CACHE_TTL);
+      expect(cached).toBeNull();
+    });
+
+    it("should still return an expired entry when maxAge is omitted", async () => {
+      await cacheAuditResult(testCache, "test-ttl-nomax", result);
+      const now = Date.now();
+      vi.spyOn(Date, "now").mockReturnValue(now + AUDIT_CACHE_TTL + 1000);
+
+      const cached = await getCachedAuditResult(testCache, "test-ttl-nomax");
+      expect(cached).toStrictEqual(result);
+    });
+
+    it("should return null for a missing entry", async () => {
+      const cached = await getCachedAuditResult(testCache, "test-ttl-missing", AUDIT_CACHE_TTL);
+      expect(cached).toBeNull();
     });
   });
 

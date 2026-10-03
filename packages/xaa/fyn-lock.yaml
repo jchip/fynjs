@@ -675,12 +675,12 @@ balanced-match:
   $: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==
   _: 'https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz'
 brace-expansion:
- _latest: 5.0.9
+ _latest: 5.0.12
  _:
-  ^5.0.8: 5.0.9
- 5.0.9:
-  $: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==
-  _: 'https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.9.tgz'
+  ^5.0.8: 5.0.12
+ 5.0.12:
+  $: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==
+  _: 'https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.12.tgz'
   dependencies:
    balanced-match: ^4.0.2
 buffer-from:

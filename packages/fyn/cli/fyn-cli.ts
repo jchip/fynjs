@@ -130,7 +130,7 @@ interface AuditArgv {
     json?: boolean;
     omit?: string[];
     auditLevel?: string;
-    noCache?: boolean;
+    cache?: boolean;
   };
 }
 
@@ -831,7 +831,7 @@ class FynCli {
       json: argv.opts?.json || false,
       omit: argv.opts?.omit || [],
       auditLevel: (argv.opts?.auditLevel as any) || "info",
-      noCache: argv.opts?.noCache || false
+      noCache: argv.opts?.cache === false
     };
     return showAudit(this.fyn, opts).finally(() => {
       return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);

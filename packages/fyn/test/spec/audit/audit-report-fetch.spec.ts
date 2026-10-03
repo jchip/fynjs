@@ -16,7 +16,7 @@ const { npmFetchMock } = vi.hoisted(() => ({ npmFetchMock: vi.fn() }));
 vi.mock("npm-registry-fetch", () => ({ default: npmFetchMock }));
 
 import AuditReport from "../../../lib/audit/audit-report";
-import { generateCacheKey, cacheAuditResult } from "../../../lib/audit/audit-cache";
+import { AUDIT_CACHE_TTL, generateCacheKey, cacheAuditResult } from "../../../lib/audit/audit-cache";
 
 describe("audit-report fetchAdvisories()", () => {
   let fynDir: string;
@@ -40,6 +40,7 @@ describe("audit-report fetchAdvisories()", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     Fs.rmSync(fynDir, { recursive: true, force: true });
   });
 
@@ -89,6 +90,48 @@ describe("audit-report fetchAdvisories()", () => {
       await cacheAuditResult(fynDir, key, cached);
       throw new Error("network timeout at: https://registry.npmjs.org/");
     });
+
+    const result = await report.fetchAdvisories();
+
+    expect(npmFetchMock.mock.calls).toHaveLength(1);
+    expect(result).toStrictEqual(cached);
+  });
+
+  it("should use a cached result within the TTL without fetching", async () => {
+    const report = makeReport();
+    const key = generateCacheKey(report.buildBulkPayload());
+    const cached = { advisories: {}, metadata: { totalDependencies: 1 } };
+    await cacheAuditResult(fynDir, key, cached);
+
+    const result = await report.fetchAdvisories();
+
+    expect(npmFetchMock.mock.calls).toHaveLength(0);
+    expect(result).toStrictEqual(cached);
+  });
+
+  it("should refetch when the cached result is older than the TTL", async () => {
+    const report = makeReport();
+    const key = generateCacheKey(report.buildBulkPayload());
+    await cacheAuditResult(fynDir, key, { advisories: {}, metadata: { totalDependencies: 1 } });
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now + AUDIT_CACHE_TTL + 1000);
+    const fresh = { lodash: [{ id: 1, vulnerable_versions: "<4.17.21" }] };
+    npmFetchMock.mockResolvedValue({ json: async () => fresh });
+
+    const result = await report.fetchAdvisories();
+
+    expect(npmFetchMock.mock.calls).toHaveLength(1);
+    expect(result.advisories).toStrictEqual(fresh);
+  });
+
+  it("should fall back to an expired cached result when the fetch fails", async () => {
+    const report = makeReport();
+    const key = generateCacheKey(report.buildBulkPayload());
+    const cached = { advisories: { lodash: [] }, metadata: { totalDependencies: 1 } };
+    await cacheAuditResult(fynDir, key, cached);
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now + AUDIT_CACHE_TTL + 1000);
+    npmFetchMock.mockRejectedValue(new Error("network timeout at: https://registry.npmjs.org/"));
 
     const result = await report.fetchAdvisories();
 

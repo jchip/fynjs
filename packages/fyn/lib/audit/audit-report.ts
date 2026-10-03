@@ -3,7 +3,7 @@
  *
  * Workflow:
  * 1. Build bulk payload from resolved DepData.pkgs
- * 2. Check cache for existing advisories
+ * 2. Check cache for advisories fetched within AUDIT_CACHE_TTL
  * 3. If miss, POST to /-/npm/v1/security/advisories/bulk
  * 4. Cache response and return
  */
@@ -11,6 +11,7 @@
 import semver from "semver";
 import logger from "../logger";
 import {
+  AUDIT_CACHE_TTL,
   generateCacheKey,
   cacheAuditResult,
   getCachedAuditResult,
@@ -188,7 +189,7 @@ class AuditReport {
 
     // Check cache first (unless noCache)
     if (!this._noCache) {
-      const cached = await getCachedAuditResult(this._cacheDir, cacheKey);
+      const cached = await getCachedAuditResult(this._cacheDir, cacheKey, AUDIT_CACHE_TTL);
       if (cached) {
         logger.debug("Using cached audit result");
         return cached;
@@ -230,7 +231,7 @@ class AuditReport {
 
       return result;
     } catch (err: unknown) {
-      // Try to use cached data on network error
+      // Try to use cached data on network error, even if expired
       if (!this._noCache) {
         const cached = await getCachedAuditResult(this._cacheDir, cacheKey);
         if (cached) {
