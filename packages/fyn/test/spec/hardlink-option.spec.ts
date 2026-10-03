@@ -6,8 +6,11 @@ import FynCentral from "../../lib/fyn-central";
 import FsOps from "../../lib/util/file-ops";
 
 // each test picks whether @fynjs/reflink is loaded; it's absent unless a test sets it
-const reflink = vi.hoisted(() => ({ cloneFiles: undefined as unknown }));
-vi.mock("../../lib/util/reflink", () => ({ loadReflinkCloneFiles: async () => reflink.cloneFiles }));
+const reflink = vi.hoisted(() => ({ cloneFiles: undefined as unknown, cloneDir: undefined as unknown }));
+vi.mock("../../lib/util/reflink", () => ({
+  loadReflinkCloneFiles: async () => reflink.cloneFiles,
+  loadReflinkCloneDir: async () => reflink.cloneDir
+}));
 
 //
 // The central store hardlinks by default. --no-hardlink or FYN_HARDLINK=false turns it off,
@@ -190,6 +193,82 @@ describe("hardlink option", function () {
       const { central, savedDir } = await init();
       expect(central).toBe(false);
       expect(savedDir).toBe(centralDir);
+    });
+  });
+
+  //
+  // On macOS a new install uses the central store when @fynjs/reflink can clone dirs.
+  //
+  describe("central store by default on macOS", () => {
+    const tmpRoot = Path.join(__dirname, "..", "..", ".temp", "central-default-spec");
+    const fynDir = Path.join(tmpRoot, ".fyn");
+    const defaultDir = Path.join(fynDir, "_central-storage");
+    let saveCentralEnv: string | undefined;
+    let savePlatform: PropertyDescriptor;
+
+    beforeEach(() => {
+      Fs.rmSync(tmpRoot, { recursive: true, force: true });
+      Fs.mkdirSync(Path.join(tmpRoot, "node_modules", ".f"), { recursive: true });
+      saveCentralEnv = process.env.FYN_CENTRAL_DIR;
+      delete process.env.FYN_CENTRAL_DIR;
+      savePlatform = Object.getOwnPropertyDescriptor(process, "platform")!;
+      Object.defineProperty(process, "platform", { ...savePlatform, value: "darwin" });
+      reflink.cloneDir = async () => true;
+    });
+    afterEach(() => {
+      reflink.cloneDir = undefined;
+      Object.defineProperty(process, "platform", savePlatform);
+      if (saveCentralEnv === undefined) {
+        delete process.env.FYN_CENTRAL_DIR;
+      } else {
+        process.env.FYN_CENTRAL_DIR = saveCentralEnv;
+      }
+    });
+    afterAll(() => {
+      Fs.rmSync(tmpRoot, { recursive: true, force: true });
+    });
+
+    const init = async (more: Record<string, unknown> = {}, savedDir?: string | false) => {
+      const fyn: any = new Fyn({ opts: { cwd: tmpRoot, targetDir: "node_modules", fynDir, ...more } });
+      if (savedDir !== undefined) {
+        fyn._installConfig.centralDir = savedDir;
+      }
+      const central = await fyn._initCentralStore();
+      await fyn.saveInstallConfig();
+      const saved = JSON.parse(
+        Fs.readFileSync(Path.join(tmpRoot, "node_modules", ".f", ".fyn.json"), "utf8")
+      );
+      return { central, savedDir: saved.centralDir };
+    };
+
+    it("uses the store for a new install", async () => {
+      const { central, savedDir } = await init();
+      expect(central).toBeInstanceOf(FynCentral);
+      expect(savedDir).toBe(defaultDir);
+    });
+
+    it("keeps copying when .fyn.json saved centralDir false", async () => {
+      const { central, savedDir } = await init({}, false);
+      expect(central).toBe(false);
+      expect(savedDir).toBe(false);
+    });
+
+    it("is off with --no-central-store", async () => {
+      expect((await init({ centralStore: false })).central).toBe(false);
+    });
+
+    it("is off with --no-reflink", async () => {
+      expect((await init({ reflink: false })).central).toBe(false);
+    });
+
+    it("is off when @fynjs/reflink can't load", async () => {
+      reflink.cloneDir = undefined;
+      expect((await init()).central).toBe(false);
+    });
+
+    it("is off on linux", async () => {
+      Object.defineProperty(process, "platform", { ...savePlatform, value: "linux" });
+      expect((await init()).central).toBe(false);
     });
   });
 });

@@ -231,6 +231,10 @@ const debug = false;
               if (!args.find((x) => x.includes("--cwd"))) {
                 args = args.concat(`--cwd=${cwd}`);
               }
+              // keep the cache and central store out of the real ~/.fyn
+              if (!args.find((x) => x.includes("--fyn-dir"))) {
+                args = [getFynDirArg(fynDir)].concat(args);
+              }
             } else {
               args = [].concat(
                 `--reg=${registry}`,

@@ -267,8 +267,8 @@ const options: Record<string, OptionSpec> = {
   "central-store": {
     args: "<flag boolean>",
     alias: ["central", "cs"],
-    desc: "keep single copy of packages in central store",
-    argDefault: "false"
+    // no argDefault: unset means the default, which is on for new installs on macOS
+    desc: "keep single copy of packages in central store. On by default on macOS when @fynjs/reflink can clone, unless node_modules was installed without it. --no-central-store turns the default off"
   },
   hardlink: {
     args: "<flag boolean>",

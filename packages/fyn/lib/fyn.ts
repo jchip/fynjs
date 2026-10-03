@@ -17,7 +17,7 @@ import FynCentral from "./fyn-central";
 import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import { localLinkNeedsRefresh } from "./util/hard-link-dir";
-import { loadReflinkCloneFiles } from "./util/reflink";
+import { loadReflinkCloneDir, loadReflinkCloneFiles } from "./util/reflink";
 import lockfile from "lockfile";
 import ck from "chalker/chalk";
 import {
@@ -463,7 +463,11 @@ class Fyn {
       centralDir = Path.join(this.fynDir, "_central-storage");
       logger.debug(`Enabling central store by CLI flag using dir ${centralDir}`);
     } else if (!this._fynpo?.config) {
-      return (this._central = false);
+      if (!(await this._defaultCentralStore())) {
+        return (this._central = false);
+      }
+      centralDir = Path.join(this.fynDir, "_central-storage");
+      logger.debug(`Enabling central store by default on macOS using dir ${centralDir}`);
     } else {
       centralDir = this._fynpo.config.centralDir;
       if (!centralDir) {
@@ -493,6 +497,21 @@ class Fyn {
       reflink: this.reflink,
       copyFallback: this.copyFallback
     }));
+  }
+
+  /**
+   * On macOS, a new install clones packages from the central store when @fynjs/reflink can
+   * clone dirs, since warm installs then run 2-3x faster than copying. A .fyn.json that saved
+   * centralDir false keeps copying, and --no-central-store opts out.
+   */
+  async _defaultCentralStore(): Promise<boolean> {
+    return (
+      process.platform === "darwin" &&
+      this._options.centralStore === undefined &&
+      this._installConfig.centralDir === undefined &&
+      this.reflink &&
+      Boolean(await loadReflinkCloneDir())
+    );
   }
 
   /**
