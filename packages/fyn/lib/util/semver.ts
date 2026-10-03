@@ -103,6 +103,45 @@ export function simpleCompare(a: string, b: string): number {
   }
 }
 
+/**
+ * Sort versions newest first, in the same order as `simpleCompare`, but parse each version
+ * once. A packument can hold thousands of prereleases, and `simpleCompare` re-parses both
+ * sides with semver on every prerelease compare.
+ */
+export function sortDescending(versions: string[]): string[] {
+  const keyed = versions.map(v => {
+    const parts = split(v, "-");
+    return {
+      v,
+      nums: parts[0].split(".").map(x => parseInt(x, 10)),
+      pre: parts[1],
+      sv: undefined as Semver.SemVer | null | undefined
+    };
+  });
+  type Keyed = (typeof keyed)[number];
+  const semverOf = (k: Keyed) => (k.sv === undefined ? (k.sv = Semver.parse(k.v)) : k.sv);
+
+  keyed.sort((a, b) => {
+    if (a.v === b.v) return 0;
+    for (let i = 0; i < a.nums.length; i++) {
+      if (a.nums[i] > b.nums[i]) return -1;
+      if (a.nums[i] < b.nums[i]) return 1;
+    }
+    if (a.pre) {
+      if (b.pre) {
+        const sa = semverOf(a);
+        const sb = semverOf(b);
+        if (sa && sb) return sb.compare(sa);
+        return a.pre > b.pre ? -1 : 1;
+      }
+      return 1;
+    }
+    return b.pre ? -1 : 0;
+  });
+
+  return keyed.map(k => k.v);
+}
+
 export function isVersionNewer(a: string, b: string): boolean {
   return simpleCompare(a, b) < 0;
 }

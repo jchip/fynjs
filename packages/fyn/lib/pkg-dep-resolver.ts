@@ -200,7 +200,6 @@ interface ResolveResult {
   resolved: string;
 }
 
-const simpleSemverCompare = semverUtil.simpleCompare;
 const { checkPkgOsCpu, relativePath, unSlashNpmScope } = fyntil;
 
 /**
@@ -1269,7 +1268,7 @@ class PkgDepResolver {
         }
 
         // sort versions in descending order
-        const sorted = Object.keys(meta.versions).sort(simpleSemverCompare);
+        const sorted = semverUtil.sortDescending(Object.keys(meta.versions));
         // make sure all versions newer than the tagged latest version are not considered
         if (latest && sorted[0] !== latest) {
           if (meta.time && meta.time[latest]) {

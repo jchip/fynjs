@@ -53,6 +53,18 @@ describe("semver", function() {
     });
   });
 
+  describe("sortDescending", function() {
+    it("should sort in the same order as simpleCompare", () => {
+      const versions = [
+        "1.0.0-alpha.10", "0.8.3", "1.0.0", "1.0.0-alpha.9", "2.0.0-beta", "1.0.0-alpha",
+        "0.8.3--rc", "01.8.3-b", "1.8.3-a", "10.08.003", "1.0.0-rc.1", "2.0.0", "1.8.3-c"
+      ];
+      const expected = [...versions].sort(semver.simpleCompare);
+      expect(semver.sortDescending(versions)).toEqual(expected);
+      expect(semver.sortDescending([...versions].reverse())).toEqual(expected);
+    });
+  });
+
   describe("localify", function() {
     it("should add tag", () => {
       const x = semver.localify("0.1.1");
