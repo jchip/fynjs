@@ -184,6 +184,13 @@ $pkg:
  1.0.6-fynlocal_h:
   $: local
   _: ./packages/fetch
+'@fynjs/reflink':
+ _latest: 0.1.0-fynlocal_h
+ _:
+  ../reflink: 0.1.0-fynlocal_h
+ 0.1.0-fynlocal_h:
+  $: local
+  _: ./packages/reflink
 '@fynpo/base':
  _latest: 2.1.12-fynlocal_h
  _:
@@ -741,6 +748,8 @@ fyn:
   top: 1
   $: local
   _: ./packages/fyn
+  optionalDependencies:
+   '@fynjs/reflink': ^0.1.0
 fynpo:
  _latest: 3.2.3-fynlocal_h
  _:

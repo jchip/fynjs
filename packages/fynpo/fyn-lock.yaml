@@ -251,6 +251,13 @@ $pkg:
   top: 1
   $: local
   _: ../fetch
+'@fynjs/reflink':
+ _latest: 0.1.0-fynlocal_h
+ _:
+  ../reflink: 0.1.0-fynlocal_h
+ 0.1.0-fynlocal_h:
+  $: local
+  _: ../reflink
 '@fynjs/run':
  _latest: 1.1.9-fynlocal_h
  _:
@@ -1311,6 +1318,8 @@ fyn:
   top: 1
   $: local
   _: ../fyn
+  optionalDependencies:
+   '@fynjs/reflink': ^0.1.0
 get-east-asian-width:
  _latest: 1.6.0
  _:
