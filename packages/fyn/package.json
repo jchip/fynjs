@@ -127,6 +127,9 @@
     "xsh": "^1.1.8",
     "yamljs": "^0.3.0"
   },
+  "optionalDependencies": {
+    "@fynjs/reflink": "^0.1.0"
+  },
   "devDependencies": {
     "@fynjs/run": "^1.1.9",
     "@fynjs/ts-resolve": "^1.0.3",

@@ -273,7 +273,17 @@ const options: Record<string, OptionSpec> = {
   hardlink: {
     args: "<flag boolean>",
     // no argDefault: unset means use FYN_HARDLINK or the choice saved in .fyn.json
-    desc: "hardlink central store files into node_modules (default). --no-hardlink is remembered, and skips the central store on macOS and Windows, where it would only copy"
+    desc: "hardlink central store files into node_modules (default). --no-hardlink is remembered, and skips the central store on macOS and Windows, where it would only copy unless @fynjs/reflink can clone"
+  },
+  reflink: {
+    args: "<flag boolean>",
+    desc: "reflink (copy-on-write clone) central store files into node_modules where the filesystem can (default). --no-reflink never clones, so @fynjs/reflink isn't used",
+    argDefault: "true"
+  },
+  "copy-fallback": {
+    args: "<flag boolean>",
+    desc: "copy central store files that can't be cloned or hardlinked (default). --no-copy-fallback fails the install instead",
+    argDefault: "true"
   },
   copy: {
     args: "[packages string..]",

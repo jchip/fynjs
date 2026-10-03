@@ -133,10 +133,12 @@ async function copyFile(srcFp, destFp) {
  *
  * @param {*} srcFp - source file path
  * @param {*} destFp - destination file path
+ * @param {*} noCopy - fail instead of falling back to a copy (always fails on macOS)
  * @returns
  */
-async function cloneFile(srcFp, destFp) {
-  return copyNew(srcFp, destFp, fs.constants.COPYFILE_FICLONE);
+async function cloneFile(srcFp, destFp, noCopy = false) {
+  const mode = noCopy ? fs.constants.COPYFILE_FICLONE_FORCE : fs.constants.COPYFILE_FICLONE;
+  return copyNew(srcFp, destFp, mode);
 }
 
 async function prepDestDir(dest) {

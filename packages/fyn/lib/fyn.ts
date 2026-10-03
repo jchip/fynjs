@@ -17,6 +17,7 @@ import FynCentral from "./fyn-central";
 import xaa from "./util/xaa";
 import { checkPkgNeedInstall } from "./util/check-pkg-need-install";
 import { localLinkNeedsRefresh } from "./util/hard-link-dir";
+import { loadReflinkCloneFiles } from "./util/reflink";
 import lockfile from "lockfile";
 import ck from "chalker/chalk";
 import {
@@ -84,6 +85,8 @@ interface FynOptions {
   copy?: string[];
   centralStore?: boolean;
   hardlink?: boolean;
+  reflink?: boolean;
+  copyFallback?: boolean;
   forceCache?: boolean;
   offline?: boolean;
   fynlocal?: boolean;
@@ -484,17 +487,34 @@ class Fyn {
       return (this._central = false);
     }
 
-    return (this._central = new FynCentral({ centralDir, hardlink: this.hardlink }));
+    return (this._central = new FynCentral({
+      centralDir,
+      hardlink: this.hardlink,
+      reflink: this.reflink,
+      copyFallback: this.copyFallback
+    }));
   }
 
   /**
-   * The central store only pays off when node_modules links to it. Copying out of it writes
-   * every file twice, so it's skipped when linking is known to be impossible.
+   * The central store only pays off when node_modules links or clones from it. Copying out of
+   * it writes every file twice, so it's skipped when neither is known to be possible.
    */
   async _centralCopyOnlyReason(centralDir: string): Promise<string | undefined> {
-    // libuv never clones on macOS or Windows, so with linking off replicate copies
-    if (!this.hardlink && ["darwin", "win32"].includes(process.platform)) {
-      return "hardlink is off";
+    // with copies forbidden, keep the store so a file that can't clone fails the install
+    if (!this.copyFallback) {
+      return undefined;
+    }
+    if (!this.hardlink && !this.reflink) {
+      return "hardlink and reflink are off";
+    }
+    // libuv never clones on macOS or Windows, so with linking off replicate copies.
+    // @fynjs/reflink clones there, so it keeps the store.
+    if (
+      !this.hardlink &&
+      ["darwin", "win32"].includes(process.platform) &&
+      !(await loadReflinkCloneFiles())
+    ) {
+      return "hardlink is off and @fynjs/reflink isn't loaded";
     }
     // the store dir may not exist yet, so stat its closest existing parent
     const deviceOf = async (dir: string): Promise<number> => {
@@ -1413,6 +1433,16 @@ class Fyn {
       return fynTil.strToBool(process.env.FYN_HARDLINK);
     }
     return this._installConfig.hardlink !== false;
+  }
+
+  /** --no-reflink never clones store files into node_modules, so @fynjs/reflink isn't used */
+  get reflink(): boolean {
+    return this._options.reflink !== false;
+  }
+
+  /** --no-copy-fallback fails the install on a store file that can't be cloned or hardlinked */
+  get copyFallback(): boolean {
+    return this._options.copyFallback !== false;
   }
 
   get concurrency(): number | undefined {

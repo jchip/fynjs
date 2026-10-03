@@ -5,6 +5,10 @@ import Fyn from "../../lib/fyn";
 import FynCentral from "../../lib/fyn-central";
 import FsOps from "../../lib/util/file-ops";
 
+// each test picks whether @fynjs/reflink is loaded; it's absent unless a test sets it
+const reflink = vi.hoisted(() => ({ cloneFiles: undefined as unknown }));
+vi.mock("../../lib/util/reflink", () => ({ loadReflinkCloneFiles: async () => reflink.cloneFiles }));
+
 //
 // The central store hardlinks by default. --no-hardlink or FYN_HARDLINK=false turns it off,
 // and .fyn.json remembers that for later installs. Precedence: CLI or rc, then env, then
@@ -112,6 +116,7 @@ describe("hardlink option", function () {
     });
     afterEach(() => {
       vi.restoreAllMocks();
+      reflink.cloneFiles = undefined;
       Object.defineProperty(process, "platform", savePlatform);
       if (saveCentralEnv === undefined) {
         delete process.env.FYN_CENTRAL_DIR;
@@ -125,8 +130,8 @@ describe("hardlink option", function () {
 
     const setPlatform = (platform: string) =>
       Object.defineProperty(process, "platform", { ...savePlatform, value: platform });
-    const init = async (hardlink?: boolean) => {
-      const fyn: any = new Fyn({ opts: { cwd: tmpRoot, targetDir: "node_modules", hardlink } });
+    const init = async (hardlink?: boolean, more: Record<string, unknown> = {}) => {
+      const fyn: any = new Fyn({ opts: { cwd: tmpRoot, targetDir: "node_modules", hardlink, ...more } });
       const central = await fyn._initCentralStore();
       await fyn.saveInstallConfig();
       const saved = JSON.parse(
@@ -138,6 +143,27 @@ describe("hardlink option", function () {
     it.each(["darwin", "win32"])("skips it on %s when hardlink is off", async platform => {
       setPlatform(platform);
       const { central, savedDir } = await init(false);
+      expect(central).toBe(false);
+      expect(savedDir).toBe(centralDir);
+    });
+
+    it.each(["darwin", "win32"])("keeps it on %s when hardlink is off and reflink clones", async platform => {
+      setPlatform(platform);
+      reflink.cloneFiles = async () => undefined;
+      const { central } = await init(false);
+      expect(central).toBeInstanceOf(FynCentral);
+    });
+
+    it("keeps it with --no-copy-fallback, so a file that can't clone fails the install", async () => {
+      setPlatform("darwin");
+      const { central } = await init(false, { copyFallback: false });
+      expect(central).toBeInstanceOf(FynCentral);
+    });
+
+    it("skips it on any platform when hardlink and reflink are both off", async () => {
+      setPlatform("linux");
+      reflink.cloneFiles = async () => undefined;
+      const { central, savedDir } = await init(false, { reflink: false });
       expect(central).toBe(false);
       expect(savedDir).toBe(centralDir);
     });

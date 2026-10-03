@@ -5,6 +5,7 @@ import ssri from "ssri";
 import * as Tar from "tar";
 import fyntil from "./util/fyntil";
 import { cloneFile, copyFile, linkFile } from "./util/hard-link-dir";
+import { loadReflinkCloneDir, loadReflinkCloneFiles, type CloneDir } from "./util/reflink";
 import logger from "./logger";
 import { AggregateError } from "@jchip/error";
 import { filterScanDir, type ExtrasData } from "filter-scan-dir";
@@ -69,6 +70,10 @@ interface FynCentralOptions {
   centralDir?: string;
   /** hardlink replicated files to the store, falling back to a copy where links fail */
   hardlink?: boolean;
+  /** false never reflinks (clones) replicated files, so @fynjs/reflink isn't used */
+  reflink?: boolean;
+  /** false fails instead of copying a file that can't be cloned or hardlinked */
+  copyFallback?: boolean;
 }
 
 /** link errors that mean the filesystem can't hardlink from the store at all */
@@ -118,11 +123,22 @@ class FynCentral {
   private _centralDir: string;
   private _map: Map<string, PackageInfo>;
   private _hardlink: boolean;
+  private _reflink: boolean;
+  private _copyFallback: boolean;
+  /** cleared on the first dir clone the filesystem can't do, so later packages skip it */
+  private _cloneDirs = true;
 
-  constructor({ centralDir = ".fyn/_central-storage", hardlink = true }: FynCentralOptions = {}) {
+  constructor({
+    centralDir = ".fyn/_central-storage",
+    hardlink = true,
+    reflink = true,
+    copyFallback = true
+  }: FynCentralOptions = {}) {
     this._centralDir = Path.resolve(centralDir);
     this._map = new Map();
     this._hardlink = hardlink;
+    this._reflink = reflink;
+    this._copyFallback = copyFallback;
   }
 
   _analyze(integrity: string): PackageInfo {
@@ -344,9 +360,32 @@ class FynCentral {
       const info = await this.getInfo(integrity);
 
       const list = flattenTree(info.tree as TreeNode, { dirs: [], files: [] }, "");
+      const srcDir = Path.join(info.contentPath, "package");
+
+      // one clone for the whole package, where the filesystem can (APFS). Per-file placement
+      // pays a metadata cost for every file, clone or link alike.
+      const cloneDir = this._reflink && this._cloneDirs && (await loadReflinkCloneDir());
+      if (cloneDir && (await this._cloneWholeDir(cloneDir, srcDir, destDir))) {
+        return;
+      }
 
       for (const dir of list.dirs) {
         await Fs.$.mkdirp(Path.join(destDir, dir));
+      }
+
+      // @fynjs/reflink clones, else hardlinks unless hardlink is off, else copies unless
+      // copyFallback is off. package.json is never linked, since fyn rewrites it in place. With
+      // reflink off, @fynjs/reflink is skipped, since it always tries a clone first.
+      const reflinkCloneFiles = this._reflink && (await loadReflinkCloneFiles());
+      const copy = this._copyFallback;
+      if (reflinkCloneFiles) {
+        const others = list.files.filter(f => f !== "package.json");
+        await Promise.all([
+          reflinkCloneFiles(srcDir, destDir, others, this._hardlink, copy),
+          others.length < list.files.length &&
+            reflinkCloneFiles(srcDir, destDir, ["package.json"], false, copy)
+        ]);
+        return;
       }
 
       await xaa.map(
@@ -354,12 +393,13 @@ class FynCentral {
         (file: string) => {
           const src = Path.join(info.contentPath, "package", file);
           const dest = Path.join(destDir, file);
-          // copy package.json because we modify it
+          // copy package.json because we modify it. With reflink off, a copy is its only way
+          // in, not a fallback, so copyFallback doesn't apply to it.
           // TODO: don't modify it?
           if (file === "package.json") {
-            return copyFile(src, dest);
+            return this._reflink && !copy ? cloneFile(src, dest, true) : copyFile(src, dest);
           }
-          return this._hardlink ? this._linkFile(src, dest) : cloneFile(src, dest);
+          return this._hardlink ? this._linkFile(src, dest) : this._cloneOrCopy(src, dest);
         },
         { concurrency: 5 }
       );
@@ -389,7 +429,45 @@ class FynCentral {
         throw err;
       }
     }
-    await cloneFile(src, dest);
+    await this._cloneOrCopy(src, dest);
+  }
+
+  /** Clone, else copy, as reflink and copyFallback allow. */
+  async _cloneOrCopy(src: string, dest: string): Promise<void> {
+    if (this._reflink) {
+      await cloneFile(src, dest, !this._copyFallback);
+    } else if (this._copyFallback) {
+      await copyFile(src, dest);
+    } else {
+      throw new Error(`fyn-central: can't place ${dest}: it can't be hardlinked, and reflink and copy-fallback are off`);
+    }
+  }
+
+  /**
+   * Clone the store's package dir to `destDir` in one call. A dir clone needs `destDir` to not
+   * exist, and it is the empty dir createPkgOutDir just made, so remove that first. A
+   * non-empty `destDir` is left alone for the per-file path, which never writes through an
+   * existing file. Resolves false, with `destDir` in place, when the dir isn't cloned.
+   */
+  async _cloneWholeDir(cloneDir: CloneDir, srcDir: string, destDir: string): Promise<boolean> {
+    try {
+      await Fs.rmdir(destDir);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "ENOTEMPTY" || code === "EEXIST") {
+        return false;
+      }
+      if (code !== "ENOENT") {
+        throw err;
+      }
+    }
+    if (await cloneDir(srcDir, destDir)) {
+      return true;
+    }
+    this._cloneDirs = false;
+    logger.debug(`fyn-central: can't clone dirs from ${this._centralDir}, cloning files instead`);
+    await Fs.$.mkdirp(destDir);
+    return false;
   }
 
   _untarStream(tarStream: Readable, targetDir: string): Promise<TreeNode> {

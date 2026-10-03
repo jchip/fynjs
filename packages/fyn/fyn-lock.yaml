@@ -59,6 +59,8 @@ $pkg:
   vitest: ^5.0.0
   which: ^6.0.1
   xstdout: ^0.1.1
+ opt:
+  '@fynjs/reflink': ../reflink
 '@babel/code-frame':
  _latest: 8.0.0
  _:
@@ -126,6 +128,14 @@ $pkg:
   top: 1
   $: local
   _: ../fetch
+'@fynjs/reflink':
+ _latest: 0.1.0-fynlocal_h
+ _:
+  ../reflink: 0.1.0-fynlocal_h
+ 0.1.0-fynlocal_h:
+  top: 1
+  $: local
+  _: ../reflink
 '@fynjs/run':
  _latest: 1.1.9-fynlocal_h
  _:
