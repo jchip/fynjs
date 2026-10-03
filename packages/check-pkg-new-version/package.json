@@ -51,7 +51,7 @@
   "dependencies": {
     "check-pkg-new-version-engine": "^2.1.7",
     "ini": "^7.0.0",
-    "semver": "^7.3.4"
+    "semver": "^7.5.2"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

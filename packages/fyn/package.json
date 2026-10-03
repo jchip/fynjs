@@ -115,7 +115,7 @@
     "pacote": "^22.0.0",
     "pkg-preper": "^0.3.7",
     "publish-util": "^3.1.7",
-    "semver": "^7.3.5",
+    "semver": "^7.5.2",
     "source-map": "^0.8.0",
     "ssri": "^14.0.0",
     "strip-bom": "^5.0.0",
