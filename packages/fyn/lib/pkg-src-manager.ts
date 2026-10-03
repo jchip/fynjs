@@ -9,6 +9,11 @@
 
 import Promise from "aveazul";
 import { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime } from "./cacache-util";
+import {
+  readTrimmedPackument,
+  trimmedPackumentFile,
+  writeTrimmedPackument
+} from "./util/trimmed-packument";
 import os from "os";
 import type Pacote from "pacote";
 import * as _ from "lodash-es";
@@ -368,6 +373,8 @@ class PkgSrcManager {
   private _pacoteOpts: PacoteOptions;
   private _regData: RegistryData;
   private _metaStat: MetaStat;
+  /** trimmed packument copies, see util/trimmed-packument */
+  private _packumentDir: string;
   private _lastMetaStatus: string;
   private _fetching?: string[];
   private _fetchingMsg?: string;
@@ -380,6 +387,8 @@ class PkgSrcManager {
     this._meta = {};
     this._cacheDir = this._options.fynCacheDir!;
     fs.mkdirSync(this._cacheDir, { recursive: true });
+    // cacache's own cleanup only touches its content-*, index-* and tmp dirs, so this is safe here
+    this._packumentDir = Path.join(this._cacheDir, "fyn-packuments");
     this._inflights = {
       meta: new Inflight()
     };
@@ -722,6 +731,9 @@ class PkgSrcManager {
         }
         // Refresh cache timestamp after successful fetch
         refreshCacheEntry(this._cacheDir, qItem.cacheKey).catch(() => {});
+        if (!qItem.item.urlType) {
+          writeTrimmedPackument(trimmedPackumentFile(this._packumentDir, qItem.packumentUrl), x);
+        }
         qItem.defer.resolve(x);
       })
       .catch(err => {
@@ -982,6 +994,7 @@ class PkgSrcManager {
     const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
     const legacyCacheKey = `make-fetch-happen:request-cache:full:${packumentUrl}`;
     const cacheKeys = [cacheKey, legacyCacheKey];
+    const trimmedFile = trimmedPackumentFile(this._packumentDir, packumentUrl);
 
     let cacheMemoized = false;
 
@@ -1132,7 +1145,10 @@ class PkgSrcManager {
       // Skip local cacache + meta-mem so this queues a fresh registry fetch.
       cacheLookup = Promise.resolve();
     } else {
-      cacheLookup = loadBestCachedPackument(true);
+      // the trimmed copy, else the full cacache entry
+      cacheLookup = readTrimmedPackument(trimmedFile).then(
+        trimmed => trimmed || loadBestCachedPackument(true)
+      );
     }
 
     const promise: Promise<Packument> = cacheLookup
@@ -1143,7 +1159,7 @@ class PkgSrcManager {
           return cached.preparedUrlMeta;
         }
         foundCache = cached;
-        const packument = cached && cached.data && JSON.parse(cached.data);
+        const packument = cached && (cached.packument || (cached.data && JSON.parse(cached.data)));
         foundPackument = packument;
 
         if (cached && cached.refreshTime) {
@@ -1156,6 +1172,10 @@ class PkgSrcManager {
             this._fyn._options.refreshMeta !== true &&
             stale < META_CACHE_STALE_TIME
           ) {
+            if (!cached.packument) {
+              // no trimmed copy yet: make one, keeping the full copy's refresh time
+              writeTrimmedPackument(trimmedFile, packument, cached.refreshTime);
+            }
             cacheMemoized = true;
             this._metaStat.wait--;
             return packument;

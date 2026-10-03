@@ -9,6 +9,11 @@ import Fyn from "../../lib/fyn";
 import PkgSrcManager from "../../lib/pkg-src-manager";
 import mockNpm from "../fixtures/mock-npm";
 import { getBucketPath, refreshCacheEntry } from "../../lib/cacache-util";
+import {
+  readTrimmedPackument,
+  trimmedPackumentFile,
+  writeTrimmedPackument,
+} from "../../lib/util/trimmed-packument";
 import { MARK_URL_SPEC } from "../../lib/constants";
 
 // vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
@@ -402,6 +407,82 @@ describe("pkg-src-manager", function () {
       .step(() => {
         expect(Fs.statSync(bucket).mtimeMs).toBeGreaterThan(staleTime.getTime());
       });
+  });
+
+  describe("trimmed packument copies", () => {
+    const offlineFyn = () => ({
+      concurrency: 1,
+      _options: {},
+      isFynpo: false,
+      forceCache: false,
+      remoteMetaDisabled: "offline",
+      remoteTgzDisabled: false,
+      copy: [],
+    });
+    const fullPackument = {
+      name: "mod-a",
+      readme: "dropped",
+      versions: { "2.0.0": { name: "mod-a", version: "2.0.0", description: "dropped" } },
+      "dist-tags": { latest: "2.0.0" },
+    };
+    const trimmedFile = (mgr) =>
+      trimmedPackumentFile(Path.join(fynCacheDir, "fyn-packuments"), mgr.makePackumentUrl("mod-a"));
+
+    it("writes a trimmed copy after a registry fetch", () => {
+      const pacote = require("pacote");
+      const origPackument = pacote.packument;
+      pacote.packument = () => Promise.resolve(JSON.parse(JSON.stringify(fullPackument)));
+      const mgr = new PkgSrcManager({
+        registry: "http://localhost/",
+        fynCacheDir,
+        fyn: { ...offlineFyn(), remoteMetaDisabled: false },
+      });
+
+      return verify({ timeout: 2000, cleanup: () => (pacote.packument = origPackument) })
+        .callbackStep((next) => {
+          mgr.netRetrieveMeta({
+            item: { name: "mod-a" },
+            packumentUrl: mgr.makePackumentUrl("mod-a"),
+            cacheKey: "test-cache-key",
+            defer: { resolve: (v) => next(null, v), reject: (e) => next(e) },
+          });
+        })
+        .step(() => new Promise((resolve) => setTimeout(resolve, 50)))
+        .step(() => readTrimmedPackument(trimmedFile(mgr)))
+        .step((read) => {
+          expect(read.packument["dist-tags"].latest).toBe("2.0.0");
+          expect(read.packument.readme).toBe(undefined);
+          expect(read.packument.versions["2.0.0"]).toEqual({});
+        });
+    });
+
+    it("uses a fresh trimmed copy without the full cache entry", () => {
+      const mgr = new PkgSrcManager({ registry: "http://localhost/", fynCacheDir, fyn: offlineFyn() });
+      return verify()
+        .step(() => writeTrimmedPackument(trimmedFile(mgr), fullPackument))
+        .step(() => mgr.fetchMeta({ name: "mod-a", semver: "" }))
+        .step((meta) => {
+          expect(meta["dist-tags"].latest).toBe("2.0.0");
+          expect(meta.readme).toBe(undefined);
+        });
+    });
+
+    it("makes a trimmed copy from a fresh full entry, keeping its refresh time", () => {
+      const mgr = new PkgSrcManager({ registry: "http://localhost/", fynCacheDir, fyn: offlineFyn() });
+      const cacheKey = `make-fetch-happen:request-cache:${mgr.makePackumentUrl("mod-a")}`;
+      const refreshed = new Date(Date.now() - 60 * 60 * 1000);
+      return verify({ timeout: 2000 })
+        .step(() => cacache.put(fynCacheDir, cacheKey, JSON.stringify(fullPackument)))
+        .step(() => Fs.utimesSync(getBucketPath(fynCacheDir, cacheKey), refreshed, refreshed))
+        .step(() => mgr.fetchMeta({ name: "mod-a", semver: "" }))
+        .step((meta) => expect(meta.readme).toBe("dropped"))
+        .step(() => new Promise((resolve) => setTimeout(resolve, 50)))
+        .step(() => readTrimmedPackument(trimmedFile(mgr)))
+        .step((read) => {
+          expect(read.packument.readme).toBe(undefined);
+          expect(Math.abs(read.refreshTime - refreshed.getTime())).toBeLessThan(1000);
+        });
+    });
   });
 
   it("settles the in-flight meta count after a URL fetch", () => {
