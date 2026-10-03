@@ -1,3 +1,69 @@
+# 10/3/2026
+
+## Packages
+
+-   `@fynpo/base@2.1.12` `(2.1.11 => 2.1.12)`
+-   `check-pkg-new-version@1.1.8` `(1.1.7 => 1.1.8)`
+-   `fyn@3.2.3` `(3.2.2 => 3.2.3)`
+-   `fynpo@3.2.3` `(3.2.2 => 3.2.3)`
+-   `fynpo-cli@3.2.3` `(3.2.2 => 3.2.3)`
+
+## Commits
+
+-   `packages/http-server`
+
+    -   build(deps): raise dependency floors past known advisories [commit](https://github.com/jchip/fynjs/commit/9848e859426fe2bb9d5f71fae10db45f2182a710)
+
+-   `packages/fynpo-base`
+
+    -   build(deps): raise dependency floors past known advisories [commit](https://github.com/jchip/fynjs/commit/9848e859426fe2bb9d5f71fae10db45f2182a710)
+    -   test(fynpo-base): match the electrode fixtures bumped dep ranges [commit](https://github.com/jchip/fynjs/commit/05e48fde04cd8803488ae6a6f01e8b6624c745b7)
+    -   build(deps): bump the npm_and_yarn group across 3 directories with 3 updates [commit](https://github.com/jchip/fynjs/commit/0dd62485aae28cac04e9c411b5a27ff15d73bb7c)
+
+-   `packages/check-pkg-new-version`
+
+    -   build(deps): raise dependency floors past known advisories [commit](https://github.com/jchip/fynjs/commit/9848e859426fe2bb9d5f71fae10db45f2182a710)
+
+-   `packages/fyn`
+
+    -   build(deps): raise dependency floors past known advisories [commit](https://github.com/jchip/fynjs/commit/9848e859426fe2bb9d5f71fae10db45f2182a710)
+    -   fix(fyn): say a package isnt in the registry instead of suggesting --refresh-meta [commit](https://github.com/jchip/fynjs/commit/d46b07c7c95cc1ec9b293074fbbbc80da8a3cd95)
+    -   fix(fyn): print install failures without a stack trace when expected [commit](https://github.com/jchip/fynjs/commit/113ccf12778c22e4cbd63d7cdcabbd16cb4294d1)
+    -   fix(fyn): skip a latest tag whose version isnt in the packument [commit](https://github.com/jchip/fynjs/commit/b163dfb2ebd0623f6eb7a846b6e198cf3955b1c7)
+    -   perf(fyn): keep a trimmed copy of each packument for warm installs [commit](https://github.com/jchip/fynjs/commit/da180f85d28d555130b4d3d0059ccd73a0b181de)
+    -   perf(fyn): require http and https at runtime in the bundle [commit](https://github.com/jchip/fynjs/commit/5e455a6049383dba54b4a47ed3ef8af5678c136b)
+    -   fix(fyn): say lock data in the unsatisfied semver error only when it applies [commit](https://github.com/jchip/fynjs/commit/7729b9fcca2da0446c81b578225486202f94f89c)
+    -   fix(fyn): report resolution failures without the meta retrieval wrapper [commit](https://github.com/jchip/fynjs/commit/76e799a84c6a96edb9bf15718bea390b745aaa2c)
+    -   fix(fyn): fail a dist-tag whose version is after --lock-time [commit](https://github.com/jchip/fynjs/commit/de63f38afa6e09b3717cec82f2aef6a2ecc254a9)
+    -   perf(fyn): search only the majors a range allows when resolving [commit](https://github.com/jchip/fynjs/commit/fca0c3f4557088ea657a4dae443909cfe4626cf2)
+    -   fix(fyn): respect --lock-time when latest satisfies the range [commit](https://github.com/jchip/fynjs/commit/1f5d7c447d43230405a59298c043fa478cb05c03)
+    -   perf(fyn): parse each version once when sorting a packument [commit](https://github.com/jchip/fynjs/commit/68ff158da40c01ac305d64157a4a41ddd73f1553)
+    -   perf(fyn): cut startup with the compile cache and lazy loads [commit](https://github.com/jchip/fynjs/commit/57d86bfca37485f2c44b0c643d106be08d75f382)
+    -   perf(fyn): raise the default registry socket count from 15 to 32 [commit](https://github.com/jchip/fynjs/commit/b9d47d6143236e282dc55a7fbb44bebfb816c5d0)
+    -   fix(fyn): dont reject a package over a stale _id it was published with [commit](https://github.com/jchip/fynjs/commit/2ec44eb596610a3d79ee6b59e13fc40d03daccf7)
+    -   fix(fyn): stop arborist debug checks when running in fyns own dir [commit](https://github.com/jchip/fynjs/commit/40eb2319e8ac5b0d788c4931859b286a74a553a6)
+    -   fix(fyn): skip fyns cache and store in the no-change scan [commit](https://github.com/jchip/fynjs/commit/ac29c3da9b9a5ba5f4a20edf6ba706b567de66e1)
+    -   feat(fyn): skip the central store when it could only copy [commit](https://github.com/jchip/fynjs/commit/bfde271be156e6367b59445f914a22305e95bae1)
+
+-   `packages/fynpo`
+
+    -   feat(fynpo): explain grouped bumps and log the confirmed versions [commit](https://github.com/jchip/fynjs/commit/fc7e69ba7337173fd49b8c047d3924dae6b25757)
+    -   feat(fynpo): list the commits behind each bump in the confirm prompt [commit](https://github.com/jchip/fynjs/commit/4c0432885e9b3099396ea2d744d19aa89e699ece)
+    -   feat(fynpo): confirm minor and major bumps in changelog [commit](https://github.com/jchip/fynjs/commit/17db67148ab6793d9d803b6dc484aa98cafa035e)
+    -   build(deps): raise dependency floors past known advisories [commit](https://github.com/jchip/fynjs/commit/9848e859426fe2bb9d5f71fae10db45f2182a710)
+
+-   `packages/init-package`
+
+    -   build(deps): raise dependency floors past known advisories [commit](https://github.com/jchip/fynjs/commit/9848e859426fe2bb9d5f71fae10db45f2182a710)
+
+-   `notes`
+
+    -   docs(notes): record the parked V8 startup snapshot experiment [commit](https://github.com/jchip/fynjs/commit/fbfea27f582770b66ea92e2a7b08b60b93c082f5)
+
+-   `MISC`
+
+    -   update lockfile [commit](https://github.com/jchip/fynjs/commit/b6dbe89788691e2662f1d7adc59437d2220871d9)
+
 # 10/2/2026
 
 ## Packages
