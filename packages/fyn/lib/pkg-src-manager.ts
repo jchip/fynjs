@@ -689,7 +689,7 @@ class PkgSrcManager {
           if (!x) {
             const msg = `pacote returned null/undefined for packument of ${pkgName}`;
             logger.error(chalk.yellow(msg));
-            throw new AggregateError([new Error(msg)], msg);
+            throw Object.assign(new AggregateError([new Error(msg)], msg), { expected: true });
           }
           // Handle different response formats from different pacote versions
           if (x.readme) delete x.readme; // don't need this
@@ -700,7 +700,8 @@ class PkgSrcManager {
         .catch(err => {
           const msg = `pacote failed fetching packument of ${pkgName}`;
           logger.error(chalk.yellow(msg), chalk.red(err.message));
-          throw new AggregateError([err], msg);
+          // a registry or network failure, so the CLI reports it without a stack trace
+          throw Object.assign(new AggregateError([err], msg), { expected: true });
         });
     };
 
@@ -726,7 +727,7 @@ class PkgSrcManager {
         if (!x) {
           const msg = `packument fetch returned null/undefined for ${pkgName}`;
           logger.error(chalk.yellow(msg));
-          qItem.defer.reject(new AggregateError([new Error(msg)], msg));
+          qItem.defer.reject(Object.assign(new AggregateError([new Error(msg)], msg), { expected: true }));
           return;
         }
         // Refresh cache timestamp after successful fetch

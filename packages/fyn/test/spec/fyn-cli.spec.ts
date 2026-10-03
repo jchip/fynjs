@@ -32,6 +32,49 @@ describe("FynCli", function () {
     });
   });
 
+  describe("fail", function () {
+    const runFail = async (err: Error) => {
+      const cli: any = Object.create(FynCli.prototype);
+      cli._opts = { cwd: "/tmp", saveLogs: "/dev/null" };
+      cli._fyn = { cwd: "/tmp" };
+      cli.saveLogs = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(fyntil, "exit").mockImplementation(() => undefined as never);
+      vi.spyOn(logger, "freezeItems").mockImplementation(() => undefined);
+      const error = vi.spyOn(logger, "error").mockImplementation(() => logger);
+      const debug = vi.spyOn(logger, "debug").mockImplementation(() => logger);
+      await cli.fail("install failed:", err);
+      const text = (spy: typeof error) => spy.mock.calls.map(c => c.join(" ")).join("\n");
+      return { errors: text(error), debugs: text(debug) };
+    };
+    const expected = (message: string) => Object.assign(new Error(message), { expected: true });
+
+    it("prints an expected failure's message, with the stack only at debug", async () => {
+      const { errors, debugs } = await runFail(expected("Unable to find a version that satisfies x@^9"));
+      expect(errors).toContain("Unable to find a version that satisfies x@^9");
+      expect(errors).not.toContain("    at ");
+      expect(errors).not.toContain("process.argv");
+      expect(debugs).toContain("    at ");
+      expect(debugs).toContain("process.argv");
+    });
+
+    it("prints each cause of an expected AggregateError", async () => {
+      const inner = Object.assign(new AggregateError([expected("404 Not Found - GET /nope")], "pacote failed"), {
+        expected: true
+      });
+      const { errors } = await runFail(new AggregateError([inner], "Unable to retrieve meta for package nope"));
+      expect(errors).toContain("Unable to retrieve meta for package nope");
+      expect(errors).toContain("  pacote failed");
+      expect(errors).toContain("    404 Not Found - GET /nope");
+      expect(errors).not.toContain("    at ");
+    });
+
+    it("keeps the stack for an unexpected error, even inside an AggregateError", async () => {
+      expect((await runFail(new TypeError("x is undefined"))).errors).toContain("    at ");
+      const wrapped = new AggregateError([new TypeError("x is undefined")], "Unable to retrieve meta");
+      expect((await runFail(wrapped)).errors).toContain("    at ");
+    });
+  });
+
   describe("run --if-present", function () {
     const makeCli = (scripts = {}) => {
       const cli: any = Object.create(FynCli.prototype);

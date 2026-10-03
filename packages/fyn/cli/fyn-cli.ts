@@ -43,6 +43,24 @@ import {
 
 import { syncLocalExports, localExportsScanIgnores } from "../lib/local-exports";
 
+/**
+ * Resolution and registry failures are flagged `expected`. An AggregateError is expected only when
+ * all its causes are, since a wrapper can also hold a real bug.
+ */
+const isExpectedFailure = (err: Error): boolean =>
+  Boolean((err as { expected?: boolean }).expected) ||
+  (err instanceof AggregateError && err.errors.length > 0 && err.errors.every(isExpectedFailure));
+
+/** Log an error's message, then each cause's, indented */
+const logCauses = (msg: string, err: Error, indent = ""): void => {
+  logger.error(msg, `${indent}${err.message}`);
+  if (err instanceof AggregateError) {
+    for (const cause of err.errors) {
+      logCauses(msg, cause, `${indent}  `);
+    }
+  }
+};
+
 /** Fyn CLI options */
 export interface FynCliOpts {
   cwd: string;
@@ -235,14 +253,18 @@ class FynCli {
     
     if (!alreadyLogged) {
       logger.error(msg, `CWD ${this.fyn.cwd}`);
-      logger.error("process.argv", process.argv);
+      logger.debug("process.argv", process.argv);
       logger.error(msg, "Please check for any errors that occur above.");
       const lessCmd = chalk.magenta(`less -R ${dbgLog}`);
       logger.error(
         msg,
         `Also check ${chalk.magenta(dbgLog)} for more details. ${lessCmd} if you are on Un*x.`
       );
-      if (err.stack) {
+      if (isExpectedFailure(err)) {
+        // the messages say what went wrong; the stack is in the saved log
+        logCauses(msg, err);
+        logger.debug(msg, cleanErrorStack(err));
+      } else if (err.stack) {
         logger.error(msg, cleanErrorStack(err));
       } else if (err.message) {
         logger.error(msg, err.message);

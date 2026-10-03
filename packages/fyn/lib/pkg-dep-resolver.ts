@@ -234,8 +234,11 @@ const failMetaMsg = name =>
 /**
  * The meta was retrieved, but no version can be resolved from it. This is reported as is, not
  * wrapped in the "Unable to retrieve meta" error, whose --refresh-meta hint doesn't apply.
+ * `expected` tells the CLI to report it without a stack trace.
  */
-class ResolveError extends Error {}
+class ResolveError extends Error {
+  expected = true;
+}
 
 /*
  * Package dependencies resolver
@@ -1787,7 +1790,7 @@ ${item.depPath.join(" > ")}`
           .fetchMeta(item)
           .then((meta: PackageMeta) => {
             if (!meta) {
-              throw new Error(failMetaMsg(item.name));
+              throw Object.assign(new Error(failMetaMsg(item.name)), { expected: true });
             }
             const updated = this._fyn.depLocker.update(item, meta);
             // First try without force: the meta may be a stale local cacache
@@ -1805,7 +1808,7 @@ ${item.depPath.join(" > ")}`
             );
             return this._pkgSrcMgr.fetchMeta(item, true).then(freshMeta => {
               if (!freshMeta) {
-                throw new Error(failMetaMsg(item.name));
+                throw Object.assign(new Error(failMetaMsg(item.name)), { expected: true });
               }
               const freshUpdated = this._fyn.depLocker.update(item, freshMeta);
               return this._resolveWithMeta({
