@@ -20,13 +20,24 @@ describe("fyn-central store", () => {
   const integrity = ssri.fromData("pkg-a@1.0.0").toString();
   const old = new Date(Date.now() - 10 * 60 * 1000);
 
-  /** a gzipped tarball of package/{package.json,index.js} */
-  const tarball = () => {
+  /**
+   * a gzipped tarball of package/{package.json,index.js,lib/util.js}, with npm's fixed
+   * 1985-10-26 mtime on every file, as npm publishes them
+   */
+  const tarball = (opts: { noMtime?: boolean } = {}) => {
     const src = Path.join(root, "src");
-    Fs.mkdirSync(Path.join(src, "package"), { recursive: true });
-    Fs.writeFileSync(Path.join(src, "package", "package.json"), '{"name":"pkg-a","version":"1.0.0"}');
-    Fs.writeFileSync(Path.join(src, "package", "index.js"), "module.exports = 1;\n");
-    return Tar.c({ gzip: true, cwd: src }, ["package"]) as unknown as NodeJS.ReadableStream;
+    const npmTime = new Date("1985-10-26T08:15:00Z");
+    Fs.mkdirSync(Path.join(src, "package", "lib"), { recursive: true });
+    const files = {
+      "package.json": '{"name":"pkg-a","version":"1.0.0"}',
+      "index.js": "module.exports = 1;\n",
+      "lib/util.js": "module.exports = 2;\n"
+    };
+    for (const [file, text] of Object.entries(files)) {
+      Fs.writeFileSync(Path.join(src, "package", file), text);
+      Fs.utimesSync(Path.join(src, "package", file), npmTime, npmTime);
+    }
+    return Tar.c({ gzip: true, cwd: src, ...opts }, ["package"]) as unknown as NodeJS.ReadableStream;
   };
   const siblings = () => Fs.readdirSync(Path.dirname(contentPath)).sort();
   const base = () => Path.basename(contentPath);
@@ -113,6 +124,80 @@ describe("fyn-central store", () => {
     await central.delete(integrity);
     expect(rename).toHaveBeenCalledWith(contentPath, expect.stringContaining(`${base()}.del-`));
     expect(siblings()).toEqual([]);
+  });
+
+  //
+  // tree.json's shaSum hashes each file's path, mtime in seconds and size (format 2). A fresh
+  // entry gets it from the tar headers. validate() compares a stat walk, and moves an older
+  // format entry to format 2 after checking it with its own format's hash.
+  //
+  const treeFile = () => Path.join(contentPath, "tree.json");
+  const readTree = () => JSON.parse(Fs.readFileSync(treeFile(), "utf8"));
+  /** a new FynCentral on the same store, so nothing is cached from storing the entry */
+  const validateFresh = async () => {
+    const other: any = new FynCentral({ centralDir: Path.join(root, "central") });
+    await other.has(integrity);
+    return other.validate(integrity);
+  };
+  /** rewrite the stored entry as format 1, with its v1 hash */
+  const makeOldFormat = async () => {
+    const { v1 } = await central._scanShasums(Path.join(contentPath, "package"));
+    Fs.writeFileSync(treeFile(), JSON.stringify({ ...readTree(), shaSum: v1, _: 1 }));
+  };
+  const editFile = () => {
+    const file = Path.join(contentPath, "package", "index.js");
+    Fs.writeFileSync(file, "module.exports = 9;\n");
+    Fs.utimesSync(file, new Date(), new Date());
+  };
+
+  it("hashes a new entry from the tar headers, without a walk, and a stat walk agrees", async () => {
+    const scan = vi.spyOn(central, "_scanShasums");
+    await store();
+
+    expect(scan).not.toHaveBeenCalled();
+    expect(readTree()._).toBe(2);
+    expect(await validateFresh()).toBe(true);
+  });
+
+  it("walks the files when the tarball has no mtimes", async () => {
+    const scan = vi.spyOn(central, "_scanShasums");
+    await store(false, () => tarball({ noMtime: true }));
+
+    expect(scan).toHaveBeenCalledTimes(1);
+    expect(await validateFresh()).toBe(true);
+  });
+
+  it("catches an edited file", async () => {
+    await store();
+    editFile();
+    expect(await validateFresh()).toBe(false);
+  });
+
+  it("checks an old format entry with its own hash, then converts it", async () => {
+    await store();
+    await makeOldFormat();
+
+    expect(await validateFresh()).toBe(true);
+    expect(readTree()._).toBe(2);
+    expect(await validateFresh()).toBe(true);
+  });
+
+  it("leaves an old format entry that changed as it is, so it gets replaced", async () => {
+    await store();
+    await makeOldFormat();
+    editFile();
+
+    expect(await validateFresh()).toBe(false);
+    expect(readTree()._).toBe(1);
+  });
+
+  it("converts a legacy tree with no wrapper or hash", async () => {
+    await store();
+    Fs.writeFileSync(treeFile(), JSON.stringify(readTree().$));
+
+    expect(await validateFresh()).toBe(true);
+    expect(readTree()._).toBe(2);
+    expect(await validateFresh()).toBe(true);
   });
 
   it("rewrites tree.json through a temp file", async () => {

@@ -49,8 +49,20 @@ interface PackageInfo {
   exist?: boolean;
   mutates?: boolean;
   shaSum?: string;
+  /** tree.json's `_`, which says how shaSum was made; undefined for the unwrapped legacy tree */
+  sumVersion?: number;
   validated?: boolean;
 }
+
+/**
+ * tree.json's current format. Its shaSum hashes each file's path, mtime in whole seconds and
+ * size, so a fresh extraction gets it from the tar headers without walking the files again.
+ * Format 1 hashed a stat walk of files and dirs with mtimes in ms.
+ */
+const SUM_VERSION = 2;
+
+const hashList = (list: string[]): string =>
+  Crypto.createHash("sha512").update(JSON.stringify(list.sort())).digest("base64");
 
 /** Tree file content structure (new format with version) */
 interface TreeFileContent {
@@ -249,9 +261,13 @@ class FynCentral {
     return info;
   }
 
-  async _calcContentShasum(info: PackageInfo, pkgDir?: string): Promise<string | undefined> {
+  /**
+   * Hash a package dir in one stat walk, in both formats: v1 for checking an old entry, v2 for
+   * everything else (see SUM_VERSION).
+   */
+  async _scanShasums(packageDir: string): Promise<{ v1: string; v2: string } | undefined> {
     try {
-      const packageDir = pkgDir || Path.join(info.contentPath, "package");
+      const v2: string[] = [];
       const filter = (
         _file: string,
         _path: string,
@@ -259,6 +275,9 @@ class FynCentral {
       ): { formatName: string } => {
         const { stat, dirFile } = extras;
         const fullStat = stat as Stats;
+        if (!fullStat.isDirectory()) {
+          v2.push(`${dirFile.replace(/\\/g, "/")}-${Math.floor(fullStat.mtimeMs / 1000)}-${fullStat.size}`);
+        }
         return { formatName: `${dirFile}-${fullStat.mtimeMs}-${fullStat.size}` };
       };
 
@@ -272,12 +291,32 @@ class FynCentral {
         includeDir: true
       });
 
-      const hash = Crypto.createHash("sha512");
-      const shaSum = hash.update(JSON.stringify((files as string[]).sort())).digest("base64");
-      return shaSum;
+      return { v1: hashList(files as string[]), v2: hashList(v2) };
     } catch (_err) {
       return undefined;
     }
+  }
+
+  /** The v2 hash of a fresh extraction, from the tar header sizes and mtimes in its tree */
+  _treeShasum(tree: TreeNode): string {
+    const files: string[] = [];
+    const walk = (node: TreeNode, dir: string): void => {
+      for (const [name, child] of Object.entries(node)) {
+        if (name === "/") {
+          for (const [file, info] of Object.entries(child as Record<string, FileInfo>)) {
+            files.push(`${dir}${file}-${info.m}-${info.z}`);
+          }
+        } else {
+          walk(child as TreeNode, `${dir}${name}/`);
+        }
+      }
+    };
+    walk(tree, "");
+    return hashList(files);
+  }
+
+  async _calcContentShasum(info: PackageInfo, pkgDir?: string): Promise<string | undefined> {
+    return (await this._scanShasums(pkgDir || Path.join(info.contentPath, "package")))?.v1;
   }
 
   /**
@@ -341,6 +380,7 @@ class FynCentral {
         }
         info.tree = parsed.$;
         info.shaSum = parsed.shaSum;
+        info.sumVersion = parsed._;
       } else {
         // Legacy format: tree stored directly without wrapper
         info.tree = parsed as TreeNode;
@@ -359,7 +399,8 @@ class FynCentral {
    * @param path - path to save the file
    */
   async saveInfoTree(info: PackageInfo, path?: string): Promise<void> {
-    const data = JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: 1 });
+    // an old entry keeps its format until validate() converts it, so a v1 hash is never labeled v2
+    const data = JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: info.sumVersion ?? 1 });
     if (path) {
       await Fs.writeFile(Path.join(path, "tree.json"), data);
       return;
@@ -494,7 +535,14 @@ class FynCentral {
     return false;
   }
 
-  _untarStream(tarStream: Readable, targetDir: string): Promise<TreeNode> {
+  /**
+   * Extract a tarball and build its tree from the tar headers.
+   *
+   * @returns the tree, and whether its sizes and mtimes are what stat will report: true when
+   *   every non-dir entry is a regular file with an mtime. A link or a missing mtime leaves
+   *   something only a stat walk can see.
+   */
+  _untarStream(tarStream: Readable, targetDir: string): Promise<{ tree: TreeNode; fromHeaders: boolean }> {
     // since we are using objects to store directory tree we have to
     // create objects without the normal prototypes to avoid name conflict
     // with file names
@@ -505,6 +553,7 @@ class FynCentral {
     };
 
     const dirTree = newDirObj();
+    let fromHeaders = true;
 
     const strip = 1;
 
@@ -523,6 +572,10 @@ class FynCentral {
 
         if (isDir) return;
 
+        if (!entry.mtime || !["File", "OldFile", "ContiguousFile"].includes(entry.type)) {
+          fromHeaders = false;
+        }
+
         const fname = parts[parts.length - 1];
         if (fname) {
           const m = Math.round((entry.mtime ? entry.mtime.getTime() : Date.now()) / 1000);
@@ -535,7 +588,7 @@ class FynCentral {
       }
     });
 
-    return missPipe(tarStream, untarStream).then(() => dirTree);
+    return missPipe(tarStream, untarStream).then(() => ({ tree: dirTree, fromHeaders }));
   }
 
   /**
@@ -594,8 +647,10 @@ class FynCentral {
       if ((stream as Promise<Readable>).then) {
         stream = await (stream as Promise<Readable>);
       }
-      info.tree = await this._untarStream(stream as Readable, targetDir);
-      info.shaSum = await this._calcContentShasum(info, targetDir);
+      const { tree, fromHeaders } = await this._untarStream(stream as Readable, targetDir);
+      info.tree = tree;
+      info.shaSum = fromHeaders ? this._treeShasum(tree) : (await this._scanShasums(targetDir))?.v2;
+      info.sumVersion = SUM_VERSION;
       await this.saveInfoTree(info, tmp);
 
       try {
@@ -629,12 +684,18 @@ class FynCentral {
     }
 
     if (info.validated === undefined) {
-      const sum = await this.getContentShasum(integrity);
-      if (!info.shaSum) {
-        info.shaSum = sum;
-        await this.saveInfoTree(info);
+      const sums = await this._scanShasums(Path.join(info.contentPath, "package"));
+      if (info.sumVersion === SUM_VERSION) {
+        info.validated = Boolean(sums) && info.shaSum === sums!.v2;
+      } else {
+        // an older entry: check it with its own format's hash, then move it to the current one
+        info.validated = Boolean(sums) && (!info.shaSum || info.shaSum === sums!.v1);
+        if (info.validated) {
+          info.shaSum = sums!.v2;
+          info.sumVersion = SUM_VERSION;
+          await this.saveInfoTree(info);
+        }
       }
-      info.validated = info.shaSum === sum;
     }
 
     return info.validated;
