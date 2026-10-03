@@ -10,8 +10,6 @@ import Path from "path";
 import Fs from "./file-ops";
 import fs from "fs";
 import * as xaa from "xaa";
-import npmPacklist from "npm-packlist";
-import Arborist from "@npmcli/arborist";
 import fynTil from "./fyntil";
 import logger from "../logger";
 import { SourceMapGenerator } from "source-map";
@@ -197,6 +195,11 @@ const SYM_FILES = Symbol("files");
  */
 async function generatePackTree(path, _logger = logger) {
   let files;
+  // loaded here, not at the top, so installs that never pack a local package skip evaluating them
+  const [{ default: npmPacklist }, { default: Arborist }] = await Promise.all([
+    import("npm-packlist"),
+    import("@npmcli/arborist")
+  ]);
   // Detect which API version is available
   // v10+ requires (tree, options) - tree is Arborist tree
   // v1.x uses (options) - options contains path

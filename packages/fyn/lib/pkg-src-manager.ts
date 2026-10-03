@@ -8,10 +8,9 @@
 
 
 import Promise from "aveazul";
-import cacache from "cacache";
-import { refreshCacheEntry, getCacheInfoWithRefreshTime } from "./cacache-util";
+import { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime } from "./cacache-util";
 import os from "os";
-import pacote from "pacote";
+import type Pacote from "pacote";
 import * as _ from "lodash-es";
 import chalk from "chalk";
 import { PassThrough, Readable } from "stream";
@@ -34,7 +33,7 @@ import { MARK_URL_SPEC } from "./constants";
 import { AggregateError } from "@jchip/error";
 import { prePackObj } from "publish-util";
 import { PackageRef } from "@fynpo/base";
-import Arborist from "@npmcli/arborist";
+import type Arborist from "@npmcli/arborist";
 // Import the module object (not a named binding) so execFileSync is resolved at
 // call time — tests stub childProcess.execFileSync on the CJS module object.
 import childProcess from "child_process";
@@ -51,6 +50,12 @@ import type { DepItem } from "./dep-item";
 // carries the whole fynpo.json config shape
 import type { FynpoData } from "./fyn";
 import type { Inflight as InflightType, ItemQueue, WatchData } from "item-queue";
+
+// pacote and the network stack under it load on first use, so an install that finds nothing
+// changed never evaluates them.
+let pacoteLoad: Promise<typeof Pacote> | undefined;
+const loadPacote = (): Promise<typeof Pacote> =>
+  (pacoteLoad ??= Promise.resolve(import("pacote")).then(m => m.default));
 
 /** Options for PkgSrcManager constructor */
 interface PkgSrcManagerOptions {
@@ -192,7 +197,7 @@ interface PacoteOptions {
   alwaysAuth?: boolean;
   username?: string;
   password?: string;
-  Arborist: typeof Arborist;
+  Arborist?: typeof Arborist;
   [key: string]: unknown;
 }
 
@@ -422,9 +427,6 @@ class PkgSrcManager {
       registryData
     ) as PacoteOptions;
 
-    // Add Arborist to pacote options for git dependencies (required by pacote v21+)
-    this._pacoteOpts.Arborist = Arborist;
-
     this._regData = registryData;
     this.normalizeRegUrlSlash();
 
@@ -495,6 +497,17 @@ class PkgSrcManager {
 
   getPacoteOpts(extra?: Record<string, unknown>): PacoteOptions {
     return Object.assign({}, extra, this._pacoteOpts);
+  }
+
+  /**
+   * pacote v21+ needs Arborist to prepare git and dir deps. Load it on first use, so installs
+   * without such deps skip evaluating it.
+   */
+  _loadArborist(): Promise<void> {
+    if (this._pacoteOpts.Arborist) return Promise.resolve();
+    return Promise.resolve(import("@npmcli/arborist")).then(m => {
+      this._pacoteOpts.Arborist = m.default;
+    });
   }
 
   getPublishUtil(json: LocalPkgJson, fullPath: string): PublishUtilConfig | undefined {
@@ -647,17 +660,19 @@ class PkgSrcManager {
     //
     const pacoteRequest = () => {
       logger.debug(`pacote.packument ${qItem.packumentUrl}`);
-      const promise = pacote.packument(
-        pkgName,
-        // pacote 21 / npm-registry-fetch 19 read camelCase options; the old
-        // kebab-case names were silently ignored. preferOnline forces a server
-        // revalidation (cache mode "no-cache") for this refresh path.
-        this.getPacoteOpts({
-          fullMetadata: true,
-          fetchRetries: 3,
-          preferOnline: true,
-          memoize: false
-        })
+      const promise = loadPacote().then(pacote =>
+        pacote.packument(
+          pkgName,
+          // pacote 21 / npm-registry-fetch 19 read camelCase options; the old
+          // kebab-case names were silently ignored. preferOnline forces a server
+          // revalidation (cache mode "no-cache") for this refresh path.
+          this.getPacoteOpts({
+            fullMetadata: true,
+            fetchRetries: 3,
+            preferOnline: true,
+            memoize: false
+          })
+        )
       );
       return promise
         .then(x => {
@@ -779,8 +794,8 @@ class PkgSrcManager {
     // pacote resolves.
     const pacoteOpts: Record<string, unknown> = { dirPacker };
 
-    return pacote
-      .manifest(`${item.name}@${item.semver}`, this.getPacoteOpts(pacoteOpts))
+    return Promise.all([loadPacote(), this._loadArborist()])
+      .then(([pacote]) => pacote.manifest(`${item.name}@${item.semver}`, this.getPacoteOpts(pacoteOpts)))
       .then((manifest: PkgManifestData) => {
         manifest = Object.assign({}, manifest);
         return {
@@ -907,6 +922,7 @@ class PkgSrcManager {
       //
       // cache tgz (use manifest._resolved as cache key)
       //
+      const cacache = await loadCacache();
       const cacheStream = cacache.put.stream(this._cacheDir, tgzCacheKey, { metadata: manifest });
       cacheStream.on("integrity", i => (integrity = i.sha512[0].source));
       await missPipe(packStream, cacheStream);
@@ -971,7 +987,7 @@ class PkgSrcManager {
 
     const loadCachedPackument = async (key, memoize = true) => {
       try {
-        const cached = await cacache.get(this._cacheDir, key, { memoize });
+        const cached = await (await loadCacache()).get(this._cacheDir, key, { memoize });
         const info = await getCacheInfoWithRefreshTime(this._cacheDir, key);
         return Object.assign(cached, {
           refreshTime: info && info.refreshTime,
@@ -1254,8 +1270,8 @@ class PkgSrcManager {
     return defer.promise;
   }
 
-  cacacheTarballStream(integrity: string): Readable {
-    return cacache.get.stream.byDigest(this._cacheDir, integrity);
+  async cacacheTarballStream(integrity: string): NativePromise<Readable> {
+    return (await loadCacache()).get.stream.byDigest(this._cacheDir, integrity);
   }
 
   pacoteTarballStream(pkgId: string, pkgInfo: PkgVersionInfo, integrity?: string): PassThrough {
@@ -1266,22 +1282,24 @@ class PkgSrcManager {
       const opts = this.getPacoteOpts({
         integrity
       });
-      // Create a fetcher for the tarball URL
-      const fetcher = new (pacote as any).RemoteFetcher(tarballUrl, opts);
       // Create a passthrough stream that we can return
       const passthrough = new PassThrough();
 
       // Start the tarballStream operation and pipe to passthrough
       // We need to start this immediately so that when pacotePrefetch consumes
       // the passthrough stream, data will flow through
-      const streamPromise = fetcher.tarballStream((stream: Readable) => {
-        // Pipe the source stream to our passthrough stream
-        stream.pipe(passthrough);
-        // Return a promise that resolves when piping is complete
-        return new Promise<void>((resolve, reject) => {
-          stream.on("end", resolve);
-          stream.on("error", reject);
-          passthrough.on("error", reject);
+      const streamPromise = loadPacote().then(pacote => {
+        // Create a fetcher for the tarball URL
+        const fetcher = new (pacote as any).RemoteFetcher(tarballUrl, opts);
+        return fetcher.tarballStream((stream: Readable) => {
+          // Pipe the source stream to our passthrough stream
+          stream.pipe(passthrough);
+          // Return a promise that resolves when piping is complete
+          return new Promise<void>((resolve, reject) => {
+            stream.on("end", resolve);
+            stream.on("error", reject);
+            passthrough.on("error", reject);
+          });
         });
       });
 
@@ -1293,24 +1311,24 @@ class PkgSrcManager {
     }
 
     // Fallback for packages without tarball URL
-    const opts = this.getPacoteOpts({
-      fullMetadata: true,
-      integrity,
-      resolved: tarballUrl
-    });
-
     const passthrough = new PassThrough();
-    const streamPromise = pacote.tarball.stream(
-      pkgId,
-      (stream: Readable) => {
-        stream.pipe(passthrough);
-        return new Promise<void>((resolve, reject) => {
-          stream.on("end", resolve);
-          stream.on("error", reject);
-          passthrough.on("error", reject);
-        });
-      },
-      opts
+    const streamPromise = Promise.all([loadPacote(), this._loadArborist()]).then(([pacote]) =>
+      pacote.tarball.stream(
+        pkgId,
+        (stream: Readable) => {
+          stream.pipe(passthrough);
+          return new Promise<void>((resolve, reject) => {
+            stream.on("end", resolve);
+            stream.on("error", reject);
+            passthrough.on("error", reject);
+          });
+        },
+        this.getPacoteOpts({
+          fullMetadata: true,
+          integrity,
+          resolved: tarballUrl
+        })
+      )
     );
 
     // If there's an error starting the stream, propagate it to the passthrough
@@ -1346,7 +1364,7 @@ class PkgSrcManager {
     const tarId = this.tarballFetchId(pkgInfo);
 
     const tarStream = async (): NativePromise<Readable> => {
-      return integrity && (await cacache.get.hasContent(this._cacheDir, integrity))
+      return integrity && (await (await loadCacache()).get.hasContent(this._cacheDir, integrity))
         ? this.cacacheTarballStream(integrity)
         : this.pacoteTarballStream(tarId, pkgInfo, integrity);
     };
@@ -1426,8 +1444,8 @@ class PkgSrcManager {
     // - use stream from cached tarball if exist
     // - else fetch from network
 
-    const promise: Promise<string | Readable> = cacache.get
-      .hasContent(this._cacheDir, integrity)
+    const promise: Promise<string | Readable> = Promise.resolve(loadCacache())
+      .then(cacache => cacache.get.hasContent(this._cacheDir, integrity))
       .catch(() => false)
       .then((content: unknown) => {
         if (content) {

@@ -18,11 +18,21 @@
  * The mtime is just fyn's bookkeeping to track "last refreshed from npm at X time".
  */
 
-import cacache from "cacache";
+import type Cacache from "cacache";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import cacachePkg from "cacache/package.json" with { type: "json" };
+
+let cacacheLoad: Promise<typeof Cacache> | undefined;
+
+/**
+ * cacache, and the glob it pulls in, load on first use, so an install that finds nothing
+ * changed never evaluates them.
+ */
+function loadCacache(): Promise<typeof Cacache> {
+  return (cacacheLoad ??= import("cacache").then(m => m.default));
+}
 
 /**
  * Hash a cache key using SHA256 (matches cacache's algorithm).
@@ -76,6 +86,7 @@ async function getCacheInfoWithRefreshTime(cache: string, key: string) {
   const bucket = getBucketPath(cache, key);
 
   try {
+    const cacache = await loadCacache();
     const [info, bucketStat] = await Promise.all([cacache.get.info(cache, key), fs.stat(bucket)]);
 
     if (!info) {
@@ -95,4 +106,4 @@ async function getCacheInfoWithRefreshTime(cache: string, key: string) {
   }
 }
 
-export { refreshCacheEntry, getCacheInfoWithRefreshTime, getBucketPath, hashKey };
+export { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime, getBucketPath, hashKey };

@@ -8,7 +8,6 @@
  * 4. Cache response and return
  */
 
-import npmFetch from "npm-registry-fetch";
 import semver from "semver";
 import logger from "../logger";
 import {
@@ -204,6 +203,8 @@ class AuditReport {
 
     try {
       const fetchOpts = this.getFetchOptions();
+      // loaded here so runs that skip the audit never evaluate the fetch stack
+      const { default: npmFetch } = await import("npm-registry-fetch");
       const response = await npmFetch(auditUrl, {
         ...fetchOpts,
         method: "POST",

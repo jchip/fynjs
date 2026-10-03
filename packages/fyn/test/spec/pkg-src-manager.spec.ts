@@ -617,12 +617,15 @@ describe("pkg-src-manager", function () {
       });
   });
 
-  it("tarball-stream fallback requests full metadata with the correct camelCase option", () => {
+  it("tarball-stream fallback requests full metadata with the correct camelCase option", async () => {
     const pacote = require("pacote");
     const origStream = pacote.tarball.stream;
     let captured;
+    let called;
+    const calledP = new Promise(resolve => (called = resolve));
     pacote.tarball.stream = (_id, _cb, opts) => {
       captured = opts;
+      called();
       return Promise.resolve();
     };
 
@@ -641,6 +644,8 @@ describe("pkg-src-manager", function () {
     try {
       // no dist.tarball -> takes the pacote.tarball.stream fallback path
       mgr.pacoteTarballStream("mod-a@1.0.0", { name: "mod-a", version: "1.0.0" }, "sha512-x");
+      // pacote loads on first use, so the call lands after a tick
+      await calledP;
       expect(captured.fullMetadata).toBe(true);
       expect(captured).not.toHaveProperty("fullMeta");
     } finally {

@@ -8,9 +8,9 @@
  * ensuring different dependency sets get different cache entries.
  */
 
-import cacache from "cacache";
 import crypto from "crypto";
 import Path from "path";
+import { loadCacache } from "../cacache-util";
 
 /** Bulk request payload: package names mapped to version arrays */
 export type BulkPayload = Record<string, string[]>;
@@ -65,7 +65,7 @@ function generateCacheKey(payload: BulkPayload): string {
 async function cacheAuditResult(cacheDir: string, key: string, result: AuditResult): Promise<void> {
   const auditCacheDir = Path.join(cacheDir, "audit");
   const data = JSON.stringify(result);
-  await cacache.put(auditCacheDir, key, data);
+  await (await loadCacache()).put(auditCacheDir, key, data);
 }
 
 /**
@@ -75,7 +75,7 @@ async function cacheAuditResult(cacheDir: string, key: string, result: AuditResu
 async function getCachedAuditResult(cacheDir: string, key: string): Promise<AuditResult | null> {
   const auditCacheDir = Path.join(cacheDir, "audit");
   try {
-    const { data } = await cacache.get(auditCacheDir, key);
+    const { data } = await (await loadCacache()).get(auditCacheDir, key);
     return JSON.parse(data.toString()) as AuditResult;
   } catch (err: unknown) {
     const code = (err as NodeJS.ErrnoException).code;
@@ -92,7 +92,7 @@ async function getCachedAuditResult(cacheDir: string, key: string): Promise<Audi
 async function hasAuditCache(cacheDir: string, key: string): Promise<boolean> {
   const auditCacheDir = Path.join(cacheDir, "audit");
   try {
-    const info = await cacache.get.info(auditCacheDir, key);
+    const info = await (await loadCacache()).get.info(auditCacheDir, key);
     return info !== null;
   } catch {
     return false;
