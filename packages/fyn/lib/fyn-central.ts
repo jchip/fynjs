@@ -76,6 +76,12 @@ interface FynCentralOptions {
   copyFallback?: boolean;
 }
 
+/** an extraction marker or temp dir older than this was left by an install that died */
+const STALE_MS = 5 * 60 * 1000;
+
+/** a name suffix no other install, or other call in this one, will pick */
+const uniqueSuffix = (): string => `${process.pid}-${Crypto.randomBytes(4).toString("hex")}`;
+
 /** link errors that mean the filesystem can't hardlink from the store at all */
 const NO_LINK_CODES = ["EXDEV", "EPERM", "ENOTSUP", "EOPNOTSUPP", "ENOSYS"];
 
@@ -300,11 +306,22 @@ class FynCentral {
     return info.mutates;
   }
 
+  /**
+   * Rename the entry away before removing it, so a concurrent install never finds it half
+   * deleted, with tree.json present and package/ partly gone.
+   */
   async delete(integrity: string): Promise<void> {
     const info = this._map.get(integrity);
     if (info && info.exist && info.contentPath) {
-      await Fs.$.rimraf(info.contentPath);
+      const trash = `${info.contentPath}.del-${uniqueSuffix()}`;
+      try {
+        await Fs.rename(info.contentPath, trash);
+      } catch (err) {
+        // ENOENT: another install deleted it first
+        if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+      }
       this._map.delete(integrity);
+      await Fs.$.rimraf(trash);
     }
   }
 
@@ -334,16 +351,23 @@ class FynCentral {
   }
 
   /**
-   * Save the content dir tree from info to file
+   * Save the content dir tree from info to file. In a live entry it's written to a temp file
+   * and renamed over, so a concurrent install never reads half of it. A `path` is a temp dir
+   * only this install uses, so it's written directly.
    *
    * @param info - package info
    * @param path - path to save the file
    */
   async saveInfoTree(info: PackageInfo, path?: string): Promise<void> {
-    await Fs.writeFile(
-      Path.join(path || info.contentPath, "tree.json"),
-      JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: 1 })
-    );
+    const data = JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: 1 });
+    if (path) {
+      await Fs.writeFile(Path.join(path, "tree.json"), data);
+      return;
+    }
+    const treeFile = Path.join(info.contentPath, "tree.json");
+    const tmpFile = `${treeFile}.${uniqueSuffix()}`;
+    await Fs.writeFile(tmpFile, data);
+    await Fs.rename(tmpFile, treeFile);
   }
 
   async setMutation(integrity: string, mutates = true): Promise<void> {
@@ -514,48 +538,81 @@ class FynCentral {
     return missPipe(tarStream, untarStream).then(() => dirTree);
   }
 
-  async _acquireTmpLock(info: PackageInfo): Promise<string> {
-    const tmpLock = `${info.contentPath}.lock`;
-
+  /**
+   * Claim the `.extracting` marker that tells other installs this one is writing the entry.
+   * mkdir is atomic, so only one install gets it. A marker older than STALE_MS was left by an
+   * install that died, so it is taken over.
+   *
+   * @returns true when this install owns the marker
+   */
+  async _claimMarker(marker: string, retry = true): Promise<boolean> {
     try {
-      await Fs.$.mkdirp(Path.dirname(info.contentPath));
-      await Fs.$.acquireLock(tmpLock, {
-        wait: 5 * 60 * 1000,
-        pollPeriod: 500,
-        stale: 5 * 60 * 1000
-      });
+      await Fs.mkdir(marker);
+      return true;
     } catch (err) {
-      logger.error("fyn-central - unable to acquire tmp lock", tmpLock);
-      const msg = (err as Error).message && (err as Error).message.replace(tmpLock, "<lockfile>");
-      throw new Error(`Unable to acquire fyn-central tmp lock ${tmpLock} - ${msg}`);
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
     }
-
-    return tmpLock;
+    const stat = await Fs.stat(marker).catch(() => undefined);
+    if (retry && (!stat || Date.now() - stat.mtimeMs > STALE_MS)) {
+      await Fs.$.rimraf(marker);
+      return this._claimMarker(marker, false);
+    }
+    return false;
   }
 
+  /** Remove temp and trash dirs that installs which died left next to the entry. */
+  async _removeStaleTemps(contentPath: string): Promise<void> {
+    const dir = Path.dirname(contentPath);
+    const base = Path.basename(contentPath);
+    for (const name of await Fs.readdir(dir)) {
+      if (!name.startsWith(`${base}.tmp`) && !name.startsWith(`${base}.del-`)) continue;
+      const stat = await Fs.stat(Path.join(dir, name)).catch(() => undefined);
+      if (stat && Date.now() - stat.mtimeMs > STALE_MS) {
+        await Fs.$.rimraf(Path.join(dir, name));
+      }
+    }
+  }
+
+  /**
+   * Extract into a temp dir only this call uses, then rename it into place. The rename is
+   * atomic, so other installs see the entry complete or not at all. If another install renamed
+   * its copy in first, that copy has the same integrity, so this one is dropped for it.
+   */
   async _storeTarStream(
     info: PackageInfo,
-    _integrity: string,
     _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
   ): Promise<void> {
     let stream = _stream;
-    const tmp = `${info.contentPath}.tmp`;
+    const tmp = `${info.contentPath}.tmp-${uniqueSuffix()}`;
 
-    await Fs.$.rimraf(tmp); // in case there was any remnant left from an interrupted install
-    const targetDir = Path.join(tmp, "package");
-    await Fs.$.mkdirp(targetDir);
-    if (typeof stream === "function") {
-      stream = stream();
-    }
-    if ((stream as Promise<Readable>).then) {
-      stream = await (stream as Promise<Readable>);
-    }
-    // TODO: user could break during untar and cause corrupted module
-    info.tree = await this._untarStream(stream as Readable, targetDir);
-    info.shaSum = await this._calcContentShasum(info, targetDir);
-    await this.saveInfoTree(info, tmp);
+    try {
+      const targetDir = Path.join(tmp, "package");
+      await Fs.$.mkdirp(targetDir);
+      if (typeof stream === "function") {
+        stream = stream();
+      }
+      if ((stream as Promise<Readable>).then) {
+        stream = await (stream as Promise<Readable>);
+      }
+      info.tree = await this._untarStream(stream as Readable, targetDir);
+      info.shaSum = await this._calcContentShasum(info, targetDir);
+      await this.saveInfoTree(info, tmp);
 
-    await Fs.rename(tmp, info.contentPath);
+      try {
+        await Fs.rename(tmp, info.contentPath);
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code!;
+        if (!["ENOTEMPTY", "EEXIST", "EPERM"].includes(code) || !(await Fs.exists(info.contentPath))) {
+          throw err;
+        }
+        logger.debug("fyn-central: another install stored it first", info.contentPath);
+        await Fs.$.rimraf(tmp);
+        await this.readInfoTree(info);
+      }
+    } catch (err) {
+      await Fs.$.rimraf(tmp);
+      throw err;
+    }
     info.exist = true;
   }
 
@@ -583,51 +640,62 @@ class FynCentral {
     return info.validated;
   }
 
+  /**
+   * Store a package's tarball in the central store. Installs never wait on each other: each
+   * extracts into its own temp dir and renames it into place.
+   *
+   * While extracting, an install holds the entry's `.extracting` marker. With `deferIfBusy`, a
+   * live marker from another install returns false without reading the stream, so the caller
+   * can do its other packages first and come back to this one.
+   *
+   * @returns false when deferred, true when the package is in the store
+   */
   async storeTarStream(
     pkgId: string,
     integrity: string,
-    stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
-  ): Promise<void> {
-    let tmpLock: string | false = false;
+    stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>,
+    deferIfBusy = false
+  ): Promise<boolean> {
     let currentStream: typeof stream | undefined = stream;
+    let marker: string | undefined;
 
     try {
-      let info = await this._loadTree(integrity);
+      const info = await this._loadTree(integrity);
 
       if (info.exist) {
         logger.debug("fyn-central storeTarStream: already exist", info.contentPath);
         if (!info.tree) {
           logger.error(`fyn-central exist package missing tree.json`);
         }
-      } else {
-        tmpLock = await this._acquireTmpLock(info);
-        info = await this._loadTree(integrity, info, true);
-
-        if (info.exist) {
-          logger.debug("fyn-central storeTarStream: found after lock acquired", info.contentPath);
-          if (!info.tree) {
-            const msg = `fyn-central content exist but no tree.json ${info.contentPath}`;
-            logger.error(msg);
-            throw new Error(msg);
-          }
-        } else {
-          logger.debug("storing tar to central store", pkgId, integrity);
-          await this._storeTarStream(info, integrity, currentStream);
-          currentStream = undefined;
-          this._map.set(integrity, info);
-          logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);
-        }
+        return true;
       }
+
+      await Fs.$.mkdirp(Path.dirname(info.contentPath));
+      const markerPath = `${info.contentPath}.extracting`;
+      if (await this._claimMarker(markerPath)) {
+        marker = markerPath;
+        // another install may have finished the entry just before releasing its marker
+        if ((await this._loadTree(integrity, info)).exist) {
+          return true;
+        }
+        await this._removeStaleTemps(info.contentPath);
+      } else if (deferIfBusy) {
+        logger.debug("fyn-central: another install is storing it, deferring", pkgId);
+        return false;
+      }
+
+      logger.debug("storing tar to central store", pkgId, integrity);
+      await this._storeTarStream(info, currentStream);
+      currentStream = undefined;
+      this._map.set(integrity, info);
+      logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);
+      return true;
     } finally {
-      if (
-        currentStream &&
-        (currentStream as Readable).destroy !== undefined
-      ) {
+      if (currentStream && (currentStream as Readable).destroy !== undefined) {
         (currentStream as Readable).destroy();
       }
-
-      if (tmpLock) {
-        await Fs.$.releaseLock(tmpLock);
+      if (marker) {
+        await Fs.rmdir(marker).catch(() => undefined);
       }
     }
   }

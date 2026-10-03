@@ -18,12 +18,28 @@ const { retry, missPipe } = fyntil;
 /** The slice of a `PkgVersionInfo` that extraction reads and writes */
 type ExtractPkg = Pick<PkgVersionInfo, "name" | "version" | "promoted" | "extracted">;
 
+/**
+ * A package not in the central store yet. The extractor stores it and then replicates it, so
+ * the extraction runs here and doesn't hold a download slot.
+ */
+export interface CentralStoreJob {
+  integrity: string;
+  /** resolves false when deferred, because another install is storing it right now */
+  store(deferIfBusy: boolean): Promise<boolean>;
+}
+
 /** Data passed to processItem */
 interface ExtractData {
   pkg: ExtractPkg;
-  result?: string | Readable;
+  /** a tarball stream, a central store integrity, or a package to store first */
+  result?: string | Readable | CentralStoreJob;
   listener?: EventEmitter;
+  /** already moved to the end of the queue once, because another install was storing it */
+  deferred?: boolean;
 }
+
+const isStoreJob = (result: ExtractData["result"]): result is CentralStoreJob =>
+  typeof (result as CentralStoreJob | undefined)?.store === "function";
 
 /** Fyn instance interface for dist extractor */
 export interface FynForExtractor {
@@ -166,9 +182,18 @@ class PkgDistExtractor {
         return json;
       }
 
+      const job = data.result;
+      // A package something is waiting on is never deferred, nor one deferred once already.
+      if (isStoreJob(job) && !(await job.store(!data.listener && !data.deferred))) {
+        // another install is storing it in the central store; do the rest of the queue first
+        data.deferred = true;
+        this._promiseQ.addItem(data);
+        return undefined;
+      }
+      const result = isStoreJob(job) ? job.integrity : job;
+
       await this._fyn.createPkgOutDir(fullOutDir);
 
-      const result = data.result;
       let act: string;
       let retrieve: () => Promise<void>;
 

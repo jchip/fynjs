@@ -35,6 +35,7 @@ import { VisualExec } from "visual-exec";
 import fyntil from "./util/fyntil";
 import type { PkgJsonData } from "./util/fyntil";
 import { MARK_URL_SPEC } from "./constants";
+import type { CentralStoreJob } from "./pkg-dist-extractor";
 import { AggregateError } from "@jchip/error";
 import { prePackObj } from "publish-util";
 import { PackageRef } from "@fynpo/base";
@@ -107,8 +108,9 @@ interface FynCentralInstance {
   storeTarStream(
     tarId: string,
     integrity: string,
-    tarStream: () => NativePromise<Readable>
-  ): NativePromise<void>;
+    tarStream: () => NativePromise<Readable>,
+    deferIfBusy?: boolean
+  ): NativePromise<boolean>;
 }
 
 /** Fetch item representing a dependency to fetch */
@@ -206,17 +208,20 @@ interface PacoteOptions {
   [key: string]: unknown;
 }
 
+/** a tarball stream, a central store integrity, or a package for the extractor to store first */
+type FetchedTarball = Readable | string | CentralStoreJob;
+
 /** Tarball fetch result */
 interface TarballFetchResult {
-  then: <TResult1 = Readable | string, TResult2 = never>(
-    onfulfilled?: ((value: Readable | string) => TResult1 | PromiseLike<TResult1>) | null,
+  then: <TResult1 = FetchedTarball, TResult2 = never>(
+    onfulfilled?: ((value: FetchedTarball) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ) => Promise<TResult1 | TResult2>;
   catch: <TResult = never>(
     onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null
-  ) => Promise<Readable | string | TResult>;
-  tap: (f: (x: Readable | string) => void) => Promise<Readable | string>;
-  promise: Promise<Readable | string>;
+  ) => Promise<FetchedTarball | TResult>;
+  tap: (f: (x: FetchedTarball) => void) => Promise<FetchedTarball>;
+  promise: Promise<FetchedTarball>;
   startTime: number;
 }
 
@@ -1379,7 +1384,11 @@ class PkgSrcManager {
     return `${pkgInfo.name}@${pkgInfo.version}`;
   }
 
-  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgVersionInfo): NativePromise<string | Readable> {
+  /**
+   * A package not in the central store yet comes back as a store job, so the extractor writes
+   * the store, not the download slot this runs in.
+   */
+  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgVersionInfo): NativePromise<FetchedTarball> {
     const { central, copy } = this._fyn;
 
     const tarId = this.tarballFetchId(pkgInfo);
@@ -1423,7 +1432,10 @@ class PkgSrcManager {
         }
 
         if (!hasCentral) {
-          await central.storeTarStream(tarId, integrity, tarStream);
+          return {
+            integrity,
+            store: deferIfBusy => central.storeTarStream(tarId, integrity, tarStream, deferIfBusy)
+          };
         }
 
         return integrity;
@@ -1438,7 +1450,7 @@ class PkgSrcManager {
     const pkgId = this.tarballFetchId(pkgInfo);
     const integrity = this.getIntegrity(pkgInfo);
 
-    const doFetch = (): Promise<string | Readable> => {
+    const doFetch = (): Promise<FetchedTarball> => {
       const fetchStartTime = Date.now();
 
       if (!this._fetching) {
@@ -1465,7 +1477,7 @@ class PkgSrcManager {
     // - use stream from cached tarball if exist
     // - else fetch from network
 
-    const promise: Promise<string | Readable> = Promise.resolve(loadCacache())
+    const promise: Promise<FetchedTarball> = Promise.resolve(loadCacache())
       .then(cacache => cacache.get.hasContent(this._cacheDir, integrity))
       .catch(() => false)
       .then((content: unknown) => {
@@ -1481,14 +1493,14 @@ class PkgSrcManager {
       });
 
     return {
-      then: <TResult1 = Readable | string, TResult2 = never>(
-        r?: ((value: Readable | string) => TResult1 | PromiseLike<TResult1>) | null,
+      then: <TResult1 = FetchedTarball, TResult2 = never>(
+        r?: ((value: FetchedTarball) => TResult1 | PromiseLike<TResult1>) | null,
         e?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
       ) => promise.then(r, e),
       catch: <TResult = never>(
         e?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null
       ) => promise.catch(e),
-      tap: (f: (x: Readable | string) => void) => promise.then(x => (f(x), x)),
+      tap: (f: (x: FetchedTarball) => void) => promise.then(x => (f(x), x)),
       promise,
       startTime
     };

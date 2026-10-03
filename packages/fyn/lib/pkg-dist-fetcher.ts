@@ -2,7 +2,7 @@
 import * as _ from "lodash-es";
 import Fs from "./util/file-ops";
 import logger from "./logger";
-import PkgDistExtractor, { type FynForExtractor } from "./pkg-dist-extractor";
+import PkgDistExtractor, { type CentralStoreJob, type FynForExtractor } from "./pkg-dist-extractor";
 import PromiseQueue from "./util/promise-queue";
 import chalk from "chalk";
 import longPending from "./long-pending";
@@ -49,7 +49,7 @@ interface FynForDistFetcher extends FynForExtractor {
 /** Package source manager interface */
 interface PkgSrcManager {
   /** a thenable of its own making (`TarballFetchResult`), not a Promise */
-  fetchTarball(pkg: FetchPkg): PromiseLike<Readable | string>;
+  fetchTarball(pkg: FetchPkg): PromiseLike<Readable | string | CentralStoreJob>;
   fetchUrlSemverMeta(depItem: DepItem): Promise<{
     urlVersions?: Record<string, { dist?: { fullPath?: string } }>;
   }>;
@@ -164,7 +164,7 @@ class PkgDistFetcher {
     return this._promiseQ.isPending || this._distExtractor.isPending();
   }
 
-  handleItemDone(data: { res?: { result?: Readable; pkg?: FetchPkg }; item: string }): void {
+  handleItemDone(data: { res?: { result?: Readable | CentralStoreJob; pkg?: FetchPkg }; item: string }): void {
     const result = _.get(data, "res.result");
 
     const { item } = data;
@@ -223,7 +223,7 @@ class PkgDistFetcher {
     return true;
   }
 
-  async fetchItem(item: string): Promise<{ result?: Readable | string; pkg?: FetchPkg } | undefined> {
+  async fetchItem(item: string): Promise<{ result?: Readable | string | CentralStoreJob; pkg?: FetchPkg } | undefined> {
     const { pkg } = this._packages[item];
 
     if (pkg.local) return undefined;
