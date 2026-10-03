@@ -581,6 +581,19 @@ class FynCli {
     const start = Date.now();
     const runAudit = argv.opts?.audit !== false;
     const auditFile = argv.opts?.auditFile;
+    const auditAfterInstall = async () => {
+      if (!runAudit) return;
+      try {
+        await showAudit(this.fyn, {
+          colors: this.fyn._options.colors !== false,
+          summary: true,  // Show brief summary, not full report
+          auditFile
+        });
+      } catch (err) {
+        // Audit failures should not fail the install
+        logger.warn("Security audit failed:", err.message);
+      }
+    };
     return AveAzul.try(() => this.fyn._initializePkg())
       .then(async () => {
         checkNewVersion(this.fyn._options);
@@ -709,23 +722,14 @@ class FynCli {
         );
 
         // Run security audit after install (like npm)
-        if (runAudit) {
-          try {
-            await showAudit(this.fyn, {
-              colors: this.fyn._options.colors !== false,
-              summary: true,  // Show brief summary, not full report
-              auditFile
-            });
-          } catch (err) {
-            // Audit failures should not fail the install
-            logger.warn("Security audit failed:", err.message);
-          }
-        }
+        await auditAfterInstall();
       })
-      .catch(err => {
+      .catch(async err => {
         if (err.message === "No Change") {
           logger.info(`No changes detected since last fyn install - nothing to be done.
   To force install, run 'fyn install --force-install' or 'fyn install --fi'`);
+          // new advisories can appear without any install change, and fynpo reads this report
+          await auditAfterInstall();
         } else {
           failure = err;
         }
