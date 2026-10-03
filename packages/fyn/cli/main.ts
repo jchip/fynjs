@@ -403,8 +403,10 @@ const options: Record<string, OptionSpec> = {
   concurrency: {
     args: "<num number>",
     alias: "cc",
-    desc: "Max network concurrency",
-    argDefault: "15"
+    // 32 recovers most of 64's gain on slow links and costs nothing on fast ones; see
+    // notes/pnpm-benchmark-replication.md
+    desc: "Max network concurrency (registry sockets)",
+    argDefault: "32"
   },
   "auto-run": {
     args: "<flag boolean>",
