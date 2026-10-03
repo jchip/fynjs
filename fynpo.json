@@ -1,7 +1,7 @@
 {
   "packages": {
     "autoSearch": true,
-    "exclude": ["docusaurus", "testing/**"],
+    "exclude": ["testing/**"],
     "publishInclude": ["path:packages/*", "path:_w/*"]
   },
   "fyn": {
