@@ -1332,8 +1332,10 @@ class PkgDepResolver {
         !lockTime || !latestTime || new Date(latestTime).getTime() <= Number(lockTime);
       // simply use latest if it satisfies, before searching through all versions. This is also
       // what keeps a range that latest satisfies from resolving to a version above latest.
+      // A registry can tag a version it doesn't list, so latest must be in versions.
+      const latestListed = latest && meta.versions![latest] ? latest : undefined;
       let resolved: string | undefined =
-        (checkLatestSatisfy() && latestInLockTime && latest) || find(meta[LOCK_SORTED_VERSIONS], {});
+        (checkLatestSatisfy() && latestInLockTime && latestListed) || find(meta[LOCK_SORTED_VERSIONS], {});
       // if not able to resolve from locked data or it's newer than latest which
       // satisfies the semver, then must resolve again with latest info.
       // must resolve with original real meta

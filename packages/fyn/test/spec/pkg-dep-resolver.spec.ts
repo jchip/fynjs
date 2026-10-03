@@ -656,6 +656,30 @@ describe("resolvePackage when latest is not the highest version", function () {
   });
 });
 
+// A registry can tag a version it doesn't list, e.g. one it filtered out or hasn't synced yet.
+describe("resolvePackage when latest is not in versions", function () {
+  const resolve = semver => {
+    const resolver = Object.create(PkgDepResolver.prototype);
+    resolver._fyn = {};
+    resolver._data = { getPkg: () => undefined };
+    resolver._options = {};
+    const meta = {
+      name: "x",
+      "dist-tags": { latest: "1.3.0" },
+      versions: { "1.0.0": {}, "1.2.0": {}, "2.0.0": {} }
+    };
+    return resolver.resolvePackage({ item: { name: "x", semver }, meta });
+  };
+
+  it("uses the newest listed version that satisfies", () => {
+    expect(resolve("^1.0.0")).toBe("1.2.0");
+  });
+
+  it("resolves a range latest doesn't satisfy as before", () => {
+    expect(resolve("^2.0.0")).toBe("2.0.0");
+  });
+});
+
 describe("_failUnsatisfySemver", function () {
   const item = { name: "mod-a", semver: "^2.0.0", depPath: ["test", "mod-a"] };
   const fail = inLockData => () => PkgDepResolver.prototype._failUnsatisfySemver(item as any, inLockData);
