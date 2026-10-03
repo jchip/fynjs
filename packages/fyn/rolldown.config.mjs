@@ -48,6 +48,33 @@ const evalRequirePlugin = {
   }
 };
 
+/**
+ * A package's `import ... from "http"`, or a top-level `require("http")` that rolldown hoists,
+ * ends up as a static ESM import in the bundle. Node builds the ESM facade of a builtin by
+ * reading every export, and node:http's lazy getters then load its internal undici - about 5ms
+ * of startup that a repeat install never uses. A runtime require leaves those getters alone.
+ */
+const requireHttpAtRuntimePlugin = {
+  name: "require-http-at-runtime",
+  transform(code, id) {
+    if (!id.includes("node_modules") || !/(["'])(node:)?https?\1/.test(code)) {
+      return null;
+    }
+    const mod = `((?:node:)?https?)`;
+    const replaced = code
+      .replace(new RegExp(`\\brequire\\(\\s*(["'])${mod}\\1\\s*\\)`, "g"), '__fynRequire("$2")')
+      .replace(
+        new RegExp(`^import\\s*\\*\\s*as\\s+([\\w$]+)\\s+from\\s*(["'])${mod}\\2;?`, "gm"),
+        'const $1 = __fynRequire("$3");'
+      )
+      .replace(
+        new RegExp(`^import\\s*\\{([^}]*)\\}\\s*from\\s*(["'])${mod}\\2;?`, "gm"),
+        (_m, names, _q, m) => `const {${names.replace(/\s+as\s+/g, ": ")}} = __fynRequire("${m}");`
+      );
+    return replaced === code ? null : { code: replaced };
+  }
+};
+
 /** node-gyp ships a Find-VisualStudio.cs that is not JavaScript - webpack used null-loader */
 const nullCsPlugin = {
   name: "null-cs",
@@ -138,7 +165,14 @@ const noExternalsPlugin = {
 export default defineConfig({
   input: Path.resolve("cli/main.ts"),
   platform: "node",
-  plugins: [nullCsPlugin, shcmdCommandsPlugin, evalRequirePlugin, arboristDebugPlugin, noExternalsPlugin],
+  plugins: [
+    nullCsPlugin,
+    shcmdCommandsPlugin,
+    evalRequirePlugin,
+    requireHttpAtRuntimePlugin,
+    arboristDebugPlugin,
+    noExternalsPlugin
+  ],
   resolve: {
     extensions: [".ts", ".js", ".json"],
     symlinks: true,
