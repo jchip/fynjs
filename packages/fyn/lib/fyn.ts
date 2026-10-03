@@ -1855,8 +1855,14 @@ class Fyn {
 
     if (pkg._hasShrinkwrap) json._hasShrinkwrap = true;
 
-    // if _id exist then it should match
-    if (json._id && json._id !== pkgId) {
+    // An _id fyn wrote (it writes _fyn with it) must match in full: its version tells a local
+    // link (-fynlocal_h) from the registry copy. An _id that came in the tarball can be stale
+    // (dom-helpers 5.2.1 ships "dom-helpers@5.2.0"), so only its name has to match, and the
+    // version check below decides the version.
+    const idMatches =
+      !json._id ||
+      (json._fyn ? json._id === pkgId : json._id.slice(0, json._id.lastIndexOf("@")) === pkg.name);
+    if (!idMatches) {
       logger.debug(`readPkgJson - json._id ${json._id} not matched pkg ${pkgId}`);
       json._invalid = true;
       return json;

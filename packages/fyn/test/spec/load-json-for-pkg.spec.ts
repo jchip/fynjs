@@ -105,6 +105,33 @@ describe("loadJsonForPkg version validation", () => {
     expect(json._invalid).toBeUndefined();
   });
 
+  it("accepts the expected version despite a stale _id the package was published with", async () => {
+    // dom-helpers 5.2.1's own package.json says "_id": "dom-helpers@5.2.0". Rejecting it got a
+    // freshly extracted copy deleted under --always-fetch-dist, which checks it before fyn
+    // rewrites _id.
+    writePkgJson({ name: "dom-helpers", version: "5.2.1", _id: "dom-helpers@5.2.0" });
+
+    const json = await loadJson({ name: "dom-helpers", version: "5.2.1" });
+
+    expect(json._invalid).toBeUndefined();
+  });
+
+  it("still rejects an _id fyn wrote for another version, which tells local from registry", async () => {
+    writePkgJson({ name: "mod-a", version: "1.0.0", _id: "mod-a@1.0.0-fynlocal_h", _fyn: {} });
+
+    const json = await loadJson({ name: "mod-a", version: "1.0.0" });
+
+    expect(json._invalid).toBe(true);
+  });
+
+  it("rejects an _id that names another package", async () => {
+    writePkgJson({ name: "@scope/mod-a", version: "1.0.0", _id: "@scope/mod-b@1.0.0" });
+
+    const json = await loadJson({ name: "@scope/mod-a", version: "1.0.0" });
+
+    expect(json._invalid).toBe(true);
+  });
+
   it("still rejects a mismatch when the directory has no _id to check", async () => {
     writePkgJson({ name: "mod-a", version: "2.0.0" });
 
