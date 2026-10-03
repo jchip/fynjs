@@ -42,11 +42,10 @@ Thumbs.db
 .fyn-audit.json
 _w
 
-# Lock files - fyn-lock.yaml is generated per package; committed only where a
-# package explicitly tracks it (that package's own .gitignore un-ignores it).
-# Named explicitly rather than via `*-lock*` - that glob previously swallowed
-# tracked source files (see FPO-57).
-fyn-lock.yaml
+# Lock files - fyn-lock.yaml is committed for every package, but not for
+# nested demos and test fixtures. Other managers' locks are named explicitly
+# rather than via `*-lock*`, which once swallowed tracked source files.
+packages/*/*/**/fyn-lock.yaml
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
