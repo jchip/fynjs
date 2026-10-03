@@ -1,0 +1,118 @@
+# Builds and publishes the @fynjs/reflink-<platform> packages. The main @fynjs/reflink is
+# published from a dev machine by `fynpo publish`, and its optionalDependencies pin these
+# packages at the same version. That [Publish] commit reaches main afterwards, which starts
+# this workflow.
+name: reflink-platforms
+on:
+  push:
+    branches: ["main"]
+concurrency:
+  group: reflink-platforms
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      # Build only when HEAD is a [Publish] commit that lists a new @fynjs/reflink version,
+      # and the done tag for that version doesn't exist yet.
+      - id: check
+        run: |
+          version=$(node -p "require('./packages/reflink/package.json').version")
+          message=$(git log -1 --format=%B)
+          if [ "$(head -n1 <<< "$message")" != "[Publish]" ]; then
+            echo "HEAD is not a [Publish] commit"
+          elif ! grep -qxF -- " - @fynjs/reflink@$version" <<< "$message"; then
+            echo "@fynjs/reflink@$version is not in this release"
+          elif git ls-remote --exit-code --tags origin "refs/tags/reflink-platform-packages-v$version" > /dev/null; then
+            echo "reflink-platform-packages-v$version already exists"
+          else
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: detect
+    if: needs.detect.outputs.version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { host: macos-latest, target: aarch64-apple-darwin }
+          - { host: macos-latest, target: x86_64-apple-darwin }
+          - { host: windows-latest, target: x86_64-pc-windows-msvc }
+          - { host: windows-latest, target: aarch64-pc-windows-msvc }
+          - { host: ubuntu-latest, target: x86_64-unknown-linux-gnu, flags: --use-napi-cross }
+          - { host: ubuntu-latest, target: aarch64-unknown-linux-gnu, flags: --use-napi-cross }
+          - { host: ubuntu-latest, target: x86_64-unknown-linux-musl, flags: -x, zig: true }
+          - { host: ubuntu-latest, target: aarch64-unknown-linux-musl, flags: -x, zig: true }
+    runs-on: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - if: matrix.zig
+        uses: mlugg/setup-zig@v2
+      - run: npm i -g @napi-rs/cli@$(node -p "require('./packages/reflink/package.json').devDependencies['@napi-rs/cli']")
+      - working-directory: packages/reflink
+        run: napi build --platform --release --esm --target ${{ matrix.target }} ${{ matrix.flags }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: packages/reflink/reflink.*.node
+          if-no-files-found: error
+
+  publish:
+    needs: [detect, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      VERSION: ${{ needs.detect.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm i -g @napi-rs/cli@$(node -p "require('./packages/reflink/package.json').devDependencies['@napi-rs/cli']")
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bindings-*
+          path: packages/reflink/artifacts
+          merge-multiple: true
+      - working-directory: packages/reflink
+        run: |
+          napi create-npm-dirs --npm-dir platform-packages
+          napi artifacts --npm-dir platform-packages --output-dir artifacts
+      # Check every package has its binary before publishing any of them.
+      - working-directory: packages/reflink/platform-packages
+        run: |
+          for dir in */; do
+            ls "$dir"*.node > /dev/null || { echo "no binary in $dir"; exit 1; }
+          done
+      # Skip packages already on npm, so a re-run after a partial failure finishes the rest.
+      - working-directory: packages/reflink/platform-packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for dir in */; do
+            name=$(node -p "require('./${dir}package.json').name")
+            if npm view "$name@$VERSION" version > /dev/null 2>&1; then
+              echo "$name@$VERSION already published"
+            else
+              (cd "$dir" && npm publish --access public --provenance)
+            fi
+          done
+      - run: |
+          git tag "reflink-platform-packages-v$VERSION"
+          git push origin "reflink-platform-packages-v$VERSION"
