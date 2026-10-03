@@ -195,7 +195,7 @@ $pkg:
    filter-scan-dir: ^2.1.10
    ignore: ^7.0.6
    lodash-es: ^4.18.1
-   minimatch: ^10.0.3
+   minimatch: ^10.2.3
    optional-import: ^1.1.7
    semver: ^7.7.2
 '@jchip/error':
@@ -588,7 +588,7 @@ conventional-commits-parser:
 deep-object-diff:
  _latest: 1.1.9
  _:
-  ^1.1.7: 1.1.9
+  ^1.1.9: 1.1.9
  1.1.9:
   $: sha512-Rn+RuwkmkDwCi2/oXOFS9Gsr5lJZu/yTGpK7wAaAIE75CC+LCGEZHpY6VQJa/RoJcrmaA/docWJZvYohlNkWPA==
   _: 'https://registry.npmjs.org/deep-object-diff/-/deep-object-diff-1.1.9.tgz'
@@ -734,18 +734,18 @@ fsevents:
   os:
    - darwin
 fyn:
- _latest: 3.2.1-fynlocal_h
+ _latest: 3.2.2-fynlocal_h
  _:
-  '../fyn,./packages/fyn': 3.2.1-fynlocal_h
- 3.2.1-fynlocal_h:
+  '../fyn,./packages/fyn': 3.2.2-fynlocal_h
+ 3.2.2-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fyn
 fynpo:
- _latest: 3.2.1-fynlocal_h
+ _latest: 3.2.2-fynlocal_h
  _:
-  ./packages/fynpo: 3.2.1-fynlocal_h
- 3.2.1-fynlocal_h:
+  ./packages/fynpo: 3.2.2-fynlocal_h
+ 3.2.2-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fynpo
@@ -765,21 +765,21 @@ fynpo:
    chalk: ^6.0.0
    conventional-commits-filter: ^6.0.1
    conventional-commits-parser: ^7.1.2
-   deep-object-diff: ^1.1.7
+   deep-object-diff: ^1.1.9
    env-paths: ^4.0.0
    execa: ^10.0.0
    fs-extra: ^11.3.0
-   fyn: ^3.2.1
+   fyn: ^3.2.2
    get-stdin: ^10.0.0
    import-fresh: ^4.0.0
    item-queue: ^2.1.10
    lodash-es: ^4.18.1
-   minimatch: ^10.0.3
+   minimatch: ^10.2.3
    npm-packlist: ^11.3.0
    optional-require: ^2.1.1
    resolve-from: ^5.0.0
    resolve-global: ^2.0.0
-   semver: ^7.3.5
+   semver: ^7.5.2
    slash: ^5.1.0
    strong-log-transformer: ^2.1.0
    visual-exec: ^1.1.10
@@ -1141,7 +1141,7 @@ mimic-function:
 minimatch:
  _latest: 10.2.6
  _:
-  '^10.0.3,^10.2.2': 10.2.6
+  '^10.0.3,^10.2.2,^10.2.3': 10.2.6
  10.2.6:
   $: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==
   _: 'https://registry.npmjs.org/minimatch/-/minimatch-10.2.6.tgz'
@@ -1361,7 +1361,7 @@ run-verify:
 semver:
  _latest: 7.8.5
  _:
-  '^7.3.5,^7.5.2,^7.6.0,^7.7.2,^7.8.5': 7.8.5
+  '^7.5.2,^7.6.0,^7.7.2,^7.8.5': 7.8.5
  7.8.5:
   top: 1
   $: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==
