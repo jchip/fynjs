@@ -639,6 +639,24 @@ describe("resolvePackage when latest is not the highest version", function () {
     expect(resolve("beta")).toBe(undefined);
   });
 
+  it("resolves a tag whose version is within the lock time", () => {
+    expect(resolve("next", { lockTime: new Date("2016-01-01T00:00:00.000Z") })).toBe("2.0.3");
+  });
+
+  it("fails a tag whose version was published after the lock time", () => {
+    const lockTime = new Date("2014-06-01T00:00:00.000Z");
+    expect(() => resolve("next", { lockTime })).toThrow(
+      "q@next is 2.0.3, published 2015-01-01T00:00:00.000Z, after the lock time 2014-06-01T00:00:00.000Z"
+    );
+    expect(() => resolve("latest", { lockTime: new Date("2016-01-01T00:00:00.000Z") })).toThrow(
+      "q@latest is 1.5.1"
+    );
+  });
+
+  it("resolves a tag when its version has no publish time", () => {
+    expect(resolve("next", { lockTime: new Date("2014-06-01T00:00:00.000Z"), withTime: false })).toBe("2.0.3");
+  });
+
   it("takes the newest version within the lock time when latest is after it", () => {
     expect(resolve(">=1", { lockTime: new Date("2016-01-01T00:00:00.000Z") })).toBe("2.0.3");
     expect(resolve(">=1", { lockTime: new Date("2014-06-01T00:00:00.000Z") })).toBe("1.0.0");

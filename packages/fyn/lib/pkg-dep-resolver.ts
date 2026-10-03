@@ -898,7 +898,17 @@ class PkgDepResolver {
 
       const dtags = meta["dist-tags"];
       if (dtags && dtags.hasOwnProperty(semver)) {
-        return dtags[semver];
+        const version = dtags[semver];
+        // A tag only knows where it points now, not where it pointed at the lock time. So a tag
+        // whose version was published after the lock time fails rather than install it.
+        const lockTime = this._fyn.lockTime;
+        const published = lockTime && meta.time && meta.time[version];
+        if (published && new Date(published).getTime() > lockTime.getTime()) {
+          throw new Error(
+            `${meta.name}@${semver} is ${version}, published ${published}, after the lock time ${lockTime.toISOString()}`
+          );
+        }
+        return version;
       }
     }
     return undefined;
