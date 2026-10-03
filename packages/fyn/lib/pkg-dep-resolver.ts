@@ -21,9 +21,7 @@ import {
   SEMVER,
   RSEMVERS,
   LOCK_RSEMVERS,
-  SORTED_VERSIONS,
-  LATEST_SORTED_VERSIONS,
-  LATEST_VERSION_TIME,
+  VERSION_INDEX,
   LOCK_SORTED_VERSIONS,
   LATEST_TAG_VERSION,
   LOCAL_VERSION_MAPS,
@@ -1260,52 +1258,26 @@ class PkgDepResolver {
       // This sorting and semver searching is the most expensive part of the
       // resolve process, so caching them is very important for performance.
       //
-      if (!meta[SORTED_VERSIONS]) {
+      if (!meta[VERSION_INDEX]) {
         if (!meta.versions) {
           const msg = `Meta for package ${item.name} doesn't have versions`;
           logger.error(msg);
           throw new Error(msg);
         }
 
-        // sort versions in descending order
-        const sorted = semverUtil.sortDescending(Object.keys(meta.versions));
-        // make sure all versions newer than the tagged latest version are not considered
-        if (latest && sorted[0] !== latest) {
-          if (meta.time && meta.time[latest]) {
-            // just need to lock to latest time
-            meta[LATEST_VERSION_TIME] = new Date(meta.time[latest]).getTime();
-          } else {
-            // unfortunately, must filter out all versions newer than latest
-            meta[LATEST_SORTED_VERSIONS] = sorted.filter(
-              v => !semverUtil.isVersionNewer(v, latest)
-            );
-          }
-        }
-
-        meta[SORTED_VERSIONS] = sorted;
+        meta[VERSION_INDEX] = new semverUtil.VersionIndex(Object.keys(meta.versions));
       }
 
-      // The configured cutoff is a Date; the cached latest cutoff is milliseconds.
-      let lockTime: Date | number | undefined = this._fyn.lockTime;
-      let sortedVersions = meta[SORTED_VERSIONS];
+      const lockTime = this._fyn.lockTime;
 
-      // can't consider any versions newer or later than latest if it satisfies the semver
-      if (checkLatestSatisfy()) {
-        if (meta[LATEST_VERSION_TIME] && (!lockTime || Number(lockTime) > meta[LATEST_VERSION_TIME])) {
-          // lockTime can't be greater than latest time
-          lockTime = meta[LATEST_VERSION_TIME];
-        } else if (meta[LATEST_SORTED_VERSIONS]) {
-          sortedVersions = meta[LATEST_SORTED_VERSIONS];
-        }
-      }
-
+      // `countVer` is how many versions the package has, which can be more than `versions` holds
       const find = (
         versions: string[] | undefined,
         times: Record<string, string>,
-        mustUseRealMeta?: boolean
+        mustUseRealMeta?: boolean,
+        countVer = versions ? versions.length : 0
       ): string | undefined => {
         if (!versions) return undefined;
-        const countVer = versions.length;
 
         return _.find(versions, v => {
           if (!satisfies(v, item.semver)) {
@@ -1341,8 +1313,9 @@ class PkgDepResolver {
       // A latest published after the lock time is left to the search below, which filters by time.
       const latestTime = latest && meta.time && meta.time[latest];
       const latestInLockTime =
-        !this._fyn.lockTime || !latestTime || new Date(latestTime).getTime() <= Number(this._fyn.lockTime);
-      // simply use latest if it satisfies, before searching through all versions
+        !lockTime || !latestTime || new Date(latestTime).getTime() <= Number(lockTime);
+      // simply use latest if it satisfies, before searching through all versions. This is also
+      // what keeps a range that latest satisfies from resolving to a version above latest.
       let resolved: string | undefined =
         (checkLatestSatisfy() && latestInLockTime && latest) || find(meta[LOCK_SORTED_VERSIONS], {});
       // if not able to resolve from locked data or it's newer than latest which
@@ -1351,7 +1324,8 @@ class PkgDepResolver {
       const mustUseRealMeta =
         checkLatestSatisfy() && resolved && semverUtil.isVersionNewer(resolved, latest!);
       if (!resolved || mustUseRealMeta) {
-        resolved = find(sortedVersions, meta.time || {}, mustUseRealMeta);
+        const index = meta[VERSION_INDEX]!;
+        resolved = find(index.candidates(item.semver), meta.time || {}, mustUseRealMeta, index.size);
       }
 
       // logger.log("found meta version", resolved, "that satisfied", item.name, item.semver);

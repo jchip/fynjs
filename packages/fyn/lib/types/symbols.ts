@@ -33,9 +33,7 @@ export {
   RSEMVERS,
   LOCK_SORTED_VERSIONS,
   LATEST_TAG_VERSION,
-  LATEST_VERSION_TIME,
-  SORTED_VERSIONS,
-  LATEST_SORTED_VERSIONS,
+  VERSION_INDEX,
   LOCAL_VERSION_MAPS,
   RESOLVE_ORDER,
   PACKAGE_RAW_INFO,
@@ -49,14 +47,13 @@ import {
   RSEMVERS,
   LOCK_SORTED_VERSIONS,
   LATEST_TAG_VERSION,
-  LATEST_VERSION_TIME,
-  SORTED_VERSIONS,
-  LATEST_SORTED_VERSIONS,
+  VERSION_INDEX,
   LOCAL_VERSION_MAPS,
   RESOLVE_ORDER,
   PACKAGE_RAW_INFO,
   DEP_ITEM
 } from "../symbols";
+import type { VersionIndex } from "../util/semver";
 
 /**
  * Type-safe symbol property accessors
@@ -72,10 +69,7 @@ import {
  */
 export interface PackageMetaSymbols {
   [LOCK_RSEMVERS]?: Record<string, string | string[]>;
-  [SORTED_VERSIONS]?: string[];
-  [LATEST_SORTED_VERSIONS]?: string[];
-  /** Timestamp (ms since epoch) of the latest version publication */
-  [LATEST_VERSION_TIME]?: number;
+  [VERSION_INDEX]?: VersionIndex;
   [LOCK_SORTED_VERSIONS]?: string[];
   [LATEST_TAG_VERSION]?: string;
   [LOCAL_VERSION_MAPS]?: Record<string, string>;
@@ -224,21 +218,21 @@ export function setResolveOrder<T extends { [RESOLVE_ORDER]?: string[] }>(
   (obj as { [RESOLVE_ORDER]?: string[] })[RESOLVE_ORDER] = value;
 }
 
-// --- SORTED_VERSIONS Accessors ---
+// --- VERSION_INDEX Accessors ---
 
-/** Get the sorted versions array from an object */
-export function getSortedVersions<T extends { [SORTED_VERSIONS]?: string[] }>(
+/** Get the version index from an object */
+export function getVersionIndex<T extends { [VERSION_INDEX]?: VersionIndex }>(
   obj: T
-): string[] | undefined {
-  return obj[SORTED_VERSIONS];
+): VersionIndex | undefined {
+  return obj[VERSION_INDEX];
 }
 
-/** Set the sorted versions array on an object */
-export function setSortedVersions<T extends { [SORTED_VERSIONS]?: string[] }>(
+/** Set the version index on an object */
+export function setVersionIndex<T extends { [VERSION_INDEX]?: VersionIndex }>(
   obj: T,
-  value: string[] | undefined
+  value: VersionIndex | undefined
 ): void {
-  (obj as { [SORTED_VERSIONS]?: string[] })[SORTED_VERSIONS] = value;
+  (obj as { [VERSION_INDEX]?: VersionIndex })[VERSION_INDEX] = value;
 }
 
 // --- LOCK_SORTED_VERSIONS Accessors ---
@@ -258,23 +252,6 @@ export function setLockSortedVersions<T extends { [LOCK_SORTED_VERSIONS]?: strin
   (obj as { [LOCK_SORTED_VERSIONS]?: string[] })[LOCK_SORTED_VERSIONS] = value;
 }
 
-// --- LATEST_SORTED_VERSIONS Accessors ---
-
-/** Get the latest sorted versions array from an object */
-export function getLatestSortedVersions<T extends { [LATEST_SORTED_VERSIONS]?: string[] }>(
-  obj: T
-): string[] | undefined {
-  return obj[LATEST_SORTED_VERSIONS];
-}
-
-/** Set the latest sorted versions array on an object */
-export function setLatestSortedVersions<T extends { [LATEST_SORTED_VERSIONS]?: string[] }>(
-  obj: T,
-  value: string[]
-): void {
-  (obj as { [LATEST_SORTED_VERSIONS]?: string[] })[LATEST_SORTED_VERSIONS] = value;
-}
-
 // --- LATEST_TAG_VERSION Accessors ---
 
 /** Get the latest tag version from an object */
@@ -290,23 +267,6 @@ export function setLatestTagVersion<T extends { [LATEST_TAG_VERSION]?: string }>
   value: string | undefined
 ): void {
   (obj as { [LATEST_TAG_VERSION]?: string })[LATEST_TAG_VERSION] = value;
-}
-
-// --- LATEST_VERSION_TIME Accessors ---
-
-/** Get the latest version time from an object */
-export function getLatestVersionTime<T extends { [LATEST_VERSION_TIME]?: number }>(
-  obj: T
-): number | undefined {
-  return obj[LATEST_VERSION_TIME];
-}
-
-/** Set the latest version time on an object */
-export function setLatestVersionTime<T extends { [LATEST_VERSION_TIME]?: number }>(
-  obj: T,
-  value: number
-): void {
-  (obj as { [LATEST_VERSION_TIME]?: number })[LATEST_VERSION_TIME] = value;
 }
 
 // --- LOCAL_VERSION_MAPS Accessors ---

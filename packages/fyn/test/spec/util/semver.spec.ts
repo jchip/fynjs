@@ -65,6 +65,36 @@ describe("semver", function() {
     });
   });
 
+  describe("VersionIndex", function() {
+    const versions = [
+      "1.0.0", "3.0.1", "2.3.2", "1.1.4", "3.1.0-beta.1", "4.3.6", "2.0.0", "7.8.5", "5.5.1", "5.4.0"
+    ];
+    // what a full sorted scan would consider: every version, newest first
+    const all = semver.sortDescending(versions);
+    // first version satisfying the range in an order
+    const first = (list, range) => list.find(v => semver.satisfies(v, range));
+
+    it("returns only the allowed majors, newest first, in full sort order", () => {
+      const index = new semver.VersionIndex(versions);
+      expect(index.size).toBe(versions.length);
+      expect(index.candidates("^2.0.0")).toEqual(all.filter(v => v.startsWith("2.") || v.startsWith("3.")));
+      expect(index.candidates("~5.4.0 || ~5.5.0")).toEqual(["5.5.1", "5.4.0"]);
+    });
+
+    it("picks what a full scan picks for compound and unbounded ranges", () => {
+      const index = new semver.VersionIndex(versions);
+      for (const range of ["1 || 2 || 3.1.1", "1 || 2 || 3.1.1 || 4", ">=1 <2 || >=4", "*", ">3", "<=2", "^3.0.0-beta.0"]) {
+        expect(first(index.candidates(range), range)).toBe(first(all, range));
+      }
+    });
+
+    it("falls back to every version when the range or a major doesn't parse", () => {
+      expect(new semver.VersionIndex(versions).candidates("next")).toEqual(all);
+      const odd = ["v1.0.0", "2.0.0", "1.5.0"];
+      expect(new semver.VersionIndex(odd).candidates("^2.0.0")).toEqual(semver.sortDescending(odd));
+    });
+  });
+
   describe("localify", function() {
     it("should add tag", () => {
       const x = semver.localify("0.1.1");

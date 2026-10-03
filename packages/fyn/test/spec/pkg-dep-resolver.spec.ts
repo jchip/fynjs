@@ -602,7 +602,7 @@ describe("resolvePackage when latest is not the highest version", function () {
     resolver._options = {};
     const meta: Record<string, unknown> = {
       name: "q",
-      "dist-tags": { latest: "1.5.1" },
+      "dist-tags": { latest: "1.5.1", next: "2.0.3" },
       versions: { "1.0.0": {}, "1.5.1": {}, "2.0.3": {} }
     };
     if (withTime) {
@@ -629,6 +629,14 @@ describe("resolvePackage when latest is not the highest version", function () {
 
   it("uses latest when it was published before the lock time", () => {
     expect(resolve(">=1", { lockTime: new Date("2018-01-01T00:00:00.000Z") })).toBe("1.5.1");
+  });
+
+  it("resolves a tag other than latest to its version, even above latest", () => {
+    expect(resolve("next")).toBe("2.0.3");
+  });
+
+  it("resolves a tag the package doesn't have to nothing", () => {
+    expect(resolve("beta")).toBe(undefined);
   });
 
   it("takes the newest version within the lock time when latest is after it", () => {

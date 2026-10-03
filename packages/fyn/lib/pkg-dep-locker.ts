@@ -6,6 +6,7 @@ import Fs from "./util/file-ops";
 import * as _ from "lodash-es";
 import chalk from "chalk";
 import { simpleCompare as simpleSemverCompare, isLocalHard, unlocalify } from "./util/semver";
+import type { VersionIndex } from "./util/semver";
 import Semver from "semver";
 import Yaml from "yamljs";
 import sortObjKeys from "./util/sort-obj-keys";
@@ -13,11 +14,9 @@ import type { FynForDepLocker } from "./types";
 import {
   LOCK_RSEMVERS,
   RSEMVERS,
-  SORTED_VERSIONS,
+  VERSION_INDEX,
   LOCK_SORTED_VERSIONS,
   LATEST_TAG_VERSION,
-  LATEST_SORTED_VERSIONS,
-  LATEST_VERSION_TIME,
   LOCAL_VERSION_MAPS,
   OPT_FAILED_PLATFORM,
   type LockVersionMeta,
@@ -37,10 +36,8 @@ import type { DepData } from "./dep-data";
 interface ConvertedLockData {
   [LATEST_TAG_VERSION]?: string;
   [LOCK_RSEMVERS]?: Record<string, string | string[]>;
-  [SORTED_VERSIONS]?: string[];
+  [VERSION_INDEX]?: VersionIndex;
   [LOCK_SORTED_VERSIONS]?: string[];
-  [LATEST_SORTED_VERSIONS]?: string[];
-  [LATEST_VERSION_TIME]?: number;
   [LOCAL_VERSION_MAPS]?: Record<string, string>;
   versions: Record<string, PackageVersionMeta>;
   "dist-tags"?: Record<string, string>;
@@ -234,10 +231,8 @@ class PkgDepLocker {
 
     const convertedLocked = locked as ConvertedLockData;
     Object.assign(convertedLocked.versions, meta.versions);
-    convertedLocked[SORTED_VERSIONS] = undefined;
+    convertedLocked[VERSION_INDEX] = undefined;
     convertedLocked[LATEST_TAG_VERSION] = undefined;
-    convertedLocked[LATEST_VERSION_TIME] = undefined;
-    convertedLocked[LATEST_SORTED_VERSIONS] = undefined;
     if (Object.prototype.hasOwnProperty.call(meta, LOCAL_VERSION_MAPS)) {
       convertedLocked[LOCAL_VERSION_MAPS] = meta[LOCAL_VERSION_MAPS];
     }

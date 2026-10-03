@@ -142,6 +142,96 @@ export function sortDescending(versions: string[]): string[] {
   return keyed.map(k => k.v);
 }
 
+/**
+ * The [min, max] majors each `||` alternative of a range allows, or undefined when the range
+ * doesn't parse. A version can only satisfy a comparator set if its major sits between the majors
+ * of the set's bounds. The max is inclusive, so `<2.0.0` lets major 2 through, which is harmless.
+ */
+function majorWindows(range: string): [number, number][] | undefined {
+  let parsed: Semver.Range;
+  try {
+    parsed = new Semver.Range(range);
+  } catch {
+    return undefined;
+  }
+  return parsed.set.map(set => {
+    let lo = 0;
+    let hi = Infinity;
+    for (const cmp of set) {
+      // an empty comparator (`*`) has no version and bounds nothing
+      if (typeof cmp.semver !== "object") continue;
+      const major = cmp.semver.major;
+      if (cmp.operator === "" || cmp.operator === "=") {
+        lo = Math.max(lo, major);
+        hi = Math.min(hi, major);
+      } else if (cmp.operator.startsWith(">")) {
+        lo = Math.max(lo, major);
+      } else if (cmp.operator.startsWith("<")) {
+        hi = Math.min(hi, major);
+      }
+    }
+    return [lo, hi] as [number, number];
+  });
+}
+
+/**
+ * A packument's versions grouped by major, newest major first. `candidates` returns, newest
+ * first, only the versions in the majors a range allows, and sorts a group the first time a range
+ * needs it. Packuments can hold thousands of versions, and most ranges need one or two majors.
+ */
+export class VersionIndex {
+  /** how many versions the packument has */
+  readonly size: number;
+  private _versions: string[];
+  // undefined until first needed; null when some major isn't a number, so groups can't be used
+  private _groups?: { major: number; versions: string[]; sorted: boolean }[] | null;
+  private _all?: string[];
+
+  constructor(versions: string[]) {
+    this._versions = versions;
+    this.size = versions.length;
+  }
+
+  /** Every version, newest first, in `sortDescending` order. */
+  all(): string[] {
+    return (this._all ??= sortDescending(this._versions));
+  }
+
+  /** The versions that could satisfy `range`, newest first, in `sortDescending` order. */
+  candidates(range: string): string[] {
+    const windows = majorWindows(range);
+    const groups = windows && this._getGroups();
+    if (!groups) return this.all();
+
+    const out: string[] = [];
+    for (const g of groups) {
+      if (!windows.some(([lo, hi]) => g.major >= lo && g.major <= hi)) continue;
+      if (!g.sorted) {
+        g.versions = sortDescending(g.versions);
+        g.sorted = true;
+      }
+      for (const v of g.versions) out.push(v);
+    }
+    return out;
+  }
+
+  private _getGroups() {
+    if (this._groups !== undefined) return this._groups;
+    const byMajor = new Map<number, string[]>();
+    for (const v of this._versions) {
+      // the same parse simpleCompare uses for the first part
+      const major = parseInt(v, 10);
+      if (Number.isNaN(major)) return (this._groups = null);
+      const group = byMajor.get(major);
+      if (group) group.push(v);
+      else byMajor.set(major, [v]);
+    }
+    return (this._groups = [...byMajor]
+      .sort((a, b) => b[0] - a[0])
+      .map(([major, versions]) => ({ major, versions, sorted: false })));
+  }
+}
+
 export function isVersionNewer(a: string, b: string): boolean {
   return simpleCompare(a, b) < 0;
 }

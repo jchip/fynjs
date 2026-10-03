@@ -11,11 +11,8 @@ export const LOCK_SORTED_VERSIONS = Symbol("lock sorted versions");
 
 export const LATEST_TAG_VERSION = Symbol("latest tag version");
 
-export const LATEST_VERSION_TIME = Symbol("latest version time");
-
-export const SORTED_VERSIONS = Symbol("sorted versions");
-
-export const LATEST_SORTED_VERSIONS = Symbol("latest sorted versions");
+/** a packument's versions grouped by major, see util/semver VersionIndex */
+export const VERSION_INDEX = Symbol("version index");
 
 export const LOCAL_VERSION_MAPS = Symbol("local version maps");
 
