@@ -560,3 +560,79 @@ describe("findVersionFromDistTag with a multi-version lock entry", function () {
     expect(findVersion({ "^3.0.0": ["3.10.1"] }, "^3.0.0")).toBe(undefined);
   });
 });
+
+describe("resolvePackage with a lock time", function () {
+  const resolve = (semver, lockTime?: Date) => {
+    const resolver = Object.create(PkgDepResolver.prototype);
+    resolver._fyn = { lockTime };
+    resolver._data = { getPkg: () => undefined };
+    resolver._options = {};
+    const meta = {
+      name: "x",
+      "dist-tags": { latest: "1.2.0" },
+      versions: { "1.0.0": {}, "1.1.0": {}, "1.2.0": {} },
+      time: {
+        "1.0.0": "2018-01-01T00:00:00.000Z",
+        "1.1.0": "2019-01-01T00:00:00.000Z",
+        "1.2.0": "2020-01-01T00:00:00.000Z"
+      }
+    };
+    return resolver.resolvePackage({ item: { name: "x", semver }, meta });
+  };
+
+  it("skips a latest published after the lock time", () => {
+    expect(resolve("^1.0.0", new Date("2019-06-01T00:00:00.000Z"))).toBe("1.1.0");
+  });
+
+  it("uses latest when it was published before the lock time", () => {
+    expect(resolve("^1.0.0", new Date("2021-01-01T00:00:00.000Z"))).toBe("1.2.0");
+  });
+
+  it("uses latest when there is no lock time", () => {
+    expect(resolve("^1.0.0")).toBe("1.2.0");
+  });
+});
+
+// The latest tag can sit below the highest version, like q: latest 1.5.1 while 2.0.3 exists.
+describe("resolvePackage when latest is not the highest version", function () {
+  const resolve = (semver, { lockTime, withTime = true }: { lockTime?: Date; withTime?: boolean } = {}) => {
+    const resolver = Object.create(PkgDepResolver.prototype);
+    resolver._fyn = { lockTime };
+    resolver._data = { getPkg: () => undefined };
+    resolver._options = {};
+    const meta: Record<string, unknown> = {
+      name: "q",
+      "dist-tags": { latest: "1.5.1" },
+      versions: { "1.0.0": {}, "1.5.1": {}, "2.0.3": {} }
+    };
+    if (withTime) {
+      meta.time = {
+        "1.0.0": "2014-01-01T00:00:00.000Z",
+        "2.0.3": "2015-01-01T00:00:00.000Z",
+        "1.5.1": "2017-01-01T00:00:00.000Z"
+      };
+    }
+    return resolver.resolvePackage({ item: { name: "q", semver }, meta });
+  };
+
+  it("does not go above latest when latest satisfies", () => {
+    expect(resolve(">=1")).toBe("1.5.1");
+  });
+
+  it("does not go above latest when latest satisfies and there are no publish times", () => {
+    expect(resolve(">=1", { withTime: false })).toBe("1.5.1");
+  });
+
+  it("uses a version above latest when latest doesn't satisfy", () => {
+    expect(resolve("^2.0.0")).toBe("2.0.3");
+  });
+
+  it("uses latest when it was published before the lock time", () => {
+    expect(resolve(">=1", { lockTime: new Date("2018-01-01T00:00:00.000Z") })).toBe("1.5.1");
+  });
+
+  it("takes the newest version within the lock time when latest is after it", () => {
+    expect(resolve(">=1", { lockTime: new Date("2016-01-01T00:00:00.000Z") })).toBe("2.0.3");
+    expect(resolve(">=1", { lockTime: new Date("2014-06-01T00:00:00.000Z") })).toBe("1.0.0");
+  });
+});

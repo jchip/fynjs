@@ -1338,8 +1338,13 @@ class PkgDepResolver {
         });
       };
 
+      // A latest published after the lock time is left to the search below, which filters by time.
+      const latestTime = latest && meta.time && meta.time[latest];
+      const latestInLockTime =
+        !this._fyn.lockTime || !latestTime || new Date(latestTime).getTime() <= Number(this._fyn.lockTime);
       // simply use latest if it satisfies, before searching through all versions
-      let resolved: string | undefined = (checkLatestSatisfy() && latest) || find(meta[LOCK_SORTED_VERSIONS], {});
+      let resolved: string | undefined =
+        (checkLatestSatisfy() && latestInLockTime && latest) || find(meta[LOCK_SORTED_VERSIONS], {});
       // if not able to resolve from locked data or it's newer than latest which
       // satisfies the semver, then must resolve again with latest info.
       // must resolve with original real meta
