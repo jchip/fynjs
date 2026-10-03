@@ -509,30 +509,30 @@ class FynCentral {
   }
 
   /**
-   * Clone the store's package dir to `destDir` in one call. A dir clone needs `destDir` to not
-   * exist, and it is the empty dir createPkgOutDir just made, so remove that first. A
-   * non-empty `destDir` is left alone for the per-file path, which never writes through an
-   * existing file. Resolves false, with `destDir` in place, when the dir isn't cloned.
+   * Clone the store's package dir to `destDir` in one call. A dir clone needs a path that
+   * doesn't exist, so it goes to a unique sibling that's then renamed over `destDir`. The
+   * rename replaces `destDir` only while it's still the empty dir createPkgOutDir made. If
+   * anything put files there meanwhile, the clone is dropped for the per-file path, which never
+   * writes through an existing file. Resolves false, with `destDir` untouched, when not cloned.
    */
   async _cloneWholeDir(cloneDir: CloneDir, srcDir: string, destDir: string): Promise<boolean> {
+    const tmp = `${destDir}.clone-${uniqueSuffix()}`;
+    if (!(await cloneDir(srcDir, tmp))) {
+      this._cloneDirs = false;
+      logger.debug(`fyn-central: can't clone dirs from ${this._centralDir}, cloning files instead`);
+      return false;
+    }
     try {
-      await Fs.rmdir(destDir);
+      await Fs.rename(tmp, destDir);
+      return true;
     } catch (err) {
+      await Fs.$.rimraf(tmp);
       const code = (err as NodeJS.ErrnoException).code;
       if (code === "ENOTEMPTY" || code === "EEXIST") {
         return false;
       }
-      if (code !== "ENOENT") {
-        throw err;
-      }
+      throw err;
     }
-    if (await cloneDir(srcDir, destDir)) {
-      return true;
-    }
-    this._cloneDirs = false;
-    logger.debug(`fyn-central: can't clone dirs from ${this._centralDir}, cloning files instead`);
-    await Fs.$.mkdirp(destDir);
-    return false;
   }
 
   /**

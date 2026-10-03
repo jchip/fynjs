@@ -231,9 +231,10 @@ describe("fyn-central replicate: dir clone", () => {
     reflinkMode.fake = fakeFiles;
     await makeCentral(root, contentPath).replicate("sha512-test", destDir);
 
-    expect(copyDir).toHaveBeenCalledWith(Path.join(contentPath, "package"), destDir);
+    expect(copyDir).toHaveBeenCalledWith(Path.join(contentPath, "package"), expect.stringContaining(`${destDir}.clone-`));
     expect(fakeFiles).not.toHaveBeenCalled();
     expect(Fs.readFileSync(Path.join(destDir, "lib", "util.js"), "utf8")).toBe("module.exports = 2;\n");
+    expect(Fs.readdirSync(root).filter(f => f.includes(".clone-"))).toEqual([]);
   });
 
   it("clones files, and stops trying dirs, when the filesystem can't clone a dir", async () => {
@@ -252,14 +253,17 @@ describe("fyn-central replicate: dir clone", () => {
     expect(noDir).toHaveBeenCalledTimes(1);
   });
 
-  it("leaves a non-empty install dir to the per-file path", async () => {
-    reflinkMode.fakeDir = copyDir;
+  it("drops its clone for the per-file path when the install dir gets files during the clone", async () => {
+    // what a second extraction of the same package can do while this one clones
+    reflinkMode.fakeDir = vi.fn(async (src: string, dest: string) => {
+      Fs.writeFileSync(Path.join(destDir, "index.js"), "written meanwhile");
+      return copyDir(src, dest);
+    });
     reflinkMode.fake = fakeFiles;
-    Fs.writeFileSync(Path.join(destDir, "stale.js"), "stale");
     await makeCentral(root, contentPath).replicate("sha512-test", destDir);
 
-    expect(copyDir).not.toHaveBeenCalled();
     expect(fakeFiles).toHaveBeenCalled();
+    expect(Fs.readdirSync(root).filter(f => f.includes(".clone-"))).toEqual([]);
   });
 
   it("never clones the dir with reflink off", async () => {
