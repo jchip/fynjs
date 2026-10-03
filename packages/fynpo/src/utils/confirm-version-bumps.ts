@@ -45,13 +45,26 @@ const groupBumps = (names: string[], type: number, collated): BumpGroup => {
   };
 };
 
+const line = (name: string, collated) => {
+  const pkg = collated.packages[name];
+  return `  ${name}: ${pkg.version} -> ${pkg.newVersion}`;
+};
+
 const describeBumps = (group: BumpGroup, collated) => {
-  const line = (name) => {
-    const pkg = collated.packages[name];
-    return `  ${name}: ${pkg.version} -> ${pkg.newVersion}`;
+  // only reasons from packages bumped at the same type explain this bump
+  const why = (name) => {
+    const reasons = (collated.packages[name].bumpReasons || []).filter(
+      (r) => collated.packages[r.by]?.updateType === group.type
+    );
+    const list = (reason, text) => {
+      const by = reasons.filter((r) => r.reason === reason).map((r) => r.by);
+      return by.length > 0 ? [`${text} ${by.join(", ")}`] : [];
+    };
+    const parts = [...list("locked", "locked with"), ...list("depends", "depends on")];
+    return parts.length > 0 ? ` (${parts.join("; ")})` : "";
   };
   const withCommits = (name) => [
-    line(name),
+    `${line(name, collated)}${why(name)}`,
     ...(collated.packages[name].bumpMsgs || []).map(
       (x) => `    ${x.id.slice(0, 8)}: ${x.m.split("\n")[0]}`
     ),
@@ -59,7 +72,10 @@ const describeBumps = (group: BumpGroup, collated) => {
   return [
     ...group.direct.flatMap(withCommits),
     ...(group.along.length > 0
-      ? ["Bumped along with them through version locks or dependencies:", ...group.along.map(line)]
+      ? [
+          "Bumped along with them:",
+          ...group.along.map((name) => `${line(name, collated)}${why(name)}`),
+        ]
       : []),
   ];
 };
@@ -99,6 +115,7 @@ export const confirmVersionBumps = async (collated, promptOpts: any = {}): Promi
       [
         "These packages will get a MAJOR version bump based on their commit messages:",
         ...describeBumps(majors, collated),
+        "One answer covers all of them.",
       ].join("\n")
     );
     const answer = await ask("OK to bump major versions? [y/N] ", io);
@@ -114,7 +131,7 @@ export const confirmVersionBumps = async (collated, promptOpts: any = {}): Promi
       [
         "These packages will get a minor version bump based on their commit messages:",
         ...describeBumps(minors, collated),
-        "Answering no will bump all of them as patch instead.",
+        "One answer covers all of them. Answering no will bump all of them as patch instead.",
       ].join("\n")
     );
     const answer = await ask("Bump minor versions? [Y/n] ", io);
@@ -122,14 +139,20 @@ export const confirmVersionBumps = async (collated, promptOpts: any = {}): Promi
       logger.error("Version bump confirmation cancelled.");
       return false;
     }
-    if (["n", "no"].includes(answer.trim().toLowerCase())) {
+    const declined = ["n", "no"].includes(answer.trim().toLowerCase());
+    if (declined) {
       // minor bumps only start from packages' own commits, so with those declined
       // nothing is left to justify a minor anywhere
       for (const name of bumped) {
         findVersion(name, 0, collated);
       }
-      logger.info("Using patch bumps for:", bumped.join(", "));
     }
+    logger.info(
+      [
+        declined ? "Using patch bumps instead:" : "Minor bumps confirmed:",
+        ...bumped.map((name) => line(name, collated)),
+      ].join("\n")
+    );
   }
 
   return true;

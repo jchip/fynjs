@@ -22,6 +22,16 @@ export const findVersion = (name, updateType, collated) => {
   collated.packages[name].originalPkg = pkgJson;
 };
 
+// Remember that `by`'s bump pulled `name` along, through a version lock or a dependency.
+// The confirm prompt uses this to explain why a package is bumped with others.
+const addBumpReason = (collated, name, reason: "locked" | "depends", by: string) => {
+  const pkg = (collated.packages[name] ??= {});
+  pkg.bumpReasons ??= [];
+  if (!pkg.bumpReasons.some((r) => r.reason === reason && r.by === by)) {
+    pkg.bumpReasons.push({ reason, by });
+  }
+};
+
 const findUpdateType = (name, collated, minBumpType = 0) => {
   const opts = collated.opts || {};
   const lintConfig = opts.fynpoRc.commitlint;
@@ -71,8 +81,12 @@ export const determinePackageVersions = (collated) => {
     const pkgNames = Object.keys(byName).filter((name) =>
       [].concat(byName[name] || []).some((pkg: any) => pkg.managed !== false)
     );
+    const realPackages = [...collated.realPackages];
 
     for (const name of pkgNames) {
+      for (const by of _.without(realPackages, name)) {
+        addBumpReason(collated, name, "locked", by);
+      }
       if (!collated.realPackages.includes(name)) {
         collated.realPackages.push(name);
       }
@@ -105,6 +119,9 @@ export const determinePackageVersions = (collated) => {
     const verLocks = changed.verLocks[name];
     if (verLocks) {
       for (const lockPkgName of verLocks) {
+        if (lockPkgName !== name) {
+          addBumpReason(collated, lockPkgName, "locked", name);
+        }
         if (!collated.realPackages.includes(lockPkgName)) {
           collated.realPackages.push(lockPkgName);
           findUpdateType(lockPkgName, collated, collated.packages[name].updateType);
@@ -148,7 +165,13 @@ export const determinePackageVersions = (collated) => {
 
       const updateTypes = deps
         .filter((depName) => collated.packages[depName])
-        .map((depName) => cascadeTypeOf(name, depName));
+        .map((depName) => {
+          const type = cascadeTypeOf(name, depName);
+          if (type > 0) {
+            addBumpReason(collated, name, "depends", depName);
+          }
+          return type;
+        });
       if (updateTypes.length > 0) {
         const minBumpType = _.max([pkgType, ...updateTypes]);
         if (collated.realPackages.includes(name)) {
@@ -186,6 +209,7 @@ export const determinePackageVersions = (collated) => {
       if (!utils.getManagedPackage(opts.graph, lockPkgName)) {
         continue;
       }
+      addBumpReason(collated, lockPkgName, "locked", pkgName);
       if (
         !indirectBumps.includes(lockPkgName) &&
         !indirectLockBumps.includes(lockPkgName) &&

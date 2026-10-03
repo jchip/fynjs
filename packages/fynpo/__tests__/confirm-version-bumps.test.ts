@@ -8,7 +8,7 @@ vi.mock("../src/logger", () => ({
 
 import { logger } from "../src/logger";
 import { confirmVersionBumps } from "../src/utils/confirm-version-bumps";
-import { findVersion } from "../src/utils/get-package-version";
+import { determinePackageVersions, findVersion } from "../src/utils/get-package-version";
 
 const versions = { a: "1.2.3", b: "2.0.0", c: "3.4.5" };
 
@@ -133,6 +133,10 @@ describe("confirmVersionBumps", () => {
 
   it("shows packages that follow along and patches them too when minor is declined", () => {
     const collated = makeCollated(0, 1);
+    collated.packages.c.bumpReasons = [
+      { reason: "locked", by: "b" },
+      { reason: "depends", by: "a" },
+    ];
     collated.packages.b.bumpMsgs = [
       { id: "0123456789abcdef", m: "feat: add b thing\n\nbody" },
       { id: "fedcba9876543210", m: "[minor] tweak b" },
@@ -149,8 +153,8 @@ describe("confirmVersionBumps", () => {
             "  b: 2.0.0 -> 2.1.0",
             "    01234567: feat: add b thing",
             "    fedcba98: [minor] tweak b",
-            "Bumped along with them through version locks or dependencies:",
-            "  c: 3.4.5 -> 3.5.0",
+            "Bumped along with them:",
+            "  c: 3.4.5 -> 3.5.0 (locked with b)",
           ].join("\n")
         );
         expect(newVersions(collated)).toEqual({ a: "1.2.4", b: "2.0.1", c: "3.4.6" });
@@ -183,6 +187,105 @@ describe("confirmVersionBumps", () => {
       .step((ok) => {
         expect(ok).toBe(true);
         expect(prompts()).toBe("");
+      });
+  });
+
+  it("explains follow-along bumps from the real version pipeline and logs the result", () => {
+    // lib has a minor commit; lib-x is locked with it; app depends on it and inherits
+    const byName = Object.fromEntries(
+      ["lib", "lib-x", "app"].map((name) => [name, [{ pkgJson: { version: "1.0.0" } }]])
+    );
+    const collated: any = {
+      opts: {
+        graph: { packages: { byName } },
+        fynpoRc: { versionCascade: { bumpType: "inherit" } },
+        versionLockMap: {},
+      },
+      changed: {
+        verLocks: { lib: ["lib", "lib-x"] },
+        forceUpdated: [],
+        depMap: { app: ["lib"] },
+        depSections: { app: { lib: "dep" } },
+      },
+      realPackages: ["lib"],
+      packages: { lib: { msgs: [{ id: "abcdef0123456789", m: "[minor] new api" }] } },
+    };
+    const io = tty();
+    answering(io, ["n\n"]);
+    return verify()
+      .step(() => determinePackageVersions(collated))
+      .step(() => confirmVersionBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect((logger.warn as any).mock.calls.at(-1)[0]).toContain(
+          [
+            "  lib: 1.0.0 -> 1.1.0",
+            "    abcdef01: [minor] new api",
+            "Bumped along with them:",
+            "  lib-x: 1.0.0 -> 1.1.0 (locked with lib)",
+            "  app: 1.0.0 -> 1.1.0 (depends on lib)",
+          ].join("\n")
+        );
+        expect((logger.info as any).mock.calls.at(-1)[0]).toBe(
+          [
+            "Using patch bumps instead:",
+            "  lib: 1.0.0 -> 1.0.1",
+            "  lib-x: 1.0.0 -> 1.0.1",
+            "  app: 1.0.0 -> 1.0.1",
+          ].join("\n")
+        );
+      });
+  });
+
+  it("logs the confirmed minor versions", () => {
+    const collated = makeCollated(0);
+    const io = tty();
+    answering(io, ["y\n"]);
+    return verify()
+      .step(() => confirmVersionBumps(collated, io))
+      .step(() => {
+        expect((logger.info as any).mock.calls.at(-1)[0]).toBe(
+          ["Minor bumps confirmed:", "  b: 2.0.0 -> 2.1.0"].join("\n")
+        );
+      });
+  });
+
+  it("explains why direct packages locked together share a prompt", () => {
+    const names = ["fyn", "fynpo", "fynpo-cli"];
+    const byName = Object.fromEntries(
+      names.map((name) => [name, [{ pkgJson: { version: "3.2.2" } }]])
+    );
+    const collated: any = {
+      opts: { graph: { packages: { byName } }, fynpoRc: {}, versionLockMap: {} },
+      changed: {
+        verLocks: { fyn: names, fynpo: names },
+        forceUpdated: [],
+        depMap: {},
+        depSections: {},
+      },
+      realPackages: ["fynpo", "fyn"],
+      packages: {
+        fynpo: { msgs: [{ id: "4c0432880000", m: "[minor] list commits" }] },
+        fyn: { msgs: [{ id: "bfde271b0000", m: "[minor] skip central store" }] },
+      },
+    };
+    const io = tty();
+    answering(io, ["y\n"]);
+    return verify()
+      .step(() => determinePackageVersions(collated))
+      .step(() => confirmVersionBumps(collated, io))
+      .step(() => {
+        expect((logger.warn as any).mock.calls.at(-1)[0]).toContain(
+          [
+            "  fynpo: 3.2.2 -> 3.3.0 (locked with fyn)",
+            "    4c043288: [minor] list commits",
+            "  fyn: 3.2.2 -> 3.3.0 (locked with fynpo)",
+            "    bfde271b: [minor] skip central store",
+            "Bumped along with them:",
+            "  fynpo-cli: 3.2.2 -> 3.3.0 (locked with fynpo, fyn)",
+            "One answer covers all of them. Answering no will bump all of them as patch instead.",
+          ].join("\n")
+        );
       });
   });
 });
