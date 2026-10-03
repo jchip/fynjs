@@ -33,22 +33,24 @@ const findUpdateType = (name, collated, minBumpType = 0) => {
   collated.packages[name] = collated.packages[name] || {};
   const msgs = collated.packages[name].msgs || [];
 
-  const ownUpdateType = msgs.reduce((a, x) => {
+  const typeOf = (x) => {
     const parsed: any = utils.lintParser(x.m, parserOpts);
     if ((parsed.type && majorTypes.includes(parsed.type)) || x.m.indexOf("[maj") >= 0) {
-      if (a < 2) {
-        a = 2;
-      }
-    } else if ((parsed.type && minorTypes.includes(parsed.type)) || x.m.indexOf("[min") >= 0) {
-      if (a < 1) {
-        a = 1;
-      }
+      return 2;
     }
-    return a;
-  }, 0);
+    if ((parsed.type && minorTypes.includes(parsed.type)) || x.m.indexOf("[min") >= 0) {
+      return 1;
+    }
+    return 0;
+  };
+  const types = msgs.map(typeOf);
+  const ownUpdateType = Math.max(0, ...types);
 
-  // ownUpdateType is what the package's own commits ask for, before locks and dependencies
+  // ownUpdateType is what the package's own commits ask for, before locks and dependencies.
+  // bumpMsgs are the commits that ask for it.
   collated.packages[name].ownUpdateType = ownUpdateType;
+  collated.packages[name].bumpMsgs =
+    ownUpdateType > 0 ? msgs.filter((_x, ix) => types[ix] === ownUpdateType) : [];
   collated.packages[name].updateType = Math.max(ownUpdateType, minBumpType);
 };
 

@@ -133,6 +133,10 @@ describe("confirmVersionBumps", () => {
 
   it("shows packages that follow along and patches them too when minor is declined", () => {
     const collated = makeCollated(0, 1);
+    collated.packages.b.bumpMsgs = [
+      { id: "0123456789abcdef", m: "feat: add b thing\n\nbody" },
+      { id: "fedcba9876543210", m: "[minor] tweak b" },
+    ];
     const io = tty();
     answering(io, ["n\n"]);
     return verify()
@@ -140,7 +144,15 @@ describe("confirmVersionBumps", () => {
       .step((ok) => {
         expect(ok).toBe(true);
         const shown = (logger.warn as any).mock.calls.at(-1)[0];
-        expect(shown).toMatch(/b: 2\.0\.0 -> 2\.1\.0\nBumped along[^\n]*\n  c: 3\.4\.5 -> 3\.5\.0/);
+        expect(shown).toContain(
+          [
+            "  b: 2.0.0 -> 2.1.0",
+            "    01234567: feat: add b thing",
+            "    fedcba98: [minor] tweak b",
+            "Bumped along with them through version locks or dependencies:",
+            "  c: 3.4.5 -> 3.5.0",
+          ].join("\n")
+        );
         expect(newVersions(collated)).toEqual({ a: "1.2.4", b: "2.0.1", c: "3.4.6" });
       });
   });

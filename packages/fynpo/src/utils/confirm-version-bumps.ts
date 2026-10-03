@@ -50,8 +50,14 @@ const describeBumps = (group: BumpGroup, collated) => {
     const pkg = collated.packages[name];
     return `  ${name}: ${pkg.version} -> ${pkg.newVersion}`;
   };
+  const withCommits = (name) => [
+    line(name),
+    ...(collated.packages[name].bumpMsgs || []).map(
+      (x) => `    ${x.id.slice(0, 8)}: ${x.m.split("\n")[0]}`
+    ),
+  ];
   return [
-    ...group.direct.map(line),
+    ...group.direct.flatMap(withCommits),
     ...(group.along.length > 0
       ? ["Bumped along with them through version locks or dependencies:", ...group.along.map(line)]
       : []),
