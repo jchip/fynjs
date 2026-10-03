@@ -6,7 +6,6 @@
   "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fynpo",
   "scripts": {
     "build": "rm -rf dist && rolldown -c rolldown.config.mjs",
-    "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "test": "vitest run",
     "ci:check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && vitest run",
     "prepublishOnly": "xrun --serial [build, test]",
@@ -117,7 +116,6 @@
     "rolldown": "^1.2.6",
     "run-verify": "^2.1.8",
     "source-map-support": "^0.5.19",
-    "typedoc": "^0.28.14",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

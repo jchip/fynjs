@@ -14,7 +14,6 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "xrun build",
-    "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src | cut -c1-8) --out docs src",
     "ci:check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && vitest run",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack",
@@ -53,7 +52,6 @@
     "prettier": "^3.5.3",
     "publish-util": "^3.1.7",
     "source-map-support": "^0.5.19",
-    "typedoc": "^0.28.14",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

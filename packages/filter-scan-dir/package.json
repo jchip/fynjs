@@ -27,7 +27,6 @@
     "clean": "rm -rf dist-* coverage",
     "prepack": "publish-util-prepack",
     "prepublishOnly": "xrun ci",
-    "docs": "typedoc src/index.ts --out docs && touch docs/.nojekyll",
     "postpack": "publish-util-postpack"
   },
   "repository": {
@@ -67,7 +66,6 @@
     "prettier": "^3.5.3",
     "publish-util": "^3.1.7",
     "run-verify": "^2.1.8",
-    "typedoc": "^0.28.14",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

@@ -26,7 +26,6 @@
     "demo:cjs": "cd demo/sample-1-cjs && fyn install && node demo.cjs",
     "demo:esm": "cd demo/sample-1-esm && fyn install && node demo.js",
     "prepublishOnly": "npm run coverage && npm run build",
-    "docs": "typedoc --gitRevision $(git rev-list -1 HEAD src) --out docs src",
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
@@ -64,7 +63,6 @@
     "publish-util": "^3.1.7",
     "run-verify": "^2.1.8",
     "source-map-support": "^0.5.21",
-    "typedoc": "^0.28.5",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
