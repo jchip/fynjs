@@ -503,7 +503,7 @@ export const fynpoMain = () => {
           alias: "cvb",
           args: "[flag boolean]",
           argDefault: "true",
-          desc: "confirm minor and major version bumps (use --no-confirm-version-bumps or --no-cvb to skip)",
+          desc: "confirm minor, major, and indirect version bumps (use --no-confirm-version-bumps or --no-cvb to skip)",
         },
       },
     },

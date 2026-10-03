@@ -29,6 +29,14 @@ const ask = async (question: string, promptOpts): Promise<string | undefined> =>
   }
 };
 
+/** The prompt streams, or undefined when there is no terminal to ask on. */
+const terminal = (promptOpts) => {
+  const input = promptOpts.input || process.stdin;
+  const output = promptOpts.output || process.stdout;
+  const runningInCI = promptOpts.isCI ?? isCI;
+  return runningInCI || !input.isTTY || !output.isTTY ? undefined : { input, output };
+};
+
 type BumpGroup = { type: number; direct: string[]; along: string[] };
 
 /**
@@ -50,19 +58,21 @@ const line = (name: string, collated) => {
   return `  ${name}: ${pkg.version} -> ${pkg.newVersion}`;
 };
 
+/** Why a package is bumped, from the reasons that pass `keep`. */
+const describeReasons = (name: string, collated, keep = (_r) => true) => {
+  const reasons = (collated.packages[name].bumpReasons || []).filter(keep);
+  const list = (reason, text) => {
+    const by = reasons.filter((r) => r.reason === reason).map((r) => r.by);
+    return by.length > 0 ? [`${text} ${by.join(", ")}`] : [];
+  };
+  const parts = [...list("locked", "locked with"), ...list("depends", "depends on")];
+  return parts.length > 0 ? ` (${parts.join("; ")})` : "";
+};
+
 const describeBumps = (group: BumpGroup, collated) => {
   // only reasons from packages bumped at the same type explain this bump
-  const why = (name) => {
-    const reasons = (collated.packages[name].bumpReasons || []).filter(
-      (r) => collated.packages[r.by]?.updateType === group.type
-    );
-    const list = (reason, text) => {
-      const by = reasons.filter((r) => r.reason === reason).map((r) => r.by);
-      return by.length > 0 ? [`${text} ${by.join(", ")}`] : [];
-    };
-    const parts = [...list("locked", "locked with"), ...list("depends", "depends on")];
-    return parts.length > 0 ? ` (${parts.join("; ")})` : "";
-  };
+  const why = (name) =>
+    describeReasons(name, collated, (r) => collated.packages[r.by]?.updateType === group.type);
   const withCommits = (name) => [
     `${line(name, collated)}${why(name)}`,
     ...(collated.packages[name].bumpMsgs || []).map(
@@ -96,19 +106,14 @@ export const confirmVersionBumps = async (collated, promptOpts: any = {}): Promi
     return true;
   }
 
-  const input = promptOpts.input || process.stdin;
-  const output = promptOpts.output || process.stdout;
-  const runningInCI = promptOpts.isCI ?? isCI;
-
-  if (runningInCI || !input.isTTY || !output.isTTY) {
+  const io = terminal(promptOpts);
+  if (!io) {
     logger.warn(
       "Can't confirm minor/major version bumps without a terminal. " +
         "Using the bump types from commit messages."
     );
     return true;
   }
-
-  const io = { input, output };
 
   if (majors.direct.length > 0) {
     logger.warn(
@@ -152,6 +157,87 @@ export const confirmVersionBumps = async (collated, promptOpts: any = {}): Promi
         declined ? "Using patch bumps instead:" : "Minor bumps confirmed:",
         ...bumped.map((name) => line(name, collated)),
       ].join("\n")
+    );
+  }
+
+  return true;
+};
+
+/**
+ * Ask which indirect bumps to keep. These packages have no commits of their own and are bumped
+ * only because of a dependency or a version lock. A skipped package is dropped from the
+ * changelog, so prepare only updates its dependency ranges and it is released later.
+ * When selecting, packages locked together are asked about as one group.
+ *
+ * @returns false when the user cancels
+ */
+export const confirmIndirectBumps = async (collated, promptOpts: any = {}): Promise<boolean> => {
+  const names: string[] = collated.indirectBumps.filter(
+    (name) => !collated.packages[name].originalPkg?.private
+  );
+  if (names.length === 0) {
+    return true;
+  }
+
+  const io = terminal(promptOpts);
+  if (!io) {
+    return true;
+  }
+
+  logger.warn(
+    [
+      "These packages have no commits of their own. They are bumped because of a dependency or a version lock:",
+      ...names.map((name) => `${line(name, collated)}${describeReasons(name, collated)}`),
+    ].join("\n")
+  );
+
+  let choice: string | undefined;
+  do {
+    const answer = await ask("Approve [a]ll, [s]elect, or [n]one? [A/s/n] ", io);
+    if (answer === undefined) {
+      logger.error("Version bump confirmation cancelled.");
+      return false;
+    }
+    choice = { "": "a", a: "a", all: "a", s: "s", select: "s", n: "n", none: "n" }[
+      answer.trim().toLowerCase()
+    ];
+  } while (!choice);
+
+  let skipped: string[] = [];
+  if (choice === "n") {
+    skipped = names;
+  } else if (choice === "s") {
+    // version locked packages must move together, so each lock group gets one answer
+    const lockMap = collated.opts?.versionLockMap || {};
+    const groups: string[][] = [];
+    for (const name of names) {
+      if (!groups.some((g) => g.includes(name))) {
+        groups.push((lockMap[name] || [name]).filter((n) => names.includes(n)));
+      }
+    }
+    for (const group of groups) {
+      let question = `${line(group[0], collated)}? [Y/n] `;
+      if (group.length > 1) {
+        io.output.write(
+          ["Version locked together:", ...group.map((name) => line(name, collated)), ""].join("\n")
+        );
+        question = "Bump all of them? [Y/n] ";
+      }
+      const answer = await ask(question, io);
+      if (answer === undefined) {
+        logger.error("Version bump confirmation cancelled.");
+        return false;
+      }
+      if (["n", "no"].includes(answer.trim().toLowerCase())) {
+        skipped.push(...group);
+      }
+    }
+  }
+
+  if (skipped.length > 0) {
+    collated.indirectBumps = collated.indirectBumps.filter((name) => !skipped.includes(name));
+    logger.info(
+      ["Skipping these bumps:", ...skipped.map((name) => line(name, collated))].join("\n")
     );
   }
 

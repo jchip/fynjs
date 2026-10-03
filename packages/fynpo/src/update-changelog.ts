@@ -43,7 +43,7 @@ import {
 } from "./utils/git-list-commits.ts";
 import { determinePackageVersions } from "./utils/get-package-version.ts";
 import { updateChangelog } from "./utils/update-changelog-file.ts";
-import { confirmVersionBumps } from "./utils/confirm-version-bumps.ts";
+import { confirmVersionBumps, confirmIndirectBumps } from "./utils/confirm-version-bumps.ts";
 import { updatePackageVersions } from "./utils/update-package-versions.ts";
 import { getCurrentBranch } from "./utils/get-current-branch.ts";
 
@@ -194,7 +194,10 @@ export default class Changelog {
       .then(collateCommitsPackages)
       .then(determinePackageVersions);
 
-    if (opts.confirmVersionBumps !== false && !(await confirmVersionBumps(collated))) {
+    if (
+      opts.confirmVersionBumps !== false &&
+      !((await confirmVersionBumps(collated)) && (await confirmIndirectBumps(collated)))
+    ) {
       process.exitCode = 1;
       return;
     }

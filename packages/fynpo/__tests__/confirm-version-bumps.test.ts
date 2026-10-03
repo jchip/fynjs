@@ -7,7 +7,7 @@ vi.mock("../src/logger", () => ({
 }));
 
 import { logger } from "../src/logger";
-import { confirmVersionBumps } from "../src/utils/confirm-version-bumps";
+import { confirmIndirectBumps, confirmVersionBumps } from "../src/utils/confirm-version-bumps";
 import { determinePackageVersions, findVersion } from "../src/utils/get-package-version";
 
 const versions = { a: "1.2.3", b: "2.0.0", c: "3.4.5" };
@@ -286,6 +286,161 @@ describe("confirmVersionBumps", () => {
             "One answer covers all of them. Answering no will bump all of them as patch instead.",
           ].join("\n")
         );
+      });
+  });
+});
+
+describe("confirmIndirectBumps", () => {
+  /** `a` bumps from its own commits; `c`, `d`, and `e` follow along */
+  const makeIndirect = () => {
+    const collated = makeCollated(0);
+    collated.indirectBumps = ["c", "d", "e"];
+    for (const name of ["d", "e"]) {
+      collated.opts.graph.packages.byName[name] = [{ pkgJson: { version: "1.0.0" } }];
+      findVersion(name, 0, collated);
+    }
+    collated.packages.c.bumpReasons = [{ reason: "depends", by: "a" }];
+    return collated;
+  };
+
+  it("keeps all indirect bumps on an empty answer", () => {
+    const collated = makeIndirect();
+    const io = tty();
+    const prompts = answering(io, ["\n"]);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(prompts()).toContain("Approve [a]ll, [s]elect, or [n]one? [A/s/n] ");
+        expect(prompts()).not.toContain("[Y/n]");
+        expect((logger.warn as any).mock.calls.at(-1)[0]).toContain(
+          "  c: 3.4.5 -> 3.4.6 (depends on a)"
+        );
+        expect(collated.indirectBumps).toEqual(["c", "d", "e"]);
+      });
+  });
+
+  it("drops all indirect bumps on none", () => {
+    const collated = makeIndirect();
+    const io = tty();
+    answering(io, ["n\n"]);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(collated.indirectBumps).toEqual([]);
+        expect(collated.directBumps).toEqual(["a", "b"]);
+      });
+  });
+
+  it("asks about each package on select", () => {
+    const collated = makeIndirect();
+    const io = tty();
+    const prompts = answering(io, ["s\n", "\n", "n\n", "y\n"]);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(prompts()).toContain("  d: 1.0.0 -> 1.0.1? [Y/n] ");
+        expect(collated.indirectBumps).toEqual(["c", "e"]);
+        expect((logger.info as any).mock.calls.at(-1)[0]).toBe(
+          ["Skipping these bumps:", "  d: 1.0.0 -> 1.0.1"].join("\n")
+        );
+      });
+  });
+
+  it("asks once per version lock group on select", () => {
+    const collated = makeIndirect();
+    const lock = ["d", "e", "x"];
+    collated.opts.versionLockMap = { d: lock, e: lock, x: lock };
+    const io = tty();
+    const prompts = answering(io, ["s\n", "\n", "n\n"]);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(prompts()).toContain(
+          ["Version locked together:", "  d: 1.0.0 -> 1.0.1", "  e: 1.0.0 -> 1.0.1", ""].join("\n")
+        );
+        expect(prompts().split("[Y/n]").length).toBe(3);
+        expect(collated.indirectBumps).toEqual(["c"]);
+      });
+  });
+
+  it("never asks about packages locked with a direct bump", () => {
+    // a has a commit; b is locked with a; app depends on a
+    const byName = Object.fromEntries(
+      ["a", "b", "app"].map((name) => [name, [{ pkgJson: { version: "1.0.0" } }]])
+    );
+    const lock = ["a", "b"];
+    const collated: any = {
+      opts: {
+        graph: { packages: { byName } },
+        fynpoRc: {},
+        versionLockMap: { a: lock, b: lock },
+      },
+      changed: {
+        verLocks: { a: ["b"] },
+        forceUpdated: [],
+        depMap: { app: ["a"] },
+        depSections: { app: { a: "dep" } },
+      },
+      realPackages: ["a"],
+      packages: { a: { msgs: [{ id: "abcdef0123456789", m: "fix: a thing" }] } },
+    };
+    const io = tty();
+    answering(io, ["n\n"]);
+    return verify()
+      .step(() => determinePackageVersions(collated))
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect((logger.warn as any).mock.calls.at(-1)[0]).not.toContain("  b:");
+        expect(collated.directBumps).toEqual(["a", "b"]);
+        expect(collated.indirectBumps).toEqual([]);
+      });
+  });
+
+  it("asks again on an unknown answer", () => {
+    const collated = makeIndirect();
+    const io = tty();
+    const prompts = answering(io, ["x\n", "a\n"]);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(prompts().split("[A/s/n]").length).toBe(3);
+        expect(collated.indirectBumps).toEqual(["c", "d", "e"]);
+      });
+  });
+
+  it("stops when input closes during select", () => {
+    const collated = makeIndirect();
+    const io = tty();
+    answering(io, ["s\n", "\n"]);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => expect(ok).toBe(false));
+  });
+
+  it("skips private packages and keeps everything without a terminal", () => {
+    const collated = makeIndirect();
+    for (const name of ["c", "d", "e"]) {
+      collated.packages[name].originalPkg.private = true;
+    }
+    const io = tty();
+    const prompts = answering(io, []);
+    return verify()
+      .step(() => confirmIndirectBumps(collated, io))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(prompts()).toBe("");
+        collated.packages.c.originalPkg.private = false;
+      })
+      .step(() => confirmIndirectBumps(collated, { ...tty(), isCI: true }))
+      .step((ok) => {
+        expect(ok).toBe(true);
+        expect(collated.indirectBumps).toEqual(["c", "d", "e"]);
       });
   });
 });
