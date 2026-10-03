@@ -20,6 +20,7 @@ const fooEvent = (delay: number, cb: (err: Error | null, result?: string) => voi
   setTimeout(() => cb(null, "foo"), delay);
 const fooErrorEvent = (delay: number, cb: (err: Error) => void) =>
   setTimeout(() => cb(new Error("foo failed")), delay);
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("runVerify", () => {
   it("should verify async event returning unexpected result", () => {
@@ -645,6 +646,107 @@ describe("runDefer", () => {
         expect(r).toBeDefined();
         expect(r).toBeInstanceOf(Error);
         expect(r.message).toBe("fail resolve");
+      }
+    );
+  });
+
+  // Handlers are typed `(value) => void`, but an async one still returns a promise.
+  // Its rejection must fail the run, not escape as an unhandled rejection.
+  it("should fail if an async onResolve rejects", () => {
+    const defer = runDefer();
+    return asyncVerify(
+      expectErrorToBe(
+        () =>
+          asyncVerify(
+            defer,
+            runTimeout(50),
+            () => defer.resolve("hello"),
+            defer.onResolve(async () => {
+              throw new Error("async onResolve error");
+            })
+          ),
+        "async onResolve error"
+      )
+    );
+  });
+
+  it("should fail if an async onReject rejects", () => {
+    const defer = runDefer();
+    return asyncVerify(
+      expectErrorToBe(
+        () =>
+          asyncVerify(
+            defer,
+            runTimeout(50),
+            () => defer.reject(new Error("hello")),
+            defer.onReject(async () => {
+              throw new Error("async onReject error");
+            })
+          ),
+        "async onReject error"
+      )
+    );
+  });
+
+  it("should fail if an async onResolve rejects after the steps finish", () => {
+    const defer = runDefer();
+    return asyncVerify(
+      expectErrorToBe(
+        () =>
+          asyncVerify(
+            defer,
+            runTimeout(200),
+            defer.onResolve(async () => {
+              await delay(20);
+              throw new Error("slow onResolve error");
+            }),
+            () => defer.resolve("hello")
+          ),
+        "slow onResolve error"
+      )
+    );
+  });
+
+  it("should fail if an async onResolve rejects after a wait step passed", () => {
+    const defer = runDefer();
+    return asyncVerify(
+      expectErrorToBe(
+        () =>
+          asyncVerify(
+            defer.onResolve(async () => {
+              await delay(20);
+              throw new Error("slow onResolve error");
+            }),
+            runTimeout(200),
+            () => defer.resolve("hello"),
+            defer.wait(),
+            () => delay(50)
+          ),
+        "slow onResolve error"
+      )
+    );
+  });
+
+  it("should wait for an async onResolve and keep the last step's result", () => {
+    const defer = runDefer();
+    let handled = false;
+    return asyncVerify(
+      () =>
+        asyncVerify(
+          defer,
+          runTimeout(200),
+          defer.onResolve(async () => {
+            await delay(20);
+            handled = true;
+          }),
+          () => {
+            defer.resolve("hello");
+            return "last";
+          }
+        ),
+      (r: any) => {
+        expect(handled).toBe(true);
+        expect(r).toBe("last");
       }
     );
   });

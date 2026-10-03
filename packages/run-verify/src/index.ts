@@ -200,6 +200,10 @@ function _runVerify(args: any[], errorFromCall: Error): void {
   let failError: Error | undefined;
   const defers: DeferObject[] = [];
   let completed = false;
+  // Async defer handlers still running. The run can't finish until they settle.
+  let pendingHandlers = 0;
+  // Set when the steps finished while handlers were still running.
+  let endResult: { value: any } | undefined;
 
   if (checkFuncs.length < 2) {
     throw errorMsg(errorFromCall, "runVerify - must pass done function");
@@ -259,6 +263,10 @@ function _runVerify(args: any[], errorFromCall: Error): void {
       if (defers.length && !defers.every((x) => x.invoked)) {
         return undefined;
       }
+      if (pendingHandlers > 0) {
+        endResult = { value: prevResult };
+        return undefined;
+      }
       return invokeFinally(undefined, prevResult);
     }
 
@@ -273,15 +281,46 @@ function _runVerify(args: any[], errorFromCall: Error): void {
     const addDefer = (defer: DeferObject) => {
       defers.push(defer);
 
+      // A handler typed `(value) => void` can still be async. Return its promises so a
+      // rejecting async verifier fails the run instead of escaping as unhandled.
       const invokeDeferHandlers = (handlers: Array<(v: any) => void>, value: any) => {
+        const pending: PromiseLike<unknown>[] = [];
         for (const h of handlers) {
           try {
-            h(value);
+            const returned: any = h(value);
+            if (returned && typeof returned.then === "function") {
+              pending.push(returned);
+            }
           } catch (err) {
             defer.failed = true;
             defer.error = err as Error;
             break;
           }
+        }
+        return pending.length > 0 ? Promise.all(pending) : undefined;
+      };
+
+      const checkDone = () => {
+        const errors = defers.map((x) => x.error).filter((x) => x);
+        if (errors.length > 0) {
+          if (!(defer as any)[DEFER_WAIT]) {
+            return invokeFinally(errors[0]);
+          } else {
+            return undefined;
+          }
+        }
+
+        if (
+          !(defer as any)._waiting &&
+          defers.every((x) => x.invoked) &&
+          index >= lastIx &&
+          pendingHandlers === 0
+        ) {
+          if (endResult) {
+            return invokeFinally(undefined, endResult.value);
+          }
+          const results = defers.map((x) => x.result);
+          return invokeFinally(undefined, results.length === 1 ? results[0] : results);
         }
         return undefined;
       };
@@ -289,25 +328,27 @@ function _runVerify(args: any[], errorFromCall: Error): void {
       const onDefer = (err: Error | undefined, r?: any) => {
         if (!failError && !defer.invoked) {
           defer.invoked = true;
-          if (!err) {
-            invokeDeferHandlers(defer.handlers.resolve, r);
-          } else {
-            invokeDeferHandlers(defer.handlers.reject, err);
+          const handlersDone = !err
+            ? invokeDeferHandlers(defer.handlers.resolve, r)
+            : invokeDeferHandlers(defer.handlers.reject, err);
+
+          if (!handlersDone) {
+            return checkDone();
           }
 
-          const errors = defers.map((x) => x.error).filter((x) => x);
-          if (errors.length > 0) {
-            if (!(defer as any)[DEFER_WAIT]) {
-              return invokeFinally(errors[0]);
-            } else {
-              return undefined;
+          pendingHandlers++;
+          // A late rejection may land after a `defer.wait()` step has passed, so
+          // fail right away rather than leave it for a step to pick up.
+          handlersDone.then(
+            () => {
+              pendingHandlers--;
+              checkDone();
+            },
+            (err2) => {
+              pendingHandlers--;
+              invokeFinally(err2 as Error);
             }
-          }
-
-          if (!(defer as any)._waiting && defers.every((x) => x.invoked) && index >= lastIx) {
-            const results = defers.map((x) => x.result);
-            return invokeFinally(undefined, results.length === 1 ? results[0] : results);
-          }
+          );
         }
         return undefined;
       };
