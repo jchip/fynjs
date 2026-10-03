@@ -209,7 +209,7 @@ describe("pkg-dep-resolver", function () {
     });
     // the meta was fetched fine, so the error is not wrapped as a meta retrieval failure
     return verify({ timeout: 9000 })
-      .expectErrorHas("Unable to find a version from lock data that satisfied semver mod-a@^14.0.0")
+      .expectErrorHas("Unable to find a version that satisfies mod-a@^14.0.0")
       .step(() => fyn.resolveDependencies())
       .step((error) => {
         expect(error.message).not.toContain("Unable to retrieve meta");
@@ -233,7 +233,7 @@ describe("pkg-dep-resolver", function () {
       },
     });
     return verify({ timeout: 9000 })
-      .expectErrorHas("Unable to find a version from lock data that satisfied semver mod-a@blah")
+      .expectErrorHas("Unable to find a version that satisfies mod-a@blah")
       .step(() => fyn.resolveDependencies())
       .step((error) => {
         expect(error.message).not.toContain("Unable to retrieve meta");
@@ -653,5 +653,15 @@ describe("resolvePackage when latest is not the highest version", function () {
   it("takes the newest version within the lock time when latest is after it", () => {
     expect(resolve(">=1", { lockTime: new Date("2016-01-01T00:00:00.000Z") })).toBe("2.0.3");
     expect(resolve(">=1", { lockTime: new Date("2014-06-01T00:00:00.000Z") })).toBe("1.0.0");
+  });
+});
+
+describe("_failUnsatisfySemver", function () {
+  const item = { name: "mod-a", semver: "^2.0.0", depPath: ["test", "mod-a"] };
+  const fail = inLockData => () => PkgDepResolver.prototype._failUnsatisfySemver(item as any, inLockData);
+
+  it("says lock data only when the versions came from the lock", () => {
+    expect(fail(true)).toThrow("Unable to find a version in lock data that satisfies mod-a@^2.0.0");
+    expect(fail(false)).toThrow("Unable to find a version that satisfies mod-a@^2.0.0");
   });
 });

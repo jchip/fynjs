@@ -1397,9 +1397,10 @@ class PkgDepResolver {
     return meta.versions ? meta.versions[String(resolved)] && resolved : resolved;
   }
 
-  _failUnsatisfySemver(item: DepItem): never {
+  _failUnsatisfySemver(item: DepItem, inLockData: boolean): never {
+    const where = inLockData ? " in lock data" : "";
     throw new ResolveError(
-      `Unable to find a version from lock data that satisfied semver ${item.name}@${item.semver}
+      `Unable to find a version${where} that satisfies ${item.name}@${item.semver}
 ${item.depPath.join(" > ")}`
     );
   }
@@ -1429,7 +1430,7 @@ ${item.depPath.join(" > ")}`
 
     if (!resolved) {
       if (!force) return false;
-      this._failUnsatisfySemver(item);
+      this._failUnsatisfySemver(item, Boolean(lockOnly));
     }
 
     if (semverUtil.isLocal(resolved)) {
@@ -1704,7 +1705,7 @@ ${item.depPath.join(" > ")}`
     }
 
     if (force) {
-      this._failUnsatisfySemver(item);
+      this._failUnsatisfySemver(item, true);
     }
 
     // unable to resolve with lock data
