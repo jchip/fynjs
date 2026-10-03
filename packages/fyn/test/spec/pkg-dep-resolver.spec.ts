@@ -240,6 +240,30 @@ describe("pkg-dep-resolver", function () {
       });
   });
 
+  it("should say the registry doesn't have a package, without the --refresh-meta hint", { timeout: 10000 }, () => {
+    const fyn = new Fyn({
+      opts: {
+        registry: `http://localhost:${server.info.port}`,
+        pkgFile: false,
+        pkgData: {
+          name: "test",
+          version: "1.0.0",
+          dependencies: {
+            "mod-not-there": "^1.0.0",
+          },
+        },
+        fynDir,
+        cwd: fynDir,
+      },
+    });
+    return verify({ timeout: 9000 })
+      .expectErrorHas("Package mod-not-there was not found in the registry")
+      .step(() => fyn.resolveDependencies())
+      .step((error) => {
+        expect(error.message).not.toContain("refresh-meta");
+      });
+  });
+
   it(
     "does not abort the install when a devOptDependencies meta fetch fails",
     { timeout: 10000 },

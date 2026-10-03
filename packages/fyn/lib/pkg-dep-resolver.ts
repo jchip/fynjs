@@ -231,6 +231,12 @@ export function lockedMetaNeedsFetch(
 const failMetaMsg = name =>
   `Unable to retrieve meta for package ${name} - If you've updated its version recently, try to run fyn with '--refresh-meta' again`;
 
+/** A registry 404, possibly inside AggregateError wrappers */
+const isNotFound = (err: any): boolean =>
+  err?.statusCode === 404 ||
+  err?.code === "E404" ||
+  (err instanceof AggregateError && err.errors.some(isNotFound));
+
 /**
  * The meta was retrieved, but no version can be resolved from it. This is reported as is, not
  * wrapped in the "Unable to retrieve meta" error, whose --refresh-meta hint doesn't apply.
@@ -1827,6 +1833,9 @@ ${item.depPath.join(" > ")}`
             if (!item.dsrc || !item.dsrc.includes("opt")) {
               if (err instanceof ResolveError || err.message.includes("Unable to retrieve meta")) {
                 throw err;
+              } else if (isNotFound(err)) {
+                // --refresh-meta can't help a package the registry doesn't have
+                throw new AggregateError([err], `Package ${item.name} was not found in the registry`);
               } else {
                 throw new AggregateError([err], failMetaMsg(item.name));
               }
