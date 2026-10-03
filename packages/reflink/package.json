@@ -1,0 +1,72 @@
+{
+  "name": "@fynjs/reflink",
+  "version": "0.1.0",
+  "description": "Native copy-on-write file cloning for fyn (macOS, Linux, Windows)",
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/reflink",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "napi": {
+    "binaryName": "reflink",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-musl",
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc"
+    ]
+  },
+  "scripts": {
+    "build": "napi build --platform --release --esm",
+    "build:debug": "napi build --platform --esm",
+    "artifacts": "napi artifacts --npm-dir platform-packages",
+    "prepare": "node prepare.mjs",
+    "test": "vitest run",
+    "ci:check": "vitest run",
+    "prepublishOnly": "node prepare.mjs --required",
+    "prepack": "publish-util-prepack && node prepack.mjs",
+    "postpack": "publish-util-postpack"
+  },
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/reflink"
+  },
+  "keywords": [
+    "reflink",
+    "clone",
+    "copy-on-write",
+    "clonefile",
+    "napi"
+  ],
+  "author": "Joel Chen",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@napi-rs/cli": "3.10.6",
+    "@types/node": "^26.4.1",
+    "publish-util": "^3.1.7",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "reflink.*.node"
+  ]
+}
