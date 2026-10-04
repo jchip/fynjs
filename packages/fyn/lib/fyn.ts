@@ -467,7 +467,7 @@ class Fyn {
         return (this._central = false);
       }
       centralDir = Path.join(this.fynDir, "_central-storage");
-      logger.debug(`Enabling central store by default on macOS using dir ${centralDir}`);
+      logger.debug(`Enabling central store by default using dir ${centralDir}`);
     } else {
       centralDir = this._fynpo.config.centralDir;
       if (!centralDir) {
@@ -500,18 +500,22 @@ class Fyn {
   }
 
   /**
-   * On macOS, a new install clones packages from the central store when @fynjs/reflink can
-   * clone dirs, since warm installs then run 2-3x faster than copying. A .fyn.json that saved
+   * A new install uses the central store on macOS when @fynjs/reflink can clone dirs, and on
+   * Linux when it can hardlink or clone, since warm installs then run 2-3x faster than copying.
+   * Files are cloned where possible, else hardlinked, else copied. A .fyn.json that saved
    * centralDir false keeps copying, and --no-central-store opts out.
    */
   async _defaultCentralStore(): Promise<boolean> {
-    return (
-      process.platform === "darwin" &&
-      this._options.centralStore === undefined &&
-      this._installConfig.centralDir === undefined &&
-      this.reflink &&
-      Boolean(await loadReflinkCloneDir())
-    );
+    if (this._options.centralStore !== undefined || this._installConfig.centralDir !== undefined) {
+      return false;
+    }
+    if (process.platform === "darwin") {
+      return this.reflink && Boolean(await loadReflinkCloneDir());
+    }
+    if (process.platform === "linux") {
+      return this.hardlink || (this.reflink && Boolean(await loadReflinkCloneFiles()));
+    }
+    return false;
   }
 
   /**

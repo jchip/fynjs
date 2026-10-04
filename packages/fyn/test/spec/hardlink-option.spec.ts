@@ -197,9 +197,10 @@ describe("hardlink option", function () {
   });
 
   //
-  // On macOS a new install uses the central store when @fynjs/reflink can clone dirs.
+  // A new install uses the central store on macOS when @fynjs/reflink can clone dirs, and on
+  // Linux when it can hardlink or clone.
   //
-  describe("central store by default on macOS", () => {
+  describe("central store by default", () => {
     const tmpRoot = Path.join(__dirname, "..", "..", ".temp", "central-default-spec");
     const fynDir = Path.join(tmpRoot, ".fyn");
     const defaultDir = Path.join(fynDir, "_central-storage");
@@ -266,8 +267,37 @@ describe("hardlink option", function () {
       expect((await init()).central).toBe(false);
     });
 
-    it("is off on linux", async () => {
-      Object.defineProperty(process, "platform", { ...savePlatform, value: "linux" });
+    describe("on linux", () => {
+      beforeEach(() => {
+        Object.defineProperty(process, "platform", { ...savePlatform, value: "linux" });
+        reflink.cloneDir = undefined;
+      });
+      afterEach(() => {
+        reflink.cloneFiles = undefined;
+      });
+
+      it("uses the store to hardlink without @fynjs/reflink", async () => {
+        const { central, savedDir } = await init();
+        expect(central).toBeInstanceOf(FynCentral);
+        expect(savedDir).toBe(defaultDir);
+      });
+
+      it("keeps copying when .fyn.json saved centralDir false", async () => {
+        expect((await init({}, false)).central).toBe(false);
+      });
+
+      it("is off with --no-hardlink and no @fynjs/reflink", async () => {
+        expect((await init({ hardlink: false })).central).toBe(false);
+      });
+
+      it("clones with --no-hardlink when @fynjs/reflink loads", async () => {
+        reflink.cloneFiles = async () => undefined;
+        expect((await init({ hardlink: false })).central).toBeInstanceOf(FynCentral);
+      });
+    });
+
+    it("is off on win32", async () => {
+      Object.defineProperty(process, "platform", { ...savePlatform, value: "win32" });
       expect((await init()).central).toBe(false);
     });
   });
