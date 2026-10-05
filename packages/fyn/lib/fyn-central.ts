@@ -13,26 +13,11 @@ import type { Stats } from "fs";
 import Crypto from "crypto";
 import * as xaa from "xaa";
 import type { Readable } from "stream";
+import { treeCollector, type FileInfo, type TreeNode, type UntarTree } from "./util/untar-tree";
+import { getFsWorkerPool } from "./util/fs-worker-pool";
+import { NO_LINK_CODES } from "./util/place-files";
 
 const { missPipe } = fyntil;
-
-/** File metadata in the tree */
-interface FileInfo {
-  /** File size */
-  z: number;
-  /** Modification time in seconds */
-  m: number;
-  /** Checksum (tar header cksum) */
-  $: number | boolean;
-}
-
-/** Directory tree node - uses null prototype objects to avoid name conflicts */
-interface TreeNode {
-  /** Files in this directory */
-  "/": Record<string, FileInfo>;
-  /** Subdirectories */
-  [dir: string]: TreeNode | Record<string, FileInfo>;
-}
 
 /** Flattened tree structure */
 interface FlattenedTree {
@@ -93,9 +78,6 @@ const STALE_MS = 5 * 60 * 1000;
 
 /** a name suffix no other install, or other call in this one, will pick */
 const uniqueSuffix = (): string => `${process.pid}-${Crypto.randomBytes(4).toString("hex")}`;
-
-/** link errors that mean the filesystem can't hardlink from the store at all */
-const NO_LINK_CODES = ["EXDEV", "EPERM", "ENOTSUP", "EOPNOTSUPP", "ENOSYS"];
 
 /**
  * Convert a directory tree structure to a flatten one like:
@@ -434,16 +416,18 @@ class FynCentral {
         return;
       }
 
-      for (const dir of list.dirs) {
-        await Fs.$.mkdirp(Path.join(destDir, dir));
-      }
-
       // @fynjs/reflink clones, else hardlinks unless hardlink is off, else copies unless
       // copyFallback is off. package.json is never linked, since fyn rewrites it in place. With
       // reflink off, @fynjs/reflink is skipped, since it always tries a clone first.
       const reflinkCloneFiles = this._reflink && (await loadReflinkCloneFiles());
       const copy = this._copyFallback;
+      const mkdirs = async (): Promise<void> => {
+        for (const dir of list.dirs) {
+          await Fs.$.mkdirp(Path.join(destDir, dir));
+        }
+      };
       if (reflinkCloneFiles) {
+        await mkdirs();
         const others = list.files.filter(f => f !== "package.json");
         await Promise.all([
           reflinkCloneFiles(srcDir, destDir, others, this._hardlink, copy),
@@ -453,6 +437,25 @@ class FynCentral {
         return;
       }
 
+      const pool = getFsWorkerPool();
+      if (pool) {
+        const { noLink } = await pool.run("place", {
+          srcDir,
+          destDir,
+          dirs: list.dirs,
+          files: list.files,
+          hardlink: this._hardlink,
+          reflink: this._reflink,
+          copyFallback: copy
+        });
+        if (noLink && this._hardlink) {
+          this._hardlink = false;
+          logger.info(`fyn-central: can't hardlink from ${this._centralDir} (${noLink}), copying instead`);
+        }
+        return;
+      }
+
+      await mkdirs();
       await xaa.map(
         list.files,
         (file: string) => {
@@ -535,60 +538,12 @@ class FynCentral {
     }
   }
 
-  /**
-   * Extract a tarball and build its tree from the tar headers.
-   *
-   * @returns the tree, and whether its sizes and mtimes are what stat will report: true when
-   *   every non-dir entry is a regular file with an mtime. A link or a missing mtime leaves
-   *   something only a stat walk can see.
-   */
-  _untarStream(tarStream: Readable, targetDir: string): Promise<{ tree: TreeNode; fromHeaders: boolean }> {
-    // since we are using objects to store directory tree we have to
-    // create objects without the normal prototypes to avoid name conflict
-    // with file names
-    const newDirObj = (): TreeNode => {
-      const n = Object.create(null) as TreeNode;
-      n["/"] = Object.create(null);
-      return n;
-    };
-
-    const dirTree = newDirObj();
-    let fromHeaders = true;
-
+  /** Extract a tarball and build its tree from the tar headers. */
+  _untarStream(tarStream: Readable, targetDir: string): Promise<UntarTree> {
     const strip = 1;
-
-    const untarStream = Tar.x({
-      strip,
-      strict: true,
-      C: targetDir,
-      onentry: (entry: Tar.ReadEntry) => {
-        const parts = entry.path.split(/\/|\\/);
-        const isDir = entry.type === "Directory";
-        const dirs = parts.slice(strip, isDir ? parts.length : parts.length - 1);
-
-        const wtree = dirs.reduce((wt: TreeNode, dir: string) => {
-          return (wt[dir] as TreeNode) || (wt[dir] = newDirObj());
-        }, dirTree);
-
-        if (isDir) return;
-
-        if (!entry.mtime || !["File", "OldFile", "ContiguousFile"].includes(entry.type)) {
-          fromHeaders = false;
-        }
-
-        const fname = parts[parts.length - 1];
-        if (fname) {
-          const m = Math.round((entry.mtime ? entry.mtime.getTime() : Date.now()) / 1000);
-          wtree["/"][fname] = {
-            z: entry.size,
-            m,
-            $: entry.header.cksumValid && entry.header.cksum
-          };
-        }
-      }
-    });
-
-    return missPipe(tarStream, untarStream).then(() => ({ tree: dirTree, fromHeaders }));
+    const { onentry, result } = treeCollector(strip);
+    const untarStream = Tar.x({ strip, strict: true, C: targetDir, onentry });
+    return missPipe(tarStream, untarStream).then(() => result);
   }
 
   /**
@@ -630,10 +585,14 @@ class FynCentral {
    * Extract into a temp dir only this call uses, then rename it into place. The rename is
    * atomic, so other installs see the entry complete or not at all. If another install renamed
    * its copy in first, that copy has the same integrity, so this one is dropped for it.
+   *
+   * A tarball that's a file on disk is untarred by an fs worker, when fyn has them built.
    */
   async _storeTarStream(
     info: PackageInfo,
-    _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
+    _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>,
+    integrity: string,
+    tarFile?: () => Promise<string | undefined>
   ): Promise<void> {
     let stream = _stream;
     const tmp = `${info.contentPath}.tmp-${uniqueSuffix()}`;
@@ -641,13 +600,21 @@ class FynCentral {
     try {
       const targetDir = Path.join(tmp, "package");
       await Fs.$.mkdirp(targetDir);
-      if (typeof stream === "function") {
-        stream = stream();
+      const pool = tarFile && getFsWorkerPool();
+      const file = pool && (await tarFile!());
+      let untarred: UntarTree;
+      if (file) {
+        untarred = await pool!.run("untar", { file, integrity, targetDir, strip: 1 });
+      } else {
+        if (typeof stream === "function") {
+          stream = stream();
+        }
+        if ((stream as Promise<Readable>).then) {
+          stream = await (stream as Promise<Readable>);
+        }
+        untarred = await this._untarStream(stream as Readable, targetDir);
       }
-      if ((stream as Promise<Readable>).then) {
-        stream = await (stream as Promise<Readable>);
-      }
-      const { tree, fromHeaders } = await this._untarStream(stream as Readable, targetDir);
+      const { tree, fromHeaders } = untarred;
       info.tree = tree;
       info.shaSum = fromHeaders ? this._treeShasum(tree) : (await this._scanShasums(targetDir))?.v2;
       info.sumVersion = SUM_VERSION;
@@ -709,13 +676,16 @@ class FynCentral {
    * live marker from another install returns false without reading the stream, so the caller
    * can do its other packages first and come back to this one.
    *
+   * @param tarFile - resolves the tarball's file on disk, when it has one, so an fs worker
+   *   can untar it instead of the stream
    * @returns false when deferred, true when the package is in the store
    */
   async storeTarStream(
     pkgId: string,
     integrity: string,
     stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>,
-    deferIfBusy = false
+    deferIfBusy = false,
+    tarFile?: () => Promise<string | undefined>
   ): Promise<boolean> {
     let currentStream: typeof stream | undefined = stream;
     let marker: string | undefined;
@@ -746,7 +716,7 @@ class FynCentral {
       }
 
       logger.debug("storing tar to central store", pkgId, integrity);
-      await this._storeTarStream(info, currentStream);
+      await this._storeTarStream(info, currentStream, integrity, tarFile);
       currentStream = undefined;
       this._map.set(integrity, info);
       logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);

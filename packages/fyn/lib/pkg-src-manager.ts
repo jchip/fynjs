@@ -8,7 +8,7 @@
 
 
 import Promise from "aveazul";
-import { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime } from "./cacache-util";
+import { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime, getContentPath } from "./cacache-util";
 import {
   readTrimmedPackument,
   trimmedPackumentFile,
@@ -109,7 +109,8 @@ interface FynCentralInstance {
     tarId: string,
     integrity: string,
     tarStream: () => NativePromise<Readable>,
-    deferIfBusy?: boolean
+    deferIfBusy?: boolean,
+    tarFile?: () => NativePromise<string | undefined>
   ): NativePromise<boolean>;
 }
 
@@ -1432,9 +1433,13 @@ class PkgSrcManager {
         }
 
         if (!hasCentral) {
+          const tarFile = async (): NativePromise<string | undefined> => {
+            const content = await (await loadCacache()).get.hasContent(this._cacheDir, integrity);
+            return content ? getContentPath(this._cacheDir, content.sri) : undefined;
+          };
           return {
             integrity,
-            store: deferIfBusy => central.storeTarStream(tarId, integrity, tarStream, deferIfBusy)
+            store: deferIfBusy => central.storeTarStream(tarId, integrity, tarStream, deferIfBusy, tarFile)
           };
         }
 

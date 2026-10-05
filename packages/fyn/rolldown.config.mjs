@@ -142,6 +142,64 @@ const arboristDebugPlugin = {
 };
 
 /**
+ * agent-base keeps `protocol` in state its constructor creates after `super()`, so the
+ * `this.protocol = "http:"` that http.Agent sets is dropped. Every read of `agent.protocol`, which
+ * node does on each request, then guesses from `new Error().stack`. @npmcli/agent knows the
+ * protocol when it creates the agent, so set it there.
+ */
+const agentProtocolPlugin = {
+  name: "agent-protocol",
+  transform(code, id) {
+    if (!id.replace(/\\/g, "/").endsWith("/@npmcli/agent/lib/agents.js")) {
+      return null;
+    }
+
+    const anchor = "super(normalizedOptions)\n";
+    if (!code.includes(anchor)) {
+      // fail loudly rather than ship a bundle that's quietly slow again
+      throw new Error("agent-protocol: super(normalizedOptions) not found in @npmcli/agent/lib/agents.js");
+    }
+
+    const set =
+      "if (typeof normalizedOptions.secureEndpoint === 'boolean') " +
+      "this.protocol = normalizedOptions.secureEndpoint ? 'https:' : 'http:'\n";
+    return { code: code.replace(anchor, anchor + set) };
+  }
+};
+
+/**
+ * cacache makes the cache dir and writes its CACHEDIR.TAG with `wx` before every write, so each
+ * one after the first fails with EEXIST - thousands of thrown errors per install. Do it once per
+ * cache dir.
+ */
+const cacacheDirOncePlugin = {
+  name: "cacache-dir-once",
+  transform(code, id) {
+    if (!id.replace(/\\/g, "/").endsWith("/cacache/lib/util/cache-dir.js")) {
+      return null;
+    }
+
+    const fn = "async function mkdir (cache) {\n  await fs.mkdir(cache, { recursive: true, owner: 'inherit' })\n  await writeTag(cache)\n}";
+    if (!code.includes(fn)) {
+      throw new Error("cacache-dir-once: mkdir not found in cacache/lib/util/cache-dir.js");
+    }
+
+    const once =
+      "const made = new Map()\n" +
+      "function mkdir (cache) {\n" +
+      "  let p = made.get(cache)\n" +
+      "  if (!p) {\n" +
+      "    p = fs.mkdir(cache, { recursive: true, owner: 'inherit' }).then(() => writeTag(cache))\n" +
+      "    made.set(cache, p)\n" +
+      "    p.catch(() => made.delete(cache))\n" +
+      "  }\n" +
+      "  return p\n" +
+      "}";
+    return { code: code.replace(fn, once) };
+  }
+};
+
+/**
  * Rolldown only warns on an unresolved import and leaves it in the bundle as an external. fyn
  * ships as a single bundle with its dependencies stripped (publishUtil.remove), so any external
  * other than a node builtin fails at runtime - e.g. a workspace dep whose dist/ is missing.
@@ -162,7 +220,7 @@ const noExternalsPlugin = {
   }
 };
 
-export default defineConfig({
+const fynConfig = {
   input: Path.resolve("cli/main.ts"),
   platform: "node",
   plugins: [
@@ -171,6 +229,8 @@ export default defineConfig({
     evalRequirePlugin,
     requireHttpAtRuntimePlugin,
     arboristDebugPlugin,
+    agentProtocolPlugin,
+    cacacheDirOncePlugin,
     noExternalsPlugin
   ],
   resolve: {
@@ -211,4 +271,24 @@ export default defineConfig({
     minify: false,
     codeSplitting: false
   }
-});
+};
+
+/**
+ * The fs worker runs in its own thread, so it's a bundle of its own next to fyn.mjs, where
+ * lib/util/fs-worker-pool.ts looks for it. It needs only tar and ssri.
+ */
+const fsWorkerConfig = {
+  input: Path.resolve("lib/util/fs-worker.ts"),
+  platform: "node",
+  plugins: [noExternalsPlugin],
+  resolve: { extensions: [".ts", ".js", ".json"], symlinks: true },
+  transform: fynConfig.transform,
+  output: {
+    file: "dist/fs-worker.mjs",
+    format: "esm",
+    minify: false,
+    codeSplitting: false
+  }
+};
+
+export default defineConfig([fynConfig, fsWorkerConfig]);

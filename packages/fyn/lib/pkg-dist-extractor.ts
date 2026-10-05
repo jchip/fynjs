@@ -12,6 +12,7 @@ import xaa from "./util/xaa";
 import type { Readable } from "stream";
 import type { EventEmitter } from "events";
 import type { PkgVersionInfo, InstalledPkgJson } from "./types";
+import { POOL_SIZE } from "./util/fs-worker-pool";
 
 const { retry, missPipe } = fyntil;
 
@@ -50,6 +51,7 @@ export interface FynForExtractor {
   createPkgOutDir(dir: string): Promise<void>;
   loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<InstalledPkgJson>;
   isNormalLayout: boolean;
+  extractConcurrency?: number;
   /** `false` when the central store is off - every read of this guards on it first */
   central:
     | {
@@ -74,7 +76,9 @@ class PkgDistExtractor {
 
   constructor(options: PkgDistExtractorOptions) {
     this._promiseQ = new PromiseQueue({
-      concurrency: 4, // don't want to untar too many files at the same time
+      // one job per fs worker, plus one so a worker isn't idle while the main thread finishes a
+      // job. Past 4 it got slower even with 13 workers, as the jobs contend for the disk.
+      concurrency: options.fyn.extractConcurrency || Math.min(4, POOL_SIZE + 1),
       stopOnError: true,
       processItem: (x: ExtractData, id: number) => this.processItem(x, id)
     });

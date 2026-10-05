@@ -62,6 +62,16 @@ function getBucketPath(cache: string, key: string): string {
 }
 
 /**
+ * Get the content file path for an integrity that cacache matched, such as the `sri` from
+ * `get.hasContent`. Same layout as cacache: the algorithm, then the hex digest in segments.
+ */
+function getContentPath(cache: string, sri: { algorithm: string; hexDigest(): string }): string {
+  const hex = sri.hexDigest();
+  const contentV = cacachePkg["cache-version"].content;
+  return path.join(cache, `content-v${contentV}`, sri.algorithm, hex.slice(0, 2), hex.slice(2, 4), hex.slice(4));
+}
+
+/**
  * Update cache entry refresh timestamp by modifying bucket file mtime.
  * Does not modify file contents, only filesystem metadata.
  * Errors are silently ignored (cache refresh is non-critical).
@@ -106,4 +116,11 @@ async function getCacheInfoWithRefreshTime(cache: string, key: string) {
   }
 }
 
-export { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime, getBucketPath, hashKey };
+export {
+  loadCacache,
+  refreshCacheEntry,
+  getCacheInfoWithRefreshTime,
+  getBucketPath,
+  getContentPath,
+  hashKey
+};

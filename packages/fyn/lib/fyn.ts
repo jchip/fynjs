@@ -95,6 +95,7 @@ interface FynOptions {
   refreshOptionals?: boolean;
   ignoreDist?: boolean;
   concurrency?: number;
+  extractConcurrency?: number;
   deepResolve?: boolean;
   preferLock?: boolean;
   alwaysFetchDist?: boolean;
@@ -1470,6 +1471,10 @@ class Fyn {
 
   get concurrency(): number | undefined {
     return this._options.concurrency;
+  }
+
+  get extractConcurrency(): number | undefined {
+    return this._options.extractConcurrency;
   }
 
   get deepResolve(): boolean | undefined {

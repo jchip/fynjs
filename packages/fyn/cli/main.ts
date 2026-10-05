@@ -418,6 +418,12 @@ const options: Record<string, OptionSpec> = {
     desc: "Max network concurrency (registry sockets)",
     argDefault: "32"
   },
+  "extract-concurrency": {
+    args: "<num number>",
+    alias: "excc",
+    // unset scales with CPU cores, see PkgDistExtractor
+    desc: "Max packages extracted at once (default: CPU cores, at most 4)"
+  },
   "auto-run": {
     args: "<flag boolean>",
     argDefault: "true",
