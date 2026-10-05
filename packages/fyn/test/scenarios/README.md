@@ -161,7 +161,8 @@ module.exports = {
   // Custom: Override default fyn run
   run({ registry, fynDir, cwd, baseArgs, pkgJson, pkgJsonFile, debug }) {
     // Return a Promise that runs fyn with custom logic
-    const fynRun = require("../../cli/fyn");
+    // cli/main's run, not cli/fyn: the CLI entry runs `fyn install` when it's imported
+    const { run: fynRun } = require("../../cli/main");
     return fynRun([...baseArgs, "install", "--custom-flag"]);
   },
 

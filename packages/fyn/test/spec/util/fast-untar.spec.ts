@@ -12,7 +12,10 @@ import { treeCollector } from "../../../lib/util/untar-tree";
 
 const TGZ_DIR = Path.join(__dirname, "../../fixtures/mock-npm/.tgz");
 
-/** Recursive listing: relative path, type, mode, mtime seconds, size, content */
+/**
+ * Recursive listing: relative path, type, mode, mtime seconds, size, content. A dir's mtime is
+ * when its last entry was written, so only files' mtimes are compared.
+ */
 const listing = (root: string, rel = ""): any[] => {
   const out: any[] = [];
   for (const name of Fs.readdirSync(Path.join(root, rel)).sort()) {
@@ -23,7 +26,7 @@ const listing = (root: string, rel = ""): any[] => {
       p,
       type: isDir ? "dir" : "file",
       mode: st.mode & 0o7777,
-      mtime: Math.floor(st.mtimeMs / 1000),
+      mtime: isDir ? 0 : Math.floor(st.mtimeMs / 1000),
       size: isDir ? 0 : st.size,
       content: isDir ? "" : Fs.readFileSync(Path.join(root, p)).toString("base64")
     });

@@ -18,7 +18,8 @@ import * as _ from "lodash-es";
 import * as Yaml from "js-yaml";
 import Promise from "aveazul";
 import { make as dirTree } from "../dir-tree";
-import fynRun from "../../cli/fyn";
+// not cli/fyn, the CLI entry: importing it runs `fyn install` in this package
+import { run as fynRun } from "../../cli/main";
 import fyntil from "../../lib/util/fyntil";
 import logger from "../../lib/logger";
 import mockNpm from "../fixtures/mock-npm";
