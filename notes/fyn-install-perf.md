@@ -9,26 +9,44 @@ is still open. Most numbers come from pnpm's benchmark harness on the Mac, with 
 
 ### Mac
 
-"default" sets no store options, so on macOS fyn clones from the central store. "copy" turns the
-store off. pnpm 12 ran in the same session. Seconds, one sample per cell:
+A full run of pnpm's harness on 2026-10-04, with fyn at `683296f4`, npm 12.2.0, pnpm 11.28.2 and
+pnpm 12.9.1, on Node 24.21.0. "fyn default" sets no store options, so on macOS it clones each
+package dir from the central store with `@fynjs/reflink`. "fyn copy" turns the store off. Seconds,
+one sample per cell, best in bold:
 
-| Scenario | 15 ms: copy | default | pnpm 12 | 50 ms: copy | default | pnpm 12 |
-|---|---|---|---|---|---|---|
-| clean | 5.69 | **5.72** | 18.68 | 7.14 | **7.09** | 18.36 |
-| lockfile | 5.11 | **5.00** | 16.52 | 5.09 | **5.04** | 16.48 |
-| cache | 4.16 | **1.68** | 3.17 | 4.20 | **1.66** | 3.11 |
-| cache + lockfile | 4.10 | **1.58** | 2.85 | 4.12 | **1.57** | 2.85 |
-| repeat | 0.11 | 0.09 | **0.04** | 0.10 | 0.10 | **0.04** |
-| update | 1.58 | **1.46** | 3.09 | 1.77 | **1.65** | 3.23 |
+**15 ms / 200 Mbps**
 
-- **The default matches copy on installs that download,** and is 2.5x faster on warm-cache
+| Scenario | npm | pnpm 11 | pnpm 12 | fyn copy | fyn default |
+|---|---|---|---|---|---|
+| clean | 13.51 | 9.00 | 18.01 | 5.87 | **5.82** |
+| lockfile | **4.89** | 8.88 | 15.43 | 5.11 | 5.16 |
+| cache | 6.22 | 6.08 | 2.98 | 4.35 | **1.70** |
+| cache + lockfile | 4.43 | 5.13 | 2.87 | 4.17 | **1.61** |
+| repeat | 0.71 | 0.32 | **0.04** | 0.09 | 0.10 |
+| update | 2.10 | 2.09 | 2.82 | 1.70 | **1.49** |
+
+**50 ms / 200 Mbps**
+
+| Scenario | npm | pnpm 11 | pnpm 12 | fyn copy | fyn default |
+|---|---|---|---|---|---|
+| clean | 30.62 | 9.87 | 19.73 | 7.63 | **7.40** |
+| lockfile | 8.10 | 9.20 | 16.70 | 5.24 | **5.13** |
+| cache | 6.11 | 5.91 | 3.31 | 4.32 | **1.74** |
+| cache + lockfile | 4.25 | 5.08 | 2.76 | 4.09 | **1.59** |
+| repeat | 0.78 | 0.33 | **0.04** | 0.10 | 0.10 |
+| update | 2.55 | 2.08 | 3.20 | 1.82 | **1.71** |
+
+- **fyn's default is fastest on every row but two.** pnpm 12 wins repeat, which is startup, and
+  pnpm 12 is a native binary. npm wins lockfile at 15 ms by about 0.25s, which is near noise.
+- **Clean installs are 1.5x faster than pnpm 11 at 15 ms, and 1.3x at 50 ms.** Against npm the gap
+  is 2.3x at 15 ms and 4.1x at 50 ms.
+- **pnpm 12's cold installs are slow on macOS** because it writes every file twice. See
+  [pnpm-benchmark-replication.md](pnpm-benchmark-replication.md).
+- **The default matches copy on installs that download,** and is about 2.5x faster on warm-cache
   installs. The central store costs nothing extra.
-- **fyn beats pnpm 12 on every row but repeat.** pnpm 12's cold installs are slow on macOS because
-  it writes every file twice. Repeat is startup, and pnpm 12 is a native binary.
 - **Noise.** A second sample of the same build differed by 0.1-0.4s per row, so treat single
   differences under about 0.3s as noise.
-- The store-protocol, validation and messaging changes below came after this table. A spot check
-  after them showed clean and lockfile flat within noise.
+- Raw results: `.temp/pnpm-bench/local-results-{15,50}ms-v15-683296f4.json`.
 
 ### Linux
 

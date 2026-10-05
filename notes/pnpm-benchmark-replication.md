@@ -25,6 +25,9 @@ install here at 15 ms. fyn's current numbers, which beat pnpm 12 on every row bu
 
 ## Results
 
+These are the 2026-09-24 runs. A full rerun on 2026-10-04, with the latest fyn and newer npm and
+pnpm, is in [fyn-install-perf.md](fyn-install-perf.md). pnpm 12's cold installs were still slow there.
+
 Times in seconds. Most cells are one sample. A second full run at 50 ms matched the first within
 about 5%, except pnpm 12's clean install, which ranged 13.5-16.5s across three runs.
 
