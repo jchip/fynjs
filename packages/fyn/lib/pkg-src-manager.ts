@@ -10,10 +10,17 @@
 import Promise from "aveazul";
 import { loadCacache, refreshCacheEntry, getCacheInfoWithRefreshTime, getContentPath } from "./cacache-util";
 import {
+  parseTrimmed,
   readTrimmedPackument,
+  touchTrimmedPackument,
   trimmedPackumentFile,
-  writeTrimmedPackument
+  writeTrimmedPackument,
+  type PackumentValidators
 } from "./util/trimmed-packument";
+import { getFsWorkerPool } from "./util/fs-worker-pool";
+import { registryGet, pickRegistryOpts, fetchPackument, type RegistryOpts } from "./util/registry-get";
+import type { TarSource } from "./util/fs-worker";
+import ssri from "ssri";
 import os from "os";
 import type Pacote from "pacote";
 import * as _ from "lodash-es";
@@ -63,6 +70,7 @@ let pacoteLoad: Promise<typeof Pacote> | undefined;
 const loadPacote = (): Promise<typeof Pacote> =>
   (pacoteLoad ??= Promise.resolve(import("pacote")).then(m => m.default));
 
+
 /** Options for PkgSrcManager constructor */
 interface PkgSrcManagerOptions {
   registry?: string;
@@ -88,6 +96,8 @@ interface FynForSrcManager {
   forceCache: boolean | string;
   remoteMetaDisabled: boolean | string;
   remoteTgzDisabled: boolean | string;
+  /** resolve as of this time, which needs full packuments for their `time` */
+  lockTime?: Date;
   /** `false` when the central store is off - reads of it guard on that first */
   central?: FynCentralInstance | false;
   copy: string[];
@@ -110,7 +120,7 @@ interface FynCentralInstance {
     integrity: string,
     tarStream: () => NativePromise<Readable>,
     deferIfBusy?: boolean,
-    tarFile?: () => NativePromise<string | undefined>
+    tarSource?: () => NativePromise<TarSource | undefined>
   ): NativePromise<boolean>;
 }
 
@@ -176,6 +186,13 @@ interface Deferred<T> {
   reject: (reason: unknown) => void;
 }
 
+/** A cached packument, and what the registry needs to revalidate it */
+interface CachedPackument extends PackumentValidators {
+  packument: Packument;
+  /** fyn's trimmed copy, rather than a full one an older fyn left in cacache */
+  trimmed: boolean;
+}
+
 /** Queue item for meta fetching */
 interface MetaQueueItem {
   type: "meta";
@@ -183,6 +200,7 @@ interface MetaQueueItem {
   item: FetchItem;
   packumentUrl: string;
   defer: Deferred<Packument>;
+  cached?: CachedPackument;
 }
 
 /** Meta fetch statistics */
@@ -382,6 +400,7 @@ class PkgSrcManager {
   /** trimmed packument copies, see util/trimmed-packument */
   private _packumentDir: string;
   private _lastMetaStatus: string;
+  private _registryOpts?: RegistryOpts;
   private _fetching?: string[];
   private _fetchingMsg?: string;
 
@@ -660,55 +679,45 @@ class PkgSrcManager {
       }
     };
 
-    //
-    // where fetch will ultimately occur and cached
-    // make-fetch-happen/index.js:106 (cachingFetch)
-    //   - missing cache ==> remoteFetch
-    //   - found cache   ==> conditionalFetch
-    // make-fetch-happen/index.js:143 (isStale check)
-    //
-    // make-fetch-happen/index.js:229 (conditionalFetch) ==> remoteFetch
-    // make-fetch-happen/index.js:256 (304 Not Modified handling) (just returncachedRes?)
-    //
-    // make-fetch-happen/index.js:309 (remoteFetch)
-    // make-fetch-happen/index.js:352 (caching)
-    //
-    const pacoteRequest = () => {
-      logger.debug(`pacote.packument ${qItem.packumentUrl}`);
-      const promise = loadPacote().then(pacote =>
-        pacote.packument(
-          pkgName,
-          // pacote 21 / npm-registry-fetch 19 read camelCase options; the old
-          // kebab-case names were silently ignored. preferOnline forces a server
-          // revalidation (cache mode "no-cache") for this refresh path.
-          this.getPacoteOpts({
-            fullMetadata: true,
-            fetchRetries: 3,
-            preferOnline: true,
-            memoize: false
-          })
-        )
-      );
-      return promise
-        .then(x => {
-          // Handle case where pacote returns null/undefined for missing packages
-          if (!x) {
-            const msg = `pacote returned null/undefined for packument of ${pkgName}`;
-            logger.error(chalk.yellow(msg));
-            throw Object.assign(new AggregateError([new Error(msg)], msg), { expected: true });
+    // The response stays gzipped on the main thread. An fs worker unzips, parses, and trims
+    // it, and writes the trimmed copy, which is the only copy fyn keeps.
+    const registryRequest = async (): NativePromise<Packument> => {
+      logger.debug(`fetch packument ${qItem.packumentUrl}`);
+      const { cached } = qItem;
+      const file = trimmedPackumentFile(this._packumentDir, qItem.packumentUrl);
+      try {
+        const job = {
+          url: qItem.packumentUrl,
+          file,
+          etag: cached?.etag,
+          lastModified: cached?.lastModified,
+          // abbreviated, unless lock time needs `time`, or the cached copy to revalidate is full
+          full: Boolean(this._fyn.lockTime) || Boolean(cached && !cached.corgi)
+        };
+        // an fs worker decodes, trims, and writes it, so the main thread only parses the trimmed JSON
+        const pool = getFsWorkerPool();
+        const res = await fetchPackument(
+          job,
+          (url, headers) => this.registryGet(url, headers),
+          pool ? saveJob => pool.run("savePackument", saveJob) : undefined
+        );
+        if (res.status === 304) {
+          if (cached.trimmed) {
+            touchTrimmedPackument(file);
+          } else {
+            writeTrimmedPackument(file, cached.packument, undefined, cached);
           }
-          // Handle different response formats from different pacote versions
-          if (x.readme) delete x.readme; // don't need this
-          if (x._contentLength) delete x._contentLength; // newer pacote adds this
-          updateItem(x._cached ? "cached" : "200");
-          return x;
-        })
-        .catch(err => {
-          const msg = `pacote failed fetching packument of ${pkgName}`;
-          logger.error(chalk.yellow(msg), chalk.red(err.message));
-          // a registry or network failure, so the CLI reports it without a stack trace
-          throw Object.assign(new AggregateError([err], msg), { expected: true });
-        });
+          updateItem("304");
+          return cached.packument;
+        }
+        updateItem("200");
+        return parseTrimmed(res.json)!.packument as Packument;
+      } catch (err) {
+        const msg = `failed fetching packument of ${pkgName}`;
+        logger.error(chalk.yellow(msg), chalk.red(err.message));
+        // a registry or network failure, so the CLI reports it without a stack trace
+        throw Object.assign(new AggregateError([err], msg), { expected: true });
+      }
     };
 
     this._metaStat.wait--;
@@ -716,7 +725,7 @@ class PkgSrcManager {
 
     this.updateFetchMetaStatus(false);
 
-    const promise = qItem.item.urlType ? this.fetchUrlSemverMeta(qItem.item) : pacoteRequest();
+    const promise = qItem.item.urlType ? this.fetchUrlSemverMeta(qItem.item) : Promise.resolve(registryRequest());
 
     return promise
       .then(x => {
@@ -736,17 +745,22 @@ class PkgSrcManager {
           qItem.defer.reject(Object.assign(new AggregateError([new Error(msg)], msg), { expected: true }));
           return;
         }
-        // Refresh cache timestamp after successful fetch
-        refreshCacheEntry(this._cacheDir, qItem.cacheKey).catch(() => {});
-        if (!qItem.item.urlType) {
-          writeTrimmedPackument(trimmedPackumentFile(this._packumentDir, qItem.packumentUrl), x);
-        }
         qItem.defer.resolve(x);
       })
       .catch(err => {
         this._metaStat.inTx--;
         qItem.defer.reject(err);
       });
+  }
+
+  /** the plain values of the pacote options, for util/registry-get */
+  get registryOpts(): RegistryOpts {
+    return (this._registryOpts ??= pickRegistryOpts(this._pacoteOpts as Record<string, unknown>));
+  }
+
+  /** GET from the registry, see util/registry-get */
+  registryGet(url: string, extraHeaders: Record<string, string>): NativePromise<any> {
+    return registryGet(url, extraHeaders, this.registryOpts);
   }
 
   hasMeta(item: FetchItem): boolean {
@@ -1063,19 +1077,29 @@ class PkgSrcManager {
     };
 
     const readMemoizedPackument = async () => {
-      const memoized = await loadBestCachedPackument(false);
-      if (!(memoized && memoized.data)) {
+      const memoized = (await readTrimmedPackument(trimmedFile)) || (await loadBestCachedPackument(false));
+      if (!(memoized && (memoized.packument || memoized.data))) {
         return undefined;
       }
       logger.debug(`using memoized packument cache for '${pkgName}'`);
       cacheMemoized = true;
       this._metaStat.wait--;
-      return JSON.parse(memoized.data.toString());
+      return memoized.packument || JSON.parse(memoized.data.toString());
     };
 
     let fetchAttempted = false;
     let foundCache;
     let foundPackument;
+
+    // the cached packument, with the validators its cache entry kept
+    const revalidate = (packument: Packument): CachedPackument => {
+      if (foundCache.packument) {
+        const { etag, lastModified, corgi } = foundCache;
+        return { packument, trimmed: true, etag, lastModified, corgi };
+      }
+      const resHeaders = foundCache.metadata?.resHeaders || {};
+      return { packument, trimmed: false, etag: resHeaders.etag, lastModified: resHeaders["last-modified"] };
+    };
 
     const queueMetaFetchRequest = (cached?: Packument): Packument | Promise<Packument> => {
       fetchAttempted = true;
@@ -1101,7 +1125,8 @@ class PkgSrcManager {
         cacheKey,
         item,
         packumentUrl,
-        defer: Promise.defer<Packument>()
+        defer: Promise.defer<Packument>(),
+        cached: cached && revalidate(cached)
       };
 
       this._netQ.addItem(netQItem);
@@ -1152,9 +1177,10 @@ class PkgSrcManager {
       // Skip local cacache + meta-mem so this queues a fresh registry fetch.
       cacheLookup = Promise.resolve();
     } else {
-      // the trimmed copy, else the full cacache entry
-      cacheLookup = readTrimmedPackument(trimmedFile).then(
-        trimmed => trimmed || loadBestCachedPackument(true)
+      // the trimmed copy, else the full cacache entry. Lock time needs `time`, which an
+      // abbreviated copy doesn't have.
+      cacheLookup = readTrimmedPackument(trimmedFile).then(trimmed =>
+        trimmed && !(trimmed.corgi && this._fyn.lockTime) ? trimmed : loadBestCachedPackument(true)
       );
     }
 
@@ -1388,13 +1414,26 @@ class PkgSrcManager {
   /**
    * A package not in the central store yet comes back as a store job, so the extractor writes
    * the store, not the download slot this runs in.
+   *
+   * @param data - the tarball's bytes, when it was downloaded for the central store and not
+   *   into cacache
    */
-  async getCentralPackage(integrity: string | undefined, pkgInfo: PkgVersionInfo): NativePromise<FetchedTarball> {
+  async getCentralPackage(
+    integrity: string | undefined,
+    pkgInfo: PkgVersionInfo,
+    data?: Buffer
+  ): NativePromise<FetchedTarball> {
     const { central, copy } = this._fyn;
 
     const tarId = this.tarballFetchId(pkgInfo);
 
     const tarStream = async (): NativePromise<Readable> => {
+      if (data) {
+        if (!ssri.checkData(data, integrity)) {
+          throw Object.assign(new Error(`integrity check failed for ${tarId}`), { code: "EINTEGRITY" });
+        }
+        return Readable.from([data]);
+      }
       return integrity && (await (await loadCacache()).get.hasContent(this._cacheDir, integrity))
         ? this.cacacheTarballStream(integrity)
         : this.pacoteTarballStream(tarId, pkgInfo, integrity);
@@ -1433,13 +1472,14 @@ class PkgSrcManager {
         }
 
         if (!hasCentral) {
-          const tarFile = async (): NativePromise<string | undefined> => {
+          const tarSource = async (): NativePromise<TarSource | undefined> => {
+            if (data) return { data };
             const content = await (await loadCacache()).get.hasContent(this._cacheDir, integrity);
-            return content ? getContentPath(this._cacheDir, content.sri) : undefined;
+            return content ? { file: getContentPath(this._cacheDir, content.sri) } : undefined;
           };
           return {
             integrity,
-            store: deferIfBusy => central.storeTarStream(tarId, integrity, tarStream, deferIfBusy, tarFile)
+            store: deferIfBusy => central.storeTarStream(tarId, integrity, tarStream, deferIfBusy, tarSource)
           };
         }
 
@@ -1455,7 +1495,18 @@ class PkgSrcManager {
     const pkgId = this.tarballFetchId(pkgInfo);
     const integrity = this.getIntegrity(pkgInfo);
 
-    const doFetch = (): Promise<FetchedTarball> => {
+    // A package going into the central store has the store as its cache: the tarball comes
+    // down as bytes for an fs worker to check and untar, and skips cacache. Packages the store
+    // won't take still go through cacache.
+    const tarballUrl = _.get(pkgInfo, "dist.tarball") as string | undefined;
+    const central = this._fyn.central as FynCentralInstance | undefined;
+    const centralEligible = Boolean(integrity && tarballUrl && central && !tarballUrl.startsWith(MARK_URL_SPEC));
+    const copied = (): boolean => {
+      const { copy } = this._fyn;
+      return copy.indexOf(pkgInfo.name) >= 0 || copy.indexOf(`${pkgInfo.name}@${pkgInfo.version}`) >= 0;
+    };
+
+    const doFetch = (fetchForCentral: boolean): Promise<FetchedTarball> => {
       const fetchStartTime = Date.now();
 
       if (!this._fetching) {
@@ -1467,14 +1518,17 @@ class PkgSrcManager {
 
       logger.updateItem(FETCH_PACKAGE, `${this._fetching.length} ${this._fetchingMsg}`);
 
-      return this.pacotePrefetch(pkgId, pkgInfo, integrity).then(() => {
+      const fetched = fetchForCentral
+        ? Promise.resolve(this.registryGet(tarballUrl!, {})).then(res => res.buffer() as NativePromise<Buffer>)
+        : this.pacotePrefetch(pkgId, pkgInfo, integrity);
+      return fetched.then((data: Buffer | void) => {
         const status = chalk.cyan(`200`);
         const time = logFormat.time(Date.now() - fetchStartTime);
         const ix = this._fetching!.indexOf(pkgId);
         this._fetching!.splice(ix, 1);
         this._fetchingMsg = `${status} ${time} ${chalk.red.bgGreen(pkgInfo.name)}`;
         logger.updateItem(FETCH_PACKAGE, `${this._fetching!.length} ${this._fetchingMsg}`);
-        return this.getCentralPackage(integrity, pkgInfo);
+        return this.getCentralPackage(integrity, pkgInfo, data || undefined);
       });
     };
 
@@ -1482,19 +1536,29 @@ class PkgSrcManager {
     // - use stream from cached tarball if exist
     // - else fetch from network
 
-    const promise: Promise<FetchedTarball> = Promise.resolve(loadCacache())
-      .then(cacache => cacache.get.hasContent(this._cacheDir, integrity))
-      .catch(() => false)
-      .then((content: unknown) => {
-        if (content) {
-          return this.getCentralPackage(integrity, pkgInfo);
-        }
+    const fetchRemote = (fetchForCentral: boolean): Promise<FetchedTarball> => {
+      const rd = this._fyn.remoteTgzDisabled;
+      if (rd) {
+        throw new Error(`option ${rd} has disabled retrieving tarball from remote`);
+      }
+      return doFetch(fetchForCentral);
+    };
 
-        const rd = this._fyn.remoteTgzDisabled;
-        if (rd) {
-          throw new Error(`option ${rd} has disabled retrieving tarball from remote`);
+    const promise: Promise<FetchedTarball> = Promise.resolve()
+      .then(async () => {
+        // a package the store has, or will take, skips cacache: the store is its cache. Offline,
+        // a tarball an older fyn left in cacache can still fill the store.
+        if (centralEligible) {
+          if (await central!.has(integrity)) return this.getCentralPackage(integrity, pkgInfo);
+          if (!this._fyn.remoteTgzDisabled && !copied() && (await central!.allow(integrity))) {
+            return fetchRemote(true);
+          }
         }
-        return doFetch();
+        const content = await Promise.resolve(loadCacache())
+          .then(cacache => cacache.get.hasContent(this._cacheDir, integrity))
+          .catch(() => false);
+        if (content) return this.getCentralPackage(integrity, pkgInfo);
+        return fetchRemote(false);
       });
 
     return {

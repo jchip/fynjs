@@ -15,6 +15,7 @@ import * as xaa from "xaa";
 import type { Readable } from "stream";
 import { treeCollector, type FileInfo, type TreeNode, type UntarTree } from "./util/untar-tree";
 import { getFsWorkerPool } from "./util/fs-worker-pool";
+import type { TarSource } from "./util/fs-worker";
 import { NO_LINK_CODES } from "./util/place-files";
 
 const { missPipe } = fyntil;
@@ -586,13 +587,14 @@ class FynCentral {
    * atomic, so other installs see the entry complete or not at all. If another install renamed
    * its copy in first, that copy has the same integrity, so this one is dropped for it.
    *
-   * A tarball that's a file on disk is untarred by an fs worker, when fyn has them built.
+   * A tarball that's a file on disk, or already in memory, is untarred by an fs worker, when
+   * fyn has them built.
    */
   async _storeTarStream(
     info: PackageInfo,
     _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>,
     integrity: string,
-    tarFile?: () => Promise<string | undefined>
+    tarSource?: () => Promise<TarSource | undefined>
   ): Promise<void> {
     let stream = _stream;
     const tmp = `${info.contentPath}.tmp-${uniqueSuffix()}`;
@@ -600,11 +602,11 @@ class FynCentral {
     try {
       const targetDir = Path.join(tmp, "package");
       await Fs.$.mkdirp(targetDir);
-      const pool = tarFile && getFsWorkerPool();
-      const file = pool && (await tarFile!());
+      const pool = tarSource && getFsWorkerPool();
+      const source = pool && (await tarSource!());
       let untarred: UntarTree;
-      if (file) {
-        untarred = await pool!.run("untar", { file, integrity, targetDir, strip: 1 });
+      if (source) {
+        untarred = await pool!.run("untar", { ...source, integrity, targetDir, strip: 1 });
       } else {
         if (typeof stream === "function") {
           stream = stream();
@@ -676,8 +678,8 @@ class FynCentral {
    * live marker from another install returns false without reading the stream, so the caller
    * can do its other packages first and come back to this one.
    *
-   * @param tarFile - resolves the tarball's file on disk, when it has one, so an fs worker
-   *   can untar it instead of the stream
+   * @param tarSource - resolves the tarball's file on disk or its bytes, when it has either, so
+   *   an fs worker can untar it instead of the stream
    * @returns false when deferred, true when the package is in the store
    */
   async storeTarStream(
@@ -685,7 +687,7 @@ class FynCentral {
     integrity: string,
     stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>,
     deferIfBusy = false,
-    tarFile?: () => Promise<string | undefined>
+    tarSource?: () => Promise<TarSource | undefined>
   ): Promise<boolean> {
     let currentStream: typeof stream | undefined = stream;
     let marker: string | undefined;
@@ -716,7 +718,7 @@ class FynCentral {
       }
 
       logger.debug("storing tar to central store", pkgId, integrity);
-      await this._storeTarStream(info, currentStream, integrity, tarFile);
+      await this._storeTarStream(info, currentStream, integrity, tarSource);
       currentStream = undefined;
       this._map.set(integrity, info);
       logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);

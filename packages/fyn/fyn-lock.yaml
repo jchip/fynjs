@@ -21,6 +21,7 @@ $pkg:
   item-queue: ../item-queue
   lockfile: ^1.0.4
   lodash-es: ^4.18.1
+  make-fetch-happen: ^16.0.1
   minimatch: ^10.2.6
   '@fynjs/cli-args': ../cli-args
   '@fynjs/fetch': ../fetch
@@ -2312,8 +2313,9 @@ magicast:
 make-fetch-happen:
  _latest: 16.0.1
  _:
-  ^16.0.0: 16.0.1
+  '^16.0.0,^16.0.1': 16.0.1
  16.0.1:
+  top: 1
   $: sha512-uUv1yxHzaKVVEPfcFeGSNov/Cehjv08ovlY8ImTljgL7Q+SiA0dAYLQ6SYVa2kkKqNj4Y3aZEI7xv2teadie0A==
   _: 'https://registry.npmjs.org/make-fetch-happen/-/make-fetch-happen-16.0.1.tgz'
   dependencies:

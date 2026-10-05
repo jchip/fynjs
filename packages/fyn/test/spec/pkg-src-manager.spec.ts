@@ -3,6 +3,7 @@ import Fs from "fs";
 import Http from "http";
 import * as Yaml from "js-yaml";
 import Path from "path";
+import Zlib from "zlib";
 import cacache from "cacache";
 import { verify } from "run-verify";
 import Fyn from "../../lib/fyn";
@@ -15,6 +16,15 @@ import {
   writeTrimmedPackument,
 } from "../../lib/util/trimmed-packument";
 import { MARK_URL_SPEC } from "../../lib/constants";
+import { packumentHeaders } from "../../lib/util/registry-get";
+
+/** a make-fetch-happen response with a body and headers */
+const fakeResponse = (body: Buffer, headers: Record<string, string> = {}, status = 200) => ({
+  status,
+  headers: { get: (name: string) => headers[name.toLowerCase()] ?? null },
+  buffer: () => Promise.resolve(body),
+  body: { resume: () => undefined },
+});
 
 // vitest runs spec files in parallel, and `Date.now()` alone collided - two files starting in
 // the same millisecond shared this directory and deleted each other's fixtures (ENOTEMPTY on
@@ -294,78 +304,22 @@ describe("pkg-src-manager", function () {
     expect(meta["dist-tags"].latest).toBe("2.0.0");
   });
 
-  it("requests packument with camelCase pacote v21 options", () => {
-    const pacote = require("pacote");
-    const origPackument = pacote.packument;
-    let captured;
-    pacote.packument = (name, opts) => {
-      captured = opts;
-      return Promise.resolve({
-        name,
-        versions: { "1.0.0": { name, version: "1.0.0" } },
-        "dist-tags": { latest: "1.0.0" },
-      });
-    };
-
-    const fyn = {
-      concurrency: 1,
-      _fynCacheDir: fynCacheDir,
-      _options: {},
-      isFynpo: false,
-      forceCache: false,
-      remoteMetaDisabled: false,
-      remoteTgzDisabled: false,
-      copy: [],
-    };
+  it("fetches a packument with no make-fetch-happen cache", async () => {
     const mgr = new PkgSrcManager({
-      registry: "http://localhost/",
+      registry: `http://localhost:${server.info.port}`,
       fynCacheDir,
-      fyn,
+      fyn: { concurrency: 1, _options: {} },
     });
-
-    return verify({
-      timeout: 500,
-      cleanup: () => {
-        pacote.packument = origPackument;
-      },
-    })
-      .callbackStep<any>((next) => {
-        mgr.netRetrieveMeta({
-          item: { name: "mod-a" },
-          packumentUrl: mgr.makePackumentUrl("mod-a"),
-          cacheKey: "test-cache-key",
-          defer: {
-            resolve: (value) => next(null, value),
-            reject: (err) => next(err),
-          },
-        });
-      })
-      .step((result) => {
-        expect(result["dist-tags"].latest).toBe("1.0.0");
-        // the v21-correct camelCase options must reach pacote
-        expect(captured.fullMetadata).toBe(true);
-        expect(captured.fetchRetries).toBe(3);
-        expect(captured.preferOnline).toBe(true);
-        // the old kebab-case / nonexistent names must be gone
-        expect(captured).not.toHaveProperty("full-metadata");
-        expect(captured).not.toHaveProperty("fetch-retries");
-        expect(captured).not.toHaveProperty("cache-policy");
-        expect(captured).not.toHaveProperty("cache-key");
-      });
+    const res = await mgr.registryGet(mgr.makePackumentUrl("mod-a"), packumentHeaders());
+    expect(res.status).toBe(200);
+    expect(JSON.parse((await res.buffer()).toString())["dist-tags"]).toBeDefined();
+    expect(res.headers.get("etag")).toMatch(/^"/);
+    expect(Fs.existsSync(Path.join(fynCacheDir, "index-v5"))).toBe(false);
   });
 
-  it("refreshes fetched packument cache timestamps with the manager cache directory", () => {
-    const pacote = require("pacote");
-    const origPackument = pacote.packument;
-    pacote.packument = (name) =>
-      Promise.resolve({
-        name,
-        versions: { "1.0.0": { name, version: "1.0.0" } },
-        "dist-tags": { latest: "1.0.0" },
-      });
-
+  it("revalidates a stale trimmed copy with its etag", () => {
     const mgr = new PkgSrcManager({
-      registry: "http://localhost/",
+      registry: `http://localhost:${server.info.port}`,
       fynCacheDir,
       fyn: {
         concurrency: 1,
@@ -377,35 +331,57 @@ describe("pkg-src-manager", function () {
         copy: [],
       },
     });
-    const cacheKey = "test-cache-key";
-    let bucket;
-    const staleTime = new Date(Date.now() - 26 * 60 * 60 * 1000);
+    const file = trimmedPackumentFile(Path.join(fynCacheDir, "fyn-packuments"), mgr.makePackumentUrl("mod-a"));
+    const packument = { name: "mod-a", versions: { "9.0.0": {} }, "dist-tags": { latest: "9.0.0" } };
+    const staleTime = Date.now() - 26 * 60 * 60 * 1000;
 
-    return verify({
-      timeout: 500,
-      cleanup: () => {
-        pacote.packument = origPackument;
+    return verify({ timeout: 2000 })
+      .step(() => writeTrimmedPackument(file, packument, staleTime, { etag: '"cached-etag"' }))
+      .step(() => mgr.fetchMeta({ name: "mod-a", semver: "" }))
+      .step((meta) => {
+        // the mock registry answers 304 to any etag, so the cached copy comes back
+        expect(meta["dist-tags"].latest).toBe("9.0.0");
+      })
+      .step(() => new Promise((resolve) => setTimeout(resolve, 50)))
+      .step(() => readTrimmedPackument(file))
+      .step((read) => {
+        expect(read.etag).toBe('"cached-etag"');
+        expect(read.refreshTime).toBeGreaterThan(staleTime + 60 * 1000);
+      });
+  });
+
+  it("revalidates a stale full copy from older fyn, and keeps it trimmed", () => {
+    const mgr = new PkgSrcManager({
+      registry: `http://localhost:${server.info.port}`,
+      fynCacheDir,
+      fyn: {
+        concurrency: 1,
+        _options: {},
+        isFynpo: false,
+        forceCache: false,
+        remoteMetaDisabled: false,
+        remoteTgzDisabled: false,
+        copy: [],
       },
-    })
-      .step(() => cacache.put(fynCacheDir, cacheKey, "cached"))
-      .step(() => {
-        bucket = getBucketPath(fynCacheDir, cacheKey);
-        Fs.utimesSync(bucket, staleTime, staleTime);
-      })
-      .callbackStep((next) => {
-        mgr.netRetrieveMeta({
-          item: { name: "mod-a" },
-          packumentUrl: mgr.makePackumentUrl("mod-a"),
-          cacheKey,
-          defer: {
-            resolve: (value) => next(null, value),
-            reject: (err) => next(err),
-          },
-        });
-      })
-      .step(() => new Promise((resolve) => setTimeout(resolve, 20)))
-      .step(() => {
-        expect(Fs.statSync(bucket).mtimeMs).toBeGreaterThan(staleTime.getTime());
+    });
+    const packumentUrl = mgr.makePackumentUrl("mod-a");
+    const cacheKey = `make-fetch-happen:request-cache:${packumentUrl}`;
+    const file = trimmedPackumentFile(Path.join(fynCacheDir, "fyn-packuments"), packumentUrl);
+    const packument = { name: "mod-a", versions: { "9.0.0": {} }, "dist-tags": { latest: "9.0.0" } };
+    const staleTime = new Date(Date.now() - 26 * 60 * 60 * 1000);
+    const metadata = { resHeaders: { etag: '"full-etag"' } };
+
+    return verify({ timeout: 2000 })
+      .step(() => cacache.put(fynCacheDir, cacheKey, JSON.stringify(packument), { metadata }))
+      .step(() => Fs.utimesSync(getBucketPath(fynCacheDir, cacheKey), staleTime, staleTime))
+      .step(() => mgr.fetchMeta({ name: "mod-a", semver: "" }))
+      .step((meta) => expect(meta["dist-tags"].latest).toBe("9.0.0"))
+      .step(() => new Promise((resolve) => setTimeout(resolve, 50)))
+      .step(() => readTrimmedPackument(file))
+      .step((read) => {
+        expect(read.packument["dist-tags"].latest).toBe("9.0.0");
+        expect(read.etag).toBe('"full-etag"');
+        expect(read.refreshTime).toBeGreaterThan(staleTime.getTime() + 60 * 1000);
       });
   });
 
@@ -428,17 +404,18 @@ describe("pkg-src-manager", function () {
     const trimmedFile = (mgr) =>
       trimmedPackumentFile(Path.join(fynCacheDir, "fyn-packuments"), mgr.makePackumentUrl("mod-a"));
 
-    it("writes a trimmed copy after a registry fetch", () => {
-      const pacote = require("pacote");
-      const origPackument = pacote.packument;
-      pacote.packument = () => Promise.resolve(JSON.parse(JSON.stringify(fullPackument)));
+    it("writes a trimmed copy with its etag after a registry fetch", () => {
       const mgr = new PkgSrcManager({
         registry: "http://localhost/",
         fynCacheDir,
         fyn: { ...offlineFyn(), remoteMetaDisabled: false },
       });
+      mgr.registryGet = () => Promise.resolve(fakeResponse(Zlib.gzipSync(JSON.stringify(fullPackument)), {
+        "content-encoding": "gzip",
+        etag: '"e1"',
+      }));
 
-      return verify({ timeout: 2000, cleanup: () => (pacote.packument = origPackument) })
+      return verify({ timeout: 2000 })
         .callbackStep((next) => {
           mgr.netRetrieveMeta({
             item: { name: "mod-a" },
@@ -453,6 +430,64 @@ describe("pkg-src-manager", function () {
           expect(read.packument["dist-tags"].latest).toBe("2.0.0");
           expect(read.packument.readme).toBe(undefined);
           expect(read.packument.versions["2.0.0"]).toEqual({});
+          expect(read.etag).toBe('"e1"');
+        });
+    });
+
+    const netMeta = (mgr) =>
+      new Promise((resolve, reject) => {
+        mgr.netRetrieveMeta({
+          item: { name: "mod-a" },
+          packumentUrl: mgr.makePackumentUrl("mod-a"),
+          cacheKey: "test-cache-key",
+          defer: { resolve, reject },
+        });
+      });
+
+    it("uses abbreviated packuments by default", () => {
+      const mgr = new PkgSrcManager({
+        registry: "http://localhost/",
+        fynCacheDir,
+        fyn: { ...offlineFyn(), remoteMetaDisabled: false },
+      });
+      const headers: Record<string, string>[] = [];
+      mgr.registryGet = (_url, h) => {
+        headers.push(h);
+        return Promise.resolve(fakeResponse(Buffer.from(JSON.stringify(fullPackument)), {
+          "content-type": "application/vnd.npm.install-v1+json",
+        }));
+      };
+
+      return verify({ timeout: 2000 })
+        .step(() => netMeta(mgr))
+        .step(() => {
+          expect(headers).toHaveLength(1);
+          expect(headers[0].accept).toBe(packumentHeaders().accept);
+        });
+    });
+
+    it("asks for full packuments under lock time and skips an abbreviated cached copy", () => {
+      const mgr = new PkgSrcManager({
+        registry: "http://localhost/",
+        fynCacheDir,
+        fyn: { ...offlineFyn(), remoteMetaDisabled: false, lockTime: new Date() },
+      });
+      const headers: Record<string, string>[] = [];
+      mgr.registryGet = (_url, h) => {
+        headers.push(h);
+        return Promise.resolve(fakeResponse(Buffer.from(JSON.stringify(fullPackument)), {
+          "content-type": "application/json",
+        }));
+      };
+
+      return verify({ timeout: 2000 })
+        .step(() => writeTrimmedPackument(trimmedFile(mgr), fullPackument, undefined, { etag: '"c"', corgi: true }))
+        .step(() => mgr.fetchMeta({ name: "mod-a", semver: "" }))
+        .step((meta) => {
+          expect(meta["dist-tags"].latest).toBe("2.0.0");
+          expect(headers).toHaveLength(1);
+          expect(headers[0].accept).toBe("application/json");
+          expect(headers[0]["if-none-match"]).toBeUndefined();
         });
     });
 
@@ -518,9 +553,6 @@ describe("pkg-src-manager", function () {
   });
 
   it("settles the in-flight meta count after a failed packument fetch", () => {
-    const pacote = require("pacote");
-    const origPackument = pacote.packument;
-    pacote.packument = () => Promise.reject(new Error("registry unavailable"));
     const mgr = new PkgSrcManager({
       registry: "http://localhost/",
       fynCacheDir,
@@ -535,12 +567,9 @@ describe("pkg-src-manager", function () {
       },
     });
 
-    return verify({
-      timeout: 500,
-      cleanup: () => {
-        pacote.packument = origPackument;
-      },
-    })
+    mgr.registryGet = () => Promise.reject(new Error("registry unavailable"));
+
+    return verify({ timeout: 500 })
       .expectErrorInstanceMatch(Error)
       .callbackStep((next) => {
         mgr.netRetrieveMeta({
@@ -779,6 +808,109 @@ describe("pkg-src-manager", function () {
     } finally {
       childProcess.execFileSync = origExecFileSync;
     }
+  });
+
+  describe("fetchTarball for the central store", () => {
+    const makeMgr = (central) =>
+      new PkgSrcManager({
+        registry: `http://localhost:${server.info.port}`,
+        fynCacheDir,
+        fyn: {
+          concurrency: 1,
+          _fynCacheDir: fynCacheDir,
+          _options: {},
+          isFynpo: false,
+          forceCache: false,
+          remoteMetaDisabled: false,
+          remoteTgzDisabled: false,
+          copy: [],
+          central,
+        },
+      });
+    const versionInfo = async (mgr) => {
+      const meta = await mgr.fetchMeta({ name: "mod-a", semver: "" });
+      return meta.versions[Object.keys(meta.versions)[0]];
+    };
+
+    it("reuses a central store package without downloading it", () => {
+      const central = { has: async () => true, allow: async () => true, validate: async () => true };
+      const mgr = makeMgr(central);
+      const calls: string[] = [];
+      const registryGet = mgr.registryGet.bind(mgr);
+      // packuments still use it, so only record tarball downloads
+      mgr.registryGet = (url, headers) => {
+        if (url.endsWith(".tgz")) calls.push(url);
+        return registryGet(url, headers);
+      };
+
+      let info;
+      return verify({ timeout: 2000 })
+        .step(() => versionInfo(mgr))
+        .step((vi) => {
+          info = vi;
+          return mgr.fetchTarball(info);
+        })
+        .step((result) => {
+          expect(result).toBe(mgr.getIntegrity(info));
+          expect(calls).toEqual([]);
+        });
+    });
+
+    it("downloads a tarball as bytes for the central store, skipping cacache", () => {
+      let sourced: any;
+      let streamed: Buffer;
+      const central = {
+        has: async () => false,
+        allow: async () => true,
+        validate: async () => true,
+        storeTarStream: async (_id, _integrity, tarStream, _defer, tarSource) => {
+          sourced = await tarSource();
+          const chunks: Buffer[] = [];
+          for await (const c of await tarStream()) chunks.push(c as Buffer);
+          streamed = Buffer.concat(chunks);
+          return true;
+        },
+      };
+      const mgr = makeMgr(central);
+
+      let info;
+      return verify({ timeout: 5000 })
+        .step(() => versionInfo(mgr))
+        .step((vi) => {
+          info = vi;
+          return mgr.fetchTarball(info);
+        })
+        .step((job) => {
+          expect(job.integrity).toBe(mgr.getIntegrity(info));
+          return job.store(false);
+        })
+        .step(() => {
+          expect(Buffer.isBuffer(sourced.data)).toBe(true);
+          expect(sourced.data.length).toBeGreaterThan(0);
+          expect(streamed.equals(sourced.data)).toBe(true);
+          expect(Fs.existsSync(Path.join(fynCacheDir, "content-v2"))).toBe(false);
+        });
+    });
+
+    it("keeps a package the store won't take in cacache", () => {
+      const central = { has: async () => false, allow: async () => false, validate: async () => true };
+      const mgr = makeMgr(central);
+      const calls: string[] = [];
+      const registryGet = mgr.registryGet.bind(mgr);
+      mgr.registryGet = (url, headers) => {
+        if (url.endsWith(".tgz")) calls.push(url);
+        return registryGet(url, headers);
+      };
+
+      return verify({ timeout: 5000 })
+        .step(() => versionInfo(mgr))
+        .step((info) => mgr.fetchTarball(info))
+        .step((stream) => new Promise((resolve) => stream.on("end", resolve).resume()))
+        .step(() => {
+          expect(calls).toEqual([]);
+          expect(Fs.existsSync(Path.join(fynCacheDir, "content-v2"))).toBe(true);
+        });
+    });
   });
 
   describe("isPinnedGitCommit", () => {

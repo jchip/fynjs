@@ -144,26 +144,23 @@ const arboristDebugPlugin = {
 /**
  * agent-base keeps `protocol` in state its constructor creates after `super()`, so the
  * `this.protocol = "http:"` that http.Agent sets is dropped. Every read of `agent.protocol`, which
- * node does on each request, then guesses from `new Error().stack`. @npmcli/agent knows the
- * protocol when it creates the agent, so set it there.
+ * node does on each request, then guesses from `new Error().stack`. @npmcli/agent's getAgent
+ * caches one agent per protocol, so set it there.
  */
 const agentProtocolPlugin = {
   name: "agent-protocol",
   transform(code, id) {
-    if (!id.replace(/\\/g, "/").endsWith("/@npmcli/agent/lib/agents.js")) {
+    if (!id.replace(/\\/g, "/").endsWith("/@npmcli/agent/lib/index.js")) {
       return null;
     }
 
-    const anchor = "super(normalizedOptions)\n";
+    const anchor = "const newAgent = new Agent(normalizedOptions)\n";
     if (!code.includes(anchor)) {
       // fail loudly rather than ship a bundle that's quietly slow again
-      throw new Error("agent-protocol: super(normalizedOptions) not found in @npmcli/agent/lib/agents.js");
+      throw new Error("agent-protocol: new Agent(normalizedOptions) not found in @npmcli/agent/lib/index.js");
     }
 
-    const set =
-      "if (typeof normalizedOptions.secureEndpoint === 'boolean') " +
-      "this.protocol = normalizedOptions.secureEndpoint ? 'https:' : 'http:'\n";
-    return { code: code.replace(anchor, anchor + set) };
+    return { code: code.replace(anchor, anchor + "newAgent.protocol = url.protocol\n") };
   }
 };
 

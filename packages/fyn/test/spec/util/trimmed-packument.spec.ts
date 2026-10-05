@@ -2,13 +2,16 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import Fs from "fs";
 import Os from "os";
 import Path from "path";
+import Zlib from "zlib";
 import { verify } from "run-verify";
 import {
   TRIMMED_FORMAT,
   trimPackument,
   trimmedPackumentFile,
   readTrimmedPackument,
-  writeTrimmedPackument
+  writeTrimmedPackument,
+  savePackument,
+  parseTrimmed
 } from "../../../lib/util/trimmed-packument";
 
 const packument = {
@@ -105,5 +108,27 @@ describe("trimmed-packument", function () {
       .step(() => Fs.writeFileSync(file, JSON.stringify({ $format: TRIMMED_FORMAT + 1, versions: {} })))
       .step(() => readTrimmedPackument(file))
       .step(read => expect(read).toBe(undefined));
+  });
+
+  it("decodes a gzip, brotli, or plain response, then writes it trimmed with its validators", () => {
+    const json = JSON.stringify(packument);
+    const bodies = [
+      { data: Zlib.gzipSync(json), encoding: "gzip" },
+      { data: Zlib.brotliCompressSync(json), encoding: "br" },
+      { data: Buffer.from(json), encoding: undefined }
+    ];
+    return verify().step(async () => {
+      for (const body of bodies) {
+        const file = trimmedPackumentFile(dir, `http://r/${body.encoding}`);
+        const saved: any = await savePackument({ ...body, file, etag: '"e"', lastModified: "lm" });
+        const { json } = saved;
+        const { $format, ...expected } = trimPackument(packument);
+        expect(parseTrimmed(json)).toEqual({ packument: expected, etag: '"e"', lastModified: "lm" });
+        const read = await readTrimmedPackument(file);
+        expect(read.packument).toEqual(expected);
+        expect(read.etag).toBe('"e"');
+        expect(read.lastModified).toBe("lm");
+      }
+    });
   });
 });
