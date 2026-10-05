@@ -13,7 +13,14 @@ export type CloneFiles = (
   files: string[],
   hardlink?: boolean,
   copyFallback?: boolean
-) => Promise<unknown>;
+) => Promise<CloneStats>;
+
+/** how many files cloneFiles placed each way */
+export interface CloneStats {
+  cloned: number;
+  linked: number;
+  copied: number;
+}
 
 /**
  * Clone the whole dir `src` to `dest` in one call. `dest` must not exist. Resolves false where

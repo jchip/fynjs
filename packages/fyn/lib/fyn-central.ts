@@ -122,6 +122,11 @@ class FynCentral {
   private _copyFallback: boolean;
   /** cleared on the first dir clone the filesystem can't do, so later packages skip it */
   private _cloneDirs = true;
+  /**
+   * cleared when a package's files hardlink but none clone, so later packages hardlink in the
+   * fs workers. That's faster than @fynjs/reflink on a filesystem that can't clone (ext4).
+   */
+  private _cloneFiles = true;
 
   constructor({
     centralDir = ".fyn/_central-storage",
@@ -392,7 +397,7 @@ class FynCentral {
       // @fynjs/reflink clones, else hardlinks unless hardlink is off, else copies unless
       // copyFallback is off. package.json is never linked, since fyn rewrites it in place. With
       // reflink off, @fynjs/reflink is skipped, since it always tries a clone first.
-      const reflinkCloneFiles = this._reflink && (await loadReflinkCloneFiles());
+      const reflinkCloneFiles = this._reflink && this._cloneFiles && (await loadReflinkCloneFiles());
       const copy = this._copyFallback;
       const mkdirs = async (): Promise<void> => {
         for (const dir of list.dirs) {
@@ -403,11 +408,15 @@ class FynCentral {
         await ensurePrepared();
         await mkdirs();
         const others = list.files.filter(f => f !== "package.json");
-        await Promise.all([
+        const [stats] = await Promise.all([
           reflinkCloneFiles(srcDir, destDir, others, this._hardlink, copy),
           others.length < list.files.length &&
             reflinkCloneFiles(srcDir, destDir, ["package.json"], false, copy)
         ]);
+        if (this._cloneFiles && stats.cloned === 0 && stats.linked > 0) {
+          this._cloneFiles = false;
+          logger.debug(`fyn-central: can't clone files from ${this._centralDir}, hardlinking instead`);
+        }
         return;
       }
 

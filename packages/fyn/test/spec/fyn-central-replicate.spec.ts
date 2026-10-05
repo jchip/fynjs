@@ -199,6 +199,31 @@ describe("fyn-central replicate: reflink call", () => {
     expect(fake).toHaveBeenCalledTimes(2);
     for (const call of fake.mock.calls as unknown[][]) expect(call[4]).toBe(false);
   });
+
+  // what a filesystem without copy-on-write (ext4) reports
+  it("hardlinks without reflink once a package's files link but none clone", async () => {
+    const fake = vi.fn(async (_s: string, _d: string, files: string[]) => ({ cloned: 0, linked: files.length, copied: 0 }));
+    reflinkMode.fake = fake;
+    const central = makeCentral(root, contentPath);
+    await central.replicate("sha512-test", destDir);
+    expect(fake).toHaveBeenCalledTimes(2);
+
+    const destDir2 = Path.join(root, "installed2");
+    Fs.mkdirSync(destDir2);
+    await central.replicate("sha512-test", destDir2);
+    expect(fake).toHaveBeenCalledTimes(2);
+    const ino = (dir: string) => Fs.statSync(Path.join(dir, "lib", "util.js")).ino;
+    expect(ino(destDir2)).toBe(ino(Path.join(contentPath, "package")));
+  });
+
+  it("keeps using reflink when any file clones", async () => {
+    const fake = vi.fn(async () => ({ cloned: 1, linked: 1, copied: 0 }));
+    reflinkMode.fake = fake;
+    const central = makeCentral(root, contentPath);
+    await central.replicate("sha512-test", destDir);
+    await central.replicate("sha512-test", destDir);
+    expect(fake).toHaveBeenCalledTimes(4);
+  });
 });
 
 // One cloneDir per package where the filesystem can, in place of the empty install dir. A dir
