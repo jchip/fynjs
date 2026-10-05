@@ -81,6 +81,10 @@ Linux, "fyn default" uses the central store with hardlinks. Seconds, one sample 
   cores busy, while fyn's main thread is its serial limit.
 - **Copy mode is about 2x slower than the default here.** Hardlinking from the store beats
   writing every file on this box.
+- **These rows ran without `@fynjs/reflink`,** which isn't published yet, so fyn hardlinked with
+  `linkSync` in the fs worker. A Linux build of it, installed for a rerun, made warm-cache rows
+  0.25-0.5s slower. Cold rows were flat within noise. ext4 can't clone, so each file tries a clone
+  before it hardlinks.
 - **The registry shares the box.** It uses CPU the install could otherwise use, mostly serving
   packuments on clean installs.
 - Raw results on the box: `~/bench/pnpm-benchmarks/local-results-{15,50}ms-v15-683296f4.json`.
@@ -177,6 +181,9 @@ Abbreviated packuments and the changes after them cut another 0.7-1.0s off clean
   lists, and the store job returns trees. A worker could read `tree.json` itself.
 - **Memory.** Downloaded bytes wait in memory until their store job runs. Max RSS stays under 1 GB
   on the benchmark. A cap on bytes waiting to be stored would bound it for very large installs.
+- **Skip `@fynjs/reflink` where it can't clone.** On ext4 its per-file clone attempt costs more
+  than the worker's `linkSync`. A one-time clone probe, or skipping it on Linux when hardlinks are
+  on, would keep the faster path once the package is published.
 - **Downloads during resolve, later.** Filling the store while resolve runs gave no gain, because
   tarball HTTP competes with packuments for the main thread and the sockets. It is worth another
   try once each tarball costs the main thread much less.
