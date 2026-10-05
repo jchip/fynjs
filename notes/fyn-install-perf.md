@@ -1,8 +1,8 @@
 # fyn install performance
 
 How fast fyn installs today, how an install runs, what we kept and dropped along the way, and what
-is still open. Most numbers come from pnpm's benchmark harness on the Mac, with a short Linux check. See
-[pnpm-benchmark-replication.md](pnpm-benchmark-replication.md) for the rig, the fixture
+is still open. The numbers come from pnpm's benchmark harness on a Mac and a 4-core Linux box.
+See [pnpm-benchmark-replication.md](pnpm-benchmark-replication.md) for the rig, the fixture
 (`alotta-files`, about 1.3k packages and 42k files) and how to run it.
 
 ## Where fyn stands
@@ -40,8 +40,9 @@ one sample per cell, best in bold:
   pnpm 12 is a native binary. npm wins lockfile at 15 ms by about 0.25s, which is near noise.
 - **Clean installs are 1.5x faster than pnpm 11 at 15 ms, and 1.3x at 50 ms.** Against npm the gap
   is 2.3x at 15 ms and 4.1x at 50 ms.
-- **pnpm 12's cold installs are slow on macOS** because it writes every file twice. See
-  [pnpm-benchmark-replication.md](pnpm-benchmark-replication.md).
+- **pnpm 12's installs are slow on macOS** because it creates files from 14 threads at once, and
+  APFS slows down under that. `RAYON_NUM_THREADS=4` gets its clean install to about 10.5s. See
+  [pnpm12-macos-perf.md](pnpm12-macos-perf.md).
 - **The default matches copy on installs that download,** and is about 2.5x faster on warm-cache
   installs. The central store costs nothing extra.
 - **Noise.** A second sample of the same build differed by 0.1-0.4s per row, so treat single
@@ -50,22 +51,39 @@ one sample per cell, best in bold:
 
 ### Linux
 
-A 4-core i5-4570T with ext4 and Node 24.21.0, at 15 ms / 200 Mbps, with the registry and the
-latency proxy on the same box. fyn runs its Linux default, the central store with hardlinks.
-Seconds, as the range of 3-4 runs:
+The same harness on 2026-10-04, on a 4-core i5-4570T with ext4 and Node 24.21.0. The registry and
+the latency proxy run on the same box. Same fyn build and manager versions as the Mac run. On
+Linux, "fyn default" uses the central store with hardlinks. Seconds, one sample per cell:
 
-| Scenario | fyn |
-|---|---|
-| clean | 6.9-7.1 |
-| lockfile | 4.5-4.6 |
-| cache | 2.46-2.49 |
+**15 ms / 200 Mbps**
 
-- **Warm cache is slower than the Mac's clone mode,** since hardlinking every file costs more than
-  one dir clone per package.
-- **pnpm 12 is still faster on this box.** It keeps all 4 cores busy, while fyn's main thread is
-  its serial limit.
+| Scenario | npm | pnpm 11 | pnpm 12 | fyn copy | fyn default |
+|---|---|---|---|---|---|
+| clean | 34.57 | 10.14 | **4.54** | 13.68 | 7.11 |
+| lockfile | 12.44 | 5.94 | **3.30** | 11.32 | 4.66 |
+| cache | 14.82 | 5.89 | **1.25** | 8.70 | 2.49 |
+| cache + lockfile | 8.81 | 3.03 | **0.77** | 8.29 | 2.12 |
+| repeat | 1.72 | 0.73 | **0.02** | 0.18 | 0.19 |
+| update | 4.45 | 5.74 | **1.20** | 3.36 | 2.46 |
+
+**50 ms / 200 Mbps**
+
+| Scenario | npm | pnpm 11 | pnpm 12 | fyn copy | fyn default |
+|---|---|---|---|---|---|
+| clean | 62.80 | 10.79 | **4.97** | 14.67 | 8.57 |
+| lockfile | 13.47 | 5.98 | **3.48** | 11.60 | 5.44 |
+| cache | 14.79 | 5.91 | **1.19** | 8.74 | 2.47 |
+| cache + lockfile | 8.94 | 3.08 | **0.77** | 8.23 | 2.23 |
+| repeat | 1.73 | 0.75 | **0.02** | 0.19 | 0.19 |
+| update | 5.04 | 5.65 | **1.20** | 3.47 | 2.92 |
+
+- **fyn's default beats npm and pnpm 11 on every row.** pnpm 12 is faster still. It keeps all 4
+  cores busy, while fyn's main thread is its serial limit.
+- **Copy mode is about 2x slower than the default here.** Hardlinking from the store beats
+  writing every file on this box.
 - **The registry shares the box.** It uses CPU the install could otherwise use, mostly serving
   packuments on clean installs.
+- Raw results on the box: `~/bench/pnpm-benchmarks/local-results-{15,50}ms-v15-683296f4.json`.
 
 ## How an install runs
 

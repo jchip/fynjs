@@ -6,7 +6,7 @@ fyn, and varied the network link to see where the gap comes from.
 
 **Short version.** The rig is honest, but its 50 ms round trip amplifies npm's serial requests. At a
 realistic 15 ms, npm vs pnpm 11 is 1.5x. pnpm 12's published cold-install numbers did not reproduce
-on this Mac, because its store writes every file twice on APFS. fyn in copy mode is the fastest clean
+on this Mac, because it creates files from too many threads at once on APFS. fyn in copy mode is the fastest clean
 install here at 15 ms. fyn's current numbers, which beat pnpm 12 on every row but repeat, are in
 [fyn-install-perf.md](fyn-install-perf.md).
 
@@ -103,11 +103,11 @@ about 42k files, 79 MB compressed, which is about 3.2s of link time at 200 Mbps.
 - **The network is not the problem.** `trustLockfile` is honored: the lockfile row fetches zero
   packuments. Resolution adds only about 2.4s. npm and fyn fetch the same 1,345 tarballs in 5.4-8.6s.
 - **Every file is written twice.** A cold install writes each file into the content-addressed store,
-  then again into the virtual store. npm and fyn write each file once. One pass of 42k files costs about
-  4.5-5.7s on this Mac, so two passes cost about 11s. That is the copy-mode number.
-- **Per-file clones make the second pass slower, not faster.** The default clones each file into the
-  virtual store, which cost about 3s more than plain copies. That fits pnpm's note that APFS caps
-  per-file `clonefile` near 6k files/s.
+  then again into the virtual store. npm and fyn write each file once.
+- **The second pass runs on too many threads.** pnpm 12 imports files one at a time from a rayon pool
+  with one thread per core, 14 here. APFS `clonefileat` and file creation slow down under that load.
+  `RAYON_NUM_THREADS=4` cuts the clean install to about 10.5s at both latencies. The full
+  investigation is in [pnpm12-macos-perf.md](pnpm12-macos-perf.md).
 - **Warm installs flip it.** With the store built, clone mode is one directory `clonefile` per package
   (2.2s). Copy mode rewrites all 42k files (5.7s).
 - **On Linux the second pass is nearly free.** pnpm hardlinks first there, which is why the published CI
