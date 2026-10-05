@@ -42,6 +42,7 @@ import PkgOptResolver from "./pkg-opt-resolver";
 import { LocalPkgBuilder } from "./local-pkg-builder";
 import pathUpEach from "./util/path-up-each";
 import { localExportsNeedInstall } from "./local-exports";
+import type { PlacedPkgJson } from "./util/place-files";
 import {
   mergeAllowScripts,
   normalizeScriptPolicy,
@@ -1892,9 +1893,10 @@ class Fyn {
     return null;
   }
 
-  async loadJsonForPkg(pkg: PkgVersionInfo, dir?: string): Promise<InstalledPkgJson> {
+  /** @param placed - package.json as an fs worker placed it, so it isn't read back */
+  async loadJsonForPkg(pkg: PkgVersionInfo, dir?: string, placed?: PlacedPkgJson): Promise<InstalledPkgJson> {
     const fullOutDir = dir || this.getInstalledPkgDir(pkg.name, pkg.version, pkg);
-    const json = (await fynTil.readPkgJson(fullOutDir, true)) as InstalledPkgJson;
+    const json = (await fynTil.readPkgJson(fullOutDir, true, false, placed?.str)) as InstalledPkgJson;
 
     const pkgId = `${pkg.name}@${pkg.version}`;
     const id = `${json.name}@${json.version}`;
@@ -1950,16 +1952,19 @@ class Fyn {
     pkg.dir = json[PACKAGE_RAW_INFO]!.dir;
     pkg.str = json[PACKAGE_RAW_INFO]!.str;
 
-    try {
-      const gypFile = Path.join(fullOutDir, "binding.gyp");
-      await Fs.lstat(gypFile);
-
+    const hasGyp =
+      placed?.gyp ??
+      (await Fs.lstat(Path.join(fullOutDir, "binding.gyp")).then(
+        () => true,
+        () => false
+      ));
+    if (hasGyp) {
       json.gypfile = true;
       const scr = json.scripts;
       if (_.isEmpty(scr) || (!scr!.install && !scr!.postinstall && !(scr as Record<string, string>).postInstall)) {
         _.set(json, "scripts.install", "node-gyp rebuild");
       }
-    } catch (err) {}
+    }
 
     pkg.json = json;
 

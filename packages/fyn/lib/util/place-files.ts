@@ -20,11 +20,20 @@ export interface PlaceJob {
   hardlink: boolean;
   reflink: boolean;
   copyFallback: boolean;
+  /** make destDir first, emptying it if it's left from an earlier install, as createPkgOutDir does */
+  prepare?: boolean;
+}
+
+/** package.json as placed, so the main thread doesn't read it back, and whether there's a binding.gyp */
+export interface PlacedPkgJson {
+  str: string;
+  gyp: boolean;
 }
 
 export interface PlaceResult {
   /** the error code when hardlinks stopped working, so the caller stops trying them */
   noLink?: string;
+  pkgJson?: PlacedPkgJson;
 }
 
 const copyNewSync = (src: string, dest: string, mode = 0): void => {
@@ -50,6 +59,24 @@ const linkSync = (src: string, dest: string): void => {
   }
 };
 
+/** Make dir, emptying it if it already exists, and replacing it if it's a file */
+function prepareDirSync(dir: string): void {
+  let made: string | undefined;
+  try {
+    made = Fs.mkdirSync(dir, { recursive: true });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+    Fs.rmSync(dir, { recursive: true, force: true });
+    Fs.mkdirSync(dir, { recursive: true });
+    return;
+  }
+  if (made === undefined) {
+    for (const name of Fs.readdirSync(dir)) {
+      Fs.rmSync(Path.join(dir, name), { recursive: true, force: true });
+    }
+  }
+}
+
 export function placeFilesSync(job: PlaceJob): PlaceResult {
   const { srcDir, destDir, reflink, copyFallback } = job;
   let hardlink = job.hardlink;
@@ -64,6 +91,8 @@ export function placeFilesSync(job: PlaceJob): PlaceResult {
       throw new Error(`fyn-central: can't place ${dest}: it can't be hardlinked, and reflink and copy-fallback are off`);
     }
   };
+
+  if (job.prepare) prepareDirSync(destDir);
 
   for (const dir of job.dirs) {
     Fs.mkdirSync(Path.join(destDir, dir), { recursive: true });
@@ -94,5 +123,8 @@ export function placeFilesSync(job: PlaceJob): PlaceResult {
     }
   }
 
-  return { noLink };
+  const pkgJson = job.files.includes("package.json")
+    ? { str: Fs.readFileSync(Path.join(destDir, "package.json"), "utf8"), gyp: job.files.includes("binding.gyp") }
+    : undefined;
+  return { noLink, pkgJson };
 }

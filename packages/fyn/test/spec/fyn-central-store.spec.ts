@@ -7,13 +7,32 @@ import * as Tar from "tar";
 import FynCentral from "../../lib/fyn-central";
 import FileOps from "../../lib/util/file-ops";
 
+// With `worker.on`, FynCentral gets a pool that runs the fs worker's store and scan jobs
+// in-thread. The test's integrity is a label, so the pool checks the bytes against their own hash.
+const worker = vi.hoisted(() => ({ on: false }));
+vi.mock("../../lib/util/fs-worker-pool", async () => {
+  const { storeJobSync } = await import("../../lib/util/fs-worker");
+  const { scanShasumsSync } = await import("../../lib/util/store-entry");
+  const pool = {
+    run: async (op: string, job: any) => {
+      if (op === "scan") return scanShasumsSync(job.dir);
+      if (op !== "store") throw new Error(`unexpected fs job ${op}`);
+      return storeJobSync({ ...job, integrity: ssri.fromData(job.data).toString() });
+    }
+  };
+  return { POOL_SIZE: 1, getFsWorkerPool: () => (worker.on ? pool : undefined) };
+});
+
 //
 // Concurrent installs share one central store and never wait on each other. Each extracts a
 // package into its own temp dir and renames it into place, so others see an entry complete or
 // not at all. An `.extracting` marker tells other installs one is in progress, so they can do
 // other packages first. Deletes rename the entry away before removing it.
 //
-describe("fyn-central store", () => {
+describe.each([
+  { name: "in-thread", inWorker: false },
+  { name: "with an fs worker", inWorker: true }
+])("fyn-central store, $name", ({ inWorker }) => {
   let root: string;
   let central: any;
   let contentPath: string;
@@ -43,6 +62,7 @@ describe("fyn-central store", () => {
   const base = () => Path.basename(contentPath);
 
   beforeEach(() => {
+    worker.on = inWorker;
     root = Fs.realpathSync(Fs.mkdtempSync(Path.join(Os.tmpdir(), "fyn-central-store-")));
     central = new FynCentral({ centralDir: Path.join(root, "central") });
     contentPath = central._analyze(integrity).contentPath;
@@ -53,8 +73,20 @@ describe("fyn-central store", () => {
     Fs.rmSync(root, { recursive: true, force: true });
   });
 
-  const store = (deferIfBusy?: boolean, stream: () => unknown = tarball) =>
-    central.storeTarStream("pkg-a@1.0.0", integrity, stream, deferIfBusy);
+  /** the tarball as bytes, as a download hands it to the fs worker */
+  const bytes = async (stream: unknown) => {
+    const chunks: Buffer[] = [];
+    for await (const c of stream as AsyncIterable<Buffer>) chunks.push(c);
+    return { data: new Uint8Array(Buffer.concat(chunks)) };
+  };
+  const store = (deferIfBusy?: boolean, stream: () => unknown = tarball, opts?: { noMtime?: boolean }) =>
+    central.storeTarStream(
+      "pkg-a@1.0.0",
+      integrity,
+      stream,
+      deferIfBusy,
+      inWorker ? () => bytes(tarball(opts)) : undefined
+    );
 
   it("stores the package and leaves no temp dir or marker behind", async () => {
     expect(await store()).toBe(true);
@@ -90,15 +122,26 @@ describe("fyn-central store", () => {
   });
 
   it("uses the entry another install renamed in first, and drops its own copy", async () => {
-    const realRename = FileOps.rename;
-    vi.spyOn(FileOps, "rename").mockImplementation(async (from: string, to: string) => {
+    const winRace = (to: string) => {
       if (to === contentPath && !Fs.existsSync(contentPath)) {
         // the other install wins the race
         Fs.mkdirSync(Path.join(contentPath, "package"), { recursive: true });
         Fs.writeFileSync(Path.join(contentPath, "tree.json"), JSON.stringify({ $: {}, shaSum: "winner", _: 1 }));
       }
-      return realRename(from, to);
-    });
+    };
+    if (inWorker) {
+      const realRenameSync = Fs.renameSync;
+      vi.spyOn(Fs, "renameSync").mockImplementation((from: Fs.PathLike, to: Fs.PathLike) => {
+        winRace(to as string);
+        return realRenameSync(from, to);
+      });
+    } else {
+      const realRename = FileOps.rename;
+      vi.spyOn(FileOps, "rename").mockImplementation(async (from: string, to: string) => {
+        winRace(to);
+        return realRename(from, to);
+      });
+    }
 
     expect(await store()).toBe(true);
     expect(central._map.get(integrity).shaSum).toBe("winner");
@@ -161,9 +204,11 @@ describe("fyn-central store", () => {
 
   it("walks the files when the tarball has no mtimes", async () => {
     const scan = vi.spyOn(central, "_scanShasums");
-    await store(false, () => tarball({ noMtime: true }));
+    await store(false, () => tarball({ noMtime: true }), { noMtime: true });
 
-    expect(scan).toHaveBeenCalledTimes(1);
+    // the fs worker walks with sync calls, and must get the same hash as the async walk
+    expect(scan).toHaveBeenCalledTimes(inWorker ? 0 : 1);
+    expect(readTree().shaSum).toBe((await central._scanShasums(Path.join(contentPath, "package"))).v2);
     expect(await validateFresh()).toBe(true);
   });
 

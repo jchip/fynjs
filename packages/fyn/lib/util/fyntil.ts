@@ -103,7 +103,7 @@ export interface Fyntil {
   exit(err?: number | Error | string | boolean | null): never;
   readJson<T = Record<string, unknown>>(file: string, defaultData?: T): Promise<T>;
   relativePath(from: string, to: string, shouldPosixify?: boolean): string;
-  readPkgJson(dirOrFile: string, keepRaw?: boolean, packageFyn?: boolean): Promise<PkgJsonData>;
+  readPkgJson(dirOrFile: string, keepRaw?: boolean, packageFyn?: boolean, pkgJsonStr?: string): Promise<PkgJsonData>;
   symlinkDir(linkName: string, targetName: string, relative?: boolean): Promise<void>;
   symlinkFile(linkName: string, targetName: string): Promise<void>;
   validateExistSymlink(linkName: string, targetPath: string, relative?: boolean): Promise<boolean>;
@@ -289,7 +289,13 @@ const fyntil: Fyntil = {
     return shouldPosixify ? posixify(rel) : rel;
   },
 
-  async readPkgJson(dirOrFile: string, keepRaw: boolean = false, packageFyn: boolean = false): Promise<PkgJsonData> {
+  /** @param pkgJsonStr - package.json's content, when the caller has it already */
+  async readPkgJson(
+    dirOrFile: string,
+    keepRaw: boolean = false,
+    packageFyn: boolean = false,
+    pkgJsonStr?: string
+  ): Promise<PkgJsonData> {
     const isDir = !dirOrFile.endsWith(".json");
     const dir = isDir ? dirOrFile : Path.dirname(dirOrFile);
     const files = ["package.json", packageFyn && PACKAGE_FYN_JSON].filter(Boolean) as string[];
@@ -297,7 +303,8 @@ const fyntil: Fyntil = {
     for (const fname of files) {
       const file = Path.join(dir, fname);
       try {
-        const str = await Fs.readFile(file, "utf8");
+        const str =
+          fname === "package.json" && pkgJsonStr !== undefined ? pkgJsonStr : await Fs.readFile(file, "utf8");
         const json = JSON.parse(str.trim());
         _.merge(finalJson, json);
         if (keepRaw && fname !== PACKAGE_FYN_JSON) {

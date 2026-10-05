@@ -80,4 +80,29 @@ describe("place-files", () => {
     }
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+  it("prepare makes a missing dest, empties a stale one, and replaces a file", () => {
+    const deep = Path.join(tmp, "x", "y");
+    placeFilesSync(job({ destDir: deep, prepare: true }));
+    expect(read(deep, "a.js")).toBe("aaa");
+
+    Fs.writeFileSync(Path.join(dest, "stale.js"), "old");
+    Fs.mkdirSync(Path.join(dest, "old-dir"));
+    placeFilesSync(job({ prepare: true }));
+    expect(Fs.readdirSync(dest).sort()).toEqual(["a.js", "package.json", "sub"]);
+
+    const asFile = Path.join(tmp, "file-dest");
+    Fs.writeFileSync(asFile, "not a dir");
+    placeFilesSync(job({ destDir: asFile, prepare: true }));
+    expect(read(asFile, "sub/b.js")).toBe("bbb");
+  });
+
+  it("returns package.json as placed, and whether there's a binding.gyp", () => {
+    expect(placeFilesSync(job()).pkgJson).toEqual({ str: "{}", gyp: false });
+
+    Fs.writeFileSync(Path.join(src, "binding.gyp"), "{}");
+    expect(placeFilesSync(job({ files: [...files, "binding.gyp"] })).pkgJson).toEqual({ str: "{}", gyp: true });
+
+    expect(placeFilesSync(job({ files: ["a.js"] })).pkgJson).toBe(undefined);
+  });
 });

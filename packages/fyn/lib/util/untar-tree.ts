@@ -5,6 +5,8 @@
  * Shared by the in-thread extraction and the tar worker, so it imports nothing from fyn.
  */
 
+import Crypto from "node:crypto";
+
 /** File metadata in the tree */
 export interface FileInfo {
   /** File size */
@@ -85,4 +87,37 @@ export function treeCollector(strip: number): {
   };
 
   return { onentry, result };
+}
+
+/**
+ * tree.json's current format. Its shaSum hashes each file's path, mtime in whole seconds and
+ * size, so a fresh extraction gets it from the tar headers without walking the files again.
+ * Format 1 hashed a stat walk of files and dirs with mtimes in ms.
+ */
+export const SUM_VERSION = 2;
+
+export const hashList = (list: string[]): string =>
+  Crypto.createHash("sha512").update(JSON.stringify(list.sort())).digest("base64");
+
+/** The shaSum of a tree from tar headers, in SUM_VERSION's format */
+export function treeShasum(tree: TreeNode): string {
+  const files: string[] = [];
+  const walk = (node: TreeNode, dir: string): void => {
+    for (const [name, child] of Object.entries(node)) {
+      if (name === "/") {
+        for (const [file, info] of Object.entries(child as Record<string, FileInfo>)) {
+          files.push(`${dir}${file}-${info.m}-${info.z}`);
+        }
+      } else {
+        walk(child as TreeNode, `${dir}${name}/`);
+      }
+    }
+  };
+  walk(tree, "");
+  return hashList(files);
+}
+
+/** tree.json's content. An old entry keeps its sumVersion until validate() converts it. */
+export function treeFileJson(info: { tree?: TreeNode | false; shaSum?: string; mutates?: boolean; sumVersion?: number }): string {
+  return JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: info.sumVersion ?? 1 });
 }

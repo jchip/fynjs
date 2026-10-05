@@ -24,6 +24,22 @@ interface PoolWorker {
 /** One worker less than the CPUs, for the main thread, and at most 8 */
 export const POOL_SIZE = Math.max(1, Math.min(8, Os.availableParallelism() - 1));
 
+/**
+ * A downloaded Buffer is often a view into a much bigger ArrayBuffer, and postMessage copies the
+ * whole ArrayBuffer. So the message gets a copy of just the view, transferred. The caller's
+ * Buffer stays usable.
+ */
+export function postJob(worker: Pick<Worker, "postMessage">, id: number, { op, job }: FsJob): void {
+  const { data } = job as { data?: Uint8Array };
+  if (!data) {
+    worker.postMessage({ id, op, job });
+    return;
+  }
+  const copy = new Uint8Array(data.byteLength);
+  copy.set(data);
+  worker.postMessage({ id, op, job: { ...job, data: copy } }, [copy.buffer]);
+}
+
 class FsWorkerPool {
   private _file: string;
   private _workers: PoolWorker[] = [];
@@ -52,7 +68,7 @@ class FsWorkerPool {
       pw.busy = pending;
       // a busy worker keeps the process alive, an idle one doesn't
       pw.worker.ref();
-      pw.worker.postMessage({ id: this._nextId++, ...pending.job });
+      postJob(pw.worker, this._nextId++, pending.job);
     }
   }
 

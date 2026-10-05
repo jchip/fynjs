@@ -139,4 +139,21 @@ describe("loadJsonForPkg version validation", () => {
 
     expect(json._invalid).toBe(true);
   });
+
+  it("uses package.json as an fs worker placed it, without reading the file", async () => {
+    writePkgJson({ name: "mod-a", version: "2.0.0" });
+    const placed = { str: JSON.stringify({ name: "mod-a", version: "1.0.0" }), gyp: true };
+
+    const json = await Fyn.prototype.loadJsonForPkg.call(
+      {} as never,
+      { name: "mod-a", version: "1.0.0" } as never,
+      dir,
+      placed
+    );
+
+    expect(json._invalid).toBe(undefined);
+    // the worker saw a binding.gyp in the files it placed
+    expect(json.gypfile).toBe(true);
+    expect(json.scripts!.install).toBe("node-gyp rebuild");
+  });
 });

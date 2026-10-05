@@ -8,15 +8,21 @@ import { cloneFile, copyFile, linkFile } from "./util/hard-link-dir";
 import { loadReflinkCloneDir, loadReflinkCloneFiles, type CloneDir } from "./util/reflink";
 import logger from "./logger";
 import { AggregateError } from "@jchip/error";
-import { filterScanDir, type ExtrasData } from "filter-scan-dir";
-import type { Stats } from "fs";
-import Crypto from "crypto";
+import { filterScanDir } from "filter-scan-dir";
 import * as xaa from "xaa";
 import type { Readable } from "stream";
-import { treeCollector, type FileInfo, type TreeNode, type UntarTree } from "./util/untar-tree";
+import {
+  treeCollector,
+  treeShasum,
+  treeFileJson,
+  SUM_VERSION,
+  type TreeNode,
+  type UntarTree
+} from "./util/untar-tree";
 import { getFsWorkerPool } from "./util/fs-worker-pool";
 import type { TarSource } from "./util/fs-worker";
-import { NO_LINK_CODES } from "./util/place-files";
+import { STALE_MS, uniqueSuffix, shasumScan } from "./util/store-entry";
+import { NO_LINK_CODES, type PlacedPkgJson } from "./util/place-files";
 
 const { missPipe } = fyntil;
 
@@ -39,16 +45,6 @@ interface PackageInfo {
   sumVersion?: number;
   validated?: boolean;
 }
-
-/**
- * tree.json's current format. Its shaSum hashes each file's path, mtime in whole seconds and
- * size, so a fresh extraction gets it from the tar headers without walking the files again.
- * Format 1 hashed a stat walk of files and dirs with mtimes in ms.
- */
-const SUM_VERSION = 2;
-
-const hashList = (list: string[]): string =>
-  Crypto.createHash("sha512").update(JSON.stringify(list.sort())).digest("base64");
 
 /** Tree file content structure (new format with version) */
 interface TreeFileContent {
@@ -73,12 +69,6 @@ interface FynCentralOptions {
   /** false fails instead of copying a file that can't be cloned or hardlinked */
   copyFallback?: boolean;
 }
-
-/** an extraction marker or temp dir older than this was left by an install that died */
-const STALE_MS = 5 * 60 * 1000;
-
-/** a name suffix no other install, or other call in this one, will pick */
-const uniqueSuffix = (): string => `${process.pid}-${Crypto.randomBytes(4).toString("hex")}`;
 
 /**
  * Convert a directory tree structure to a flatten one like:
@@ -123,6 +113,10 @@ function flattenTree(tree: TreeNode, output: FlattenedTree, baseDir: string): Fl
 class FynCentral {
   private _centralDir: string;
   private _map: Map<string, PackageInfo>;
+  /** entries found missing, so has() and allow() don't stat them again; storing re-checks */
+  private _missing = new Map<string, PackageInfo>();
+  /** store dirs this install has made, so each is made once */
+  private _madeDirs = new Set<string>();
   private _hardlink: boolean;
   private _reflink: boolean;
   private _copyFallback: boolean;
@@ -195,8 +189,10 @@ class FynCentral {
           this._map.set(integrity, info);
         }
       }
+      this._missing.delete(integrity);
       return info;
     } catch (_err) {
+      if (!noSet) this._missing.set(integrity, info);
       return info;
     }
   }
@@ -208,9 +204,7 @@ class FynCentral {
    * @returns boolean
    */
   async has(integrity: string): Promise<boolean> {
-    const info = this._map.has(integrity)
-      ? this._map.get(integrity)!
-      : await this._loadTree(integrity);
+    const info = this._map.get(integrity) ?? this._missing.get(integrity) ?? (await this._loadTree(integrity));
 
     return Boolean(info.tree);
   }
@@ -222,9 +216,7 @@ class FynCentral {
    * @returns boolean
    */
   async allow(integrity: string): Promise<boolean> {
-    const info = this._map.has(integrity)
-      ? this._map.get(integrity)!
-      : await this._loadTree(integrity);
+    const info = this._map.get(integrity) ?? this._missing.get(integrity) ?? (await this._loadTree(integrity));
 
     return info.mutates ? false : true;
   }
@@ -250,31 +242,8 @@ class FynCentral {
    */
   async _scanShasums(packageDir: string): Promise<{ v1: string; v2: string } | undefined> {
     try {
-      const v2: string[] = [];
-      const filter = (
-        _file: string,
-        _path: string,
-        extras: ExtrasData
-      ): { formatName: string } => {
-        const { stat, dirFile } = extras;
-        const fullStat = stat as Stats;
-        if (!fullStat.isDirectory()) {
-          v2.push(`${dirFile.replace(/\\/g, "/")}-${Math.floor(fullStat.mtimeMs / 1000)}-${fullStat.size}`);
-        }
-        return { formatName: `${dirFile}-${fullStat.mtimeMs}-${fullStat.size}` };
-      };
-
-      const files = await filterScanDir({
-        cwd: packageDir,
-        filter,
-        filterDir: filter,
-        fullStat: true, // need full stat for mtimeMs and size prop
-        concurrency: 500,
-        sortFiles: false, // concurrency breaks sorting, sort files all at once after
-        includeDir: true
-      });
-
-      return { v1: hashList(files as string[]), v2: hashList(v2) };
+      const { options, sums } = shasumScan(packageDir);
+      return sums(await filterScanDir(options));
     } catch (_err) {
       return undefined;
     }
@@ -282,21 +251,9 @@ class FynCentral {
 
   /** The v2 hash of a fresh extraction, from the tar header sizes and mtimes in its tree */
   _treeShasum(tree: TreeNode): string {
-    const files: string[] = [];
-    const walk = (node: TreeNode, dir: string): void => {
-      for (const [name, child] of Object.entries(node)) {
-        if (name === "/") {
-          for (const [file, info] of Object.entries(child as Record<string, FileInfo>)) {
-            files.push(`${dir}${file}-${info.m}-${info.z}`);
-          }
-        } else {
-          walk(child as TreeNode, `${dir}${name}/`);
-        }
-      }
-    };
-    walk(tree, "");
-    return hashList(files);
+    return treeShasum(tree);
   }
+
 
   async _calcContentShasum(info: PackageInfo, pkgDir?: string): Promise<string | undefined> {
     return (await this._scanShasums(pkgDir || Path.join(info.contentPath, "package")))?.v1;
@@ -321,9 +278,7 @@ class FynCentral {
   }
 
   async getMutation(integrity: string): Promise<boolean | undefined> {
-    const info = this._map.has(integrity)
-      ? this._map.get(integrity)!
-      : await this._loadTree(integrity);
+    const info = this._map.get(integrity) ?? this._missing.get(integrity) ?? (await this._loadTree(integrity));
 
     return info.mutates;
   }
@@ -383,7 +338,7 @@ class FynCentral {
    */
   async saveInfoTree(info: PackageInfo, path?: string): Promise<void> {
     // an old entry keeps its format until validate() converts it, so a v1 hash is never labeled v2
-    const data = JSON.stringify({ $: info.tree, shaSum: info.shaSum, mutates: info.mutates, _: info.sumVersion ?? 1 });
+    const data = treeFileJson(info);
     if (path) {
       await Fs.writeFile(Path.join(path, "tree.json"), data);
       return;
@@ -403,7 +358,23 @@ class FynCentral {
     await this.saveInfoTree(info);
   }
 
-  async replicate(integrity: string, destDir: string): Promise<void> {
+  /**
+   * @param prepare - makes destDir, when the caller hasn't. An fs worker does it instead when
+   *   it places the files.
+   * @returns package.json as placed, when an fs worker placed the files
+   */
+  async replicate(
+    integrity: string,
+    destDir: string,
+    prepare?: () => Promise<void>
+  ): Promise<PlacedPkgJson | undefined> {
+    let prepared = !prepare;
+    const ensurePrepared = async (): Promise<void> => {
+      if (!prepared) {
+        prepared = true;
+        await prepare!();
+      }
+    };
     try {
       const info = await this.getInfo(integrity);
 
@@ -413,8 +384,9 @@ class FynCentral {
       // one clone for the whole package, where the filesystem can (APFS). Per-file placement
       // pays a metadata cost for every file, clone or link alike.
       const cloneDir = this._reflink && this._cloneDirs && (await loadReflinkCloneDir());
-      if (cloneDir && (await this._cloneWholeDir(cloneDir, srcDir, destDir))) {
-        return;
+      if (cloneDir) {
+        await ensurePrepared();
+        if (await this._cloneWholeDir(cloneDir, srcDir, destDir)) return;
       }
 
       // @fynjs/reflink clones, else hardlinks unless hardlink is off, else copies unless
@@ -428,6 +400,7 @@ class FynCentral {
         }
       };
       if (reflinkCloneFiles) {
+        await ensurePrepared();
         await mkdirs();
         const others = list.files.filter(f => f !== "package.json");
         await Promise.all([
@@ -440,22 +413,24 @@ class FynCentral {
 
       const pool = getFsWorkerPool();
       if (pool) {
-        const { noLink } = await pool.run("place", {
+        const { noLink, pkgJson } = await pool.run("place", {
           srcDir,
           destDir,
           dirs: list.dirs,
           files: list.files,
           hardlink: this._hardlink,
           reflink: this._reflink,
-          copyFallback: copy
+          copyFallback: copy,
+          prepare: !prepared
         });
         if (noLink && this._hardlink) {
           this._hardlink = false;
           logger.info(`fyn-central: can't hardlink from ${this._centralDir} (${noLink}), copying instead`);
         }
-        return;
+        return pkgJson;
       }
 
+      await ensurePrepared();
       await mkdirs();
       await xaa.map(
         list.files,
@@ -587,14 +562,11 @@ class FynCentral {
    * atomic, so other installs see the entry complete or not at all. If another install renamed
    * its copy in first, that copy has the same integrity, so this one is dropped for it.
    *
-   * A tarball that's a file on disk, or already in memory, is untarred by an fs worker, when
-   * fyn has them built.
+   * With an fs worker, storeTarStream hands the whole job to _storeInWorker instead.
    */
   async _storeTarStream(
     info: PackageInfo,
-    _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>,
-    integrity: string,
-    tarSource?: () => Promise<TarSource | undefined>
+    _stream: Readable | (() => Readable) | (() => Promise<Readable>) | Promise<Readable>
   ): Promise<void> {
     let stream = _stream;
     const tmp = `${info.contentPath}.tmp-${uniqueSuffix()}`;
@@ -602,21 +574,13 @@ class FynCentral {
     try {
       const targetDir = Path.join(tmp, "package");
       await Fs.$.mkdirp(targetDir);
-      const pool = tarSource && getFsWorkerPool();
-      const source = pool && (await tarSource!());
-      let untarred: UntarTree;
-      if (source) {
-        untarred = await pool!.run("untar", { ...source, integrity, targetDir, strip: 1 });
-      } else {
-        if (typeof stream === "function") {
-          stream = stream();
-        }
-        if ((stream as Promise<Readable>).then) {
-          stream = await (stream as Promise<Readable>);
-        }
-        untarred = await this._untarStream(stream as Readable, targetDir);
+      if (typeof stream === "function") {
+        stream = stream();
       }
-      const { tree, fromHeaders } = untarred;
+      if ((stream as Promise<Readable>).then) {
+        stream = await (stream as Promise<Readable>);
+      }
+      const { tree, fromHeaders } = await this._untarStream(stream as Readable, targetDir);
       info.tree = tree;
       info.shaSum = fromHeaders ? this._treeShasum(tree) : (await this._scanShasums(targetDir))?.v2;
       info.sumVersion = SUM_VERSION;
@@ -653,7 +617,10 @@ class FynCentral {
     }
 
     if (info.validated === undefined) {
-      const sums = await this._scanShasums(Path.join(info.contentPath, "package"));
+      const pkgDir = Path.join(info.contentPath, "package");
+      // a worker walks it with sync calls, so the main thread sends one message, not a stat per file
+      const pool = getFsWorkerPool();
+      const sums = pool ? await pool.run("scan", { dir: pkgDir }) : await this._scanShasums(pkgDir);
       if (info.sumVersion === SUM_VERSION) {
         info.validated = Boolean(sums) && info.shaSum === sums!.v2;
       } else {
@@ -693,6 +660,12 @@ class FynCentral {
     let marker: string | undefined;
 
     try {
+      const pool = tarSource && getFsWorkerPool();
+      const source = pool && (await tarSource!());
+      if (source) {
+        return await this._storeInWorker(pool!, source, pkgId, integrity, deferIfBusy);
+      }
+
       const info = await this._loadTree(integrity);
 
       if (info.exist) {
@@ -703,7 +676,11 @@ class FynCentral {
         return true;
       }
 
-      await Fs.$.mkdirp(Path.dirname(info.contentPath));
+      const entryDir = Path.dirname(info.contentPath);
+      if (!this._madeDirs.has(entryDir)) {
+        await Fs.$.mkdirp(entryDir);
+        this._madeDirs.add(entryDir);
+      }
       const markerPath = `${info.contentPath}.extracting`;
       if (await this._claimMarker(markerPath)) {
         marker = markerPath;
@@ -718,9 +695,10 @@ class FynCentral {
       }
 
       logger.debug("storing tar to central store", pkgId, integrity);
-      await this._storeTarStream(info, currentStream, integrity, tarSource);
+      await this._storeTarStream(info, currentStream);
       currentStream = undefined;
       this._map.set(integrity, info);
+      this._missing.delete(integrity);
       logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);
       return true;
     } finally {
@@ -731,6 +709,37 @@ class FynCentral {
         await Fs.rmdir(marker).catch(() => undefined);
       }
     }
+  }
+
+  /** storeTarStream's steps, run by an fs worker with sync calls, marker and all */
+  async _storeInWorker(
+    pool: NonNullable<ReturnType<typeof getFsWorkerPool>>,
+    source: TarSource,
+    pkgId: string,
+    integrity: string,
+    deferIfBusy: boolean
+  ): Promise<boolean> {
+    const info = this._map.get(integrity) ?? this._missing.get(integrity) ?? this._analyze(integrity);
+    const result = await pool.run("store", { ...source, integrity, contentPath: info.contentPath, deferIfBusy });
+    if (result.busy) {
+      logger.debug("fyn-central: another install is storing it, deferring", pkgId);
+      return false;
+    }
+    if (result.stored) {
+      info.tree = result.tree;
+      info.shaSum = result.stored.shaSum;
+      info.sumVersion = result.stored.sumVersion;
+      info.exist = true;
+      this._map.set(integrity, info);
+      this._missing.delete(integrity);
+      logger.debug("fyn-central storeTarStream: stored", pkgId, info.contentPath);
+    } else {
+      logger.debug("fyn-central: the entry is in place already", info.contentPath);
+      if (!(await this._loadTree(integrity, info)).tree) {
+        logger.error(`fyn-central exist package missing tree.json`);
+      }
+    }
+    return true;
   }
 }
 

@@ -13,6 +13,7 @@ import type { Readable } from "stream";
 import type { EventEmitter } from "events";
 import type { PkgVersionInfo, InstalledPkgJson } from "./types";
 import { POOL_SIZE } from "./util/fs-worker-pool";
+import type { PlacedPkgJson } from "./util/place-files";
 
 const { retry, missPipe } = fyntil;
 
@@ -49,13 +50,13 @@ export interface FynForExtractor {
   getFvDir(version: string): string;
   ensureProperPkgDir(pkg: ExtractPkg, fullOutDir?: string): Promise<InstalledPkgJson | null>;
   createPkgOutDir(dir: string): Promise<void>;
-  loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string): Promise<InstalledPkgJson>;
+  loadJsonForPkg(pkg: ExtractPkg, fullOutDir: string, placed?: PlacedPkgJson): Promise<InstalledPkgJson>;
   isNormalLayout: boolean;
   extractConcurrency?: number;
   /** `false` when the central store is off - every read of this guards on it first */
   central:
     | {
-        replicate(src: string, dest: string): Promise<void>;
+        replicate(src: string, dest: string, prepare?: () => Promise<void>): Promise<PlacedPkgJson | undefined>;
       }
     | false;
 }
@@ -162,6 +163,7 @@ class PkgDistExtractor {
 
     const promotedOpt = _.defaults({ promoted }, _.pick(pkg, "promoted")) as { promoted?: boolean };
     const fullOutDir = this._fyn.getInstalledPkgDir(pkg.name, pkg.version, promotedOpt);
+    let placed: PlacedPkgJson | undefined;
 
     // do we have a copy of it in FV_DIR already?
     if (pkg.extracted && pkg.extracted === fullOutDir) {
@@ -196,23 +198,21 @@ class PkgDistExtractor {
       }
       const result = isStoreJob(job) ? job.integrity : job;
 
-      await this._fyn.createPkgOutDir(fullOutDir);
-
       let act: string;
       let retrieve: () => Promise<void>;
 
       if (typeof result === "string") {
         act = "hardlink";
-        retrieve = () => {
+        retrieve = async () => {
           // a string result is a central store path, so the store is enabled here
-          const central = this._fyn.central as {
-            replicate(src: string, dest: string): Promise<void>;
-          };
-          return central.replicate(result, fullOutDir);
+          const central = this._fyn.central as Exclude<FynForExtractor["central"], false>;
+          // the fs worker placing the files makes fullOutDir, when there is one
+          placed = await central.replicate(result, fullOutDir, () => this._fyn.createPkgOutDir(fullOutDir));
         };
       } else {
         act = "extract";
-        retrieve = () => {
+        retrieve = async () => {
+          await this._fyn.createPkgOutDir(fullOutDir);
           const untarStream = Tar.x({
             strip: 1,
             strict: true,
@@ -238,7 +238,7 @@ class PkgDistExtractor {
     // retry, and it does occur and then succeeds.  Tested on Macbook pro High Sierra.
     let retries = 0;
     return retry(
-      () => this._fyn.loadJsonForPkg(pkg, fullOutDir),
+      () => this._fyn.loadJsonForPkg(pkg, fullOutDir, placed),
       () => {
         retries++;
         logger.warn(`retrying ${retries} reading package.json`, fullOutDir);
