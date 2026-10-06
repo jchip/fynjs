@@ -101,6 +101,37 @@ Linux, "fyn default" uses the central store with hardlinks. Seconds, one sample 
 - Raw results on the box: `~/bench/pnpm-benchmarks/local-results-{15,50}ms-v15-683296f4.json`.
   The reflink reruns are `-v15rl-2d5a5b0c` with it and `-v15norl-2d5a5b0c` without.
 
+### Memory
+
+Peak memory on 2026-10-06, both machines above, fyn at `d24b1a89`, same manager versions. This is
+not the harness. Each manager installs `alotta-files` straight from registry.npmjs.org with no
+latency proxy, under `/usr/bin/time` (`-l` on macOS, `-v` on Linux). Worker threads share the
+process, so they are counted. The probe is `notes/blog-node-perf/mem-probe/`. MB, median of 3
+rounds, with the range:
+
+| Manager | Mac clean | Mac warm cache | Linux clean | Linux warm cache |
+|---|---|---|---|---|
+| npm | 705 (684-730) | 1,243 (1,223-1,263) | 610 (609-613) | 1,026 (1,015-1,031) |
+| pnpm 11 | 1,434 (1,431-1,436) | 1,038 (1,033-1,082) | 976 (972-1,001) | 660 (659-663) |
+| pnpm 12 | **474** (470-538) | **177** (176-179) | **399** (389-404) | **162** (162-166) |
+| fyn | 672 (668-679) | 457 (453-466) | 841 (802-858) | 359 (355-361) |
+
+Max RSS. "Warm cache" drops `node_modules` and the lockfile and keeps the cache.
+
+- **pnpm 12 uses the least memory on every row.** fyn peaks 1.4x higher clean and 2.6x higher
+  warm on the Mac. On Linux it's 2.1x and 2.2x.
+- **fyn beats npm and pnpm 11 on a warm cache, and pnpm 11 clean.** npm uses less than fyn on a
+  Linux clean install.
+- **fyn's clean peak is higher on Linux.** fyn keeps downloaded tarball bytes until a worker stores
+  them. The 4-core box likely drains that queue slower. A slow network the same morning gave Mac
+  clean peaks of 577-654 MB.
+- **macOS peak footprint** gives a wider gap: fyn 580 vs pnpm 12 203 clean, and 426 vs 132 warm.
+- The registry was fast, so the probe's timings are usable as a side check. On the Mac, fyn's
+  clean install took 3.9-4.3s and pnpm 12 took 12.9-14.4s. On Linux, pnpm 12 took 4.1s and fyn
+  6.9-8.3s.
+- Raw results: `.temp/mem-probe/results.ndjson` (Mac) and `results-linux.ndjson`, and
+  `~/bench/mem-probe/` on the box.
+
 ## How an install runs
 
 ```
@@ -116,6 +147,42 @@ fs workers      unzip, parse, trim        verify, untar,          copy or clone 
   work from it.
 - **fs workers do the CPU and disk work.** The pool uses cores - 1 workers, capped at 8. Jobs use
   sync fs calls, so each one is a single message instead of many async hops.
+
+## Copy, hardlink or clone on APFS
+
+Measured on 2026-10-02 on the Mac above, with fyn's replicate step.
+
+| Placing | copy | hardlink | clone each file | clone each package dir |
+|---|---|---|---|---|
+| 314 packages, 6,979 files | 702 ms, 138 MB disk | 1,015 ms, 2.7 MB | 555 ms, 2.3 MB | - |
+| alotta-files store, 1,294 packages, 37.6k files | 4.85s | - | 3.18s | **0.61s** |
+
+- **Hardlinks are slower than copies on APFS.** Each new file costs metadata work, however it's
+  made. Only one `clonefile(2)` per package dir escapes that. On ext4, hardlinks are near instant.
+- **Node can't clone on macOS.** libuv's `COPYFILE_FICLONE` makes a full copy there, checked with a
+  1 GB file. fyn clones through `@fynjs/reflink`.
+- The 37.6k-file row ran 15 packages in flight. Per-file clones went through `@fynjs/reflink`'s
+  `cloneFiles`, and the dir clones through its `cloneDir`.
+
+**Freshly written files clone just as fast.** On 2026-10-06 we wrote real package files fresh,
+then placed them right away, after `sync`, or after a 35s wait. 15 packages in flight, through
+the same `cloneFiles` and `cloneDir`. Median ms, 5 rounds at 12k files and 3 at 28.5k, shuffled:
+
+| Placing | right away | after `sync` | after 35s |
+|---|---|---|---|
+| 12k files, 65 MB: clone each file | 685 | 689 | 738 |
+| 12k files: clone each package dir | 130 | 123 | 143 |
+| 12k files: copy | 1,365 | 1,341 | 1,345 |
+| 28.5k files, 220 MB: clone each file | 1,876 | 1,919 | 2,003 |
+| 28.5k files: clone each package dir | 340 | 327 | 339 |
+| 28.5k files: copy | 2,887 | 2,913 | 2,860 |
+
+- Every gap is within about 7%, and the 35s wait is the slowest column. Copy doesn't change
+  either.
+- So clone losing on cold installs isn't about fresh files. The extra pass is the likelier
+  cause: each file goes into the store, then gets placed again.
+- Not covered: cloning while other threads are still writing, as a real cold install does.
+- The probe is `notes/blog-node-perf/clone-probe/`.
 
 ## What we kept
 
