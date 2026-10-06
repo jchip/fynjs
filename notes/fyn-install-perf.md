@@ -82,13 +82,24 @@ Linux, "fyn default" uses the central store with hardlinks. Seconds, one sample 
 - **Copy mode is about 2x slower than the default here.** Hardlinking from the store beats
   writing every file on this box.
 - **These rows ran without `@fynjs/reflink`,** which isn't published yet, so fyn hardlinked with
-  `linkSync` in the fs worker. A Linux build of it, installed for a rerun, made warm-cache rows
-  0.25-0.5s slower. Cold rows were flat within noise. ext4 can't clone, so each package paid a
-  failed clone and @fynjs/reflink's own placement instead of the worker's. fyn now stops using
-  it once a package hardlinks with no clones (see "Still open").
+  `linkSync` in the fs worker. With a Linux build of it installed, fyn at `683296f4` was
+  0.25-0.5s slower on warm-cache rows. ext4 can't clone, so @fynjs/reflink only hardlinked, and
+  that was slower than the worker. fyn now drops @fynjs/reflink once a package hardlinks with no
+  clones. A rerun at `2d5a5b0c` on 2026-10-06 matches a same-day run without it:
+
+  | fyn default | 15 ms without | 15 ms with | 50 ms without | 50 ms with |
+  |---|---|---|---|---|
+  | clean | 7.03 | 7.10 | 8.52 | 8.59 |
+  | lockfile | 4.67 | 4.68 | 5.37 | 5.40 |
+  | cache | 2.49 | 2.68 | 2.45 | 2.47 |
+  | cache + lockfile | 2.11 | 2.15 | 2.22 | 2.23 |
+
+  The 15 ms cache gap is noise. Three alternating `probe.sh` cache runs gave 2.46-2.49s with
+  @fynjs/reflink and 2.45-2.47s without.
 - **The registry shares the box.** It uses CPU the install could otherwise use, mostly serving
   packuments on clean installs.
 - Raw results on the box: `~/bench/pnpm-benchmarks/local-results-{15,50}ms-v15-683296f4.json`.
+  The reflink reruns are `-v15rl-2d5a5b0c` with it and `-v15norl-2d5a5b0c` without.
 
 ## How an install runs
 
@@ -137,6 +148,7 @@ Mac rows are at 15 ms unless noted. Linux is the 4-core box above.
 | Store writes happen in the extractor, not the download slot | Mac 50 ms clone clean 2.3s faster |
 | Store hash from the tar headers untar already read | Mac clone clean 9.63s → 9.35s at 15 ms |
 | Clone mode is the default on macOS when `@fynjs/reflink` can clone dirs | Mac warm-cache installs 2.5x faster than copy |
+| Drop `@fynjs/reflink` once a package hardlinks with no clones, and `linkSync` in the workers | Linux with @fynjs/reflink installed, cache 2.87s → 2.47s at 50 ms |
 
 On the Mac, the worker and fetch changes together cut the default clean install by 2.0-2.2s and
 lockfile by 1.8-1.9s. The default stopped paying the store's 2s cost on installs that download.
@@ -182,10 +194,6 @@ Abbreviated packuments and the changes after them cut another 0.7-1.0s off clean
   lists, and the store job returns trees. A worker could read `tree.json` itself.
 - **Memory.** Downloaded bytes wait in memory until their store job runs. Max RSS stays under 1 GB
   on the benchmark. A cap on bytes waiting to be stored would bound it for very large installs.
-- **Measure the clone probe on Linux.** `replicate` now drops `@fynjs/reflink` per-file placement
-  once a package's files hardlink and none clone, so later packages use the worker's `linkSync`.
-  Unit tests cover it. The Linux box wasn't available, so the warm-cache rows haven't been rerun
-  with reflink installed.
 - **Downloads during resolve, later.** Filling the store while resolve runs gave no gain, because
   tarball HTTP competes with packuments for the main thread and the sockets. It is worth another
   try once each tarball costs the main thread much less.
