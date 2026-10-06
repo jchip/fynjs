@@ -1,7 +1,8 @@
 # Builds and publishes the @fynjs/reflink-<platform> packages. The main @fynjs/reflink is
 # published from a dev machine by `fynpo publish`, and its optionalDependencies pin these
 # packages at the same version. That [Publish] commit reaches main afterwards, which starts
-# this workflow.
+# this workflow. A commit with [reflink-ci-dry-run] in its message runs the same jobs, but
+# publishes with --dry-run and pushes no tag.
 name: reflink-platforms
 on:
   push:
@@ -17,15 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check.outputs.version }}
+      dry_run: ${{ steps.check.outputs.dry_run }}
     steps:
       - uses: actions/checkout@v7
       # Build only when HEAD is a [Publish] commit that lists a new @fynjs/reflink version,
-      # and the done tag for that version doesn't exist yet.
+      # and the done tag for that version doesn't exist yet. Or when HEAD asks for a dry run.
       - id: check
         run: |
           version=$(node -p "require('./packages/reflink/package.json').version")
           message=$(git log -1 --format=%B)
-          if [ "$(head -n1 <<< "$message")" != "[Publish]" ]; then
+          if grep -qF -- "[reflink-ci-dry-run]" <<< "$message"; then
+            echo "dry run of @fynjs/reflink@$version"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "dry_run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$(head -n1 <<< "$message")" != "[Publish]" ]; then
             echo "HEAD is not a [Publish] commit"
           elif ! grep -qxF -- " - @fynjs/reflink@$version" <<< "$message"; then
             echo "@fynjs/reflink@$version is not in this release"
@@ -64,7 +70,7 @@ jobs:
       - run: npm i -g @napi-rs/cli@$(node -p "require('./packages/reflink/package.json').devDependencies['@napi-rs/cli']")
       - working-directory: packages/reflink
         run: napi build --platform --release --esm --target ${{ matrix.target }} ${{ matrix.flags }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bindings-${{ matrix.target }}
           path: packages/reflink/reflink.*.node
@@ -78,6 +84,7 @@ jobs:
       id-token: write
     env:
       VERSION: ${{ needs.detect.outputs.version }}
+      DRY_RUN: ${{ needs.detect.outputs.dry_run }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -85,7 +92,7 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - run: npm i -g @napi-rs/cli@$(node -p "require('./packages/reflink/package.json').devDependencies['@napi-rs/cli']")
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: bindings-*
           path: packages/reflink/artifacts
@@ -109,10 +116,13 @@ jobs:
             name=$(node -p "require('./${dir}package.json').name")
             if npm view "$name@$VERSION" version > /dev/null 2>&1; then
               echo "$name@$VERSION already published"
+            elif [ "$DRY_RUN" = true ]; then
+              (cd "$dir" && npm publish --access public --dry-run)
             else
               (cd "$dir" && npm publish --access public --provenance)
             fi
           done
-      - run: |
+      - if: needs.detect.outputs.dry_run != 'true'
+        run: |
           git tag "reflink-platform-packages-v$VERSION"
           git push origin "reflink-platform-packages-v$VERSION"
