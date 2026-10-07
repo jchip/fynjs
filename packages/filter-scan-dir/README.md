@@ -53,7 +53,9 @@ console.log(await filterScanDir({ cwd: "test" }));
 Return `true` to accept an entry or `false` to skip it.
 Directories enter the output only with `includeDir: true`.
 Return `{ stop: true }` to stop the scan.
-With `grouping: true`, return a string to choose a result group.
+With `grouping: true`, return a string or `{ group }` to choose a result group.
+Without `grouping`, the group is ignored and the entry goes to the result.
+Callbacks must be synchronous. An `async` callback throws a `TypeError` before scanning.
 
 Use `prefilter` when only some entries need full metadata:
 

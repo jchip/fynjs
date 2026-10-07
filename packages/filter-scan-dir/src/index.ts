@@ -52,7 +52,8 @@ export type FilterInfo = {
 export type FilterResult = boolean | string | FilterInfo;
 
 /**
- * filter callback for file or directory entry
+ * filter callback for file or directory entry. It must be synchronous;
+ * an `async` function throws a `TypeError`.
  * @param file - name of the file/dir being considered
  * @param path - path to the directory containing the file. Not the full path,
  *    just the relative path from CWD.  It's empty string for the files in the
@@ -126,7 +127,8 @@ export type Options<FullStat extends boolean = boolean> = {
   /** array or string of extensions to include only, apply after `ignoreExt` */
   filterExt?: string | string[];
   /**
-   * path separator to use to join entries
+   * path separator to use to join entries in output paths.
+   * Filesystem calls always use `/`.
    *
    * - *Default*: `path.posix.sep`
    * - If you didn't specify this, then `cwd` is automatically converted to use `/`.
@@ -158,6 +160,8 @@ type InternalOpts = GroupingOptions & {
   _error?: { cause: unknown };
   /** path separator to use for joining paths */
   _sep: string;
+  /** normalized cwd for output paths with a custom pathSep */
+  _outCwd: string;
   result: Record<string, string[]>;
   readdirOpts: any;
   dir: string;
@@ -218,7 +222,7 @@ function makeExtrasData(
  */
 function addResult(result, options: InternalOpts, extras: ExtrasData) {
   const group =
-    (options.grouping && typeof result === "string" ? result : result && result.group) || "files";
+    (options.grouping && (typeof result === "string" ? result : result.group)) || "files";
 
   if (!options.result[group]) {
     options.result[group] = [];
@@ -290,11 +294,12 @@ function acceptEntry(
   options: InternalOpts,
   entry: Dirent,
   path: string,
-  gitignore?: GitignoreRules,
+  gitignore: GitignoreRules | undefined,
+  fsPath: string,
 ): boolean {
   const isDirectory = entry.isDirectory();
   if (isDirectory && options._ignoreDirs.has(entry.name)) return false;
-  if (gitignore?.ignores(Path.resolve(options.dir, path, entry.name), isDirectory)) return false;
+  if (gitignore?.ignores(Path.resolve(options.dir, fsPath, entry.name), isDirectory)) return false;
   if (options.prefilter && !options.prefilter(entry.name, path, entry)) return false;
   if (isDirectory) return true;
 
@@ -335,10 +340,19 @@ function getResult(options: InternalOpts): GroupingResult | string[] {
  * @param level
  * @returns
  */
-function walkSync(path: string, options: InternalOpts, level = 0, parentRules?: GitignoreRules) {
+function walkSync(
+  path: string,
+  options: InternalOpts,
+  level = 0,
+  parentRules?: GitignoreRules,
+  fsPath = path,
+) {
   try {
     // Use Path.join to normalize the directory path once at entry
-    const dir = Path.join(options.dir, path);
+    const dir = Path.join(options.dir, fsPath);
+    // `path` and output paths use pathSep; `fsPath` and fs calls use `/`
+    const posixSep = options._sep === "/";
+    const outDir = posixSep ? dir : join2(options._sep, options._outCwd, path);
     const gitignore = options.gitignore
       ? GitignoreRules.loadSync(Path.resolve(dir), options.gitignore, parentRules)
       : undefined;
@@ -361,16 +375,17 @@ function walkSync(path: string, options: InternalOpts, level = 0, parentRules?: 
     // process files first
     for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
-      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path, gitignore)) continue;
+      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path, gitignore, fsPath))
+        continue;
       let extras: ExtrasData;
 
       if (options.fullStat) {
         const name = options._earlyFilter ? (file as Dirent).name : (file as string);
-        const fullFile = join2(options._sep, dir, name);
-        const stat = Fs.lstatSync(fullFile);
+        const fullFile = join2(options._sep, outDir, name);
+        const stat = Fs.lstatSync(posixSep ? fullFile : join2("/", dir, name));
         extras = makeExtrasData(name, fullFile, path, stat, extrasFiles, options);
       } else {
-        const fullFile = join2(options._sep, dir, (file as Dirent).name);
+        const fullFile = join2(options._sep, outDir, (file as Dirent).name);
         extras = makeExtrasData(
           (file as Dirent).name,
           fullFile,
@@ -398,7 +413,8 @@ function walkSync(path: string, options: InternalOpts, level = 0, parentRules?: 
           break;
         }
         if (!flags.skip && level < options.maxLevel) {
-          walkSync(extras.dirFile, options, level + 1, gitignore);
+          const childFsPath = posixSep ? extras.dirFile : join2("/", fsPath, extras.file);
+          walkSync(extras.dirFile, options, level + 1, gitignore, childFsPath);
         }
       }
     }
@@ -436,7 +452,13 @@ function releaseDirectory(options: InternalOpts) {
  * @param level
  * @returns
  */
-async function walk(path: string, options: InternalOpts, level = 0, parentRules?: GitignoreRules) {
+async function walk(
+  path: string,
+  options: InternalOpts,
+  level = 0,
+  parentRules?: GitignoreRules,
+  fsPath = path,
+) {
   let promises = [];
   let hasSlot = false;
   try {
@@ -451,7 +473,10 @@ async function walk(path: string, options: InternalOpts, level = 0, parentRules?
     if (options._stopped) return undefined;
 
     // Use Path.join to normalize the directory path once at entry
-    const dir = Path.join(options.dir, path);
+    const dir = Path.join(options.dir, fsPath);
+    // `path` and output paths use pathSep; `fsPath` and fs calls use `/`
+    const posixSep = options._sep === "/";
+    const outDir = posixSep ? dir : join2(options._sep, options._outCwd, path);
     const gitignore = options.gitignore
       ? await GitignoreRules.load(Path.resolve(dir), options.gitignore, parentRules)
       : undefined;
@@ -474,17 +499,18 @@ async function walk(path: string, options: InternalOpts, level = 0, parentRules?
     // process files first
     for (let ix = 0; !options._stopped && ix < files.length; ix++) {
       const file = files[ix];
-      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path, gitignore)) continue;
+      if (options._earlyFilter && !acceptEntry(options, file as Dirent, path, gitignore, fsPath))
+        continue;
       let extras;
 
       if (options.fullStat) {
         const name = options._earlyFilter ? (file as Dirent).name : (file as string);
-        const fullFile = join2(options._sep, dir, name);
-        const stat = await asyncLStat(fullFile);
+        const fullFile = join2(options._sep, outDir, name);
+        const stat = await asyncLStat(posixSep ? fullFile : join2("/", dir, name));
         if (options._stopped) break;
         extras = makeExtrasData(name, fullFile, path, stat, extrasFiles, options);
       } else {
-        const fullFile = join2(options._sep, dir, (file as Dirent).name);
+        const fullFile = join2(options._sep, outDir, (file as Dirent).name);
         extras = makeExtrasData(
           (file as Dirent).name,
           fullFile,
@@ -518,7 +544,8 @@ async function walk(path: string, options: InternalOpts, level = 0, parentRules?
           break;
         }
         if (!flags.skip && level < options.maxLevel) {
-          const walkP = walk(extras.dirFile, options, level + 1, gitignore);
+          const childFsPath = posixSep ? extras.dirFile : join2("/", fsPath, extras.file);
+          const walkP = walk(extras.dirFile, options, level + 1, gitignore, childFsPath);
           if (options.concurrency > 1) {
             promises.push(walkP);
             // Bound eager child walks as well as active directory operations.
@@ -569,6 +596,13 @@ function makeOptions(opts: string | ScanOptions): InternalOpts {
     throw new TypeError("prefilter requires fullStat: true");
   }
 
+  // a returned promise is truthy and would accept every entry
+  for (const name of ["filter", "filterDir", "prefilter"]) {
+    if (Object.prototype.toString.call(options[name]) === "[object AsyncFunction]") {
+      throw new TypeError(`${name} must return a result synchronously, not a promise`);
+    }
+  }
+
   const sep = options.pathSep || Path.posix.sep;
 
   let cwd = options.cwd || (options as any).dir || process.cwd();
@@ -608,6 +642,7 @@ function makeOptions(opts: string | ScanOptions): InternalOpts {
     options,
     {
       dir: cwd,
+      _outCwd: Path.join(cwd),
       fullStat: options.fullStat === undefined ? true : options.fullStat,
       result: Object.create(null),
       ignoreExt: []
