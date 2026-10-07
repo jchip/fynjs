@@ -683,6 +683,8 @@ class PkgDepLocker {
       return;
     }
 
+    // a global install never takes the install lock, so nothing else creates node_modules/.f
+    Fs.$.mkdirp(Path.dirname(filename));
     Fs.writeFileSync(filename, this._stringify(Path.dirname(filename)));
   }
 

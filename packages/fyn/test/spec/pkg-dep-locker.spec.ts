@@ -382,6 +382,24 @@ describe("pkg-dep-locker", function () {
         });
     });
 
+    it("saveInstalled creates a missing node_modules/.f", () => {
+      let installedFile: string;
+      return verify({
+        timeout: 2000,
+        cleanup: () => Fs.rmSync(tmpDir, { recursive: true, force: true }),
+      })
+        .step(() => (tmpDir = makeTmpDir()))
+        .step(() => {
+          installedFile = Path.join(tmpDir, "node_modules", ".f", "lock.yaml");
+          const locker = new PkgDepLocker(true, true, { _shownMissingFiles: new Set() });
+          locker._lockData = sampleLockData();
+          locker.saveInstalled(installedFile);
+        })
+        .step(() => {
+          expect(Fs.existsSync(installedFile)).toBe(true);
+        });
+    });
+
     it("saveInstalled writes nothing when the lockfile is disabled", () => {
       return verify({
         timeout: 2000,
