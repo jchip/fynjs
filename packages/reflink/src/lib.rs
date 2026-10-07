@@ -8,7 +8,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::io::{self, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 use std::thread;
@@ -95,8 +95,29 @@ fn place_err(e: io::Error, src: &Path, dest: &Path) -> Error {
   to_napi(e, format!("{} -> {}", src.display(), dest.display()))
 }
 
+fn invalid(msg: &str) -> io::Error {
+  io::Error::new(ErrorKind::InvalidInput, msg)
+}
+
+/// Whether `dest` names the file `src` resolves to. Only the parent of `dest` is resolved, so
+/// replacing a symlink at `dest` is still allowed.
+fn same_file_path(src: &Path, dest: &Path) -> bool {
+  let (Some(parent), Some(name)) = (dest.parent(), dest.file_name()) else {
+    return false;
+  };
+  let parent = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
+  match (fs::canonicalize(src), fs::canonicalize(parent)) {
+    (Ok(s), Ok(p)) => s == p.join(name),
+    _ => false,
+  }
+}
+
 fn clone_one(src: &str, dest: &str) -> Result<bool> {
   let (s, d) = (Path::new(src), Path::new(dest));
+  // the pre-delete in place() would remove src
+  if same_file_path(s, d) {
+    return Err(place_err(invalid("dest is the source"), s, d));
+  }
   let placed = place(s, d, false, true, &AtomicBool::new(true)).map_err(|e| place_err(e, s, d))?;
   Ok(matches!(placed, Placed::Cloned))
 }
@@ -109,6 +130,20 @@ fn clone_many(
   copy: bool,
 ) -> Result<CloneStats> {
   let (src_dir, dest_dir) = (Path::new(src_dir), Path::new(dest_dir));
+  // an absolute or .. entry joins onto a path outside dest_dir, possibly the source itself
+  let outside = |f: &&String| {
+    !Path::new(f.as_str()).components().all(|c| matches!(c, Component::Normal(_) | Component::CurDir))
+  };
+  if let Some(f) = files.iter().find(outside) {
+    return Err(to_napi(invalid("file must be relative to the dir, without .."), f.clone()));
+  }
+  if !files.is_empty() {
+    if let (Ok(s), Ok(d)) = (fs::canonicalize(src_dir), fs::canonicalize(dest_dir)) {
+      if s == d {
+        return Err(place_err(invalid("destDir is srcDir"), src_dir, dest_dir));
+      }
+    }
+  }
   let pairs: Vec<(PathBuf, PathBuf)> =
     files.iter().map(|f| (src_dir.join(f), dest_dir.join(f))).collect();
 

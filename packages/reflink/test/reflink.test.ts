@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { verify } from "run-verify";
 import { cloneDir, cloneFile, cloneFileSync, cloneFiles, cloneFilesSync } from "../index.js";
 
 let dir: string;
@@ -44,6 +45,15 @@ describe("cloneFile", () => {
   it("rejects with paths when src is missing", async () => {
     await expect(cloneFile(p("nope"), p("b"))).rejects.toThrow(/nope/);
   });
+
+  it("rejects without deleting src when dest is src", () =>
+    verify({ timeout: 2000 })
+      .step(() => fs.writeFileSync(p("a"), "keep"))
+      .expectErrorMatch(/InvalidInput/)
+      .step(() => cloneFile(p("a"), p("a")))
+      .expectErrorMatch(/InvalidInput/)
+      .step(() => cloneFileSync(p("a"), `${dir}/./a`))
+      .step(() => expect(fs.readFileSync(p("a"), "utf8")).toBe("keep")));
 });
 
 describe("cloneFiles", () => {
@@ -140,6 +150,32 @@ describe("cloneFiles", () => {
     fs.mkdirSync(p("s"));
     await expect(cloneFiles(p("s"), p("d"), ["missing"])).rejects.toThrow(/missing/);
   });
+
+  // Path::join would resolve these onto the source, which the pre-delete then removes
+  it.each([
+    ["an absolute", () => p("s/a")],
+    ["a ..", () => "../s/a"],
+    ["a nested ..", () => "x/../../s/a"]
+  ])("rejects %s entry without touching the source", (_, entry) =>
+    verify({ timeout: 2000 })
+      .step(() => fs.mkdirSync(p("s")))
+      .step(() => fs.writeFileSync(p("s/a"), "keep"))
+      .expectErrorMatch(/InvalidInput/)
+      .step(() => cloneFiles(p("s"), p("d"), [entry()]))
+      .expectErrorMatch(/InvalidInput/)
+      .step(() => cloneFilesSync(p("s"), p("d"), [entry()]))
+      .step(() => expect(fs.readFileSync(p("s/a"), "utf8")).toBe("keep"))
+      .step(() => expect(fs.existsSync(p("d"))).toBe(false)));
+
+  it("rejects without touching the source when destDir is srcDir", () =>
+    verify({ timeout: 2000 })
+      .step(() => fs.mkdirSync(p("s")))
+      .step(() => fs.writeFileSync(p("s/a"), "keep"))
+      .expectErrorMatch(/InvalidInput/)
+      .step(() => cloneFiles(p("s"), p("s"), ["a"]))
+      .expectErrorMatch(/InvalidInput/)
+      .step(() => cloneFilesSync(p("s"), `${dir}/s/.`, ["a"]))
+      .step(() => expect(fs.readFileSync(p("s/a"), "utf8")).toBe("keep")));
 });
 
 // only APFS clones directories, and the macOS tmpdir is on APFS
