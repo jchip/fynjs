@@ -87,6 +87,72 @@ describe("visual-logger", () => {
     });
   });
 
+  describe("logLevel", () => {
+    const make = (logLevel?: any) => {
+      const out: string[] = [];
+      const visLog = new VisualLogger({
+        color: false,
+        logLevel,
+        output: { write: (x) => (out.push(x), true) } as OutputInterface
+      });
+      return { out, visLog };
+    };
+
+    it("should default to info", () => {
+      return verify({ timeout: 500 })
+        .step(() => make().visLog)
+        .keep.step((visLog) => expect(visLog.logLevel).toBe("info"))
+        .step((visLog) => expect((visLog as any)._logLevel).toBe(VisualLogger.Levels.info));
+    });
+
+    it("should take the level from the constructor option", () => {
+      return verify({ timeout: 500 })
+        .step(() => make("debug"))
+        .keep.step(({ visLog }) => expect(visLog.logLevel).toBe("debug"))
+        .keep.step(({ visLog }) => visLog.debug("dbg"))
+        .step(({ out }) => expect(out).toEqual(["> dbg\n"]));
+    });
+
+    it("should print debug after setting debug", () => {
+      return verify({ timeout: 500 })
+        .step(() => make())
+        .keep.step(({ visLog }) => visLog.debug("before"))
+        .keep.step(({ visLog }) => (visLog.logLevel = "debug"))
+        .keep.step(({ visLog }) => visLog.debug("after"))
+        .step(({ out }) => expect(out).toEqual(["> after\n"]));
+    });
+
+    it("should suppress info after setting warn", () => {
+      return verify({ timeout: 500 })
+        .step(() => make())
+        .keep.step(({ visLog }) => (visLog.logLevel = "warn"))
+        .keep.step(({ visLog }) => visLog.info("info msg"))
+        .keep.step(({ visLog }) => visLog.warn("warn msg"))
+        .step(({ out }) => expect(out).toEqual(["> warn msg\n"]));
+    });
+
+    it("should return the level name from the getter", () => {
+      return verify({ timeout: 500 })
+        .step(() => make().visLog)
+        .keep.step((visLog) => (visLog.logLevel = "error"))
+        .step((visLog) => expect(visLog.logLevel).toBe("error"));
+    });
+
+    it("should throw TypeError setting an unknown level", () => {
+      const { visLog } = make();
+      return verify({ timeout: 500 })
+        .expectErrorInstanceMatch(TypeError, "unknown log level: loud")
+        .step(() => (visLog.logLevel = "loud" as any))
+        .step(() => expect(visLog.logLevel).toBe("info"));
+    });
+
+    it("should throw TypeError for an unknown constructor level", () => {
+      return verify({ timeout: 500 })
+        .expectErrorInstanceMatch(TypeError, "unknown log level: loud")
+        .step(() => make("loud"));
+    });
+  });
+
   describe("visual item", () => {
     let out: string[] = [];
     let clearCount = 0;

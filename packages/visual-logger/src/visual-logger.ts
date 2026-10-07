@@ -34,6 +34,13 @@ export type LogItemType = keyof typeof LogItemTypes;
 
 const DEFAULT_SPINNER_INTERVAL = 100;
 
+function levelValue(level: LogLevel): number {
+  if (!Object.prototype.hasOwnProperty.call(Levels, level)) {
+    throw new TypeError(`VisualLogger unknown log level: ${String(level)}`);
+  }
+  return Levels[level];
+}
+
 const SPIN_OFF = 0;
 const SPIN_STARTED = 1;
 const SPIN_RUNNING = 2;
@@ -67,6 +74,7 @@ export interface VisualLoggerOptions {
   updatesPerDot?: number;
   color?: boolean;
   saveLogs?: boolean;
+  logLevel?: LogLevel;
 }
 
 interface SpinTimer {
@@ -104,7 +112,7 @@ export class VisualLogger {
     this._items = [];
     this._itemOptions = {};
     this._lines = [];
-    this._logLevel = Levels.info;
+    this._logLevel = levelValue(options.logLevel ?? "info");
     this._itemType = LogItemTypes.normal;
     this._logData = [];
     this._output = options.output || defaultOutput;
@@ -139,6 +147,14 @@ export class VisualLogger {
   set color(enable: boolean) {
     this._color = enable;
     this.setPrefix();
+  }
+
+  get logLevel(): LogLevel {
+    return (Object.keys(Levels) as LogLevel[]).find((k) => Levels[k] === this._logLevel)!;
+  }
+
+  set logLevel(level: LogLevel) {
+    this._logLevel = levelValue(level);
   }
 
   static get spinners(): string[] {

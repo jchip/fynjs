@@ -41,6 +41,14 @@ logger.info("done");
 
 `debug()`, `verbose()`, `info()`, `log()`, `warn()`, `error()` - one per level. Levels are `debug` (10), `verbose` (20), `info` (30), `warn` (40), `error` (50), `fyi` (60) and `none` (100); each gets its own color, exported as `LevelColors`.
 
+Messages below the logger's level are saved to `logData` but not printed. The level defaults to `info`. Set it with the `logLevel` constructor option or the `logLevel` property:
+
+```js
+const logger = new VisualLogger({ logLevel: "debug" });
+logger.logLevel; // "debug"
+logger.logLevel = "warn"; // an unknown name throws TypeError
+```
+
 `prefix(str | false)` and `setPrefix(str)` set a prefix on subsequent lines.
 
 ### Items
