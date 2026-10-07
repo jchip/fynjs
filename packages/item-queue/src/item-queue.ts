@@ -161,6 +161,8 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
   private _watchTime: number;
   private _id: number;
   private _pause: boolean;
+  /** bumped by an immediate pause(), so a resume() tick scheduled earlier skips itself */
+  private _pauseSeq = 0;
   private _startTime: number;
   private _processing: boolean;
   private _watchTimer: any;
@@ -327,6 +329,7 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
       // nothing in flight, so pause now. A marker here would be consumed by the
       // next resume() and pause the queue again.
       this._pause = true;
+      this._pauseSeq++;
       process.nextTick(() => this.emit("pause"));
     }
     return this;
@@ -355,7 +358,10 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
   resume() {
     // cancel a pause() that hasn't been reached yet; user-placed pauseItem markers stay
     this._itemQ = this._itemQ.filter((x) => x._control !== PAUSE_CALL);
+    const pauseSeq = this._pauseSeq;
     process.nextTick(() => {
+      // a later pause() wins over this resume()
+      if (pauseSeq !== this._pauseSeq) return;
       this.unpause();
       if (this._itemQ.length === 0) {
         this._itemQ.push(this._wrap(RESUME_ITEM));

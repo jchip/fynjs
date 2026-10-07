@@ -342,6 +342,27 @@ describe("item-queue", () => {
       .step(() => expect(seen).toEqual([1]));
   });
 
+  it("should stay paused after resume() then pause() on an idle queue", () => {
+    const seen: number[] = [];
+    const paused = signal<void>();
+    const pq = new ItemQueue<number>({
+      processItem: (x) => {
+        seen.push(x);
+      },
+    });
+    pq.once("pause", () => paused.resolve());
+
+    return verify({ timeout: 500, signals: { paused } })
+      .step(() => pq.addItems([1, 2], true))
+      .step(() => pq.resume())
+      .step(() => pq.pause())
+      .awaiting(paused)
+      // let resume()'s tick run
+      .step(() => new Promise((resolve) => setImmediate(resolve)))
+      .step(() => expect(pq.isPause).toBe(true))
+      .step(() => expect(seen).toEqual([]));
+  });
+
   it("should pause before the next item when pause() is called while processing", () => {
     const seen: number[] = [];
     const paused = signal<void>();
