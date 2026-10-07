@@ -62,6 +62,28 @@ BACKENDS.forEach(({ name, ck }) => {
         .step(() => ck("  <red>x</red>  "))
         .step(r => expect(r).toBe(`  ${RED_X}  `)));
 
+    it("should give the colors on output minus the colors with colors off", () =>
+      verify({ timeout: TIMEOUT })
+        .step(() => ck("abc</red>", OFF))
+        .step(r => expect(r).toBe("abc</red>"))
+        .step(() => ck("<red>x</red></blue> y", OFF))
+        .step(r => expect(r).toBe("x</blue> y"))
+        .step(() => ck("<>", OFF))
+        .step(r => expect(r).toBe("<>"))
+        .step(() => ck("1 < 2 <red>x</red> 3 > 2", OFF))
+        .step(r => expect(r).toBe("1 < 2 x 3 > 2"))
+        .step(() => ck("<<red>x</red>>&lt;", OFF))
+        .step(r => expect(r).toBe("<x><")));
+
+    it("should still drop unclosed or mismatched markers with colors off", () =>
+      verify({ timeout: TIMEOUT })
+        .step(() => ck("<red>x", OFF))
+        .step(r => expect(r).toBe("x"))
+        .step(() => ck("a < b > c", OFF))
+        .step(r => expect(r).toBe("a  c"))
+        .step(() => ck("<red>a<blue>b</red>", OFF))
+        .step(r => expect(r).toBe("ab")));
+
     it("should leave invalid numeric entities as-is", () =>
       verify({ timeout: TIMEOUT })
         .step(() => ck.decodeHtml("&#xZZ;"))
@@ -80,4 +102,17 @@ BACKENDS.forEach(({ name, ck }) => {
         .step(() => ck.decodeHtml("&#X41;&#x42;&#67;"))
         .step(r => expect(r).toBe("ABC")));
   });
+});
+
+describe("chalk 6 with colors off", () => {
+  // a chalk 6 instance has no supportsColor; at level 0 chalk itself emits no codes
+  const ck0 = makeChalker(new Chalk({ level: 0 }));
+  const S = "<red.bold>a</> <#FF0000>b</> <orange>c</> <bg-orange>d</> abc</red> <>";
+
+  it("should match the supportsColor false output", () =>
+    verify({ timeout: TIMEOUT })
+      .step(() => ck0(S))
+      .step(r => expect(r).toBe("a b c d abc</red> <>"))
+      .step(() => ck0(S, OFF))
+      .step(r => expect(r).toBe("a b c d abc</red> <>")));
 });

@@ -267,11 +267,8 @@ function format(
   // read CHALK off the instance at call time - it is public and settable
   userChalk = normalizeColors(userChalk || instance.CHALK);
 
-  // skip applying ansi colors if chalk says color support is off
-  // no trim here, so the output matches the colors on path minus the colors
-  if (userChalk.supportsColor === false) {
-    return s ? decodeHtml(s.replace(MARKERS_RE, "")) : "";
-  }
+  // chalk says color support is off: parse the same way, but keep marker text unstyled
+  const off = userChalk.supportsColor === false;
 
   // a stray < or > that is not part of a marker is its own text token
   const tks = s && s.match(/<[^<>]+>|[^<>]+|[<>]/g);
@@ -299,6 +296,8 @@ function format(
 
       // markers balance check
       if (a.length === 1) {
+        // colors off never throws: an unclosed open marker is dropped
+        if (off) return a;
         const partial =
           tks.slice(0, ix).join("") + `[${tks[ix]}]` + (tks.length > ix + 1 ? "..." : "");
         throw new Error(`unbalanced open/close markers: ${partial}`);
@@ -306,7 +305,7 @@ function format(
 
       // markers match check
       const mk = e.substring(1, e.length - 1);
-      if (lvl.mk && mk !== lvl.mk) {
+      if (lvl.mk && mk !== lvl.mk && !off) {
         const partial =
           tks.slice(0, ix).join("") +
           `[** ${tks[ix]} **]` +
@@ -316,7 +315,7 @@ function format(
       }
 
       // apply marker and update result at previous level
-      const t = applyChalkMarkers(mk, lvl.s, userChalk);
+      const t = off ? lvl.s : applyChalkMarkers(mk, lvl.s, userChalk);
       a.pop();
       const nl = a.length - 1;
       a[nl].s = t + a[nl].s;

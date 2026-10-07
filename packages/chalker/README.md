@@ -113,7 +113,9 @@ chalker(str, [chalkInstance]);
 
 **Returns:** A string with terminal/ansi color codes
 
-> If `chalk.supportsColor` is `false`, then it will simply remove the `<>` markers and decode HTML entities only.
+> If `chalk.supportsColor` is `false`, then markers are parsed the same way but no colors are applied.
+> The output is the colored output minus the color codes, with HTML entities decoded.
+> Chalk 5+ instances have no `supportsColor`. At `level` 0, chalk itself emits no color codes.
 
 ### `chalker.CHALK`
 
@@ -142,7 +144,7 @@ chalker.remove(str, keepHtml);
 - `str` - String with chalker color markers
 - `keepHtml` - If `true`, then don't decode HTML entity escapes.
 
-Simply remove all chalker markers and return the plain text string, with HTML escapes decoded.
+Remove all chalker markers and trim leading and trailing whitespace. Then decode HTML escapes and return the plain text string.
 
 **Returns**: A plain text string without chalker color markers
 
