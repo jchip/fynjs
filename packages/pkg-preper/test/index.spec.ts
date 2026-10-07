@@ -183,4 +183,56 @@ describe("PkgPreper integration", () => {
         expect(calls[0]).toContain("git://test");
       });
   });
+
+  // resolves once the packing tmp dir has been created and removed again,
+  // which happens right before depDirPacker's error handler runs
+  const tmpCleaned = (tmpRoot: string) =>
+    new Promise<void>((resolve) => {
+      const poll = () => {
+        const dir = Path.join(tmpRoot, "tmp");
+        if (Fs.existsSync(dir) && Fs.readdirSync(dir).length === 0) {
+          setTimeout(resolve, 20);
+        } else {
+          setTimeout(poll, 10);
+        }
+      };
+      poll();
+    });
+
+  it("depDirPacker should destroy the stream on failure", () => {
+    let stream: ReturnType<PkgPreper["depDirPacker"]> | undefined;
+    const errors: unknown[] = [];
+
+    return verify({ timeout: 2000, cleanup: () => stream?.destroy() })
+      .callbackStep((next) => {
+        const preper = new PkgPreper({
+          tmpDir: Path.join(Os.tmpdir(), "pkg-preper-unused"),
+          installDependencies: async () => undefined,
+        });
+        stream = preper.depDirPacker({}, "/nonexistent-pkg-preper-dir");
+        stream.on("error", (e) => errors.push(e));
+        stream.on("close", () => next());
+      })
+      .step(() => expect(stream?.destroyed).toBe(true))
+      .step(() => expect(errors).toHaveLength(1));
+  });
+
+  it("depDirPacker should not emit a second error after the consumer destroys it", () => {
+    const base = makeTmpDir();
+    const tmpDir = Path.join(base, "tmp");
+    const errors: string[] = [];
+
+    return verify({
+      timeout: 2000,
+      cleanup: () => Fs.rmSync(base, { recursive: true, force: true }),
+    })
+      .step(() => {
+        const preper = new PkgPreper({ tmpDir, installDependencies: async () => undefined });
+        const stream = preper.depDirPacker({ _resolved: "test" }, makeFixturePkg(base));
+        stream.on("error", (e: Error) => errors.push(e.message));
+        stream.on("prepared", () => stream.destroy(new Error("boom")));
+      })
+      .step(() => tmpCleaned(tmpDir))
+      .step(() => expect(errors).toEqual(["boom"]));
+  });
 });

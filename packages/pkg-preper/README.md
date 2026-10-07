@@ -43,7 +43,7 @@ Returns the `(manifest, dir) => stream` callback to hand to pacote as its `dirPa
 
 ### `preper.depDirPacker(manifest, dir)`
 
-The packer itself, if you'd rather call it directly. Returns a stream of the packed tarball; emits `prepared` once the prepare step is done and `error` if anything fails.
+The packer itself, if you'd rather call it directly. Returns a stream of the packed tarball; emits `prepared` once the prepare step is done (right away when there is no `prepare` script). On failure the stream is destroyed with the error.
 
 ### `preper.packDirectory(manifest, dir, target)`
 

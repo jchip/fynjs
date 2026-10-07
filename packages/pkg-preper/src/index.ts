@@ -98,7 +98,13 @@ class PkgPreper {
               files.map((f) => `./${f}`),
             );
           })
-          .then(() => FsPromises.rename(tmpTarget, target))
+          .then(() =>
+            FsPromises.rename(tmpTarget, target).catch((err: NodeJS.ErrnoException) => {
+              // rename can't cross filesystems; copy instead (withTmp removes the source)
+              if (err.code !== "EXDEV") throw err;
+              return FsPromises.copyFile(tmpTarget, target);
+            }),
+          )
           .then(() => undefined);
       });
     });
@@ -131,7 +137,8 @@ class PkgPreper {
         });
       })
       .catch((err) => {
-        stream.emit("error", err);
+        // destroy is a no-op if pipeline already destroyed the stream, so no duplicate error
+        stream.destroy(err);
       });
 
     return stream;
