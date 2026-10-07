@@ -150,19 +150,19 @@ $pkg:
    conventional-commits-parser: ^7.0.0
    picocolors: ^1.1.1
 '@conventional-changelog/git-client':
- _latest: 3.1.2
+ _latest: 3.2.0
  _:
-  ^3.0.0: 3.1.2
- 3.1.2:
-  $: sha512-jZqwnJwf7nboIlAcw/mkOjVa6DexCcUOgT2oOQgkoi3z9vR8tGFkcMy2BFcYwjhL9sYcDDXkRQDayiDieCoW7A==
-  _: 'https://registry.npmjs.org/@conventional-changelog/git-client/-/git-client-3.1.2.tgz'
+  ^3.0.0: 3.2.0
+ 3.2.0:
+  $: sha512-sD/E0vzpkoDz/dqM1Hhv0ihC4KBw6RXjefeO8SG1XrX+wGkMxe1pKeedkKDPCtr2JjuhbuS9aJNgOvnT8hbeBw==
+  _: 'https://registry.npmjs.org/@conventional-changelog/git-client/-/git-client-3.2.0.tgz'
   dependencies:
    '@simple-libs/child-process-utils': ^2.0.0
    '@simple-libs/stream-utils': ^2.0.0
-   semver: ^7.5.2
+   verkit: ^0.5.0
   peerDependencies:
    conventional-commits-filter: ^6.0.1
-   conventional-commits-parser: ^7.1.2
+   conventional-commits-parser: ^7.1.3
 '@conventional-changelog/template':
  _latest: 1.4.0
  _:
@@ -452,13 +452,13 @@ ansi-escapes:
   dependencies:
    environment: ^1.0.0
 ansi-regex:
- _latest: 6.3.0
+ _latest: 6.4.0
  _:
   ^5.0.1: 5.0.1
-  '^6.0.1,^6.2.2': 6.3.0
- 6.3.0:
-  $: sha512-WpDfL7NO6j7tH88IDBNVdUJxDh9nmCteAVW9dsep846XdwF4naCBK+/tGLX3KJgcpgMRXCFlTM2hKGoK9FsdrQ==
-  _: 'https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.3.0.tgz'
+  '^6.0.1,^6.2.2': 6.4.0
+ 6.4.0:
+  $: sha512-KzTVk2tCWAHtYrvvvaP8bJKJq2pVinhLcGEQdtLIYPbmNGNyYe8QwNaTUYQp2J7/vIsUKt5QCqAfUkYyG9DkOw==
+  _: 'https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.4.0.tgz'
  5.0.1:
   $: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==
   _: 'https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz'
@@ -494,7 +494,7 @@ balanced-match:
   $: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==
   _: 'https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz'
 boxen:
- _latest: 8.0.1
+ _latest: 9.0.0
  _:
   ^8.0.1: 8.0.1
  8.0.1:
@@ -533,13 +533,13 @@ camelcase:
   $: sha512-8WB3Jcas3swSvjIeA2yvCJ+Miyz5l1ZmB6HFb9R1317dt9LCQoswg/BGrmAmkWVEszSrrg4RwmO46qIm2OEnSA==
   _: 'https://registry.npmjs.org/camelcase/-/camelcase-8.0.0.tgz'
 chalk:
- _latest: 6.0.0
+ _latest: 6.0.1
  _:
   ^5.3.0: 5.6.2
-  ^6.0.0: 6.0.0
- 6.0.0:
-  $: sha512-2uNTXIuTTxk7ciZgAU1BQcgnchcG0xXnrs6jzkQfj9SsRa9M2s5zE8WT96hS6KmG4MzWHSrvH43DF1m4XRkrFg==
-  _: 'https://registry.npmjs.org/chalk/-/chalk-6.0.0.tgz'
+  ^6.0.0: 6.0.1
+ 6.0.1:
+  $: sha512-/Ce6KNm3vIbWdMlNna6RVIZ/ICQxnJxCicet5LBKK9ZffBkqzDw0xh9EiKSljdRtiIQ1S1z4YgcscUUGzNCWrA==
+  _: 'https://registry.npmjs.org/chalk/-/chalk-6.0.1.tgz'
  5.6.2:
   $: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==
   _: 'https://registry.npmjs.org/chalk/-/chalk-5.6.2.tgz'
@@ -583,12 +583,12 @@ conventional-commits-filter:
   $: sha512-cs+LadpH7Kpw0M3k8wurk+sOVVDAENA0iK4OBOrkL94j5lEVYRJ4j3zd2bhY9qgzyrPqthdcYT3axzRN7AliMg==
   _: 'https://registry.npmjs.org/conventional-commits-filter/-/conventional-commits-filter-6.0.1.tgz'
 conventional-commits-parser:
- _latest: 7.1.2
+ _latest: 7.1.3
  _:
-  '^7.0.0,^7.1.2': 7.1.2
- 7.1.2:
-  $: sha512-O+x4N2yH+ijvqWlIyTHsXTAP+algNWgGbjY2duCe8w2vUMvUB95cLRslCPfTMQyLAKlet3bhZTdu6ozn4M+QJQ==
-  _: 'https://registry.npmjs.org/conventional-commits-parser/-/conventional-commits-parser-7.1.2.tgz'
+  '^7.0.0,^7.1.2': 7.1.3
+ 7.1.3:
+  $: sha512-Q9oWm1o9uy/oEsZQIraoFMZ4RuPD+79KgwWj6mJVP356tazolCB0piRLZ5Kz9te9p027uSEcUW+Gu44Eh+X79g==
+  _: 'https://registry.npmjs.org/conventional-commits-parser/-/conventional-commits-parser-7.1.3.tgz'
   dependencies:
    '@simple-libs/stream-utils': ^2.0.0
    argue-cli: ^3.1.0
@@ -662,12 +662,12 @@ escalade:
   $: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==
   _: 'https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz'
 execa:
- _latest: 10.0.1
+ _latest: 10.1.0
  _:
-  ^10.0.0: 10.0.1
- 10.0.1:
-  $: sha512-ge98qjkRK4IB7tL7Ju/6qmm5LHoH1eEMt5FNZrz3f4UIYhF28lggX20z3FaX1sgc67msLEn0N0BscOs29iuwyw==
-  _: 'https://registry.npmjs.org/execa/-/execa-10.0.1.tgz'
+  ^10.0.0: 10.1.0
+ 10.1.0:
+  $: sha512-5HT/600HqXEtmkb9mK/PkTWw+bQSCzPnWiZ4/87wD3Hi0wFzCapOuNT9p4M08PDd+KLHdHvFhKjOWmNx/npRNQ==
+  _: 'https://registry.npmjs.org/execa/-/execa-10.1.0.tgz'
   dependencies:
    '@sindresorhus/merge-streams': ^4.0.0
    figures: ^6.1.0
@@ -676,11 +676,11 @@ execa:
    is-plain-obj: ^4.1.0
    is-stream: ^4.0.1
    npm-run-path: ^6.0.0
-   pretty-ms: ^9.3.0
+   pretty-ms: ^9.3.1
    signal-exit: ^4.1.0
    strip-final-newline: ^4.0.0
    which-command: ^0.1.0
-   yoctocolors: ^2.1.2
+   yoctocolors: ^2.2.0
 fast-deep-equal:
  _latest: 3.1.3
  _:
@@ -721,12 +721,12 @@ filter-scan-dir:
   $: local
   _: ./packages/filter-scan-dir
 fs-extra:
- _latest: 11.4.0
+ _latest: 11.4.1
  _:
-  ^11.3.0: 11.4.0
- 11.4.0:
-  $: sha512-EQsFzMUJkCKGr1ePqlYADkIUmHW1s3ZXr5Yqy6wbGrfUCphpl2maM/kyOIRA2HpP3AaFQTZXD4ldjek+nccddA==
-  _: 'https://registry.npmjs.org/fs-extra/-/fs-extra-11.4.0.tgz'
+  ^11.3.0: 11.4.1
+ 11.4.1:
+  $: sha512-KYAb4c9BJQI6QqGKthV68OHe0badztdXJWKo0WtBA9IuCFPTKvE5ZdUBglP833aMjhaSPNO4A5j/EkzZtGlKjA==
+  _: 'https://registry.npmjs.org/fs-extra/-/fs-extra-11.4.1.tgz'
   dependencies:
    graceful-fs: ^4.2.0
    jsonfile: ^6.0.1
@@ -869,12 +869,12 @@ human-signals:
   $: sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ==
   _: 'https://registry.npmjs.org/human-signals/-/human-signals-8.0.1.tgz'
 ignore:
- _latest: 7.0.9
+ _latest: 7.0.12
  _:
-  ^7.0.6: 7.0.9
- 7.0.9:
-  $: sha512-brTTsvFRt5C1gGHtPst/281UjPD5t9fBqbgoMPlVWy11ZLTPfu7HxK4ZYqO9H7o/yC9rSTCI85EaQ4OoY12qYw==
-  _: 'https://registry.npmjs.org/ignore/-/ignore-7.0.9.tgz'
+  ^7.0.6: 7.0.12
+ 7.0.12:
+  $: sha512-/8UvqAPU9DGTI9k4mxtf49U37Isfwr8Uts96+SBHIkFxPJnHS0Ew4f00sM4Scd8V8EjM0jUNtVDdv1kPdt35lg==
+  _: 'https://registry.npmjs.org/ignore/-/ignore-7.0.12.tgz'
 ignore-walk:
  _latest: 9.0.0-fynlocal_h
  _:
@@ -1287,7 +1287,7 @@ postcss:
 pretty-ms:
  _latest: 9.3.1
  _:
-  ^9.3.0: 9.3.1
+  ^9.3.1: 9.3.1
  9.3.1:
   $: sha512-HzMy3Geq23nVALD/M2LliU+F+M+gVNsvkQWWqeBZ8HDiCgzo6YPJ/Omrmtq24EFrIsk0a3EkQGEd7bDOo+IhGA==
   _: 'https://registry.npmjs.org/pretty-ms/-/pretty-ms-9.3.1.tgz'
@@ -1407,14 +1407,14 @@ source-map-js:
   $: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==
   _: 'https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz'
 string-width:
- _latest: 8.2.2
+ _latest: 8.3.0
  _:
   ^4.1.0: 4.2.3
   '^7.0.0,^7.2.0': 7.2.0
-  ^8.2.0: 8.2.2
- 8.2.2:
-  $: sha512-GaPUh5gfdrYzqeVNZvUfT23vYYxXzKYidUcnMtJg/3rxRV63EFZy3k6xfKlmfeJD0176lnUV/Usr3XcwSvFzpg==
-  _: 'https://registry.npmjs.org/string-width/-/string-width-8.2.2.tgz'
+  ^8.2.0: 8.3.0
+ 8.3.0:
+  $: sha512-ZbmZM0JCihQN91dWnxoipT2KOEyHqEyfRXUyjuRhW8b/xnqPDoq4gWEVApTVa9db2wN8mmoikgFBbjh71+cGeQ==
+  _: 'https://registry.npmjs.org/string-width/-/string-width-8.3.0.tgz'
   dependencies:
    get-east-asian-width: ^1.5.0
    strip-ansi: ^7.1.2
@@ -1497,7 +1497,7 @@ type-fest:
   $: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==
   _: 'https://registry.npmjs.org/type-fest/-/type-fest-4.41.0.tgz'
 unicorn-magic:
- _latest: 0.4.0
+ _latest: 0.4.1
  _:
   ^0.3.0: 0.3.0
  0.3.0:
@@ -1510,6 +1510,13 @@ universalify:
  2.0.1:
   $: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==
   _: 'https://registry.npmjs.org/universalify/-/universalify-2.0.1.tgz'
+verkit:
+ _latest: 0.5.0
+ _:
+  ^0.5.0: 0.5.0
+ 0.5.0:
+  $: sha512-u4J1hr6Y+C/hit34GwL3eIcUf3wngT8TlYUjK7tk0jxydKLAq3sYvifjdTDA6U3KCKRcQCQDGf/srjxfZF3l7g==
+  _: 'https://registry.npmjs.org/verkit/-/verkit-0.5.0.tgz'
 visual-exec:
  _latest: 1.1.10-fynlocal_h
  _:
@@ -1593,13 +1600,13 @@ widest-line:
   dependencies:
    string-width: ^7.0.0
 wrap-ansi:
- _latest: 10.0.1
+ _latest: 10.0.2
  _:
-  ^10.0.0: 10.0.1
+  ^10.0.0: 10.0.2
   ^9.0.0: 9.0.2
- 10.0.1:
-  $: sha512-M0N4xzyzosiIok3svYlEo1sdLZts/8FPgYH/GPC3wvlmPoRvnoManGMrE54waYj3tISA8w6lsdesfVv67qSr8Q==
-  _: 'https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-10.0.1.tgz'
+ 10.0.2:
+  $: sha512-6OLRNZqRntVGBm26ghZ5eZhCuWWyOkRCSn8XsOIuq5stpCE/tjLbdozd93naILZig0lmD8ANfRwnhn0DLeXGlg==
+  _: 'https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-10.0.2.tgz'
   dependencies:
    ansi-styles: ^6.2.3
    string-width: ^8.2.0
@@ -1634,7 +1641,7 @@ xsh:
 yoctocolors:
  _latest: 2.2.0
  _:
-  ^2.1.2: 2.2.0
+  ^2.2.0: 2.2.0
  2.2.0:
   $: sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg==
   _: 'https://registry.npmjs.org/yoctocolors/-/yoctocolors-2.2.0.tgz'
