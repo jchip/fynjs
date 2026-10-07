@@ -11,7 +11,7 @@
 - [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
 - [GitHub](https://github.com/jchip/fynjs/tree/main/packages/chalker)
 
-Set ansi colors in strings using `<>` markers and [chalk] or [ansi-colors].
+Set ansi colors in strings using `<>` markers. Colors come from Node's built-in [`util.styleText`][util.styletext], [chalk], or [ansi-colors].
 
 # Usage
 
@@ -39,16 +39,21 @@ logger.log(chalker.remove(msg));
 # Install
 
 ```
-npm i --save chalker chalk
+npm i --save chalker
 ```
 
-or:
+`chalker` works without a colors library, using Node's built-in [`util.styleText`][util.styletext]. [chalk] `>= 4` and [ansi-colors] `>= 4` are optional peer dependencies. Pick where colors come from with the import path:
 
-```
-npm i --save chalker ansi-colors
-```
+| import                | colors from                                                 | needs                |
+| --------------------- | ----------------------------------------------------------- | -------------------- |
+| `chalker`             | chalk if installed, else ansi-colors, else `util.styleText` | nothing              |
+| `chalker/style-text`  | Node's built-in `util.styleText`                            | nothing              |
+| `chalker/chalk`       | chalk                                                       | `chalk` `>= 4`       |
+| `chalker/ansi-colors` | ansi-colors                                                 | `ansi-colors` `>= 4` |
 
-`chalker` expects either [chalk] `>= 4` or [ansi-colors] `>= 4` as a peer dependency.
+`chalker` finds the library at runtime with a top-level await. The other three import their library directly, so bundlers can resolve it and CommonJS can `require()` them.
+
+With `util.styleText`, colors follow Node's own checks: they are off when stdout is not a terminal, and `NO_COLOR` and `FORCE_COLOR` apply. Two gaps: an rgb or hex outer color does not resume after a nested color closes, so in `<#FF0000>a<blue>b</blue>c</>` the `c` loses its color. And a color is not reopened after a line break, as chalk and ansi-colors do.
 
 # Demo
 
@@ -133,8 +138,8 @@ import ansiColors from "ansi-colors";
 chalker.CHALK = ansiColors;
 ```
 
-Set the default colors library. By default, `chalker` loads `chalk` first and falls back to
-[ansi-colors].
+Set the default colors library. By default, `chalker` loads `chalk` first, then falls back to
+[ansi-colors], then to Node's built-in [`util.styleText`][util.styletext].
 
 > With [ansi-colors], `chalker` changes the module object it uses. ansi-colors has no
 > true-color support, so `chalker` adds `rgb`, `bgRgb`, `hex` and `bgHex` methods to it.
@@ -146,12 +151,13 @@ Set the default colors library. By default, `chalker` loads `chalk` first and fa
 > changes. Setting `chalker.CHALK` to an instance from `colors.create()` keeps the new styles
 > on that instance. The methods added on load stay on the shared module.
 
-> `chalker` is published as an ESM-only package (`"type": "module"`). It can still be loaded
-> from CommonJS with `require("chalker")` on Node >=22.18, but since `require()` of an ESM
-> module returns the module's namespace object, you need to access `.default`:
+> `chalker` is published as an ESM-only package (`"type": "module"`). `require("chalker")`
+> fails with `ERR_REQUIRE_ASYNC_MODULE` because of its top-level await. From CommonJS, use
+> `await import("chalker")`, or `require()` one of the other entries. `require()` of an ESM
+> module returns its namespace object, so take `.default`:
 >
 > ```js
-> const chalker = require("chalker").default;
+> const chalker = require("chalker/style-text").default;
 > ```
 
 ### `chalker.remove`
@@ -188,6 +194,7 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 
 [demo]: ./images/demo.png
 [ansi-colors]: https://www.npmjs.com/package/ansi-colors
+[util.styletext]: https://nodejs.org/api/util.html#utilstyletextformat-text-options
 [chalk]: https://www.npmjs.com/package/chalk
 [chalk advanced colors]: https://github.com/chalk/chalk#256-and-truecolor-color-support
 
