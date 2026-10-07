@@ -81,7 +81,7 @@ function setLogLevel(ll: string | undefined): void {
     const real = _.find(levels, l => l.startsWith(ll));
     const x = real ? CliLogger.Levels[real as keyof typeof CliLogger.Levels] : undefined;
     if (x !== undefined) {
-      (logger as any)._logLevel = x;
+      logger.logLevel = real as keyof typeof CliLogger.Levels;
     } else {
       logger.error(`Invalid log level "${ll}".  Supported levels are: ${levels.join(", ")}`);
       fynTil.exit(1);
@@ -592,7 +592,7 @@ const commands: Record<string, CommandSpec> = {
     args: "[packages string..]",
     exec: async (cmd: CommandNode) => {
       const json = Boolean(cmd.jsonMeta.opts.json);
-      const previousLogLevel = (logger as any)._logLevel;
+      const previousLogLevel = logger.logLevel;
       if (json) {
         // Machine-readable output must not be mixed with startup/config messages on stdout.
         cmd.jsonMeta.opts.logLevel = "none";
@@ -602,7 +602,7 @@ const commands: Record<string, CommandSpec> = {
         config.noStartupInfo = json;
         return await new FynCli(config).outdated(cmd.jsonMeta);
       } finally {
-        if (json) (logger as any)._logLevel = previousLogLevel;
+        if (json) logger.logLevel = previousLogLevel;
       }
     },
     options: {
@@ -678,7 +678,7 @@ const commands: Record<string, CommandSpec> = {
           // Generic error
           logger.error(chalk.red("Script execution failed:"));
           logger.error(err.message || err.toString());
-          if (err.stack && (logger as any)._logLevel <= CliLogger.Levels.debug) {
+          if (err.stack && CliLogger.Levels[logger.logLevel] <= CliLogger.Levels.debug) {
             logger.debug(err.stack);
           }
         }
