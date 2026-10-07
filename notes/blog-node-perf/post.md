@@ -5,6 +5,8 @@
 Recently I caught the news that pnpm was rewritten in Rust, and I checked it out. It also stirred
 my interest in an old project of mine: [fyn and fynpo](https://fynjs.pages.dev/).
 
+**While Rust definitely makes the most of memory, concurrency, and CPU, it's not as clear cut as it may seem. There are some unexpected surprises. Read on to find out.**
+
 ## Background
 
 My involvement with Node.js and its package managers goes way back. Here's a quick timeline and

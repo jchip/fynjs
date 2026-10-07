@@ -35,6 +35,7 @@
   h1 .rust { color: var(--rust); }
   h2 { font: 700 clamp(24px, 3.4vw, 32px)/1.15 var(--display); font-stretch: 105%; margin: 0; text-wrap: balance; }
   .lede { font-size: 20px; color: var(--muted); max-width: 62ch; margin: 0; }
+  .hook { font: 600 20px/1.45 var(--display); color: var(--fg); max-width: 62ch; margin: 0; }
   section { display: grid; gap: 18px; }
   section p { margin: 0; max-width: 65ch; }
   ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; max-width: 65ch; }
@@ -64,6 +65,7 @@
     <div class="kicker">fyn · pnpm's benchmark · 2026</div>
     <h1><span class="rust">Rust</span> vs <span class="node">Node.js</span> for a package manager - tuning fyn on pnpm benchmarks</h1>
     <p class="lede">Recently I caught the news that pnpm was rewritten in Rust, and I checked it out. It also stirred my interest in an old project of mine: <a href="https://fynjs.pages.dev/">fyn and fynpo</a>.</p>
+    <p class="hook">While Rust definitely makes the most of memory, concurrency, and CPU, it's not as clear cut as it may seem. There are some unexpected surprises. Read on to find out.</p>
   </header>
 
   <section>
