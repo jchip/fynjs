@@ -3,6 +3,8 @@ import EventEmitter from "events";
 import assert from "assert";
 import { InflightStore as Inflight, type InflightItem as InflightRecord, type RecordKey } from "xflight";
 const PAUSE_ITEM = Symbol("pause");
+// marker queued by pause(), kept apart from PAUSE_ITEM so resume() can cancel it
+const PAUSE_CALL = Symbol("pauseCall");
 const RESUME_ITEM = Symbol("resume");
 const NOOP_ITEM = Symbol("NOOP");
 const WATCH_PERIOD = 500;
@@ -149,7 +151,8 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
   private _itemQ: ItemQueueData<ItemT>[];
   private _concurrency: number;
   private _stopOnError: boolean;
-  private _failed: boolean | Error;
+  private _failed: boolean;
+  private _failError: unknown;
   private _timeout: number;
   private _deferred: boolean;
   private _processItem: ProcessCb<ItemT>;
@@ -203,22 +206,22 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
    */
   wait(): Promise<void> {
     if (this._failed) {
-      return this.Promise.reject(this._failed);
+      return this.Promise.reject(this._failError);
     }
 
     if (this.isPending) {
       return new this.Promise((resolve, reject) => {
-        const h = (data) => {
-          if (data.error) {
-            this.removeListener("done", h);
-            reject(data.error);
-          } else {
-            this.removeListener("fail", h);
-            resolve(data);
-          }
+        // separate listeners, so a falsy rejection value still rejects
+        const onDone = (data) => {
+          this.removeListener("fail", onFail);
+          resolve(data);
         };
-        this.once("done", h);
-        this.once("fail", h);
+        const onFail = (data) => {
+          this.removeListener("done", onDone);
+          reject(data.error);
+        };
+        this.once("done", onDone);
+        this.once("fail", onFail);
       });
     }
 
@@ -317,7 +320,15 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
    * @returns instance self
    */
   pause() {
-    this._itemQ.unshift(this._wrap(ItemQueue.pauseItem));
+    if (this._processing || !this._pending.isEmpty) {
+      // pause takes effect when the marker is reached, after in-flight items finish
+      this._itemQ.unshift({ item: undefined, _control: PAUSE_CALL });
+    } else {
+      // nothing in flight, so pause now. A marker here would be consumed by the
+      // next resume() and pause the queue again.
+      this._pause = true;
+      process.nextTick(() => this.emit("pause"));
+    }
     return this;
   }
 
@@ -342,6 +353,8 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
    * @returns instance self
    */
   resume() {
+    // cancel a pause() that hasn't been reached yet; user-placed pauseItem markers stay
+    this._itemQ = this._itemQ.filter((x) => x._control !== PAUSE_CALL);
     process.nextTick(() => {
       this.unpause();
       if (this._itemQ.length === 0) {
@@ -364,10 +377,11 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
   }
 
   private _wrap(item: ItemT | symbol, stopOnError?: boolean): ItemQueueData<ItemT> {
-    if (typeof item === "symbol") {
-      return { item: undefined, _control: item };
+    // only the queue's own markers are control items; any other symbol is user data
+    if (item === PAUSE_ITEM || item === RESUME_ITEM) {
+      return { item: undefined, _control: item as symbol };
     } else {
-      return { item, stopOnError };
+      return { item: item as ItemT, stopOnError };
     }
   }
 
@@ -375,7 +389,7 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     this.emit(evt, data);
   }
 
-  private _handleQueueItemDone(data: ItemQueueResult<ItemT>) {
+  private _handleQueueItemDone(data: ItemQueueResult<ItemT>, failed: boolean) {
     if (data.id > 0) {
       this._pending.remove(data.id);
     }
@@ -385,10 +399,11 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     }
 
     if (!data._control && data.id > 0) {
-      if (data.error) {
+      if (failed) {
         this._emit("failItem", data);
         if (data.stopOnError !== false && this._stopOnError) {
-          this._failed = data.error;
+          this._failed = true;
+          this._failError = data.error;
           this._emit("fail", data);
           return;
         }
@@ -485,10 +500,27 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     }
   }
 
+  /**
+   * A failed queue never runs queued items. Report each one as a failed item
+   * with the queue's error, so callers waiting on a `failItem` don't hang.
+   */
+  private _failQueued() {
+    const queued = this._itemQ;
+    this._itemQ = [];
+    for (const wrapped of queued) {
+      if (!wrapped._control) {
+        this._emit("failItem", { id: this._id++, error: this._failError as Error, ...wrapped });
+      }
+    }
+    return 0;
+  }
+
   private _process() {
     if (this._startTime === undefined) {
       this._startTime = Date.now();
     }
+
+    if (this._failed) return this._failQueued();
 
     if (this._processing || this._pause || this._itemQ.length === 0) return 0;
 
@@ -497,13 +529,13 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     let i = this._pending.count;
     for (; this._itemQ.length > 0 && i < this._concurrency; i++) {
       const wrapped = this._itemQ.shift();
-      if (wrapped._control === PAUSE_ITEM) {
+      if (wrapped._control === PAUSE_ITEM || wrapped._control === PAUSE_CALL) {
         this._pause = true;
         // since no more pending can be added at this point, if there're no
         // existing pending, then setup to emit the pause event.
         if (this._pending.isEmpty) {
           process.nextTick(() => {
-            this._handleQueueItemDone({ id: 0, item: undefined, _control: NOOP_ITEM });
+            this._handleQueueItemDone({ id: 0, item: undefined, _control: NOOP_ITEM }, false);
           });
         }
         break;
@@ -533,9 +565,9 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
       this._pending.add(id, {
         item: wrapped.item,
         promise: promise.then(
-          (res: any) => this._handleQueueItemDone({ id, res, ...wrapped }),
+          (res: any) => this._handleQueueItemDone({ id, res, ...wrapped }, false),
           (error: Error) => {
-            this._handleQueueItemDone({ id, error, ...wrapped });
+            this._handleQueueItemDone({ id, error, ...wrapped }, true);
           }
         ),
       });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { verify, signal } from "run-verify";
-import { ItemQueue } from "../../src/index.js";
+import { ItemQueue, type ItemQueueResult } from "../../src/index.js";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -321,5 +321,191 @@ describe("item-queue", () => {
 
     expect(pq.listenerCount("done")).toBe(0);
     expect(pq.listenerCount("failItem")).toBe(1);
+  });
+
+  it("should resume after pause() then resume() on an idle queue", () => {
+    const seen: number[] = [];
+    const done = signal<unknown>();
+    const pq = new ItemQueue<number>({
+      processItem: (x) => {
+        seen.push(x);
+      },
+    });
+    pq.once("done", (data) => done.resolve(data));
+
+    return verify({ timeout: 500, signals: { done } })
+      .step(() => pq.pause())
+      .step(() => pq.resume())
+      .awaiting(done)
+      .step(() => expect(pq.isPause).toBe(false))
+      .step(() => pq.addItem(1).wait())
+      .step(() => expect(seen).toEqual([1]));
+  });
+
+  it("should pause before the next item when pause() is called while processing", () => {
+    const seen: number[] = [];
+    const paused = signal<void>();
+    const pq = new ItemQueue<number>({
+      concurrency: 3,
+      processItem: (x) => {
+        seen.push(x);
+        if (x === 1) pq.pause();
+      },
+    });
+    pq.once("pause", () => paused.resolve());
+
+    return verify({ timeout: 500, signals: { paused } })
+      .step(() => pq.addItems([1, 2, 3]))
+      .awaiting(paused)
+      .step(() => expect(seen).toEqual([1]))
+      .step(() => pq.resume().wait())
+      .step(() => expect(seen).toEqual([1, 2, 3]));
+  });
+
+  it("should let an in-flight item finish when pause() is called", () => {
+    const seen: number[] = [];
+    let release: () => void = () => undefined;
+    const started = signal<void>();
+    const paused = signal<void>();
+    const pq = new ItemQueue<number>({
+      concurrency: 1,
+      processItem: (x) => {
+        seen.push(x);
+        if (x === 1) started.resolve();
+        return new Promise<void>((resolve) => (release = resolve));
+      },
+    });
+    pq.once("pause", () => paused.resolve());
+
+    return verify({ timeout: 500, signals: { started, paused } })
+      .step(() => pq.addItems([1, 2]))
+      .awaiting(started)
+      .step(() => pq.pause())
+      .step(() => release())
+      .awaiting(paused)
+      .step(() => expect(seen).toEqual([1]));
+  });
+
+  it("should resume after pause() then resume() with an item in flight", () => {
+    const seen: number[] = [];
+    let release: () => void = () => undefined;
+    const started = signal<void>();
+    const done = signal<unknown>();
+    const pq = new ItemQueue<number>({
+      concurrency: 1,
+      processItem: (x) => {
+        seen.push(x);
+        if (x !== 1) return undefined;
+        started.resolve();
+        return new Promise<void>((resolve) => (release = resolve));
+      },
+    });
+    pq.once("done", (data) => done.resolve(data));
+
+    return verify({ timeout: 500, signals: { started, done } })
+      .step(() => pq.addItems([1, 2, 3]))
+      .awaiting(started)
+      .step(() => pq.pause())
+      .step(() => pq.resume())
+      // let resume()'s tick run while item 1 is still in flight
+      .step(() => new Promise((resolve) => setImmediate(resolve)))
+      .step(() => release())
+      .awaiting(done)
+      .step(() => expect(seen).toEqual([1, 2, 3]));
+  });
+
+  it("should keep a queued pauseItem when start() is called", () => {
+    const seen: number[] = [];
+    const paused = signal<void>();
+    const pq = new ItemQueue<number | symbol>({
+      concurrency: 1,
+      processItem: (x) => {
+        seen.push(x as number);
+      },
+    });
+    pq.once("pause", () => paused.resolve());
+
+    return verify({ timeout: 500, signals: { paused } })
+      .step(() => pq.addItems([1, ItemQueue.pauseItem, 2], true))
+      .step(() => pq.start())
+      .awaiting(paused)
+      .step(() => expect(seen).toEqual([1]));
+  });
+
+  it("should count a falsy rejection as a failed item", () => {
+    const failItem = signal<ItemQueueResult>();
+    const pq = new ItemQueue({
+      processItem: () => Promise.reject(undefined),
+      handlers: {
+        failItem: (data) => failItem.resolve(data),
+        doneItem: () => failItem.reject(new Error("falsy rejection counted as doneItem")),
+      },
+    });
+
+    return verify({ timeout: 500, signals: { failItem } })
+      .step(() => pq.addItem(1))
+      .awaiting(failItem)
+      .step((data) => expect(data.item).toBe(1));
+  });
+
+  it("should fail a stopOnError queue on a falsy rejection", () => {
+    const pq = new ItemQueue({
+      stopOnError: true,
+      processItem: () => Promise.reject(0),
+    });
+
+    return verify({ timeout: 500 })
+      .expectError.step(() => pq.addItem(1).wait())
+      .step((error) => expect(error).toBe(0))
+      .expectError.step(() => pq.wait())
+      .step((error) => expect(error).toBe(0));
+  });
+
+  it("should report items added after a stopOnError failure as failed items", () => {
+    const ran: number[] = [];
+    const failed: Array<ItemQueueResult<number | symbol>> = [];
+    const lateFail = signal<void>();
+    const boom = new Error("boom");
+    const pq = new ItemQueue<number | symbol>({
+      stopOnError: true,
+      processItem: (x) => {
+        ran.push(x as number);
+        if (x === 1) throw boom;
+      },
+    });
+    pq.on("failItem", (data) => {
+      failed.push(data);
+      if (data.item === 2) lateFail.resolve();
+    });
+
+    return verify({ timeout: 500, signals: { lateFail } })
+      .expectError.step(() => pq.addItem(1).wait())
+      .step((error) => expect(error).toBe(boom))
+      .step(() => pq.addItems([ItemQueue.pauseItem, 2]))
+      .awaiting(lateFail)
+      .step(() => expect(failed.map((d) => d.item)).toEqual([1, 2]))
+      .step(() => expect(failed[1].error).toBe(boom))
+      .step(() => expect(ran).toEqual([1]))
+      .step(() => expect(pq.count).toBe(0));
+  });
+
+  it("should pass a user symbol item to processItem", () => {
+    const sym = Symbol("user");
+    const seen: symbol[] = [];
+    const doneItem = signal<ItemQueueResult<symbol>>();
+    const pq = new ItemQueue<symbol>({
+      processItem: (x) => {
+        seen.push(x);
+      },
+      handlers: {
+        doneItem: (data) => doneItem.resolve(data),
+      },
+    });
+
+    return verify({ timeout: 500, signals: { doneItem } })
+      .step(() => pq.addItem(sym))
+      .awaiting(doneItem)
+      .keep.step((data) => expect(data.item).toBe(sym))
+      .step(() => expect(seen).toEqual([sym]));
   });
 });
