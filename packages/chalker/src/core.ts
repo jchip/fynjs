@@ -156,19 +156,13 @@ function applyChalkMethod(chalkInstance: AnyColors, name: string, values: unknow
 }
 
 function decodeHtml(str: string): string {
-  return str.replace(/&[\w#]+;/g, m => {
-    if (Object.prototype.hasOwnProperty.call(htmlEntities, m)) return htmlEntities[m];
-    if (m.startsWith("&#x")) {
-      const s = m.substring(3, m.length - 1);
-      const p = parseInt(s, 16);
-      return String.fromCodePoint(p);
+  // invalid or out of range entities are left as-is
+  return str.replace(/&(?:#[xX]([0-9a-fA-F]+)|#([0-9]+)|\w+);/g, (m, hex, dec) => {
+    if (hex === undefined && dec === undefined) {
+      return Object.prototype.hasOwnProperty.call(htmlEntities, m) ? htmlEntities[m] : m;
     }
-    if (m.startsWith("&#")) {
-      const s = m.substring(2, m.length - 1);
-      const p = parseInt(s, 10);
-      return String.fromCodePoint(p);
-    }
-    return m;
+    const p = hex !== undefined ? parseInt(hex, 16) : parseInt(dec, 10);
+    return p <= 0x10ffff ? String.fromCodePoint(p) : m;
   });
 }
 
@@ -255,9 +249,11 @@ function applyChalkMarkers(markers: string, text: string, userChalk: AnyColors):
   return chalkify(text);
 }
 
+const MARKERS_RE = /<[^>]*>/g;
+
 // remove the color marker like <red>text</> from strings
 function remove(s: string, keepHtml?: boolean): string {
-  const r = s.replace(/<[^>]*>/g, "").trim();
+  const r = s.replace(MARKERS_RE, "").trim();
   return keepHtml ? r : decodeHtml(r);
 }
 
@@ -272,22 +268,23 @@ function format(
   userChalk = normalizeColors(userChalk || instance.CHALK);
 
   // skip applying ansi colors if chalk says color support is off
+  // no trim here, so the output matches the colors on path minus the colors
   if (userChalk.supportsColor === false) {
-    return remove(s as string);
+    return s ? decodeHtml(s.replace(MARKERS_RE, "")) : "";
   }
 
-  const tks = s && s.match(/(<[^>]+>|[^<>]+)/g);
+  // a stray < or > that is not part of a marker is its own text token
+  const tks = s && s.match(/<[^<>]+>|[^<>]+|[<>]/g);
 
-  // empty string "" result in null from match
-  // but other strings w/o matches gets ['original-string']
+  // null, undefined, or "" (match returns null for "")
   if (!tks) return s || "";
 
   const colorized = tks.reduceRight(
     (a: MarkerLevel[], e: string, ix: number) => {
       const lvl = a[a.length - 1];
 
-      // text
-      if (e[0] !== "<") {
+      // text, or a stray <
+      if (e[0] !== "<" || e.length === 1) {
         lvl.s = e + lvl.s;
         return a;
       }
@@ -328,6 +325,13 @@ function format(
     },
     [{ s: "" }] as MarkerLevel[]
   );
+
+  // close markers that never found an open marker are kept as text
+  while (colorized.length > 1) {
+    const lvl = colorized.pop() as MarkerLevel;
+    const nl = colorized.length - 1;
+    colorized[nl].s = lvl.s + tks[lvl.ix as number] + colorized[nl].s;
+  }
 
   return decodeHtml(colorized[0].s);
 }
