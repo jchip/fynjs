@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PassThrough } from "node:stream";
+import { getEventListeners } from "node:events";
 import { verify } from "run-verify";
 import VisualLogger from "visual-logger";
 import xsh from "xsh";
@@ -146,5 +147,41 @@ describe("onComplete throwing on failure", () => {
       })
       .step(err => expect(err).toBe(original))
       .step(() => expect(visualLogger.removeItem).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("AbortSignal listener", () => {
+  it("is removed when execution finishes by success, failure, timeout or abort", () => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    const listeners = () => getEventListeners(signal, "abort").length;
+    const run = (opts: { timeout?: number } = {}) => {
+      const child = runningChild();
+      const ve = new VisualExec({ command: "test", signal, ...opts });
+      return { child, result: ve.show(child) };
+    };
+    const ok = { stdout: "", stderr: "" };
+
+    return verify({ timeout: 2000 })
+      .step(() => {
+        const { child, result } = run();
+        child.resolve(ok);
+        return result;
+      })
+      .step(() => expect(listeners()).toBe(0))
+      .expectError.step(() => {
+        const { child, result } = run();
+        child.reject(new Error("child failed"));
+        return result;
+      })
+      .step(() => expect(listeners()).toBe(0))
+      .expectError.step(() => run({ timeout: 10 }).result)
+      .step(() => expect(listeners()).toBe(0))
+      .expectError.step(() => {
+        const { result } = run();
+        controller.abort();
+        return result;
+      })
+      .step(() => expect(listeners()).toBe(0));
   });
 });

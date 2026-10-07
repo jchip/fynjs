@@ -614,8 +614,12 @@ export class VisualExec {
       execPromise = Promise.race([execPromise, timeoutPromise]);
     }
 
+    let handleAbort: (() => void) | undefined;
+
     const cleanup = () => {
       if (timeoutId) clearTimeout(timeoutId);
+      // a long-lived signal reused across runs would otherwise collect one listener per run
+      if (handleAbort) this._signal!.removeEventListener("abort", handleAbort);
 
       const stream = this._outputStream;
       this._outputStream = undefined;
@@ -647,7 +651,7 @@ export class VisualExec {
 
     if (this._signal) {
       const abortPromise = new Promise<never>((_, reject) => {
-        const handleAbort = () => {
+        handleAbort = () => {
           this.abort();
           reject(cancelError(createAbortError(command), Date.now() - startTime));
         };
