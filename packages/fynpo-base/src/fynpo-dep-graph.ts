@@ -128,10 +128,10 @@ export class PackageRef {
    * @param ref package string reference
    */
   parseRef(ref: string): void {
-    const parts = ref.split(":");
+    const colonIx = ref.indexOf(":");
 
-    if (parts.length > 1) {
-      const tmp = parts[0].trim();
+    if (colonIx >= 0) {
+      const tmp = ref.substring(0, colonIx).trim();
       if (tmp === "id" || tmp === "path" || tmp === "name") {
         this.type = tmp;
       } else {
@@ -139,9 +139,10 @@ export class PackageRef {
           `package ref '${ref}' has unknown type '${tmp}' - must be 'id', 'path', or 'name'`
         );
       }
-      this.value = parts[1].trim();
+      // the value may contain `:` too, ie: in a regexp
+      this.value = ref.substring(colonIx + 1).trim();
     } else {
-      this.value = parts[0].trim();
+      this.value = ref.trim();
       if (this.value.lastIndexOf("@") > 0) {
         this.type = "id";
       } else {
@@ -162,6 +163,10 @@ export class PackageRef {
   }
 
   match(pkgInfo: PackageBasicInfo): boolean {
+    // a `g` or `y` flag makes exec continue from lastIndex; each match starts fresh
+    if (this.regex) {
+      this.regex.lastIndex = 0;
+    }
     if (this.type === "path") {
       return this.regex ? this.regex.exec(pkgInfo.path) !== null : this.mm.match(pkgInfo.path);
     } else if (this.type === "id") {
@@ -636,6 +641,9 @@ export class FynpoDepGraph {
       files.push(scanned);
     }
 
+    // start fresh so reading again doesn't add every package a second time
+    this.packages.byName = Object.create(null);
+
     const allFiles: string[] = ([] as string[]).concat(...files);
     const filesByDepth = [...allFiles].sort((a, b) => {
       const depth = (file: string) => posixify(Path.dirname(file)).split("/").length;
@@ -893,13 +901,7 @@ export class FynpoDepGraph {
     };
 
     for (const path in byPath) {
-      if (!depMapByPath[path]) {
-        depMapByPath[path] = {
-          pkgInfo: byPath[path],
-          localDepsByPath: Object.create(null),
-          dependentsByPath: Object.create(null),
-        };
-      }
+      this.getDepData(byPath[path]);
     }
 
     for (const path in byPath) {
@@ -909,6 +911,24 @@ export class FynpoDepGraph {
       doResolve(depData, pkgInfo.devDependencies, "dev");
       doResolve(depData, pkgInfo.optionalDependencies, "opt");
     }
+  }
+
+  /**
+   * Get the dep data of a package, creating an empty one if it doesn't exist yet
+   *
+   * @param pkgInfo package info
+   * @returns dep data
+   */
+  private getDepData(pkgInfo: FynpoPackageInfo): PackageDepData {
+    let depData = this.depMapByPath[pkgInfo.path];
+    if (!depData) {
+      depData = this.depMapByPath[pkgInfo.path] = {
+        pkgInfo,
+        localDepsByPath: Object.create(null),
+        dependentsByPath: Object.create(null),
+      };
+    }
+    return depData;
   }
 
   /**
@@ -1004,8 +1024,8 @@ export class FynpoDepGraph {
       return false;
     }
 
-    const dataPkg = this.depMapByPath[pkgInfo.path];
-    const dataDep = this.depMapByPath[depPkg.path];
+    const dataPkg = this.getDepData(pkgInfo);
+    const dataDep = this.getDepData(depPkg);
 
     if (dataPkg.localDepsByPath[depPkg.path]) {
       // dep relation already exist

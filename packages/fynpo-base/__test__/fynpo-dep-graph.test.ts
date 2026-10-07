@@ -604,3 +604,35 @@ describe("local dep semver matching", () => {
       .step((graph) => expect(localDeps(graph, "packages/caret")).toEqual([]));
   });
 });
+
+describe("fynpo dep graph re-reads and manual edges", () => {
+  const cwd = path.join(import.meta.dirname, "sample");
+  const counts = (graph: FynpoDepGraph) =>
+    Object.fromEntries(Object.entries(graph.packages.byName).map(([n, l]) => [n, l.length]));
+
+  it("keeps byName unchanged when readPackages runs twice", () => {
+    const graph = new FynpoDepGraph({ cwd, patterns: ["packages/*"] });
+    return verify({ timeout: 5000 })
+      .step(() => graph.readPackages())
+      .step(() => counts(graph))
+      .step(async (first) => {
+        await graph.readPackages();
+        return [first, counts(graph)];
+      })
+      .step(([first, second]) => expect(second).toEqual(first));
+  });
+
+  it("adds an edge with addDep before resolve() creates the dep map", () => {
+    const graph = new FynpoDepGraph({ cwd, patterns: ["packages/*"] });
+    return verify({ timeout: 5000 })
+      .step(() => graph.readPackages())
+      .step(() => graph.addDep(graph.packages.byPath["packages/pkg1"], graph.packages.byPath["packages/pkg2"], "dep"))
+      .keep.step((added) => expect(added).toBe(true))
+      .keep.step(() =>
+        expect(graph.depMapByPath["packages/pkg1"].localDepsByPath).toHaveProperty(["packages/pkg2"])
+      )
+      .step(() =>
+        expect(graph.depMapByPath["packages/pkg2"].dependentsByPath).toHaveProperty(["packages/pkg1"])
+      );
+  });
+});

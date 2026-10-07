@@ -54,7 +54,8 @@ type CacheOutputRule = FilesFilterPatterns &
   CacheBaseRule & {
     /**
      * use npm pack to create a list of files to include.
-     * will check them against the exclude patterns and ignore any that match
+     * will check them against the exclude patterns and ignore any that match.
+     * processOutput doesn't read this; the caller runs npm-packlist and passes `preFiles`.
      */
     filesFromNpmPack?: boolean;
   };
@@ -224,6 +225,7 @@ export async function processInput(
     extra?: any;
   } = { input: {} }
 ) {
+  cwd = cwd || process.cwd();
   const files = await scanFiles(
     cwd,
     makeMmPatterns(input.include, input.minimatchOptions),
@@ -264,6 +266,7 @@ export async function processLifecycleInput(
     packageJson?: Record<string, string | unknown>;
   } = { input: {} }
 ) {
+  cwd = cwd || process.cwd();
   packageJson = packageJson || (await readPkgJson(cwd));
   const npmScripts = pick(get(packageJson, "scripts"), input.npmScripts);
 
@@ -300,6 +303,7 @@ export async function processOutput(
     preFiles?: string[];
   } = { output: {} }
 ) {
+  cwd = cwd || process.cwd();
   const mmIncludes = makeMmPatterns(output.include, output.minimatchOptions);
   const mmExcludes = makeMmPatterns(output.exclude, output.minimatchOptions);
 

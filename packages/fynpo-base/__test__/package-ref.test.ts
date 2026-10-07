@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 import { PackageRef } from "../src/fynpo-dep-graph.js";
 
 describe("PackageRef", () => {
@@ -44,5 +45,30 @@ describe("PackageRef", () => {
     expect(() => new PackageRef("version:1.2.3")).toThrow(
       "unknown type 'version' - must be 'id', 'path', or 'name'"
     );
+  });
+});
+
+describe("PackageRef values with colons and stateful regexps", () => {
+  const pkg = { name: "foo", version: "1.0.0", path: "a:b/foo" };
+
+  it("keeps everything after the first colon as the value", () => {
+    return verify({ timeout: 1000 })
+      .step(() => new PackageRef("path:a:b/*"))
+      .keep.step((ref) => expect(ref.value).toBe("a:b/*"))
+      .step((ref) => expect(ref.match(pkg)).toBe(true));
+  });
+
+  it("parses a regexp that contains a colon", () => {
+    return verify({ timeout: 1000 })
+      .step(() => new PackageRef("name:/^(?:foo|bar)$/"))
+      .keep.step((ref) => expect(ref.regex?.source).toBe("^(?:foo|bar)$"))
+      .step((ref) => expect(ref.match(pkg)).toBe(true));
+  });
+
+  it("matches the same package every time with a g-flag regexp", () => {
+    return verify({ timeout: 1000 })
+      .step(() => new PackageRef("name:/foo/g"))
+      .keep.step((ref) => expect(ref.match(pkg)).toBe(true))
+      .step((ref) => expect(ref.match(pkg)).toBe(true));
   });
 });

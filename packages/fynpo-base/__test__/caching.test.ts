@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { processInput, processOutput, processLifecycleInput, readHashDigest } from "../src/caching.js";
 import npmPacklist from "npm-packlist";
+import { verify } from "run-verify";
 import Path from "node:path";
 import { promises as Fs } from "node:fs";
 import { createHash } from "node:crypto";
@@ -134,5 +135,45 @@ describe("caching", function () {
       return acc;
     }, {});
     // console.log("outputFiles", outputFiles);
+  });
+});
+
+describe("caching without cwd", () => {
+  const saveDir = process.cwd();
+  let dir: string;
+
+  const setup = async () => {
+    await Fs.mkdir(".temp", { recursive: true });
+    dir = await Fs.mkdtemp(Path.resolve(".temp/cache-nocwd-"));
+    await Fs.writeFile(Path.join(dir, "package.json"), JSON.stringify({ name: "x", scripts: {} }));
+    await Fs.writeFile(Path.join(dir, "artifact.txt"), "data");
+    process.chdir(dir);
+  };
+
+  const cleanup = async () => {
+    process.chdir(saveDir);
+    await Fs.rm(dir, { recursive: true, force: true });
+  };
+
+  it("processInput defaults cwd to process.cwd()", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(setup)
+      .step(() => processInput({ input: { include: ["*.txt"] } }))
+      .step((result) => expect(result.files).toEqual(["artifact.txt"]));
+  });
+
+  it("processLifecycleInput defaults cwd to process.cwd()", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(setup)
+      .step(() => processLifecycleInput({ input: { npmScripts: ["build"] } }))
+      .step((result) => expect(result).toEqual({}));
+  });
+
+  it("processOutput defaults cwd to process.cwd()", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(setup)
+      .step(() => processOutput({ calcHash: true, output: { include: ["*.txt"] } }))
+      .keep.step((result) => expect(result.files).toEqual(["artifact.txt"]))
+      .step((result) => expect(result.data.fileHashes).toHaveProperty(["artifact.txt"]));
   });
 });
