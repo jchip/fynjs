@@ -1,6 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import Path from "path";
-import { unwrapNpmCmd, quote, unquote, relative } from "../src/index.js";
+import which from "which";
+import { verify } from "run-verify";
+import { unwrapNpmCmd, resolveNpmCmd, quote, unquote, relative } from "../src/index.js";
+
+const fixture = (name: string) => Path.join(import.meta.dirname, "fixtures", name);
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("utils", () => {
   describe("quote", () => {
@@ -27,6 +35,52 @@ describe("utils", () => {
         expect(r).toBe(`../Users/test`);
       }
     });
+
+    it("should return a cross-drive absolute path as is", async () => {
+      // emulate win32 path semantics, where relative() across drives stays absolute
+      await verify({ timeout: 1000 })
+        .step(() => vi.spyOn(Path, "relative").mockImplementation(Path.win32.relative))
+        .step(() => vi.spyOn(Path, "isAbsolute").mockImplementation(Path.win32.isAbsolute))
+        .step(() => relative(`D:\\tools\\cli.js`, `C:\\work`))
+        .step((r) => expect(r).toBe(`D:\\tools\\cli.js`));
+    });
+  });
+});
+
+describe("resolveNpmCmd", () => {
+  it("should fall back to the cmd path when the launch line has no script", async () => {
+    const cmdFile = fixture("short-launch.cmd");
+    await verify({ timeout: 1000 })
+      .step(() => vi.spyOn(which, "sync").mockReturnValue(cmdFile))
+      .step(() => resolveNpmCmd("short-launch"))
+      .step((r) => expect(r).toBe(quote(cmdFile)));
+  });
+});
+
+describe("unwrap-npm-cmd cache", () => {
+  const withWin32 = () => {
+    const desc = Object.getOwnPropertyDescriptor(process, "platform")!;
+    Object.defineProperty(process, "platform", { ...desc, value: "win32" });
+    return () => Object.defineProperty(process, "platform", desc);
+  };
+
+  it("should apply relative and jsOnly per call on a cached resolve", async () => {
+    let restore = () => {};
+    const cmdFile = fixture("hello-js.cmd");
+    const dir = Path.dirname(cmdFile);
+    // on posix the batch's backslashes stay in the last path segment
+    const jsFile = `${dir}\\node_modules\\hello\\bin\\hello.js`;
+    const cwd = Path.dirname(dir);
+    const relJs = `.${Path.sep}${Path.basename(dir)}\\node_modules\\hello\\bin\\hello.js`;
+    const opts = { path: "cache-test-path" };
+    await verify({ timeout: 1000, cleanup: () => restore() })
+      .step(() => (restore = withWin32()))
+      .step(() => vi.spyOn(which, "sync").mockReturnValue(cmdFile))
+      .step(() => unwrapNpmCmd("hello-js a", opts))
+      .keep.step((r) => expect(r).toBe(`${quote(process.execPath)} ${quote(jsFile)} a`))
+      .step(() => unwrapNpmCmd("hello-js b", { ...opts, jsOnly: true, relative: true, cwd }))
+      .keep.step((r) => expect(r).toBe(`${quote(relJs)} b`))
+      .step(() => expect(which.sync).toHaveBeenCalledTimes(1));
   });
 });
 

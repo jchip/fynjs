@@ -46,6 +46,9 @@ export function resolveNpmCmd(exe: string, options?: ResolveOptions): string | R
   }
   // update JS script from batch file
   const a = nodeCmd.split(" ").filter((x) => x)[1];
+  if (!a) {
+    return quote(resolvedExe);
+  }
   const b = a.replace(`%~dp0`, resolvedDir).replace(`%dp0%`, resolvedDir);
   let jsFile: string;
   if (nodeJsVer < 18) {
