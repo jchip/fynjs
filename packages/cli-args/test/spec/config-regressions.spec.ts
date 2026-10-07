@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 import { NixClap } from "../../src/nix-clap.js";
 
 describe("configuration regressions", () => {
@@ -118,13 +119,13 @@ describe("configuration regressions", () => {
     expect(command.source).toEqual({ "server-name": "user", serverName: "default" });
   });
 
-  it("ignores config keys that match no declared option", () => {
+it("ignores config keys that match no declared option", () => {
     const nc = new NixClap(noOutputExit).init({ name: { args: "<name string>" } });
-    const { command } = nc.parse([], 0);
 
-    command.applyConfig({ name: "configured", junk: 1 });
-
-    expect(command.opts).toEqual({ name: "configured" });
+    return verify({ timeout: 500 })
+      .step(() => nc.parse([], 0).command)
+      .keep.step(command => command.applyConfig({ name: "configured", junk: 1 }))
+      .step(command => expect(command.opts).toEqual({ name: "configured" }));
   });
 
   it("routes config keys to the parsed sub command that declares them", () => {
@@ -132,13 +133,13 @@ describe("configuration regressions", () => {
       { verbose: { args: "[flag boolean]" } },
       { run: { options: { cc: { args: "<v number>", argDefault: "6" } } } }
     );
-    const { command } = nc.parse(["run"], 0);
 
-    command.applyConfig({ verbose: true, cc: 2 });
-
-    expect(command.opts).toEqual({ verbose: true });
-    expect(command.subCmdNodes.run.opts.cc).toBe(2);
-    expect(command.subCmdNodes.run.source.cc).toBe("user");
+    return verify({ timeout: 500 })
+      .step(() => nc.parse(["run"], 0).command)
+      .keep.step(command => command.applyConfig({ verbose: true, cc: 2 }))
+      .keep.step(command => expect(command.opts).toEqual({ verbose: true }))
+      .keep.step(command => expect(command.subCmdNodes.run.opts.cc).toBe(2))
+      .step(command => expect(command.subCmdNodes.run.source.cc).toBe("user"));
   });
 
   describe("config hook", () => {
@@ -148,10 +149,11 @@ describe("configuration regressions", () => {
         options: { token: { args: "<v string>", required: true } },
         exec: cmd => (seen = cmd.opts.token)
       });
-      const parsed = nc.parse([], 0);
 
-      expect(parsed.errorNodes).toEqual([]);
-      expect(seen).toBe("abc");
+      return verify({ timeout: 500 })
+        .step(() => nc.parse([], 0))
+        .step(parsed => expect(parsed.errorNodes).toEqual([]))
+        .step(() => expect(seen).toBe("abc"));
     });
 
     it("reaches a sub command exec handler", () => {
@@ -165,9 +167,10 @@ describe("configuration regressions", () => {
           }
         }
       );
-      nc.parse(["run"], 0);
 
-      expect(seen).toBe("user:2");
+      return verify({ timeout: 500 })
+        .step(() => nc.parse(["run"], 0))
+        .step(() => expect(seen).toBe("user:2"));
     });
 
     it("sees CLI values and never overrides them", () => {
@@ -180,11 +183,12 @@ describe("configuration regressions", () => {
           return { cwd: "/from-config", name: "configured" };
         }
       }).init({ cwd: { args: "<dir string>" }, name: { args: "<n string>", argDefault: "d" } });
-      const { command } = nc.parse(["--cwd", "/from-cli"], 0);
 
-      expect(hookCwd).toBe("/from-cli");
-      expect(command.opts).toEqual({ cwd: "/from-cli", name: "configured" });
-      expect(command.source).toEqual({ cwd: "cli", name: "user" });
+      return verify({ timeout: 500 })
+        .step(() => nc.parse(["--cwd", "/from-cli"], 0).command)
+        .keep.step(() => expect(hookCwd).toBe("/from-cli"))
+        .keep.step(command => expect(command.opts).toEqual({ cwd: "/from-cli", name: "configured" }))
+        .step(command => expect(command.source).toEqual({ cwd: "cli", name: "user" }));
     });
 
     it("still applies defaults when the hook reads metadata and returns nothing", () => {
@@ -193,9 +197,10 @@ describe("configuration regressions", () => {
         skipExec: true,
         config: cmd => void cmd.jsonMeta
       }).init({ "server-name": { args: "<n string>", argDefault: "d" } });
-      const { command } = nc.parse([], 0);
 
-      expect(command.opts).toEqual({ "server-name": "d", serverName: "d" });
+      return verify({ timeout: 500 })
+        .step(() => nc.parse([], 0).command)
+        .step(command => expect(command.opts).toEqual({ "server-name": "d", serverName: "d" }));
     });
   });
 });

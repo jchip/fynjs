@@ -1,5 +1,6 @@
 import { PassThrough } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
+import { verify } from "run-verify";
 import stripAnsi from "strip-ansi";
 import VisualLogger from "visual-logger";
 import { VisualExec, type VisualExecOptions } from "../src/visual-exec.js";
@@ -110,56 +111,61 @@ describe("progress format", () => {
         finish = () => resolve({ stdout: "", stderr: "" });
       })
     });
-    const done = async () => {
+    const done = () => {
       finish();
-      await result;
-      logger.shutdown();
+      return result;
     };
-    return { update, stdout, stderr, done };
+    return { logger, update, stdout, stderr, done };
   }
 
   const progressCalls = (update: ReturnType<typeof vi.spyOn>) =>
     update.mock.calls.filter(([, data]: any[]) => data?.display).map(([, data]: any[]) => data);
 
-  it("shows the formatted progress on the stdout label without onProgress", async () => {
-    const { update, stdout, done } = run({ progress: { pattern, format } });
+  it("shows the formatted progress on the stdout label without onProgress", () => {
+    const { logger, update, stdout, done } = run({ progress: { pattern, format } });
 
-    stdout.emit("data", "Progress: 3/10\n");
-    stdout.emit("data", "more output\n");
-    await done();
-
-    const calls = progressCalls(update);
-    expect(calls[0]).toEqual({
-      msg: "Progress: 3/10",
-      display: "=== Running test\nstdout 3/10",
-      _save: false,
-      _render: false
-    });
-    // later stdout updates keep the progress on the label
-    expect(calls[calls.length - 1].display).toBe("=== Running test\nstdout 3/10");
+    return verify({ timeout: 500, cleanup: () => logger.shutdown() })
+      .step(() => stdout.emit("data", "Progress: 3/10\n"))
+      .step(() => stdout.emit("data", "more output\n"))
+      .step(() => done())
+      .step(() => progressCalls(update))
+      .keep.step(calls =>
+        expect(calls[0]).toEqual({
+          msg: "Progress: 3/10",
+          display: "=== Running test\nstdout 3/10",
+          _save: false,
+          _render: false
+        })
+      )
+      // later stdout updates keep the progress on the label
+      .step(calls => expect(calls[calls.length - 1].display).toBe("=== Running test\nstdout 3/10"));
   });
 
-  it("updates the stdout label for progress found on stderr", async () => {
-    const { update, stdout, stderr, done } = run({ progress: { pattern, format } });
+  it("updates the stdout label for progress found on stderr", () => {
+    const { logger, update, stdout, stderr, done } = run({ progress: { pattern, format } });
 
-    stdout.emit("data", "hello\n");
-    stderr.emit("data", "2/5\n2/5\n");
-    await done();
-
-    // one render for the progress, none for the repeated text
-    expect(progressCalls(update)).toEqual([
-      { msg: "hello", display: "=== Running test\nstdout 2/5", _save: false, _render: false }
-    ]);
+    return (
+      verify({ timeout: 500, cleanup: () => logger.shutdown() })
+        .step(() => stdout.emit("data", "hello\n"))
+        .step(() => stderr.emit("data", "2/5\n2/5\n"))
+        .step(() => done())
+        // one render for the progress, none for the repeated text
+        .step(() =>
+          expect(progressCalls(update)).toEqual([
+            { msg: "hello", display: "=== Running test\nstdout 2/5", _save: false, _render: false }
+          ])
+        )
+    );
   });
 
-  it("still calls onProgress along with format", async () => {
+  it("still calls onProgress along with format", () => {
     const onProgress = vi.fn();
-    const { update, stdout, done } = run({ progress: { pattern, format }, onProgress });
+    const { logger, update, stdout, done } = run({ progress: { pattern, format }, onProgress });
 
-    stdout.emit("data", "4/8\n");
-    await done();
-
-    expect(onProgress).toHaveBeenCalledWith({ current: 4, total: 8, percent: undefined });
-    expect(progressCalls(update)[0].display).toBe("=== Running test\nstdout 4/8");
+    return verify({ timeout: 500, cleanup: () => logger.shutdown() })
+      .step(() => stdout.emit("data", "4/8\n"))
+      .step(() => done())
+      .step(() => expect(onProgress).toHaveBeenCalledWith({ current: 4, total: 8, percent: undefined }))
+      .step(() => expect(progressCalls(update)[0].display).toBe("=== Running test\nstdout 4/8"));
   });
 });

@@ -256,25 +256,31 @@ describe("mergeConfigOpts", () => {
   const source = { concurrency: "default", cc: "default", sort: "default", bail: "cli" };
 
   it("lets top-level config override an option's argDefault", () => {
-    const merged = mergeConfigOpts({ concurrency: 2, sort: false }, "run", opts, source);
-    expect(merged.concurrency).toBe(2);
-    expect(merged.sort).toBe(false);
+    return verify({ timeout: 500 })
+      .step(() => mergeConfigOpts({ concurrency: 2, sort: false }, "run", opts, source))
+      .keep.step((merged) => expect(merged.concurrency).toBe(2))
+      .step((merged) => expect(merged.sort).toBe(false));
   });
 
   it("prefers command.<name> config over top-level config", () => {
     const fynpoRc = { concurrency: 2, command: { run: { concurrency: 4, stream: true } } };
-    const merged = mergeConfigOpts(fynpoRc, "run", opts, source);
-    expect(merged.concurrency).toBe(4);
-    expect(merged.stream).toBe(true);
+    return verify({ timeout: 500 })
+      .step(() => mergeConfigOpts(fynpoRc, "run", opts, source))
+      .keep.step((merged) => expect(merged.concurrency).toBe(4))
+      .step((merged) => expect(merged.stream).toBe(true));
   });
 
   it("ignores another command's config", () => {
     const fynpoRc = { command: { bootstrap: { concurrency: 4 } } };
-    expect(mergeConfigOpts(fynpoRc, "run", opts, source).concurrency).toBe(6);
+    return verify({ timeout: 500 })
+      .step(() => mergeConfigOpts(fynpoRc, "run", opts, source))
+      .step((merged) => expect(merged.concurrency).toBe(6));
   });
 
   it("never overrides a flag given on the CLI", () => {
     const fynpoRc = { bail: false, command: { run: { bail: false } } };
-    expect(mergeConfigOpts(fynpoRc, "run", opts, source).bail).toBe(true);
+    return verify({ timeout: 500 })
+      .step(() => mergeConfigOpts(fynpoRc, "run", opts, source))
+      .step((merged) => expect(merged.bail).toBe(true));
   });
 });
