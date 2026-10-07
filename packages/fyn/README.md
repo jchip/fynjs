@@ -56,29 +56,23 @@ fyn options can be listed in help:
 fyn --help
 ```
 
-fyn loads config from `CWD/.fynrc`, `CWD/.npmrc`, `~/.fynrc`, and `~/.npmrc` in this specified order, from highest to lowest priority.
+fyn loads config from up to 9 rc files. Later files override earlier ones, so this list goes from lowest to highest priority:
 
-From `.npmrc`, only fields `registry`, `@<scope>:registry`,`email`, and `_auth` are read.
+1. `$NPM_CONFIG_GLOBALCONFIG`
+2. `$PREFIX/etc/npmrc`
+3. `$NPM_CONFIG_USERCONFIG`
+4. `~/.npmrc`
+5. `~/.fynrc`
+6. `<fynpo dir>/.npmrc` (in a fynpo monorepo, when CWD is not the fynpo dir)
+7. `<fynpo dir>/.fynrc` (same as above)
+8. `CWD/.npmrc`
+9. `CWD/.fynrc`
 
-`.fynrc` file can be an [ini] or `YAML` format. For the `YAML` format, the first line must be `---`.
+fyn merges every key from every rc file into its options, including `.npmrc` files.
 
-Below is an `YAML` example, with all the options set to their default values:
+Every rc file is parsed as [ini]. YAML is not supported.
 
-```yml
----
-registry: https://registry.npmjs.org
-"@scope:registry": https://registry.custom.com
-offline: false
-forceCache: false
-lockOnly: false
-progress: normal
-logLevel: info
-production: false
-centralStore: false
-hardlink: true
-```
-
-Or as an ini:
+Below is an ini example, with the options set to their default values:
 
 ```ini
 registry=https://registry.npmjs.org
@@ -89,8 +83,27 @@ lockOnly=false
 progress=normal
 logLevel=info
 production=false
-centralStore=false
 hardlink=true
+```
+
+`centralStore` has no fixed default. When it is unset in a non-fynpo project, fyn turns it on for macOS when @fynjs/reflink can clone dirs, and for Linux when it can hardlink or clone. It stays off on other platforms. A fynpo monorepo uses its own central store. Set `centralStore=false` to keep it off in a non-fynpo project.
+
+### `.fynrc` sections
+
+A `.fynrc` file can have sections that apply only in some environments. Top level keys are the defaults, and a matching section overrides them.
+
+- `[IS_CI]` matches when the `CI` or `BUILD_ENV` env var is set.
+- `[CI:value]` matches when `CI` equals `value`. If `CI` is unset, `BUILD_ENV` is checked instead.
+- `[VAR:value]` matches when env var `VAR` equals `value`.
+- `[A|B:value]` matches when `A` or `B` equals `value`.
+
+When several sections match, `[CI:value]` wins over `[IS_CI]`, and `[IS_CI]` wins over `[VAR:value]`.
+
+```ini
+progress=normal
+
+[IS_CI]
+progress=none
 ```
 
 ### Local source exports (`fyn.localExports`)
@@ -464,8 +477,9 @@ or per-invocation on the command line:
 fyn install --no-enforce-registry-deps
 ```
 
-The CLI flag takes precedence over the `package.json` setting, which takes
-precedence over the default (on).
+Any explicitly set option takes precedence over the `package.json` setting. That
+covers the CLI flag, an `enforceRegistryDeps` key in an rc file, and fynpo's
+`fyn.options`. The `package.json` setting takes precedence over the default (on).
 
 This is independent of the lifecycle-script controls above: `allowScripts` /
 `allowTopLevelScripts` decide whether *scripts run*, while `enforceRegistryDeps`

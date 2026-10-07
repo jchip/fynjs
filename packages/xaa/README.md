@@ -21,16 +21,16 @@ Or just use your IDE for hint if it supports TypeScript and typedoc.
 ### xaa.timeout
 
 ```js
-import { timeout } from "xaa";
+import { timeout, delay } from "xaa";
 
 async function test() {
   // will throw TimeoutError
-  await timeout(50, "took too long").run(xaa.delay(100));
+  await timeout(50, "took too long").run(delay(100));
   // will run the two functions and wait for them
   await timeout(50, "oops")
     .run([
-      () => xaa.delay(10, 1),
-      () => xaa.delay(15, 2),
+      () => delay(10, 1),
+      () => delay(15, 2),
       "some value",
       Promise.resolve("more value")
     ])
@@ -43,7 +43,7 @@ async function test() {
 ### xaa.map
 
 ```js
-import { map } from xaa;
+import { map } from "xaa";
 
 async function test() {
   return await map(

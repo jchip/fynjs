@@ -27,18 +27,15 @@ bootstrap, or build.
 
 ## Config
 
-Lives under `command.publish`, which is already the established home for release-wide
-settings read from the changelog and version code paths via explicit
-`_.get(fynpoRc, "command.publish.…")` — see `update-changelog-file.ts:14`
-(`command.publish.tags`) and `update-package-versions.ts:11-12`.
+Lives under the `packages` object, next to the discovery keys. fynpo-base
+`resolvePackagesConfig` (`packages-config.ts`) normalizes it, and `makePublishFilter`
+(fynpo `utils.ts`) reads `publishInclude` and `publishExclude` from the result.
 
 ```json
 {
-  "command": {
-    "publish": {
-      "includePackages": ["path:core/*", "path:dev-tools/*"],
-      "excludePackages": ["path:**/samples/**"]
-    }
+  "packages": {
+    "publishInclude": ["path:core/*", "path:dev-tools/*"],
+    "publishExclude": ["path:**/samples/**"]
   }
 }
 ```
@@ -52,9 +49,9 @@ Bare entries follow existing `PackageRef` rules — a mid-string `@` means `id`,
 
 ### Semantics
 
-1. `includePackages` absent or empty → every package is eligible (today's behavior, unchanged).
-2. `includePackages` non-empty → a package is eligible only if it matches at least one ref.
-3. `excludePackages` is applied after, subtractively, and always wins.
+1. `publishInclude` absent or empty → every package is eligible (today's behavior, unchanged).
+2. `publishInclude` non-empty → a package is eligible only if it matches at least one ref.
+3. `publishExclude` is applied after, subtractively, and always wins.
 4. `"private": true` remains an independent veto, evaluated separately and unchanged.
 
 Allowlist-first is deliberate: it fails closed. A newly added `demo/fynapp-9` is
@@ -63,10 +60,9 @@ directory.
 
 ### Naming
 
-Not `patterns`/`packages`/`ignore`/`only` — those are live flat option names. `patterns` in
-particular is the discovery option (`index.ts:69`); if a `command.publish.patterns` key ever
-got merged flat into opts it would silently repoint discovery. `includePackages` /
-`excludePackages` cannot collide.
+The keys sit inside `packages` with a `publish` prefix, so they can't be confused with the
+discovery keys `include` and `exclude`. A `packages` value given as the historical array
+means the same list is also the `publishInclude` allow list (as `path:` refs).
 
 ## Where it applies
 
@@ -145,15 +141,13 @@ a new demo package is publishable until someone remembers. With this feature:
 
 ```json
 {
-  "command": {
-    "publish": {
-      "includePackages": [
-        "path:core/*",
-        "path:dev-tools/*",
-        "path:rollup-federation/federation-js",
-        "path:rollup-federation/rollup-plugin-federation"
-      ]
-    }
+  "packages": {
+    "publishInclude": [
+      "path:core/*",
+      "path:dev-tools/*",
+      "path:rollup-federation/federation-js",
+      "path:rollup-federation/rollup-plugin-federation"
+    ]
   }
 }
 ```

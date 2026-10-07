@@ -457,7 +457,7 @@ export const fynpoMain = () => {
     },
     local: {
       alias: "l",
-      desc: "update packages dependencies to point to local",
+      desc: "resolve the local package dependency graph, without installing",
       exec: execLocal,
     },
     prepare: {
