@@ -548,13 +548,12 @@ export class ClapNodeGenerator {
         setArg(i, args[i], node.argsList[i]);
       }
     } else {
+      const value = node.argsList[0];
+      // A declared flag reads 0/1 as booleans. Unknown options keep them as numbers.
+      const isBool = isBoolean(value) || (!opt.isUnknown && (value === "0" || value === "1"));
       node.argsMap[0] =
         node.argsList.length > 0
-          ? this.convertValue(
-              isBoolean(node.argsList[0]) ? "boolean" : isNumber(node.argsList[0]) ? "number" : "string",
-              node.argsList[0],
-              opt
-            )
+          ? this.convertValue(isBool ? "boolean" : isNumber(value) ? "number" : "string", value, opt)
           : (true as any);
     }
 
