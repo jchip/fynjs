@@ -95,6 +95,41 @@ describe("createTsMapper", () => {
       expect(custom("file:///p/vendor/a.js")).toBeNull();
       expect(custom(`${B}a.js`)).toBe(`${B}a.ts`);
     });
+
+    describe("with the cwd under a skipped dir", () => {
+      const cwd = "/p/.fynpo/proj";
+      const files = [`file://${cwd}/src/a.ts`, `file://${cwd}/node_modules/x/a.ts`, "file:///q/node_modules/x/a.ts"];
+      const mapUnderCwd = () => {
+        vi.spyOn(process, "cwd").mockReturnValue(cwd);
+        return withFiles(...files).map;
+      };
+
+      it("maps files below the cwd", () => {
+        return verify({ timeout: 500, cleanup: () => vi.restoreAllMocks() })
+          .step(() => mapUnderCwd())
+          .step(map => expect(map(`file://${cwd}/src/a.js`)).toBe(`file://${cwd}/src/a.ts`));
+      });
+
+      it("still skips node_modules below the cwd", () => {
+        return verify({ timeout: 500, cleanup: () => vi.restoreAllMocks() })
+          .step(() => mapUnderCwd())
+          .step(map => expect(map(`file://${cwd}/node_modules/x/a.js`)).toBeNull());
+      });
+
+      it("handles the filesystem root as the cwd", () => {
+        return verify({ timeout: 500, cleanup: () => vi.restoreAllMocks() })
+          .step(() => vi.spyOn(process, "cwd").mockReturnValue("/"))
+          .step(() => withFiles("file:///src/a.ts", "file:///node_modules/x/a.ts").map)
+          .keep.step(map => expect(map("file:///src/a.js")).toBe("file:///src/a.ts"))
+          .step(map => expect(map("file:///node_modules/x/a.js")).toBeNull());
+      });
+
+      it("tests a url outside the cwd whole", () => {
+        return verify({ timeout: 500, cleanup: () => vi.restoreAllMocks() })
+          .step(() => mapUnderCwd())
+          .step(map => expect(map("file:///q/node_modules/x/a.js")).toBeNull());
+      });
+    });
   });
 
   describe("caching", () => {
@@ -106,12 +141,14 @@ describe("createTsMapper", () => {
       expect(isFile.mock.calls.length).toBe(afterFirst);
     });
 
-    it("caches negative results too", () => {
-      const { map, isFile } = withFiles();
-      expect(map(`${B}a.js`)).toBeNull();
-      const afterFirst = isFile.mock.calls.length;
-      expect(map(`${B}a.js`)).toBeNull();
-      expect(isFile.mock.calls.length).toBe(afterFirst);
+    it("does not cache misses, so a file created later is found", () => {
+      const set = new Set<string>();
+      const map = createTsMapper({ isFile: url => set.has(url) });
+
+      return verify({ timeout: 500 })
+        .step(() => expect(map(`${B}a.js`)).toBeNull())
+        .step(() => set.add(`${B}a.ts`))
+        .step(() => expect(map(`${B}a.js`)).toBe(`${B}a.ts`));
     });
   });
 });

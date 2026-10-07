@@ -1,5 +1,5 @@
 import { statSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 /** Predicate testing whether a `file:` URL points at a real file. */
 export type FileCheck = (url: string) => boolean;
@@ -31,7 +31,10 @@ export const defaultIsFile: FileCheck = url => {
 export type MapperOptions = {
   /** Overridable for tests; defaults to a real filesystem stat. */
   isFile?: FileCheck;
-  /** URLs matching this are left alone. */
+  /**
+   * URLs matching this are left alone. For a URL under the cwd, it is tested against the
+   * part below the cwd, ie: `/src/a.js`. Other URLs are tested whole.
+   */
   skip?: RegExp;
 };
 
@@ -46,10 +49,14 @@ export type MapperOptions = {
 export function createTsMapper(options: MapperOptions = {}) {
   const isFile = options.isFile ?? defaultIsFile;
   const skip = options.skip ?? DEFAULT_SKIP;
-  const cache = new Map<string, string | null>();
+  const cache = new Map<string, string>();
+  // test skip below the cwd, so a project that sits under a .fynpo dir still gets mapped
+  let cwdUrl = pathToFileURL(process.cwd()).href;
+  if (!cwdUrl.endsWith("/")) cwdUrl += "/";
 
   const lookup = (url: string): string | null => {
-    if (skip.test(url)) return null;
+    const subject = url.startsWith(cwdUrl) ? url.slice(cwdUrl.length - 1) : url;
+    if (skip.test(subject)) return null;
 
     const js = url.match(JS_EXTENSION);
     if (js) {
@@ -86,7 +93,8 @@ export function createTsMapper(options: MapperOptions = {}) {
     const cached = cache.get(url);
     if (cached !== undefined) return cached;
     const mapped = lookup(url);
-    cache.set(url, mapped);
+    // only hits are cached, so a file created later is still found
+    if (mapped) cache.set(url, mapped);
     return mapped;
   };
 }

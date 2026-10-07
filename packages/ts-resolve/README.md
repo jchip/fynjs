@@ -34,7 +34,12 @@ install();
 | `./foo` | `./foo.ts`, `.tsx`, `.mts`, `.cts`, then `./foo/index.*` |
 
 A real `.js` file always wins - an existing file is never shadowed by a `.ts`
-of the same name. `node_modules` and the fynpo store are never remapped.
+of the same name. `node_modules` and the fynpo store are never remapped. For
+files under the cwd, only the path below the cwd is checked for them, so a
+project that sits inside a `.fynpo` directory still gets mapped.
+
+Successful lookups are cached. Misses are not, so a `.ts` file created while
+the process runs is still found.
 
 ## Why no source maps
 
