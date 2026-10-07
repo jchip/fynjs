@@ -148,6 +148,7 @@ Key differences to be aware of:
 - `call(propertyName, ...args)` - Call a method on the resolved value with the provided arguments
 - `asCallback(callback, options?)` - Register a Node-style callback that handles the resolution or rejection
 - `error(handler)` - Like catch(), but only catches operational errors, letting programmer errors bubble up
+- `catch(filter..., handler)` - Filtered catch: handle only errors matching an Error class, a predicate function, or an object of properties; others are rethrown
 
 ### Static Methods
 
@@ -161,6 +162,7 @@ Key differences to be aware of:
 - `fromNode(fn, options?)` - Convert Node-style callback functions to promise-returning functions
 - `fromCallback(fn, options?)` - Alias for fromNode
 - `each(items, fn)` - Iterate over array elements
+- `filter(items, fn)` - Filter array elements
 - `reduce(array, fn, initialValue?)` - Reduce array elements
 - `some(promises, count)` - Wait for a specified number of promises to be fulfilled
 - `method(fn)` - Creates a method that returns a promise resolving to the value returned by the original function

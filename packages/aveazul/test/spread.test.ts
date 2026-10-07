@@ -116,4 +116,12 @@ describe("AveAzul.prototype.spread", () => {
         expect(result).toBe(6);
       });
   });
+
+  test("should not mutate the input array", async () => {
+    const input = [AveAzul.resolve(1), 2];
+    return verify({ timeout: 1000 })
+      .step(() => AveAzul.resolve(input).spread((a, b) => a + b))
+      .keep.step((result) => expect(result).toBe(3))
+      .step(() => expect(input[0]).toBeInstanceOf(AveAzul));
+  });
 });

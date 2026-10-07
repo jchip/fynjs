@@ -80,9 +80,9 @@ describe("AveAzul.using", () => {
     const usingUnchecked = AveAzul.using as (...args: unknown[]) => unknown;
 
     return verify({ timeout: 1000 })
-      .expectErrorToBe("resrouces and handler function required")
+      .expectErrorToBe("resources and handler function required")
       .step(() => usingUnchecked())
-      .expectErrorToBe("resrouces and handler function required")
+      .expectErrorToBe("resources and handler function required")
       .step(() => AveAzul.using([]))
       .expectErrorToBe(
         "only two arguments are allowed when passing an array of resources"

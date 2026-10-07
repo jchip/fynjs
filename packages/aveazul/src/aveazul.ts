@@ -11,6 +11,9 @@ export interface MapOptions {
   concurrency?: number;
 }
 
+/** A `.catch()` filter: an Error class, a predicate, or an object of properties to match. */
+export type CatchFilter = (new (...args: any[]) => Error) | ((error: any) => unknown) | object;
+
 export interface AsCallbackOptions {
   spread?: boolean;
 }
@@ -53,6 +56,10 @@ export interface AveAzulClass {
   props<T extends object>(obj: T): AveAzul<{ [K in keyof T]: Awaited<T[K]> }>;
   defer<T>(): Deferred<T>;
   each<T>(
+    items: Iterable<T | PromiseLike<T>>,
+    fn: (item: T, index: number, length: number) => unknown
+  ): AveAzul<T[]>;
+  filter<T>(
     items: Iterable<T | PromiseLike<T>>,
     fn: (item: T, index: number, length: number) => unknown
   ): AveAzul<T[]>;
@@ -151,11 +158,45 @@ class AveAzul<T> extends Promise<T> {
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
   ) => AveAzul<TResult1 | TResult2>;
 
-  declare catch: <TResult = never>(
-    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null
-  ) => AveAzul<T | TResult>;
-
   declare finally: (onfinally?: (() => void) | undefined | null) => AveAzul<T>;
+
+  /**
+   * Bluebird-style filtered catch: `.catch(filter..., handler)`.
+   * A filter is an Error class (instanceof), a predicate function, or an object
+   * whose own properties must equal the error's. Unmatched errors are rethrown.
+   * With a single argument it is the native catch.
+   */
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null
+  ): AveAzul<T | TResult>;
+  catch<TResult = never>(
+    ...filtersAndHandler: [...CatchFilter[], (reason: any) => TResult | PromiseLike<TResult>]
+  ): AveAzul<T | TResult>;
+  catch(...args: any[]): AveAzul<any> {
+    if (args.length <= 1) {
+      return super.catch(args[0]) as AveAzul<any>;
+    }
+    const handler = args.pop();
+    if (typeof handler !== "function") {
+      throw new TypeError(
+        "The last argument to .catch() must be a function, got " + String(handler)
+      );
+    }
+    const filters = args as any[];
+    return super.catch((err: any) => {
+      for (const f of filters) {
+        if (f === Error || (f != null && f.prototype instanceof Error)) {
+          if (err instanceof f) return handler(err);
+        } else if (typeof f === "function") {
+          if (f(err)) return handler(err);
+        } else if (err !== null && (typeof err === "object" || typeof err === "function")) {
+          // loose equality, as Bluebird does
+          if (Object.keys(f).every((k) => f[k] == err[k])) return handler(err);
+        }
+      }
+      throw err;
+    }) as AveAzul<any>;
+  }
 
   /**
    * Bluebird-style tap() method that lets you perform side effects in a chain
@@ -177,9 +218,18 @@ class AveAzul<T> extends Promise<T> {
    * @returns Promise that resolves with the filtered array
    */
   filter(fn: (item: any, index: number, length: number) => any): AveAzul<any[]> {
-    return this.then((value) =>
-      (xaa as any).filter(value, fn)
-    ) as AveAzul<any[]>;
+    return this.then(async (value) => {
+      const arr = toArray(value as Iterable<unknown>);
+      const len = arr.length;
+      const result: any[] = [];
+      for (let i = 0; i < len; i++) {
+        const x = isPromise(arr[i]) ? await arr[i] : arr[i];
+        if (await fn(x, i, len)) {
+          result.push(x);
+        }
+      }
+      return result;
+    }) as AveAzul<any[]>;
   }
 
   /**
@@ -189,9 +239,12 @@ class AveAzul<T> extends Promise<T> {
    * @returns Promise that resolves with the mapped array
    */
   map<U>(fn: (item: any, index: number, length: number) => U | PromiseLike<U>, options: MapOptions = { concurrency: 50 }): AveAzul<U[]> {
-    return this.then((value) =>
-      (xaa as any).map(value, fn, options)
-    ) as AveAzul<U[]>;
+    return this.then((value) => {
+      const arr = toArray(value as Iterable<unknown>);
+      const len = arr.length;
+      // xaa passes a context object as the third argument; Bluebird passes the length
+      return (xaa as any).map(arr, (item: unknown, index: number) => fn(item, index, len), options);
+    }) as AveAzul<U[]>;
   }
 
   /**
@@ -232,7 +285,7 @@ class AveAzul<T> extends Promise<T> {
    */
   each(fn: (item: any, index: number, length: number) => unknown): AveAzul<any[]> {
     return this.then(async (value) => {
-      const arr = value as any[];
+      const arr = toArray(value as Iterable<unknown>);
       const result: any[] = [];
       for (let i = 0; i < arr.length; i++) {
         let x = arr[i];
@@ -313,7 +366,7 @@ class AveAzul<T> extends Promise<T> {
     const hasInitial = arguments.length > 1;
 
     return this.then(async (array) => {
-      const arr = array as any[];
+      const arr = toArray(array as Iterable<unknown>);
       const len = arr.length;
       let value: U;
       let idx: number;
@@ -407,12 +460,13 @@ class AveAzul<T> extends Promise<T> {
 
     return this.then(async (args) => {
       if (Array.isArray(args)) {
-        for (let i = 0; i < args.length; i++) {
-          if (isPromise(args[i])) {
-            args[i] = await args[i];
+        const values = args.slice();
+        for (let i = 0; i < values.length; i++) {
+          if (isPromise(values[i])) {
+            values[i] = await values[i];
           }
         }
-        return fn(...args);
+        return fn(...values);
       } else {
         return fn(args);
       }
@@ -662,6 +716,16 @@ class AveAzul<T> extends Promise<T> {
   }
 
   /**
+   * Bluebird-style filter() for array filtering
+   * @param items - Array or iterable to filter
+   * @param fn - Filter function (item, index, length)
+   * @returns Promise that resolves with the items that passed the filter
+   */
+  static filter<T>(items: Iterable<T | PromiseLike<T>>, fn: (item: T, index: number, length: number) => unknown): AveAzul<T[]> {
+    return (AveAzul.resolve(items) as AveAzul<any>).filter(fn as any) as AveAzul<T[]>;
+  }
+
+  /**
    * Bluebird-style reduce() for array reduction
    * @param array - Array to reduce
    * @param fn - Reducer function (value, item, index, length)
@@ -729,7 +793,7 @@ class AveAzul<T> extends Promise<T> {
    */
   static using<R>(resources: any, ...args: any[]): AveAzul<R> {
     if (args.length === 0) {
-      throw new TypeError("resrouces and handler function required");
+      throw new TypeError("resources and handler function required");
     }
 
     if (Array.isArray(resources)) {
