@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
+import { verify } from "run-verify";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -95,6 +96,15 @@ describe("real import.meta.resolve", () => {
 
   it("should treat an unexported subpath as not found by default", () => {
     expect(report.notExportedDefault.ok).toBe("FELL-BACK");
+  });
+
+  // pins the documented gap: resolution does not stat a bare subpath, so a missing file in
+  // an installed package with no exports map is reported present and fails on import
+  it("should route a missing subpath of a package with no exports map through fail", () => {
+    return verify({ timeout: 500 })
+      .step(() => expect(report.missingSubpathNoExports.ok).toEqual({ failCalled: "ERR_MODULE_NOT_FOUND" }))
+      .step(() => expect(report.hasMissingSubpathNoExports).toBe(true))
+      .step(() => expect(report.resolveMissingSubpathNoExports).toBe(true));
   });
 
   it("should treat an unexported subpath as a failure when asked", () => {

@@ -93,4 +93,16 @@ out.hasMissing = optionalImport.has("totally-not-installed");
 out.resolvePresent = String(optionalImport.resolve("present-esm")).endsWith("present-esm/index.js");
 out.resolveMissing = optionalImport.resolve("totally-not-installed", { default: null });
 
+// documented gap: a missing subpath of an installed package with no exports map
+await record("missingSubpathNoExports", async () =>
+  await optionalImport("present-cjs/nope.js", {
+    default: "FELL-BACK",
+    fail: (e: Error) => ({ failCalled: (e as any).code })
+  })
+);
+out.hasMissingSubpathNoExports = optionalImport.has("present-cjs/nope.js");
+out.resolveMissingSubpathNoExports = String(
+  optionalImport.resolve("present-cjs/nope.js", { default: null })
+).endsWith("present-cjs/nope.js");
+
 console.log(JSON.stringify(out, null, 2));

@@ -157,6 +157,7 @@ subpath. Path and `file:` URL specifiers are therefore existence-checked separat
 described under [Path specifiers](#path-specifiers). One gap remains either way: a subpath of
 an installed package with no `exports` map (`"some-pkg/nope.js"`) is a bare specifier, so it
 resolves without error and surfaces as a `fail` on import rather than a `notFound`.
+For the same reason, `.has()` returns `true` for it and `.resolve()` returns its URL.
 
 **Conditions differ from `optional-require`.** Resolution here runs under the `import`
 condition, so a package with divergent conditional exports may resolve to a different file than
