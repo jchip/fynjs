@@ -71,7 +71,8 @@ const { stdout, stderr } = await ve.execute();
 | `onOutput(data, stream)` | called on each stdout/stderr chunk |
 | `onComplete(output, exitCode)` | called when finished; its return value becomes `execute()`'s result on success |
 | `outputFile` / `outputFileOptions` | stream output to a file (`append`, `includeStderr`, `timestamps`) |
-| `progress` / `onProgress` | extract progress from output by regex or custom function |
+| `progress` / `onProgress` | extract progress from stdout or stderr by regex or custom function |
+| `progress.format(p)` | text to show after the `stdout` label, ie: `p => \`${p.current}/${p.total}\`` |
 | `matchers` | `[{ pattern, onMatch }]` run against output lines |
 
 ### Methods

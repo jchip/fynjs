@@ -38,7 +38,7 @@ export interface ProgressExtractor {
   pattern?: RegExp;
   /** Custom extractor function */
   extract?: (line: string) => { current?: number; total?: number; percent?: number } | null;
-  /** Display format for progress */
+  /** Format progress as text to show after the `stdout` label, ie: `p => \`${p.current}/${p.total}\`` */
   format?: (p: { current?: number; total?: number; percent?: number }) => string;
 }
 
@@ -97,6 +97,8 @@ export interface VisualExecOptions {
 interface DigestItem {
   name: symbol;
   buf: string;
+  /** last message rendered for the item */
+  msg?: string;
 }
 
 export interface ExecOutput {
@@ -301,6 +303,9 @@ export class VisualExec {
   private _progress?: ProgressExtractor;
   private _onProgress?: (progress: { current?: number; total?: number; percent?: number }) => void;
   private _matchers?: OutputMatcher[];
+  /** latest `progress.format` result, shown on the stdout label */
+  private _progressText?: string;
+  private _stdoutDigest?: DigestItem;
   private _stdoutKey?: symbol;
   private _stderrKey?: symbol;
   private _updateStdout?: (buf: string) => void;
@@ -401,7 +406,7 @@ export class VisualExec {
 
   private _extractProgress(line: string): void {
     const cfg = this._progress;
-    if (!cfg || !this._onProgress) return;
+    if (!cfg || !(this._onProgress || cfg.format)) return;
     let progress: { current?: number; total?: number; percent?: number } | null = null;
     if (cfg.extract) {
       progress = cfg.extract(line);
@@ -415,7 +420,29 @@ export class VisualExec {
         };
       }
     }
-    if (progress) this._onProgress(progress);
+    if (!progress) return;
+    if (cfg.format) {
+      const text = cfg.format(progress);
+      if (text !== this._progressText) {
+        this._progressText = text;
+        this._renderDigest(this._stdoutDigest!);
+      }
+    }
+    if (this._onProgress) this._onProgress(progress);
+  }
+
+  private _renderDigest(item: DigestItem): void {
+    // progress goes on the stdout label, the item with the spinner
+    const display =
+      item === this._stdoutDigest && this._progressText
+        ? `=== ${this._title}\nstdout ${this._progressText}`
+        : undefined;
+    this._logger.updateItem(item.name, {
+      msg: item.msg,
+      display,
+      _save: false,
+      _render: false
+    });
   }
 
   private _updateDigest(item: DigestItem, buf: string): void {
@@ -459,11 +486,8 @@ export class VisualExec {
       item.buf += "\n";
     }
 
-    this._logger.updateItem(item.name, {
-      msg: msgs.join(chalk.blue.inverse("\\n")),
-      _save: false,
-      _render: false
-    });
+    item.msg = msgs.join(chalk.blue.inverse("\\n"));
+    this._renderDigest(item);
   }
 
   private _createDataHandler(stream: OutputStream): (buf: Buffer | string) => void {
@@ -526,6 +550,7 @@ export class VisualExec {
     });
 
     const stdoutDigest: DigestItem = { name: this._stdoutKey, buf: "" };
+    this._stdoutDigest = stdoutDigest;
     const stderrDigest: DigestItem = { name: this._stderrKey, buf: "" };
     this._updateStdout = (buf: string) => this._updateDigest(stdoutDigest, buf);
     this._updateStderr = (buf: string) => this._updateDigest(stderrDigest, buf);

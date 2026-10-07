@@ -92,3 +92,74 @@ describe("output digest", () => {
     logger.shutdown();
   });
 });
+
+describe("progress format", () => {
+  const pattern = /(?<current>\d+)\/(?<total>\d+)/;
+  const format = (p: { current?: number; total?: number }) => `${p.current}/${p.total}`;
+
+  function run(options: Partial<VisualExecOptions>) {
+    const { exec, logger } = setup(options);
+    const update = vi.spyOn(logger, "updateItem");
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    let finish: () => void = () => undefined;
+    const result = exec.show({
+      stdout,
+      stderr,
+      promise: new Promise<{ stdout: string; stderr: string }>(resolve => {
+        finish = () => resolve({ stdout: "", stderr: "" });
+      })
+    });
+    const done = async () => {
+      finish();
+      await result;
+      logger.shutdown();
+    };
+    return { update, stdout, stderr, done };
+  }
+
+  const progressCalls = (update: ReturnType<typeof vi.spyOn>) =>
+    update.mock.calls.filter(([, data]: any[]) => data?.display).map(([, data]: any[]) => data);
+
+  it("shows the formatted progress on the stdout label without onProgress", async () => {
+    const { update, stdout, done } = run({ progress: { pattern, format } });
+
+    stdout.emit("data", "Progress: 3/10\n");
+    stdout.emit("data", "more output\n");
+    await done();
+
+    const calls = progressCalls(update);
+    expect(calls[0]).toEqual({
+      msg: "Progress: 3/10",
+      display: "=== Running test\nstdout 3/10",
+      _save: false,
+      _render: false
+    });
+    // later stdout updates keep the progress on the label
+    expect(calls[calls.length - 1].display).toBe("=== Running test\nstdout 3/10");
+  });
+
+  it("updates the stdout label for progress found on stderr", async () => {
+    const { update, stdout, stderr, done } = run({ progress: { pattern, format } });
+
+    stdout.emit("data", "hello\n");
+    stderr.emit("data", "2/5\n2/5\n");
+    await done();
+
+    // one render for the progress, none for the repeated text
+    expect(progressCalls(update)).toEqual([
+      { msg: "hello", display: "=== Running test\nstdout 2/5", _save: false, _render: false }
+    ]);
+  });
+
+  it("still calls onProgress along with format", async () => {
+    const onProgress = vi.fn();
+    const { update, stdout, done } = run({ progress: { pattern, format }, onProgress });
+
+    stdout.emit("data", "4/8\n");
+    await done();
+
+    expect(onProgress).toHaveBeenCalledWith({ current: 4, total: 8, percent: undefined });
+    expect(progressCalls(update)[0].display).toBe("=== Running test\nstdout 4/8");
+  });
+});
