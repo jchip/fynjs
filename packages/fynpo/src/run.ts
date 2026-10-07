@@ -399,7 +399,9 @@ path: ${pkg.path}`;
       logger.warn(chalk.yellow(line));
     }
 
-    const joinedCommand = [this._npmClient, "run", this._script].concat(this._args).join(" ");
+    const joinedCommand = [this._npmClient, "run", this._script]
+      .concat(this._args.length > 0 ? ["--", ...this._args] : [])
+      .join(" ");
     const pkgMsg = count === 1 ? "package" : "packages";
 
     logger.info(`Executing command ${joinedCommand} in ${count} ${pkgMsg}`);

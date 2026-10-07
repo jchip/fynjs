@@ -356,7 +356,6 @@ export class Bootstrap {
   }
 
   async exec({
-    build = true,
     fynOpts = [],
     concurrency = 6,
     skip = [],

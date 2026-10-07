@@ -181,8 +181,8 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
   let secondRun = false;
   try {
     await bootstrap.exec({
-      build: meta.opts.build,
-      fynOpts: meta.opts.fynOpts,
+      // config `fynOpts` lands in the merged opts; there is no CLI option for it
+      fynOpts: bootstrap._opts.fynOpts,
       concurrency: meta.opts.concurrency,
       skip: meta.opts.skip,
     });
@@ -305,6 +305,8 @@ export const resolveRunExitCode = (
 const execRunScript = async (cmd, _parsed) => {
   const opts = await makeOpts(cmd, _parsed);
   const graph = await makeDepGraph(opts);
+  // the parser stops at `--` and leaves the rest in parsed._ for the script
+  opts["--"] = _parsed?._ || [];
   let exitCode = 0;
   try {
     // In @fynjs/cli-args, use cmd.jsonMeta.args for named arguments
@@ -323,15 +325,23 @@ const execRunScript = async (cmd, _parsed) => {
 };
 
 const execInit = (cmd, _parsed) => {
-  // In @fynjs/cli-args, use cmd.jsonMeta.opts for merged options
-  const opts = Object.assign({ cwd: process.cwd() }, cmd.jsonMeta?.opts || {});
+  // jsonMeta.opts is per command, so merge the root opts (like --cwd) first, as makeOpts does
+  const opts = Object.assign(
+    { cwd: process.cwd() },
+    cmd.rootCmd?.jsonMeta?.opts || {},
+    cmd.jsonMeta?.opts || {}
+  );
 
   return new Init(opts).exec();
 };
 
 const execLinting = (cmd, _parsed) => {
-  // In @fynjs/cli-args, use cmd.jsonMeta.opts for merged options
-  const opts = Object.assign({ cwd: process.cwd() }, cmd.jsonMeta?.opts || {});
+  // jsonMeta.opts is per command, so merge the root opts (like --cwd) first, as makeOpts does
+  const opts = Object.assign(
+    { cwd: process.cwd() },
+    cmd.rootCmd?.jsonMeta?.opts || {},
+    cmd.jsonMeta?.opts || {}
+  );
 
   return new Commitlint(opts).exec();
 };
@@ -358,13 +368,6 @@ export const cliOptions = {
     alias: "s",
     args: "<vals string..>",
     desc: "include only packages with names matching the given scopes",
-    allowCmd: ["bootstrap", "local", "run"],
-  },
-  deps: {
-    alias: "d",
-    args: "[val number]",
-    argDefault: "10",
-    desc: "level of deps to include even if they were ignored",
     allowCmd: ["bootstrap", "local", "run"],
   },
   commit: {
@@ -440,11 +443,6 @@ export const fynpoMain = () => {
       desc: "bootstrap packages",
       exec: execBootstrap,
       options: {
-        build: {
-          args: "[flag boolean]",
-          argDefault: "true",
-          desc: "run npm script build if no prepare (use --no-build to disable)",
-        },
         concurrency: {
           alias: "cc",
           args: "[val number]",
@@ -497,7 +495,7 @@ export const fynpoMain = () => {
           desc: "enable to trigger publish with changelog commit",
         },
         tag: {
-          desc: "create tags for individual packages",
+          desc: "create tags for individual packages (only with --publish)",
         },
         "confirm-version-bumps": {
           alias: "cvb",
