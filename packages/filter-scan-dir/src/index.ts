@@ -85,7 +85,11 @@ export type Options<FullStat extends boolean = boolean> = {
   sortFiles?: boolean;
   /** include directories in result */
   includeDir?: boolean;
-  /** include symlinks in result (when includeDir is false, symlinks to directories are excluded unless this is true) */
+  /**
+   * include symlinks in result. When `includeDir` is false, all symlinks are skipped unless
+   * this is true, links to files as well as links to directories. When `includeDir` is true,
+   * this option has no effect and symlinks go through the normal filters. Symlinks are never followed.
+   */
   includeSymlink?: boolean;
   /** zero base max level of directories to recurse into. Default: `Infinity`  */
   maxLevel?: number;
@@ -265,8 +269,8 @@ function processDir(options, extras) {
  * @returns
  */
 function processFile(options, extras) {
-  // If includeDir is false and includeSymlink is not true, skip symlinks
-  // This prevents symlinks to directories from being included as files
+  // If includeDir is false and includeSymlink is not true, skip every symlink,
+  // whether it points to a file or a directory
   if (
     !options.includeDir &&
     !options.includeSymlink &&
