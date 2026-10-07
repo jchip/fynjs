@@ -16,6 +16,8 @@ vi.mock("visual-logger", () => ({
     info = vi.fn();
     error = vi.fn();
     verbose = vi.fn();
+    // getDefaultLogger calls it when it detects CI
+    setItemType = vi.fn();
     prefix() {
       return this;
     }
