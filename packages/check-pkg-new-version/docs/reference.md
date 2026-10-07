@@ -1,6 +1,6 @@
 # check-pkg-new-version reference
 
-`check-pkg-new-version` lets a published CLI tell its users when a newer version of itself exists. It wraps `check-pkg-new-version-engine` with a Node `fetch` based registry fetcher, a `semver` comparison, and `.npmrc` loading. ESM only (`"type": "module"`). Engine behavior (throttling, metadata file, notify rules) is documented at https://fynjs.pages.dev/check-pkg-new-version-engine.md.
+`check-pkg-new-version` lets a published CLI tell its users when a newer version of itself exists. It wraps `check-pkg-new-version-engine` with a Node `fetch` based registry fetcher, a `semver` comparison, and `.npmrc` loading. ESM only (`"type": "module"`). Engine behavior (throttling, metadata file, notify rules) is documented at https://fynjs.pages.dev/ref/check-pkg-new-version-engine.md.
 
 ## Imports
 

@@ -1,6 +1,6 @@
 // Builds fynjs.pages.dev into site-pub/ at the repo root: landing page, llms.txt, llms-full.txt,
-// one reference per package copied from packages/<dir>/docs/reference.md, TypeDoc HTML under
-// api/, and robots.txt with a sitemap.xml.
+// one reference per package under ref/, copied from packages/<dir>/docs/reference.md, TypeDoc
+// HTML under api/, and robots.txt with a sitemap.xml.
 // TypeDoc reads each package's types, so the monorepo must be bootstrapped first.
 import Fs from "node:fs";
 import Path from "node:path";
@@ -86,7 +86,7 @@ function llmsTxt(groups) {
   for (const [title, list] of groups) {
     lines.push(`## ${title}`, ``);
     for (const p of list) {
-      lines.push(`- [${p.name}](${SITE_URL}/${p.dir}.md): ${p.description} (v${p.version})`);
+      lines.push(`- [${p.name}](${SITE_URL}/ref/${p.dir}.md): ${p.description} (v${p.version})`);
     }
     lines.push(``);
   }
@@ -96,7 +96,7 @@ function llmsTxt(groups) {
 
 function llmsFullTxt(groups) {
   const refs = groups.flatMap(([, list]) =>
-    list.map(p => `<!-- ${p.name} v${p.version}: ${SITE_URL}/${p.dir}.md -->\n\n${p.ref.trim()}\n`)
+    list.map(p => `<!-- ${p.name} v${p.version}: ${SITE_URL}/ref/${p.dir}.md -->\n\n${p.ref.trim()}\n`)
   );
   return [`# fynjs`, ``, `> ${SUMMARY}`, ``, ...refs].join("\n");
 }
@@ -106,7 +106,7 @@ function sitemapXml(pkgs, groups) {
     "",
     "llms.txt",
     "llms-full.txt",
-    ...groups.flatMap(([, list]) => list.map(p => `${p.dir}.md`)),
+    ...groups.flatMap(([, list]) => list.map(p => `ref/${p.dir}.md`)),
     ...[...pkgs.values()].filter(p => p.api).map(p => p.api)
   ];
   const urls = paths.map(p => `  <url><loc>${SITE_URL}/${p}</loc></url>`);
@@ -124,7 +124,7 @@ function packagesHtml(groups) {
     .map(([title, list]) => {
       const items = list
         .map(p => {
-          const links = [p.ref && `<a href="${p.dir}.md">reference</a>`, p.api && `<a href="${p.api}">API</a>`];
+          const links = [p.ref && `<a href="ref/${p.dir}.md">reference</a>`, p.api && `<a href="${p.api}">API</a>`];
           return (
             `<li><a href="https://www.npmjs.com/package/${p.name}"><code>${escapeHtml(p.name)}</code></a>` +
             `<span>${escapeHtml(p.description)}</span>` +
@@ -146,8 +146,9 @@ await buildApi(pkgs);
 
 const groups = groupsOf(pkgs, p => p.ref);
 
+Fs.mkdirSync(Path.join(OUT, "ref"));
 for (const [, list] of groups) {
-  for (const p of list) Fs.writeFileSync(Path.join(OUT, `${p.dir}.md`), p.ref);
+  for (const p of list) Fs.writeFileSync(Path.join(OUT, "ref", `${p.dir}.md`), p.ref);
 }
 Fs.writeFileSync(Path.join(OUT, "llms.txt"), llmsTxt(groups));
 Fs.writeFileSync(Path.join(OUT, "llms-full.txt"), llmsFullTxt(groups));

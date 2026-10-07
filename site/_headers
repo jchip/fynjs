@@ -1,5 +1,5 @@
 # Serve references as text so browsers show them instead of downloading.
-/*.md
+/ref/*
   Content-Type: text/plain; charset=utf-8
 /llms*.txt
   Content-Type: text/plain; charset=utf-8

@@ -2,7 +2,7 @@
 
 fynpo-cli is a global launcher. It installs a `fynpo` command that finds the `fynpo` package installed in the current directory's monorepo and runs it in-process. It has no logic, no dependencies and no bundled copy of fynpo.
 
-For commands, flags and config, see https://fynjs.pages.dev/fynpo.md.
+For commands, flags and config, see https://fynjs.pages.dev/ref/fynpo.md.
 
 ## Install
 

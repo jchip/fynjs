@@ -23,7 +23,7 @@ fynjs.pages.dev/
   index.html      landing page for humans
   llms.txt        index: one line per package, linking to its reference
   llms-full.txt   every reference joined into one file
-  <dir>.md        one reference per package, named by its packages/<dir>
+  ref/<dir>.md    one reference per package, named by its packages/<dir>
   api/            TypeDoc HTML for packages that ship types
 ```
 
