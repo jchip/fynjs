@@ -71,18 +71,19 @@ export interface FsJobResult {
  */
 export function storeJobSync(job: StoreJob): StoreResult {
   const { contentPath } = job;
-  if (Fs.existsSync(contentPath)) return { exist: true };
+  if (entryCompleteSync(contentPath)) return { exist: true };
   Fs.mkdirSync(Path.dirname(contentPath), { recursive: true });
   const marker = `${contentPath}.extracting`;
   const claimed = claimMarkerSync(marker);
   try {
     if (claimed) {
       // another install may have finished the entry just before releasing its marker
-      if (Fs.existsSync(contentPath)) return { exist: true };
+      if (entryCompleteSync(contentPath)) return { exist: true };
       removeStaleTempsSync(contentPath);
     } else if (job.deferIfBusy) {
       return { busy: true };
     }
+    if (Fs.existsSync(contentPath)) removeBrokenEntrySync(contentPath);
     return storeEntrySync(job);
   } finally {
     if (claimed) {
@@ -91,6 +92,29 @@ export function storeJobSync(job: StoreJob): StoreResult {
       } catch {}
     }
   }
+}
+
+/** A complete entry has a tree.json that parses. One without is left from a broken write. */
+function entryCompleteSync(contentPath: string): boolean {
+  try {
+    JSON.parse(Fs.readFileSync(Path.join(contentPath, "tree.json"), "utf8"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Rename a broken entry away, then remove it, as FynCentral.delete does */
+function removeBrokenEntrySync(contentPath: string): void {
+  const trash = `${contentPath}.del-${uniqueSuffix()}`;
+  try {
+    Fs.renameSync(contentPath, trash);
+  } catch (err) {
+    // ENOENT: another install removed it first
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+    return;
+  }
+  Fs.rmSync(trash, { recursive: true, force: true });
 }
 
 function storeEntrySync(job: StoreJob): StoreResult {

@@ -187,16 +187,18 @@ class FynCentral {
 
     try {
       const stat = await Fs.stat(info.contentPath);
-      info.exist = true;
+      // an entry whose tree.json can't be read is left from a broken write, so it doesn't exist
       if (stat.isDirectory()) {
         await this.readInfoTree(info);
         if (!noSet) {
           this._map.set(integrity, info);
         }
       }
+      info.exist = true;
       this._missing.delete(integrity);
       return info;
     } catch (_err) {
+      info.exist = false;
       if (!noSet) this._missing.set(integrity, info);
       return info;
     }
@@ -305,6 +307,23 @@ class FynCentral {
       this._map.delete(integrity);
       await Fs.$.rimraf(trash);
     }
+  }
+
+  /**
+   * An entry with no readable tree.json is left from a broken write. Rename it away, then
+   * remove it, the same way delete() does.
+   */
+  async _removeBrokenEntry(contentPath: string): Promise<void> {
+    const trash = `${contentPath}.del-${uniqueSuffix()}`;
+    try {
+      await Fs.rename(contentPath, trash);
+    } catch (err) {
+      // ENOENT: another install removed it first
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+      return;
+    }
+    logger.warn(`fyn-central: replacing a broken store entry with no tree.json at ${contentPath}`);
+    await Fs.$.rimraf(trash);
   }
 
   /**
@@ -703,6 +722,9 @@ class FynCentral {
         return false;
       }
 
+      if (await Fs.exists(info.contentPath)) {
+        await this._removeBrokenEntry(info.contentPath);
+      }
       logger.debug("storing tar to central store", pkgId, integrity);
       await this._storeTarStream(info, currentStream);
       currentStream = undefined;

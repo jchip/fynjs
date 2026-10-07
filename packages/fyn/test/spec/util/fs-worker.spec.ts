@@ -66,8 +66,21 @@ describe("fs-worker untarFileSync with in-memory data", () => {
   it("leaves an entry that's there already, without extracting", () => {
     const contentPath = Path.join(tmp, "store", "entry");
     Fs.mkdirSync(Path.join(contentPath, "package"), { recursive: true });
+    Fs.writeFileSync(Path.join(contentPath, "tree.json"), JSON.stringify({ $: {}, _: SUM_VERSION }));
     expect(storeJobSync({ data, integrity, contentPath })).toEqual({ exist: true });
     expect(Fs.readdirSync(Path.dirname(contentPath))).toEqual(["entry"]);
+  });
+
+  it("replaces an entry that has no tree.json, such as empty dirs left by a broken write", () => {
+    const contentPath = Path.join(tmp, "store", "entry");
+    return verify({ timeout: 2000 })
+      .step(() => Fs.mkdirSync(Path.join(contentPath, "package", "lib"), { recursive: true }))
+      .step(() => storeJobSync({ data, integrity, contentPath }))
+      .step((result) => expect(result).toHaveProperty("stored"))
+      .step(() => {
+        expect(Fs.existsSync(Path.join(contentPath, "tree.json"))).toBe(true);
+        expect(Fs.readdirSync(Path.dirname(contentPath))).toEqual(["entry"]);
+      });
   });
 
   it("removes its temp dir and marker when the tarball fails its integrity check", () => {

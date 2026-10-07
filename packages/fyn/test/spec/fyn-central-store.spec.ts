@@ -6,6 +6,7 @@ import ssri from "ssri";
 import * as Tar from "tar";
 import FynCentral from "../../lib/fyn-central";
 import FileOps from "../../lib/util/file-ops";
+import { verify } from "run-verify";
 
 // With `worker.on`, FynCentral gets a pool that runs the fs worker's store and scan jobs
 // in-thread. The test's integrity is a label, so the pool checks the bytes against their own hash.
@@ -159,6 +160,20 @@ describe.each([
     await store();
     expect(siblings()).toEqual([base(), `${base()}.tmp-2-live`]);
   });
+
+  it("replaces an entry that has no tree.json, such as empty dirs left by a broken write", () =>
+    verify({ timeout: 2000 })
+      .step(() => Fs.mkdirSync(Path.join(contentPath, "package", "lib"), { recursive: true }))
+      .step(() => central.has(integrity))
+      .step((has) => expect(has).toBe(false))
+      .step(() => store())
+      .step((stored) => expect(stored).toBe(true))
+      .step(() => central.has(integrity))
+      .step((has) => expect(has).toBe(true))
+      .step(() => {
+        expect(Fs.readFileSync(Path.join(contentPath, "package", "index.js"), "utf8")).toBe("module.exports = 1;\n");
+        expect(siblings()).toEqual([base()]);
+      }));
 
   it("deletes by renaming the entry away first", async () => {
     await store();
