@@ -223,6 +223,55 @@ describe("Inflight", () => {
       });
   });
 
+  // promise(k, f1), remove(k), promise(k, f2): f1 settling must not drop f2's entry
+  it("should keep a newer entry when a removed promise resolves", () => {
+    const ifl = new Inflight<string>();
+    let resolve1!: (v: string) => void;
+    let p1!: Promise<string>;
+    let p2!: Promise<string>;
+
+    return verify({ timeout: 500 })
+      .step(() => {
+        p1 = ifl.promise("k", () => new Promise<string>((res) => (resolve1 = res)));
+      })
+      .step(() => ifl.remove("k"))
+      .step(() => {
+        p2 = ifl.promise("k", () => new Promise<string>(() => {}));
+      })
+      .step(() => expect(p2).not.toBe(p1))
+      .step(() => resolve1("one"))
+      .step(() => p1)
+      .keep.step((v) => expect(v).toBe("one"))
+      // let p1's cleanup run before checking
+      .step(() => new Promise((res) => setTimeout(res, 0)))
+      .step(() => expect(ifl.get("k")).toBe(p2))
+      .step(() => expect(ifl.count).toBe(1));
+  });
+
+  it("should keep a newer entry when a removed promise rejects", () => {
+    const ifl = new Inflight<string>();
+    let reject1!: (err: Error) => void;
+    let p1!: Promise<string>;
+    let p2!: Promise<string>;
+
+    return verify({ timeout: 500 })
+      .step(() => {
+        p1 = ifl.promise("k", () => new Promise<string>((_res, rej) => (reject1 = rej)));
+      })
+      .step(() => ifl.remove("k"))
+      .step(() => {
+        p2 = ifl.promise("k", () => new Promise<string>(() => {}));
+      })
+      .step(() => expect(p2).not.toBe(p1))
+      .step(() => reject1(new Error("one failed")))
+      .expectErrorHas("one failed")
+      .step(() => p1)
+      // let p1's cleanup run before checking
+      .step(() => new Promise((res) => setTimeout(res, 0)))
+      .step(() => expect(ifl.get("k")).toBe(p2))
+      .step(() => expect(ifl.count).toBe(1));
+  });
+
   it("should reject when factory doesn't return promise", () => {
     const ifl = new Inflight<string>();
 

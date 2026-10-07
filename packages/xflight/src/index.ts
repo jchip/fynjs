@@ -193,18 +193,21 @@ export class Inflight<T = unknown> extends InflightStore<Promise<T>> {
             return existing;
         }
 
-        // Safe cleanup - don't throw if already removed manually
-        const cleanup = (): void => {
-            this._inflights.delete(key);
-        };
-
         try {
             const p = factory();
             assert(
                 p && typeof p.then === "function",
                 `xflight: promiseFactory for key ${String(key)} didn't return a promise`
             );
-            this.add(key, p).then(cleanup, cleanup);
+            this.add(key, p);
+            const item = this._inflights.get(key);
+            // Delete only our own entry. The key may have been removed and re-added since.
+            const cleanup = (): void => {
+                if (this._inflights.get(key) === item) {
+                    this._inflights.delete(key);
+                }
+            };
+            p.then(cleanup, cleanup);
             return p;
         } catch (err) {
             return this.Promise.reject(err);
