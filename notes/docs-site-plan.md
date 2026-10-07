@@ -91,17 +91,17 @@ All site and reference changes land on `main`. The `cf-pages` branch holds `main
 commit with the built site. Cloudflare Pages watches `cf-pages` and serves the built folder as
 is. It runs no build of its own.
 
-Every publish hard resets `cf-pages` to `main`, so the branch never keeps old builds. To publish:
+Every publish hard resets `cf-pages` to `main`, so the branch never keeps old builds. To publish,
+run from `main` after `fyn bootstrap` (TypeDoc needs installed, built packages):
 
 ```sh
-git switch cf-pages
-git reset --hard main
-fyn bootstrap                 # TypeDoc needs installed, built packages
-node site/build.mjs           # writes site-pub/
-git add -f site-pub           # site-pub is gitignored on main
-git commit -m "chore(site): build"
-git push --force origin cf-pages
+fyn publish-site
 ```
+
+`site/publish.mjs` resets `cf-pages` to `main`, builds `site-pub/` there, commits it with
+`chore(site): build`, force pushes, and switches back to `main`. `fyn publish-site -- --dry-run`
+does all of it except the real push.
+It refuses to run off `main` or with staged changes. Unstaged edits carry over untouched.
 
 Cloudflare Pages settings: production branch `cf-pages`, no build command, output directory
 `site-pub`. There is no GitHub Actions workflow and no wrangler secret.
@@ -110,5 +110,4 @@ Cloudflare Pages settings: production branch `cf-pages`, no build command, outpu
 
 1. Create the Cloudflare Pages project `fynjs`, connected to the repo's `cf-pages` branch.
    Needs the account owner.
-2. Repoint the README links that still go to `jchip.github.io/*`.
-3. Decide whether `check-refs.mjs` joins `ci:check`.
+2. Decide whether `check-refs.mjs` joins `ci:check`.
