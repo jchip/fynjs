@@ -125,12 +125,9 @@ describe("chalker", function () {
             console.log(r);
           }));
 
-      // chalk/ansi-colors rescan a string they're wrapping for embedded reset codes or newlines
-      // and reinsert their own open code after each one, so an outer style resumes after an
-      // inner nested style closes or a line breaks. styleText doesn't do this, and replicating
-      // it would mean reimplementing that rescan ourselves rather than delegating to styleText,
-      // so this one known gap is skipped for style-text: flat/single-level markers (every other
-      // test here) are unaffected and byte-identical.
+      // this case nests inside rgb/hex colors and spans newlines, the two places style-text
+      // can't resume an outer color the way chalk/ansi-colors do (see src/style-text.ts), so it
+      // is skipped for style-text. Flat markers (every other test here) are byte-identical.
       it.skipIf(engine.name === "style-text")("should support nesting colors", () => {
         const ctx = engine.context(2);
         return verify()

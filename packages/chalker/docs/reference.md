@@ -244,8 +244,8 @@ A chalk-shaped chain built on `util.styleText`. It is the backend of `chalker/st
 - Each name in `Object.keys(util.inspect.colors)` is a getter that returns a new chain with that style appended. Chains are callable: `styleTextColors.red.bold("x")`.
 - `rgb(r, g, b)`, `bgRgb(r, g, b)`, `hex(value)`, `bgHex(value)` are methods on every chain. They emit 24-bit escapes directly (`38;2;r;g;b` closing with `39`, background `48;2;...` closing `49`) and bypass `styleText`. `hex` parses with `color-convert`.
 - Order: the step chained first ends up outermost. Chains mix named and RGB steps in any order.
-- No `supportsColor` or `level` property exists on it. Named styles are applied by `util.styleText(name, text)` with default options, so Node's own stream and color checks decide whether named styles emit codes. RGB and hex escapes are always emitted.
-- Known gap stated in source: this backend does not re-open an outer style after a nested style closes or after a newline, so nested siblings or multi-line spans can lose the outer style where chalk would keep it.
+- No `supportsColor` or `level` property exists on it. Named styles are applied by `util.styleText(name, text)` with default options, so Node's own stream and color checks decide whether they emit codes. RGB and hex escapes are built by chalker, and follow the same check: each one asks `util.styleText` whether colors are on, at call time.
+- Known gaps: an rgb or hex outer color does not resume after a nested color closes (`<#FF0000>a<blue>b</blue>c</>` leaves `c` unstyled). A style is not re-opened after a newline, as chalk and ansi-colors do. Named outer styles do resume, since `util.styleText` handles that.
 
 ## Behavior summary
 

@@ -51,6 +51,28 @@ describe("static entries", () => {
       verify()
         .step(() => expect(ckStyleText.CHALK).not.toBe(chalk))
         .step(() => expect(ckStyleText.CHALK).not.toBe(ansiColors)));
+
+    it("should leave rgb and hex markers unstyled when styleText has colors off", () => {
+      const saved = process.env.FORCE_COLOR;
+      return verify({
+        cleanup: () => {
+          process.env.FORCE_COLOR = saved;
+        }
+      })
+        .step(() => {
+          process.env.FORCE_COLOR = "0";
+        })
+        .step(() => ckStyleText("<red>r</red> <#FF0000>hex</> <bg(1,2,3)>rgb</> &lt;"))
+        .step(r => expect(r).toBe("r hex rgb <"))
+        // markers are still checked, the same as with colors on
+        .expectErrorHas("unbalanced")
+        .step(() => ckStyleText("<red>x"));
+    });
+
+    it("should color rgb and hex markers when styleText has colors on", () =>
+      verify()
+        .step(() => ckStyleText("<#FF0000>hex</>"))
+        .step(r => expect(r).toBe("\u001b[38;2;255;0;0mhex\u001b[39m")));
   });
 
   describe("instance isolation", () => {

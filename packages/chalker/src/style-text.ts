@@ -17,11 +17,10 @@ export { makeChalker } from "./core.ts";
 // truecolor escapes are a public, stable ANSI sequence, so they're built directly here the same
 // way `defineAnsiColor` in ./core.ts builds them for the ansi-colors backend.
 //
-// Known gap: chalk/ansi-colors rescan a string they're wrapping for embedded reset codes or
-// newlines and reinsert their own open code after each one, so an outer style resumes after an
-// inner nested style closes or a line breaks. This backend doesn't do that rescan, so deeply
-// nested sibling markers or a styled span containing a newline can leak to unstyled where chalk
-// would have kept coloring. Flat/single-level markers, the common case, are unaffected.
+// Known gaps: styleText resumes an outer named style after a nested one closes, but it can't
+// resume an rgb/hex outer color, since those escapes are built here. And chalk/ansi-colors
+// reopen their style after each newline in a span, which styleText doesn't do. Flat markers,
+// the common case, are unaffected.
 //
 type AnyColors = any;
 
@@ -33,10 +32,14 @@ const STYLE_NAMES: ReadonlySet<string> = new Set(Object.keys(inspect.colors));
 // first ends up outermost, applied last, in `applyOps` below.
 type Op = string | ((text: string) => string);
 
+// The rgb/hex escapes skip styleText, so ask it whether colors are on (TTY, NO_COLOR,
+// FORCE_COLOR) at call time, the same check it applies to the named styles.
+const colorsOn = () => styleText("red", "x") !== "x";
+
 function rgbOp(r: number, g: number, b: number, bg?: boolean): Op {
   const open = `${bg ? 48 : 38};2;${r};${g};${b}`;
   const close = bg ? 49 : 39;
-  return (text: string) => `\u001b[${open}m${text}\u001b[${close}m`;
+  return (text: string) => (colorsOn() ? `\u001b[${open}m${text}\u001b[${close}m` : text);
 }
 
 function applyOps(ops: readonly Op[], text: string): string {
