@@ -253,7 +253,7 @@ const MARKERS_RE = /<[^>]*>/g;
 
 // remove the color marker like <red>text</> from strings
 function remove(s: string, keepHtml?: boolean): string {
-  const r = s.replace(MARKERS_RE, "").trim();
+  const r = s.replace(MARKERS_RE, "");
   return keepHtml ? r : decodeHtml(r);
 }
 

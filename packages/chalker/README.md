@@ -144,7 +144,8 @@ chalker.remove(str, keepHtml);
 - `str` - String with chalker color markers
 - `keepHtml` - If `true`, then don't decode HTML entity escapes.
 
-Remove all chalker markers and trim leading and trailing whitespace. Then decode HTML escapes and return the plain text string.
+Remove all chalker markers, then decode HTML escapes and return the plain text string.
+Whitespace is kept as is. Before 2.3.0, leading and trailing whitespace was trimmed.
 
 **Returns**: A plain text string without chalker color markers
 

@@ -319,6 +319,11 @@ magenta1 <red>red</red> <green>green</> magenta2</magenta> plain3`,
             )
           )
           .step(r => expect(r).toBe("red bold text &#xD83D;&#xDC69;green on blue bold")));
+
+      it("should keep leading and trailing whitespace when removing markers", () =>
+        verify()
+          .step(() => chalker.remove("  <red>indented</red>\n"))
+          .step(r => expect(r).toBe("  indented\n")));
     });
   });
 
