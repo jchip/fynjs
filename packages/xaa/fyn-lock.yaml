@@ -969,12 +969,12 @@ source-map:
   $: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
   _: 'https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz'
 source-map-js:
- _latest: 1.2.1
+ _latest: 1.2.2
  _:
-  ^1.2.1: 1.2.1
- 1.2.1:
-  $: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==
-  _: 'https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz'
+  ^1.2.1: 1.2.2
+ 1.2.2:
+  $: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==
+  _: 'https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz'
 source-map-support:
  _latest: 0.5.21
  _:

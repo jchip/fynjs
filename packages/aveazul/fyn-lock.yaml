@@ -974,12 +974,12 @@ siginfo:
   $: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==
   _: 'https://registry.npmjs.org/siginfo/-/siginfo-2.0.0.tgz'
 source-map-js:
- _latest: 1.2.1
+ _latest: 1.2.2
  _:
-  ^1.2.1: 1.2.1
- 1.2.1:
-  $: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==
-  _: 'https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz'
+  ^1.2.1: 1.2.2
+ 1.2.2:
+  $: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==
+  _: 'https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz'
 stackback:
  _latest: 0.0.2
  _:
