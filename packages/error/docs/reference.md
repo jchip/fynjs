@@ -45,14 +45,15 @@ Input selection:
 Processing, applied to each line of the text split on `"\n"`:
 
 1. A line that does not match `/ {4,}at/` (an `at` preceded by 4 or more spaces anywhere in the line) is kept unchanged. This covers the message line, `Require stack:` lines, and frames indented with fewer than 4 spaces.
-2. A frame line is parsed with `/( {4,}at)([^\(]+\()([^\)]+\))(.*)/`. Group 3 is the "path": the text after the first `(` up to and including the first `)`. Groups 2 and 4 are the text before and after it.
-3. The frame is dropped when parsing fails. That removes frames without parentheses, such as `    at /abs/file.js:1:1` and `    at node:internal/main/run_main_module:17:47`, and any `at file:///...` frame.
-4. The frame is dropped unless the path contains `scheme://` (regex `/[^:]+:\/\//`) or `path.isAbsolute(path)` is true. That removes relative paths and `node:internal/...` frames. `path.isAbsolute` is platform specific, so a Windows path like `C:\a\b.js` is dropped on POSIX.
-5. Backslashes in the path are replaced with `/`.
-6. The frame is dropped if the path matches the built-in filter or any `ignorePathFilter` entry. A `RegExp` entry uses `path.match(re)`. A string entry uses `path.includes(str)`. Falsy entries (such as `""`) are skipped.
-7. Otherwise `replacePath` (when usable) is removed with `String.prototype.replace` (first occurrence only, plain string, not a regex). It can match anywhere in the path, not only at the start.
-8. The kept frame is rebuilt as group1 + group2 + new path + group4. Because the path comes from group 3, everything after the first `)` (group 4) is unchanged. A `)` inside a file path ends the path early.
-9. After mapping, empty strings are removed and lines are joined with `"\n"`. Blank lines in the original text (including a trailing newline) are therefore removed too.
+2. A frame line is parsed with `/( {4,}at )(?:([^(]*\()(.+)(\).*)|(.+))/`. It has two forms. `at name (location)` takes the location from the first `(` to the last `)`, so a `)` inside a path does not cut it short. `at location` has no parentheses. Node uses it for anonymous functions and ES module top-level code.
+3. The frame is dropped when parsing fails (such as a bare `    at`), or unless the location contains `scheme://` (regex `/[^:]+:\/\//`) or `path.isAbsolute(location)` is true. That removes `node:internal/...` frames in either form, `(<anonymous>)`, `(index 0)`, and relative paths. `path.isAbsolute` is platform specific, so a Windows path like `C:\a\b.js` is dropped on POSIX.
+4. Backslashes in the location are replaced with `/`.
+5. The frame is dropped if the location matches the built-in filter or any `ignorePathFilter` entry. A `RegExp` entry uses `location.match(re)`. A string entry uses `location.includes(str)`. Falsy entries (such as `""`) are skipped.
+6. Otherwise `replacePath` (when usable) is removed. A location that starts with `file://` + `replacePath` loses both, so an ES module URL under the current directory becomes a relative path. Any other location has the first occurrence of `replacePath` removed with `String.prototype.replace` (plain string, not a regex). It can match anywhere in the location, not only at the start. A `file://` URL outside `replacePath` therefore stays whole.
+7. The kept frame is rebuilt as `at` + name + new location + the text after the last `)`. Text before the 4-space indent is not kept.
+8. Dropped frames are removed and the remaining lines are joined with `"\n"`. Blank lines in the original text are kept.
+
+Real stacks from CommonJS and ES modules are covered by tests on Node 22, 24 and 26 (`test/spec/real-stack.spec.ts`).
 
 Built-in filter (always on, checked before `ignorePathFilter`):
 
@@ -62,12 +63,13 @@ Built-in filter (always on, checked before `ignorePathFilter`):
 
 It drops frames from the `pirates` and `isomorphic-loader` require hooks. It matches on the backslash-normalized path.
 
-Not removed: frames from other `node_modules` packages, and any absolute path outside `replacePath`. Only `node:` internals and relative paths go by rule 4.
+Not removed: frames from other `node_modules` packages, and any absolute path outside `replacePath`. Only `node:` internals and other non-absolute locations go by rule 3.
 
 ```js
 cleanErrorStack(err);
 // Error: boom
 //     at run (src/app.js:10:5)
+//     at src/main.mjs:3:1
 cleanErrorStack(err, { replacePath: false, ignorePathFilter: ["/node_modules/", /vitest/] });
 ```
 
@@ -96,10 +98,11 @@ Edge cases on `errors`:
 function aggregateErrorStack(error: AggregateError): string
 ```
 
-Returns `aggregateStack(error.__stack || error.message || String(error), error.errors)`. The parameter type is this package's `AggregateError` class.
+Returns `aggregateStack(top, error.errors)`. The parameter type is this package's `AggregateError` class.
 
-- For an instance of this package's `AggregateError`, the top part is its saved original stack (`__stack`), which is the native stack text, including the header `AggregateError: <message>` and frames.
-- For a native `globalThis.AggregateError` (or any object without `__stack`), the top part is `error.message`, falling back to `String(error)` when the message is empty. The native stack frames and the `AggregateError:` header are not used. Example: message `"msg"` yields `"msg\n  Error: e\n      at ..."`.
+- For an instance of this package's `AggregateError`, `top` is its saved original stack (`__stack`), which is the native stack text, including the header `AggregateError: <message>` and frames.
+- For any other object, such as a native `globalThis.AggregateError`, `top` is `error.stack`. The native header and frames are kept.
+- When that text is empty, `top` falls back to `error.message`, then `String(error)`. An instance of this class with an empty `__stack` never reads its own `stack`, since that getter calls this function.
 - The list used is `error.errors`.
 - The result is computed each time. It is cached only by the `stack` getter of this package's class.
 
@@ -119,24 +122,25 @@ class AggregateError extends globalThis.AggregateError {
   errors: any[];
   stack: string;
   __stack: string;
-  constructor(errors?: any[], msg?: string);
+  constructor(errors?: Iterable<any>, msg?: string, options?: { cause?: unknown });
 }
 ```
 
 An `AggregateError` whose `stack` also prints the errors it wraps. It is a subclass, not a polyfill. See "Polyfill behavior" below.
 
-Constructor `new AggregateError(errors, msg?)`:
+Constructor `new AggregateError(errors, msg?, options?)`:
 
 - `errors` must be truthy and have a callable `[Symbol.iterator]`. Otherwise it throws `TypeError` with the message `input errors must be iterable but it's ${typeof errors}`. Falsy values give `undefined`, `object` (for `null`), `number`, and so on. A truthy number (`5`) gives `number`. A string is accepted since strings are iterable.
-- `msg` is the message. When omitted the message is `""`. There is no third `options` argument. `{ cause }` passed as a third argument is ignored.
-- The parent constructor is called as `super(errors, msg)`.
+- `errors` is spread once with `Array.from`, and that list goes to both the parent constructor and `errors`. So a `Set` or a one-shot iterator such as a generator gives its elements, and a string `"ab"` gives `["a", "b"]`, as with the native class.
+- `msg` is the message. When omitted the message is `""`.
+- `options` is passed to the parent constructor, so `{ cause }` sets `cause` as the native class does.
 
 Instance properties (all defined with `Object.defineProperty`, so `Object.keys(err)` is `[]`):
 
 | property | attributes | value |
 | --- | --- | --- |
 | `name` | non-enumerable, non-writable, non-configurable own property | `"AggregateError"`. A subclass cannot override it by assignment. |
-| `errors` | non-enumerable, writable, configurable | `[].concat(errors)`: a shallow copy when `errors` is an array. |
+| `errors` | non-enumerable, writable, configurable | `Array.from(errors)`: a new array, even when `errors` is an array. |
 | `__stack` | non-enumerable, non-writable, non-configurable | `this.stack` read right after `super()`: the native stack text of the error. |
 | `stack` | non-enumerable, configurable accessor | Getter returning `aggregateErrorStack(this)`, computed on first read and cached. |
 
@@ -147,20 +151,9 @@ Instance properties (all defined with `Object.defineProperty`, so `Object.keys(e
 - `instanceof` works against the native class (`new AggregateError([]) instanceof globalThis.AggregateError` is `true`). A native instance is not an instance of this class.
 - `console.log(err)` and `err.stack` in a debugger show the aggregate form. `cleanErrorStack(err)` therefore also cleans the nested error stacks, and the nested lines keep their 2-space indent.
 
-Edge cases from `[].concat(errors)`, which does not iterate:
-
-- A non-array iterable (for example `Set` or a generator) is wrapped as a single element: `new AggregateError(new Set([e])).errors` is `[Set]`, not `[e]`. The native parent receives the original iterable, but the own `errors` property replaces the native one.
-- A generator is consumed by `super()` first, so `errors` ends up `[<exhausted generator>]`, and the nested stack lists `String(generator)` (`[object Generator]`).
-- A string `"ab"` gives `["ab"]`, where the native class would give `["a", "b"]`.
-
 ## Polyfill behavior
 
 - The package does not patch or define any global. Importing it has no side effects (`"sideEffects": false`).
 - `AggregateError` here is a different class from `globalThis.AggregateError` (`AggregateError !== globalThis.AggregateError`). Its prototype parent is the global one.
 - The module evaluates `class AggregateError extends globalThis.AggregateError` at import time. If the runtime lacks a global `AggregateError`, import throws. All supported Node versions (`engines`) have it, so there is no fallback implementation.
-- Code that wants the aggregate-stack behavior must import this class explicitly. Native `AggregateError` instances are unchanged, and `aggregateErrorStack(native)` is the way to format them (see above for how the top line differs).
-
-## README mismatches
-
-- The README calls `AggregateError` a polyfill. In code it is a subclass of the global class and never installs itself.
-- The README says Node 15+ has a built-in `AggregateError`. The code requires the global, and `engines` is Node 22 or newer.
+- Code that wants the aggregate-stack behavior must import this class explicitly. Native `AggregateError` instances are unchanged, and `aggregateErrorStack(native)` is the way to format them.

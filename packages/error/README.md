@@ -7,11 +7,13 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
-Utilities and polyfill for node.js errors
+Utilities for readable node.js error stacks, and an `AggregateError` subclass that prints nested stacks.
 
-### API reference: <https://fynjs.pages.dev/ref/error.md> <!-- omit in toc -->
+### API reference: <https://fynjs.pages.dev/api/modules/_jchip_error> <!-- omit in toc -->
 
-See the [full API reference](docs/reference.md) for every function, option, and type.
+See the [API reference](https://fynjs.pages.dev/api/modules/_jchip_error) for every function, option, and type.
+
+The [Markdown reference](docs/reference.md) has the full API and its runtime behavior in one file, written for AI agents. It also ships in the package as `docs/reference.md`.
 
 # Table of Contents <!-- omit in toc -->
 
@@ -24,42 +26,41 @@ See the [full API reference](docs/reference.md) for every function, option, and 
 
 ### `cleanErrorStack`
 
-```ts
+```js
 import { cleanErrorStack } from "@jchip/error";
 
+function loadConfig() {
+  return JSON.parse("{ bad json");
+}
+
 try {
-  require("oops");
+  loadConfig();
 } catch (err) {
   console.log(cleanErrorStack(err));
 }
 ```
 
-Output:
+Output, run as `node test/app.mjs` from `/home/me/app`:
 
 ```
-Error: Cannot find module 'oops'
-Require stack:
-- /Users/joel/error/test/samples.ts
-    at Object.<anonymous> (test/samples.js:4:3)
+SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+    at loadConfig (test/app.mjs:4:15)
+    at test/app.mjs:8:3
 ```
 
-vs:
+vs `err.stack`:
 
 ```
-Error: Cannot find module 'oops'
-Require stack:
-- /Users/joel/error/test/samples.js
-    at Function.Module._resolveFilename (node:internal/modules/cjs/loader:933:15)
-    at Function.Module._load (node:internal/modules/cjs/loader:778:27)
-    at Module.require (node:internal/modules/cjs/loader:1005:19)
-    at require (node:internal/modules/cjs/helpers:94:18)
-    at Object.<anonymous> (/Users/joel/error/test/samples.js:4:3)
-    at Module._compile (node:internal/modules/cjs/loader:1101:14)
-    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1153:10)
-    at Module.load (node:internal/modules/cjs/loader:981:32)
-    at Function.Module._load (node:internal/modules/cjs/loader:822:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:79:12)
+SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+    at JSON.parse (<anonymous>)
+    at loadConfig (file:///home/me/app/test/app.mjs:4:15)
+    at file:///home/me/app/test/app.mjs:8:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
 ```
+
+Frames from `node:` internals are dropped. Paths under the current directory become relative, for both ES module `file://` URLs and CommonJS paths.
 
 ### `aggregateErrorStack`
 
@@ -67,7 +68,7 @@ Generate stack with aggregate errors from [AggregateError]
 
 Example:
 
-```ts
+```js
 import { aggregateErrorStack, AggregateError } from "@jchip/error";
 
 console.log(aggregateErrorStack(new AggregateError([new Error("error 1")], "test")));
@@ -77,21 +78,15 @@ Output:
 
 ```
 AggregateError: test
-    at Object.<anonymous> (/Users/joel/error/test/samples.js:3:33)
-    at Module._compile (node:internal/modules/cjs/loader:1101:14)
-    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1153:10)
-    at Module.load (node:internal/modules/cjs/loader:981:32)
-    at Function.Module._load (node:internal/modules/cjs/loader:822:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:79:12)
-    at node:internal/main/run_main_module:17:47
+    at file:///home/me/app/test/app.mjs:3:33
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
   Error: error 1
-      at Object.<anonymous> (/Users/joel/error/test/samples.js:3:53)
-      at Module._compile (node:internal/modules/cjs/loader:1101:14)
-      at Object.Module._extensions..js (node:internal/modules/cjs/loader:1153:10)
-      at Module.load (node:internal/modules/cjs/loader:981:32)
-      at Function.Module._load (node:internal/modules/cjs/loader:822:12)
-      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:79:12)
-      at node:internal/main/run_main_module:17:47
+      at file:///home/me/app/test/app.mjs:3:53
+      at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+      at async node:internal/modules/esm/loader:647:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
 ```
 
 ### `AggregateError`
@@ -102,51 +97,45 @@ AggregateError: test
 
 Example with `cleanErrorStack`:
 
-```ts
+```js
 import { cleanErrorStack, AggregateError } from "@jchip/error";
 
+function loadConfig() {
+  return JSON.parse("{ bad json");
+}
+
 try {
-  require("bad");
+  loadConfig();
 } catch (err) {
-  console.log(cleanErrorStack(new AggregateError([err], "require failed")));
+  console.log(cleanErrorStack(new AggregateError([err], "config failed")));
 }
 ```
 
 Output:
 
 ```
-AggregateError: require failed
-    at Object.<anonymous> (test/samples.js:12:31)
-  Error: Cannot find module 'bad'
-  Require stack:
-  - /Users/joel/error/test/samples.js
-      at Object.<anonymous> (test/samples.js:10:3)
+AggregateError: config failed
+    at test/app.mjs:10:31
+  SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+      at loadConfig (test/app.mjs:4:15)
+      at test/app.mjs:8:3
 ```
 
-vs:
+vs `new AggregateError([err], "config failed").stack`:
 
 ```
-AggregateError: require failed
-    at Object.<anonymous> (/Users/joel/error/test/samples.js:12:15)
-    at Module._compile (node:internal/modules/cjs/loader:1101:14)
-    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1153:10)
-    at Module.load (node:internal/modules/cjs/loader:981:32)
-    at Function.Module._load (node:internal/modules/cjs/loader:822:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:79:12)
-    at node:internal/main/run_main_module:17:47
-  Error: Cannot find module 'bad'
-  Require stack:
-  - /Users/joel/error/test/samples.js
-      at Function.Module._resolveFilename (node:internal/modules/cjs/loader:933:15)
-      at Function.Module._load (node:internal/modules/cjs/loader:778:27)
-      at Module.require (node:internal/modules/cjs/loader:1005:19)
-      at require (node:internal/modules/cjs/helpers:94:18)
-      at Object.<anonymous> (/Users/joel/error/test/samples.js:10:3)
-      at Module._compile (node:internal/modules/cjs/loader:1101:14)
-      at Object.Module._extensions..js (node:internal/modules/cjs/loader:1153:10)
-      at Module.load (node:internal/modules/cjs/loader:981:32)
-      at Function.Module._load (node:internal/modules/cjs/loader:822:12)
-      at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:79:12)
+AggregateError: config failed
+    at file:///home/me/app/test/app.mjs:10:15
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+  SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+      at JSON.parse (<anonymous>)
+      at loadConfig (file:///home/me/app/test/app.mjs:4:15)
+      at file:///home/me/app/test/app.mjs:8:3
+      at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+      at async node:internal/modules/esm/loader:647:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
 ```
 
 [aggregateerror]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError

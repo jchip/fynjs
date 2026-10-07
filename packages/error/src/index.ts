@@ -36,15 +36,15 @@ export function cleanErrorStack(
       if (!line.match(/ {4,}at/)) {
         return line;
       }
-      // path runs to the last ")" so a ")" inside the path does not cut it short
-      const match = line.match(/( {4,}at)([^\(]+\()(.+\))(.*)/);
-      // skip any stack tracing line not in these formats:
-      // - "    at Blah (/foo/bar:##:##)" format
-      // - "scheme://path" (ie: webpack://path)
-      if (!match || (!match[3].match(/[^:]+:\/\//) && !Path.isAbsolute(match[3]))) {
+      // "    at name (location)" or "    at location", the second for anonymous functions and
+      // ESM top-level code. The location runs to the last ")" so a ")" inside it does not cut it short.
+      const match = line.match(/( {4,}at )(?:([^(]*\()(.+)(\).*)|(.+))/);
+      const [, at, name = "", location = match?.[5], tail = ""] = match || [];
+      // keep only locations that are absolute paths or "scheme://path" (ie: file://, webpack://)
+      if (!location || (!location.match(/[^:]+:\/\//) && !Path.isAbsolute(location))) {
         return false;
       }
-      const path = match[3].replace(/\\/g, "/");
+      const path = location.replace(/\\/g, "/");
       if (
         defaultPathFilter
           .concat(ignorePathFilter)
@@ -52,8 +52,14 @@ export function cleanErrorStack(
       ) {
         return false;
       }
-      const path2 = replacePath && replacePath.length > 1 ? path.replace(replacePath, "") : path;
-      return `${match[1]}${match[2]}${path2}${match[4]}`;
+      let path2 = path;
+      if (replacePath && replacePath.length > 1) {
+        // an ESM location is a file:// URL, so drop the scheme along with replacePath
+        path2 = path.startsWith(`file://${replacePath}`)
+          ? path.slice(`file://${replacePath}`.length)
+          : path.replace(replacePath, "");
+      }
+      return `${at}${name}${path2}${tail}`;
     })
     .filter((x) => x !== false)
     .join("\n");

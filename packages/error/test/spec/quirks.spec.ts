@@ -75,6 +75,14 @@ describe("cleanErrorStack line handling", () => {
       .step((s) => expect(s).toBe("Error: line 1\n\nline 3\n    at f (/abs/x.js:1:1)"));
   });
 
+  it("should drop an at line with no location", () => {
+    const x = new Error("x");
+    x.stack = "Error: x\n    at\n    at g (/p/keep.js:2:2)";
+    return verify({ timeout: 1000 })
+      .step(() => cleanErrorStack(x, { replacePath: false }))
+      .step((s) => expect(s).toBe("Error: x\n    at g (/p/keep.js:2:2)"));
+  });
+
   it("should match filters against the whole path when it has a )", () => {
     const x = new Error("x");
     x.stack = "Error: x\n    at f (/p/(x)/skip/y.js:1:1)\n    at g (/p/keep.js:2:2)";
