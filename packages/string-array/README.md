@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url]
-
 # String Array
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Parse string into array of string elements.
 
@@ -88,6 +93,13 @@ See the [full API reference](docs/reference.md) for every function, option, and 
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-[npm-image]: https://badge.fury.io/js/string-array.svg
-[npm-url]: https://npmjs.org/package/string-array
 [npm scripts]: https://docs.npmjs.com/misc/scripts
+
+[license-image]: https://img.shields.io/npm/l/string-array.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/string-array.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=string-array
+[npm-badge-png]: https://nodei.co/npm/string-array.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/string-array

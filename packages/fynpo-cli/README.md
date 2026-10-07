@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-
 # fynpo-cli
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 The global launcher for the `fynpo` command.
 
@@ -29,7 +34,12 @@ See the [full API reference](docs/reference.md) for how `fynpo` is resolved and 
 Licensed under the [Apache License, Version 2.0](./LICENSE).
 
 [fynpo]: https://github.com/jchip/fynjs/tree/main/packages/fynpo
-[npm-image]: https://badge.fury.io/js/fynpo-cli.svg
-[npm-url]: https://npmjs.org/package/fynpo-cli
+
+[license-image]: https://img.shields.io/npm/l/fynpo-cli.svg
+[license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/fynpo-cli.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=fynpo-cli
+[npm-badge-png]: https://nodei.co/npm/fynpo-cli.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/fynpo-cli

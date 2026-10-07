@@ -169,8 +169,9 @@ Copyright (c) 2022-2026 Joel Chen
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-[npm-version-svg]: https://badge.fury.io/js/filter-scan-dir.svg
-[package-url]: https://npmjs.com/package/filter-scan-dir
+[api docs]: https://fynjs.pages.dev/ref/filter-scan-dir.md
+[github]: https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir
+
 [license-image]: https://img.shields.io/npm/l/filter-scan-dir.svg
 [license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
@@ -178,5 +179,4 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [downloads-image]: https://img.shields.io/npm/dm/filter-scan-dir.svg
 [downloads-url]: https://npm-stat.com/charts.html?package=filter-scan-dir
 [npm-badge-png]: https://nodei.co/npm/filter-scan-dir.png?downloads=true&stars=true
-[api docs]: https://fynjs.pages.dev/ref/filter-scan-dir.md
-[github]: https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir
+[package-url]: https://npmjs.com/package/filter-scan-dir

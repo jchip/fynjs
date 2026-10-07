@@ -1,5 +1,12 @@
 # xflight
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 **Avoid redundant async calls by sharing inflight promises for the same key.**
 
 ## Description
@@ -180,3 +187,12 @@ Apache-2.0
 ---
 
 © Joel Chen
+
+[license-image]: https://img.shields.io/npm/l/xflight.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/xflight.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=xflight
+[npm-badge-png]: https://nodei.co/npm/xflight.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/xflight

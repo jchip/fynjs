@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url]
-
 # xsh
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Some random NodeJS helper functions for shell execution
 
@@ -177,8 +182,11 @@ xsh.popd();
 `popd` `chdir`s back to the directory most recently saved by `pushd`, returning it. `popd`
 throws if the stack is empty.
 
-[npm-image]: https://badge.fury.io/js/xsh.svg
-
-[npm-url]: https://npmjs.org/package/xsh
-
-
+[license-image]: https://img.shields.io/npm/l/xsh.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/xsh.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=xsh
+[npm-badge-png]: https://nodei.co/npm/xsh.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/xsh

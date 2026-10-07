@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-
 # pkg-preper
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 A [pacote] `dirPacker` that runs a package's `prepare` script before packing it.
 
@@ -60,7 +65,12 @@ The packing code is adapted from the [npm CLI](https://github.com/npm/cli/blob/l
 [npm-packlist]: https://www.npmjs.com/package/npm-packlist
 [tar]: https://www.npmjs.com/package/tar
 [cacache]: https://www.npmjs.com/package/cacache
-[npm-image]: https://badge.fury.io/js/pkg-preper.svg
-[npm-url]: https://npmjs.org/package/pkg-preper
+
+[license-image]: https://img.shields.io/npm/l/pkg-preper.svg
+[license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/pkg-preper.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=pkg-preper
+[npm-badge-png]: https://nodei.co/npm/pkg-preper.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/pkg-preper

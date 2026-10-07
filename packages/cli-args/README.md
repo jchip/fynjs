@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-
 # @fynjs/cli-args
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Simple, lightweight, flexible, and comprehensive Un\*x Command Line Argument Parsing for Node.js.
 
@@ -2075,8 +2080,13 @@ Other popular CLI parsers you might consider:
 [argparse]: https://github.com/nodeca/argparse
 [yargs]: https://github.com/yargs/yargs
 [commander]: https://github.com/tj/commander.js
+[webpack]: https://webpack.js.org/
+
+[license-image]: https://img.shields.io/npm/l/@fynjs/cli-args.svg
+[license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
-[npm-image]: https://badge.fury.io/js/%40fynjs%2Fcli-args.svg
-[npm-url]: https://npmjs.org/package/@fynjs/cli-args
-[webpack]: https://webpack.js.org/
+[downloads-image]: https://img.shields.io/npm/dm/@fynjs/cli-args.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynjs%2Fcli-args
+[npm-badge-png]: https://nodei.co/npm/@fynjs/cli-args.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynjs/cli-args

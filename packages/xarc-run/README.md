@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][ci-shield]][ci-url]
-
 # @fynjs/run
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 `npm run` enhanced - A powerful task runner and build tool for modern JavaScript projects.
 
@@ -712,10 +717,6 @@ See [reference](./docs/reference.md) for more detailed information on features s
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-[ci-shield]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
-[npm-image]: https://badge.fury.io/js/%40fynjs%2Frun.svg
-[npm-url]: https://npmjs.org/package/@fynjs/run
 [npm scripts]: https://docs.npmjs.com/misc/scripts
 [bash]: https://www.gnu.org/software/bash/
 [zsh]: http://www.zsh.org/
@@ -723,3 +724,12 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [auto complete with namespace]: ./docs/reference.md#auto-complete-with-namespace
 [npm]: https://www.npmjs.com/package/npm
 [node.js stream]: https://nodejs.org/api/stream.html
+
+[license-image]: https://img.shields.io/npm/l/@fynjs/run.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/@fynjs/run.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynjs%2Frun
+[npm-badge-png]: https://nodei.co/npm/@fynjs/run.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynjs/run

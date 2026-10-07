@@ -1,8 +1,11 @@
 # fyn
 
-[![NPM version][npm-image]][npm-url]
-[![Apache 2.0 License][apache-2.0-blue-image]][apache-2.0-url]
-[![Build Status][build-image]][build-url]
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 **fyn** is a fast package manager for Node.js. It treats your disk as a registry, so you can develop and test packages using local copies. It uses hardlinks and a shared store to save disk space and speed up installs. It can link live source folders between packages, so changes show up right away. It reads your existing `.npmrc` and lockfiles, and it powers [fynpo], a zero-setup monorepo tool.
 
@@ -516,12 +519,6 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [ini]: https://www.npmjs.com/package/ini
 [node_preserve_symlinks]: https://nodejs.org/docs/latest-v8.x/api/cli.html#cli_node_preserve_symlinks_1
 [require-at]: https://www.npmjs.com/package/require-at
-[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
-[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
-[npm-image]: https://badge.fury.io/js/fyn.svg
-[npm-url]: https://npmjs.org/package/fyn
-[apache-2.0-blue-image]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
-[apache-2.0-url]: https://www.apache.org/licenses/LICENSE-2.0
 [npm scripts]: https://docs.npmjs.com/misc/scripts
 [node-tar]: https://www.npmjs.com/package/tar
 [semver]: https://www.npmjs.com/package/semver
@@ -535,3 +532,12 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [npm link]: https://docs.npmjs.com/cli/link.html
 [@npmcli/run-script]: https://www.npmjs.com/package/@npmcli/run-script
 [npmlog]: https://www.npmjs.com/package/npmlog
+
+[license-image]: https://img.shields.io/npm/l/fyn.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/fyn.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=fyn
+[npm-badge-png]: https://nodei.co/npm/fyn.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/fyn

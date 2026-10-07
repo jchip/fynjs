@@ -1,5 +1,12 @@
 # run-verify
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 **run-verify gives tests a controlled progression.** Organize actions and assertions
 into explicit steps, each checked before the next begins. Coordinate callbacks, promises,
 and events in the order your test requires, with a deadline to keep the run bounded.
@@ -215,3 +222,12 @@ the [low-level API reference](docs/reference.md#low-level-positional-api) for de
 ## License
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+[license-image]: https://img.shields.io/npm/l/run-verify.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/run-verify.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=run-verify
+[npm-badge-png]: https://nodei.co/npm/run-verify.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/run-verify

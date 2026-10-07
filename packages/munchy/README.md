@@ -1,5 +1,12 @@
 # munchy
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 A producer Node stream for draining different data, including Readable streams.
 
 This is an ESM only package.
@@ -136,3 +143,12 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 ---
 
 [options for node readable stream]: https://nodejs.org/api/stream.html#stream_new_stream_readable_options
+
+[license-image]: https://img.shields.io/npm/l/munchy.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/munchy.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=munchy
+[npm-badge-png]: https://nodei.co/npm/munchy.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/munchy

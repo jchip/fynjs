@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-
 # @fynpo/base
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 The package-graph and config layer under [fynpo] and [fyn].
 
@@ -82,7 +87,12 @@ Licensed under the [Apache License, Version 2.0](./LICENSE).
 
 [fynpo]: https://github.com/jchip/fynjs/tree/main/packages/fynpo
 [fyn]: https://github.com/jchip/fynjs/tree/main/packages/fyn
-[npm-image]: https://badge.fury.io/js/%40fynpo%2Fbase.svg
-[npm-url]: https://npmjs.org/package/@fynpo/base
+
+[license-image]: https://img.shields.io/npm/l/@fynpo/base.svg
+[license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/@fynpo/base.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynpo%2Fbase
+[npm-badge-png]: https://nodei.co/npm/@fynpo/base.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynpo/base

@@ -77,23 +77,11 @@ Copyright (c) 2022-2026 Joel Chen
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-<!-- License badges -->
-
 [license-image]: https://img.shields.io/npm/l/fynpo.svg
 [license-url]: LICENSE
-
-<!-- CI and coverage badges -->
-
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
-
-<!-- david-dm badges -->
-
-
-<!-- npm badges -->
-
-[npm-badge-png]: https://nodei.co/npm/fynpo.png?downloads=true&stars=true
-[package-url]: https://npmjs.com/package/fynpo
-[npm-version-svg]: https://versionbadg.es/fynpo.svg
 [downloads-image]: https://img.shields.io/npm/dm/fynpo.svg
 [downloads-url]: https://npm-stat.com/charts.html?package=fynpo
+[npm-badge-png]: https://nodei.co/npm/fynpo.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/fynpo

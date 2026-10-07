@@ -1,5 +1,12 @@
 # optional-import
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 ESM optional dependency loading that tells **"not installed"** apart from **"installed but broken"**.
 
 The ESM counterpart to [optional-require]. Where `optional-require` wraps a `require` call,
@@ -184,3 +191,12 @@ this from inside an async function instead, or stay on `optional-require`.
 Apache-2.0
 
 [optional-require]: https://www.npmjs.com/package/optional-require
+
+[license-image]: https://img.shields.io/npm/l/optional-import.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/optional-import.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=optional-import
+[npm-badge-png]: https://nodei.co/npm/optional-import.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/optional-import

@@ -1,5 +1,12 @@
 # @fynjs/ts-resolve
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 Run this repo's TypeScript on plain `node`, with no transpiler.
 
 Node already strips TypeScript types natively. What it deliberately does **not**
@@ -80,3 +87,12 @@ from a `.ts` file it is handed, on every version this package supports.
 ## API reference
 
 See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
+[license-image]: https://img.shields.io/npm/l/@fynjs/ts-resolve.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/@fynjs/ts-resolve.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynjs%2Fts-resolve
+[npm-badge-png]: https://nodei.co/npm/@fynjs/ts-resolve.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynjs/ts-resolve

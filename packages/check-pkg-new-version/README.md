@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-
 # check-pkg-new-version
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Let a published CLI tell its users when a newer version of itself exists.
 
@@ -49,7 +54,12 @@ See the [full API reference](docs/reference.md) for every option, type, and runt
 Licensed under the [Apache License, Version 2.0](./LICENSE).
 
 [check-pkg-new-version-engine]: https://github.com/jchip/fynjs/tree/main/packages/check-pkg-new-version-engine
-[npm-image]: https://badge.fury.io/js/check-pkg-new-version.svg
-[npm-url]: https://npmjs.org/package/check-pkg-new-version
+
+[license-image]: https://img.shields.io/npm/l/check-pkg-new-version.svg
+[license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/check-pkg-new-version.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=check-pkg-new-version
+[npm-badge-png]: https://nodei.co/npm/check-pkg-new-version.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/check-pkg-new-version

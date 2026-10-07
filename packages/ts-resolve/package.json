@@ -57,5 +57,9 @@
     "type": "git",
     "url": "git+https://github.com/jchip/fynjs.git",
     "directory": "packages/ts-resolve"
+  },
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/ts-resolve",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
   }
 }

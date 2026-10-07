@@ -1,5 +1,12 @@
 # xaa
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 async/await and Promise helpers.
 
 github: <https://github.com/jchip/fynjs/tree/main/packages/xaa>
@@ -64,3 +71,12 @@ async function test() {
 Licensed under the [Apache License, Version 2.0].
 
 [apache license, version 2.0]: https://www.apache.org/licenses/LICENSE-2.0
+
+[license-image]: https://img.shields.io/npm/l/xaa.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/xaa.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=xaa
+[npm-badge-png]: https://nodei.co/npm/xaa.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/xaa

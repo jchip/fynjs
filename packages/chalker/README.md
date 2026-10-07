@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url]
-
 # chalker
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Set ansi colors in strings using `<>` markers and [chalk] or [ansi-colors].
 
@@ -183,5 +188,12 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [ansi-colors]: https://www.npmjs.com/package/ansi-colors
 [chalk]: https://www.npmjs.com/package/chalk
 [chalk advanced colors]: https://github.com/chalk/chalk#256-and-truecolor-color-support
-[npm-image]: https://badge.fury.io/js/chalker.svg
-[npm-url]: https://npmjs.org/package/chalker
+
+[license-image]: https://img.shields.io/npm/l/chalker.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/chalker.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=chalker
+[npm-badge-png]: https://nodei.co/npm/chalker.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/chalker

@@ -1,5 +1,12 @@
 # @fynjs/create-monorepo
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 Supplement tool to create a new fynpo monorepo. The directory structure of a fynpo monorepo will look like:
 
 ```
@@ -104,3 +111,12 @@ To test the hook,
 ```
 git commit -m "[patch] message"
 ```
+
+[license-image]: https://img.shields.io/npm/l/@fynjs/create-monorepo.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/@fynjs/create-monorepo.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynjs%2Fcreate-monorepo
+[npm-badge-png]: https://nodei.co/npm/@fynjs/create-monorepo.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynjs/create-monorepo

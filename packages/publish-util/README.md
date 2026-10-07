@@ -1,5 +1,12 @@
 # publish-util
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 Clean up `package.json` for publishing.
 
 Your `package.json`:
@@ -193,3 +200,12 @@ Using `npm pack`
 ## API reference
 
 See the [full API reference](docs/reference.md) for every bin, config setting, function, and type.
+
+[license-image]: https://img.shields.io/npm/l/publish-util.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/publish-util.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=publish-util
+[npm-badge-png]: https://nodei.co/npm/publish-util.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/publish-util

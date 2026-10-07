@@ -1,5 +1,12 @@
 # check-pkg-new-version-engine
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 Provide generic engine for npm CLI packages to check newer version.
 
 - bundler friendly (webpack etc)
@@ -50,3 +57,12 @@ async function start() {
 ## API reference
 
 See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
+[license-image]: https://img.shields.io/npm/l/check-pkg-new-version-engine.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/check-pkg-new-version-engine.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=check-pkg-new-version-engine
+[npm-badge-png]: https://nodei.co/npm/check-pkg-new-version-engine.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/check-pkg-new-version-engine

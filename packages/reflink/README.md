@@ -1,5 +1,12 @@
 # @fynjs/reflink
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 Native copy-on-write file cloning for Node.js, built with [napi-rs].
 
 fyn uses it to replicate packages from its central store into `node_modules`. A clone
@@ -92,3 +99,12 @@ fyn test
 Apache-2.0
 
 [napi-rs]: https://napi.rs
+
+[license-image]: https://img.shields.io/npm/l/@fynjs/reflink.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/@fynjs/reflink.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynjs%2Freflink
+[npm-badge-png]: https://nodei.co/npm/@fynjs/reflink.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynjs/reflink

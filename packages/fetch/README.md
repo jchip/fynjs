@@ -1,5 +1,12 @@
 # @fynjs/fetch
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 A hardened, zero-dependency HTTP client based on Node.js core `fetch`.
 
 ## Features
@@ -229,3 +236,12 @@ See the [full API reference](docs/reference.md) for every option, type, and runt
 ## License
 
 Apache-2.0
+
+[license-image]: https://img.shields.io/npm/l/@fynjs/fetch.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/@fynjs/fetch.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=%40fynjs%2Ffetch
+[npm-badge-png]: https://nodei.co/npm/@fynjs/fetch.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/@fynjs/fetch

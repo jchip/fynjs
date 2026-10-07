@@ -1,5 +1,12 @@
 # item-queue
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 An item processing queue using Promise.
 
 [**API Reference**](https://fynjs.pages.dev/ref/item-queue.md)
@@ -74,3 +81,12 @@ See the [full API reference](docs/reference.md) for every method, option, and ty
 
 [example1-demo-image]: ./samples/example1.gif
 [visual-logger]: https://www.npmjs.com/package/visual-logger
+
+[license-image]: https://img.shields.io/npm/l/item-queue.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/item-queue.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=item-queue
+[npm-badge-png]: https://nodei.co/npm/item-queue.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/item-queue

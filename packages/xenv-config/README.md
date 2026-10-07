@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url]
-
 # xenv-config
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Load config from env, user config, or default spec.
 
@@ -135,5 +140,11 @@ The order of source to check are:
 3.  The default value from spec if it's declared
 4.  Nothing
 
-[npm-image]: https://badge.fury.io/js/xenv-config.svg
-[npm-url]: https://npmjs.org/package/xenv-config
+[license-image]: https://img.shields.io/npm/l/xenv-config.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/xenv-config.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=xenv-config
+[npm-badge-png]: https://nodei.co/npm/xenv-config.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/xenv-config

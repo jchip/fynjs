@@ -1,5 +1,12 @@
 # AveAzul.js
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 AveAzul ("Blue Bird" in Spanish) serves as a near drop-in replacement for Bluebird. It's built on native Promise, by extending it with the familiar utility methods from Bluebird.
 
 ## Purpose
@@ -210,3 +217,12 @@ Apache-2.0
 ## Author
 
 Joel Chen, with assistant from Cursor Claude-3.7-sonnet
+
+[license-image]: https://img.shields.io/npm/l/aveazul.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/aveazul.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=aveazul
+[npm-badge-png]: https://nodei.co/npm/aveazul.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/aveazul

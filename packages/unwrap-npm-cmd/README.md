@@ -1,5 +1,12 @@
 # unwrap-npm-cmd
 
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
+
 Unwrap npm's node.js bin CMD batch for js files on Windows.
 
 [Sample](./test/fixtures/sample.js):
@@ -57,3 +64,12 @@ unwrapNpmCmd(cmd, options);
 # License
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+[license-image]: https://img.shields.io/npm/l/unwrap-npm-cmd.svg
+[license-url]: LICENSE
+[build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
+[build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/unwrap-npm-cmd.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=unwrap-npm-cmd
+[npm-badge-png]: https://nodei.co/npm/unwrap-npm-cmd.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/unwrap-npm-cmd

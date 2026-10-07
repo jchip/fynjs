@@ -1,4 +1,4 @@
-# @jchip/error <sup>[![Version Badge][npm-version-svg]][package-url]</sup> <!-- omit in toc -->
+# @jchip/error <!-- omit in toc -->
 
 [![License][license-image]][license-url]
 [![build][build-image]][build-url]
@@ -150,6 +150,7 @@ AggregateError: require failed
 ```
 
 [aggregateerror]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError
+
 [license-image]: https://img.shields.io/npm/l/@jchip/error.svg
 [license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
@@ -158,4 +159,3 @@ AggregateError: require failed
 [downloads-url]: https://npm-stat.com/charts.html?package=%40jchip%2Ferror
 [npm-badge-png]: https://nodei.co/npm/@jchip/error.png?downloads=true&stars=true
 [package-url]: https://npmjs.com/package/@jchip/error
-[npm-version-svg]: https://versionbadg.es/jchip/error.svg

@@ -1,6 +1,11 @@
-[![NPM version][npm-image]][npm-url] [![Build Status][build-image]][build-url]
-
 # visual-exec
+
+[![License][license-image]][license-url]
+[![build][build-image]][build-url]
+
+[![Downloads][downloads-image]][downloads-url]
+
+[![npm badge][npm-badge-png]][package-url]
 
 Run a shell command and show it as a live spinner line instead of a wall of output.
 
@@ -96,7 +101,12 @@ Licensed under the [Apache License, Version 2.0](./LICENSE).
 
 [visual-logger]: https://github.com/jchip/fynjs/tree/main/packages/visual-logger
 [xsh]: https://github.com/jchip/fynjs/tree/main/packages/xsh
-[npm-image]: https://badge.fury.io/js/visual-exec.svg
-[npm-url]: https://npmjs.org/package/visual-exec
+
+[license-image]: https://img.shields.io/npm/l/visual-exec.svg
+[license-url]: LICENSE
 [build-image]: https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg
 [build-url]: https://github.com/jchip/fynjs/actions/workflows/ci.yml
+[downloads-image]: https://img.shields.io/npm/dm/visual-exec.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=visual-exec
+[npm-badge-png]: https://nodei.co/npm/visual-exec.png?downloads=true&stars=true
+[package-url]: https://npmjs.com/package/visual-exec
