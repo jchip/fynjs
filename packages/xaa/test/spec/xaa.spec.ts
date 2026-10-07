@@ -2,6 +2,14 @@ import { describe, it, expect } from "vitest";
 import { verify } from "run-verify";
 import * as xaa from "../../src/index.js";
 
+// records unhandled rejections until stop() is called
+const captureUnhandled = () => {
+  const seen: unknown[] = [];
+  const onUnhandled = (reason: unknown) => seen.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  return { seen, stop: () => void process.off("unhandledRejection", onUnhandled) };
+};
+
 describe("xaa", () => {
   describe("delay", () => {
     it("should wait ms", async () => {
@@ -167,6 +175,32 @@ describe("xaa", () => {
             50
           )
         ));
+
+    it("should reject with TimeoutError when rejectMsg is empty", () =>
+      verify({ timeout: 1000 })
+        .expectErrorInstanceMatch(xaa.TimeoutError, /^xaa TimeoutRunner operation timed out$/)
+        .step(() => xaa.timeout(10, "").run(xaa.delay(100))));
+
+    it("should not leave an unhandled rejection when timer fires before run", () => {
+      const cap = captureUnhandled();
+      return verify({ timeout: 1000, cleanup: cap.stop })
+        .step(() => xaa.timeout(10, "early"))
+        .keep.step(() => xaa.delay(50))
+        .keep.step(() => expect(cap.seen).toEqual([]))
+        .expectErrorToBe("early")
+        .step(too => too.run(xaa.delay(100)));
+    });
+
+    it("should not leave an unhandled rejection when cancel is called before run", () => {
+      const cap = captureUnhandled();
+      return verify({ timeout: 1000, cleanup: cap.stop })
+        .step(() => xaa.timeout(500))
+        .keep.step(too => too.cancel())
+        .keep.step(() => xaa.delay(20))
+        .keep.step(() => expect(cap.seen).toEqual([]))
+        .expectErrorHas("operation cancelled")
+        .step(too => too.run(xaa.delay(10)));
+    });
   });
 
   describe("each", function () {
@@ -573,6 +607,65 @@ describe("xaa", () => {
           expect(err.partial[0]).toBe(2); // First element was processed successfully
         });
     });
+
+    it("should reject when func throws synchronously on a promise item with concurrency", () =>
+      verify({ timeout: 500 })
+        .expectErrorToBe("sync oops")
+        .step(() =>
+          xaa.map(
+            [Promise.resolve(1), 2],
+            v => {
+              if (v === 1) throw new Error("sync oops");
+              return v;
+            },
+            { concurrency: 2 }
+          )
+        ));
+
+    it("should reject with a thrown string with concurrency", () =>
+      verify({ timeout: 500 })
+        .expectError.step(() =>
+          xaa.map(
+            [1, 2],
+            async () => {
+              throw "boom";
+            },
+            { concurrency: 2 }
+          )
+        )
+        .step(err => expect(err).toBe("boom")));
+
+    it("should reject with a thrown undefined with concurrency", () =>
+      // run-verify's expectError does not treat a rejection with undefined as an error
+      verify({ timeout: 500 })
+        .step(() =>
+          xaa
+            .map(
+              [1, 2],
+              () => {
+                throw undefined;
+              },
+              { concurrency: 2 }
+            )
+            .then(
+              () => ["resolved"],
+              err => ["rejected", err]
+            )
+        )
+        .step(r => expect(r).toEqual(["rejected", undefined])));
+
+    it("should reject with a thrown string for concurrency 1", () =>
+      verify({ timeout: 500 })
+        .expectError.step(() =>
+          xaa.map(
+            [1, 2],
+            () => {
+              throw "boom";
+            },
+            { concurrency: 1 }
+          )
+        )
+        .step(err => expect(err).toBe("boom")));
   });
 
   describe("filter", function () {

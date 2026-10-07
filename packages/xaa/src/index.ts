@@ -150,7 +150,11 @@ export class TimeoutRunner<T> {
     this.defer = makeDefer(options.Promise);
     this.ThePromise = options.Promise;
     this.TimeoutError = options.TimeoutError;
-    this.timeout = setTimeout(() => this.defer.reject(new this.TimeoutError(rejectMsg)), maxMs);
+    // TimeoutError asserts a non-empty message, so fall back to the default
+    const msg = rejectMsg || "xaa TimeoutRunner operation timed out";
+    this.timeout = setTimeout(() => this.defer.reject(new this.TimeoutError(msg)), maxMs);
+    // timer or cancel() may reject before run() attaches a handler
+    this.defer.promise.catch(() => {});
   }
 
   /**
@@ -377,6 +381,22 @@ function createMapContext<T>(array: readonly T[]): MapContext<T> {
   };
 }
 /**
+ * attach partial results to a map error
+ *
+ * Thrown values can be primitives or frozen, so a failed assignment is ignored.
+ *
+ * @param err - the thrown value
+ * @param partial - results mapped so far
+ */
+function addPartial<O>(err: unknown, partial: O[]): void {
+  try {
+    (err as MapError<O>).partial = partial;
+  } catch {
+    // can't attach partial to this value
+  }
+}
+
+/**
  * async map for array that supports concurrency
  *
  * Use by xaa.map internally.
@@ -393,7 +413,7 @@ function multiMap<T, O>(
 ): Promise<O[]> {
   const awaited = new Array<O>(array.length);
 
-  let error: MapError<O>;
+  let failed = false;
   let completedCount = 0;
   let freeSlots = options.concurrency;
   let index = 0;
@@ -409,21 +429,21 @@ function multiMap<T, O>(
 
   const fail = (err: Error): void => {
     context.failed = true;
-    if (!error) {
-      error = err as MapError<O>; // Safe because of the following line:
-      error.partial = awaited;
-      defer.reject(error);
+    if (!failed) {
+      failed = true;
+      addPartial(err, awaited);
+      defer.reject(err);
     }
   };
 
   const mapNext = (): any => {
     // important to check this here, so an empty input array immediately
     // gets resolved with an empty result.
-    if (!error && completedCount === totalCount) {
+    if (!failed && completedCount === totalCount) {
       return defer.resolve(awaited);
     }
 
-    if (error || freeSlots <= 0 || index >= totalCount) {
+    if (failed || freeSlots <= 0 || index >= totalCount) {
       return null;
     }
 
@@ -456,18 +476,20 @@ function multiMap<T, O>(
       }
     };
 
-    const item = ir ? ir.value : array[pendingIx];
-
-    if (isPromise<T>(item)) {
-      return item.then(val => {
-        return handleRet(func.call(options.thisArg, val, pendingIx, context));
-      }, fail);
-    } else {
+    const callFunc = (val: T) => {
       try {
-        return handleRet(func.call(options.thisArg, item as T, pendingIx, context));
+        return handleRet(func.call(options.thisArg, val, pendingIx, context));
       } catch (err) {
         return fail(err);
       }
+    };
+
+    const item = ir ? ir.value : array[pendingIx];
+
+    if (isPromise<T>(item)) {
+      return item.then(callFunc, fail);
+    } else {
+      return callFunc(item as T);
     }
   };
 
@@ -502,7 +524,7 @@ export async function mapSeries<T, O>(
     }
   } catch (err) {
     context.failed = true;
-    (err as MapError<O>).partial = awaited;
+    addPartial(err, awaited);
     throw err;
   }
 
