@@ -1,4 +1,5 @@
 import Path from "path";
+import Os from "os";
 import util from "util";
 import assert from "assert";
 import semver from "semver";
@@ -248,6 +249,22 @@ interface LocalDepInfo {
 const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
 const { posixify } = fynTil;
+
+/**
+ * Whether an install lock was left by a process on this host that no longer runs. A lock
+ * without an owner, from an older fyn, is left to lockfile's stale time.
+ */
+export async function installLockOwnerGone(fname: string): Promise<boolean> {
+  try {
+    const { pid, host } = JSON.parse(await Fs.readFile(fname, "utf8"));
+    if (host !== Os.hostname() || !Number.isInteger(pid)) return false;
+    process.kill(pid, 0);
+    return false;
+  } catch (err) {
+    // ESRCH: no such process. EPERM means it runs as another user.
+    return (err as NodeJS.ErrnoException).code === "ESRCH";
+  }
+}
 
 
 class Fyn {
@@ -1674,11 +1691,18 @@ class Fyn {
   async createInstallLock(): Promise<boolean> {
     await this.createDir(this.getFvDir());
     const fname = this.getFvDir(".installing.lock");
+    // take over a lock left by an install that died, without waiting out its stale time
+    if (await installLockOwnerGone(fname)) {
+      logger.debug(`taking over ${fname}, its install process is gone`);
+      await Fs.unlink(fname).catch(() => undefined);
+    }
     await createLock(fname, {
       wait: 3000,
       // consider 30 minutes lockfile stale
       stale: 30 * 60 * 1000
     });
+    // the owner, so a later install can tell a lock left by a process that died
+    await Fs.writeFile(fname, JSON.stringify({ pid: process.pid, host: Os.hostname() }));
     return true;
   }
 
