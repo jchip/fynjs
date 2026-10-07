@@ -15,6 +15,9 @@ export function internalCheckIsNewer(
   tag?: string
 ): CheckResult {
   const version = distTags[tag];
+  if (!semver.valid(version)) {
+    return { isNewer: false };
+  }
   return {
     isNewer: semver.gt(version, pkg.version),
     version

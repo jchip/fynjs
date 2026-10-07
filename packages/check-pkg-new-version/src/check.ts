@@ -10,12 +10,16 @@ import { type CheckNewVersionOptions, checkPkgNewVersionEngine } from "check-pkg
  * @returns whatever
  */
 export async function checkPkgNewVersion(options: CheckNewVersionOptions): Promise<any> {
-  const npmConfig = options.npmConfig || (await getNpmRcConfig());
+  // drop keys set to undefined so they don't override the defaults below
+  const given = Object.fromEntries(
+    Object.entries(options).filter(([, v]) => v !== undefined)
+  ) as CheckNewVersionOptions;
+  const npmConfig = given.npmConfig || (await getNpmRcConfig());
 
   return checkPkgNewVersionEngine({
     fetchJSON: internalFetchJSON,
     npmConfig,
     checkIsNewer: internalCheckIsNewer,
-    ...options,
+    ...given,
   });
 }

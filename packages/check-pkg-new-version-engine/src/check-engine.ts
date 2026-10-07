@@ -30,7 +30,7 @@ async function fetchDistTags2(baseUrl, _authToken, options: CheckNewVersionOptio
     const body = await options.fetchJSON(pkUrl.toString(), { headers });
     return body["dist-tags"];
   } catch {
-    return {};
+    return undefined;
   }
 }
 
@@ -46,9 +46,9 @@ function getNpmRegistryInfo(npmConfig: NpmConfig, pkg: PkgInfo) {
   const pkgNames = pkg.name.split("/");
   const scope = pkgNames.length > 1 ? pkgNames[0] : "";
 
-  const regKey = Object.keys(npmConfig).find(
-    (k) => k.endsWith("registry") && (!scope || k.startsWith(scope))
-  );
+  // only a scoped package may use a scoped registry
+  const regKey =
+    scope && Object.keys(npmConfig).find((k) => k.endsWith("registry") && k.startsWith(scope));
 
   const registry =
     (regKey && npmConfig[regKey]) || npmConfig.registry || "https://registry.npmjs.org/";
@@ -126,6 +126,11 @@ async function _internalCheck(options: CheckNewVersionOptions): Promise<any> {
 
   // only if we fetched for something that we need to do a check and update meta
   if (shouldFetch) {
+    // no dist-tags object means the fetch failed: save nothing so the next run retries
+    if (!distTags || typeof distTags !== "object") {
+      return false;
+    }
+
     let notifiedVersion =
       typeof existMeta.notifiedVersion === "string" ? existMeta.notifiedVersion : "";
 

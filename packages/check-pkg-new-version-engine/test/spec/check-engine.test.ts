@@ -4,6 +4,7 @@ import os from "os";
 import { checkPkgNewVersionEngine } from "../../src/index.js";
 import type { CheckNewVersionOptions } from "../../src/index.js";
 import { internalNotify } from "../../src/notify-new-version.js";
+import { verify } from "run-verify";
 
 const environment = vi.hoisted(() => ({ isCI: false }));
 vi.mock("ci-info", () => ({ get isCI() { return environment.isCI; } }));
@@ -115,6 +116,20 @@ describe("checkPkgNewVersionEngine", () => {
     expect(options.fetchDistTags).toHaveBeenCalledWith("https://registry.example/", "", options.pkg);
   });
 
+  it("uses the default registry for an unscoped package, not a scoped one", () =>
+    verify({ timeout: 1000 })
+      .step(() => {
+        options.npmConfig = {
+          "@scope:registry": "https://scope.example/",
+          registry: "https://registry.example/",
+        };
+      })
+      .step(() => checkPkgNewVersionEngine(options))
+      .keep.step((result) => expect(result).toBe(true))
+      .step(() =>
+        expect(options.fetchDistTags).toHaveBeenCalledWith("https://registry.example/", "", pkg)
+      ));
+
   it("fetches packuments through fetchJSON with an encoded package name and request headers", async () => {
     options.pkg = { ...pkg, name: "@scope/package" };
     delete options.fetchDistTags;
@@ -129,14 +144,38 @@ describe("checkPkgNewVersionEngine", () => {
     expect(options.checkIsNewer).toHaveBeenCalledWith(options.pkg, distTags, "latest");
   });
 
-  it("treats a failed JSON fetch as empty dist tags", async () => {
-    delete options.fetchDistTags;
-    options.fetchJSON = vi.fn().mockRejectedValue(new Error("offline"));
-    vi.mocked(options.checkIsNewer).mockReturnValue({ isNewer: false });
-    expect(await checkPkgNewVersionEngine(options)).toBe(true);
-    expect(options.checkIsNewer).toHaveBeenCalledWith(pkg, {}, "latest");
-    expect(saved().distTags).toEqual({});
-  });
+  it("returns false and saves nothing when the JSON fetch fails", () =>
+    verify({ timeout: 1000 })
+      .step(() => {
+        delete options.fetchDistTags;
+        options.fetchJSON = vi.fn().mockRejectedValue(new Error("offline"));
+      })
+      .step(() => checkPkgNewVersionEngine(options))
+      .keep.step((result) => expect(result).toBe(false))
+      .keep.step(() => expect(options.checkIsNewer).not.toHaveBeenCalled())
+      .step(() => expect(Fs.writeFile).not.toHaveBeenCalled()));
+
+  it.each([
+    ["fetchJSON without dist-tags", (value: CheckNewVersionOptions) => {
+      delete value.fetchDistTags;
+      value.fetchJSON = vi.fn().mockResolvedValue({});
+    }],
+    ["fetchDistTags without a result", (value: CheckNewVersionOptions) => {
+      value.fetchDistTags = vi.fn().mockResolvedValue(undefined);
+    }],
+  ])("returns false and saves nothing on a failed fetch (%s), so the next run fetches", (
+    _name, setup
+  ) =>
+    verify({ timeout: 1000 })
+      .step(() => {
+        cache({ time: now - day, distTags, notifiedVersion: "2.0.0", notifiedTime: now - day });
+        setup(options);
+      })
+      .step(() => checkPkgNewVersionEngine(options))
+      .keep.step((result) => expect(result).toBe(false))
+      .keep.step(() => expect(options.checkIsNewer).not.toHaveBeenCalled())
+      .keep.step(() => expect(options.notifyNewVersion).not.toHaveBeenCalled())
+      .step(() => expect(Fs.writeFile).not.toHaveBeenCalled()));
 
   it.each([
     ["missing fetch method", (value: CheckNewVersionOptions) => { delete value.fetchDistTags; }],

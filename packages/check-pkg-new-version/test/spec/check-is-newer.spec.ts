@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { internalCheckIsNewer } from "../../src/check-is-newer.js";
+import { verify } from "run-verify";
 
 describe("internalCheckIsNewer", () => {
   it("should check if newer version exists", () => {
@@ -24,4 +25,12 @@ describe("internalCheckIsNewer", () => {
     expect(result.version).toBe("3.0.0-beta.1");
     expect(result.isNewer).toBe(true);
   });
+
+  it("reports no newer version, without throwing, when the dist-tag is missing", () =>
+    verify({ timeout: 1000 })
+      .step(() => ({ name: "test", version: "1.0.0" }))
+      .keep.step((pkg) =>
+        expect(internalCheckIsNewer(pkg, { latest: "2.0.0" }, "next")).toEqual({ isNewer: false })
+      )
+      .step((pkg) => expect(internalCheckIsNewer(pkg, {}, "latest")).toEqual({ isNewer: false })));
 });
