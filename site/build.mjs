@@ -13,7 +13,7 @@ const OUT = Path.join(SITE, "..", "site-pub");
 
 // Every published package must be in exactly one group, so a new package can't go missing.
 const GROUPS = {
-  Tools: ["fyn", "fynpo", "fynpo-base", "fynpo-cli", "xarc-run"],
+  Tools: ["fyn", "fynpo", "fynpo-base", "fynpo-cli", "create-monorepo", "xarc-run"],
   CLI: ["cli-args", "chalker", "visual-logger", "visual-exec", "xsh", "unwrap-npm-cmd"],
   Async: ["aveazul", "xaa", "item-queue", "xflight"],
   "I/O": ["fetch", "filter-scan-dir", "munchy", "reflink"],
@@ -160,7 +160,7 @@ Fs.writeFileSync(
 );
 Fs.writeFileSync(Path.join(OUT, "sitemap.xml"), sitemapXml(pkgs, groups));
 Fs.writeFileSync(Path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}/sitemap.xml\n`);
-for (const file of ["_headers", "favicon.svg", "og-image.png"]) {
+for (const file of ["_headers", "favicon.svg", "og-image.png", "googlee9bcb5713536aa25.html"]) {
   Fs.copyFileSync(Path.join(SITE, file), Path.join(OUT, file));
 }
 
