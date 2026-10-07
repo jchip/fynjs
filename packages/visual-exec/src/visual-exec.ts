@@ -136,22 +136,15 @@ interface ChildProcess {
   child?: { kill(signal?: string): boolean; pid?: number };
 }
 
-function createTimeoutError(
-  context: Partial<ExecErrorContext>,
-  elapsed: number
-): VisualExecError {
-  const err = new Error(
-    `Command timed out after ${elapsed}ms: ${context.command}`
-  ) as VisualExecError;
+function createTimeoutError(command: string, elapsed: number): VisualExecError {
+  const err = new Error(`Command timed out after ${elapsed}ms: ${command}`) as VisualExecError;
   err.name = "TimeoutError";
-  err.context = { ...context, duration: elapsed } as ExecErrorContext;
   return err;
 }
 
-function createAbortError(context: Partial<ExecErrorContext>): VisualExecError {
-  const err = new Error(`Command aborted: ${context.command}`) as VisualExecError;
+function createAbortError(command: string): VisualExecError {
+  const err = new Error(`Command aborted: ${command}`) as VisualExecError;
   err.name = "AbortError";
-  err.context = context as ExecErrorContext;
   return err;
 }
 
@@ -511,6 +504,10 @@ export class VisualExec {
    * it defaults to `ExecOutput`, which is what a run without an `onComplete` produces.
    */
   show<T = ExecOutput>(child: ChildProcess): Promise<T> {
+    return this._show<T>(child, this._command);
+  }
+
+  private _show<T>(child: ChildProcess, command: string): Promise<T> {
     this._stdoutKey = Symbol("visual-exec-stdout");
     this._stderrKey = Symbol("visual-exec-stderr");
     this._rawChild = child.child;
@@ -533,13 +530,22 @@ export class VisualExec {
     this._updateStdout = (buf: string) => this._updateDigest(stdoutDigest, buf);
     this._updateStderr = (buf: string) => this._updateDigest(stderrDigest, buf);
 
+    // output seen so far, so a timeout or abort error can carry it like an exit failure does
+    const seen: ExecOutput = { stdout: "", stderr: "" };
+    const capture = (stream: OutputStream, data: string) => {
+      const text = seen[stream] + data;
+      seen[stream] = text.length > MAX_OUTPUT_IN_ERROR ? text.slice(-MAX_OUTPUT_IN_ERROR) : text;
+    };
+
     this._onStdoutData = (buf: Buffer | string) => {
       const data = typeof buf === "string" ? buf : buf.toString();
+      capture("stdout", data);
       this._updateStdout!(data);
       this._createDataHandler("stdout")(buf);
     };
     this._onStderrData = (buf: Buffer | string) => {
       const data = typeof buf === "string" ? buf : buf.toString();
+      capture("stderr", data);
       this._updateStderr!(data);
       this._createDataHandler("stderr")(buf);
     };
@@ -561,7 +567,11 @@ export class VisualExec {
       .catch((err: VisualExecError) => {
         const output = err.output ?? { stdout: "", stderr: "" };
         const exitCode = err.exitCode ?? err.code ?? 1;
-        this._onComplete?.(output, exitCode);
+        try {
+          this._onComplete?.(output, exitCode);
+        } catch {
+          // the command's own failure is the error to report
+        }
         this.logResult(err);
         throw err;
       })
@@ -570,6 +580,21 @@ export class VisualExec {
         const result = this._onComplete?.(output, 0);
         return result !== undefined ? result : output;
       });
+
+    const cancelError = (err: VisualExecError, duration: number): VisualExecError => {
+      const output = { ...seen };
+      err.output = output;
+      return enhanceError(err, {
+        exitCode: -1,
+        signal: "SIGTERM",
+        cwd: this._cwd,
+        command,
+        duration,
+        lastLines: lastLines(`${output.stdout}\n${output.stderr}`, DEFAULT_LAST_LINES),
+        stdout: output.stdout,
+        stderr: output.stderr
+      });
+    };
 
     if (this._timeout) {
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -583,12 +608,7 @@ export class VisualExec {
             }, this._timeoutGrace);
             (grace as any).unref?.();
           }
-          reject(
-            createTimeoutError(
-              { command: this._command, cwd: this._cwd, exitCode: -1, signal: "SIGTERM" },
-              this._timeout
-            )
-          );
+          reject(cancelError(createTimeoutError(command, this._timeout), this._timeout));
         }, this._timeout);
       });
       execPromise = Promise.race([execPromise, timeoutPromise]);
@@ -629,15 +649,7 @@ export class VisualExec {
       const abortPromise = new Promise<never>((_, reject) => {
         const handleAbort = () => {
           this.abort();
-          reject(
-            createAbortError({
-              command: this._command,
-              cwd: this._cwd,
-              exitCode: -1,
-              signal: "SIGTERM",
-              duration: Date.now() - startTime
-            })
-          );
+          reject(cancelError(createAbortError(command), Date.now() - startTime));
         };
         if (this._signal!.aborted) {
           handleAbort();
@@ -781,7 +793,7 @@ export class VisualExec {
       return Promise.reject(enhanceError(err, context));
     });
 
-    return this.show<T>(child);
+    return this._show<T>(child, cmd);
   }
 }
 
