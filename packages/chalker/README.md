@@ -127,6 +127,16 @@ chalker.CHALK = ansiColors;
 Set the default colors library. By default, `chalker` loads `chalk` first and falls back to
 [ansi-colors].
 
+> With [ansi-colors], `chalker` changes the module object it uses. ansi-colors has no
+> true-color support, so `chalker` adds `rgb`, `bgRgb`, `hex` and `bgHex` methods to it.
+> This happens on load: `chalker/ansi-colors` always does it, and `chalker` does it when it
+> falls back to ansi-colors. Each true-color marker, such as `<#FF0000>` or `<orange>`, also
+> registers a style named like `chalker_rgb_255_0_0` through `colors.alias()`.
+>
+> The default ansi-colors export is shared, so other code that imports ansi-colors sees these
+> changes. Setting `chalker.CHALK` to an instance from `colors.create()` keeps the new styles
+> on that instance. The methods added on load stay on the shared module.
+
 > `chalker` is published as an ESM-only package (`"type": "module"`). It can still be loaded
 > from CommonJS with `require("chalker")` on Node >=22.18, but since `require()` of an ESM
 > module returns the module's namespace object, you need to access `.default`:
