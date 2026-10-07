@@ -135,7 +135,8 @@ const ERR_MODULE_NOT_FOUND = "ERR_MODULE_NOT_FOUND";
 const ERR_PACKAGE_PATH_NOT_EXPORTED = "ERR_PACKAGE_PATH_NOT_EXPORTED";
 
 function normalizeOpts(optsOrMsg?: OptsOrMessage): OptionalImportOpts {
-  if (optsOrMsg === undefined) {
+  // `== null` so a JS caller's `null` means defaults, same as omitting it
+  if (optsOrMsg == null) {
     return {};
   }
   if (optsOrMsg === true || typeof optsOrMsg === "string") {
@@ -397,6 +398,8 @@ export type OptionalImportFunction<T = any> = {
    *
    * @param specifier - the module specifier to check
    * @returns `true` if the specifier resolves
+   * @throws a resolve error that does not mean "not installed", such as an invalid
+   * `package.json`, so a broken install is never reported as absent
    */
   has: (specifier: string) => boolean;
   /**

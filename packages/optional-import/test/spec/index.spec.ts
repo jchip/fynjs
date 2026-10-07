@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { verify } from "run-verify";
 import {
   makeOptionalImport,
   tryImport,
@@ -355,4 +356,15 @@ describe("default log", () => {
       setDefaultLog((message: string) => console.log(message));
     }
   });
+});
+
+describe("null options", () => {
+  it("should use defaults when options are null", () =>
+    verify({ timeout: 1000 })
+      .step(() => tryImport(metaOf(), "nope", null as any))
+      .keep.step((mod) => expect(mod).toBe(undefined))
+      .step(() => tryResolve(metaOf(), "nope", null as any))
+      .keep.step((url) => expect(url).toBe(undefined))
+      .step(() => makeOptionalImport(presentMeta)("present-esm", null as any))
+      .step((mod) => expect(mod.kind).toBe("esm")));
 });

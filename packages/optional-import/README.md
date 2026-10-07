@@ -110,7 +110,9 @@ Returns an optional import function bound to the caller's `import.meta`.
 
 - `optionalImport(specifier, optsOrMsg?)` → `Promise` of the module namespace
 - `optionalImport.resolve(specifier, optsOrMsg?)` → resolved URL, **synchronously**
-- `optionalImport.has(specifier)` → `boolean`, **synchronously**
+- `optionalImport.has(specifier)` → `boolean`, **synchronously**. It throws, like `.resolve()`,
+  when resolving fails for a reason other than "not installed" (for example an invalid
+  `package.json`), so a broken install is never reported as absent.
 - `optionalImport.log` — the log function, replaceable
 
 ### `tryImport(meta, specifier, optsOrMsg?)` / `tryResolve(meta, specifier, optsOrMsg?)`
