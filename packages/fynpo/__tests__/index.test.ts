@@ -20,6 +20,7 @@ import {
   cliOptions,
   fynpoMain,
   implicitDiscoveryNotice,
+  mergeConfigOpts,
   resolveRunExitCode,
   reportPrepareError,
 } from "../src/index";
@@ -247,5 +248,33 @@ describe("implicitDiscoveryNotice (FPO-48)", () => {
   it("treats an empty packages value as declaring nothing", () => {
     expect(implicitDiscoveryNotice(true, 3, []).message).toContain(`No "packages" config`);
     expect(implicitDiscoveryNotice(true, 3, {}).message).toContain(`No "packages" config`);
+  });
+});
+
+describe("mergeConfigOpts", () => {
+  const opts = { concurrency: 6, cc: 6, sort: true, bail: true };
+  const source = { concurrency: "default", cc: "default", sort: "default", bail: "cli" };
+
+  it("lets top-level config override an option's argDefault", () => {
+    const merged = mergeConfigOpts({ concurrency: 2, sort: false }, "run", opts, source);
+    expect(merged.concurrency).toBe(2);
+    expect(merged.sort).toBe(false);
+  });
+
+  it("prefers command.<name> config over top-level config", () => {
+    const fynpoRc = { concurrency: 2, command: { run: { concurrency: 4, stream: true } } };
+    const merged = mergeConfigOpts(fynpoRc, "run", opts, source);
+    expect(merged.concurrency).toBe(4);
+    expect(merged.stream).toBe(true);
+  });
+
+  it("ignores another command's config", () => {
+    const fynpoRc = { command: { bootstrap: { concurrency: 4 } } };
+    expect(mergeConfigOpts(fynpoRc, "run", opts, source).concurrency).toBe(6);
+  });
+
+  it("never overrides a flag given on the CLI", () => {
+    const fynpoRc = { bail: false, command: { run: { bail: false } } };
+    expect(mergeConfigOpts(fynpoRc, "run", opts, source).bail).toBe(true);
   });
 });

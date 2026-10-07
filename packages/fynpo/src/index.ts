@@ -116,11 +116,43 @@ const noticeImplicitDiscovery = (autoSearched: boolean, found: number, packages?
 
 const { readFynpoData } = utils;
 
+/**
+ * Merge CLI opts over the fynpo config. Order is CLI flag, then `command.<name>` config,
+ * then top-level config, then the option's `argDefault`.
+ *
+ * @param fynpoRc - the loaded fynpo config
+ * @param cmdName - the command's canonical name, for `command.<name>` lookup
+ * @param opts - root and command opts from cli-args
+ * @param source - where each opt came from (`cli`, `user`, `default`)
+ * @returns the merged opts
+ */
+export const mergeConfigOpts = (
+  fynpoRc: Record<string, any>,
+  cmdName: string,
+  opts: Record<string, any>,
+  source: Record<string, string>
+) => {
+  const cmdConfig = fynpoRc.command?.[cmdName] || {};
+  const merged = { ...fynpoRc, ...cmdConfig, ...opts };
+  for (const key in opts) {
+    if (source[key] !== "default") {
+      continue;
+    }
+    if (cmdConfig[key] !== undefined) {
+      merged[key] = cmdConfig[key];
+    } else if (fynpoRc[key] !== undefined) {
+      merged[key] = fynpoRc[key];
+    }
+  }
+  return merged;
+};
+
 const makeOpts = async (cmd, _parsed) => {
   // In @fynjs/cli-args, merge root command opts with subcommand opts
   const rootOpts = cmd.rootCmd?.jsonMeta?.opts || {};
   const cmdOpts = cmd.jsonMeta?.opts || {};
   const allOpts = { ...rootOpts, ...cmdOpts };
+  const source = { ...cmd.rootCmd?.jsonMeta?.source, ...cmd.jsonMeta?.source };
 
   let cwd = process.cwd();
   if (allOpts.cwd) {
@@ -129,7 +161,7 @@ const makeOpts = async (cmd, _parsed) => {
     process.chdir(cwd);
   }
   const fynpo: any = utils.loadConfig(cwd);
-  const optConfig = Object.assign({}, fynpo.fynpoRc, allOpts, {
+  const optConfig = Object.assign(mergeConfigOpts(fynpo.fynpoRc, cmd.name, allOpts, source), {
     cwd: fynpo.dir,
     // Explicit scan patterns remain separate from additive package includes.
     patterns: fynpo.fynpoRc.patterns,
@@ -183,8 +215,8 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
     await bootstrap.exec({
       // config `fynOpts` lands in the merged opts; there is no CLI option for it
       fynOpts: bootstrap._opts.fynOpts,
-      concurrency: meta.opts.concurrency,
-      skip: meta.opts.skip,
+      concurrency: bootstrap._opts.concurrency,
+      skip: bootstrap._opts.skip,
     });
 
     if (!firstRunTime) {
