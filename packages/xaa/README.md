@@ -12,11 +12,14 @@ npm i xaa
 
 ## APIs
 
-See the [full API reference](docs/reference.md) for every function, option, and type.
+See the [full API reference](docs/reference.md) for every function, option, and type. It also ships in the package at `node_modules/xaa/docs/reference.md`.
 
-API references <https://jchip.github.io/xaa/>
+Online:
 
-Or just use your IDE for hint if it supports TypeScript and typedoc.
+- Reference: <https://fynjs.pages.dev/ref/xaa.md>
+- TypeDoc: <https://fynjs.pages.dev/api/modules/xaa>
+
+xaa is ESM only and ships TypeScript types.
 
 ## Examples:
 

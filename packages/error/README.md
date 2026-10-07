@@ -9,7 +9,7 @@
 
 Utilities and polyfill for node.js errors
 
-### API reference: <https://jchip.github.io/error> <!-- omit in toc -->
+### API reference: <https://fynjs.pages.dev/ref/error.md> <!-- omit in toc -->
 
 See the [full API reference](docs/reference.md) for every function, option, and type.
 

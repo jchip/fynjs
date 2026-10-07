@@ -2,7 +2,7 @@
 
 An item processing queue using Promise.
 
-[**API Reference**](https://jchip.github.io/item-queue/index.html)
+[**API Reference**](https://fynjs.pages.dev/ref/item-queue.md)
 
 ## Features
 

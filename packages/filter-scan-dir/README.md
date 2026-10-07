@@ -178,5 +178,5 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [downloads-image]: https://img.shields.io/npm/dm/filter-scan-dir.svg
 [downloads-url]: https://npm-stat.com/charts.html?package=filter-scan-dir
 [npm-badge-png]: https://nodei.co/npm/filter-scan-dir.png?downloads=true&stars=true
-[api docs]: https://jchip.github.io/filter-scan-dir/modules.html#filterScanDir
+[api docs]: https://fynjs.pages.dev/ref/filter-scan-dir.md
 [github]: https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir
