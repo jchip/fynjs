@@ -7,13 +7,11 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_jchip_error) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/error)
+
 Utilities for readable node.js error stacks, and an `AggregateError` subclass that prints nested stacks.
-
-### API reference: <https://fynjs.pages.dev/api/modules/_jchip_error> <!-- omit in toc -->
-
-See the [API reference](https://fynjs.pages.dev/api/modules/_jchip_error) for every function, option, and type.
-
-The [Markdown reference](docs/reference.md) has the full API and its runtime behavior in one file, written for AI agents. It also ships in the package as `docs/reference.md`.
 
 # Table of Contents <!-- omit in toc -->
 

@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/visual-exec) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/visual-exec)
+
 Run a shell command and show it as a live spinner line instead of a wall of output.
 
 Output is captured while the command runs and the terminal shows a single updating line; on failure the captured output is logged so you can see what went wrong. The default logger detects CI and turns the in-place items off there, so build logs stay plain. Built on [visual-logger] and [xsh].
@@ -32,8 +36,6 @@ const { stdout, stderr } = await ve.execute();
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ### `new VisualExec(options)`
 

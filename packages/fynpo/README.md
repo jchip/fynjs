@@ -7,6 +7,9 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [Markdown reference](docs/reference.md) - the full CLI reference and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/fynpo)
+
 **fynpo is a zero setup JavaScript tool for working with multiple packages as monorepo or colorepo**
 
 - See [this express monorepo PoC](https://github.com/jchip/express-monorepo) that put [express](https://expressjs.com/) and all its dependencies together in a monorepo, with their source cloned from their repos directly.
@@ -66,10 +69,6 @@
 - **Remote Caching**: Share build cache on a remote server
 
   > Enable you to upload your build cache to a remote server for sharing with other team members or CI/CD jobs.
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every command, option, and config setting.
 
 ## License
 

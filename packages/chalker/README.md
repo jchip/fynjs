@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/chalker) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/chalker)
+
 Set ansi colors in strings using `<>` markers and [chalk] or [ansi-colors].
 
 # Usage
@@ -105,8 +109,6 @@ the corresponding API directly.
   - ie: `<#FF0000.bg#0000FF.bg-orange.keyword(red)>`
 
 # APIs
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ### `chalker`
 

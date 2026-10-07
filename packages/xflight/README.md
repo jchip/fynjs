@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/xflight) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/xflight)
+
 **Avoid redundant async calls by sharing inflight promises for the same key.**
 
 ## Description
@@ -67,8 +71,6 @@ const inflight = new Inflight();
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ### `new Inflight([PromiseImpl])`
 - `PromiseImpl` (optional): Custom Promise implementation, e.g. [AveAzul](https://www.npmjs.com/package/aveazul). Defaults to the native `Promise`.

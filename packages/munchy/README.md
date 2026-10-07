@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/munchy) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/munchy)
+
 A producer Node stream for draining different data, including Readable streams.
 
 This is an ESM only package.
@@ -37,8 +41,6 @@ munchy.pipe(process.stdout);
 ```
 
 # API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ## constructor
 

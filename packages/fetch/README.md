@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_fynjs_fetch) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/fetch)
+
 A hardened, zero-dependency HTTP client based on Node.js core `fetch`.
 
 ## Features
@@ -228,10 +232,6 @@ import { fynFetch } from "@fynjs/fetch";
 // automatically cleans up partial file if download fails or is aborted
 await fynFetch.stream("https://example.com/archive.tgz", "local.tgz");
 ```
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ## License
 

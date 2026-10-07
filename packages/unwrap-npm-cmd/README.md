@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/unwrap-npm-cmd) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/unwrap-npm-cmd)
+
 Unwrap npm's node.js bin CMD batch for js files on Windows.
 
 [Sample](./test/fixtures/sample.js):
@@ -45,8 +49,6 @@ child.spawnSync(
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ```js
 unwrapNpmCmd(cmd, options);

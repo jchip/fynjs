@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_fynjs_run) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/xarc-run)
+
 `npm run` enhanced - A powerful task runner and build tool for modern JavaScript projects.
 
 - **Compatible** with `npm run` for [npm scripts]
@@ -711,7 +715,7 @@ const tasks = {
 
 ## Detailed Reference
 
-See [reference](./docs/reference.md) for more detailed information on features such as [load tasks into namespace], and setup [auto complete with namespace] for your shell.
+See the [Markdown reference](./docs/reference.md) for more detailed information on features such as [load tasks into namespace], and setup [auto complete with namespace] for your shell.
 
 ## License
 

@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/xsh) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/xsh)
+
 Some random NodeJS helper functions for shell execution
 
 ## Install
@@ -34,8 +38,6 @@ xsh.exec("echo hello");
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ### `Promise`
 

@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_fynjs_reflink) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/reflink)
+
 Native copy-on-write file cloning for Node.js, built with [napi-rs].
 
 fyn uses it to replicate packages from its central store into `node_modules`. A clone
@@ -49,8 +53,6 @@ Removing first matters. A clone or copy writes through an existing destination, 
 would corrupt any other path hardlinked to the same file.
 
 ## API
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ### `cloneFile(src, dest)` / `cloneFileSync(src, dest)`
 

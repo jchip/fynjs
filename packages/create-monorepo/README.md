@@ -7,6 +7,8 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/create-monorepo)
+
 Supplement tool to create a new fynpo monorepo. The directory structure of a fynpo monorepo will look like:
 
 ```

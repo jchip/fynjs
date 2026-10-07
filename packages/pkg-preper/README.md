@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/pkg-preper) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/pkg-preper)
+
 A [pacote] `dirPacker` that runs a package's `prepare` script before packing it.
 
 When a dependency is installed from a git URL rather than the registry, what's in the repo is often source that has to be built first - that's what a `prepare` script is for. pacote will pack such a directory for you, but it won't build it. `pkg-preper` supplies the packer that does: it reads the directory's `package.json`, and if there's a `prepare` script it hands the directory to your `installDependencies` callback (which installs deps and runs the script) before packing the result into a tarball with [npm-packlist] and [tar].
@@ -36,8 +40,6 @@ await pacote.tarball(spec, { dirPacker: preper.getDirPackerCb() });
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ### `new PkgPreper({ tmpDir, installDependencies })`
 

@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_fynjs_cli-args) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/cli-args)
+
 Simple, lightweight, flexible, and comprehensive Un\*x Command Line Argument Parsing for Node.js.
 
 ## Features
@@ -1357,8 +1361,6 @@ if (parsed.error) {
 ```
 
 ## APIs
-
-See the [full API reference](docs/reference.md) for every method, option, and type.
 
 These are methods `NixClap` class supports.
 

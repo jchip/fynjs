@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/aveazul) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/aveazul)
+
 AveAzul ("Blue Bird" in Spanish) serves as a near drop-in replacement for Bluebird. It's built on native Promise, by extending it with the familiar utility methods from Bluebird.
 
 ## Purpose
@@ -129,8 +133,6 @@ Key differences to be aware of:
 - A few very specialized methods not available
 
 ## API
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ### Instance Methods
 

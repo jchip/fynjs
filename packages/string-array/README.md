@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/string-array) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/string-array)
+
 Parse string into array of string elements.
 
 `"[ hello, world, [ 1, [2, [ 3 ]]]]"` :arrow_right: `[ "hello", "world", [ "1", [ "2", [ "3" ]]]]`
@@ -84,10 +88,6 @@ const r2 = stringArray.parse("test[1,2,3]");
 * `AssertionError("array missing ]")`
 * `AssertionError("array has extra ]")`
 * `AssertionError("extra data at end of array")` - if `noExtra` is `true` and there are extra text following a complete array in `str`
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ## License
 

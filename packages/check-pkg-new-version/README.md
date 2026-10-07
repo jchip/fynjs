@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/check-pkg-new-version) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/check-pkg-new-version)
+
 Let a published CLI tell its users when a newer version of itself exists.
 
 It fetches the package's dist-tags from the registry, compares them against the version the user is running, and calls you back when there's something newer. Checks are throttled - the result is cached on disk, so a CLI can call this on every run without hitting the registry every time.
@@ -33,8 +37,6 @@ await checkPkgNewVersion({
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ### `checkPkgNewVersion(options): Promise<any>`
 

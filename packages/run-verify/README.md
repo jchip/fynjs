@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/run-verify) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/run-verify)
+
 **run-verify gives tests a controlled progression.** Organize actions and assertions
 into explicit steps, each checked before the next begins. Coordinate callbacks, promises,
 and events in the order your test requires, with a deadline to keep the run bounded.
@@ -211,10 +215,7 @@ more than once runs it once. A chain with configured signals cannot be branched 
 reused. Each signal represents one occurrence. Create the signals and chain inside each
 test.
 
-## API reference
-
-See the [full API reference](docs/reference.md) for every `verify` method, option, type,
-and runtime rule.
+## Low-level API
 
 `verify` uses lower-level runner APIs to do the work. Those APIs are also exported. See
 the [low-level API reference](docs/reference.md#low-level-positional-api) for details.

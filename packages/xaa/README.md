@@ -7,24 +7,17 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
-async/await and Promise helpers.
+- [API reference](https://fynjs.pages.dev/api/modules/xaa) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/xaa)
 
-github: <https://github.com/jchip/fynjs/tree/main/packages/xaa>
+async/await and Promise helpers.
 
 ## Install and Usage
 
 ```
 npm i xaa
 ```
-
-## APIs
-
-See the [full API reference](docs/reference.md) for every function, option, and type. It also ships in the package at `node_modules/xaa/docs/reference.md`.
-
-Online:
-
-- Reference: <https://fynjs.pages.dev/ref/xaa.md>
-- TypeDoc: <https://fynjs.pages.dev/api/modules/xaa>
 
 xaa is ESM only and ships TypeScript types.
 

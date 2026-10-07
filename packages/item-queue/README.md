@@ -7,9 +7,11 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
-An item processing queue using Promise.
+- [API reference](https://fynjs.pages.dev/api/modules/item-queue) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/item-queue)
 
-[**API Reference**](https://fynjs.pages.dev/ref/item-queue.md)
+An item processing queue using Promise.
 
 ## Features
 
@@ -74,10 +76,6 @@ More Examples:
 See [sample](./samples/example1.js) for a demo usage with [visual-logger].
 
 ![item-queue demo][example1-demo-image]
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every method, option, and type.
 
 [example1-demo-image]: ./samples/example1.gif
 [visual-logger]: https://www.npmjs.com/package/visual-logger

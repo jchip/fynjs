@@ -7,15 +7,16 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/filter-scan-dir) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir)
+
 Extremely fast recursive directory crawling and filtering for Node.js.
 Returns a flat array of file paths.
 It can scan 1 million files in about half a second with a warm OS cache and `fullStat: false`.
 See [Performance](#performance) for the measured setup.
 
 - Supports super fast concurrent mode in async version.
-
-- **[API Docs]**
-- **[Github]**
 
 # Install
 
@@ -34,8 +35,6 @@ console.log(filterScanDirSync({ cwd: "test" }));
 // async
 console.log(await filterScanDir({ cwd: "test" }));
 ```
-
-- **[API Docs]**
 
 # Filtering
 
@@ -159,18 +158,12 @@ Test system: Node.js 22.22.2 on macOS, Apple M4 Pro, 24 GB RAM.
 The fynmesh repo scan included `node_modules` and `.git`.
 Its directory count includes the root.
 
-# API reference
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
-
 # License
 
 Copyright (c) 2022-2026 Joel Chen
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-[api docs]: https://fynjs.pages.dev/ref/filter-scan-dir.md
-[github]: https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir
 
 [license-image]: https://img.shields.io/npm/l/filter-scan-dir.svg
 [license-url]: LICENSE

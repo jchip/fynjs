@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_fynpo_base) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/fynpo-base)
+
 The package-graph and config layer under [fynpo] and [fyn].
 
 It answers the questions a monorepo tool keeps asking: which directories in this repo are packages, how do they depend on each other, what order can they be built in, and what does the repo's `fynpo` config say. Nothing here drives a command - it's the shared model that fynpo's commands and fyn's local-package resolution are both built on.
@@ -76,10 +80,6 @@ Exported as a namespace (`import { caching } from "@fynpo/base"`) - input/output
 ### `gitignore` helpers and `posixify`
 
 Small utilities shared by the tools.
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every function, option, and type.
 
 ## License
 

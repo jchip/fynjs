@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/check-pkg-new-version-engine) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/check-pkg-new-version-engine)
+
 Provide generic engine for npm CLI packages to check newer version.
 
 - bundler friendly (webpack etc)
@@ -53,10 +57,6 @@ async function start() {
   });
 }
 ```
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 [license-image]: https://img.shields.io/npm/l/check-pkg-new-version-engine.svg
 [license-url]: LICENSE

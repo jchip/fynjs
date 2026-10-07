@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/_fynjs_ts-resolve) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/ts-resolve)
+
 Run this repo's TypeScript on plain `node`, with no transpiler.
 
 Node already strips TypeScript types natively. What it deliberately does **not**
@@ -83,10 +87,6 @@ that path too and the wrap simply agrees with it.
 
 Resolution is all that was ever missing: node's CJS loader already strips types
 from a `.ts` file it is handed, on every version this package supports.
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 [license-image]: https://img.shields.io/npm/l/@fynjs/ts-resolve.svg
 [license-url]: LICENSE

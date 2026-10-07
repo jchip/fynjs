@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/xenv-config) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/xenv-config)
+
 Load config from env, user config, or default spec.
 
 ## Install
@@ -46,8 +50,6 @@ expect(config.__$trace__).to.deep.equal({
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ```js
 xenvConfig(spec, userConfig, options);

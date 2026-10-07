@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/publish-util) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/publish-util)
+
 Clean up `package.json` for publishing.
 
 Your `package.json`:
@@ -196,10 +200,6 @@ Using `npm pack`
 2. Inspect `package.json` to ensure it's not modified
 3. Look for the `.tgz` file and extract it
 4. Inspect `package/package.json` to ensure it's as expected.
-
-## API reference
-
-See the [full API reference](docs/reference.md) for every bin, config setting, function, and type.
 
 [license-image]: https://img.shields.io/npm/l/publish-util.svg
 [license-url]: LICENSE

@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/optional-import) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/optional-import)
+
 ESM optional dependency loading that tells **"not installed"** apart from **"installed but broken"**.
 
 The ESM counterpart to [optional-require]. Where `optional-require` wraps a `require` call,
@@ -110,8 +114,6 @@ that *is* a directory counts as present and then fails on import with
 `ERR_UNSUPPORTED_DIR_IMPORT`, which is a real error worth seeing rather than a silent fallback.
 
 ## API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ### `makeOptionalImport(meta, log?)`
 

@@ -7,6 +7,10 @@
 
 [![npm badge][npm-badge-png]][package-url]
 
+- [API reference](https://fynjs.pages.dev/api/modules/visual-logger) - TypeDoc
+- [Markdown reference](docs/reference.md) - the full API and runtime behavior in one file. Also ships in the package.
+- [GitHub](https://github.com/jchip/fynjs/tree/main/packages/visual-logger)
+
 Visual CLI logger for NodeJS
 
 This is a simple logger that combines in-place terminal updates for showing things like progress, spinners, etc.
@@ -41,8 +45,6 @@ logger.info("done");
 ```
 
 ## API
-
-See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
 
 ### Logging
 
