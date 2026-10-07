@@ -10,6 +10,7 @@ An item processing queue using Promise.
 - concurrent processing
 - pause and resume processing
 - automatic watch timer for long pending items
+- per item timeout with an `AbortSignal`
 
 ## Usage
 
@@ -39,6 +40,25 @@ async function test() {
   console.log("result:", total);
 }
 ```
+
+### Timeout
+
+Set `timeout` to fail any item that takes longer than that many milliseconds.
+
+```ts
+const queue = new ItemQueue<string>({
+  timeout: 5000,
+  async processItem(url, _id, signal) {
+    const res = await fetch(url, { signal });
+    return res.text();
+  },
+});
+```
+
+A timed out item fails with an `ETIMEDOUT` error, and its slot goes to the next item.
+A result that arrives after the timeout is ignored.
+The queue can't cancel the work, so `processItem` gets an `AbortSignal` that is aborted on timeout.
+Pass it on or check it to stop the work. The signal is only passed when `timeout` is set.
 
 ## Demo
 

@@ -106,8 +106,13 @@ export type ItemQueueHandlers<ItemT = unknown> = {
  *
  * @param item item to process
  * @param id id number item queue uses to track this item
+ * @param signal only with `options.timeout`, aborted when the item times out
  */
-export type ProcessCb<ItemT> = (item: ItemT, id?: number) => Promise<unknown> | void;
+export type ProcessCb<ItemT> = (
+  item: ItemT,
+  id?: number,
+  signal?: AbortSignal
+) => Promise<unknown> | void;
 
 /**
  * Item queue options
@@ -123,6 +128,12 @@ export type ItemQueueOptions<ItemT = unknown> = {
   processItem: ProcessCb<ItemT>;
   /** immediately stop if an error occurred */
   stopOnError?: boolean;
+  /**
+   * max milliseconds an item can take. A timed out item fails with an `ETIMEDOUT` error,
+   * its concurrency slot is freed, and a late result is ignored.
+   * - `processItem` receives an `AbortSignal` that is aborted on timeout. The queue can't
+   *   cancel the work, so check the signal to stop it.
+   */
   timeout?: number;
   /** frequency the progress watcher should check for overdue items */
   watchPeriod?: number;
@@ -185,7 +196,7 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     this._processItem = options.processItem;
     this._stopOnError = options.stopOnError;
     this._failed = false;
-    this._timeout = options.timeout; // TODO
+    this._timeout = options.timeout > 0 ? options.timeout : 0;
     this._watchPeriod = options.watchPeriod || WATCH_PERIOD;
     this._watchTime = options.watchTime;
     this._id = 1;
@@ -500,6 +511,33 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
     this._watchTimer = setTimeout(() => this._pendingWatcher(), this._watchPeriod).unref();
   }
 
+  /**
+   * Fail the item if it doesn't settle within `options.timeout`. The first outcome wins,
+   * so a result that arrives after the timeout is ignored.
+   */
+  private _withTimeout(promise: Promise<unknown>, abort: AbortController): Promise<unknown> {
+    return new this.Promise((resolve, reject) => {
+      // not unref'd: a hung item must still fail instead of letting the process exit
+      const timer = setTimeout(() => {
+        const error = Object.assign(new Error(`item-queue: item timed out after ${this._timeout}ms`), {
+          code: "ETIMEDOUT",
+        });
+        abort.abort(error);
+        reject(error);
+      }, this._timeout);
+      promise.then(
+        (res) => {
+          clearTimeout(timer);
+          resolve(res);
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(err);
+        }
+      );
+    });
+  }
+
   private _setupWatch() {
     if (!this._watchTimer && this._watchTime) {
       process.nextTick(() => this._pendingWatcher());
@@ -556,8 +594,9 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
       if (wrapped._control === RESUME_ITEM) {
         promise = this.Promise.resolve({});
       } else {
+        const abort = this._timeout ? new AbortController() : undefined;
         try {
-          const res: unknown = this._processItem(wrapped.item, id);
+          const res: unknown = this._processItem(wrapped.item, id, abort?.signal);
           if (res && (res as Promise<unknown>).then) {
             promise = res as Promise<unknown>;
           } else {
@@ -565,6 +604,9 @@ export class ItemQueue<ItemT = unknown> extends EventEmitter {
           }
         } catch (err) {
           promise = this.Promise.reject(err);
+        }
+        if (abort) {
+          promise = this._withTimeout(promise, abort);
         }
       }
 

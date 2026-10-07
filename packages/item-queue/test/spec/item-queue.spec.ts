@@ -529,4 +529,106 @@ describe("item-queue", () => {
       .keep.step((data) => expect(data.item).toBe(sym))
       .step(() => expect(seen).toEqual([sym]));
   });
+
+  describe("timeout", () => {
+    it("should fail a timed out item, abort its signal and free its slot", () => {
+      const signals: AbortSignal[] = [];
+      const ran: number[] = [];
+      const failed: ItemQueueResult<number>[] = [];
+      const done = signal<void>();
+      const pq = new ItemQueue<number>({
+        concurrency: 1,
+        timeout: 20,
+        processItem: (x, _id, sig) => {
+          ran.push(x);
+          signals.push(sig);
+          // item 1 hangs, item 2 resolves right away
+          return x === 1 ? new Promise(() => undefined) : undefined;
+        },
+        handlers: {
+          failItem: (data) => failed.push(data),
+          done: () => done.resolve(),
+        },
+      });
+
+      return verify({ timeout: 500, signals: { done } })
+        .step(() => pq.addItems([1, 2]))
+        .awaiting(done)
+        .step(() => expect(ran).toEqual([1, 2]))
+        .step(() => expect(failed.map((d) => d.item)).toEqual([1]))
+        .step(() => expect((failed[0].error as any).code).toBe("ETIMEDOUT"))
+        .step(() => expect(signals[0].aborted).toBe(true))
+        .step(() => expect(signals[0].reason).toBe(failed[0].error))
+        .step(() => expect(signals[1].aborted).toBe(false));
+    });
+
+    it("should ignore a result that arrives after the timeout", () => {
+      const doneItems: number[] = [];
+      const failed: number[] = [];
+      const pq = new ItemQueue<number>({
+        timeout: 10,
+        processItem: () => delay(40),
+        handlers: {
+          doneItem: (data) => doneItems.push(data.item),
+          failItem: (data) => failed.push(data.item),
+        },
+      });
+
+      return verify({ timeout: 500 })
+        .step(() => pq.addItem(1).wait())
+        .step(() => delay(60))
+        .step(() => expect(failed).toEqual([1]))
+        .step(() => expect(doneItems).toEqual([]));
+    });
+
+    it("should pass results and errors through when items finish in time", () => {
+      const boom = new Error("boom");
+      const doneItems: unknown[] = [];
+      const failed: unknown[] = [];
+      const pq = new ItemQueue<number>({
+        timeout: 200,
+        processItem: async (x) => {
+          if (x === 2) throw boom;
+          return x * 10;
+        },
+        handlers: {
+          doneItem: (data) => doneItems.push(data.res),
+          failItem: (data) => failed.push(data.error),
+        },
+      });
+      const start = Date.now();
+
+      return verify({ timeout: 500 })
+        .step(() => pq.addItems([1, 2]).wait())
+        .step(() => expect(doneItems).toEqual([10]))
+        .step(() => expect(failed).toEqual([boom]))
+        // timers were cleared, so done did not wait for the timeout
+        .step(() => expect(Date.now() - start).toBeLessThan(150));
+    });
+
+    it("should fail a stopOnError queue with the timeout error", () => {
+      const pq = new ItemQueue({
+        stopOnError: true,
+        timeout: 10,
+        processItem: () => new Promise(() => undefined),
+      });
+
+      return verify({ timeout: 500 })
+        .expectError.step(() => pq.addItem(1).wait())
+        .step((error: any) => expect(error.code).toBe("ETIMEDOUT"));
+    });
+
+    it("should not pass a signal without a timeout", () => {
+      const args: unknown[][] = [];
+      const pq = new ItemQueue({
+        processItem: (...a) => {
+          args.push(a);
+        },
+      });
+
+      return verify({ timeout: 500 })
+        .step(() => pq.addItem(1).wait())
+        .step(() => expect(args).toEqual([[1, 1, undefined]]));
+    });
+  });
 });
