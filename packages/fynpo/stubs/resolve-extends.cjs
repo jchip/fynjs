@@ -54,7 +54,9 @@ async function resolveExtends(config = {}, context = {}) {
   );
   return mergeObjects({}, extended, config);
 }
-exports.default = resolveExtends;
+// rolldown imports this CJS stub in node mode, where the default import is module.exports
+module.exports = resolveExtends;
+module.exports.default = resolveExtends;
 function loadExtends(config = {}, context = {}) {
   const { extends: e } = config;
   const ext = e ? (Array.isArray(e) ? e : [e]) : [];
