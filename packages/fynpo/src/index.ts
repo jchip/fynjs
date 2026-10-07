@@ -148,7 +148,7 @@ const makeDepGraph = async (opts) => {
 
   //
   // `--scope` used to be honored only inside makePkgDeps, which only `prepare` reaches - so
-  // bootstrap, local and run silently ignored the option they advertise. Express it as extra
+  // bootstrap and run silently ignored the option they advertise. Express it as extra
   // `ignore` entries here instead: everything downstream already honors `ignore`, both
   // TopoRunner and run.ts's selectPackagesToRun, so all three commands and all three run
   // dispatch paths pick it up from one place. See FPO-37.
@@ -229,10 +229,6 @@ const execBootstrap = async (cmd, parsed, firstRunTime = 0) => {
   }
 
   return undefined;
-};
-
-const execLocal = async (cmd, parsed) => {
-  return await makeBootstrap(cmd, parsed);
 };
 
 const execPrepare = async (cmd, _parsed) => {
@@ -362,13 +358,13 @@ export const cliOptions = {
     alias: "i",
     args: "<vals string..>",
     desc: "list of packages to ignore",
-    allowCmd: ["bootstrap", "local", "run"],
+    allowCmd: ["bootstrap", "run"],
   },
   scope: {
     alias: "s",
     args: "<vals string..>",
     desc: "include only packages with names matching the given scopes",
-    allowCmd: ["bootstrap", "local", "run"],
+    allowCmd: ["bootstrap", "run"],
   },
   commit: {
     args: "[flag boolean]",
@@ -389,17 +385,17 @@ export const cliOptions = {
   },
   //
   // One option, two readers, same shape (a list of package names):
-  //   - bootstrap/local/run filter the topo set by it (topo-runner.ts)
+  //   - bootstrap/run filter the topo set by it (topo-runner.ts)
   //   - updated/changelog/version/prepare treat it as the selective-release
   //     selection, expanded across version lock groups (utils.expandSelection)
   // These were once two entries under the same key, so the second silently shadowed
-  // the first and cost bootstrap/local/run the option entirely. See FPO-30.
+  // the first and cost bootstrap/run the option entirely. See FPO-30.
   //
   only: {
     alias: "o",
     args: "<vals string..>",
     desc: "limit to these packages (for a release, version lock groups expand)",
-    allowCmd: ["bootstrap", "local", "run", "updated", "changelog", "version", "prepare"],
+    allowCmd: ["bootstrap", "run", "updated", "changelog", "version", "prepare"],
   },
   "ignore-changes": {
     alias: "ic",
@@ -454,11 +450,6 @@ export const fynpoMain = () => {
           desc: "list of packages to skip running fyn install on, but won't ignore",
         },
       },
-    },
-    local: {
-      alias: "l",
-      desc: "resolve the local package dependency graph, without installing",
-      exec: execLocal,
     },
     prepare: {
       alias: "p",

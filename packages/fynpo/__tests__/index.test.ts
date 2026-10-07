@@ -131,13 +131,12 @@ describe("cliOptions (FPO-30 regression)", () => {
   it("has a single `only` covering both the filter and the release senses", () => {
     // `only` was once declared twice in this table. A duplicate key collapses silently
     // in a JS object literal, so the release entry shadowed the filter entry and
-    // bootstrap/local/run lost the option along with its `-o` alias.
+    // bootstrap/run lost the option along with its `-o` alias.
     expect(cliOptions.only).toBeDefined();
     expect(cliOptions.only.alias).toEqual("o");
     expect(cliOptions.only.args).toEqual("<vals string..>");
     expect(cliOptions.only.allowCmd).toEqual([
       "bootstrap",
-      "local",
       "run",
       "updated",
       "changelog",
@@ -148,7 +147,7 @@ describe("cliOptions (FPO-30 regression)", () => {
 
   it("keeps `only` usable by every command that reads options.only", () => {
     // topo-runner.ts filters on opts.only for these
-    for (const cmd of ["bootstrap", "local", "run"]) {
+    for (const cmd of ["bootstrap", "run"]) {
       expect(cliOptions.only.allowCmd).toContain(cmd);
     }
     // prepare/version/update-changelog treat it as the selective-release selection

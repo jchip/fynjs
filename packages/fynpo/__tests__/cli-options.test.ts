@@ -67,8 +67,8 @@ describe("removed options", () => {
   );
 
   it.each([
-    [["local", "--deps", "3"], "deps"],
-    [["local", "-d", "3"], "d"],
+    [["bootstrap", "--skip", "a", "--deps", "3"], "deps"],
+    [["bootstrap", "--skip", "a", "-d", "3"], "d"],
   ])("rejects %j as unknown", (args, name) =>
     verify({ timeout: 20000 })
       .step(() => makeRepo())
@@ -76,6 +76,15 @@ describe("removed options", () => {
       .keep.step((err: any) => expect(err.code).toBe(1))
       .step((err: any) => output(err))
       .step((out) => expect(out).toContain(`unknown CLI option '${name}'`))
+  );
+
+  it("rejects the removed local command", () =>
+    verify({ timeout: 20000 })
+      .step(() => makeRepo())
+      .expectError.step((cwd) => fynpo(cwd, "local"))
+      .keep.step((err: any) => expect(err.code).toBe(1))
+      .step((err: any) => output(err))
+      .step((out) => expect(out).toContain("Unknown: 'local'"))
   );
 });
 
