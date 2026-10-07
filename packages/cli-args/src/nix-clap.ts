@@ -1,5 +1,5 @@
 import Path from "path";
-import { noop, setHelpZebra, isThenable } from "./xtil.js";
+import { noop, isThenable } from "./xtil.js";
 import EventEmitter from "events";
 import { Parser } from "./parser.js";
 import { CommandBase, type CommandSpec, unknownCommandBaseNoOptions } from "./command-base.js";
@@ -257,9 +257,6 @@ export class NixClap extends EventEmitter {
     this._name = config.name;
     this._version = config.version || false;
 
-    // Set zebra striping for help text
-    setHelpZebra(config.helpZebra !== false);
-
     this._versionAlias = config.versionAlias;
 
     this._helpOpt = config.hasOwnProperty("help")
@@ -314,13 +311,19 @@ export class NixClap extends EventEmitter {
           // "new-command": noop,
         };
 
-    // Handle exit separately since it has a different signature
-    if (!config.noDefaultHandlers) {
-      this.on("exit", defaultExit);
-    }
+    // exit stays out of _evtHandlers so removeDefaultHandlers("*") keeps it
     const handlers = config.handlers || {};
-    for (const [name, handler] of Object.entries(this._evtHandlers)) {
-      const h = handlers.hasOwnProperty(name) ? handlers[name] : handler;
+    const exitHandler = Object.hasOwn(handlers, "exit")
+      ? handlers.exit
+      : !config.noDefaultHandlers && defaultExit;
+    if (typeof exitHandler === "function") {
+      this.on("exit", exitHandler);
+    }
+    // user handlers apply even with noDefaultHandlers or for events with no default
+    const names = new Set([...Object.keys(this._evtHandlers), ...Object.keys(handlers)]);
+    names.delete("exit");
+    for (const name of names) {
+      const h = Object.hasOwn(handlers, name) ? handlers[name] : this._evtHandlers[name];
       if (typeof h === "function") {
         this.on(name, h);
       }
@@ -401,6 +404,29 @@ export class NixClap extends EventEmitter {
   }
 
   /**
+   * Make a copy of the help option without aliases that other options already use.
+   */
+  private _withFreeHelpAliases(existingOptions: Record<string, OptionSpec>): OptionSpec {
+    const helpOpt = this._helpOpt as OptionSpec;
+
+    // Collect all aliases used by existing options, except a help option that gets replaced
+    const usedAliases = new Set<string>();
+    for (const optName in existingOptions) {
+      const opt = existingOptions[optName];
+      if (optName !== "help" && opt.alias) {
+        const aliases = Array.isArray(opt.alias) ? opt.alias : [opt.alias];
+        aliases.forEach(a => usedAliases.add(a));
+      }
+    }
+
+    /* c8 ignore next 3 */
+    const helpAliases = helpOpt.alias
+      ? (Array.isArray(helpOpt.alias) ? helpOpt.alias : [helpOpt.alias])
+      : [];
+    return { ...helpOpt, alias: helpAliases.filter(a => !usedAliases.has(a)) };
+  }
+
+  /**
    * Recursively adds help option to all subcommands.
    * Filters out help aliases that conflict with existing options in the subcommand.
    */
@@ -411,28 +437,11 @@ export class NixClap extends EventEmitter {
       const cmd = commands[name];
       const existingOptions = cmd.options || {};
 
-      // Collect all aliases used by existing options in this command
-      const usedAliases = new Set<string>();
-      for (const optName in existingOptions) {
-        const opt = existingOptions[optName];
-        if (opt.alias) {
-          const aliases = Array.isArray(opt.alias) ? opt.alias : [opt.alias];
-          aliases.forEach(a => usedAliases.add(a));
-        }
-      }
-
-      // Create a copy of help option, filtering out conflicting aliases
-      /* c8 ignore next 3 */
-      const helpAliases = this._helpOpt.alias
-        ? (Array.isArray(this._helpOpt.alias) ? this._helpOpt.alias : [this._helpOpt.alias])
-        : [];
-      const filteredAliases = helpAliases.filter(a => !usedAliases.has(a));
-
       // Only add help if 'help' option name isn't already used
       if (!existingOptions.hasOwnProperty("help")) {
         cmd.options = {
           ...existingOptions,
-          help: { ...this._helpOpt, alias: filteredAliases }
+          help: this._withFreeHelpAliases(existingOptions)
         };
       }
 
@@ -461,7 +470,7 @@ export class NixClap extends EventEmitter {
       let verAlias = ["V", "v"];
       Object.keys(options).forEach(k => {
         const opt = options[k];
-        if (opt.alias) verAlias = verAlias.filter(x => opt.alias.indexOf(x) < 0);
+        if (opt.alias) verAlias = verAlias.filter(x => ![].concat(opt.alias).includes(x));
       });
       options.version = this._getVersionOpt(verAlias);
     }
@@ -469,7 +478,7 @@ export class NixClap extends EventEmitter {
     // Add help option if configured
     if (this._helpOpt) {
       options = { ...options };
-      options["help"] = this._helpOpt;
+      options["help"] = this._withFreeHelpAliases(options);
       // Also add help option to all subcommands recursively
       this._addHelpToSubCommands(commands);
     }
@@ -725,6 +734,7 @@ export class NixClap extends EventEmitter {
   skipExec(skip = true) {
     this._skipExec = skip;
     this._skipExecDefault = skip;
+    return this;
   }
 
   /**
@@ -848,13 +858,13 @@ export class NixClap extends EventEmitter {
     const parser = new Parser(this);
 
     const { command, index } = parser.parse(argv, start);
+
+    // apply default args first, so an argDefault satisfies required
+    command.applyDefaults();
     const missing = command.checkRequiredOptions();
     if (missing.length > 0) {
       command.addError(new Error("missing these required options " + missing.join(", ")));
     }
-
-    // apply default args
-    command.applyDefaults();
     command.makeCamelCaseOptions();
 
     const errorNodes = command.getErrorNodes();

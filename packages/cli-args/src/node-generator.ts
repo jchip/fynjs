@@ -457,6 +457,10 @@ export class ClapNodeGenerator {
       return [null];
     }
 
+    if (this.optNode && this.takesNegativeNumber(opt)) {
+      return this.consumeNonOptAsOption(opt);
+    }
+
     if (this.optNode) {
       // option ends previous option
       this.complete();
@@ -494,6 +498,22 @@ export class ClapNodeGenerator {
 
     this.node.addVerbatimArg(opt);
     return this.makeOptNode({ name, value, verbatim, dashes, arg: opt });
+  }
+
+  /**
+   * Whether this open option takes a negative number like `-5` as its next value.
+   * Boolean args don't, so `--flag -5` still reads `-5` as an option.
+   *
+   * @param arg - an argv entry that starts with '-'
+   */
+  private takesNegativeNumber(arg: string): boolean {
+    if (!isNumber(arg)) {
+      return false;
+    }
+    const args = this.optNode.option.args;
+    // an open option always has an arg slot left; a variadic one reuses its last slot
+    const argInfo = args[Math.min(this.node.argsList.length, args.length - 1)];
+    return argInfo.type !== "boolean";
   }
 
   /**

@@ -202,7 +202,10 @@ export class CliBase<TSpec extends BaseSpec> {
     args.replace(/([<[])([^>\]]*)([>\]])/g, (a, mark, xname: string) => {
       assert(
         !this.variadic,
-        `For args specifier of '${this.name}', only the last one can be variadic`
+        new InvalidArgSpecifierError(
+          `For args specifier of '${this.name}', only the last one can be variadic`,
+          args
+        )
       );
       // "[string foo..1,3]"
 

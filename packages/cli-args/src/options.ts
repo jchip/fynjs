@@ -1,7 +1,15 @@
 import assert from "assert";
 import { CommandBase } from "./command-base.js";
 import { OptionBase, type OptionSpec } from "./option-base.js";
-import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.js";
+import {
+  cbOrVal,
+  dup,
+  fitLines,
+  getTerminalWidth,
+  resetZebraIndex,
+  nextZebraIndex,
+  setHelpZebra
+} from "./xtil.js";
 
 /**
  * `Record<string, OptionSpec>`
@@ -148,6 +156,7 @@ export class Options {
   makeHelp(): string[] {
     const width = this.findLongestOptionHelpText();
     let help: string[] = [];
+    setHelpZebra(this.command.ncConfig?.helpZebra !== false);
     resetZebraIndex();
 
     for (const opt of Object.values(this._options)) {

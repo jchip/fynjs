@@ -131,7 +131,7 @@ $ process file1.txt file2.txt         # "Processing: file1.txt, file2.txt"
 > 1. Arguments are provided on the command line, AND
 > 2. No sub-command matches those arguments
 >
-> This means sub-commands always take precedence. For CLIs that should run without any arguments, use a [default command](#defaultcommandname) instead.
+> This means sub-commands always take precedence. For CLIs that should run without any arguments, use a [default command](#defaultcommand-config) instead.
 
 ### With Commands and Options
 
@@ -845,7 +845,7 @@ Where:
 | `required`    | `true`/`false` whether this option must be specified.                                                   |
 | `allowCmd`    | list of command names this option is allow to follow only.                                              |
 | `customTypes` | Specify [value coercion](#value-coercion) for custom types. Keys are type names, values are converters. |
-| `counting`    | Maximum count value for counting options. Use `Infinity` for unlimited counting.                        |
+| `counting`    | Set to a number (e.g. `Infinity`) to count option occurrences. The value is not enforced as a maximum.  |
 
 > **Note:** Options with kebab-case names (like `some-option`) are automatically accessible in camelCase (`someOption`) in the parsed results.
 
@@ -1043,7 +1043,7 @@ const commands = {
 
 ## Parse Result
 
-Use the method [`parse`](#parseargv-start-parsed) to parse command line arguments. It will return a parse result object.
+Use the method [`parse`](#parseargv-start) to parse command line arguments. It will return a parse result object.
 
 ```js
 {
@@ -1382,9 +1382,9 @@ These are methods `NixClap` class supports.
   - [`usage(msg)`, `cmdUsage(msg)`](#usagemsg-cmdusagemsg)
   - [`init(options, commands)`](#initoptions-commands)
   - [`init2(rootCommandSpec)`](#init2rootcommandspec)
-  - [`defaultCommand(name)`](#defaultcommandname)
-  - [`parse(argv, start, parsed)`](#parseargv-start-parsed)
-  - [`parseAsync(argv, start, parsed)`](#parseasyncargv-start-parsed)
+  - [`defaultCommand` config](#defaultcommand-config)
+  - [`parse(argv, start)`](#parseargv-start)
+  - [`parseAsync(argv, start)`](#parseasyncargv-start)
   - [`showHelp(err, cmdName)`](#showhelperr-cmdname)
   - [`removeDefaultHandlers()`](#removedefaulthandlers)
   - [`applyConfig(config, parsed, src)`](#applyconfigconfig-parsed-src)
@@ -1588,9 +1588,9 @@ const nc = new NixClap({ name: "file-processor" }).init2({
 
 See the [Understanding init() vs init2()](#understanding-init-vs-init2) section for detailed comparison.
 
-### `defaultCommand(name)`
+### `defaultCommand` config
 
-Set the default command which is invoked when no non-option arguments are provided in the command line.
+The `defaultCommand` option of the `NixClap` constructor names the command that is invoked when no non-option arguments are provided in the command line. There is no `defaultCommand()` method.
 
 **How it works:**
 
@@ -1731,7 +1731,7 @@ The `unknownCommandFallback` and `defaultCommand` work together seamlessly:
 - The unknown command name becomes the first argument to the fallback command
 - Options alone (no non-option args) don't trigger fallback - they use `defaultCommand` instead
 
-### `parse(argv, start, parsed)`
+### `parse(argv, start)`
 
 Parse command line. Call without any params to parse `process.argv`.
 
@@ -1739,11 +1739,10 @@ Return: The parse result object.
 
 - `argv` - array of CLI args. Defaults to `process.argv`.
 - `start` - index for argv from where to start parsing
-- `parsed` - previous result from `parse`. If passed, then parsing will add new data to it.
 
-### `parseAsync(argv, start, parsed)`
+### `parseAsync(argv, start)`
 
-async version of [parse](#parseargv-start-parsed).
+async version of [parse](#parseargv-start).
 
 - It will use [runExecAsync](#runexecasyncparsed) to invoke command `exec` handlers serially.
 - The command handler can return a Promise, which will be awaited.
@@ -1807,7 +1806,7 @@ console.log(parsed.command.jsonMeta.source); // Shows where each option came fro
 
 Go through the commands in parsed and call their `exec` handler.
 
-> The [`parse`](#parseargv-start-parsed) method will call this at the end unless `skipExec` flag is set.
+> The [`parse`](#parseargv-start) method will call this at the end unless `skipExec` flag is set.
 
 Return: The number of commands with `exec` was invoked.
 
@@ -1827,7 +1826,7 @@ Return: A promise that resolves with the number of commands with `exec` invoked.
 
 - `parsed` - The parse result object.
 
-**Warning:** If your `exec` handlers are async, use [`parseAsync`](#parseasyncargv-start-parsed) rather than
+**Warning:** If your `exec` handlers are async, use [`parseAsync`](#parseasyncargv-start) rather than
 reaching for this after a plain `parse`. Since `parse` already calls `runExec` unless `skipExec` is set,
 following it with `runExecAsync(parsed)` to await the handlers executes **everything a second time**,
 sub-commands included.

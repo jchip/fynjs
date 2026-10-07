@@ -2,7 +2,15 @@ import { type BaseSpec, CliBase, isRootCommand } from "./base.js";
 import { CommandNode } from "./command-node.js";
 import type { NixClapConfig, ParseResult } from "./nix-clap.js";
 import { type GroupOptionSpec, Options } from "./options.js";
-import { cbOrVal, dup, fitLines, getTerminalWidth, resetZebraIndex, nextZebraIndex } from "./xtil.js";
+import {
+  cbOrVal,
+  dup,
+  fitLines,
+  getTerminalWidth,
+  resetZebraIndex,
+  nextZebraIndex,
+  setHelpZebra
+} from "./xtil.js";
 
 /**
  * The execution function you provide for a command.
@@ -316,6 +324,7 @@ export class CommandBase extends CliBase<CommandSpec> {
 
     const cmdWidth = data.reduce((max, n) => (n[0].length > max ? n[0].length : max), 0);
 
+    setHelpZebra(this.ncConfig?.helpZebra !== false);
     resetZebraIndex();
     return data.reduce((help, strs) => {
       const lines = fitLines(strs, "  ", "    ", cmdWidth, getTerminalWidth());
