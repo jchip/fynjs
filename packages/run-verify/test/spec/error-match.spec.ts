@@ -2,6 +2,7 @@ import { describe, it, expect, expectTypeOf } from "vitest";
 import {
   asyncVerify,
   expectErrorMatch,
+  expectErrorToMatch,
   expectErrorInstanceMatch,
   verify,
   wrapCheck
@@ -50,6 +51,17 @@ describe("error match modifiers", () => {
       "message"
     );
   });
+
+  it("accepts expectErrorToMatch as an alias in every API", () =>
+    verify()
+      .step(() => verify().expectErrorToMatch(/invalid/, "E_BAD").step(fail))
+      .step(r => expect(r).toBe(failure))
+      .expectErrorHas("message")
+      .step(() => verify().expectErrorToMatch("absent").step(fail))
+      .step(() => asyncVerify(expectErrorToMatch(fail, "invalid", "E_BAD")))
+      .step(r => expect(r).toBe(failure))
+      .step(() => asyncVerify(wrapCheck(fail).expectErrorToMatch!("input")))
+      .step(r => expect(r).toBe(failure)));
 
   it("supports single classes, subclasses and either member of an array", async () => {
     expect(await verify().expectErrorInstanceMatch(Error, "input", "E_BAD").step(fail)).toBe(

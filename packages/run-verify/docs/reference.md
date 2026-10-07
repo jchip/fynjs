@@ -157,6 +157,8 @@ instance requirement preserves its inferred instance type.
 
 ### `.expectErrorMatch(matcher, code?)`
 
+`.expectErrorToMatch(matcher, code?)` is an alias, named like `.expectErrorToBe`.
+
 Requires the next step to fail with a matching top-level `message`. A string matcher
 checks for a substring; a `RegExp` tests the message. Use anchors for an exact message,
 such as `/^invalid input$/`. A failure without a string message does not match.
@@ -393,7 +395,7 @@ These wrap one positional step:
 | Helper | Requirement |
 | --- | --- |
 | `expectError(fn)` | The step must fail. A throw or rejection counts. A callback error also counts. |
-| `expectErrorMatch(fn, matcher, code?)` | Require a top-level message substring or regex match. Optionally require an exact code. |
+| `expectErrorMatch(fn, matcher, code?)` | Require a top-level message substring or regex match. Optionally require an exact code. `expectErrorToMatch` is an alias, also on `wrapCheck(fn)`. |
 | `expectErrorInstanceMatch(fn, ConstructorOrArray, matcher?, code?)` | Require an instance of one constructor or any constructor in a nonempty array. Optionally require a message match and exact code. |
 | `expectErrorToBe(fn, message, code?)` | Require an exact top-level message. Optionally require an exact code. |
 | `expectErrorToBe(fn, Constructor, code?)` | Require an instance of `Constructor`. Optionally require an exact code. Also available on `wrapCheck(fn)`. |

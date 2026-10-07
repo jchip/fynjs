@@ -289,6 +289,9 @@ export interface Chain<Out, M extends Mods = {}, S extends SignalMap = SignalMap
   /** Require a message substring or regex and optional exact code. New requirements accumulate. */
   expectErrorMatch(matcher: ErrorMatcher, code?: ErrorCode): Chain<Out, M & { err: true }, S>;
 
+  /** Alias of {@link expectErrorMatch}, named like `expectErrorToBe`. */
+  expectErrorToMatch(matcher: ErrorMatcher, code?: ErrorCode): Chain<Out, M & { err: true }, S>;
+
   /** Require an instance of any listed class, plus optional message/code checks; infer its type. */
   expectErrorInstanceMatch<const C extends ErrorClasses>(
     types: C,
@@ -522,6 +525,9 @@ function makeChain<Out, M extends Mods, S extends SignalMap>(
       return derive<Out, M & { err: true }>({
         mods: { ...mods, err: true, errMatches: [...(mods.errMatches ?? []), { matcher, code }] }
       });
+    },
+    expectErrorToMatch(matcher: ErrorMatcher, code?: ErrorCode) {
+      return chain.expectErrorMatch(matcher, code);
     },
     expectErrorInstanceMatch<const C extends ErrorClasses>(
       types: C,

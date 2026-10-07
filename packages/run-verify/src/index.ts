@@ -125,6 +125,7 @@ export interface WrapObject {
   expectErrorHas?(msg: string, code?: ErrorCode): WrapObject;
   expectErrorToBe?(expected: string | ErrorClass, code?: ErrorCode): WrapObject;
   expectErrorMatch?(matcher: ErrorMatcher, code?: ErrorCode): WrapObject;
+  expectErrorToMatch?(matcher: ErrorMatcher, code?: ErrorCode): WrapObject;
   expectErrorInstanceMatch?(types: ErrorClasses, matcher?: ErrorMatcher, code?: ErrorCode): WrapObject;
   runTimeout?(delay: number): WrapObject;
 }
@@ -664,6 +665,8 @@ export const wrapCheck = (fn: CheckFunction): WrapObject => {
     return wrap;
   };
 
+  wrap.expectErrorToMatch = wrap.expectErrorMatch;
+
   wrap.expectErrorInstanceMatch = (types: ErrorClasses, matcher?: ErrorMatcher, code?: ErrorCode) => {
     const requirement = instanceRequirement(types, matcher, code);
     wrap._expectError ||= true;
@@ -712,6 +715,9 @@ export const expectErrorMatch = (
   matcher: ErrorMatcher,
   code?: ErrorCode
 ): WrapObject => wrapCheck(fn).expectErrorMatch!(matcher, code);
+
+/** Alias of {@link expectErrorMatch}, named like `expectErrorToBe`. */
+export const expectErrorToMatch = expectErrorMatch;
 
 /** Require failure with an instance of any supplied class, plus optional message/code checks. */
 export const expectErrorInstanceMatch = (

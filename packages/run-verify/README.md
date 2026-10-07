@@ -93,7 +93,7 @@ await verify({ timeout: 500 })
 | Modifier | Requirement |
 | --- | --- |
 | `.expectError` | The next step must fail. A throw or rejection counts. A callback error also counts. |
-| `.expectErrorMatch(matcher, code?)` | The top-level message must contain a string matcher or match a regex. A supplied `code` must also match exactly. |
+| `.expectErrorMatch(matcher, code?)` | The top-level message must contain a string matcher or match a regex. A supplied `code` must also match exactly. `.expectErrorToMatch` is an alias. |
 | `.expectErrorInstanceMatch(ConstructorOrArray, matcher?, code?)` | The failure must be an instance of the constructor or any constructor in a nonempty array. Optional message and code constraints also apply. |
 | `.expectErrorToBe(message, code?)` | The top-level message must equal `message`. A supplied `code` must also match. |
 | `.expectErrorToBe(Constructor, code?)` | The failure must be an instance of `Constructor`; the next step receives that instance type. A supplied `code` must also match. |
