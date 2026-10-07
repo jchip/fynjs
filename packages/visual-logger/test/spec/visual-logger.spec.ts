@@ -478,14 +478,32 @@ describe("visual-logger", () => {
       expect(visLog.logData).toEqual([]);
     });
 
-    it("should render if _render flag is false", async () => {
-      visLog.updateItem("TEST_1", { msg: "blah", _save: false, _render: false });
-      expect(visLog.logData).toEqual([]);
-      visLog.addItem({ name: "B", save: false });
-      visLog.updateItem("B", "hello");
-      await delay(50);
-      expect(visList).toEqual(["TEST_1: \nB: hello"]);
-      expect(visLog.logData).toEqual([]);
+    it("should show a _render false update on the next redraw of another item", () => {
+      return verify({ timeout: 500 })
+        .step(() => visLog.updateItem("TEST_1", { msg: "blah", _save: false, _render: false }))
+        .step(() => expect(visLog.logData).toEqual([]))
+        .step(() => visLog.addItem({ name: "B", save: false }))
+        .step(() => visLog.updateItem("B", "hello"))
+        .step(() => delay(50))
+        .step(() => expect(visList).toEqual(["TEST_1: blah\nB: hello"]))
+        .step(() => expect(visLog.logData).toEqual([]));
+    });
+
+    it("should not redraw for a _render false update by itself", () => {
+      return verify({ timeout: 500 })
+        .step(() => visLog.updateItem("TEST_1", { msg: "blah", _render: false }))
+        .step(() => delay(50))
+        .step(() => expect(visList).toEqual([]));
+    });
+
+    it("should keep a _render false update for freezeItems when item type is simple", () => {
+      return verify({ timeout: 500 })
+        .step(() => visLog.setItemType("simple"))
+        .step(() => visLog.updateItem("TEST_1", { msg: "quiet", _render: false }))
+        // no progress dot for an update that skips the redraw
+        .step(() => expect(out).toEqual([]))
+        .step(() => visLog.freezeItems(true))
+        .step(() => expect(out).toEqual(["TEST_1: quiet\n"]));
     });
   });
 });

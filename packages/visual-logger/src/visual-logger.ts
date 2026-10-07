@@ -364,7 +364,11 @@ export class VisualLogger {
         this._save(options._msg!);
       }
 
-      if (updateData._render === false) return this;
+      if (updateData._render === false) {
+        // skip the redraw, but keep the cached line current so the next redraw of any item shows it
+        this._lines[itemIdx] = this._shouldLogItem() ? this._renderLine(options) : options._msg!;
+        return this;
+      }
     }
 
     if (this._shouldLogItem()) {
