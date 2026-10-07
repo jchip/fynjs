@@ -20,6 +20,7 @@ import Promise from "aveazul";
 import { make as dirTree } from "../dir-tree";
 // not cli/fyn, the CLI entry: importing it runs `fyn install` in this package
 import { run as fynRun } from "../../cli/main";
+import { shortPkgDirFromEnv } from "../../lib/fyn";
 import fyntil from "../../lib/util/fyntil";
 import logger from "../../lib/logger";
 import mockNpm from "../fixtures/mock-npm";
@@ -295,7 +296,7 @@ const debug = false;
             // compare against (or regenerate) the parallel short fixture.
             const nmTreeFile = Path.join(
               stepDir,
-              process.env.FYN_SHORT_PKG_DIR ? "nm-tree-short.yaml" : "nm-tree.yaml",
+              shortPkgDirFromEnv() ? "nm-tree-short.yaml" : "nm-tree.yaml",
             );
             if (process.env.UPDATE_NM_TREE) {
               Fs.writeFileSync(nmTreeFile, Yaml.dump(nmTree, { indent: 2 }));

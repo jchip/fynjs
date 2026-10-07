@@ -39,7 +39,6 @@ describe("pkg-dist-fetcher", function () {
         cwd: fynDir,
         targetDir,
         fynDir,
-        ignoreDist: true,
       },
     });
     // TODO: verify tarballs actually fetched

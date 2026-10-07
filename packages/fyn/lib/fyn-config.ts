@@ -13,9 +13,9 @@ export interface FynConfigSpec {
 }
 
 const spec = {
-  registry: { env: "FYN_REGISTRY", default: "http://localhost:4873" },
+  registry: { default: "http://localhost:4873" },
   pkgFile: { env: "FYN_PACKAGE_FILE", default: "package.json" },
-  targetDir: { env: "FYN_TARGET_DIR", default: "xout" },
+  targetDir: { default: "xout" },
   fynDir: {
     env: ["FYN_DIR", "USERPROFILE", "HOME"],
     default: process.cwd(),

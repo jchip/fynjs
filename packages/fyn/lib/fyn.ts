@@ -95,7 +95,6 @@ interface FynOptions {
   lockOnly?: boolean;
   showDeprecated?: boolean;
   refreshOptionals?: boolean;
-  ignoreDist?: boolean;
   concurrency?: number;
   extractConcurrency?: number;
   deepResolve?: boolean;
@@ -250,6 +249,12 @@ const createLock = util.promisify(lockfile.lock);
 const unlock = util.promisify(lockfile.unlock);
 const { posixify } = fynTil;
 
+/** FYN_SHORT_PKG_DIR is on only for "1" or "true" (any case); any other value is off. */
+export function shortPkgDirFromEnv(): boolean {
+  const v = (process.env.FYN_SHORT_PKG_DIR || "").toLowerCase();
+  return v === "1" || v === "true";
+}
+
 /**
  * Whether an install lock was left by a process on this host that no longer runs. A lock
  * without an owner, from an older fyn, is left to lockfile's stale time.
@@ -352,7 +357,7 @@ class Fyn {
     // so the package's real path ends in node_modules/<name> for bundlers
     // (turbopack et al) that use that as the package boundary marker.
     // can be overridden by an existing install's recorded value in .fyn.json.
-    this._shortPkgDir = Boolean(process.env.FYN_SHORT_PKG_DIR);
+    this._shortPkgDir = shortPkgDirFromEnv();
     if (!_fynpo) {
       this._fynpo = {};
     } else if (typeof _fynpo === "object") {
@@ -1452,10 +1457,6 @@ class Fyn {
 
   get refreshOptionals(): boolean | undefined {
     return this._options.refreshOptionals;
-  }
-
-  get ignoreDist(): boolean | undefined {
-    return this._options.ignoreDist;
   }
 
   get production(): boolean | undefined {

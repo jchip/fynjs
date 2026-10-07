@@ -125,7 +125,6 @@ describe("pkg-dep-resolver", function () {
         targetDir: "xout",
         cwd: fynDir,
         fynDir,
-        ignoreDist: true,
         deepResolve,
       },
     });
@@ -284,7 +283,6 @@ describe("pkg-dep-resolver", function () {
           },
           fynDir,
           cwd: fynDir,
-          ignoreDist: true,
         },
       });
       return verify({ timeout: 9000 })
@@ -345,7 +343,6 @@ describe("pkg-dep-resolver", function () {
         },
         fynDir,
         cwd: fynDir,
-        ignoreDist: true,
       },
     });
 

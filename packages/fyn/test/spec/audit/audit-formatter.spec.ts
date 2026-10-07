@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 
 import AuditFormatter from "../../../lib/audit/audit-formatter";
 
@@ -76,7 +77,7 @@ describe("audit-formatter", () => {
       const formatter = new AuditFormatter({ json: true });
       const { output, exitCode } = formatter.format(mockAuditResult, mockVulnerabilities);
 
-      expect(exitCode).toBe(0);
+      expect(exitCode).toBe(1);
       expect(() => JSON.parse(output)).not.toThrow();
 
       const parsed = JSON.parse(output);
@@ -99,7 +100,7 @@ describe("audit-formatter", () => {
       const formatter = new AuditFormatter({ colors: false });
       const { output, exitCode } = formatter.format(mockAuditResult, mockVulnerabilities);
 
-      expect(exitCode).toBe(0);
+      expect(exitCode).toBe(1);
       expect(output).toContain("1 vulnerabilities");
       expect(output).toContain("1 high");
     });
@@ -127,13 +128,36 @@ describe("audit-formatter", () => {
 
       expect(output).toContain("info: https://npmjs.com/advisories/1234");
     });
+  });
 
-    it("should always exit 0 (report-only mode)", () => {
-      const formatter = new AuditFormatter();
-      const { exitCode } = formatter.format(mockAuditResult, mockVulnerabilities);
+  describe("format() - exit code", () => {
+    const cleanResult = { advisories: {}, metadata: { totalDependencies: 10 } };
+    const exitCodeOf = (opts: object, vulns: object[], result: object = mockAuditResult) =>
+      new AuditFormatter({ colors: false, ...opts }).format(result as any, vulns as any).exitCode;
 
-      expect(exitCode).toBe(0);
-    });
+    for (const [mode, opts] of [
+      ["human", {}],
+      ["json", { json: true }],
+      ["summary", { summary: true }]
+    ] as const) {
+      it(`${mode}: exits 1 when a vulnerability meets the audit level`, () => {
+        return verify({ timeout: 500 })
+          .step(() => exitCodeOf({ ...opts, auditLevel: "high" }, mockVulnerabilities))
+          .step(code => expect(code).toBe(1));
+      });
+
+      it(`${mode}: exits 0 when vulnerabilities are below the audit level`, () => {
+        return verify({ timeout: 500 })
+          .step(() => exitCodeOf({ ...opts, auditLevel: "critical" }, mockVulnerabilities))
+          .step(code => expect(code).toBe(0));
+      });
+
+      it(`${mode}: exits 0 when there are no vulnerabilities`, () => {
+        return verify({ timeout: 500 })
+          .step(() => exitCodeOf(opts, [], cleanResult))
+          .step(code => expect(code).toBe(0));
+      });
+    }
   });
 
   describe("formatVulnerability()", () => {

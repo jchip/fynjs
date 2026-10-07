@@ -90,7 +90,6 @@ describe("package alias resolution", () => {
         cwd,
         fynDir: Path.join(cwd, ".fyn"),
         lockfile: true,
-        ignoreDist: true,
       },
     });
 

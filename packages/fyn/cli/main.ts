@@ -363,11 +363,6 @@ const options: Record<string, OptionSpec> = {
     argDefault: "false",
     desc: "force refresh package meta from registry"
   },
-  "ignore-dist": {
-    alias: "i",
-    args: "<flag boolean>",
-    desc: "Ignore host in tarball URL from meta dist."
-  },
   "ignore-lock-url": {
     args: "<flag boolean>",
     argDefault: "false",

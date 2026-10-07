@@ -84,6 +84,13 @@ class AuditFormatter {
   }
 
   /**
+   * Exit code like npm audit: 1 when any vulnerability meets the audit level.
+   */
+  exitCodeFor(filtered: Vulnerability[]): number {
+    return filtered.length > 0 ? 1 : 0;
+  }
+
+  /**
    * Colorize text based on severity.
    */
   colorize(text: string, severity: string): string {
@@ -135,7 +142,7 @@ class AuditFormatter {
     const total = filtered.length;
     const output = `audited ${pkgCount} packages\n\n${total} ${total === 1 ? "vulnerability" : "vulnerabilities"} (${parts.join(", ")})\n\nRun \`fyn audit\` for details.`;
 
-    return { output, exitCode: 0 };
+    return { output, exitCode: 1 };
   }
 
   /**
@@ -154,7 +161,7 @@ class AuditFormatter {
       2
     );
 
-    return { output, exitCode: 0 };
+    return { output, exitCode: this.exitCodeFor(filtered) };
   }
 
   /**
@@ -215,7 +222,7 @@ class AuditFormatter {
     }
 
     lines.push("");
-    return { output: lines.join("\n"), exitCode: 0 };
+    return { output: lines.join("\n"), exitCode: this.exitCodeFor(filtered) };
   }
 
   /**

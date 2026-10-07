@@ -51,8 +51,11 @@ class ShowAudit {
 
   /**
    * Run the audit workflow.
+   *
+   * @returns exit code like npm audit: 1 if a vulnerability meets the audit level
+   *   or the audit fails, else 0. Errors are logged, not thrown.
    */
-  async runAudit(): Promise<void> {
+  async runAudit(): Promise<number> {
     const spinner = CliLogger.spinners[1];
 
     try {
@@ -69,7 +72,7 @@ class ShowAudit {
 
       if (pkgCount === 0) {
         logger.info("No dependencies to audit");
-        return;
+        return 0;
       }
 
       // Step 2: Fetch advisories
@@ -109,7 +112,7 @@ class ShowAudit {
         await formatter.precomputeStats(vulnerabilities);
       }
 
-      const { output } = formatter.format(auditResult, vulnerabilities);
+      const { output, exitCode } = formatter.format(auditResult, vulnerabilities);
 
       // Output the report (skip if empty)
       if (output) {
@@ -130,12 +133,14 @@ class ShowAudit {
         await Fs.promises.writeFile(targetPath, jsonOutput, "utf8");
       }
 
+      return exitCode;
     } catch (err) {
       logger.removeItem(FETCH_META);
       logger.error("Audit failed:", err.message);
       if (process.env.FYN_DEBUG) {
         logger.error(err.stack);
       }
+      return 1;
     }
   }
 }
@@ -143,7 +148,7 @@ class ShowAudit {
 /**
  * Entry point for audit command.
  */
-const showAudit = (fyn: FynForAudit, opts?: AuditOptions): Promise<void> => {
+const showAudit = (fyn: FynForAudit, opts?: AuditOptions): Promise<number> => {
   return new ShowAudit({ fyn, opts }).runAudit();
 };
 

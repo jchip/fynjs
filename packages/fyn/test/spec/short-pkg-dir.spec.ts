@@ -1,7 +1,10 @@
-import { describe, it, beforeEach, afterEach, afterAll, expect } from "vitest";
+import { describe, it, beforeEach, afterEach, afterAll, expect, vi } from "vitest";
 import Fs from "fs";
 import Path from "path";
-import Fyn from "../../lib/fyn";
+import Os from "os";
+import { verify } from "run-verify";
+import Fyn, { shortPkgDirFromEnv } from "../../lib/fyn";
+import logger from "../../lib/logger";
 
 describe("short-pkg-dir", function () {
   let saveEnv;
@@ -27,6 +30,86 @@ describe("short-pkg-dir", function () {
       process.env.FYN_SHORT_PKG_DIR = "1";
       const fyn = new Fyn({ opts: { cwd: "/tmp/x", targetDir: "node_modules" } });
       expect(fyn._shortPkgDir).toBe(true);
+    });
+  });
+
+  describe("env value parsing", () => {
+    for (const value of ["1", "true", "TRUE", "True"]) {
+      it(`treats "${value}" as on`, () => {
+        return verify({ timeout: 500 })
+          .step(() => (process.env.FYN_SHORT_PKG_DIR = value))
+          .step(() => new Fyn({ opts: { cwd: "/tmp/x", targetDir: "node_modules" } }))
+          .step(fyn => expect(fyn._shortPkgDir).toBe(true));
+      });
+    }
+
+    for (const value of ["0", "false", "", "no", "yes"]) {
+      it(`treats "${value}" as off`, () => {
+        return verify({ timeout: 500 })
+          .step(() => (process.env.FYN_SHORT_PKG_DIR = value))
+          .step(() => new Fyn({ opts: { cwd: "/tmp/x", targetDir: "node_modules" } }))
+          .step(fyn => expect(fyn._shortPkgDir).toBe(false));
+      });
+    }
+
+    it("shortPkgDirFromEnv is off when unset", () => {
+      return verify({ timeout: 500 })
+        .step(() => shortPkgDirFromEnv())
+        .step(on => expect(on).toBe(false));
+    });
+  });
+
+  describe("warning when an existing install forces the pkg-dir form", () => {
+    let cwd: string;
+    let warn;
+    afterEach(() => {
+      vi.restoreAllMocks();
+      Fs.rmSync(cwd, { recursive: true, force: true });
+    });
+
+    // an existing install of the given form, then a new Fyn that reads its .fyn.json
+    const initWithInstall = (envValue: string, recordedShort: boolean) =>
+      verify({ timeout: 2000 })
+        .step(() => (cwd = Fs.mkdtempSync(Path.join(Os.tmpdir(), "fyn-short-pkg-dir-"))))
+        .step(() => Fs.mkdirSync(Path.join(cwd, "xout", ".f"), { recursive: true }))
+        .step(() =>
+          Fs.writeFileSync(
+            Path.join(cwd, "xout", ".f", ".fyn.json"),
+            JSON.stringify({ shortPkgDir: recordedShort })
+          )
+        )
+        .step(() => (process.env.FYN_SHORT_PKG_DIR = envValue))
+        .step(() => (warn = vi.spyOn(logger, "warn")))
+        .step(
+          () =>
+            new Fyn({
+              _fynpo: {},
+              opts: {
+                registry: "http://localhost/",
+                pkgFile: false,
+                pkgData: { name: "t", version: "1.0.0" },
+                targetDir: "xout",
+                cwd,
+                fynDir: Path.join(cwd, ".fyn")
+              }
+            } as any)
+        )
+        .keep.step(fyn => fyn._initializePkg())
+        .keep.step(fyn => expect(fyn._shortPkgDir).toBe(recordedShort));
+
+    const pkgDirWarnings = () =>
+      warn.mock.calls.filter(c => String(c[0]).includes("Forcing pkg-dir"));
+
+    it('does not warn for "0", which means long form', () => {
+      return initWithInstall("0", false).step(() => expect(pkgDirWarnings()).toHaveLength(0));
+    });
+
+    it('warns for "1" when the install is long form', () => {
+      return initWithInstall("1", false).step(() => expect(pkgDirWarnings()).toHaveLength(1));
+    });
+
+    it('warns for "0" when the install is short form', () => {
+      return initWithInstall("0", true).step(() => expect(pkgDirWarnings()).toHaveLength(1));
     });
   });
 

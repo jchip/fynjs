@@ -70,7 +70,6 @@ describe("local link type through the lockfile", function() {
         cwd,
         fynDir: Path.join(cwd, ".fyn"),
         lockfile: true,
-        ignoreDist: true,
         ...opts
       }
     });

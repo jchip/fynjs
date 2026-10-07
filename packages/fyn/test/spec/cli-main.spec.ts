@@ -10,6 +10,7 @@ import FynCli from "../../cli/fyn-cli";
 import { FynpoConfigError } from "@fynpo/base";
 import logger from "../../lib/logger";
 import fynTil from "../../lib/util/fyntil";
+import { verify } from "run-verify";
 
 describe("cli/main", function() {
   describe("getRunExitCode", function() {
@@ -200,6 +201,47 @@ describe("cli/main", function() {
       expect(warn).not.toHaveBeenCalled();
       expect(error).toHaveBeenCalledWith(err.stack);
       expect(exit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe("removed --ignore-dist option", function() {
+    // nix-clap writes help and errors to stdout and sets process.exitCode
+    const runCaptured = (args: string[]) => {
+      let out = "";
+      const saveExitCode = process.exitCode;
+      return verify({
+        timeout: 2000,
+        cleanup: () => {
+          vi.restoreAllMocks();
+          process.exitCode = saveExitCode;
+        }
+      })
+        .step(() => (process.exitCode = undefined))
+        .step(() =>
+          vi.spyOn(process.stdout, "write").mockImplementation((s: string | Uint8Array) => {
+            out += s;
+            return true;
+          })
+        )
+        .step(() => runCli(args, 0))
+        .step(() => ({ out, exitCode: process.exitCode }));
+    };
+
+    it("is not listed in help", () => {
+      return runCaptured(["--help"])
+        .keep.step(r => expect(r.out).toContain("--ignore-lock-url"))
+        .step(r => expect(r.out).not.toContain("ignore-dist"));
+    });
+
+    it("fails as an unknown option", () => {
+      return runCaptured(["install", "--ignore-dist"])
+        .keep.step(r => expect(r.out).toContain("unknown CLI option 'ignore-dist'"))
+        .step(r => expect(r.exitCode).toBe(1));
+    });
+
+    it("no longer has the -i alias", () => {
+      return runCaptured(["install", "-i"])
+        .step(r => expect(r.out).toContain("unknown CLI option 'i'"));
     });
   });
 });

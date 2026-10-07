@@ -830,16 +830,21 @@ class FynCli {
     }
   }
 
-  audit(argv: AuditArgv): Promise<void> {
+  async audit(argv: AuditArgv): Promise<void> {
     const opts = {
       json: argv.opts?.json || false,
       omit: argv.opts?.omit || [],
       auditLevel: (argv.opts?.auditLevel as any) || "info",
       noCache: argv.opts?.cache === false
     };
-    return showAudit(this.fyn, opts).finally(() => {
-      return this._opts.saveLogs && this.saveLogs(this._opts.saveLogs);
-    });
+    const exitCode = await showAudit(this.fyn, opts);
+    if (this._opts.saveLogs) {
+      await this.saveLogs(this._opts.saveLogs);
+    }
+    // like npm audit, fail when vulnerabilities meet the audit level or the audit errors
+    if (exitCode) {
+      fyntil.exit(exitCode);
+    }
   }
 
   /**
