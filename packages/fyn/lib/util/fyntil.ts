@@ -150,6 +150,7 @@ const fyntil: Fyntil = {
         cwd: fcm.topDir,
         packages: config.packages,
         noFynLocal: config.noFynLocal,
+        localDepAutoSemver: config.localDepAutoSemver,
       });
       await graph.resolve();
 

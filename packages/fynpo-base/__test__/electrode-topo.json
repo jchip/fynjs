@@ -1695,6 +1695,281 @@
     },
     {
       "pkgInfo": {
+        "name": "subapp-web",
+        "version": "1.0.50",
+        "path": "packages/subapp-web",
+        "pkgDir": "subapp-web",
+        "dependencies": {
+          "@babel/runtime": "^7.8.3",
+          "history": "^4.9.0",
+          "jsesc": "^2.5.2",
+          "loadjs": "^4.2.0",
+          "lodash": "^4.17.15",
+          "optional-require": "^1.1.6",
+          "request": "^2.88.0",
+          "subapp-util": "^1.1.2",
+          "xaa": "^1.6.0"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.7.7",
+          "@xarc/app": "^10.0.6",
+          "babel-preset-minify": "^0.5.1",
+          "chai-as-promised": "^7.1.1",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "electrode-react-webapp": "^3.8.9",
+          "jsdom": "^16.5.1",
+          "mock-require": "^1.3.0",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "@xarc/app": "^10.0.6"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dev"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        }
+      },
+      "dependentsByPath": {
+        "packages/subapp-pbundle": {
+          "name": "subapp-pbundle",
+          "version": "0.0.44",
+          "path": "packages/subapp-pbundle",
+          "depSection": "dep"
+        },
+        "packages/subapp-react": {
+          "name": "subapp-react",
+          "version": "0.0.42",
+          "path": "packages/subapp-react",
+          "depSection": "dep"
+        },
+        "packages/subapp-redux": {
+          "name": "subapp-redux",
+          "version": "1.0.50",
+          "path": "packages/subapp-redux",
+          "depSection": "dep"
+        }
+      }
+    },
+    {
+      "pkgInfo": {
+        "name": "subapp-redux",
+        "version": "1.0.50",
+        "path": "packages/subapp-redux",
+        "pkgDir": "subapp-redux",
+        "dependencies": {
+          "optional-require": "^1.1.6",
+          "subapp-util": "^1.1.2",
+          "subapp-web": "^1.0.50"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.8.3",
+          "@babel/runtime": "^7.8.3",
+          "babel-preset-minify": "^0.4.3",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "react": "^16.8.3",
+          "react-dom": "^16.8.3",
+          "react-redux": "^6.0.1",
+          "redux": "^4.0.1",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "react": "*",
+          "react-dom": "*",
+          "redux": "*",
+          "react-redux": "*"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/subapp-web": {
+          "name": "subapp-web",
+          "version": "1.0.50",
+          "path": "packages/subapp-web",
+          "depSection": "dep"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dep",
+          "indirectSteps": [
+            "subapp-redux@1.0.50(dep)",
+            "subapp-web@1.0.50(dep)"
+          ]
+        }
+      },
+      "dependentsByPath": {}
+    },
+    {
+      "pkgInfo": {
+        "name": "subapp-react",
+        "version": "0.0.42",
+        "path": "packages/subapp-react",
+        "pkgDir": "subapp-react",
+        "dependencies": {
+          "@babel/runtime": "^7.8.3",
+          "optional-require": "^1.1.6",
+          "subapp-util": "^1.1.2",
+          "subapp-web": "^1.0.50"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.7.7",
+          "@xarc/app": "^10.0.10",
+          "babel-preset-minify": "^0.5.1",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "jsdom": "^15.2.1",
+          "react": "^16.8.3",
+          "react-async-ssr": "^0.6.0",
+          "react-dom": "^16.8.3",
+          "react-redux": "^6.0.1",
+          "react-router": "^5.1.2",
+          "react-router-dom": "^5.1.2",
+          "redux": "^4.0.1",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "react": "*",
+          "react-dom": "*"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/subapp-web": {
+          "name": "subapp-web",
+          "version": "1.0.50",
+          "path": "packages/subapp-web",
+          "depSection": "dep"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dev"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        }
+      },
+      "dependentsByPath": {}
+    },
+    {
+      "pkgInfo": {
+        "name": "subapp-pbundle",
+        "version": "0.0.44",
+        "path": "packages/subapp-pbundle",
+        "pkgDir": "subapp-pbundle",
+        "dependencies": {
+          "@babel/runtime": "^7.8.3",
+          "redux-bundler-preact": "^2.0.1",
+          "subapp-util": "^1.1.2",
+          "subapp-web": "^1.0.50"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.7.7",
+          "@xarc/app": "^10.0.6",
+          "babel-preset-minify": "^0.5.1",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "jsdom": "^15.2.1",
+          "preact": "^10.2.1",
+          "preact-render-to-string": "^5.1.3",
+          "redux-bundler": "^26.0.0",
+          "redux-bundler-preact": "^2.0.1",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "preact": "*",
+          "preact-render-to-string": "*"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/subapp-web": {
+          "name": "subapp-web",
+          "version": "1.0.50",
+          "path": "packages/subapp-web",
+          "depSection": "dep"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dev"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        }
+      },
+      "dependentsByPath": {}
+    },
+    {
+      "pkgInfo": {
         "name": "opt-archetype-check",
         "version": "1.0.0",
         "path": "packages/opt-archetype-check",
@@ -2151,49 +2426,6 @@
           "version": "4.0.4",
           "path": "packages/electrode-react-webapp",
           "depSection": "dev"
-        },
-        "packages/subapp-pbundle": {
-          "name": "subapp-pbundle",
-          "version": "0.0.44",
-          "path": "packages/subapp-pbundle",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        },
-        "packages/subapp-react": {
-          "name": "subapp-react",
-          "version": "0.0.42",
-          "path": "packages/subapp-react",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        },
-        "packages/subapp-redux": {
-          "name": "subapp-redux",
-          "version": "1.0.50",
-          "path": "packages/subapp-redux",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dev",
-          "indirectSteps": [
-            "subapp-web@1.0.50(dev)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
         }
       }
     },
@@ -2246,397 +2478,6 @@
           "version": "5.0.0",
           "path": "packages/electrode-redux-router-engine",
           "depSection": "dev"
-        }
-      },
-      "dependentsByPath": {
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dev"
-        },
-        "packages/subapp-pbundle": {
-          "name": "subapp-pbundle",
-          "version": "0.0.44",
-          "path": "packages/subapp-pbundle",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/subapp-react": {
-          "name": "subapp-react",
-          "version": "0.0.42",
-          "path": "packages/subapp-react",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/subapp-redux": {
-          "name": "subapp-redux",
-          "version": "1.0.50",
-          "path": "packages/subapp-redux",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        }
-      }
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-web",
-        "version": "1.0.50",
-        "path": "packages/subapp-web",
-        "pkgDir": "subapp-web",
-        "dependencies": {
-          "@babel/runtime": "^7.8.3",
-          "history": "^4.9.0",
-          "jsesc": "^2.5.2",
-          "loadjs": "^4.2.0",
-          "lodash": "^4.17.15",
-          "optional-require": "^1.1.6",
-          "request": "^2.88.0",
-          "subapp-util": "^1.1.2",
-          "xaa": "^1.6.0"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.7.7",
-          "@xarc/app": "^10.0.6",
-          "babel-preset-minify": "^0.5.1",
-          "chai-as-promised": "^7.1.1",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "electrode-react-webapp": "^3.8.9",
-          "jsdom": "^16.5.1",
-          "mock-require": "^1.3.0",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "@xarc/app": "^10.0.6"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dev"
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dev"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dev",
-          "indirectSteps": [
-            "subapp-web@1.0.50(dev)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        }
-      },
-      "dependentsByPath": {
-        "packages/subapp-pbundle": {
-          "name": "subapp-pbundle",
-          "version": "0.0.44",
-          "path": "packages/subapp-pbundle",
-          "depSection": "dep"
-        },
-        "packages/subapp-react": {
-          "name": "subapp-react",
-          "version": "0.0.42",
-          "path": "packages/subapp-react",
-          "depSection": "dep"
-        },
-        "packages/subapp-redux": {
-          "name": "subapp-redux",
-          "version": "1.0.50",
-          "path": "packages/subapp-redux",
-          "depSection": "dep"
-        }
-      }
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-redux",
-        "version": "1.0.50",
-        "path": "packages/subapp-redux",
-        "pkgDir": "subapp-redux",
-        "dependencies": {
-          "optional-require": "^1.1.6",
-          "subapp-util": "^1.1.2",
-          "subapp-web": "^1.0.50"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.8.3",
-          "@babel/runtime": "^7.8.3",
-          "babel-preset-minify": "^0.4.3",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "react": "^16.8.3",
-          "react-dom": "^16.8.3",
-          "react-redux": "^6.0.1",
-          "redux": "^4.0.1",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "react": "*",
-          "react-dom": "*",
-          "redux": "*",
-          "react-redux": "*"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dep"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        }
-      },
-      "dependentsByPath": {}
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-react",
-        "version": "0.0.42",
-        "path": "packages/subapp-react",
-        "pkgDir": "subapp-react",
-        "dependencies": {
-          "@babel/runtime": "^7.8.3",
-          "optional-require": "^1.1.6",
-          "subapp-util": "^1.1.2",
-          "subapp-web": "^1.0.50"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.7.7",
-          "@xarc/app": "^10.0.10",
-          "babel-preset-minify": "^0.5.1",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "jsdom": "^15.2.1",
-          "react": "^16.8.3",
-          "react-async-ssr": "^0.6.0",
-          "react-dom": "^16.8.3",
-          "react-redux": "^6.0.1",
-          "react-router": "^5.1.2",
-          "react-router-dom": "^5.1.2",
-          "redux": "^4.0.1",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "react": "*",
-          "react-dom": "*"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dep"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dev"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        }
-      },
-      "dependentsByPath": {}
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-pbundle",
-        "version": "0.0.44",
-        "path": "packages/subapp-pbundle",
-        "pkgDir": "subapp-pbundle",
-        "dependencies": {
-          "@babel/runtime": "^7.8.3",
-          "redux-bundler-preact": "^2.0.1",
-          "subapp-util": "^1.1.2",
-          "subapp-web": "^1.0.50"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.7.7",
-          "@xarc/app": "^10.0.6",
-          "babel-preset-minify": "^0.5.1",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "jsdom": "^15.2.1",
-          "preact": "^10.2.1",
-          "preact-render-to-string": "^5.1.3",
-          "redux-bundler": "^26.0.0",
-          "redux-bundler-preact": "^2.0.1",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "preact": "*",
-          "preact-render-to-string": "*"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dep"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dev"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
         }
       },
       "dependentsByPath": {}
@@ -4926,6 +4767,281 @@
     },
     {
       "pkgInfo": {
+        "name": "subapp-web",
+        "version": "1.0.50",
+        "path": "packages/subapp-web",
+        "pkgDir": "subapp-web",
+        "dependencies": {
+          "@babel/runtime": "^7.8.3",
+          "history": "^4.9.0",
+          "jsesc": "^2.5.2",
+          "loadjs": "^4.2.0",
+          "lodash": "^4.17.15",
+          "optional-require": "^1.1.6",
+          "request": "^2.88.0",
+          "subapp-util": "^1.1.2",
+          "xaa": "^1.6.0"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.7.7",
+          "@xarc/app": "^10.0.6",
+          "babel-preset-minify": "^0.5.1",
+          "chai-as-promised": "^7.1.1",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "electrode-react-webapp": "^3.8.9",
+          "jsdom": "^16.5.1",
+          "mock-require": "^1.3.0",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "@xarc/app": "^10.0.6"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dev"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        }
+      },
+      "dependentsByPath": {
+        "packages/subapp-pbundle": {
+          "name": "subapp-pbundle",
+          "version": "0.0.44",
+          "path": "packages/subapp-pbundle",
+          "depSection": "dep"
+        },
+        "packages/subapp-react": {
+          "name": "subapp-react",
+          "version": "0.0.42",
+          "path": "packages/subapp-react",
+          "depSection": "dep"
+        },
+        "packages/subapp-redux": {
+          "name": "subapp-redux",
+          "version": "1.0.50",
+          "path": "packages/subapp-redux",
+          "depSection": "dep"
+        }
+      }
+    },
+    {
+      "pkgInfo": {
+        "name": "subapp-redux",
+        "version": "1.0.50",
+        "path": "packages/subapp-redux",
+        "pkgDir": "subapp-redux",
+        "dependencies": {
+          "optional-require": "^1.1.6",
+          "subapp-util": "^1.1.2",
+          "subapp-web": "^1.0.50"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.8.3",
+          "@babel/runtime": "^7.8.3",
+          "babel-preset-minify": "^0.4.3",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "react": "^16.8.3",
+          "react-dom": "^16.8.3",
+          "react-redux": "^6.0.1",
+          "redux": "^4.0.1",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "react": "*",
+          "react-dom": "*",
+          "redux": "*",
+          "react-redux": "*"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/subapp-web": {
+          "name": "subapp-web",
+          "version": "1.0.50",
+          "path": "packages/subapp-web",
+          "depSection": "dep"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dep",
+          "indirectSteps": [
+            "subapp-redux@1.0.50(dep)",
+            "subapp-web@1.0.50(dep)"
+          ]
+        }
+      },
+      "dependentsByPath": {}
+    },
+    {
+      "pkgInfo": {
+        "name": "subapp-react",
+        "version": "0.0.42",
+        "path": "packages/subapp-react",
+        "pkgDir": "subapp-react",
+        "dependencies": {
+          "@babel/runtime": "^7.8.3",
+          "optional-require": "^1.1.6",
+          "subapp-util": "^1.1.2",
+          "subapp-web": "^1.0.50"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.7.7",
+          "@xarc/app": "^10.0.10",
+          "babel-preset-minify": "^0.5.1",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "jsdom": "^15.2.1",
+          "react": "^16.8.3",
+          "react-async-ssr": "^0.6.0",
+          "react-dom": "^16.8.3",
+          "react-redux": "^6.0.1",
+          "react-router": "^5.1.2",
+          "react-router-dom": "^5.1.2",
+          "redux": "^4.0.1",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "react": "*",
+          "react-dom": "*"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/subapp-web": {
+          "name": "subapp-web",
+          "version": "1.0.50",
+          "path": "packages/subapp-web",
+          "depSection": "dep"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dev"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        }
+      },
+      "dependentsByPath": {}
+    },
+    {
+      "pkgInfo": {
+        "name": "subapp-pbundle",
+        "version": "0.0.44",
+        "path": "packages/subapp-pbundle",
+        "pkgDir": "subapp-pbundle",
+        "dependencies": {
+          "@babel/runtime": "^7.8.3",
+          "redux-bundler-preact": "^2.0.1",
+          "subapp-util": "^1.1.2",
+          "subapp-web": "^1.0.50"
+        },
+        "devDependencies": {
+          "@babel/cli": "^7.2.3",
+          "@babel/core": "^7.2.2",
+          "@babel/plugin-transform-runtime": "^7.8.3",
+          "@babel/preset-env": "^7.3.1",
+          "@babel/preset-react": "^7.0.0",
+          "@babel/register": "^7.7.7",
+          "@xarc/app": "^10.0.6",
+          "babel-preset-minify": "^0.5.1",
+          "electrode-archetype-njs-module-dev": "^3.0.3",
+          "jsdom": "^15.2.1",
+          "preact": "^10.2.1",
+          "preact-render-to-string": "^5.1.3",
+          "redux-bundler": "^26.0.0",
+          "redux-bundler-preact": "^2.0.1",
+          "run-verify": "^1.2.2",
+          "subapp-pkg-util": "../subapp-pkg-util"
+        },
+        "peerDependencies": {
+          "preact": "*",
+          "preact-render-to-string": "*"
+        }
+      },
+      "localDepsByPath": {
+        "packages/subapp-util": {
+          "name": "subapp-util",
+          "version": "1.1.2",
+          "path": "packages/subapp-util",
+          "depSection": "dep"
+        },
+        "packages/subapp-web": {
+          "name": "subapp-web",
+          "version": "1.0.50",
+          "path": "packages/subapp-web",
+          "depSection": "dep"
+        },
+        "packages/xarc-app": {
+          "name": "@xarc/app",
+          "version": "10.0.10",
+          "path": "packages/xarc-app",
+          "depSection": "dev"
+        },
+        "packages/subapp-pkg-util": {
+          "name": "subapp-pkg-util",
+          "version": "0.0.1",
+          "path": "packages/subapp-pkg-util",
+          "depSection": "dev"
+        }
+      },
+      "dependentsByPath": {}
+    },
+    {
+      "pkgInfo": {
         "name": "opt-archetype-check",
         "version": "1.0.0",
         "path": "packages/opt-archetype-check",
@@ -5382,49 +5498,6 @@
           "version": "4.0.4",
           "path": "packages/electrode-react-webapp",
           "depSection": "dev"
-        },
-        "packages/subapp-pbundle": {
-          "name": "subapp-pbundle",
-          "version": "0.0.44",
-          "path": "packages/subapp-pbundle",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        },
-        "packages/subapp-react": {
-          "name": "subapp-react",
-          "version": "0.0.42",
-          "path": "packages/subapp-react",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        },
-        "packages/subapp-redux": {
-          "name": "subapp-redux",
-          "version": "1.0.50",
-          "path": "packages/subapp-redux",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dev",
-          "indirectSteps": [
-            "subapp-web@1.0.50(dev)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
         }
       }
     },
@@ -5477,397 +5550,6 @@
           "version": "5.0.0",
           "path": "packages/electrode-redux-router-engine",
           "depSection": "dev"
-        }
-      },
-      "dependentsByPath": {
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dev"
-        },
-        "packages/subapp-pbundle": {
-          "name": "subapp-pbundle",
-          "version": "0.0.44",
-          "path": "packages/subapp-pbundle",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/subapp-react": {
-          "name": "subapp-react",
-          "version": "0.0.42",
-          "path": "packages/subapp-react",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/subapp-redux": {
-          "name": "subapp-redux",
-          "version": "1.0.50",
-          "path": "packages/subapp-redux",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        }
-      }
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-web",
-        "version": "1.0.50",
-        "path": "packages/subapp-web",
-        "pkgDir": "subapp-web",
-        "dependencies": {
-          "@babel/runtime": "^7.8.3",
-          "history": "^4.9.0",
-          "jsesc": "^2.5.2",
-          "loadjs": "^4.2.0",
-          "lodash": "^4.17.15",
-          "optional-require": "^1.1.6",
-          "request": "^2.88.0",
-          "subapp-util": "^1.1.2",
-          "xaa": "^1.6.0"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.7.7",
-          "@xarc/app": "^10.0.6",
-          "babel-preset-minify": "^0.5.1",
-          "chai-as-promised": "^7.1.1",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "electrode-react-webapp": "^3.8.9",
-          "jsdom": "^16.5.1",
-          "mock-require": "^1.3.0",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "@xarc/app": "^10.0.6"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dev"
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dev"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dev",
-          "indirectSteps": [
-            "subapp-web@1.0.50(dev)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        }
-      },
-      "dependentsByPath": {
-        "packages/subapp-pbundle": {
-          "name": "subapp-pbundle",
-          "version": "0.0.44",
-          "path": "packages/subapp-pbundle",
-          "depSection": "dep"
-        },
-        "packages/subapp-react": {
-          "name": "subapp-react",
-          "version": "0.0.42",
-          "path": "packages/subapp-react",
-          "depSection": "dep"
-        },
-        "packages/subapp-redux": {
-          "name": "subapp-redux",
-          "version": "1.0.50",
-          "path": "packages/subapp-redux",
-          "depSection": "dep"
-        }
-      }
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-redux",
-        "version": "1.0.50",
-        "path": "packages/subapp-redux",
-        "pkgDir": "subapp-redux",
-        "dependencies": {
-          "optional-require": "^1.1.6",
-          "subapp-util": "^1.1.2",
-          "subapp-web": "^1.0.50"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.8.3",
-          "@babel/runtime": "^7.8.3",
-          "babel-preset-minify": "^0.4.3",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "react": "^16.8.3",
-          "react-dom": "^16.8.3",
-          "react-redux": "^6.0.1",
-          "redux": "^4.0.1",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "react": "*",
-          "react-dom": "*",
-          "redux": "*",
-          "react-redux": "*"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dep"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-redux@1.0.50(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        }
-      },
-      "dependentsByPath": {}
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-react",
-        "version": "0.0.42",
-        "path": "packages/subapp-react",
-        "pkgDir": "subapp-react",
-        "dependencies": {
-          "@babel/runtime": "^7.8.3",
-          "optional-require": "^1.1.6",
-          "subapp-util": "^1.1.2",
-          "subapp-web": "^1.0.50"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.7.7",
-          "@xarc/app": "^10.0.10",
-          "babel-preset-minify": "^0.5.1",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "jsdom": "^15.2.1",
-          "react": "^16.8.3",
-          "react-async-ssr": "^0.6.0",
-          "react-dom": "^16.8.3",
-          "react-redux": "^6.0.1",
-          "react-router": "^5.1.2",
-          "react-router-dom": "^5.1.2",
-          "redux": "^4.0.1",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "react": "*",
-          "react-dom": "*"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dep"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dev"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-react@0.0.42(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
-        }
-      },
-      "dependentsByPath": {}
-    },
-    {
-      "pkgInfo": {
-        "name": "subapp-pbundle",
-        "version": "0.0.44",
-        "path": "packages/subapp-pbundle",
-        "pkgDir": "subapp-pbundle",
-        "dependencies": {
-          "@babel/runtime": "^7.8.3",
-          "redux-bundler-preact": "^2.0.1",
-          "subapp-util": "^1.1.2",
-          "subapp-web": "^1.0.50"
-        },
-        "devDependencies": {
-          "@babel/cli": "^7.2.3",
-          "@babel/core": "^7.2.2",
-          "@babel/plugin-transform-runtime": "^7.8.3",
-          "@babel/preset-env": "^7.3.1",
-          "@babel/preset-react": "^7.0.0",
-          "@babel/register": "^7.7.7",
-          "@xarc/app": "^10.0.6",
-          "babel-preset-minify": "^0.5.1",
-          "electrode-archetype-njs-module-dev": "^3.0.3",
-          "jsdom": "^15.2.1",
-          "preact": "^10.2.1",
-          "preact-render-to-string": "^5.1.3",
-          "redux-bundler": "^26.0.0",
-          "redux-bundler-preact": "^2.0.1",
-          "run-verify": "^1.2.2",
-          "subapp-pkg-util": "../subapp-pkg-util"
-        },
-        "peerDependencies": {
-          "preact": "*",
-          "preact-render-to-string": "*"
-        }
-      },
-      "localDepsByPath": {
-        "packages/subapp-util": {
-          "name": "subapp-util",
-          "version": "1.1.2",
-          "path": "packages/subapp-util",
-          "depSection": "dep"
-        },
-        "packages/subapp-web": {
-          "name": "subapp-web",
-          "version": "1.0.50",
-          "path": "packages/subapp-web",
-          "depSection": "dep"
-        },
-        "packages/xarc-app": {
-          "name": "@xarc/app",
-          "version": "10.0.10",
-          "path": "packages/xarc-app",
-          "depSection": "dev"
-        },
-        "packages/subapp-pkg-util": {
-          "name": "subapp-pkg-util",
-          "version": "0.0.1",
-          "path": "packages/subapp-pkg-util",
-          "depSection": "dev"
-        },
-        "packages/electrode-react-webapp": {
-          "name": "electrode-react-webapp",
-          "version": "4.0.4",
-          "path": "packages/electrode-react-webapp",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)"
-          ]
-        },
-        "packages/electrode-redux-router-engine": {
-          "name": "electrode-redux-router-engine",
-          "version": "5.0.0",
-          "path": "packages/electrode-redux-router-engine",
-          "depSection": "dep",
-          "indirectSteps": [
-            "subapp-pbundle@0.0.44(dep)",
-            "subapp-web@1.0.50(dep)",
-            "electrode-react-webapp@4.0.4(dev)"
-          ]
         }
       },
       "dependentsByPath": {}

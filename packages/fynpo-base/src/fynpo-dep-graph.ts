@@ -288,6 +288,8 @@ export type ReadFynpoOptions = {
   noFynLocal?: string[];
   /** raw `packages` config from fynpo.json - drives discovery and the publish sets */
   packages?: unknown;
+  /** `localDepAutoSemver` from fynpo.json - widens local dep ranges the same way fyn does */
+  localDepAutoSemver?: "patch" | "minor" | "major";
 };
 
 /**
@@ -331,6 +333,30 @@ function resolvePackage(
 }
 
 /**
+ * Widen a local dep's semver per `localDepAutoSemver`, same as fyn's getAutoSemver.
+ *
+ * @param semver semver string
+ * @param autoSemver the `localDepAutoSemver` setting
+ * @returns the semver to match local versions with
+ */
+function localAutoSemver(semver: string, autoSemver?: ReadFynpoOptions["localDepAutoSemver"]) {
+  if (autoSemver) {
+    const parsedSv = Semver.coerce(semver);
+    if (parsedSv && parsedSv.raw) {
+      switch (autoSemver) {
+        case "patch":
+          return `~${parsedSv.raw}`;
+        case "minor":
+          return `^${parsedSv.raw}`;
+        case "major":
+          return "*";
+      }
+    }
+  }
+  return semver;
+}
+
+/**
  * Make a package ID from basic info by joining name and version into a single string.
  *
  * @param info package basic info
@@ -346,7 +372,10 @@ export function pkgInfoId(info: PackageBasicInfo) {
 export class FynpoDepGraph {
   packages: FynpoPackages;
   depMapByPath: Record<string, PackageDepData>;
-  /** Remember resolved package for a `name@<semver>` ID to its `name@version` ID */
+  /**
+   * Remember resolved package for a `name@<semver>` ID to its `name@version` ID.
+   * An empty string means no local version satisfies the semver.
+   */
   resolvedCache: Record<string, string>;
   /**
    * True when no `packages` patterns were configured and every directory had to be
@@ -844,13 +873,22 @@ export class FynpoDepGraph {
 
         const semId = pkgId(name, semver);
         const resolveId = this.resolvedCache[semId];
-        const depPkg = (resolveId && byId[resolveId]) || resolvePackage(semver, byName[name]);
-
-        if (!resolveId) {
-          this.resolvedCache[semId] = pkgInfoId(depPkg);
+        if (resolveId === "") {
+          continue;
         }
 
-        this.addDep(pkgInfo, depPkg, section);
+        let depPkg = resolveId ? byId[resolveId] : undefined;
+        if (!depPkg) {
+          // fyn installs from the registry when a real range matches no local version,
+          // so add no edge then.  Other specs, like dist tags, fall back to the first version.
+          const localSemver = localAutoSemver(semver, this._options.localDepAutoSemver);
+          depPkg = resolvePackage(localSemver, byName[name], !Semver.validRange(localSemver));
+          this.resolvedCache[semId] = depPkg ? pkgInfoId(depPkg) : "";
+        }
+
+        if (depPkg) {
+          this.addDep(pkgInfo, depPkg, section);
+        }
       }
     };
 

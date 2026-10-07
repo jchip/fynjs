@@ -122,12 +122,6 @@
           "path": "test1",
           "depSection": "dep"
         },
-        "tests/@scope/pkg1": {
-          "name": "@scope/pkg1",
-          "version": "1.0.0",
-          "path": "tests/@scope/pkg1",
-          "depSection": "dep"
-        },
         "@scope/pkg-2": {
           "name": "@scope/pkg-2",
           "version": "1.0.0",
@@ -135,6 +129,16 @@
           "depSection": "dev",
           "indirectSteps": [
             "@scope/pkg-2@1.0.0(dev)",
+            "test1@1.0.0(dev)"
+          ]
+        },
+        "tests/@scope/pkg1": {
+          "name": "@scope/pkg1",
+          "version": "1.0.0",
+          "path": "tests/@scope/pkg1",
+          "depSection": "dev",
+          "indirectSteps": [
+            "@scope/pkg1@1.0.0(dev)",
             "test1@1.0.0(dev)"
           ]
         },
@@ -349,12 +353,6 @@
           "path": "packages/pkg1",
           "depSection": "dep"
         },
-        "packages/pkg2-b": {
-          "name": "pkg2",
-          "version": "2.0.0",
-          "path": "packages/pkg2-b",
-          "depSection": "dep"
-        },
         "test1": {
           "name": "test1",
           "version": "1.0.0",
@@ -369,6 +367,16 @@
           "indirectSteps": [
             "@scope/pkg1@1.0.0(dep)",
             "pkg1@1.0.0(dep)"
+          ]
+        },
+        "packages/pkg2-b": {
+          "name": "pkg2",
+          "version": "2.0.0",
+          "path": "packages/pkg2-b",
+          "depSection": "dev",
+          "indirectSteps": [
+            "@scope/pkg1@1.0.0(dev)",
+            "test1@1.0.0(dev)"
           ]
         }
       },
@@ -753,12 +761,6 @@
           "path": "test1",
           "depSection": "dep"
         },
-        "tests/@scope/pkg1": {
-          "name": "@scope/pkg1",
-          "version": "1.0.0",
-          "path": "tests/@scope/pkg1",
-          "depSection": "dep"
-        },
         "@scope/pkg-2": {
           "name": "@scope/pkg-2",
           "version": "1.0.0",
@@ -766,6 +768,16 @@
           "depSection": "dev",
           "indirectSteps": [
             "@scope/pkg-2@1.0.0(dev)",
+            "test1@1.0.0(dev)"
+          ]
+        },
+        "tests/@scope/pkg1": {
+          "name": "@scope/pkg1",
+          "version": "1.0.0",
+          "path": "tests/@scope/pkg1",
+          "depSection": "dev",
+          "indirectSteps": [
+            "@scope/pkg1@1.0.0(dev)",
             "test1@1.0.0(dev)"
           ]
         },
@@ -980,12 +992,6 @@
           "path": "packages/pkg1",
           "depSection": "dep"
         },
-        "packages/pkg2-b": {
-          "name": "pkg2",
-          "version": "2.0.0",
-          "path": "packages/pkg2-b",
-          "depSection": "dep"
-        },
         "test1": {
           "name": "test1",
           "version": "1.0.0",
@@ -1000,6 +1006,16 @@
           "indirectSteps": [
             "@scope/pkg1@1.0.0(dep)",
             "pkg1@1.0.0(dep)"
+          ]
+        },
+        "packages/pkg2-b": {
+          "name": "pkg2",
+          "version": "2.0.0",
+          "path": "packages/pkg2-b",
+          "depSection": "dev",
+          "indirectSteps": [
+            "@scope/pkg1@1.0.0(dev)",
+            "test1@1.0.0(dev)"
           ]
         }
       },

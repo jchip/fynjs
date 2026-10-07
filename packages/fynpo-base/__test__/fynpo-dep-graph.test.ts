@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { verify } from "run-verify";
 import { FynpoDepGraph, getDepSection } from "../src/index.js";
+import type { ReadFynpoOptions } from "../src/index.js";
 import path from "path";
 import Fs from "fs";
 import os from "os";
@@ -506,5 +507,100 @@ describe("nested package discovery", () => {
     await graph.resolve();
 
     expect(graph.getPackageByName("child")).toMatchObject({ managed: true, nested: false });
+  });
+});
+
+describe("local dep semver matching", () => {
+  let tmpDir: string;
+  const cleanup = () => Fs.rmSync(tmpDir, { recursive: true, force: true });
+
+  // Build a temp monorepo from { dir: package.json } and resolve its graph.
+  const makeGraph = async (
+    pkgs: Record<string, Record<string, unknown>>,
+    options: ReadFynpoOptions = {}
+  ) => {
+    tmpDir = Fs.mkdtempSync(path.join(os.tmpdir(), "fynpo-semver-"));
+    for (const [dir, pkg] of Object.entries(pkgs)) {
+      Fs.mkdirSync(path.join(tmpDir, dir), { recursive: true });
+      Fs.writeFileSync(path.join(tmpDir, dir, "package.json"), JSON.stringify(pkg));
+    }
+    const graph = new FynpoDepGraph({ cwd: tmpDir, patterns: ["packages/*"], ...options });
+    await graph.resolve();
+    return graph;
+  };
+
+  const pkg = (name: string, deps: Record<string, string>, section = "dependencies") => ({
+    name,
+    version: "1.0.0",
+    [section]: deps,
+  });
+
+  const localDeps = (graph: FynpoDepGraph, dir: string) =>
+    Object.keys(graph.depMapByPath[dir].localDepsByPath);
+
+  const fixture = {
+    "packages/b": { name: "b", version: "1.2.0" },
+    "packages/unmatched": pkg("unmatched", { b: "^2.0.0" }),
+    "packages/unmatched2": pkg("unmatched2", { b: "^2.0.0" }, "devDependencies"),
+    "packages/matched": pkg("matched", { b: "^1.0.0" }),
+    "packages/tagged": pkg("tagged", { b: "latest" }),
+  };
+
+  it("adds no edge when a real range matches no local version", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(() => makeGraph(fixture))
+      .keep.step((graph) => expect(localDeps(graph, "packages/unmatched")).toEqual([]))
+      .keep.step((graph) => expect(localDeps(graph, "packages/unmatched2")).toEqual([]))
+      .keep.step((graph) =>
+        expect(graph.depMapByPath["packages/b"].dependentsByPath).toEqual({
+          "packages/matched": expect.anything(),
+          "packages/tagged": expect.anything(),
+        })
+      )
+      .step((graph) => expect(graph.resolvedCache).toHaveProperty(["b@^2.0.0"], ""));
+  });
+
+  it("adds an edge when a real range matches a local version", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(() => makeGraph(fixture))
+      .keep.step((graph) => expect(localDeps(graph, "packages/matched")).toEqual(["packages/b"]))
+      .step((graph) => expect(graph.resolvedCache).toHaveProperty(["b@^1.0.0"], "b@1.2.0"));
+  });
+
+  it("falls back to the first local version for a dist tag", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(() => makeGraph(fixture))
+      .step((graph) => expect(localDeps(graph, "packages/tagged")).toEqual(["packages/b"]));
+  });
+
+  it("matches prerelease versions like fyn, without includePrerelease", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(() =>
+        makeGraph({
+          "packages/pre": { name: "pre", version: "2.0.0-beta.1" },
+          "packages/wants-beta": pkg("wants-beta", { pre: "^2.0.0-beta.0" }),
+          "packages/wants-release": pkg("wants-release", { pre: "^2.0.0" }),
+          "packages/wants-any": pkg("wants-any", { pre: "*" }),
+        })
+      )
+      .keep.step((graph) =>
+        expect(localDeps(graph, "packages/wants-beta")).toEqual(["packages/pre"])
+      )
+      .keep.step((graph) => expect(localDeps(graph, "packages/wants-release")).toEqual([]))
+      .step((graph) => expect(localDeps(graph, "packages/wants-any")).toEqual([]));
+  });
+
+  it("widens ranges with localDepAutoSemver like fyn", () => {
+    return verify({ timeout: 5000, cleanup })
+      .step(() =>
+        makeGraph(
+          {
+            "packages/b": { name: "b", version: "1.2.0" },
+            "packages/caret": pkg("caret", { b: "^1.0.0" }),
+          },
+          { localDepAutoSemver: "patch" }
+        )
+      )
+      .step((graph) => expect(localDeps(graph, "packages/caret")).toEqual([]));
   });
 });
