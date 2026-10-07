@@ -52,9 +52,10 @@ enum Placed {
   Copied,
 }
 
-/// Place `src` at `dest`: reflink, else hardlink if `hardlink`, else copy if `copy`, else fail
-/// with the reflink error. `reflink` is cleared on the first failed reflink, so a batch on a
-/// filesystem without copy-on-write stops paying for the attempt.
+/// Place `src` at `dest`: reflink, else hardlink if `hardlink`, else copy if `copy`, else fail.
+/// `reflink` is cleared when a reflink fails because the filesystem can't clone, so a batch on
+/// a filesystem without copy-on-write stops paying for the attempt. A failure that is about one
+/// file, such as permissions, leaves it set.
 fn place(src: &Path, dest: &Path, hardlink: bool, copy: bool, reflink: &AtomicBool) -> io::Result<Placed> {
   match fs::remove_file(dest) {
     Err(e) if e.kind() != ErrorKind::NotFound => return Err(e),
@@ -66,19 +67,58 @@ fn place(src: &Path, dest: &Path, hardlink: bool, copy: bool, reflink: &AtomicBo
     match reflink_copy::reflink(src, dest) {
       Ok(()) => return Ok(Placed::Cloned),
       Err(e) => {
-        reflink.store(false, Ordering::Relaxed);
+        if fs_cant_clone(&e) {
+          reflink.store(false, Ordering::Relaxed);
+        }
         clone_err = Some(e);
       }
     }
   }
-  if hardlink && fs::hard_link(src, dest).is_ok() {
-    return Ok(Placed::Linked);
+  let mut link_err = None;
+  if hardlink {
+    match fs::hard_link(src, dest) {
+      Ok(()) => return Ok(Placed::Linked),
+      Err(e) => link_err = Some(e),
+    }
   }
-  if let (false, Some(e)) = (copy, clone_err) {
-    return Err(e);
+  if copy {
+    return fs::copy(src, dest)
+      .map(|_| Placed::Copied)
+      .map_err(|e| with_earlier("copy", e, [("hardlink", link_err), ("reflink", clone_err)]));
   }
-  fs::copy(src, dest)?;
-  Ok(Placed::Copied)
+  Err(match (link_err, clone_err) {
+    (Some(e), clone_err) => with_earlier("hardlink", e, [("reflink", clone_err)]),
+    (None, e) => e.expect("reflink is always tried without copy"),
+  })
+}
+
+/// Whether a failed reflink means the filesystem can't clone, rather than a problem with one file.
+#[cfg(unix)]
+fn fs_cant_clone(e: &io::Error) -> bool {
+  // from clonefile(2) and the FICLONE ioctl
+  const CODES: [i32; 6] = [libc::ENOTSUP, libc::EOPNOTSUPP, libc::EXDEV, libc::EINVAL, libc::ENOTTY, libc::ENOSYS];
+  e.kind() == ErrorKind::Unsupported || e.raw_os_error().is_some_and(|c| CODES.contains(&c))
+}
+
+/// Windows codes aren't sorted out, so any failure counts.
+#[cfg(not(unix))]
+fn fs_cant_clone(_: &io::Error) -> bool {
+  true
+}
+
+/// `e` from `step` ended a placement. Name each earlier failure next to it, unless it's the same
+/// error, so none is hidden.
+fn with_earlier<const N: usize>(step: &str, e: io::Error, earlier: [(&str, Option<io::Error>); N]) -> io::Error {
+  let mut msg = String::new();
+  for (name, x) in earlier {
+    if let Some(x) = x.filter(|x| x.to_string() != e.to_string()) {
+      msg += &format!("; {name}: {x}");
+    }
+  }
+  if msg.is_empty() {
+    return e;
+  }
+  io::Error::new(e.kind(), format!("{step}: {e}{msg}"))
 }
 
 /// `target` names what failed, e.g. `src -> dest` or `mkdir dir`
@@ -147,6 +187,12 @@ fn clone_many(
   let pairs: Vec<(PathBuf, PathBuf)> =
     files.iter().map(|f| (src_dir.join(f), dest_dir.join(f))).collect();
 
+  // two entries for one dest race on it. Path equality ignores `.` and extra slashes.
+  let mut dests = HashSet::with_capacity(pairs.len());
+  if let Some((_, d)) = pairs.iter().find(|(_, d)| !dests.insert(d.as_path())) {
+    return Err(to_napi(invalid("duplicate file"), d.display().to_string()));
+  }
+
   // create each parent once, before the parallel phase
   let parents: HashSet<&Path> = pairs.iter().filter_map(|(_, d)| d.parent()).collect();
   for p in parents {
@@ -203,7 +249,7 @@ pub fn clone_file(src: String, dest: String) -> AsyncTask<CloneFile> {
 /// Clone `files` (relative paths) from `srcDir` into `destDir` in parallel.
 /// Where a clone isn't possible, `hardlink` hardlinks the file instead of copying it.
 /// `copyFallback` false (default true) fails instead of copying a file that can't be placed.
-/// Parent directories are created as needed. Fails on the first error.
+/// Parent directories are created as needed. Fails on the first error, or on two entries for one file.
 #[napi]
 pub fn clone_files_sync(
   src_dir: String,

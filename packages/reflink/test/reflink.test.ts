@@ -99,6 +99,37 @@ describe("cloneFiles", () => {
     expect(fs.existsSync(p("d", sysFile))).toBe(false);
   });
 
+  // reflink EXDEV, hardlink EPERM: the hardlink error has to show up too
+  it.runIf(process.platform === "darwin")("reports the hardlink error along with the clone error", () =>
+    verify({ timeout: 2000 })
+      .expectErrorMatch(/hardlink: Operation not permitted.*reflink: Cross-device link/)
+      .step(() => cloneFiles(sysDir, p("d"), [sysFile], true, false)));
+
+  // reading z is denied, so its clone fails but its hardlink works. That one file must not
+  // turn clones off for the rest of the batch.
+  it.runIf(process.platform === "darwin" && process.getuid?.() !== 0)(
+    "keeps cloning after one file fails to clone",
+    () => {
+      const files = Array.from({ length: 200 }, (_, i) => `f${i}`);
+      return verify({ timeout: 5000 })
+        .step(() => fs.mkdirSync(p("s")))
+        .step(() => files.forEach(f => fs.writeFileSync(p("s", f), f)))
+        .step(() => fs.writeFileSync(p("s/z"), "z", { mode: 0 }))
+        .step(() => cloneFiles(p("s"), p("d"), ["z", ...files], true))
+        .step(stats => expect(stats).toEqual({ cloned: files.length, linked: 1, copied: 0 }));
+    }
+  );
+
+  it("rejects duplicate files, however they are spelled", () =>
+    verify({ timeout: 2000 })
+      .step(() => fs.mkdirSync(p("s")))
+      .step(() => fs.writeFileSync(p("s/a"), "a"))
+      .expectErrorMatch(/duplicate.*a.*InvalidInput/)
+      .step(() => cloneFiles(p("s"), p("d"), ["a", "b", "./a"]))
+      .expectErrorMatch(/duplicate.*InvalidInput/)
+      .step(() => cloneFilesSync(p("s"), p("d"), ["a", "a/"]))
+      .step(() => expect(fs.existsSync(p("d"))).toBe(false)));
+
   it("never hardlinks without hardlink set", async () => {
     fs.mkdirSync(p("s"));
     fs.writeFileSync(p("s/a.js"), "a");

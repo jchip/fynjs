@@ -36,6 +36,8 @@ Each file goes through these steps until one works:
 3. Hardlink, if the caller passed `hardlink: true`.
 4. Copy, unless the caller passed `copyFallback: false`.
 
+When steps fail with different errors, the error lists each step and its error.
+
 Removing first matters. A clone or copy writes through an existing destination, which
 would corrupt any other path hardlinked to the same file.
 
@@ -49,7 +51,8 @@ was cloned. The async version runs on the libuv thread pool.
 ### `cloneFiles(srcDir, destDir, files, hardlink?, copyFallback?)` / `cloneFilesSync(...)`
 
 Clone `files`, given as paths relative to `srcDir`, into `destDir` in parallel. Parent
-directories are created as needed. It fails on the first error.
+directories are created as needed. It fails on the first error. It also fails when two
+entries name the same file, such as `a` and `./a`.
 
 - `hardlink` (default `false`): hardlink a file that can't be cloned.
 - `copyFallback` (default `true`): set to `false` to fail instead of copying.
