@@ -36,6 +36,7 @@ Thumbs.db
 *.swo
 .config
 .local
+.worktrees
 
 # Monorepo & Fyn tooling
 .fynpo
