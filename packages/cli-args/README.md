@@ -1175,7 +1175,7 @@ The `source` field can have the following values:
 - `cli-default` - User specified a value that didn't match RegExp and fallback to default.
 - `cli-unmatch` - User specified a value that didn't match RegExp and there's no default to fallback to.
 - `default` - default value in your [options spec](#options-spec)
-- `user` - values you applied by calling the [`applyConfig`](#applyconfigconfig-parsed-src) method
+- `user` - values from the `config` hook, or from calling the [`applyConfig`](#applyconfigconfig-src) method
 
 ### Command `exec` handler
 
@@ -1416,6 +1416,7 @@ These are methods `NixClap` class supports.
 | `exit`                | `function`         | Custom exit function. Defaults to emitting the `exit` event.                                        |
 | `handlers`            | `object`           | Custom event handlers (see below).                                                                  |
 | `noDefaultHandlers`   | `boolean`          | If true, skip installing all default handlers. You must handle errors yourself.                     |
+| `config`              | `function`         | `(command) => object`. Loads user config during parse. See [`applyConfig`](#applyconfigconfig-src). |
 
 **Handlers Example:**
 
@@ -1786,20 +1787,31 @@ Apply configuration from external sources (e.g., config files) to a parsed comma
 
 This method only overrides options whose `source` does **not** start with `"cli"`, ensuring command-line arguments always take precedence.
 
-**Example:** Load options from `package.json`:
+Each key goes to the command and any parsed sub command that declares the option. Keys that match no declared option are ignored.
+
+**Recommended:** pass a `config` hook to the constructor. It runs during parse, after argv is read and before defaults, the `required` check and `exec`. So config can satisfy a `required` option and reaches `exec` handlers. The command passed to the hook only holds CLI values, so the hook can read options like `--cwd` or `--config` to find the config file.
 
 ```js
 import { readFileSync } from "fs";
 
-const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
+const nc = new NixClap({
+  config: cmd => {
+    const file = cmd.jsonMeta.opts.config || "./package.json";
+    return JSON.parse(readFileSync(file, "utf-8")).myCliConfig;
+  }
+}).init2({ options, subCommands });
+
+nc.parse();
+```
+
+Calling `applyConfig` after `parse()` is too late for `required` and `exec`, because `parse()` checks failures and runs `exec` before it returns. If you call it after parsing, set `skipExec` and run `exec` yourself. This path still can not satisfy `required`:
+
+```js
+const nc = new NixClap({ skipExec: true }).init2({ options, subCommands });
 const parsed = nc.parse();
 
-// Apply config from package.json
-// Use "user" as the source type (standard practice for external configs)
 parsed.command.applyConfig(pkg.myCliConfig, "user");
-
-console.log(parsed.command.jsonMeta.opts);
-console.log(parsed.command.jsonMeta.source); // Shows where each option came from
+nc.runExec(parsed);
 ```
 
 ### `runExec(parsed)`

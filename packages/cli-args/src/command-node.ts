@@ -252,6 +252,9 @@ export class CommandNode extends ClapNode {
    * Allow you to apply extra config to the parsed object, overriding any `opts` with `source` not start with `cli`.
    *
    * For example, you can allow user to specify options in their `package.json` file, and apply those after the command line is parsed.
+   *
+   * Each key goes to this command and any parsed sub command that declares the option.
+   * Keys that match no declared option are ignored.
    * @param config - Config object containing user options config
    * @param src - Name of the source that provided the config.  Default to `user`
    * @returns
@@ -283,9 +286,11 @@ export class CommandNode extends ClapNode {
             this.optCount[camelCaseKey] = this.optCount[matchOpt.name];
           }
         }
-      } else if (!this.optNodes[key]) {
-        new ClapNodeGenerator(this).addOptionWithArgs(key, [].concat(data.arg), undefined, src);
       }
+    }
+
+    for (const name in this.subCmdNodes) {
+      this.subCmdNodes[name].applyConfig(config, src);
     }
 
     for (let command: CommandNode = this; command; command = command.getParent()) {

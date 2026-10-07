@@ -117,4 +117,85 @@ describe("configuration regressions", () => {
     expect(command.opts).toEqual({ "server-name": "configured", serverName: "independent" });
     expect(command.source).toEqual({ "server-name": "user", serverName: "default" });
   });
+
+  it("ignores config keys that match no declared option", () => {
+    const nc = new NixClap(noOutputExit).init({ name: { args: "<name string>" } });
+    const { command } = nc.parse([], 0);
+
+    command.applyConfig({ name: "configured", junk: 1 });
+
+    expect(command.opts).toEqual({ name: "configured" });
+  });
+
+  it("routes config keys to the parsed sub command that declares them", () => {
+    const nc = new NixClap({ ...noOutputExit, skipExec: true }).init(
+      { verbose: { args: "[flag boolean]" } },
+      { run: { options: { cc: { args: "<v number>", argDefault: "6" } } } }
+    );
+    const { command } = nc.parse(["run"], 0);
+
+    command.applyConfig({ verbose: true, cc: 2 });
+
+    expect(command.opts).toEqual({ verbose: true });
+    expect(command.subCmdNodes.run.opts.cc).toBe(2);
+    expect(command.subCmdNodes.run.source.cc).toBe("user");
+  });
+
+  describe("config hook", () => {
+    it("satisfies a required option before the required check", () => {
+      let seen;
+      const nc = new NixClap({ ...noOutputExit, config: () => ({ token: "abc" }) }).init2({
+        options: { token: { args: "<v string>", required: true } },
+        exec: cmd => (seen = cmd.opts.token)
+      });
+      const parsed = nc.parse([], 0);
+
+      expect(parsed.errorNodes).toEqual([]);
+      expect(seen).toBe("abc");
+    });
+
+    it("reaches a sub command exec handler", () => {
+      let seen;
+      const nc = new NixClap({ ...noOutputExit, config: () => ({ cc: 2 }) }).init(
+        {},
+        {
+          run: {
+            options: { cc: { args: "<v number>", argDefault: "6" } },
+            exec: cmd => (seen = cmd.jsonMeta.source.cc + ":" + cmd.opts.cc)
+          }
+        }
+      );
+      nc.parse(["run"], 0);
+
+      expect(seen).toBe("user:2");
+    });
+
+    it("sees CLI values and never overrides them", () => {
+      let hookCwd;
+      const nc = new NixClap({
+        ...noOutputExit,
+        skipExec: true,
+        config: cmd => {
+          hookCwd = cmd.jsonMeta.opts.cwd;
+          return { cwd: "/from-config", name: "configured" };
+        }
+      }).init({ cwd: { args: "<dir string>" }, name: { args: "<n string>", argDefault: "d" } });
+      const { command } = nc.parse(["--cwd", "/from-cli"], 0);
+
+      expect(hookCwd).toBe("/from-cli");
+      expect(command.opts).toEqual({ cwd: "/from-cli", name: "configured" });
+      expect(command.source).toEqual({ cwd: "cli", name: "user" });
+    });
+
+    it("still applies defaults when the hook reads metadata and returns nothing", () => {
+      const nc = new NixClap({
+        ...noOutputExit,
+        skipExec: true,
+        config: cmd => void cmd.jsonMeta
+      }).init({ "server-name": { args: "<n string>", argDefault: "d" } });
+      const { command } = nc.parse([], 0);
+
+      expect(command.opts).toEqual({ "server-name": "d", serverName: "d" });
+    });
+  });
 });

@@ -169,6 +169,13 @@ export type NixClapConfig = {
    * Default is `false` (throws error if duplicate option names are found).
    */
   allowDuplicateOption?: boolean;
+  /**
+   * Load user config during parse. It's called after argv is parsed, before defaults,
+   * the required check and exec, so config can satisfy `required` and reach exec handlers.
+   * The command only holds CLI values at this point, like `--cwd` or `--config`.
+   * The result is applied with `applyConfig` and source `user`.
+   */
+  config?: (command: CommandNode) => Record<string, any> | undefined | void;
 };
 
 /**
@@ -858,6 +865,11 @@ export class NixClap extends EventEmitter {
     const parser = new Parser(this);
 
     const { command, index } = parser.parse(argv, start);
+
+    if (this._config.config) {
+      // always apply, even an empty config, to clear jsonMeta the hook may have cached
+      command.applyConfig(this._config.config(command) || {}, "user");
+    }
 
     // apply default args first, so an argDefault satisfies required
     command.applyDefaults();

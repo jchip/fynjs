@@ -3387,8 +3387,7 @@ Options:
       "log-level": "warn",
       "str-opt": "str1",
       forceCache: true,
-      applyDefault: true,
-      anything: 999
+      applyDefault: true
     });
 
     expect(m.source).toStrictEqual({
@@ -3408,8 +3407,7 @@ Options:
       "log-level": "user",
       "str-opt": "user",
       forceCache: "default",
-      applyDefault: "default",
-      anything: "user"
+      applyDefault: "default"
     });
   });
 
