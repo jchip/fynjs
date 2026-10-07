@@ -94,8 +94,9 @@ AggregateError: test
 
 ### `AggregateError`
 
-- Polyfill for [AggregateError]
-- node.js 15+ has built-in [AggregateError]
+- Subclass of the built-in [AggregateError]; it does not patch the global
+- `stack` includes the stacks of the aggregated errors, indented
+- Takes any iterable of errors and the native `{ cause }` option
 
 Example with `cleanErrorStack`:
 

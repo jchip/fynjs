@@ -36,7 +36,8 @@ export function cleanErrorStack(
       if (!line.match(/ {4,}at/)) {
         return line;
       }
-      const match = line.match(/( {4,}at)([^\(]+\()([^\)]+\))(.*)/);
+      // path runs to the last ")" so a ")" inside the path does not cut it short
+      const match = line.match(/( {4,}at)([^\(]+\()(.+\))(.*)/);
       // skip any stack tracing line not in these formats:
       // - "    at Blah (/foo/bar:##:##)" format
       // - "scheme://path" (ie: webpack://path)
@@ -54,7 +55,7 @@ export function cleanErrorStack(
       const path2 = replacePath && replacePath.length > 1 ? path.replace(replacePath, "") : path;
       return `${match[1]}${match[2]}${path2}${match[4]}`;
     })
-    .filter((x) => x)
+    .filter((x) => x !== false)
     .join("\n");
 
   return result;
@@ -87,7 +88,9 @@ export function aggregateStack(stack: string, errors: any[]): string {
  * @returns aggregate stack
  */
 export function aggregateErrorStack(error: AggregateError): string {
-  return aggregateStack(error.__stack || error.message || String(error), error.errors);
+  // our AggregateError's stack getter calls this, so only read stack from other errors
+  const stack = error.__stack || (error instanceof AggregateError ? "" : (error as Error).stack);
+  return aggregateStack(stack || error.message || String(error), error.errors);
 }
 
 /**
@@ -103,11 +106,13 @@ export class AggregateError extends globalThis.AggregateError {
   stack: string;
   /** original error stack before generating an aggregate one */
   __stack: string;
-  constructor(errors?: any[], msg?: string) {
+  constructor(errors?: Iterable<any>, msg?: string, options?: { cause?: unknown }) {
     if (!errors || !(errors[Symbol.iterator] instanceof Function)) {
       throw new TypeError(`input errors must be iterable but it's ${typeof errors}`);
     }
-    super(errors, msg);
+    // spread once: super() would consume a one-shot iterator such as a generator
+    const list = Array.from(errors);
+    super(list, msg, options);
 
     // Using defineProperty to replicate behavior of Object.keys(new Error()) returns []
     Object.defineProperty(this, "name", { value: "AggregateError" });
@@ -120,7 +125,7 @@ export class AggregateError extends globalThis.AggregateError {
         configurable: true,
         enumerable: false,
         writable: true,
-        value: [].concat(errors),
+        value: list,
       },
       // save original stack
       __stack: {
