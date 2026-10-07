@@ -72,22 +72,37 @@ export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig =
 }
 
 export async function prePack(): Promise<void> {
-  const { pkg, pkgData, saveFile, pkgFile } = await getPackInfo();
+  const info = await getPackInfo();
+  const { saveFile, pkgFile } = info;
+  let { pkg, pkgData } = info;
 
   const myName = Path.basename(process.argv[1]) || "publish-util-prepack";
 
   try {
-    const config = (pkg.publishUtil || {}) as PrePackConfig;
+    let config = (pkg.publishUtil || {}) as PrePackConfig;
     if (!config.silent) {
       console.log(`${myName} saveFile`, saveFile, "pkgFile", pkgFile);
     }
 
-    await withPackLock(saveFile, async () => {
+    await withPackLock(saveFile, async stalePid => {
       const metaFile = metaFileOf(saveFile);
-      const active = await Fs.readFile(metaFile, "utf8").then(
+      let active = await Fs.readFile(metaFile, "utf8").then(
         data => JSON.parse(data) as SaveMeta,
         () => undefined
       );
+
+      if (active && active.pid === stalePid && active.activePacks === 1) {
+        // The prepack that made this backup died holding the lock, so no other pack joined
+        // and none will run postpack for it. Do that postpack's restore, then start fresh.
+        const saved = await Fs.readFile(saveFile);
+        await writePkgFile(active.pkgFile, saved);
+        if (active.pkgFile === pkgFile) {
+          pkgData = saved;
+          pkg = JSON.parse(saved.toString()) as Record<string, unknown>;
+          config = (pkg.publishUtil || {}) as PrePackConfig;
+        }
+        active = undefined;
+      }
 
       if (active) {
         if (active.pkgFile !== pkgFile) {

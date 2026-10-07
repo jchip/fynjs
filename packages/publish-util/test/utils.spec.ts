@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 import { extractFromObj, removeFromObj, renameFromObj } from "../src/utils.js";
 
 describe("utils", () => {
@@ -94,6 +95,16 @@ describe("utils", () => {
 
       removeFromObj(testObj, ["test1", { hello: ["/.*/"] }]);
       expect(testObj).toEqual({ hello: {}, test2: 11 });
+    });
+
+    it("skips a nested spec whose key is missing", () => {
+      return verify({ timeout: 1000 })
+        .step(() => {
+          const obj = { a: 1 };
+          removeFromObj(obj, [{ scripts: ["test"] }]);
+          return obj;
+        })
+        .step(obj => expect(obj).toEqual({ a: 1 }));
     });
   });
 

@@ -3,9 +3,17 @@ import * as Fs from "fs";
 import * as Os from "os";
 import * as Path from "path";
 import { verify } from "run-verify";
-import { prePack } from "../src/prepack.js";
+import { spawnSync } from "child_process";
+import { prePack, prePackObj } from "../src/prepack.js";
 import { postPack } from "../src/postpack.js";
 import { metaFileOf, loadInfo } from "../src/utils.js";
+
+// lets a test keep its backup, meta and lock files out of the real temp dir
+const tmp = vi.hoisted(() => ({ dir: undefined as string | undefined }));
+vi.mock("os", async importOriginal => {
+  const actual = await importOriginal<typeof import("os")>();
+  return { ...actual, tmpdir: () => tmp.dir ?? actual.tmpdir() };
+});
 
 //
 // prepack prunes the manifest in place and postpack puts the original back.  They used to
@@ -165,5 +173,109 @@ describe("prepack/postpack round trip", () => {
       })
       .step(pack.restore)
       .step(() => expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original));
+  });
+});
+
+//
+// A prepack killed while it holds the pack lock leaves the lock, the backup and a meta file
+// counting one active pack that will never run postpack.
+//
+describe("recovery from a prepack that died holding the pack lock", () => {
+  let root: string;
+  let saveCwd: string;
+  const saveEnv = { ...process.env };
+
+  const manifest = (version = "1.0.0") => ({
+    name: "recover-pkg",
+    version,
+    main: "./index.js",
+    myInternalField: { do: "not publish" },
+    scripts: { prepack: "publish-util-prepack", postpack: "publish-util-postpack" }
+  });
+
+  const writePkg = (at: string, data: object) => {
+    Fs.mkdirSync(at, { recursive: true });
+    const file = Path.join(at, "package.json");
+    Fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
+    return file;
+  };
+
+  // what a dead prepack leaves behind for pkgFile: backup, meta, lock and a pruned manifest
+  const leaveInterruptedPrepack = async (pkgFile: string, activePacks = 1) => {
+    const original = Fs.readFileSync(pkgFile, "utf8");
+    const pkg = JSON.parse(original);
+    const { saveFile } = await loadInfo(pkgFile);
+    const pid = spawnSync(process.execPath, ["-e", ""]).pid as number;
+    Fs.writeFileSync(saveFile, original);
+    Fs.writeFileSync(
+      metaFileOf(saveFile),
+      JSON.stringify({ pkgFile, name: pkg.name, version: pkg.version, pid, ts: "", activePacks })
+    );
+    Fs.writeFileSync(`${saveFile}.lock`, `${pid}\n`);
+    prePackObj(pkg, { silent: true });
+    Fs.writeFileSync(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    return { original, saveFile };
+  };
+
+  beforeEach(() => {
+    saveCwd = process.cwd();
+    root = Fs.realpathSync(Fs.mkdtempSync(Path.join(Os.tmpdir(), "publish-util-recover-")));
+    for (const k of ["INIT_CWD", "npm_package_json", "npm_package_name", "npm_package_version", "PUBLISH_UTIL_PKG_DIR"]) {
+      delete process.env[k];
+    }
+    tmp.dir = Path.join(root, "tmp");
+    Fs.mkdirSync(tmp.dir);
+    vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    tmp.dir = undefined;
+    process.chdir(saveCwd);
+    process.env = { ...saveEnv };
+    Fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("restores the manifest on the first postpack", () => {
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    process.chdir(Path.dirname(pkgFile));
+
+    return verify({ timeout: 2000 })
+      .step(() => leaveInterruptedPrepack(pkgFile))
+      .keep.step(prePack)
+      .keep.step(() => expect(JSON.parse(Fs.readFileSync(pkgFile, "utf8")).myInternalField).toBeUndefined())
+      .keep.step(postPack)
+      .keep.step(({ original }) => expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original))
+      .keep.step(({ saveFile }) => expect(Fs.existsSync(saveFile)).toBe(false))
+      .keep.step(({ saveFile }) => expect(Fs.existsSync(metaFileOf(saveFile))).toBe(false))
+      .step(({ saveFile }) => expect(Fs.existsSync(`${saveFile}.lock`)).toBe(false));
+  });
+
+  it("restores another checkout the dead prepack left pruned", () => {
+    const twinFile = writePkg(Path.join(root, "twin"), manifest("9.9.9"));
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    const original = Fs.readFileSync(pkgFile, "utf8");
+    process.chdir(Path.dirname(pkgFile));
+
+    return verify({ timeout: 2000 })
+      .step(() => leaveInterruptedPrepack(twinFile))
+      .keep.step(prePack)
+      .keep.step(twin => expect(Fs.readFileSync(twinFile, "utf8")).toBe(twin.original))
+      .keep.step(() => expect(JSON.parse(Fs.readFileSync(pkgFile, "utf8")).myInternalField).toBeUndefined())
+      .keep.step(postPack)
+      .keep.step(() => expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original))
+      .step(twin => expect(Fs.readFileSync(twinFile, "utf8")).toBe(twin.original));
+  });
+
+  it("still joins when other packs had joined before the lock owner died", () => {
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    process.chdir(Path.dirname(pkgFile));
+
+    return verify({ timeout: 2000 })
+      .step(() => leaveInterruptedPrepack(pkgFile, 2))
+      .keep.step(prePack)
+      .step(({ saveFile }) => JSON.parse(Fs.readFileSync(metaFileOf(saveFile), "utf8")))
+      .step(meta => expect(meta.activePacks).toBe(3));
   });
 });

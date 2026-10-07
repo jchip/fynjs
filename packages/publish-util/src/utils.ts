@@ -55,10 +55,51 @@ export interface SaveMeta {
 
 export const metaFileOf = (saveFile: string): string => `${saveFile}.meta.json`;
 
-/** Serialize updates to the shared backup and its metadata. */
-export async function withPackLock<T>(saveFile: string, action: () => Promise<T>): Promise<T> {
+// An owner writes its pid right after creating the lock, so a lock this old without a pid
+// was left by a publish-util that recorded none.
+const OWNERLESS_LOCK_STALE_MS = 10_000;
+
+function isAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    // EPERM: the process exists but belongs to another user
+    return (err as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/**
+ * @returns the dead owner's pid (0 if it recorded none) when the lock is stale,
+ *   undefined when the lock is held or already gone
+ */
+async function staleLockOwner(lockFile: string): Promise<number | undefined> {
+  try {
+    const data = await Fs.readFile(lockFile, "utf8");
+    const pid = parseInt(data, 10);
+    if (pid > 0) {
+      return isAlive(pid) ? undefined : pid;
+    }
+    const { mtimeMs } = await Fs.stat(lockFile);
+    return Date.now() - mtimeMs > OWNERLESS_LOCK_STALE_MS ? 0 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Serialize updates to the shared backup and its metadata.
+ *
+ * The lock records its owner's pid. A lock whose owner is gone is taken over, and the
+ * action gets the dead owner's pid so it can repair what that owner left half done.
+ */
+export async function withPackLock<T>(
+  saveFile: string,
+  action: (stalePid?: number) => Promise<T>
+): Promise<T> {
   const lockFile = `${saveFile}.lock`;
   let lock;
+  let stalePid: number | undefined;
 
   for (let attempt = 0; attempt < 1000; attempt++) {
     try {
@@ -66,6 +107,11 @@ export async function withPackLock<T>(saveFile: string, action: () => Promise<T>
       break;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+      stalePid = await staleLockOwner(lockFile);
+      if (stalePid !== undefined) {
+        await Fs.unlink(lockFile).catch(() => undefined);
+        continue;
+      }
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
@@ -75,7 +121,8 @@ export async function withPackLock<T>(saveFile: string, action: () => Promise<T>
   }
 
   try {
-    return await action();
+    await lock.write(`${process.pid}\n`);
+    return await action(stalePid);
   } finally {
     await lock.close();
     await Fs.unlink(lockFile).catch(() => undefined);
@@ -271,7 +318,10 @@ export function removeFromObj(obj: Record<string, unknown>, fields: RemoveSpec):
       deleteFields(f, obj);
     } else {
       Object.keys(f).forEach((f2) => {
-        removeFromObj(obj[f2] as Record<string, unknown>, f[f2] as RemoveSpec);
+        const sub = obj[f2];
+        if (sub) {
+          removeFromObj(sub as Record<string, unknown>, f[f2] as RemoveSpec);
+        }
       });
     }
   }
