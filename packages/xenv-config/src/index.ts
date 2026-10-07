@@ -169,8 +169,7 @@ const xenvConfig = <T = Record<string, unknown>>(
     }
   };
 
-  const sources = (options && options.sources) || ["env", "option"];
-  sources.push("default");
+  const sources = [...((options && options.sources) || ["env", "option"]), "default"];
 
   const config = Object.keys(spec).reduce((cfg: Record<string, unknown>, k) => {
     const opt = spec[k];

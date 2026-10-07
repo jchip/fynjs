@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import xenvConfig from "../../src/index.js";
 import { merge } from "lodash-es";
+import { verify } from "run-verify";
 
 describe("xenv-config", function() {
   describe("from env", function() {
@@ -242,6 +243,16 @@ describe("xenv-config", function() {
       );
       expect(cfg.test).toBe(222);
       expect(cfg.__$trace__.test).toStrictEqual({ src: "option" });
+    });
+
+    it("should not mutate the caller's sources array", () => {
+      const sources = ["option"];
+      const spec = { test: { default: { d: 1 } } };
+      return verify({ timeout: 500 })
+        .step(() => xenvConfig(spec, { test: { o: 1 } }, { sources }))
+        .step(() => xenvConfig(spec, { test: { o: 1 } }, { sources }))
+        .keep.step(cfg => expect(cfg.__$trace__.test).toStrictEqual({ src: "option,default" }))
+        .step(() => expect(sources).toStrictEqual(["option"]));
     });
   });
 
