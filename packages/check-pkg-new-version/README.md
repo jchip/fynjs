@@ -29,6 +29,8 @@ await checkPkgNewVersion({
 
 ## API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ### `checkPkgNewVersion(options): Promise<any>`
 
 | option | type | description |

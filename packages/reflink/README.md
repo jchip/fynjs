@@ -43,6 +43,8 @@ would corrupt any other path hardlinked to the same file.
 
 ## API
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ### `cloneFile(src, dest)` / `cloneFileSync(src, dest)`
 
 Clone `src` to `dest`, replacing `dest`. Falls back to a copy. Returns `true` if the file

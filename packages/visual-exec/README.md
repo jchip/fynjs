@@ -28,6 +28,8 @@ const { stdout, stderr } = await ve.execute();
 
 ## API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ### `new VisualExec(options)`
 
 **Command**

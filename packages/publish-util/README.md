@@ -189,3 +189,7 @@ Using `npm pack`
 2. Inspect `package.json` to ensure it's not modified
 3. Look for the `.tgz` file and extract it
 4. Inspect `package/package.json` to ensure it's as expected.
+
+## API reference
+
+See the [full API reference](docs/reference.md) for every bin, config setting, function, and type.

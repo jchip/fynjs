@@ -80,6 +80,10 @@ const r2 = stringArray.parse("test[1,2,3]");
 * `AssertionError("array has extra ]")`
 * `AssertionError("extra data at end of array")` - if `noExtra` is `true` and there are extra text following a complete array in `str`
 
+## API reference
+
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)

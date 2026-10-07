@@ -20,7 +20,8 @@
     "test": "vitest run"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "fyn",

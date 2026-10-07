@@ -60,7 +60,8 @@
     "postpack": "publish-util-postpack"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "string",

@@ -20,6 +20,10 @@ fynpo bootstrap
 
 If you'd rather not install anything globally, run the local one directly - `npx fynpo` or `fyn fynpo` - and skip this package entirely.
 
+## API reference
+
+See the [full API reference](docs/reference.md) for how `fynpo` is resolved and run, and its error cases.
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](./LICENSE).

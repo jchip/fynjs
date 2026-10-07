@@ -39,6 +39,8 @@ child.spawnSync(
 
 ## API
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ```js
 unwrapNpmCmd(cmd, options);
 ```

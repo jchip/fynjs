@@ -44,7 +44,8 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",

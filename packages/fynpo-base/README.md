@@ -72,6 +72,10 @@ Exported as a namespace (`import { caching } from "@fynpo/base"`) - input/output
 
 Small utilities shared by the tools.
 
+## API reference
+
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](./LICENSE).

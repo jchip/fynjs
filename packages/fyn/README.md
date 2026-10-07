@@ -500,6 +500,10 @@ Other than benefiting from the massive package ecosystem and all the documents f
 - [npmlog] - for offering the `run` command as a convenience.
 - And all the other packages they depend on.
 
+## API reference
+
+See the [full API reference](docs/reference.md) for every command, option, and config setting.
+
 ## License
 
 Copyright (c) 2022-2026 Joel Chen

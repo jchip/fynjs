@@ -44,7 +44,8 @@
     "module not found"
   ],
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",

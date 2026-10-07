@@ -314,23 +314,23 @@ load({
   - Serial and concurrent task execution with proper nesting hierarchy
   - Promise, [node.js stream], or callback support for JavaScript tasks
   - Run time flow control - return further tasks to execute from JS task functions
-  - Tasks can have a [_finally_](./REFERENCE.md#finally-hook) hook that always runs after task finish or fail
+  - Tasks can have a [_finally_](./docs/reference.md#finally-hook) hook that always runs after task finish or fail
 
 - **Developer Experience**
 
   - Compatible with and loads npm scripts from `package.json`
   - Auto completion for [bash] and [zsh]
   - TypeScript support with automatic tsx/ts-node loading (tsx preferred)
-  - Advanced CLI with comprehensive options (see [CLI reference](./REFERENCE.md#cli-options))
+  - Advanced CLI with comprehensive options (see [CLI reference](./docs/reference.md#cli-options))
   - Argument parsing with `--` remaining args support
   - Specify complex task execution patterns from command line
 
 - **Extensibility & Organization**
 
   - **Provider packages** - reusable task libraries for sharing common workflows
-  - **[Namespaces](./REFERENCE.md#namespace)** for organizing tasks across modules
+  - **[Namespaces](./docs/reference.md#namespace)** for organizing tasks across modules
   - Define tasks in JavaScript files with full programmatic control
-  - Support [flexible function tasks](./REFERENCE.md#function) that can return more tasks to run
+  - Support [flexible function tasks](./docs/reference.md#function) that can return more tasks to run
   - Custom task execution reporters
 
 - **Advanced Features**
@@ -570,7 +570,7 @@ For complete CLI reference:
 $ xrun -h
 ```
 
-See [CLI Options](./REFERENCE.md#cli-options) for full details.
+See [CLI Options](./docs/reference.md#cli-options) for full details.
 
 To load [npm scripts] into the `npm` namespace, use the `--npm` option:
 
@@ -641,7 +641,7 @@ For example:
 
 ## Task Definition
 
-A task can be `string`, `array`, `function`, or `object`. See [reference](./REFERENCE.md#task-definition) for details.
+A task can be `string`, `array`, `function`, or `object`. See [reference](./docs/reference.md#task-definition) for details.
 
 ## package.json
 
@@ -706,7 +706,7 @@ const tasks = {
 
 ## Detailed Reference
 
-See [reference](./REFERENCE.md) for more detailed information on features such as [load tasks into namespace], and setup [auto complete with namespace] for your shell.
+See [reference](./docs/reference.md) for more detailed information on features such as [load tasks into namespace], and setup [auto complete with namespace] for your shell.
 
 ## License
 
@@ -719,7 +719,7 @@ Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses
 [npm scripts]: https://docs.npmjs.com/misc/scripts
 [bash]: https://www.gnu.org/software/bash/
 [zsh]: http://www.zsh.org/
-[load tasks into namespace]: REFERENCE.md#loading-task
-[auto complete with namespace]: REFERENCE.md#auto-complete-with-namespace
+[load tasks into namespace]: ./docs/reference.md#loading-tasks
+[auto complete with namespace]: ./docs/reference.md#auto-complete-with-namespace
 [npm]: https://www.npmjs.com/package/npm
 [node.js stream]: https://nodejs.org/api/stream.html

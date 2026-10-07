@@ -67,6 +67,7 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "reflink.*.node"
+    "reflink.*.node",
+    "docs/reference.md"
   ]
 }

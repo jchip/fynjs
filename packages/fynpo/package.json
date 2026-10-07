@@ -27,7 +27,8 @@
   "files": [
     "bin",
     "dist",
-    "templates"
+    "templates",
+    "docs/reference.md"
   ],
   "author": "Joel Chen",
   "contributors": [

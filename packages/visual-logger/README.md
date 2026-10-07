@@ -37,6 +37,8 @@ logger.info("done");
 
 ## API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ### Logging
 
 `debug()`, `verbose()`, `info()`, `log()`, `warn()`, `error()` - one per level. Levels are `debug` (10), `verbose` (20), `info` (30), `warn` (40), `error` (50), `fyi` (60) and `none` (100); each gets its own color, exported as `LevelColors`.

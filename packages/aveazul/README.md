@@ -123,6 +123,8 @@ Key differences to be aware of:
 
 ## API
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ### Instance Methods
 
 - `tap(fn)` - Execute side effects and return original value

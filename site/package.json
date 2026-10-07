@@ -1,0 +1,17 @@
+{
+  "name": "fynjs-site",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The fynjs.pages.dev site: landing page, AI references, and TypeDoc API docs",
+  "type": "module",
+  "scripts": {
+    "site:build": "node build.mjs",
+    "site:check": "node check-refs.mjs"
+  },
+  "devDependencies": {
+    "typedoc": "^0.28.20",
+    "typescript": "~6.0.0"
+  },
+  "author": "Joel Chen",
+  "license": "Apache-2.0"
+}

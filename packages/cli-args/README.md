@@ -1353,6 +1353,8 @@ if (parsed.error) {
 
 ## APIs
 
+See the [full API reference](docs/reference.md) for every method, option, and type.
+
 These are methods `NixClap` class supports.
 
 - [Quick Start](#quick-start)

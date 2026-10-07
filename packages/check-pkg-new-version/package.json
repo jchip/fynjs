@@ -64,7 +64,8 @@
     "vitest": "^5.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "prettier": {
     "printWidth": 100

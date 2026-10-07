@@ -159,6 +159,10 @@ Test system: Node.js 22.22.2 on macOS, Apple M4 Pro, 24 GB RAM.
 The fynmesh repo scan included `node_modules` and `.git`.
 Its directory count includes the root.
 
+# API reference
+
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 # License
 
 Copyright (c) 2022-2026 Joel Chen

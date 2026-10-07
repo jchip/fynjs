@@ -27,6 +27,7 @@
   },
   "files": [
     "index.cjs",
+    "docs/reference.md",
     "dist"
   ],
   "keywords": [

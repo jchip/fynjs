@@ -12,6 +12,8 @@ npm i xaa
 
 ## APIs
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 API references <https://jchip.github.io/xaa/>
 
 Or just use your IDE for hint if it supports TypeScript and typedoc.

@@ -76,3 +76,7 @@ that path too and the wrap simply agrees with it.
 
 Resolution is all that was ever missing: node's CJS loader already strips types
 from a `.ts` file it is handed, on every version this package supports.
+
+## API reference
+
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.

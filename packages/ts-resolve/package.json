@@ -30,7 +30,8 @@
     "prepublishOnly": "xrun build"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "typescript",

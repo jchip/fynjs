@@ -222,6 +222,10 @@ import { fynFetch } from "@fynjs/fetch";
 await fynFetch.stream("https://example.com/archive.tgz", "local.tgz");
 ```
 
+## API reference
+
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ## License
 
 Apache-2.0

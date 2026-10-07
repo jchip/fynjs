@@ -48,7 +48,8 @@
   },
   "files": [
     "dist",
-    "examples"
+    "examples",
+    "docs/reference.md"
   ],
   "keywords": [
     "unix",

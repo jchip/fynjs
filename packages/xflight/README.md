@@ -61,6 +61,8 @@ const inflight = new Inflight();
 
 ## API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ### `new Inflight([PromiseImpl])`
 - `PromiseImpl` (optional): Custom Promise implementation, e.g. [AveAzul](https://www.npmjs.com/package/aveazul). Defaults to the native `Promise`.
 

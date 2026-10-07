@@ -30,6 +30,8 @@ xsh.exec("echo hello");
 
 ## API
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ### `Promise`
 
 You can set a custom `Promise` with:

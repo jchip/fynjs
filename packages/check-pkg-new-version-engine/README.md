@@ -46,3 +46,7 @@ async function start() {
   });
 }
 ```
+
+## API reference
+
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.

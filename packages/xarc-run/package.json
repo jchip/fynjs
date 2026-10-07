@@ -47,7 +47,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "docs/reference.md"
   ],
   "keywords": [
     "concurrent",

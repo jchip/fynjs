@@ -32,6 +32,8 @@ await pacote.tarball(spec, { dirPacker: preper.getDirPackerCb() });
 
 ## API
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ### `new PkgPreper({ tmpDir, installDependencies })`
 
 - **`tmpDir`** - directory for [cacache]'s scratch space while packing

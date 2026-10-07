@@ -42,6 +42,8 @@ expect(config.__$trace__).to.deep.equal({
 
 ## API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ```js
 xenvConfig(spec, userConfig, options);
 ```

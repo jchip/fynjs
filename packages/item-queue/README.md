@@ -68,5 +68,9 @@ See [sample](./samples/example1.js) for a demo usage with [visual-logger].
 
 ![item-queue demo][example1-demo-image]
 
+## API reference
+
+See the [full API reference](docs/reference.md) for every method, option, and type.
+
 [example1-demo-image]: ./samples/example1.gif
 [visual-logger]: https://www.npmjs.com/package/visual-logger

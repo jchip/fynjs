@@ -104,6 +104,8 @@ that *is* a directory counts as present and then fails on import with
 
 ## API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ### `makeOptionalImport(meta, log?)`
 
 Returns an optional import function bound to the caller's `import.meta`.

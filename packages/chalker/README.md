@@ -101,6 +101,8 @@ the corresponding API directly.
 
 # APIs
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 ### `chalker`
 
 ```js

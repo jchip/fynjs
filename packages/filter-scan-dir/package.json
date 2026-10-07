@@ -36,7 +36,8 @@
   },
   "files": [
     "index.cjs",
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "util",

@@ -31,6 +31,8 @@ munchy.pipe(process.stdout);
 
 # API
 
+See the [full API reference](docs/reference.md) for every option, type, and runtime rule.
+
 ## constructor
 
 ```js

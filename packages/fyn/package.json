@@ -40,7 +40,8 @@
   },
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "node",

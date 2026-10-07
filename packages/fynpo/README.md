@@ -67,6 +67,10 @@
 
   > Enable you to upload your build cache to a remote server for sharing with other team members or CI/CD jobs.
 
+## API reference
+
+See the [full API reference](docs/reference.md) for every command, option, and config setting.
+
 ## License
 
 Copyright (c) 2022-2026 Joel Chen

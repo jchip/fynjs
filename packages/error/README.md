@@ -11,6 +11,8 @@ Utilities and polyfill for node.js errors
 
 ### API reference: <https://jchip.github.io/error> <!-- omit in toc -->
 
+See the [full API reference](docs/reference.md) for every function, option, and type.
+
 # Table of Contents <!-- omit in toc -->
 
 - [Examples](#examples)

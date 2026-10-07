@@ -1,0 +1,18 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "fynjs API",
+  "entryPointStrategy": "packages",
+  "out": "../site-pub/api",
+  "readme": "none",
+  "includeVersion": false,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "skipErrorChecking": true,
+  "validation": { "notExported": false },
+  "packageOptions": { "validation": { "notExported": false } },
+  "githubPages": false,
+  "navigationLinks": {
+    "fynjs": "/",
+    "GitHub": "https://github.com/jchip/fynjs"
+  }
+}

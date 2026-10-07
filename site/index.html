@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>fynjs · fyn and fynpo, package and monorepo tools for node.js</title>
+    <meta
+      name="description"
+      content="fyn, a fast node.js package manager, and fynpo, a zero setup monorepo manager. A Markdown reference and API docs for every package."
+    />
+    <meta name="author" content="Joel Chen" />
+    <meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151614" media="(prefers-color-scheme: dark)" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://fynjs.pages.dev/" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fynjs.pages.dev/" />
+    <meta property="og:title" content="fynjs · package and monorepo tools for node.js" />
+    <meta
+      property="og:description"
+      content="fyn is a fast node.js package manager. fynpo is a zero setup monorepo manager built on it."
+    />
+    <meta property="og:image" content="https://fynjs.pages.dev/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="fynjs: package and monorepo tools for node.js" />
+    <meta property="og:site_name" content="fynjs" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://fynjs.pages.dev/" />
+    <meta name="twitter:title" content="fynjs · package and monorepo tools for node.js" />
+    <meta
+      name="twitter:description"
+      content="fyn is a fast node.js package manager. fynpo is a zero setup monorepo manager built on it."
+    />
+    <meta name="twitter:image" content="https://fynjs.pages.dev/og-image.png" />
+    <meta name="twitter:image:alt" content="fynjs: package and monorepo tools for node.js" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "fynjs",
+        "url": "https://fynjs.pages.dev/",
+        "description": "fyn, a fast node.js package manager, and fynpo, a zero setup monorepo manager."
+      }
+    </script>
+    <script type="application/ld+json">
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "fyn",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "macOS, Linux, Windows",
+          "description": "A fast node.js package manager that treats your disk as a registry.",
+          "url": "https://fynjs.pages.dev/",
+          "sameAs": ["https://www.npmjs.com/package/fyn", "https://github.com/jchip/fynjs"],
+          "author": { "@type": "Person", "name": "Joel Chen" },
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "keywords": "node.js, package manager, npm, install, hardlinks, local packages"
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "fynpo",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "macOS, Linux, Windows",
+          "description": "A zero setup monorepo manager for node.js, built on fyn.",
+          "url": "https://fynjs.pages.dev/",
+          "sameAs": ["https://www.npmjs.com/package/fynpo", "https://github.com/jchip/fynjs"],
+          "author": { "@type": "Person", "name": "Joel Chen" },
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "keywords": "node.js, monorepo, workspaces, publish, changelog, topological"
+        }
+      ]
+    </script>
+    <style>
+      :root {
+        --bg: #fbfaf7;
+        --fg: #1d1d1b;
+        --muted: #6b6a64;
+        --line: #e4e1d8;
+        --card: #ffffff;
+        --accent: #2f6f4f;
+        --code-bg: #f1efe8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #151614;
+          --fg: #ecebe6;
+          --muted: #9b9a93;
+          --line: #2d2e2a;
+          --card: #1c1d1a;
+          --accent: #7cc49b;
+          --code-bg: #24251f;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #151614;
+        --fg: #ecebe6;
+        --muted: #9b9a93;
+        --line: #2d2e2a;
+        --card: #1c1d1a;
+        --accent: #7cc49b;
+        --code-bg: #24251f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 16px 64px;
+      }
+      a {
+        color: var(--accent);
+      }
+      code,
+      pre {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.9em;
+      }
+      pre {
+        margin: 12px 0 0;
+        padding: 12px 14px;
+        background: var(--code-bg);
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header .brand {
+        font-weight: 700;
+        font-size: 1.15rem;
+        text-decoration: none;
+        color: var(--fg);
+      }
+      .github {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 1000;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--bg);
+        opacity: 0.9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+      .github:hover {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      .hero {
+        padding: 56px 0 40px;
+      }
+      .hero h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
+        line-height: 1.15;
+        margin: 0 0 16px;
+        letter-spacing: -0.02em;
+      }
+      .hero p {
+        font-size: 1.15rem;
+        color: var(--muted);
+        max-width: 640px;
+        margin: 0;
+      }
+      .tools {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px 22px;
+      }
+      .card h2 {
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+      }
+      .card .tag {
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .card ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .card li {
+        margin: 4px 0;
+      }
+      h2.section {
+        margin: 56px 0 8px;
+        font-size: 1.5rem;
+      }
+      p.lead {
+        color: var(--muted);
+        margin: 0 0 16px;
+        max-width: 680px;
+      }
+      .groups {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 8px 32px;
+      }
+      .group h3 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 24px 0 8px;
+      }
+      .group ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .group li {
+        padding: 8px 0;
+        border-top: 1px solid var(--line);
+      }
+      .group li a {
+        text-decoration: none;
+      }
+      .group li span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .group li span.links {
+        font-size: 0.85rem;
+      }
+      footer {
+        margin-top: 64px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="brand" href="./">fynjs</a>
+      </header>
+      <a class="github" href="https://github.com/jchip/fynjs" title="View source on GitHub" aria-label="GitHub">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+        </svg>
+      </a>
+
+      <section class="hero">
+        <h1>Package and monorepo tools for node.js</h1>
+        <p>
+          fyn is a fast package manager. fynpo is a zero setup monorepo manager built on it. The
+          rest are the small packages they are made from.
+        </p>
+      </section>
+
+      <section class="tools">
+        <div class="card">
+          <h2>fyn</h2>
+          <p class="tag">The package manager</p>
+          <ul>
+            <li>Treats your disk as a registry. Depend on local copies of packages.</li>
+            <li>Hardlinks from a shared store save disk space and install time.</li>
+            <li>Links live source folders, so changes show up right away.</li>
+            <li>Reads your <code>.npmrc</code> and existing lockfiles.</li>
+          </ul>
+          <pre><code>npm i -g fyn
+cd your-project
+fyn</code></pre>
+        </div>
+        <div class="card">
+          <h2>fynpo</h2>
+          <p class="tag">The monorepo manager</p>
+          <ul>
+            <li>Put existing npm packages together. No changes needed.</li>
+            <li>Local packages install in their published form. No symlinks, no hoisting.</li>
+            <li>Each app stays self contained, ready to copy into a container.</li>
+            <li>Bootstraps and runs scripts in topological order.</li>
+            <li>Versions, writes changelogs and publishes.</li>
+          </ul>
+          <pre><code>npm i -g fynpo-cli
+cd your-monorepo  # has fynpo in devDependencies
+fynpo</code></pre>
+        </div>
+      </section>
+
+      <h2 class="section">Packages</h2>
+      <p class="lead">
+        <em>reference</em> is the full Markdown reference, also shipped in each package as
+        <code>docs/reference.md</code>. <em>API</em> is the generated TypeDoc site.
+      </p>
+      <div class="groups">
+      <!-- packages -->
+      </div>
+
+      <footer>
+        Apache-2.0 &middot; <a href="https://github.com/jchip/fynjs">github.com/jchip/fynjs</a>
+        &middot; <a href="llms.txt">llms.txt</a>
+      </footer>
+    </main>
+  </body>
+</html>

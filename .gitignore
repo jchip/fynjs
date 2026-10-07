@@ -17,6 +17,7 @@ coverage
 # Build artifacts
 dist
 dist-*
+site-pub
 build
 *.tsbuildinfo
 *.tgz
@@ -50,3 +51,6 @@ packages/*/*/**/fyn-lock.yaml
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+# Local git worktrees
+.worktrees

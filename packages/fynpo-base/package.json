@@ -71,7 +71,8 @@
     "semver": "^7.7.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "prettier": {
     "printWidth": 100

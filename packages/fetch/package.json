@@ -32,7 +32,8 @@
     "prepublishOnly": "fyn build"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "fetch",

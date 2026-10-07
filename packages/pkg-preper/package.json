@@ -33,7 +33,8 @@
     "prepare"
   ],
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "author": "Joel Chen",
   "bugs": {

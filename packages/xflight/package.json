@@ -35,7 +35,8 @@
     "directory": "packages/xflight"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/reference.md"
   ],
   "keywords": [
     "inflight",
