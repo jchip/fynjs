@@ -28,7 +28,7 @@ module.exports = (base, merge) => {
     },
     license: "UNLICENSED",
     devDependencies: {
-      fynpo: "^0.3.0",
+      fynpo: "^3.2.3",
       prettier: "^2.2.1",
     },
     prettier: {

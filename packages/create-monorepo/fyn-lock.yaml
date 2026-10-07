@@ -13,6 +13,7 @@ $pkg:
   '@types/lodash-es': ^4.17.12
   '@types/node': ^26.4.1
   publish-util: ../publish-util
+  run-verify: ../run-verify
   typescript: ^7.0.2
   vite: ^8.2.2
   vitest: ^5.0.0
@@ -1073,6 +1074,14 @@ rolldown:
    '@rolldown/binding-freebsd-x64': 1.2.7
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
+run-verify:
+ _latest: 2.1.8-fynlocal_h
+ _:
+  ../run-verify: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
+  top: 1
+  $: local
+  _: ../run-verify
 semver:
  _latest: 7.8.5
  _:

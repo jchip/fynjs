@@ -17,8 +17,8 @@ const nixClap = new NixClap()
         options: {
           commitlint: {
             args: "[ boolean]",
-            argDefault: "true",
-            desc: "no-commitlint to skip commitlint configuration",
+            argDefault: "false",
+            desc: "add commitlint and husky configuration",
           },
         },
       },

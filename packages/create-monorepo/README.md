@@ -15,8 +15,8 @@ fynpo-repo/
 When run, `create-monorepo` will:
 
 - Add `fynpo` as a dev dependency
-- Creat a `fynpo.json`/ `fynpo.config.js` config file
-- Add `commitlint` config if enabled
+- Create a `fynpo.json` config file (`fynpo.config.js` with `--commitlint`)
+- Add `commitlint` and `husky` config if `--commitlint` is given
 - Create an empty `packages` directory
 
 ## Getting Started
@@ -33,15 +33,15 @@ fyn  # Install dependencies
 
 ### Options:
 
-**`commitlint`** : Used to initialize the repo with commitlint configuration. This is enabled by default.
+**`commitlint`** : Initialize the repo with commitlint and husky configuration. This is off by default, and a simple `fynpo.json` config file is added.
 
-To initialize the repo without commitlint configuration, run the command with `no-commitlint` options. In this case, a simple `fynpo.json` config file will be added instead of `fynpo.config.js`.
+To include commitlint configuration, pass `--commitlint`. A `fynpo.config.js` is added instead of `fynpo.json`.
 
 ```
-npx @fynjs/create-monorepo fynpo-repo --no-commitlint
+npx @fynjs/create-monorepo fynpo-repo --commitlint
 ```
 
-The `commitlint` configuration can always be added later by running:
+The `commitlint` configuration can also be added later by running:
 
 ```
 npx fynpo init --commitlint
@@ -51,7 +51,7 @@ npx fynpo init --commitlint
 
 #### configuration:
 
-If `commitlint` is enabled, the initialized repo will include `fynpo.config.js` with the default `commitlint` config. This can be customized as per the team's needs.
+If `--commitlint` is given, the initialized repo will include `fynpo.config.js` with the default `commitlint` config. This can be customized as per the team's needs.
 
 The default configuration supports commmit message in `[<semver>][feat|bug|chore] <message>` format, where:
 `<semver>` can be:

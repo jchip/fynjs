@@ -1,13 +1,15 @@
 {
   "name": "@fynjs/create-monorepo",
-  "version": "1.0.6",
+  "version": "0.0.1",
   "description": "Create a new fynpo monorepo",
   "type": "module",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
-  "homepage": "https://github.com/jchip/fynjs",
-  "private": true,
+  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/create-monorepo",
+  "bugs": {
+    "url": "https://github.com/jchip/fynjs/issues"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -20,7 +22,13 @@
     "create-monorepo": "bin/create-monorepo.js",
     "create-fynpo": "bin/create-monorepo.js"
   },
-  "keywords": [],
+  "keywords": [
+    "fynpo",
+    "fyn",
+    "monorepo",
+    "create",
+    "scaffold"
+  ],
   "author": "Joel Chen",
   "contributors": [
     "Divya Vannilaparambath",
@@ -29,13 +37,15 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jchip/fynjs.git"
+    "url": "git+https://github.com/jchip/fynjs.git",
+    "directory": "packages/create-monorepo"
   },
   "devDependencies": {
     "@fynjs/run": "^1.1.9",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^26.4.1",
     "publish-util": "^3.1.7",
+    "run-verify": "^2.1.8",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
@@ -51,5 +61,8 @@
     "bin",
     "dist",
     "templates"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

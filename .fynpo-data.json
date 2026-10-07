@@ -8,45 +8,13 @@
           "path": "packages/create-monorepo"
         },
         "onPkg": {
-          "name": "filter-scan-dir",
-          "version": "1.6.0",
-          "path": "packages/filter-scan-dir"
+          "name": "run-verify",
+          "version": "2.1.8",
+          "path": "packages/run-verify"
         },
-        "depSection": "dep",
+        "depSection": "dev",
         "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(dev)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/create-monorepo",
-          "version": "1.0.6",
-          "path": "packages/create-monorepo"
-        },
-        "onPkg": {
-          "name": "string-array",
-          "version": "1.0.1",
-          "path": "packages/string-array"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(dep)"
-        ]
-      },
-      {
-        "fromPkg": {
-          "name": "@fynjs/create-monorepo",
-          "version": "1.0.6",
-          "path": "packages/create-monorepo"
-        },
-        "onPkg": {
-          "name": "unwrap-npm-cmd",
-          "version": "1.1.2",
-          "path": "packages/unwrap-npm-cmd"
-        },
-        "depSection": "dep",
-        "indirectSteps": [
-          "@fynjs/create-monorepo@1.0.6(dep)"
+          "@fynjs/create-monorepo@1.0.6(pkg)"
         ]
       }
     ],
@@ -289,5 +257,5 @@
       }
     ]
   },
-  "__timestamp": 1788274410967
+  "__timestamp": 1791395552620
 }
