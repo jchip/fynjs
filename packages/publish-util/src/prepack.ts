@@ -6,6 +6,8 @@ import {
   extractFromObj,
   removeFromObj,
   keepStandardFields,
+  liveOwners,
+  packOwner,
   renameFromObj,
   withPackLock,
   writePkgFile,
@@ -24,6 +26,11 @@ export interface PrePackConfig {
   autoPostPack?: boolean;
   silent?: boolean;
 }
+
+// true when a script runs publish-util-prepack, alone or chained as in
+// "xrun build && publish-util-prepack"
+const runsPrePack = (script: unknown): boolean =>
+  typeof script === "string" && script.includes("publish-util-prepack");
 
 export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig = {}): void {
   renameFromObj(pkg, config.rename);
@@ -62,12 +69,32 @@ export function prePackObj(pkg: Record<string, unknown>, config: PrePackConfig =
     set(pkg, "scripts.postpack", "publish-util-postpack");
   }
 
-  if (scripts?.prepack === "publish-util-prepack") {
+  if (scripts && runsPrePack(scripts.prepack)) {
     delete scripts.prepack;
+  }
+
+  if (scripts?.prepublishOnly === "publish-util-prepublishonly") {
+    delete scripts.prepublishOnly;
   }
 
   if (keepObj) {
     merge(pkg, keepObj);
+  }
+}
+
+/**
+ * The legacy prepublishOnly hook. prepack does the pruning now. When the package's prepack
+ * also runs publish-util-prepack, this skips, so npm publish doesn't prune twice and leave
+ * the manifest pruned after postpack.
+ */
+export async function prePublishOnly(): Promise<void> {
+  const { pkg } = await getPackInfo();
+  const scripts = pkg.scripts as Record<string, string> | undefined;
+  if (!runsPrePack(scripts?.prepack)) {
+    return prePack();
+  }
+  if (!(pkg.publishUtil as PrePackConfig | undefined)?.silent) {
+    console.log("publish-util-prepublishonly: scripts.prepack runs publish-util-prepack, skipping");
   }
 }
 
@@ -86,33 +113,36 @@ export async function prePack(): Promise<void> {
 
     await withPackLock(saveFile, async stalePid => {
       const metaFile = metaFileOf(saveFile);
-      let active = await Fs.readFile(metaFile, "utf8").then(
+      const owner = packOwner();
+      const active = await Fs.readFile(metaFile, "utf8").then(
         data => JSON.parse(data) as SaveMeta,
         () => undefined
       );
 
-      if (active && active.pid === stalePid && active.activePacks === 1) {
-        // The prepack that made this backup died holding the lock, so no other pack joined
-        // and none will run postpack for it. Do that postpack's restore, then start fresh.
-        const saved = await Fs.readFile(saveFile);
-        await writePkgFile(active.pkgFile, saved);
-        if (active.pkgFile === pkgFile) {
-          pkgData = saved;
-          pkg = JSON.parse(saved.toString()) as Record<string, unknown>;
-          config = (pkg.publishUtil || {}) as PrePackConfig;
-        }
-        active = undefined;
-      }
-
       if (active) {
-        if (active.pkgFile !== pkgFile) {
-          throw new Error(
-            `publish-util: ${active.pkgFile} is already using backup ${saveFile}`
-          );
+        const owners = liveOwners(active);
+        if ((active.pid === stalePid && active.activePacks === 1) || !owners.length) {
+          // Every pack using this backup is gone: its prepack died holding the lock, so no
+          // other pack joined, or the owners of all packs are dead. None will run postpack.
+          // Do that postpack's restore, then start fresh.
+          const saved = await Fs.readFile(saveFile);
+          await writePkgFile(active.pkgFile, saved);
+          if (active.pkgFile === pkgFile) {
+            pkgData = saved;
+            pkg = JSON.parse(saved.toString()) as Record<string, unknown>;
+            config = (pkg.publishUtil || {}) as PrePackConfig;
+          }
+        } else {
+          if (active.pkgFile !== pkgFile) {
+            throw new Error(
+              `publish-util: ${active.pkgFile} is already using backup ${saveFile}`
+            );
+          }
+          active.owners = [...owners, owner];
+          active.activePacks = active.owners.length;
+          await writePkgFile(metaFile, `${JSON.stringify(active, null, 2)}\n`);
+          return;
         }
-        active.activePacks = (active.activePacks ?? 1) + 1;
-        await writePkgFile(metaFile, `${JSON.stringify(active, null, 2)}\n`);
-        return;
       }
 
       await writePkgFile(saveFile, pkgData);
@@ -128,7 +158,8 @@ export async function prePack(): Promise<void> {
             version: pkg.version,
             pid: process.pid,
             ts: new Date().toISOString(),
-            activePacks: 1
+            activePacks: 1,
+            owners: [owner]
           },
           null,
           2

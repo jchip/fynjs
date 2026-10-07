@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { prePack } from "../src/prepack.js";
+import { verify } from "run-verify";
+import { prePack, prePublishOnly } from "../src/prepack.js";
 import { postPack } from "../src/postpack.js";
 import type { PackageInfo } from "../src/utils.js";
 
@@ -67,7 +68,8 @@ describe("pack lifecycle failures and options", () => {
       version: "1.0.0",
       pid: process.pid,
       ts: expect.any(String),
-      activePacks: 1
+      activePacks: 1,
+      owners: [expect.any(Number)]
     });
     expect(mocks.writePkgFile).toHaveBeenNthCalledWith(3, info.pkgFile, `${JSON.stringify({
       name: "test-pkg", version: "1.0.0", scripts: { postpack: "publish-util-postpack" }
@@ -108,7 +110,8 @@ describe("pack lifecycle failures and options", () => {
     expect(mocks.writePkgFile).toHaveBeenCalledOnce();
     expect(JSON.parse(mocks.writePkgFile.mock.calls[0][1])).toEqual({
       pkgFile: info.pkgFile,
-      activePacks: 2
+      activePacks: 2,
+      owners: [0, expect.any(Number)]
     });
   });
 
@@ -134,5 +137,47 @@ describe("pack lifecycle failures and options", () => {
     expect(mocks.writePkgFile).toHaveBeenCalledWith(info.pkgFile, info.pkgData);
     expect(mocks.unlink).toHaveBeenCalledWith(info.saveFile);
     expect(mocks.unlink).toHaveBeenCalledWith(`${info.saveFile}.meta.json`);
+  });
+
+  it("prepublishOnly prunes when prepack does not run publish-util-prepack", () => {
+    info.pkg.scripts = { prepack: "xrun build" };
+
+    return verify({ timeout: 2000 })
+      .step(prePublishOnly)
+      .step(() => expect(mocks.writePkgFile.mock.calls.map(call => call[0])).toEqual([
+        info.saveFile, `${info.saveFile}.meta.json`, info.pkgFile
+      ]));
+  });
+
+  it("prepublishOnly skips when prepack runs publish-util-prepack", () => {
+    info.pkg = { name: "test-pkg", scripts: { prepack: "xrun build && publish-util-prepack" } };
+
+    return verify({ timeout: 2000 })
+      .step(prePublishOnly)
+      .keep.step(() => expect(mocks.writePkgFile).not.toHaveBeenCalled())
+      .step(() => expect(console.log).toHaveBeenCalledWith(
+        "publish-util-prepublishonly: scripts.prepack runs publish-util-prepack, skipping"
+      ));
+  });
+
+  it("prepublishOnly skips quietly in silent mode", () => {
+    info.pkg.scripts = { prepack: "publish-util-prepack" };
+
+    return verify({ timeout: 2000 })
+      .step(prePublishOnly)
+      .keep.step(() => expect(mocks.writePkgFile).not.toHaveBeenCalled())
+      .step(() => expect(console.log).not.toHaveBeenCalled());
+  });
+
+  it("leaves a live pack it doesn't own to restore on its own postpack", () => {
+    // this test process stands in for the live packer of another pack
+    mocks.readFile.mockResolvedValueOnce(
+      JSON.stringify({ pkgFile: info.pkgFile, activePacks: 1, owners: [process.pid] })
+    );
+
+    return verify({ timeout: 2000 })
+      .step(postPack)
+      .keep.step(() => expect(mocks.writePkgFile).toHaveBeenCalledOnce())
+      .step(() => expect(JSON.parse(mocks.writePkgFile.mock.calls[0][1]).owners).toEqual([process.pid]));
   });
 });

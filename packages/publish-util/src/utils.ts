@@ -1,6 +1,7 @@
 import * as Fs from "fs/promises";
 import * as Os from "os";
 import * as Path from "path";
+import { execFileSync } from "child_process";
 import { findUp } from "find-up";
 import { get, set, unset } from "lodash-es";
 
@@ -51,6 +52,8 @@ export interface SaveMeta {
   pid: number;
   ts: string;
   activePacks?: number;
+  /** pack owner pid per active pack, 0 when unknown; see packOwner */
+  owners?: number[];
 }
 
 export const metaFileOf = (saveFile: string): string => `${saveFile}.meta.json`;
@@ -67,6 +70,53 @@ function isAlive(pid: number): boolean {
     // EPERM: the process exists but belongs to another user
     return (err as NodeJS.ErrnoException).code === "EPERM";
   }
+}
+
+const SHELLS = new Set(["sh", "bash", "dash", "zsh", "ksh", "mksh", "ash"]);
+
+/**
+ * The pid of the process running this pack: npm, pnpm, fyn, bun.
+ *
+ * It runs both prepack and postpack, so it lives for the whole pack. The script's own
+ * process does not, and neither does a shell running a chained script such as
+ * "xrun build && publish-util-prepack". So shells between us and the packer are skipped.
+ *
+ * @returns the pid, or 0 when the process table can't be read (e.g. no `ps` on Windows)
+ */
+export function packOwner(): number {
+  let table: string;
+  try {
+    table = execFileSync("ps", ["-A", "-o", "pid=,ppid=,comm="], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+  } catch {
+    return 0;
+  }
+
+  const procs = new Map<number, { ppid: number; comm: string }>();
+  for (const line of table.split("\n")) {
+    const m = line.match(/^\s*(\d+)\s+(\d+)\s+(.+)$/);
+    if (m) procs.set(Number(m[1]), { ppid: Number(m[2]), comm: m[3].trim() });
+  }
+
+  let pid = process.ppid;
+  for (let p = procs.get(pid); p; p = procs.get(pid)) {
+    // a login shell shows as "-zsh"
+    if (!SHELLS.has(Path.basename(p.comm).replace(/^-/, ""))) return pid;
+    pid = p.ppid;
+  }
+  return 0;
+}
+
+/**
+ * The owners of the packs still using a backup. Dead owners are dropped. A meta from an
+ * older publish-util has no owners, so its packs count as unknown (0) and are kept.
+ */
+export function liveOwners(meta: SaveMeta): number[] {
+  const count = meta.activePacks ?? 1;
+  const owners = meta.owners?.length === count ? meta.owners : new Array<number>(count).fill(0);
+  return owners.filter(pid => pid === 0 || isAlive(pid));
 }
 
 /**

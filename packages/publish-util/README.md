@@ -116,6 +116,10 @@ For example:
 }
 ```
 
+- `scripts.prepack` is removed automatically if it runs `publish-util-prepack`, alone or chained like `"npm run build && publish-util-prepack"`.
+
+- `publish-util-prepublishonly` is the legacy hook from when pruning ran in `prepublishOnly`. It skips when `scripts.prepack` already runs `publish-util-prepack`, so `npm publish` doesn't prune twice.
+
 - Can't remove `scripts.postpack` because npm needs that to restore `package.json`.
 
 - Can't use `prepack` because `npm publish` uploads meta data before that so if you want to publish with different `dependencies` it will break.
@@ -165,6 +169,10 @@ Any extra top level fields not in the standard fields are automatically removed.
 If you don't have a `scripts.postpack`, then it's automatically added with `"publish-util-postpack"` to ensure your package.json is restored after packing.
 
 - Set `publishUtil.autoPostPack` to `false` to skip this.
+
+## Overlapping and Killed Packs
+
+Packs of the same package share one backup of `package.json` in the OS temp dir. Only the last pack to finish restores it. Each pack is recorded with the pid of the process running it, such as `npm`, so a killed pack is not waited on. The next prepack or postpack restores what it left pruned. Where the process table can't be read (no `ps`, as on Windows), a killed pack is still counted as active.
 
 ## Dry Run and Verify
 

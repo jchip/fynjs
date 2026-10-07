@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import { prePack } from "../dist/prepack.js";
+import { prePublishOnly } from "../dist/prepack.js";
 
-prePack();
+prePublishOnly();

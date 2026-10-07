@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { verify } from "run-verify";
 import { prePackObj } from "../src/prepack.js";
 
 describe("prePackObj", () => {
@@ -35,6 +36,30 @@ describe("prePackObj", () => {
     prePackObj(pkg, { silent: true });
 
     expect(pkg.scripts).toEqual({ postpack: "custom-postpack" });
+  });
+
+  it("removes a chained prepack script that runs publish-util-prepack", () => {
+    const pkg = { scripts: { prepack: "xrun build && publish-util-prepack", postpack: "publish-util-postpack" } };
+
+    return verify({ timeout: 2000 })
+      .step(() => prePackObj(pkg, { silent: true }))
+      .step(() => expect(pkg.scripts).toEqual({ postpack: "publish-util-postpack" }));
+  });
+
+  it("removes a prepublishOnly script that is just publish-util-prepublishonly", () => {
+    const pkg = { scripts: { prepublishOnly: "publish-util-prepublishonly", postpack: "publish-util-postpack" } };
+
+    return verify({ timeout: 2000 })
+      .step(() => prePackObj(pkg, { silent: true }))
+      .step(() => expect(pkg.scripts).toEqual({ postpack: "publish-util-postpack" }));
+  });
+
+  it("keeps a prepublishOnly script that does more", () => {
+    const pkg = { scripts: { prepublishOnly: "xrun check", postpack: "publish-util-postpack" } };
+
+    return verify({ timeout: 2000 })
+      .step(() => prePackObj(pkg, { silent: true }))
+      .step(() => expect(pkg.scripts).toEqual({ prepublishOnly: "xrun check", postpack: "publish-util-postpack" }));
   });
 
   it("preserves custom prepack scripts and honors disabled automatic postpack", () => {

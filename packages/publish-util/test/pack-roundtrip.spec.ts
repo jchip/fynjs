@@ -6,7 +6,7 @@ import { verify } from "run-verify";
 import { spawnSync } from "child_process";
 import { prePack, prePackObj } from "../src/prepack.js";
 import { postPack } from "../src/postpack.js";
-import { metaFileOf, loadInfo } from "../src/utils.js";
+import { metaFileOf, loadInfo, packOwner } from "../src/utils.js";
 
 // lets a test keep its backup, meta and lock files out of the real temp dir
 const tmp = vi.hoisted(() => ({ dir: undefined as string | undefined }));
@@ -177,10 +177,10 @@ describe("prepack/postpack round trip", () => {
 });
 
 //
-// A prepack killed while it holds the pack lock leaves the lock, the backup and a meta file
-// counting one active pack that will never run postpack.
+// A killed pack leaves the backup and a meta file counting an active pack that will never
+// run postpack. A prepack killed while it holds the pack lock also leaves the lock.
 //
-describe("recovery from a prepack that died holding the pack lock", () => {
+describe("recovery from an interrupted pack", () => {
   let root: string;
   let saveCwd: string;
   const saveEnv = { ...process.env };
@@ -200,18 +200,21 @@ describe("recovery from a prepack that died holding the pack lock", () => {
     return file;
   };
 
-  // what a dead prepack leaves behind for pkgFile: backup, meta, lock and a pruned manifest
-  const leaveInterruptedPrepack = async (pkgFile: string, activePacks = 1) => {
+  const deadPid = () => spawnSync(process.execPath, ["-e", ""]).pid as number;
+
+  // what a dead prepack leaves behind for pkgFile: backup, meta, lock and a pruned manifest.
+  // With owners given, it is a pack killed after its prepack released the lock.
+  const leaveInterruptedPrepack = async (pkgFile: string, activePacks = 1, owners?: number[]) => {
     const original = Fs.readFileSync(pkgFile, "utf8");
     const pkg = JSON.parse(original);
     const { saveFile } = await loadInfo(pkgFile);
-    const pid = spawnSync(process.execPath, ["-e", ""]).pid as number;
+    const pid = deadPid();
     Fs.writeFileSync(saveFile, original);
     Fs.writeFileSync(
       metaFileOf(saveFile),
-      JSON.stringify({ pkgFile, name: pkg.name, version: pkg.version, pid, ts: "", activePacks })
+      JSON.stringify({ pkgFile, name: pkg.name, version: pkg.version, pid, ts: "", activePacks, owners })
     );
-    Fs.writeFileSync(`${saveFile}.lock`, `${pid}\n`);
+    if (!owners) Fs.writeFileSync(`${saveFile}.lock`, `${pid}\n`);
     prePackObj(pkg, { silent: true });
     Fs.writeFileSync(pkgFile, `${JSON.stringify(pkg, null, 2)}\n`);
     return { original, saveFile };
@@ -277,5 +280,65 @@ describe("recovery from a prepack that died holding the pack lock", () => {
       .keep.step(prePack)
       .step(({ saveFile }) => JSON.parse(Fs.readFileSync(metaFileOf(saveFile), "utf8")))
       .step(meta => expect(meta.activePacks).toBe(3));
+  });
+
+  const readMeta = (saveFile: string) => JSON.parse(Fs.readFileSync(metaFileOf(saveFile), "utf8"));
+
+  it("records each active pack's owner", () => {
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    process.chdir(Path.dirname(pkgFile));
+
+    return verify({ timeout: 2000 })
+      .step(() => loadInfo(pkgFile))
+      .keep.step(prePack)
+      .keep.step(prePack)
+      .keep.step(({ saveFile }) => expect(readMeta(saveFile).owners).toEqual([packOwner(), packOwner()]))
+      .keep.step(postPack)
+      .keep.step(({ saveFile }) => expect(readMeta(saveFile).owners).toEqual([packOwner()]))
+      .step(postPack);
+  });
+
+  it("restores after a pack killed once its prepack released the lock", () => {
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    process.chdir(Path.dirname(pkgFile));
+
+    return verify({ timeout: 2000 })
+      .step(() => leaveInterruptedPrepack(pkgFile, 1, [deadPid()]))
+      .keep.step(prePack)
+      .keep.step(({ saveFile }) => expect(readMeta(saveFile).activePacks).toBe(1))
+      .keep.step(postPack)
+      .step(({ original }) => expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original));
+  });
+
+  it("restores on postpack when the other pack that joined was killed", () => {
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    const original = Fs.readFileSync(pkgFile, "utf8");
+    process.chdir(Path.dirname(pkgFile));
+
+    return verify({ timeout: 2000 })
+      .step(() => loadInfo(pkgFile))
+      .keep.step(prePack)
+      .keep.step(({ saveFile }) => {
+        const meta = readMeta(saveFile);
+        const joined = { ...meta, activePacks: 2, owners: [...meta.owners, deadPid()] };
+        Fs.writeFileSync(metaFileOf(saveFile), JSON.stringify(joined));
+      })
+      .keep.step(postPack)
+      .keep.step(() => expect(Fs.readFileSync(pkgFile, "utf8")).toBe(original))
+      .step(({ saveFile }) => expect(Fs.existsSync(metaFileOf(saveFile))).toBe(false));
+  });
+
+  it("waits for an overlapping pack whose owner is alive", () => {
+    const pkgFile = writePkg(Path.join(root, "pkg"), manifest());
+    process.chdir(Path.dirname(pkgFile));
+
+    // this test process stands in for another live packer
+    return verify({ timeout: 2000 })
+      .step(() => leaveInterruptedPrepack(pkgFile, 1, [process.pid]))
+      .keep.step(prePack)
+      .keep.step(({ saveFile }) => expect(readMeta(saveFile).owners).toEqual([process.pid, packOwner()]))
+      .keep.step(postPack)
+      .keep.step(({ saveFile }) => expect(readMeta(saveFile).owners).toEqual([process.pid]))
+      .step(() => expect(JSON.parse(Fs.readFileSync(pkgFile, "utf8")).myInternalField).toBeUndefined());
   });
 });
