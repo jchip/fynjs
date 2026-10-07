@@ -558,7 +558,12 @@ async function walk(path: string, options: InternalOpts, level = 0, parentRules?
  */
 function makeOptions(opts: string | ScanOptions): InternalOpts {
   // Walkers select the matching callback metadata from fullStat at runtime.
-  const options = (typeof opts === "string" ? { cwd: opts } : opts) as Options;
+  const input = typeof opts === "string" ? { cwd: opts } : opts;
+  // drop keys set to undefined so they fall back to defaults, same as absent keys
+  const options = {} as Options;
+  for (const key of Object.keys(input)) {
+    if (input[key] !== undefined) options[key] = input[key];
+  }
 
   if (options.prefilter && options.fullStat === false) {
     throw new TypeError("prefilter requires fullStat: true");
