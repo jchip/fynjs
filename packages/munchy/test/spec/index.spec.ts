@@ -4,7 +4,7 @@ import fs from "node:fs";
 import Path from "node:path";
 import { PassThrough, Readable, Writable } from "node:stream";
 import { EventEmitter, once } from "node:events";
-import { verify } from "run-verify";
+import { verify, signal } from "run-verify";
 
 describe("munchy", function () {
   const drainIt = (munchy: Munchy) => {
@@ -820,6 +820,224 @@ describe("munchy", function () {
         .step(([err]: [Error]) => {
           expect(err.message).toContain("source stream emitted error");
         });
+    });
+
+    describe("finished, ending, and failing sources", function () {
+      const text = (data: any[]) => data.map(x => x.toString()).join("");
+      const recover = { handleStreamError: (err: any) => ({ result: `[${err.message}]`, remit: false }) };
+
+      it("should move past a source stream that already ended", () => {
+        const src = new Readable({ read() {}, autoDestroy: false });
+        const ended = signal<void>();
+        let output: { data: any[] };
+
+        return verify({ timeout: 500, signals: { ended } })
+          .step(() => {
+            src.push(null);
+            src.resume();
+            return once(src, "end");
+          })
+          .step(() => {
+            const munchy = new Munchy({}, src, "after", null);
+            output = drainIt(munchy);
+            munchy.once("end", () => ended.resolve());
+          })
+          .awaiting(ended)
+          .step(() => expect(text(output.data)).to.equal("after"));
+      });
+
+      it("should treat a source stream destroyed without error as ended", () => {
+        const src = new PassThrough();
+        const ended = signal<void>();
+        let output: { data: any[] };
+
+        return verify({ timeout: 500, signals: { ended } })
+          .step(() => {
+            src.destroy();
+            return once(src, "close");
+          })
+          .step(() => {
+            const munchy = new Munchy({}, src, "after", null);
+            output = drainIt(munchy);
+            munchy.once("end", () => ended.resolve());
+          })
+          .awaiting(ended)
+          .step(() => expect(text(output.data)).to.equal("after"));
+      });
+
+      it("should emit the error of a source stream destroyed with error", () => {
+        const src = new PassThrough();
+        src.on("error", () => {});
+
+        return verify({ timeout: 500 })
+          .step(() => {
+            src.destroy(new Error("gone"));
+            return new Promise(r => src.once("close", r));
+          })
+          .expectErrorToBe("gone")
+          .step(() => {
+            const munchy = new Munchy({}, src, "after", null);
+            drainIt(munchy);
+            return once(munchy, "end");
+          });
+      });
+
+      it("should hand a source stream destroyed with error to handleStreamError", () => {
+        const src = new PassThrough();
+        src.on("error", () => {});
+        const ended = signal<void>();
+        let output: { data: any[] };
+
+        return verify({ timeout: 500, signals: { ended } })
+          .step(() => {
+            src.destroy(new Error("gone"));
+            return new Promise(r => src.once("close", r));
+          })
+          .step(() => {
+            const munchy = new Munchy(recover, src, "after", null);
+            output = drainIt(munchy);
+            munchy.once("end", () => ended.resolve());
+          })
+          .awaiting(ended)
+          .step(() => expect(text(output.data)).to.equal("[gone]after"));
+      });
+
+      const endingSources = {
+        "a promise that resolves null": () => Promise.resolve(null),
+        "a sync iterable that yields null": () => ["b", null, "c"],
+        "an async iterable that yields null": () =>
+          (async function* () {
+            yield "b";
+            yield null;
+            yield "c";
+          })()
+      };
+
+      for (const [name, make] of Object.entries(endingSources)) {
+        it(`should stop the read loop when ${name} ends the stream`, () => {
+          const ended = signal<void>();
+          let munchy: Munchy;
+          let output: { data: any[] };
+
+          return verify({ timeout: 500, signals: { ended }, cleanup: () => munchy?.destroy() })
+            .step(() => {
+              munchy = new Munchy({ autoDestroy: false }, "a", make(), "d");
+              output = drainIt(munchy);
+              munchy.once("end", () => ended.resolve());
+            })
+            .awaiting(ended)
+            .step(() => new Promise(r => setImmediate(r)))
+            .step(() => expect((munchy as any)._running).to.equal(false))
+            .step(() => expect(text(output.data)).to.match(/^ab?$/));
+        });
+      }
+
+      it("should close an async iterable that ends the stream with null", () => {
+        let closed = false;
+        const source = (async function* () {
+          try {
+            yield null;
+            yield "unused";
+          } finally {
+            closed = true;
+          }
+        })();
+        const ended = signal<void>();
+        let munchy: Munchy;
+
+        return verify({ timeout: 500, signals: { ended }, cleanup: () => munchy?.destroy() })
+          .step(() => {
+            munchy = new Munchy({ autoDestroy: false }, source);
+            drainIt(munchy);
+            munchy.once("end", () => ended.resolve());
+          })
+          .awaiting(ended)
+          .step(() => new Promise(r => setImmediate(r)))
+          .step(() => expect(closed).to.equal(true));
+      });
+
+      it("should not raise unhandledRejection for a queued promise that rejects early", () => {
+        const rejections: any[] = [];
+        const onRejection = (reason: any) => rejections.push(reason);
+        let rejectLate!: (err: Error) => void;
+        const late = new Promise((_resolve, reject) => {
+          rejectLate = reject;
+        });
+        const gate = new PassThrough();
+        const ended = signal<void>();
+        let output: { data: any[] };
+
+        return verify({
+          timeout: 500,
+          signals: { ended },
+          cleanup: () => {
+            process.off("unhandledRejection", onRejection);
+          }
+        })
+          .step(() => {
+            process.on("unhandledRejection", onRejection);
+            const munchy = new Munchy(recover, gate, late, "after", null);
+            output = drainIt(munchy);
+            munchy.once("end", () => ended.resolve());
+          })
+          .step(() => {
+            rejectLate(new Error("late"));
+            return new Promise(r => setTimeout(r, 20));
+          })
+          .step(() => expect(rejections).to.deep.equal([]))
+          .step(() => {
+            gate.end();
+          })
+          .awaiting(ended)
+          .step(() => expect(text(output.data)).to.equal("[late]after"));
+      });
+
+      const failingSources = {
+        "a sync iterable that throws": {
+          make: () =>
+            (function* () {
+              yield "b";
+              throw new Error("iter boom");
+            })(),
+          message: "iter boom"
+        },
+        "a locked web stream": {
+          make: () => {
+            const web = new ReadableStream({
+              start(controller) {
+                controller.enqueue("w");
+                controller.close();
+              }
+            });
+            web.getReader();
+            return web;
+          },
+          message: "locked"
+        }
+      };
+
+      for (const [name, { make, message }] of Object.entries(failingSources)) {
+        it(`should emit error and not end for ${name}`, () => {
+          const closed = signal<void>();
+          let ended = false;
+          let output: { data: any[] };
+
+          return verify({ timeout: 500, signals: { closed } })
+            .expectErrorHas(message)
+            .step(() => {
+              const munchy = new Munchy({}, "a", make(), "tail", null);
+              output = drainIt(munchy);
+              munchy.on("end", () => {
+                ended = true;
+              });
+              munchy.once("close", () => closed.resolve());
+              return once(munchy, "end");
+            })
+            .awaiting(closed)
+            .step(() => expect(ended).to.equal(false))
+            .step(() => expect(text(output.data)).not.to.contain("tail"));
+        });
+      }
     });
   });
 });

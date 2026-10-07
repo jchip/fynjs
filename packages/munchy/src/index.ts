@@ -77,6 +77,10 @@ async function* streamToAsyncIter(stream: any) {
     wakeUp();
   };
 
+  // a source that already finished never emits "end" or "error" again
+  if (stream.errored) throw stream.errored;
+  if (stream.readableEnded || stream.destroyed) return;
+
   stream.on("data", onData);
   stream.once("error", onError);
   stream.once("end", onEnd);
@@ -173,6 +177,10 @@ export class Munchy extends Readable {
   }
 
   munch(...sources: MunchySource[]): this {
+    for (const s of sources) {
+      // a queued promise may reject before we reach it; _run still awaits it
+      if (s instanceof Promise) s.catch(() => {});
+    }
     this._sources.push(...sources);
     if (this._waitForMore) {
       const r = this._waitForMore;
@@ -244,6 +252,16 @@ export class Munchy extends Readable {
     return !this.destroyed;
   }
 
+  /** Flag EOF and drop whatever is still queued. */
+  private _end(): void {
+    this._index = this._sources.length;
+    // push(null) only flags EOF.  "end" is emitted later, once the
+    // consumer has drained the buffer, and autoDestroy closes us after
+    // that - destroying here would race and swallow both.
+    this.push(null);
+    this._resetSources([]);
+  }
+
   private async _run(): Promise<void> {
     this._running = true;
     this._reading = true;
@@ -268,12 +286,7 @@ export class Munchy extends Readable {
         this._sources[this._index++] = undefined;
 
         if (source === null) {
-          this._index = this._sources.length;
-          // push(null) only flags EOF.  "end" is emitted later, once the
-          // consumer has drained the buffer, and autoDestroy closes us after
-          // that - destroying here would race and swallow both.
-          this.push(null);
-          this._resetSources([]);
+          this._end();
           return;
         }
 
@@ -313,6 +326,11 @@ export class Munchy extends Readable {
 
           try {
             for await (const chunk of iter) {
+              if (chunk === null) {
+                this._currentStream = null;
+                this._end();
+                return;
+              }
               if (!this.push(chunk) && !(await this._waitResume())) return;
             }
           } catch (err: any) {
@@ -331,14 +349,29 @@ export class Munchy extends Readable {
         // 5. Sync Iterable
         if (resolved && typeof (resolved as any)[Symbol.iterator] === "function") {
           for (const item of resolved as Iterable<any>) {
+            if (item === null) {
+              this._end();
+              return;
+            }
             if (!this.push(item) && !(await this._waitResume())) return;
           }
           continue;
         }
 
+        // a promise that resolved to null
+        if (resolved === null) {
+          this._end();
+          return;
+        }
+
         // Fallback: push item directly
         if (!this.push(resolved) && !(await this._waitResume())) return;
       }
+    } catch (err: any) {
+      // handle it before _running clears, or a _read in between restarts
+      // the loop and keeps pushing (even "end") ahead of the error
+      this.emit("error", err);
+      this.destroy();
     } finally {
       this._reading = false;
       this._running = false;
