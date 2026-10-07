@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createTsMapper, defaultIsFile } from "../../src/resolver.ts";
+import { verify } from "run-verify";
 
 /** Build a mapper whose "filesystem" is just the given set of URLs. */
 const withFiles = (...files: string[]) => {
@@ -127,4 +128,17 @@ describe("defaultIsFile", () => {
   it("is false for a missing path", () => {
     expect(defaultIsFile(new URL("./nope.nope", import.meta.url).href)).toBe(false);
   });
+});
+
+describe("trailing-slash directory url", () => {
+  it("maps straight to the index with a single slash", () =>
+    verify({ timeout: 1000 })
+      .step(() => withFiles(`${B}sub/index.ts`, `${B}sub/.ts`))
+      .keep.step(({ map }) => expect(map(`${B}sub/`)).toBe(`${B}sub/index.ts`))
+      .step(({ isFile }) => expect(isFile).not.toHaveBeenCalledWith(`${B}sub/.ts`)));
+
+  it("returns null when the directory has no index", () =>
+    verify({ timeout: 1000 })
+      .step(() => withFiles(`${B}sub.ts`))
+      .step(({ map }) => expect(map(`${B}sub/`)).toBeNull()));
 });

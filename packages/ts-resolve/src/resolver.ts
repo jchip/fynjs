@@ -64,12 +64,17 @@ export function createTsMapper(options: MapperOptions = {}) {
     }
 
     if (!HAS_EXTENSION.test(url)) {
-      for (const ext of TS_EXTENSIONS) {
-        const candidate = url + ext;
-        if (isFile(candidate)) return candidate;
+      // A trailing slash (`./sub/`, `.`) names a directory: only its index applies.
+      const isDir = url.endsWith("/");
+      if (!isDir) {
+        for (const ext of TS_EXTENSIONS) {
+          const candidate = url + ext;
+          if (isFile(candidate)) return candidate;
+        }
       }
+      const index = isDir ? url + "index" : url + "/index";
       for (const ext of TS_EXTENSIONS) {
-        const candidate = url + "/index" + ext;
+        const candidate = index + ext;
         if (isFile(candidate)) return candidate;
       }
     }
