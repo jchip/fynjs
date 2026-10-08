@@ -90,6 +90,19 @@ export default class Publish {
     }
   }
 
+  /**
+   * Say what failed without dumping the error object. A shell command's output already
+   * streamed to the terminal, so only name the command and the package.
+   */
+  _printFailure(err: any) {
+    const pkg = err && err.pkgInfo ? ` in ${err.pkgInfo.name} (${err.pkgInfo.path})` : "";
+    if (err && err.output) {
+      console.log(`  ${err.message}${pkg}. Its output is above.`);
+    } else {
+      console.log(`  ${(err && err.stack) || err}${pkg}`);
+    }
+  }
+
   getLatestTag() {
     // check both namespaces: a selective release does not block a later full release from a
     // different commit, but nothing should be published twice off the same HEAD
@@ -266,6 +279,10 @@ export default class Publish {
             await pack.promise;
             await this.runScript(pkgInfo, "publish");
             await this.runScript(pkgInfo, "postpublish");
+          } catch (err) {
+            // so the failure report can say which package broke
+            err.pkgInfo ??= pkgInfo;
+            throw err;
           } finally {
             xsh.popd();
           }
@@ -440,7 +457,7 @@ export default class Publish {
       }
     } catch (err) {
       printError("Failure encountered publishing packages");
-      logger.error(err);
+      this._printFailure(err);
       process.exit(1);
     }
   }

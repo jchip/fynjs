@@ -60,6 +60,8 @@ import Os from "os";
 import Path from "path";
 import Publish from "../src/publish";
 import { isAlreadyPublishedError } from "../src/utils";
+import { printError } from "../src/release-output";
+import { verify } from "run-verify";
 
 // call-through spy: _cleanupFile's target under /repo doesn't exist so this still throws and
 // gets swallowed same as before, but the real implementation runs for the temp-dir cleanup in
@@ -312,5 +314,31 @@ describe("publish exit code and release tag", () => {
 
     expect(cmds.some((c) => c.startsWith("git tag -a"))).toBe(false);
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("names the failed command and package without dumping its output again", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const base = handler;
+    handler = (cmd) => {
+      if (cmd === "npm pack") {
+        const err: any = new Error("shell cmd 'npm pack' exit code 1");
+        err.output = { stdout: "prepack noise", stderr: "TypeError: boom" };
+        throw err;
+      }
+      return base(cmd);
+    };
+
+    return verify({ timeout: 3000, cleanup: () => logSpy.mockRestore() })
+      .expectError.step(() => runExec())
+      .step((err: any) => {
+        expect(err.message).toBe("process.exit:1");
+        expect(printError).toHaveBeenCalledWith("Failure encountered publishing packages");
+        const printed = logSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+        expect(printed).toContain(
+          "shell cmd 'npm pack' exit code 1 in a (packages/a). Its output is above."
+        );
+        expect(printed).not.toContain("TypeError: boom");
+        expect(printed).not.toContain("prepack noise");
+      });
   });
 });
