@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "fynpo run test --stream --ignore ignore-walk npm-packlist",
-    "ci:check": "fyn check:engines && fyn check:cjs-in-esm && fyn testing && fynpo run ci:check --stream",
+    "ci:check": "fyn check:engines && fyn check:cjs-in-esm && fyn testing && fyn testing:create-monorepo && fynpo run ci:check --stream",
     "coverage": "fynpo run coverage --stream",
     "check:engines": "node tools/check-engines.mjs",
     "check:cjs-in-esm": "node tools/check-cjs-in-esm.mjs",
@@ -19,6 +19,7 @@
     "bootstrap": "fyn git-clone1 && fyn git-clone2 && fyn install --no-fynlocal && fynpo bootstrap",
     "install": "if [ -z \"$CI\" ]; then fynpo; fi",
     "testing": "cd testing/monorepo-test && npm run clean-test",
+    "testing:create-monorepo": "node testing/create-monorepo/verify.mjs",
     "publish-site": "node site/publish.mjs"
   },
   "files": [
