@@ -60,7 +60,8 @@
   "files": [
     "bin",
     "dist",
-    "templates"
+    "templates",
+    "docs/reference.md"
   ],
   "publishConfig": {
     "access": "public"
