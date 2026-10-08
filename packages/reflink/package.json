@@ -29,6 +29,12 @@
       "aarch64-pc-windows-msvc"
     ]
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "publishUtil": {
+    "keep": ["napi"]
+  },
   "scripts": {
     "build": "napi build --platform --release --esm",
     "build:debug": "napi build --platform --esm",
