@@ -1,0 +1,212 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>optional-import | fynjs API</title><meta name="description" content="Documentation for fynjs API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">fynjs API</a>
+<div id="tsd-toolbar-links"><a href="/">fynjs</a><a href="https://github.com/jchip/fynjs">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">optional-import</a></li></ul>
+<h1>Module optional-import</h1></div>
+<section class="tsd-panel tsd-typography"><h1 id="optional-import" class="tsd-anchor-link">optional-import<a href="#optional-import" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="../media/LICENSE-14"><img src="https://img.shields.io/npm/l/optional-import.svg" alt="License"></a>
+<a href="https://github.com/jchip/fynjs/actions/workflows/ci.yml"><img src="https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg" alt="build"></a></p>
+<p><a href="https://npm-stat.com/charts.html?package=optional-import"><img src="https://img.shields.io/npm/dm/optional-import.svg" alt="Downloads"></a></p>
+<p><a href="https://npmjs.com/package/optional-import"><img src="https://nodei.co/npm/optional-import.png?downloads=true&amp;stars=true" alt="npm badge"></a></p>
+<ul>
+<li><a href="https://fynjs.pages.dev/api/modules/optional-import">API reference</a> - TypeDoc</li>
+<li><a href="../media/reference-14.md">Markdown reference</a> - the full API and runtime behavior in one file. Also ships in the package.</li>
+<li><a href="https://github.com/jchip/fynjs/tree/main/packages/optional-import">GitHub</a></li>
+</ul>
+<p>ESM optional dependency loading that tells <strong>&quot;not installed&quot;</strong> apart from <strong>&quot;installed but broken&quot;</strong>.</p>
+<p>The ESM counterpart to <a href="https://www.npmjs.com/package/optional-require">optional-require</a>. Where <code>optional-require</code> wraps a <code>require</code> call,
+there is no call to wrap in ESM — a static <code>import</code> is resolved and linked for the entire
+reachable graph before any of your code evaluates. Optional loading therefore has to go through
+<code>import()</code>, which makes it async.</p>
+<h2 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="bash"><span class="hl-0">fyn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">optional-import</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">makeOptionalImport</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;optional-import&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">optionalImport</span><span class="hl-1"> = </span><span class="hl-0">makeOptionalImport</span><span class="hl-1">(</span><span class="hl-3">import</span><span class="hl-1">.</span><span class="hl-4">meta</span><span class="hl-1">);</span><br/><br/><span class="hl-6">// undefined only if chalk is NOT INSTALLED</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">chalk</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">optionalImport</span><span class="hl-1">(</span><span class="hl-2">&quot;chalk&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">// with a fallback</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">chalk</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">optionalImport</span><span class="hl-1">(</span><span class="hl-2">&quot;chalk&quot;</span><span class="hl-1">, { </span><span class="hl-4">default:</span><span class="hl-1"> </span><span class="hl-4">plainFormatter</span><span class="hl-1"> });</span><br/><br/><span class="hl-6">// synchronous availability check — no await, no evaluation</span><br/><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-4">optionalImport</span><span class="hl-1">.</span><span class="hl-0">has</span><span class="hl-1">(</span><span class="hl-2">&quot;chalk&quot;</span><span class="hl-1">)) {</span><br/><span class="hl-1">  </span><span class="hl-6">/* ... */</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Pass <code>import.meta</code>, <strong>not</strong> <code>import.meta.url</code>. The single-argument form of
+<code>import.meta.resolve</code> has no parent parameter, so the bound <code>resolve</code> function is the only
+carrier of your module's location. Passing the url string throws a <code>TypeError</code>.</p>
+<h2 id="why-not-just-catch-the-error-from" class="tsd-anchor-link">Why not just catch the error from <code>import()</code><a href="#why-not-just-catch-the-error-from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Because Node raises the same error for a missing dependency and for a dependency that is
+installed but whose <em>own</em> dependency is missing:</p>
+<pre><code><span class="hl-5">import</span><span class="hl-1">(</span><span class="hl-2">&quot;totally-not-installed&quot;</span><span class="hl-1">)  -&gt;  </span><span class="hl-7">ERR_MODULE_NOT_FOUND</span><br/><span class="hl-1">                                     </span><span class="hl-4">Cannot</span><span class="hl-1"> </span><span class="hl-4">find</span><span class="hl-1"> </span><span class="hl-3">package</span><span class="hl-1"> </span><span class="hl-2">&#39;totally-not-installed&#39;</span><span class="hl-1"> ...</span><br/><br/><span class="hl-5">import</span><span class="hl-1">(</span><span class="hl-2">&quot;broken-nested&quot;</span><span class="hl-1">)          -&gt;  </span><span class="hl-7">ERR_MODULE_NOT_FOUND</span><br/><span class="hl-1">                                     </span><span class="hl-4">Cannot</span><span class="hl-1"> </span><span class="hl-4">find</span><span class="hl-1"> </span><span class="hl-3">package</span><span class="hl-1"> </span><span class="hl-2">&#39;a-dep-that-is-not-installed&#39;</span><span class="hl-1"> ...</span>
+</code><button>Copy</button></pre>
+
+<p>Same <code>code</code>, and the error carries no structured field naming the specifier that failed — the
+message even names the <em>nested</em> one. So a <code>try/catch</code> around <code>import()</code> cannot tell them apart,
+and a genuinely broken install silently degrades into your fallback, presenting as &quot;feature
+unavailable&quot; rather than &quot;your install is broken&quot;.</p>
+<p><code>optional-import</code> resolves first and imports second:</p>
+<pre><code class="js"><span class="hl-5">let</span><span class="hl-1"> </span><span class="hl-4">url</span><span class="hl-1">;</span><br/><span class="hl-3">try</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">url</span><span class="hl-1"> = </span><span class="hl-4">meta</span><span class="hl-1">.</span><span class="hl-0">resolve</span><span class="hl-1">(</span><span class="hl-4">specifier</span><span class="hl-1">);  </span><span class="hl-6">// only ever fails for `specifier` itself</span><br/><span class="hl-1">} </span><span class="hl-3">catch</span><span class="hl-1"> (</span><span class="hl-4">err</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-3">return</span><span class="hl-1"> </span><span class="hl-0">handleNotFound</span><span class="hl-1">(</span><span class="hl-4">err</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><span class="hl-3">return</span><span class="hl-1"> </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">import</span><span class="hl-1">(</span><span class="hl-4">url</span><span class="hl-1">);          </span><span class="hl-6">// any throw here is REAL — propagate it</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>meta.resolve</code> never fails on behalf of a nested specifier, which makes the distinction
+<strong>structural</strong> rather than a guess based on error message text.</p>
+<pre><code class="js"><span class="hl-6">// installed, but its own dependency is missing — throws, does NOT return &quot;FALLBACK&quot;</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">optionalImport</span><span class="hl-1">(</span><span class="hl-2">&quot;broken-nested&quot;</span><span class="hl-1">, { </span><span class="hl-4">default:</span><span class="hl-1"> </span><span class="hl-2">&quot;FALLBACK&quot;</span><span class="hl-1"> });</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="path-specifiers" class="tsd-anchor-link">Path specifiers<a href="#path-specifiers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>That premise — resolve fails when the thing is not there — holds for <strong>bare</strong> specifiers only.
+For a path or <code>file:</code> URL, Node's ESM resolver does no filesystem check, so resolve always
+succeeds and the missing-file signal would arrive from <code>import()</code>, where it is once again
+indistinguishable from a broken module.</p>
+<p>So path and <code>file:</code> URL specifiers get an explicit existence check after resolving, which
+restores the same split:</p>
+<pre><code class="js"><span class="hl-6">// absent file → the fallback, just like a bare specifier that is not installed</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">optionalImport</span><span class="hl-1">(</span><span class="hl-2">&quot;./optional-config.js&quot;</span><span class="hl-1">, { </span><span class="hl-4">default:</span><span class="hl-1"> {} });</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">optionalImport</span><span class="hl-1">(</span><span class="hl-2">&quot;/etc/myapp/plugin.mjs&quot;</span><span class="hl-1">, { </span><span class="hl-4">default:</span><span class="hl-1"> </span><span class="hl-5">null</span><span class="hl-1"> });</span><br/><br/><span class="hl-6">// the file IS there but it throws, or its own import is missing → still a real error</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">optionalImport</span><span class="hl-1">(</span><span class="hl-2">&quot;./broken-plugin.js&quot;</span><span class="hl-1">, { </span><span class="hl-4">default:</span><span class="hl-1"> {} });  </span><span class="hl-6">// throws</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>.has()</code> and <code>.resolve()</code> agree with this: an absent path reports <code>false</code> / the fallback rather
+than a URL to a file that is not there.</p>
+<p>Only the literal resolved URL is checked. ESM has no directory resolution and no extension
+probing, so unlike <code>optionalRequire</code>, <code>&quot;./foo&quot;</code> does <strong>not</strong> fall back to <code>./foo.js</code> or
+<code>./foo/index.js</code> — Node would not find those either, so the specifier is simply absent. A path
+that <em>is</em> a directory counts as present and then fails on import with
+<code>ERR_UNSUPPORTED_DIR_IMPORT</code>, which is a real error worth seeing rather than a silent fallback.</p>
+<h2 id="api" class="tsd-anchor-link">API<a href="#api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="_" class="tsd-anchor-link"><code>makeOptionalImport(meta, log?)</code><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Returns an optional import function bound to the caller's <code>import.meta</code>.</p>
+<ul>
+<li><code>optionalImport(specifier, optsOrMsg?)</code> → <code>Promise</code> of the module namespace</li>
+<li><code>optionalImport.resolve(specifier, optsOrMsg?)</code> → resolved URL, <strong>synchronously</strong></li>
+<li><code>optionalImport.has(specifier)</code> → <code>boolean</code>, <strong>synchronously</strong>. It throws, like <code>.resolve()</code>,
+when resolving fails for a reason other than &quot;not installed&quot; (for example an invalid
+<code>package.json</code>), so a broken install is never reported as absent.</li>
+<li><code>optionalImport.log</code> — the log function, replaceable</li>
+</ul>
+<h3 id="_-1" class="tsd-anchor-link"><code>tryImport(meta, specifier, optsOrMsg?)</code> / <code>tryResolve(meta, specifier, optsOrMsg?)</code><a href="#_-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Standalone forms, for when you do not want to build a bound function.</p>
+<h3 id="_-2" class="tsd-anchor-link"><code>setDefaultLog(log)</code><a href="#_-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Replace the default log function (<code>console.log</code>) used when no other is given.</p>
+<h3 id="options" class="tsd-anchor-link">Options<a href="#options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Mirrors <code>optional-require</code>:</p>
+<table>
+<thead>
+<tr>
+<th>option</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>default</code></td>
+<td>value returned when the module is not installed</td>
+</tr>
+<tr>
+<td><code>notFound(err)</code></td>
+<td>called instead of returning <code>default</code> when the module is not installed</td>
+</tr>
+<tr>
+<td><code>fail(err)</code></td>
+<td>called when the module resolved but importing it threw; otherwise the error is rethrown</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td><code>true</code> for a default not-found message, or a string to prepend</td>
+</tr>
+<tr>
+<td><code>log</code></td>
+<td>log function for this call</td>
+</tr>
+<tr>
+<td><code>meta</code></td>
+<td>override the bound <code>import.meta</code> for this call</td>
+</tr>
+<tr>
+<td><code>notExported</code></td>
+<td><code>&quot;notFound&quot;</code> (default) or <code>&quot;fail&quot;</code> — how to treat <code>ERR_PACKAGE_PATH_NOT_EXPORTED</code></td>
+</tr>
+</tbody>
+</table>
+<p>As a shorthand, <code>optsOrMsg</code> may be a string or <code>true</code>, equivalent to <code>{ message }</code>.</p>
+<h2 id="differences-from" class="tsd-anchor-link">Differences from <code>optional-require</code><a href="#differences-from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong>It is async.</strong> There is no synchronous ESM equivalent. <code>optionalImport.resolve()</code> and
+<code>.has()</code> are synchronous, because resolution does not evaluate the module — that covers
+availability checks, which is often the whole question.</p>
+<p><strong>It returns the module namespace unmodified.</strong> For a CJS optional dependency, <code>module.exports</code>
+lands on <code>.default</code>. <code>.default</code> is deliberately not auto-unwrapped, because that would hide the
+named exports of a real ESM package.</p>
+<h2 id="caveats" class="tsd-anchor-link">Caveats<a href="#caveats" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong><code>meta.resolve</code> does not stat the filesystem.</strong> It performs resolution, not an existence
+check — it fails when a bare package cannot be located, or when an <code>exports</code> map refuses a
+subpath. Path and <code>file:</code> URL specifiers are therefore existence-checked separately, as
+described under <a href="#path-specifiers">Path specifiers</a>. One gap remains either way: a subpath of
+an installed package with no <code>exports</code> map (<code>&quot;some-pkg/nope.js&quot;</code>) is a bare specifier, so it
+resolves without error and surfaces as a <code>fail</code> on import rather than a <code>notFound</code>.
+For the same reason, <code>.has()</code> returns <code>true</code> for it and <code>.resolve()</code> returns its URL.</p>
+<p><strong>Conditions differ from <code>optional-require</code>.</strong> Resolution here runs under the <code>import</code>
+condition, so a package with divergent conditional exports may resolve to a different file than
+<code>optionalRequire</code> would load.</p>
+<p><strong>Top-level <code>await</code> has a cost.</strong> Awaiting an optional import at module scope makes your module
+async, and <code>require()</code> of an ESM graph containing top-level await throws
+<code>ERR_REQUIRE_ASYNC_MODULE</code>. If your package has CJS consumers relying on <code>require(esm)</code>, call
+this from inside an async function instead, or stay on <code>optional-require</code>.</p>
+<h2 id="things-that-do-not-work-verified-on-node-26" class="tsd-anchor-link">Things that do not work (verified on Node 26)<a href="#things-that-do-not-work-verified-on-node-26" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong><code>imports</code>/<code>exports</code> fallback arrays.</strong> <code>{&quot;#opt&quot;: [&quot;maybe-missing&quot;, &quot;./stub.js&quot;]}</code> looks
+purpose-built for this and does not fall back — a missing package throws
+<code>ERR_MODULE_NOT_FOUND</code> rather than moving to the next entry.</li>
+<li><strong>Registering loader hooks from inside the graph.</strong> <code>import &quot;./register-hooks.js&quot;</code> followed by
+<code>import x from &quot;maybe-missing&quot;</code> in the same module still throws, because linking precedes all
+evaluation. Hooks must be installed via <code>--import</code> or a separate entry.</li>
+</ul>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Apache-2.0</p>
+</section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Type Aliases"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="type-aliases">Type Aliases<a href="#type-aliases" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="importmetalike"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/optional-import.ImportMetaLike.html">ImportMetaLike</a><a href="#importmetalike" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="logfunction"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/optional-import.LogFunction.html">LogFunction</a><a href="#logfunction" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="notexportedhandling"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/optional-import.NotExportedHandling.html">NotExportedHandling</a><a href="#notexportedhandling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="optionalimportfunction"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/optional-import.OptionalImportFunction.html">OptionalImportFunction</a><a href="#optionalimportfunction" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="optionalimportopts"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/optional-import.OptionalImportOpts.html">OptionalImportOpts</a><a href="#optionalimportopts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="optsormessage"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/optional-import.OptsOrMessage.html">OptsOrMessage</a><a href="#optsormessage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="functions">Functions<a href="#functions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="makeoptionalimport"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/optional-import.makeOptionalImport.html">makeOptionalImport</a><a href="#makeoptionalimport" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="setdefaultlog"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/optional-import.setDefaultLog.html">setDefaultLog</a><a href="#setdefaultlog" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="tryimport"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/optional-import.tryImport.html">tryImport</a><a href="#tryimport" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="tryresolve"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/optional-import.tryResolve.html">tryResolve</a><a href="#tryresolve" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#optional-import"><span>optional-<wbr/>import</span></a>
+<ul>
+<li><a href="#install"><span>Install</span></a></li>
+<li><a href="#usage"><span>Usage</span></a></li>
+<li><a href="#why-not-just-catch-the-error-from"><span>Why not just catch the error from </span></a></li>
+<li>
+<ul>
+<li><a href="#path-specifiers"><span>Path specifiers</span></a></li></ul></li>
+<li><a href="#api"><span>API</span></a></li>
+<li>
+<ul>
+<li><a href="#_"><span></span></a></li>
+<li><a href="#_-1"><span> / </span></a></li>
+<li><a href="#_-2"><span></span></a></li>
+<li><a href="#options"><span>Options</span></a></li></ul></li>
+<li><a href="#differences-from"><span>Differences from </span></a></li>
+<li><a href="#caveats"><span>Caveats</span></a></li>
+<li><a href="#things-that-do-not-work-verified-on-node-26"><span>Things that do not work (verified on <wbr/>Node 26)</span></a></li>
+<li><a href="#license"><span>License</span></a></li></ul>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Type Aliases"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Type Aliases</summary>
+<div><a href="#importmetalike"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Import<wbr/>Meta<wbr/>Like</span></a><a href="#logfunction"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Log<wbr/>Function</span></a><a href="#notexportedhandling"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Not<wbr/>Exported<wbr/>Handling</span></a><a href="#optionalimportfunction"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Optional<wbr/>Import<wbr/>Function</span></a><a href="#optionalimportopts"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Optional<wbr/>Import<wbr/>Opts</span></a><a href="#optsormessage"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Opts<wbr/>Or<wbr/>Message</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Functions</summary>
+<div><a href="#makeoptionalimport"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>make<wbr/>Optional<wbr/>Import</span></a><a href="#setdefaultlog"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>set<wbr/>Default<wbr/>Log</span></a><a href="#tryimport"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>try<wbr/>Import</span></a><a href="#tryresolve"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>try<wbr/>Resolve</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav id="tsd-sidebar-links" class="tsd-navigation"><a href="/" class="tsd-nav-link">fynjs</a><a href="https://github.com/jchip/fynjs" class="tsd-nav-link">GitHub</a></nav>
+<nav class="tsd-navigation"><a href="../index.html">fynjs API</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

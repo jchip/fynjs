@@ -1,0 +1,119 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@fynjs/reflink | fynjs API</title><meta name="description" content="Documentation for fynjs API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">fynjs API</a>
+<div id="tsd-toolbar-links"><a href="/">fynjs</a><a href="https://github.com/jchip/fynjs">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">@fynjs/reflink</a></li></ul>
+<h1>Module @fynjs/reflink</h1></div>
+<section class="tsd-panel tsd-typography"><h1 id="fynjsreflink" class="tsd-anchor-link">@fynjs/reflink<a href="#fynjsreflink" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="../media/LICENSE-2"><img src="https://img.shields.io/npm/l/@fynjs/reflink.svg" alt="License"></a>
+<a href="https://github.com/jchip/fynjs/actions/workflows/ci.yml"><img src="https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg" alt="build"></a></p>
+<p><a href="https://npm-stat.com/charts.html?package=%40fynjs%2Freflink"><img src="https://img.shields.io/npm/dm/@fynjs/reflink.svg" alt="Downloads"></a></p>
+<p><a href="https://npmjs.com/package/@fynjs/reflink"><img src="https://nodei.co/npm/@fynjs/reflink.png?downloads=true&amp;stars=true" alt="npm badge"></a></p>
+<ul>
+<li><a href="https://fynjs.pages.dev/api/modules/_fynjs_reflink">API reference</a> - TypeDoc</li>
+<li><a href="../media/reference-2.md">Markdown reference</a> - the full API and runtime behavior in one file. Also ships in the package.</li>
+<li><a href="https://github.com/jchip/fynjs/tree/main/packages/reflink">GitHub</a></li>
+</ul>
+<p>Native copy-on-write file cloning for Node.js, built with <a href="https://napi.rs">napi-rs</a>.</p>
+<p>fyn uses it to replicate packages from its central store into <code>node_modules</code>. A clone
+shares disk blocks with its source until either side is written, so it costs almost no
+space or time.</p>
+<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">cloneFile</span><span class="hl-1">, </span><span class="hl-4">cloneFiles</span><span class="hl-1">, </span><span class="hl-4">cloneDir</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/reflink&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">// one file</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">cloned</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">cloneFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/store/pkg/index.js&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/app/node_modules/pkg/index.js&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">// many files, in parallel</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">stats</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">cloneFiles</span><span class="hl-1">(</span><span class="hl-2">&quot;/store/pkg&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/app/node_modules/pkg&quot;</span><span class="hl-1">, [</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;package.json&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;lib/index.js&quot;</span><br/><span class="hl-1">]);</span><br/><span class="hl-6">// =&gt; { cloned: 2, linked: 0, copied: 0 }</span><br/><br/><span class="hl-6">// a whole directory in one call (APFS only)</span><br/><span class="hl-3">if</span><span class="hl-1"> (!(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">cloneDir</span><span class="hl-1">(</span><span class="hl-2">&quot;/store/pkg&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/app/node_modules/pkg&quot;</span><span class="hl-1">))) {</span><br/><span class="hl-1">  </span><span class="hl-6">// fall back to cloneFiles</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="how-files-are-placed" class="tsd-anchor-link">How files are placed<a href="#how-files-are-placed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Each file goes through these steps until one works:</p>
+<ol>
+<li>Remove the destination.</li>
+<li>Try a copy-on-write clone.</li>
+<li>Hardlink, if the caller passed <code>hardlink: true</code>.</li>
+<li>Copy, unless the caller passed <code>copyFallback: false</code>.</li>
+</ol>
+<p>When steps fail with different errors, the error lists each step and its error.</p>
+<p>Removing first matters. A clone or copy writes through an existing destination, which
+would corrupt any other path hardlinked to the same file.</p>
+<h2 id="api" class="tsd-anchor-link">API<a href="#api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="_" class="tsd-anchor-link"><code>cloneFile(src, dest)</code> / <code>cloneFileSync(src, dest)</code><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Clone <code>src</code> to <code>dest</code>, replacing <code>dest</code>. Falls back to a copy. Returns <code>true</code> if the file
+was cloned. The async version runs on the libuv thread pool.</p>
+<h3 id="_-1" class="tsd-anchor-link"><code>cloneFiles(srcDir, destDir, files, hardlink?, copyFallback?)</code> / <code>cloneFilesSync(...)</code><a href="#_-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Clone <code>files</code>, given as paths relative to <code>srcDir</code>, into <code>destDir</code> in parallel. Parent
+directories are created as needed. It fails on the first error. It also fails when two
+entries name the same file, such as <code>a</code> and <code>./a</code>.</p>
+<ul>
+<li><code>hardlink</code> (default <code>false</code>): hardlink a file that can't be cloned.</li>
+<li><code>copyFallback</code> (default <code>true</code>): set to <code>false</code> to fail instead of copying.</li>
+</ul>
+<p>Returns a <code>CloneStats</code> object: <code>{ cloned, linked, copied }</code>. The async version runs on a
+dedicated pool of up to 4 threads, so it doesn't compete with Node's own fs calls.</p>
+<h3 id="_-2" class="tsd-anchor-link"><code>cloneDir(src, dest)</code><a href="#_-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Clone the directory <code>src</code> to <code>dest</code> with a single <code>clonefile(2)</code> call. <code>dest</code> must not
+exist, but its parent must. Resolves <code>false</code> on anything other than APFS, so the caller
+can fall back to <code>cloneFiles</code>.</p>
+<h2 id="platforms" class="tsd-anchor-link">Platforms<a href="#platforms" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Prebuilt binaries ship as separate platform packages for macOS, Linux (glibc and musl),
+and Windows, on x64 and arm64.</p>
+<p>Clones work on filesystems that support them, such as APFS, Btrfs, XFS, and ReFS.
+Elsewhere, files are hardlinked or copied as described above.</p>
+<h2 id="building-from-source" class="tsd-anchor-link">Building from source<a href="#building-from-source" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Inside the fynjs monorepo, the native module builds on install when <code>cargo</code> is
+available. Without Rust, the build is skipped and fyn uses its JS clone path instead.</p>
+<pre><code class="sh"><span class="hl-0">fyn</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1">        </span><span class="hl-6"># release build</span><br/><span class="hl-0">fyn</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build:debug</span><span class="hl-1">  </span><span class="hl-6"># debug build</span><br/><span class="hl-0">fyn</span><span class="hl-1"> </span><span class="hl-2">test</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Apache-2.0</p>
+</section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Interfaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="interfaces">Interfaces<a href="#interfaces" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="clonestats"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><a href="../interfaces/_fynjs_reflink.CloneStats.html">CloneStats</a><a href="#clonestats" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Variables"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="variables">Variables<a href="#variables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="__napibindingtarget"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><a href="../variables/_fynjs_reflink.__napiBindingTarget.html">__napiBindingTarget</a><a href="#__napibindingtarget" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="functions">Functions<a href="#functions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="clonedir"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_reflink.cloneDir.html">cloneDir</a><a href="#clonedir" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="clonefile"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_reflink.cloneFile.html">cloneFile</a><a href="#clonefile" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="clonefiles"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_reflink.cloneFiles.html">cloneFiles</a><a href="#clonefiles" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="clonefilessync"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_reflink.cloneFilesSync.html">cloneFilesSync</a><a href="#clonefilessync" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="clonefilesync"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_reflink.cloneFileSync.html">cloneFileSync</a><a href="#clonefilesync" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#fynjsreflink"><span>@fynjs/reflink</span></a>
+<ul>
+<li><a href="#usage"><span>Usage</span></a></li>
+<li><a href="#how-files-are-placed"><span>How files are placed</span></a></li>
+<li><a href="#api"><span>API</span></a></li>
+<li>
+<ul>
+<li><a href="#_"><span> / </span></a></li>
+<li><a href="#_-1"><span> / </span></a></li>
+<li><a href="#_-2"><span></span></a></li></ul></li>
+<li><a href="#platforms"><span>Platforms</span></a></li>
+<li><a href="#building-from-source"><span>Building from source</span></a></li>
+<li><a href="#license"><span>License</span></a></li></ul>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Interfaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Interfaces</summary>
+<div><a href="#clonestats"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><span>Clone<wbr/>Stats</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Variables"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Variables</summary>
+<div><a href="#__napibindingtarget"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><span>__<wbr/>napi<wbr/>Binding<wbr/>Target</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Functions</summary>
+<div><a href="#clonedir"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>clone<wbr/>Dir</span></a><a href="#clonefile"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>clone<wbr/>File</span></a><a href="#clonefiles"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>clone<wbr/>Files</span></a><a href="#clonefilessync"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>clone<wbr/>Files<wbr/>Sync</span></a><a href="#clonefilesync"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>clone<wbr/>File<wbr/>Sync</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav id="tsd-sidebar-links" class="tsd-navigation"><a href="/" class="tsd-nav-link">fynjs</a><a href="https://github.com/jchip/fynjs" class="tsd-nav-link">GitHub</a></nav>
+<nav class="tsd-navigation"><a href="../index.html">fynjs API</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

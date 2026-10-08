@@ -1,0 +1,59 @@
+# fynjs
+
+> fyn is a fast node.js package manager. fynpo is a zero setup monorepo manager built on it. fynjs is their monorepo, plus the small packages they are built from.
+
+Each package has one Markdown reference covering its full API, options and runtime
+behavior. The same file ships in the npm package at `node_modules/<name>/docs/reference.md`
+and matches the installed version.
+
+## Tools
+
+- [fyn](https://fynjs.pages.dev/ref/fyn.md): fyn is a node.js package manager, and supports fynpo -- a zero setup monorepo tool (v3.3.0)
+- [fynpo](https://fynjs.pages.dev/ref/fynpo.md): fynpo is a zero setup monorepo manager for node.js (v3.3.0)
+- [@fynpo/base](https://fynjs.pages.dev/ref/fynpo-base.md): zero setup monorepo manager for node.js (v2.1.13)
+- [fynpo-cli](https://fynjs.pages.dev/ref/fynpo-cli.md): npm install globally to provide the fynpo command (v3.3.0)
+- [@fynjs/create-monorepo](https://fynjs.pages.dev/ref/create-monorepo.md): Create a new fynpo monorepo (v1.0.0)
+- [@fynjs/run](https://fynjs.pages.dev/ref/xarc-run.md): concurrent or serial run npm scripts, javascript tasks, and more (v1.1.10)
+
+## CLI
+
+- [@fynjs/cli-args](https://fynjs.pages.dev/ref/cli-args.md): Simple, lightweight, flexible, and comprehensive Command Line Argument Parsing for node.js (v1.2.0)
+- [chalker](https://fynjs.pages.dev/ref/chalker.md): Set ansi colors in strings using XML and chalk (v2.3.0)
+- [visual-logger](https://fynjs.pages.dev/ref/visual-logger.md): Visual logger for CLI in NodeJS (v2.1.10)
+- [visual-exec](https://fynjs.pages.dev/ref/visual-exec.md): Visual shell exec with spinners and progress display (v1.2.0)
+- [xsh](https://fynjs.pages.dev/ref/xsh.md): Some random NodeJS helper functions for shell execution (v1.1.9)
+- [unwrap-npm-cmd](https://fynjs.pages.dev/ref/unwrap-npm-cmd.md): Unwrap npm's node.js bin CMD batch for js files on Windows (v2.1.8)
+
+## Async
+
+- [aveazul](https://fynjs.pages.dev/ref/aveazul.md): Bluebird drop-in replacement built on native Promise (v2.1.9)
+- [xaa](https://fynjs.pages.dev/ref/xaa.md): async/await/Promise helpers - delay, defer, timeout, each, map, filter (v3.1.8)
+- [item-queue](https://fynjs.pages.dev/ref/item-queue.md): An item processing queue with Promise (v2.2.0)
+- [xflight](https://fynjs.pages.dev/ref/xflight.md): Handle inflight promise to avoid async duplication (v3.1.10)
+
+## I/O
+
+- [@fynjs/fetch](https://fynjs.pages.dev/ref/fetch.md): Hardened, zero-dependency HTTP client based on Node core fetch (v1.0.7)
+- [filter-scan-dir](https://fynjs.pages.dev/ref/filter-scan-dir.md): Extremely fast recursive directory crawling and filtering for Node.js. (v2.1.11)
+- [munchy](https://fynjs.pages.dev/ref/munchy.md): A producer Node stream for draining different data, including Readable streams (v2.0.8)
+- [@fynjs/reflink](https://fynjs.pages.dev/ref/reflink.md): Native copy-on-write file cloning for fyn (macOS, Linux, Windows) (v0.2.0)
+
+## Packaging
+
+- [publish-util](https://fynjs.pages.dev/ref/publish-util.md): Some util to clean up package.json for npm publish (v3.1.8)
+- [pkg-preper](https://fynjs.pages.dev/ref/pkg-preper.md): Package Preparer (v0.3.8)
+- [check-pkg-new-version](https://fynjs.pages.dev/ref/check-pkg-new-version.md): Help npm CLI packages to check newer version (v1.1.9)
+- [check-pkg-new-version-engine](https://fynjs.pages.dev/ref/check-pkg-new-version-engine.md): Provide generic engine for npm CLI packages to check newer version (v2.1.8)
+
+## Misc
+
+- [@jchip/error](https://fynjs.pages.dev/ref/error.md): utilities and polyfill for node.js errors (v2.1.8)
+- [optional-import](https://fynjs.pages.dev/ref/optional-import.md): ESM import that lets you handle module not found without try/catch, and tells 'not installed' apart from 'installed but broken' (v1.1.8)
+- [run-verify](https://fynjs.pages.dev/ref/run-verify.md): Proper test verifications (v2.2.0)
+- [string-array](https://fynjs.pages.dev/ref/string-array.md): Parse string into array of string elements (v2.1.8)
+- [@fynjs/ts-resolve](https://fynjs.pages.dev/ref/ts-resolve.md): Resolve TypeScript sources for node's built-in type stripping - no transpiler (v1.0.4)
+- [xenv-config](https://fynjs.pages.dev/ref/xenv-config.md): Load config from env, user config, or default spec (v2.1.8)
+
+## Optional
+
+- [All references in one file](https://fynjs.pages.dev/llms-full.txt)

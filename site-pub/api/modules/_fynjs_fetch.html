@@ -1,0 +1,289 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@fynjs/fetch | fynjs API</title><meta name="description" content="Documentation for fynjs API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">fynjs API</a>
+<div id="tsd-toolbar-links"><a href="/">fynjs</a><a href="https://github.com/jchip/fynjs">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">@fynjs/fetch</a></li></ul>
+<h1>Module @fynjs/fetch</h1></div>
+<section class="tsd-panel tsd-typography"><h1 id="fynjsfetch" class="tsd-anchor-link">@fynjs/fetch<a href="#fynjsfetch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="../media/LICENSE-1"><img src="https://img.shields.io/npm/l/@fynjs/fetch.svg" alt="License"></a>
+<a href="https://github.com/jchip/fynjs/actions/workflows/ci.yml"><img src="https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg" alt="build"></a></p>
+<p><a href="https://npm-stat.com/charts.html?package=%40fynjs%2Ffetch"><img src="https://img.shields.io/npm/dm/@fynjs/fetch.svg" alt="Downloads"></a></p>
+<p><a href="https://npmjs.com/package/@fynjs/fetch"><img src="https://nodei.co/npm/@fynjs/fetch.png?downloads=true&amp;stars=true" alt="npm badge"></a></p>
+<ul>
+<li><a href="https://fynjs.pages.dev/api/modules/_fynjs_fetch">API reference</a> - TypeDoc</li>
+<li><a href="../media/reference-1.md">Markdown reference</a> - the full API and runtime behavior in one file. Also ships in the package.</li>
+<li><a href="https://github.com/jchip/fynjs/tree/main/packages/fetch">GitHub</a></li>
+</ul>
+<p>A hardened, zero-dependency HTTP client based on Node.js core <code>fetch</code>.</p>
+<h2 id="features" class="tsd-anchor-link">Features<a href="#features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Zero Dependencies</strong>: Pure TypeScript, built directly on Node's native <code>fetch</code> (powered by Undici).</li>
+<li><strong>Socket Leak Protection</strong>: Idempotent <code>.drain()</code> helper to cancel unconsumed response bodies and immediately release TCP sockets back to the connection pool.</li>
+<li><strong>Bounded Timeouts</strong>: <code>timeout</code> is a total budget covering both the response headers and the body read, merged with any caller signal via <code>AbortSignal.any()</code>.</li>
+<li><strong>Resilient Retries</strong>: Configurable exponential backoff (with jitter, honoring <code>Retry-After</code>) on network failures and transient HTTP statuses (<code>408</code>, <code>429</code>, <code>500</code>, <code>502</code>, <code>503</code>, <code>504</code>), restricted to idempotent methods by default.</li>
+<li><strong>Stream Ergonomics</strong>: Automatically applies <code>duplex: &quot;half&quot;</code> when <code>body</code> is a Node <code>Readable</code> stream or WHATWG <code>ReadableStream</code>.</li>
+<li><strong>Stream Body Retries</strong>: Supports <code>bodyFactory</code> to recreate a fresh stream for every retry attempt, since a consumed Node stream cannot be re-sent. With <code>retry</code> set, a stream <code>body</code> without <code>bodyFactory</code> is rejected up front with a <code>TypeError</code>.</li>
+<li><strong>Streaming Pipeline Helper</strong>: <code>fynFetch.stream(url, destination)</code> directly streams response bodies to disk file paths or writable streams with error handling and automatic cleanup of partial files.</li>
+<li><strong>Extended Ergonomics</strong>:
+<ul>
+<li><code>prefixUrl</code>: Normalize and prepend base URLs to relative endpoints.</li>
+<li><code>searchParams</code>: Clean query string builders accepting objects, strings, or <code>URLSearchParams</code>. Params override same-named params from instance defaults and from the URL itself.</li>
+<li><code>json</code>: Send JSON objects with automatic serialization and default <code>Content-Type</code> / <code>Accept</code> headers.</li>
+<li><code>form</code>: Send URL-encoded form data with automatic serialization.</li>
+<li>HTTP verb shortcuts: <code>fynFetch.get()</code>, <code>.post()</code>, <code>.put()</code>, <code>.patch()</code>, <code>.delete()</code>, and <code>.head()</code> (with automatic body drain).</li>
+<li>Response body helpers: <code>fynFetch.json()</code>, <code>.text()</code>, <code>.buffer()</code>, <code>.arrayBuffer()</code>, <code>.blob()</code>.</li>
+<li>Basic Authentication: <code>username</code> and <code>password</code> options generate standard <code>Authorization: Basic</code> headers.</li>
+<li><code>cookies</code>: Key-value object generates standard <code>Cookie</code> headers.</li>
+<li>Instance factory: <code>fynFetch.create(defaults)</code> and <code>client.extend(overrides)</code> for preconfigured API clients.</li>
+<li>Request lifecycle hooks: <code>beforeRequest</code>, <code>beforeRetry</code>, and <code>afterResponse</code>.</li>
+</ul>
+</li>
+</ul>
+<h2 id="installation" class="tsd-anchor-link">Installation<a href="#installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="sh"><span class="hl-0">fyn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">@fynjs/fetch</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="options-reference" class="tsd-anchor-link">Options Reference<a href="#options-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>All standard <code>RequestInit</code> options are supported, plus:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timeout</code></td>
+<td><code>number</code></td>
+<td>none</td>
+<td>Total budget in ms, covering headers <strong>and</strong> the body read (including <code>stream()</code>). Applied <strong>per attempt</strong>, so N retries can take up to N x <code>timeout</code>. Exceeding it rejects with <code>TimeoutError</code>; if the deadline lands mid-body, the pending body read rejects with that same error.</td>
+</tr>
+<tr>
+<td><code>throwOnHttpError</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Throw <code>HttpError</code> when <code>!res.ok</code>. Defaults to <code>true</code> in <code>.json()</code>, <code>.text()</code>, <code>.buffer()</code>, <code>.arrayBuffer()</code> and <code>.blob()</code>; an instance default or a per-call value overrides that.</td>
+</tr>
+<tr>
+<td><code>retry</code></td>
+<td><code>number | RetryOptions</code></td>
+<td>none</td>
+<td>See below.</td>
+</tr>
+<tr>
+<td><code>prefixUrl</code></td>
+<td><code>string | URL</code></td>
+<td>none</td>
+<td>Prepended to relative paths. Any query string on the prefix stays attached to the end of the resolved URL.</td>
+</tr>
+<tr>
+<td><code>searchParams</code></td>
+<td><code>string | URLSearchParams | object</code></td>
+<td>none</td>
+<td>Overrides same-named params from instance defaults and from the URL.</td>
+</tr>
+<tr>
+<td><code>json</code></td>
+<td><code>any</code></td>
+<td>none</td>
+<td>Serialized body; sets <code>Content-Type</code> and <code>Accept</code> if unset.</td>
+</tr>
+<tr>
+<td><code>form</code></td>
+<td><code>object | URLSearchParams</code></td>
+<td>none</td>
+<td>URL-encoded body.</td>
+</tr>
+<tr>
+<td><code>username</code> / <code>password</code></td>
+<td><code>string</code></td>
+<td>none</td>
+<td>HTTP Basic auth.</td>
+</tr>
+<tr>
+<td><code>cookies</code></td>
+<td><code>Record&lt;string, string&gt;</code></td>
+<td>none</td>
+<td>Serialized into a <code>Cookie</code> header.</td>
+</tr>
+<tr>
+<td><code>bodyFactory</code></td>
+<td><code>() =&gt; BodyInit</code></td>
+<td>none</td>
+<td>Required to retry a one-shot (stream / async-iterable) body.</td>
+</tr>
+<tr>
+<td><code>hooks</code></td>
+<td><code>FynFetchHooks</code></td>
+<td>none</td>
+<td><code>beforeRequest</code>, <code>beforeRetry</code>, <code>afterResponse</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Header values of <code>undefined</code> or <code>null</code> are dropped rather than sent as the string <code>&quot;undefined&quot;</code>.</p>
+<h3 id="_" class="tsd-anchor-link"><code>RetryOptions</code><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>retries</code></td>
+<td><code>0</code></td>
+<td>Must be a non-negative integer; anything else throws <code>TypeError</code>.</td>
+</tr>
+<tr>
+<td><code>minTimeout</code></td>
+<td><code>500</code></td>
+<td>Delay before the first retry, in ms.</td>
+</tr>
+<tr>
+<td><code>factor</code></td>
+<td><code>2</code></td>
+<td>Exponential backoff multiplier.</td>
+</tr>
+<tr>
+<td><code>maxTimeout</code></td>
+<td><code>10_000</code></td>
+<td>Upper bound on any single delay, including a <code>Retry-After</code> value.</td>
+</tr>
+<tr>
+<td><code>statusCodes</code></td>
+<td><code>[408, 429, 500, 502, 503, 504]</code></td>
+<td>Statuses that trigger a retry.</td>
+</tr>
+<tr>
+<td><code>retryOn</code></td>
+<td>none</td>
+<td><code>(err, res) =&gt; boolean</code>. Replaces the <strong>entire</strong> default policy, including the idempotent-method restriction.</td>
+</tr>
+</tbody>
+</table>
+<p>Retries carry up to 25% additive jitter, and honor a <code>Retry-After</code> response header
+(delta-seconds or HTTP-date) in preference to the computed backoff, capped at <code>maxTimeout</code>.</p>
+<p><strong>Idempotent methods only.</strong> The default policy retries <code>GET</code>, <code>HEAD</code>, <code>PUT</code>,
+<code>DELETE</code>, <code>OPTIONS</code> and <code>TRACE</code>. <code>POST</code> and <code>PATCH</code> are never retried by default,
+since the server may have processed the first attempt before failing. Opt them in
+with an explicit <code>retryOn</code>:</p>
+<pre><code class="ts"><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">post</span><span class="hl-1">(</span><span class="hl-4">url</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">json:</span><span class="hl-1"> </span><span class="hl-4">payload</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">retry:</span><span class="hl-1"> { </span><span class="hl-4">retries:</span><span class="hl-1"> </span><span class="hl-9">2</span><span class="hl-1">, </span><span class="hl-0">retryOn</span><span class="hl-4">:</span><span class="hl-1"> (</span><span class="hl-4">_err</span><span class="hl-1">, </span><span class="hl-4">res</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> !!</span><span class="hl-4">res</span><span class="hl-1"> &amp;&amp; </span><span class="hl-4">res</span><span class="hl-1">.</span><span class="hl-4">status</span><span class="hl-1"> &gt;= </span><span class="hl-9">500</span><span class="hl-1"> },</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="basic-request" class="tsd-anchor-link">Basic Request<a href="#basic-request" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">res</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">fynFetch</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/api/data&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">timeout:</span><span class="hl-1"> </span><span class="hl-9">5000</span><span class="hl-1">,</span><br/><span class="hl-1">});</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">res</span><span class="hl-1">.</span><span class="hl-0">text</span><span class="hl-1">());</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="http-verb-shortcuts-json" class="tsd-anchor-link">HTTP Verb Shortcuts &amp; JSON<a href="#http-verb-shortcuts-json" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">// POST with JSON body</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">res</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">post</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/api/users&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">json:</span><span class="hl-1"> { </span><span class="hl-4">name:</span><span class="hl-1"> </span><span class="hl-2">&quot;Alice&quot;</span><span class="hl-1">, </span><span class="hl-4">role:</span><span class="hl-1"> </span><span class="hl-2">&quot;developer&quot;</span><span class="hl-1"> },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-6">// Parse JSON directly</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">user</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">json</span><span class="hl-1">&lt;{ </span><span class="hl-4">id</span><span class="hl-1">: </span><span class="hl-15">string</span><span class="hl-1">; </span><span class="hl-4">name</span><span class="hl-1">: </span><span class="hl-15">string</span><span class="hl-1"> }&gt;(</span><span class="hl-2">&quot;https://example.com/api/users/1&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">// Read as Buffer</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">buffer</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">buffer</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/api/binary&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">// HEAD request (automatically drains response body to avoid socket leaks)</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">headRes</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">head</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/api/file&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">headRes</span><span class="hl-1">.</span><span class="hl-4">headers</span><span class="hl-1">.</span><span class="hl-0">get</span><span class="hl-1">(</span><span class="hl-2">&quot;content-length&quot;</span><span class="hl-1">));</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="pre-configured-api-clients-" class="tsd-anchor-link">Pre-Configured API Clients (<code>create</code> / <code>extend</code>)<a href="#pre-configured-api-clients-" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">github</span><span class="hl-1"> = </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">create</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-4">prefixUrl:</span><span class="hl-1"> </span><span class="hl-2">&quot;https://api.github.com&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">headers:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;Accept&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;application/vnd.github.v3+json&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;User-Agent&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;my-app&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-4">timeout:</span><span class="hl-1"> </span><span class="hl-9">10_000</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">retry:</span><span class="hl-1"> { </span><span class="hl-4">retries:</span><span class="hl-1"> </span><span class="hl-9">2</span><span class="hl-1"> },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-6">// Relative path automatically resolved with prefixUrl</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">repos</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">github</span><span class="hl-1">.</span><span class="hl-0">json</span><span class="hl-1">(</span><span class="hl-2">&quot;/orgs/fynjs/repos&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">searchParams:</span><span class="hl-1"> { </span><span class="hl-4">per_page:</span><span class="hl-1"> </span><span class="hl-9">50</span><span class="hl-1"> },</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-6">// Extend with authentication</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">authClient</span><span class="hl-1"> = </span><span class="hl-4">github</span><span class="hl-1">.</span><span class="hl-0">extend</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-4">headers:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;Authorization&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">`Bearer </span><span class="hl-5">${</span><span class="hl-4">token</span><span class="hl-5">}</span><span class="hl-2">`</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="basic-authentication-cookies" class="tsd-anchor-link">Basic Authentication &amp; Cookies<a href="#basic-authentication-cookies" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">res</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">fynFetch</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/protected&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">username:</span><span class="hl-1"> </span><span class="hl-2">&quot;admin&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">password:</span><span class="hl-1"> </span><span class="hl-2">&quot;supersecretpassword&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">cookies:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">sessionId:</span><span class="hl-1"> </span><span class="hl-2">&quot;xyz123&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="url-encoded-form-submission" class="tsd-anchor-link">URL-Encoded Form Submission<a href="#url-encoded-form-submission" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">res</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">post</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/login&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">form:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">username:</span><span class="hl-1"> </span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">grant_type:</span><span class="hl-1"> </span><span class="hl-2">&quot;password&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="lifecycle-hooks" class="tsd-anchor-link">Lifecycle Hooks<a href="#lifecycle-hooks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">client</span><span class="hl-1"> = </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">create</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-4">hooks:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">beforeRequest:</span><span class="hl-1"> [</span><br/><span class="hl-1">      (</span><span class="hl-4">options</span><span class="hl-1">, </span><span class="hl-4">url</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Sending request to </span><span class="hl-5">${</span><span class="hl-4">url</span><span class="hl-5">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">      },</span><br/><span class="hl-1">    ],</span><br/><span class="hl-1">    </span><span class="hl-4">beforeRetry:</span><span class="hl-1"> [</span><br/><span class="hl-1">      ({ </span><span class="hl-4">attempt</span><span class="hl-1">, </span><span class="hl-4">error</span><span class="hl-1"> }) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">warn</span><span class="hl-1">(</span><span class="hl-2">`Retry attempt </span><span class="hl-5">${</span><span class="hl-4">attempt</span><span class="hl-5">}</span><span class="hl-2"> due to:`</span><span class="hl-1">, </span><span class="hl-4">error</span><span class="hl-1">?.</span><span class="hl-4">message</span><span class="hl-1">);</span><br/><span class="hl-1">      },</span><br/><span class="hl-1">    ],</span><br/><span class="hl-1">    </span><span class="hl-4">afterResponse:</span><span class="hl-1"> [</span><br/><span class="hl-1">      (</span><span class="hl-4">response</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Received status </span><span class="hl-5">${</span><span class="hl-4">response</span><span class="hl-8">.</span><span class="hl-4">status</span><span class="hl-5">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">      },</span><br/><span class="hl-1">    ],</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="uploading-a-stream" class="tsd-anchor-link">Uploading a Stream<a href="#uploading-a-stream" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">fs</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">// duplex: &quot;half&quot; is automatically applied</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">res</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">fynFetch</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/upload&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">method:</span><span class="hl-1"> </span><span class="hl-2">&quot;PUT&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">body:</span><span class="hl-1"> </span><span class="hl-4">fs</span><span class="hl-1">.</span><span class="hl-0">createReadStream</span><span class="hl-1">(</span><span class="hl-2">&quot;archive.tgz&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-4">timeout:</span><span class="hl-1"> </span><span class="hl-9">15000</span><span class="hl-1">,</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-6">// Immediately release the socket if you don&#39;t need the response body</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">drain</span><span class="hl-1">(</span><span class="hl-4">res</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="retrying-stream-uploads-with" class="tsd-anchor-link">Retrying Stream Uploads with <code>bodyFactory</code><a href="#retrying-stream-uploads-with" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">fs</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">res</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">fynFetch</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/upload&quot;</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-4">method:</span><span class="hl-1"> </span><span class="hl-2">&quot;PUT&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">retry:</span><span class="hl-1"> </span><span class="hl-9">2</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-0">bodyFactory</span><span class="hl-4">:</span><span class="hl-1"> () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-4">fs</span><span class="hl-1">.</span><span class="hl-0">createReadStream</span><span class="hl-1">(</span><span class="hl-2">&quot;archive.tgz&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">});</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">drain</span><span class="hl-1">(</span><span class="hl-4">res</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="streaming-download-to-disk" class="tsd-anchor-link">Streaming Download to Disk<a href="#streaming-download-to-disk" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">fynFetch</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/fetch&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">// destination can be a file path string or a Writable stream</span><br/><span class="hl-6">// automatically cleans up partial file if download fails or is aborted</span><br/><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">fynFetch</span><span class="hl-1">.</span><span class="hl-0">stream</span><span class="hl-1">(</span><span class="hl-2">&quot;https://example.com/archive.tgz&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;local.tgz&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Apache-2.0</p>
+</section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Classes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="classes">Classes<a href="#classes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="httperror"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><a href="../classes/_fynjs_fetch.HttpError.html">HttpError</a><a href="#httperror" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="timeouterror"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><a href="../classes/_fynjs_fetch.TimeoutError.html">TimeoutError</a><a href="#timeouterror" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Interfaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="interfaces">Interfaces<a href="#interfaces" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="beforeretrycontext"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><a href="../interfaces/_fynjs_fetch.BeforeRetryContext.html">BeforeRetryContext</a><a href="#beforeretrycontext" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="fynfetchhooks"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><a href="../interfaces/_fynjs_fetch.FynFetchHooks.html">FynFetchHooks</a><a href="#fynfetchhooks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="fynfetchinstance"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><a href="../interfaces/_fynjs_fetch.FynFetchInstance.html">FynFetchInstance</a><a href="#fynfetchinstance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="fynfetchoptions"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><a href="../interfaces/_fynjs_fetch.FynFetchOptions.html">FynFetchOptions</a><a href="#fynfetchoptions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="retryoptions"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><a href="../interfaces/_fynjs_fetch.RetryOptions.html">RetryOptions</a><a href="#retryoptions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Type Aliases"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="type-aliases">Type Aliases<a href="#type-aliases" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="searchparamsinit"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/_fynjs_fetch.SearchParamsInit.html">SearchParamsInit</a><a href="#searchparamsinit" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Variables"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="variables">Variables<a href="#variables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="fynfetch"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><a href="../variables/_fynjs_fetch.fynFetch.html">fynFetch</a><a href="#fynfetch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="functions">Functions<a href="#functions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="createinstance"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_fetch.createInstance.html">createInstance</a><a href="#createinstance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="drain"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_fetch.drain.html">drain</a><a href="#drain" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="stream"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><a href="../functions/_fynjs_fetch.stream.html">stream</a><a href="#stream" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-References"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="references">References<a href="#references" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="default"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><span>default</span><span> → </span><a href="../variables/_fynjs_fetch.fynFetch.html">fynFetch</a><a href="#default" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#fynjsfetch"><span>@fynjs/fetch</span></a>
+<ul>
+<li><a href="#features"><span>Features</span></a></li>
+<li><a href="#installation"><span>Installation</span></a></li>
+<li><a href="#options-reference"><span>Options <wbr/>Reference</span></a></li>
+<li>
+<ul>
+<li><a href="#_"><span></span></a></li></ul></li>
+<li><a href="#usage"><span>Usage</span></a></li>
+<li>
+<ul>
+<li><a href="#basic-request"><span>Basic <wbr/>Request</span></a></li>
+<li><a href="#http-verb-shortcuts-json"><span>HTTP <wbr/>Verb <wbr/>Shortcuts &amp; <wbr/>JSON</span></a></li>
+<li><a href="#pre-configured-api-clients-"><span>Pre-<wbr/>Configured <wbr/>API <wbr/>Clients ( / )</span></a></li>
+<li><a href="#basic-authentication-cookies"><span>Basic <wbr/>Authentication &amp; <wbr/>Cookies</span></a></li>
+<li><a href="#url-encoded-form-submission"><span>URL-<wbr/>Encoded <wbr/>Form <wbr/>Submission</span></a></li>
+<li><a href="#lifecycle-hooks"><span>Lifecycle <wbr/>Hooks</span></a></li>
+<li><a href="#uploading-a-stream"><span>Uploading a <wbr/>Stream</span></a></li>
+<li><a href="#retrying-stream-uploads-with"><span>Retrying <wbr/>Stream <wbr/>Uploads with </span></a></li>
+<li><a href="#streaming-download-to-disk"><span>Streaming <wbr/>Download to <wbr/>Disk</span></a></li></ul></li>
+<li><a href="#license"><span>License</span></a></li></ul>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Classes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Classes</summary>
+<div><a href="#httperror"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><span>Http<wbr/>Error</span></a><a href="#timeouterror"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><span>Timeout<wbr/>Error</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Interfaces"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Interfaces</summary>
+<div><a href="#beforeretrycontext"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><span>Before<wbr/>Retry<wbr/>Context</span></a><a href="#fynfetchhooks"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><span>Fyn<wbr/>Fetch<wbr/>Hooks</span></a><a href="#fynfetchinstance"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><span>Fyn<wbr/>Fetch<wbr/>Instance</span></a><a href="#fynfetchoptions"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><span>Fyn<wbr/>Fetch<wbr/>Options</span></a><a href="#retryoptions"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Interface"><use href="../assets/icons.svg#icon-256"></use></svg><span>Retry<wbr/>Options</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Type Aliases"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Type Aliases</summary>
+<div><a href="#searchparamsinit"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Search<wbr/>Params<wbr/>Init</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Variables"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Variables</summary>
+<div><a href="#fynfetch"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Variable"><use href="../assets/icons.svg#icon-32"></use></svg><span>fyn<wbr/>Fetch</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Functions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Functions</summary>
+<div><a href="#createinstance"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>create<wbr/>Instance</span></a><a href="#drain"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>drain</span></a><a href="#stream"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Function"><use href="../assets/icons.svg#icon-64"></use></svg><span>stream</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-References"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>References</summary>
+<div><a href="#default"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Reference"><use href="../assets/icons.svg#icon-4194304"></use></svg><span>default</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav id="tsd-sidebar-links" class="tsd-navigation"><a href="/" class="tsd-nav-link">fynjs</a><a href="https://github.com/jchip/fynjs" class="tsd-nav-link">GitHub</a></nav>
+<nav class="tsd-navigation"><a href="../index.html">fynjs API</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

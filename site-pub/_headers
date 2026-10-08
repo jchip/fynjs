@@ -1,0 +1,11 @@
+# Serve references as text so browsers show them instead of downloading.
+/ref/*
+  Content-Type: text/plain; charset=utf-8
+/llms*.txt
+  Content-Type: text/plain; charset=utf-8
+
+# Point HTML pages at the plain text index, as the <link rel="alternate"> tag does.
+/
+  Link: </llms.txt>; rel="alternate"; type="text/plain"
+/api/*
+  Link: </llms.txt>; rel="alternate"; type="text/plain"

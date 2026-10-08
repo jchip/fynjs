@@ -1,0 +1,130 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@fynjs/ts-resolve | fynjs API</title><meta name="description" content="Documentation for fynjs API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">fynjs API</a>
+<div id="tsd-toolbar-links"><a href="/">fynjs</a><a href="https://github.com/jchip/fynjs">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">@fynjs/ts-resolve</a></li></ul>
+<h1>Module @fynjs/ts-resolve</h1></div>
+<section class="tsd-panel tsd-typography"><h1 id="fynjsts-resolve" class="tsd-anchor-link">@fynjs/ts-resolve<a href="#fynjsts-resolve" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="../media/LICENSE-4"><img src="https://img.shields.io/npm/l/@fynjs/ts-resolve.svg" alt="License"></a>
+<a href="https://github.com/jchip/fynjs/actions/workflows/ci.yml"><img src="https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg" alt="build"></a></p>
+<p><a href="https://npm-stat.com/charts.html?package=%40fynjs%2Fts-resolve"><img src="https://img.shields.io/npm/dm/@fynjs/ts-resolve.svg" alt="Downloads"></a></p>
+<p><a href="https://npmjs.com/package/@fynjs/ts-resolve"><img src="https://nodei.co/npm/@fynjs/ts-resolve.png?downloads=true&amp;stars=true" alt="npm badge"></a></p>
+<ul>
+<li><a href="https://fynjs.pages.dev/api/modules/_fynjs_ts-resolve">API reference</a> - TypeDoc</li>
+<li><a href="../media/reference-4.md">Markdown reference</a> - the full API and runtime behavior in one file. Also ships in the package.</li>
+<li><a href="https://github.com/jchip/fynjs/tree/main/packages/ts-resolve">GitHub</a></li>
+</ul>
+<p>Run this repo's TypeScript on plain <code>node</code>, with no transpiler.</p>
+<p>Node already strips TypeScript types natively. What it deliberately does <strong>not</strong>
+do is rewrite import specifiers, so <code>./foo.js</code> will not find <code>foo.ts</code> and
+extensionless <code>./foo</code> will not resolve at all. That gap is the only reason a
+runner like <code>tsx</code> was needed here.</p>
+<p>This package fills exactly that gap: a <code>resolve</code> hook, and nothing else. Once it
+hands back a <code>.ts</code> URL, node's own type stripping compiles it. There is no
+<code>load</code> hook, no transpiler dependency, no native binary, and no postinstall.</p>
+<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="sh"><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-5">--import</span><span class="hl-1"> </span><span class="hl-2">@fynjs/ts-resolve/register</span><span class="hl-1"> </span><span class="hl-2">src/entry.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Or programmatically:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">install</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;@fynjs/ts-resolve&quot;</span><span class="hl-1">;</span><br/><span class="hl-0">install</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="what-it-maps" class="tsd-anchor-link">What it maps<a href="#what-it-maps" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>specifier</th>
+<th>resolves to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>./foo.js</code></td>
+<td><code>./foo.ts</code>, <code>./foo.tsx</code></td>
+</tr>
+<tr>
+<td><code>./foo.mjs</code></td>
+<td><code>./foo.mts</code>, <code>./foo.ts</code></td>
+</tr>
+<tr>
+<td><code>./foo.cjs</code></td>
+<td><code>./foo.cts</code>, <code>./foo.ts</code></td>
+</tr>
+<tr>
+<td><code>./foo</code></td>
+<td><code>./foo.ts</code>, <code>.tsx</code>, <code>.mts</code>, <code>.cts</code>, then <code>./foo/index.*</code></td>
+</tr>
+</tbody>
+</table>
+<p>A real <code>.js</code> file always wins - an existing file is never shadowed by a <code>.ts</code>
+of the same name. <code>node_modules</code> and the fynpo store are never remapped. For
+files under the cwd, only the path below the cwd is checked for them, so a
+project that sits inside a <code>.fynpo</code> directory still gets mapped.</p>
+<p>Successful lookups are cached. Misses are not, so a <code>.ts</code> file created while
+the process runs is still found.</p>
+<h2 id="why-no-source-maps" class="tsd-anchor-link">Why no source maps<a href="#why-no-source-maps" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Node replaces type annotations with whitespace rather than re-printing the
+file, so line <strong>and</strong> column numbers survive stripping untouched. Stack traces
+point at the original <code>.ts</code> with no source map involved.</p>
+<h2 id="limits" class="tsd-anchor-link">Limits<a href="#limits" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Node's stripping erases types; it never converts module syntax. A <code>.ts</code> file
+using <code>import</code>/<code>export</code> inside a package that is not <code>&quot;type&quot;: &quot;module&quot;</code> will
+fail with <code>Unexpected token 'export'</code>. The fix belongs in that package's
+<code>package.json</code>, not here.</p>
+<p>JSX is not supported - node cannot strip it. This repo has no <code>.tsx</code> sources.</p>
+<h2 id="requirements" class="tsd-anchor-link">Requirements<a href="#requirements" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Node &gt;= 22.18, for two reasons: the synchronous in-thread <code>module.registerHooks</code> API
+(node 22.15), and node's native TypeScript type-stripping being on by default (node
+22.18) so that <code>--import @fynjs/ts-resolve/register.ts</code> can load at all. Below 22.18
+the hook's own entry point cannot be read.</p>
+<h2 id="how-is-covered" class="tsd-anchor-link">How <code>require()</code> is covered<a href="#how-is-covered" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><code>install()</code> registers the resolve hook <em>and</em> wraps <code>Module._resolveFilename</code>.</p>
+<p>The wrap is not redundant. A CommonJS file run as the entry point is loaded
+through the ESM loader's CJS translator, and below node 26.2 the <code>require</code> that
+translator hands it goes straight to <code>Module._resolveFilename</code> without
+consulting <code>registerHooks</code> - so the hook never sees those specifiers and
+<code>require(&quot;./lib.js&quot;)</code> fails with <code>MODULE_NOT_FOUND</code>. From 26.2 the hook covers
+that path too and the wrap simply agrees with it.</p>
+<p>Resolution is all that was ever missing: node's CJS loader already strips types
+from a <code>.ts</code> file it is handed, on every version this package supports.</p>
+</section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Modules"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="modules">Modules<a href="#modules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="_"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><a href="_fynjs_ts-resolve..html"></a><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="register"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><a href="_fynjs_ts-resolve.register.html">register</a><a href="#register" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#fynjsts-resolve"><span>@fynjs/ts-<wbr/>resolve</span></a>
+<ul>
+<li><a href="#usage"><span>Usage</span></a></li>
+<li><a href="#what-it-maps"><span>What it maps</span></a></li>
+<li><a href="#why-no-source-maps"><span>Why no source maps</span></a></li>
+<li><a href="#limits"><span>Limits</span></a></li>
+<li><a href="#requirements"><span>Requirements</span></a></li>
+<li><a href="#how-is-covered"><span>How  is covered</span></a></li></ul>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Modules"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Modules</summary>
+<div><a href="#_"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><span></span></a><a href="#register"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><span>register</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav id="tsd-sidebar-links" class="tsd-navigation"><a href="/" class="tsd-nav-link">fynjs</a><a href="https://github.com/jchip/fynjs" class="tsd-nav-link">GitHub</a></nav>
+<nav class="tsd-navigation"><a href="../index.html">fynjs API</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

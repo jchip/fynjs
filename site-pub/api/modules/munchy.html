@@ -1,0 +1,252 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>munchy | fynjs API</title><meta name="description" content="Documentation for fynjs API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">fynjs API</a>
+<div id="tsd-toolbar-links"><a href="/">fynjs</a><a href="https://github.com/jchip/fynjs">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">munchy</a></li></ul>
+<h1>Module munchy</h1></div>
+<section class="tsd-panel tsd-typography"><h1 id="munchy" class="tsd-anchor-link">munchy<a href="#munchy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="../media/LICENSE-13"><img src="https://img.shields.io/npm/l/munchy.svg" alt="License"></a>
+<a href="https://github.com/jchip/fynjs/actions/workflows/ci.yml"><img src="https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg" alt="build"></a></p>
+<p><a href="https://npm-stat.com/charts.html?package=munchy"><img src="https://img.shields.io/npm/dm/munchy.svg" alt="Downloads"></a></p>
+<p><a href="https://npmjs.com/package/munchy"><img src="https://nodei.co/npm/munchy.png?downloads=true&amp;stars=true" alt="npm badge"></a></p>
+<ul>
+<li><a href="https://fynjs.pages.dev/api/modules/munchy">API reference</a> - TypeDoc</li>
+<li><a href="../media/reference-13.md">Markdown reference</a> - the full API and runtime behavior in one file. Also ships in the package.</li>
+<li><a href="https://github.com/jchip/fynjs/tree/main/packages/munchy">GitHub</a></li>
+</ul>
+<p>A producer Node stream for draining different data, including Readable streams.</p>
+<p>This is an ESM only package.</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">npm</span><span class="hl-1"> </span><span class="hl-2">i</span><span class="hl-1"> </span><span class="hl-5">--save</span><span class="hl-1"> </span><span class="hl-2">munchy</span>
+</code><button type="button">Copy</button></pre>
+
+<p>examples:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">fs</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">Munchy</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;munchy&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">munchy</span><span class="hl-1"> = </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">Munchy</span><span class="hl-1">();</span><br/><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">munch</span><span class="hl-1">(</span><span class="hl-2">&quot;hello world&quot;</span><span class="hl-1">, </span><span class="hl-4">fs</span><span class="hl-1">.</span><span class="hl-0">createReadStream</span><span class="hl-1">(</span><span class="hl-2">&quot;blah&quot;</span><span class="hl-1">), </span><span class="hl-2">&quot;bye bye&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">munch</span><span class="hl-1">(</span><span class="hl-5">null</span><span class="hl-1">); </span><span class="hl-6">// null terminates it</span><br/><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">pipe</span><span class="hl-1">(</span><span class="hl-4">process</span><span class="hl-1">.</span><span class="hl-4">stdout</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">fs</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><span class="hl-3">import</span><span class="hl-1"> </span><span class="hl-4">Munchy</span><span class="hl-1"> </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&quot;munchy&quot;</span><span class="hl-1">; </span><span class="hl-6">// default export works too</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">munchy</span><span class="hl-1"> = </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">Munchy</span><span class="hl-1">({}, </span><span class="hl-4">fs</span><span class="hl-1">.</span><span class="hl-0">createReadStream</span><span class="hl-1">(</span><span class="hl-2">&quot;foo&quot;</span><span class="hl-1">), </span><span class="hl-4">fs</span><span class="hl-1">.</span><span class="hl-0">createReadStream</span><span class="hl-1">(</span><span class="hl-2">&quot;bar&quot;</span><span class="hl-1">));</span><br/><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">munch</span><span class="hl-1">(</span><span class="hl-4">fs</span><span class="hl-1">.</span><span class="hl-0">createReadStream</span><span class="hl-1">(</span><span class="hl-2">&quot;blah&quot;</span><span class="hl-1">), </span><span class="hl-2">&quot;bye bye&quot;</span><span class="hl-1">, </span><span class="hl-5">null</span><span class="hl-1">); </span><span class="hl-6">// null terminates it</span><br/><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">pipe</span><span class="hl-1">(</span><span class="hl-4">process</span><span class="hl-1">.</span><span class="hl-4">stdout</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h1 id="api" class="tsd-anchor-link">API<a href="#api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="constructor" class="tsd-anchor-link">constructor<a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="js"><span class="hl-0">Munchy</span><span class="hl-1">(</span><span class="hl-4">opts</span><span class="hl-1">, ...</span><span class="hl-4">sources</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>opts</code></td>
+<td><a href="https://nodejs.org/api/stream.html#stream_new_stream_readable_options">options for Node Readable stream</a>, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>sources</code></td>
+<td>variadic params of sources to munch</td>
+</tr>
+</tbody>
+</table>
+<p><code>opts</code> may be <code>null</code> or omitted entirely, in which case every argument is
+treated as a source.</p>
+<h2 id="sources" class="tsd-anchor-link">sources<a href="#sources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>A source can be any of:</p>
+<table>
+<thead>
+<tr>
+<th>type</th>
+<th>behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code> / <code>Buffer</code> / <code>Uint8Array</code></td>
+<td>pushed as is</td>
+</tr>
+<tr>
+<td>Node <code>Readable</code></td>
+<td>drained, with backpressure applied to the source</td>
+</tr>
+<tr>
+<td>Web <code>ReadableStream</code></td>
+<td>converted with <code>Readable.fromWeb</code> and drained</td>
+</tr>
+<tr>
+<td><code>AsyncIterable</code></td>
+<td>drained one value at a time</td>
+</tr>
+<tr>
+<td><code>Iterable</code></td>
+<td>each value pushed</td>
+</tr>
+<tr>
+<td><code>Promise</code></td>
+<td>awaited, then handled as the resolved value</td>
+</tr>
+<tr>
+<td><code>null</code></td>
+<td>ends the stream</td>
+</tr>
+<tr>
+<td>anything else</td>
+<td>pushed as is (useful with <code>objectMode</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>A rejected <code>Promise</code> or a stream error goes through <code>handleStreamError</code> below.</p>
+<p>Munchy specific options:</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>handleStreamError</code></td>
+<td>callback to handle error from a stream being drained</td>
+</tr>
+</tbody>
+</table>
+<p><code>handleStreamError</code> should take the error object and return an object with these fields:</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>result</code></td>
+<td>string data to add to the output</td>
+</tr>
+<tr>
+<td><code>remit</code></td>
+<td>Set to <code>false</code> and munchy will continue without destroying itself, else it emits the error again and stop processing</td>
+</tr>
+</tbody>
+</table>
+<p>If <code>handleStreamError</code> returns a falsy value, then Munchy will emit the error and destroys itself.</p>
+<p>For example:</p>
+<pre><code class="js"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">munchy</span><span class="hl-1"> = </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-0">Munchy</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-0">handleStreamError</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-4">err</span><span class="hl-1"> </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-3">return</span><span class="hl-1"> { </span><span class="hl-4">result:</span><span class="hl-1"> </span><span class="hl-4">err</span><span class="hl-1">.</span><span class="hl-4">stack</span><span class="hl-1">, </span><span class="hl-4">remit:</span><span class="hl-1"> </span><span class="hl-5">false</span><span class="hl-1"> };</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="munch" class="tsd-anchor-link">munch<a href="#munch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="js"><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">munch</span><span class="hl-1">(...</span><span class="hl-4">sources</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sources</code></td>
+<td>variadic params of sources to munch</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>Returns <code>this</code>.</p>
+</li>
+<li>
+<p>To end and terminate <code>munchy</code> stream:</p>
+</li>
+</ul>
+<pre><code class="js"><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">munch</span><span class="hl-1">(</span><span class="hl-5">null</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h1 id="events" class="tsd-anchor-link">Events<a href="#events" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Munchy emits the following custom events:</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>description</th>
+<th>payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>draining</code></td>
+<td>starting to drain a stream source.</td>
+<td><code>{ stream }</code></td>
+</tr>
+<tr>
+<td><code>drained</code></td>
+<td>done with a stream source, including one recovered by <code>handleStreamError</code>.</td>
+<td><code>{ stream }</code></td>
+</tr>
+<tr>
+<td><code>munched</code></td>
+<td>all sources munched, ready for more.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>ie:</p>
+<pre><code class="js"><span class="hl-4">munchy</span><span class="hl-1">.</span><span class="hl-0">on</span><span class="hl-1">(</span><span class="hl-2">&quot;draining&quot;</span><span class="hl-1">, ({ </span><span class="hl-4">stream</span><span class="hl-1"> }) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {});</span>
+</code><button type="button">Copy</button></pre>
+
+<h1 id="demos" class="tsd-anchor-link">Demos<a href="#demos" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<ul>
+<li>Hapi - <a href="https://github.com/jchip/hapi-stream-sample">https://github.com/jchip/hapi-stream-sample</a></li>
+<li>Koa - <a href="https://github.com/jchip/koa-stream-sample">https://github.com/jchip/koa-stream-sample</a></li>
+<li>express - <a href="https://github.com/jchip/express-stream-sample">https://github.com/jchip/express-stream-sample</a></li>
+</ul>
+<h1 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></p>
+<hr>
+</section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Classes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="classes">Classes<a href="#classes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="munchy-1"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><a href="../classes/munchy.Munchy.html">Munchy</a><a href="#munchy-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Type Aliases"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="type-aliases">Type Aliases<a href="#type-aliases" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="munchyoptions"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/munchy.MunchyOptions.html">MunchyOptions</a><a href="#munchyoptions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="munchysource"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/munchy.MunchySource.html">MunchySource</a><a href="#munchysource" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="streamerrorresult"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><a href="../types/munchy.StreamErrorResult.html">StreamErrorResult</a><a href="#streamerrorresult" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-References"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="references">References<a href="#references" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="default"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><span>default</span><span> → </span><a href="../classes/munchy.Munchy.html">Munchy</a><a href="#default" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#munchy"><span>munchy</span></a><a href="#api"><span>API</span></a>
+<ul>
+<li><a href="#constructor"><span>constructor</span></a></li>
+<li><a href="#sources"><span>sources</span></a></li>
+<li><a href="#munch"><span>munch</span></a></li></ul><a href="#events"><span>Events</span></a><a href="#demos"><span>Demos</span></a><a href="#license"><span>License</span></a>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Classes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Classes</summary>
+<div><a href="#munchy-1"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Class"><use href="../assets/icons.svg#icon-128"></use></svg><span>Munchy</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Type Aliases"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Type Aliases</summary>
+<div><a href="#munchyoptions"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Munchy<wbr/>Options</span></a><a href="#munchysource"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Munchy<wbr/>Source</span></a><a href="#streamerrorresult"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Type Alias"><use href="../assets/icons.svg#icon-2097152"></use></svg><span>Stream<wbr/>Error<wbr/>Result</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-References"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>References</summary>
+<div><a href="#default"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Reference"><use href="../assets/icons.svg#icon-4194304"></use></svg><span>default</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav id="tsd-sidebar-links" class="tsd-navigation"><a href="/" class="tsd-nav-link">fynjs</a><a href="https://github.com/jchip/fynjs" class="tsd-nav-link">GitHub</a></nav>
+<nav class="tsd-navigation"><a href="../index.html">fynjs API</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

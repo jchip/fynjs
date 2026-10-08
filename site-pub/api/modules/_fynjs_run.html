@@ -1,0 +1,621 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@fynjs/run | fynjs API</title><meta name="description" content="Documentation for fynjs API"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">fynjs API</a>
+<div id="tsd-toolbar-links"><a href="/">fynjs</a><a href="https://github.com/jchip/fynjs">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">@fynjs/run</a></li></ul>
+<h1>Module @fynjs/run</h1></div>
+<section class="tsd-panel tsd-typography"><h1 id="fynjsrun" class="tsd-anchor-link">@fynjs/run<a href="#fynjsrun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="../media/LICENSE-3"><img src="https://img.shields.io/npm/l/@fynjs/run.svg" alt="License"></a>
+<a href="https://github.com/jchip/fynjs/actions/workflows/ci.yml"><img src="https://github.com/jchip/fynjs/actions/workflows/ci.yml/badge.svg" alt="build"></a></p>
+<p><a href="https://npm-stat.com/charts.html?package=%40fynjs%2Frun"><img src="https://img.shields.io/npm/dm/@fynjs/run.svg" alt="Downloads"></a></p>
+<p><a href="https://npmjs.com/package/@fynjs/run"><img src="https://nodei.co/npm/@fynjs/run.png?downloads=true&amp;stars=true" alt="npm badge"></a></p>
+<ul>
+<li><a href="https://fynjs.pages.dev/api/modules/_fynjs_run">API reference</a> - TypeDoc</li>
+<li><a href="../media/reference-3.md">Markdown reference</a> - the full API and runtime behavior in one file. Also ships in the package.</li>
+<li><a href="https://github.com/jchip/fynjs/tree/main/packages/xarc-run">GitHub</a></li>
+</ul>
+<p><code>npm run</code> enhanced - A powerful task runner and build tool for modern JavaScript projects.</p>
+<ul>
+<li><strong>Compatible</strong> with <code>npm run</code> for <a href="https://docs.npmjs.com/misc/scripts">npm scripts</a></li>
+<li><strong>Concurrent &amp; Serial</strong> execution of tasks</li>
+<li><strong>JavaScript extensibility</strong> with functions and promises</li>
+<li><strong>Provider packages</strong> for reusable task libraries</li>
+<li><strong>TypeScript support</strong> - node strips types natively; tsx is picked up automatically for syntax it cannot strip</li>
+<li><strong>Advanced CLI</strong> with argument parsing and remaining args support</li>
+<li><strong>Namespace organization</strong> for better task management</li>
+<li>and <a href="#full-list-of-features">more</a></li>
+</ul>
+<h2 id="running-npm-scripts" class="tsd-anchor-link">Running <a href="https://docs.npmjs.com/misc/scripts">npm scripts</a><a href="#running-npm-scripts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This module provides a command <code>xrun</code> to run all your <a href="https://docs.npmjs.com/misc/scripts">npm scripts</a> in <code>package.json</code>.</p>
+<p>And you can run multiple of them <strong>concurrently</strong> or <strong>serially</strong>.</p>
+<p>Some examples below:</p>
+<table>
+<thead>
+<tr>
+<th>what you want to do</th>
+<th>npm command</th>
+<th><code>xrun</code> command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>run <code>test</code></td>
+<td><code>npm run test</code></td>
+<td><code>xrun test</code></td>
+</tr>
+<tr>
+<td>run <code>lint</code> and <code>test</code> concurrently</td>
+<td>N/A</td>
+<td><code>xrun lint test</code></td>
+</tr>
+<tr>
+<td>run <code>lint</code> and then <code>test</code> serially</td>
+<td>N/A</td>
+<td><code>xrun --serial lint test</code></td>
+</tr>
+</tbody>
+</table>
+<p>Alias for the options:</p>
+<ul>
+<li><code>-s</code>: <code>--serial</code></li>
+</ul>
+<p>npm scripts run through <code>xrun</code> get the same environment variables <code>npm run</code> sets, so scripts
+that branch on them work unchanged: <code>npm_lifecycle_event</code>, <code>npm_lifecycle_script</code>,
+<code>npm_package_name</code>, <code>npm_package_version</code>, <code>npm_package_json</code>, <code>npm_execpath</code>,
+<code>npm_node_execpath</code>, <code>INIT_CWD</code>.</p>
+<h2 id="running-javascript-tasks" class="tsd-anchor-link">Running JavaScript tasks<a href="#running-javascript-tasks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>You can write your tasks in JavaScript and run them with <code>xrun</code>.</p>
+<blockquote>
+<p>This is useful when a shell script is too long to fit in a JSON string, or when it's not easy to do something with shell script.</p>
+</blockquote>
+<p>These APIs are provided: <code>concurrent</code>, <code>serial</code>, <code>exec</code>, <code>env</code>, and <code>load</code>.</p>
+<p>Put your tasks in a file <code>xrun-tasks.js</code> and <code>xrun</code> will load it automatically.</p>
+<p>An example <code>xrun-tasks.js</code>:</p>
+<pre><code class="js"><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">load</span><span class="hl-1">, </span><span class="hl-7">exec</span><span class="hl-1">, </span><span class="hl-7">concurrent</span><span class="hl-1">, </span><span class="hl-7">serial</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">);</span><br/><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-6">// define a task hello, with a string definition</span><br/><span class="hl-1">  </span><span class="hl-6">// because a string is the task&#39;s direct value, it will be executed as a shell command.</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-4">hello:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-6">// define a task world, using a JavaScript function to print something</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-0">world</span><span class="hl-4">:</span><span class="hl-1"> () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;world&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-6">// define a task serialTask, that will execute the three tasks serially, first two are</span><br/><span class="hl-1">  </span><span class="hl-6">// the hello and world tasks defined above, and 3rd one is a shell command defined with exec.</span><br/><span class="hl-1">  </span><span class="hl-6">// because the 3rd one is not a direct value of a task, it has to use exec to define a shell command.</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-4">serialTask:</span><span class="hl-1"> </span><span class="hl-0">serial</span><span class="hl-1">(</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;world&quot;</span><span class="hl-1">, </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hi from exec&quot;</span><span class="hl-1">)),</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-6">// define a task concurrentTask, that will execute the three tasks concurrently</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-4">concurrentTask:</span><span class="hl-1"> </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;world&quot;</span><span class="hl-1">, </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hi from exec&quot;</span><span class="hl-1">)),</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-6">// define a task nesting, that does complex nesting of concurrent/serial constructs</span><br/><span class="hl-1">  </span><span class="hl-6">//</span><br/><span class="hl-1">  </span><span class="hl-4">nesting:</span><span class="hl-1"> </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-0">serial</span><span class="hl-1">(</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;world&quot;</span><span class="hl-1">), </span><span class="hl-0">serial</span><span class="hl-1">(</span><span class="hl-2">&quot;serialTask&quot;</span><span class="hl-1">, </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;world&quot;</span><span class="hl-1">)))</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>To run the tasks defined above from the command prompt, below are some examples:</p>
+<table>
+<thead>
+<tr>
+<th>what you want to do</th>
+<th>command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>run <code>hello</code></td>
+<td><code>xrun hello</code></td>
+</tr>
+<tr>
+<td>run <code>hello</code> and <code>world</code> concurrently</td>
+<td><code>xrun hello world</code></td>
+</tr>
+<tr>
+<td>run <code>hello</code> and then <code>world</code> serially</td>
+<td><code>xrun --serial hello world</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="and-shell-scripts" class="tsd-anchor-link"><code>exec</code> and shell scripts<a href="#and-shell-scripts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Use <code>exec</code> to invoke a shell command from JavaScript.</p>
+<p>Here are some examples:</p>
+<table>
+<thead>
+<tr>
+<th>shell script in JSON string</th>
+<th>shell script using <code>exec</code> in JavaScript</th>
+<th>note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>echo hello</code></td>
+<td><code>exec(&quot;echo hello&quot;)</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>FOO=bar echo hello $FOO</code></td>
+<td><code>exec(&quot;FOO=bar echo hello $FOO&quot;)</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>echo hello &amp;&amp; echo world</code></td>
+<td><code>exec(&quot;echo hello &amp;&amp; echo world&quot;)</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>echo hello &amp;&amp; echo world</code></td>
+<td><code>serial(exec(&quot;echo hello&quot;), exec(&quot;echo world&quot;))</code></td>
+<td>using serial instead of <code>&amp;&amp;</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>exec</code> supports <code>options</code> that can set a few things. Some examples below:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>what you want to do</th>
+<th>shell script using <code>exec</code> in JavaScript</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>setting an env variable</td>
+<td><code>exec(&quot;echo hello $FOO&quot;, {env: {FOO: &quot;bar&quot;}})</code></td>
+</tr>
+<tr>
+<td>provide tty to the shell process</td>
+<td><code>exec(&quot;echo hello&quot;, {flags: &quot;tty&quot;})</code></td>
+</tr>
+<tr>
+<td>using spawn with tty, and setting env</td>
+<td><code>exec(&quot;echo hello $FOO&quot;, {flags: &quot;tty,spawn&quot;, env: {FOO: &quot;bar&quot;}})</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="function-tasks" class="tsd-anchor-link">Function tasks<a href="#function-tasks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>A task in JavaScript can be just a function.</p>
+<pre><code class="js"><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-0">hello</span><span class="hl-4">:</span><span class="hl-1"> () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">)</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>A function task can do a few things:</p>
+<ul>
+<li>Return a promise or be an async function, and <code>xrun</code> will wait for the Promise.</li>
+<li>Return a stream and <code>xrun</code> will wait for the stream to end.</li>
+<li>Return another task for <code>xrun</code> to execute further.</li>
+<li>Access parsed options with <code>context.argOpts</code>.</li>
+</ul>
+<p>Example:</p>
+<pre><code class="js"><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-6">// A function task named hello that access parsed options with `context.argOpts`</span><br/><span class="hl-1">  </span><span class="hl-5">async</span><span class="hl-1"> </span><span class="hl-0">hello</span><span class="hl-1">(</span><span class="hl-4">context</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;hello argOpts:&quot;</span><span class="hl-1">, </span><span class="hl-4">context</span><span class="hl-1">.</span><span class="hl-4">argOpts</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-3">return</span><span class="hl-1"> [</span><span class="hl-2">&quot;foo&quot;</span><span class="hl-1">];</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-4">h2:</span><span class="hl-1"> [</span><span class="hl-2">&quot;hello world&quot;</span><span class="hl-1">],</span><br/><span class="hl-1">  </span><span class="hl-4">foo:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo bar&quot;</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="running-tasks-with-and" class="tsd-anchor-link">Running tasks with <code>concurrent</code> and <code>serial</code><a href="#running-tasks-with-and" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Use <code>concurrent</code> and <code>serial</code> to define a task that run multiple other tasks <strong>concurrently</strong> or <strong>serially</strong>.</p>
+<p>Some examples:</p>
+<ul>
+<li>To do the same thing as the shell script <code>echo hello &amp;&amp; echo world</code>:</li>
+</ul>
+<pre><code class="js"><span class="hl-0">serial</span><span class="hl-1">(</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">), </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo world&quot;</span><span class="hl-1">));</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>or concurrently:</li>
+</ul>
+<pre><code class="js"><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">), </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo world&quot;</span><span class="hl-1">));</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>You can specify any valid tasks:</li>
+</ul>
+<pre><code class="js"><span class="hl-0">serial</span><span class="hl-1">(</span><br/><span class="hl-1">  </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;world&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;name-of-a-task&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;task1&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;task2&quot;</span><span class="hl-1">)</span><br/><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="tasks-to-set" class="tsd-anchor-link">Tasks to set <code>process.env</code><a href="#tasks-to-set" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><code>env</code> allows you to create a task to set variables in <code>process.env</code>.</p>
+<p>You use it by passing an object of env vars, like <code>env({VAR_NAME: &quot;var-value&quot;})</code></p>
+<p>Examples:</p>
+<pre><code class="js"><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-4">setEnv:</span><span class="hl-1"> </span><span class="hl-0">serial</span><span class="hl-1">(</span><span class="hl-0">env</span><span class="hl-1">({ </span><span class="hl-4">FOO:</span><span class="hl-1"> </span><span class="hl-2">&quot;bar&quot;</span><span class="hl-1"> }), () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">process</span><span class="hl-1">.</span><span class="hl-4">env</span><span class="hl-1">.</span><span class="hl-7">FOO</span><span class="hl-1">))</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="and-to-put-it-all-together" class="tsd-anchor-link">And to put it all together<a href="#and-to-put-it-all-together" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>A popular CI/CD use case is to start servers and then run tests, which can be achieved using <code>xrun</code> JavaScript tasks:</p>
+<pre><code class="js"><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">concurrent</span><span class="hl-1">, </span><span class="hl-7">serial</span><span class="hl-1">, </span><span class="hl-7">load</span><span class="hl-1">, </span><span class="hl-7">stop</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">waitOn</span><span class="hl-1"> = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;wait-on&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-0">waitUrl</span><span class="hl-1"> = </span><span class="hl-4">url</span><span class="hl-1"> </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-0">waitOn</span><span class="hl-1">({ </span><span class="hl-4">resources:</span><span class="hl-1"> [</span><span class="hl-4">url</span><span class="hl-1">] });</span><br/><br/><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;start-server-and-test&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><br/><span class="hl-1">    </span><span class="hl-6">// start the servers concurrently</span><br/><span class="hl-1">    </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;start-mock-server&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;start-app-server&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">    </span><span class="hl-0">serial</span><span class="hl-1">(</span><br/><span class="hl-1">      </span><span class="hl-6">// wait for servers concurrently, and then run tests</span><br/><span class="hl-1">      </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;wait-mock-server&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;wait-app-server&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">      </span><span class="hl-2">&quot;run-tests&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-6">// Finally stop servers and exit.</span><br/><span class="hl-1">      </span><span class="hl-6">// This is only needed because there are long running servers.</span><br/><span class="hl-1">      () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-0">stop</span><span class="hl-1">()</span><br/><span class="hl-1">    )</span><br/><span class="hl-1">  ),</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;start-mock-server&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;mock-server&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;start-app-server&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;node lib/server&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;wait-mock-server&quot;</span><span class="hl-4">:</span><span class="hl-1"> () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-0">waitUrl</span><span class="hl-1">(</span><span class="hl-2">&quot;http://localhost:8000&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;wait-app-server&quot;</span><span class="hl-4">:</span><span class="hl-1"> () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-0">waitUrl</span><span class="hl-1">(</span><span class="hl-2">&quot;http://localhost:3000&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;run-tests&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;cypress run --headless -b chrome&quot;</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p><code>xrun</code> adds <code>node_modules/.bin</code> to PATH. That's why <code>npx</code> is not needed to run commands like <code>cypress</code> that's installed in <code>node_modules</code>.</p>
+</blockquote>
+<h3 id="provider-packages" class="tsd-anchor-link">Provider Packages<a href="#provider-packages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><code>@fynjs/run</code> supports <strong>provider packages</strong> - reusable task libraries that can be shared across projects. This allows teams to standardize common build tasks and workflows.</p>
+<h4 id="what-makes-a-provider-package" class="tsd-anchor-link">What makes a provider package?<a href="#what-makes-a-provider-package" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>A provider package is identified by either:</p>
+<ol>
+<li>Having <code>xrunProvider</code> config in its <code>package.json</code></li>
+<li>Having <code>@fynjs/run</code> as a dependency</li>
+</ol>
+<h4 id="creating-a-provider-package" class="tsd-anchor-link">Creating a provider package<a href="#creating-a-provider-package" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="js"><span class="hl-6">// In your provider package&#39;s package.json</span><br/><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;my-build-tasks&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;xrunProvider&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;module&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;tasks.js&quot;</span><span class="hl-1">  </span><span class="hl-6">// optional: specify which module exports loadTasks</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="js"><span class="hl-6">// In your provider&#39;s tasks.js (or main module)</span><br/><span class="hl-15">module</span><span class="hl-1">.</span><span class="hl-15">exports</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-0">loadTasks</span><span class="hl-1">(</span><span class="hl-4">xrun</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-6">// can pass in optional namespace with xrun.load(&quot;namespace&quot;, {...})</span><br/><span class="hl-1">    </span><span class="hl-3">return</span><span class="hl-1"> </span><span class="hl-4">xrun</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">      </span><span class="hl-4">build:</span><span class="hl-1"> </span><span class="hl-2">&quot;webpack --mode=production&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-4">test:</span><span class="hl-1"> </span><span class="hl-2">&quot;jest&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-4">lint:</span><span class="hl-1"> </span><span class="hl-2">&quot;eslint src/&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-4">ci:</span><span class="hl-1"> [</span><span class="hl-2">&quot;lint&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;test&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;build&quot;</span><span class="hl-1">]</span><br/><span class="hl-1">    });</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">};</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="using-provider-packages" class="tsd-anchor-link">Using provider packages<a href="#using-provider-packages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Provider packages are automatically loaded when:</p>
+<ol>
+<li>You have no tasks loaded (automatic discovery)</li>
+<li>You explicitly enable them by setting <code>loadProviderModules: true</code> in your <code>@fynjs/run</code> config</li>
+</ol>
+<p>Provider tasks are loaded from:</p>
+<ul>
+<li><code>dependencies</code></li>
+<li><code>devDependencies</code></li>
+<li><code>optionalDependencies</code></li>
+</ul>
+<p>Example <code>package.json</code>:</p>
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-16">&quot;name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;my-app&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-16">&quot;dependencies&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-16">&quot;my-build-tasks&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;^1.0.0&quot;</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-16">&quot;@fynjs/run&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-16">&quot;loadProviderModules&quot;</span><span class="hl-1">: </span><span class="hl-5">true</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Now you can run provider tasks directly:</p>
+<pre><code class="bash"><span class="hl-0">xrun</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1">    </span><span class="hl-6"># runs the build task from my-build-tasks</span><br/><span class="hl-0">xrun</span><span class="hl-1"> </span><span class="hl-2">ci</span><span class="hl-1">       </span><span class="hl-6"># runs the ci task which executes lint, test, build serially</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="shorthands" class="tsd-anchor-link">Shorthands<a href="#shorthands" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Not a fan of full API names like <code>concurrent</code>, <code>serial</code>, <code>exec</code>? You can skip them.</p>
+<ul>
+<li><code>concurrent</code>: Any array of tasks are concurrent, except when they are specified at the top level.</li>
+<li><code>exec</code>: Any string starting with <code>~$</code> are treated as shell script.</li>
+<li><code>serial</code>: An array of tasks specified at the top level is executed serially.</li>
+</ul>
+<p>Example:</p>
+<pre><code class="js"><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-4">executeSerially:</span><span class="hl-1"> [</span><span class="hl-2">&quot;task1&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;task2&quot;</span><span class="hl-1">], </span><span class="hl-6">// top level array serially</span><br/><span class="hl-1">  </span><span class="hl-4">concurrentArray:</span><span class="hl-1"> [[</span><span class="hl-2">&quot;task1&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;task2&quot;</span><span class="hl-1">]], </span><span class="hl-6">// Any other array (the one within) are concurrent</span><br/><span class="hl-1">  </span><span class="hl-4">topLevelShell:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">, </span><span class="hl-6">// top level string is a shell script</span><br/><span class="hl-1">  </span><span class="hl-4">shellScripts:</span><span class="hl-1"> [</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;~$echo hello&quot;</span><span class="hl-1">, </span><span class="hl-6">// any string started with ~$ is shell script</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;~(tty,spawn)$echo hello&quot;</span><span class="hl-1"> </span><span class="hl-6">// also possible to specify tty and spawn flag between ~ and $</span><br/><span class="hl-1">  ]</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="full-list-of-features" class="tsd-anchor-link">Full List of Features<a href="#full-list-of-features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>
+<p><strong>Core Execution Engine</strong></p>
+<ul>
+<li>Serial and concurrent task execution with proper nesting hierarchy</li>
+<li>Promise, <a href="https://nodejs.org/api/stream.html">node.js stream</a>, or callback support for JavaScript tasks</li>
+<li>Run time flow control - return further tasks to execute from JS task functions</li>
+<li>Tasks can have a <a href="../media/reference-3.md#finally-hook"><em>finally</em></a> hook that always runs after task finish or fail</li>
+</ul>
+</li>
+<li>
+<p><strong>Developer Experience</strong></p>
+<ul>
+<li>Compatible with and loads npm scripts from <code>package.json</code></li>
+<li>Auto completion for <a href="https://www.gnu.org/software/bash/">bash</a> and <a href="http://www.zsh.org/">zsh</a></li>
+<li>TypeScript support with automatic tsx/ts-node loading (tsx preferred)</li>
+<li>Advanced CLI with comprehensive options (see <a href="../media/reference-3.md#cli-options">CLI reference</a>)</li>
+<li>Argument parsing with <code>--</code> remaining args support</li>
+<li>Specify complex task execution patterns from command line</li>
+</ul>
+</li>
+<li>
+<p><strong>Extensibility &amp; Organization</strong></p>
+<ul>
+<li><strong>Provider packages</strong> - reusable task libraries for sharing common workflows</li>
+<li><strong><a href="../media/reference-3.md#namespace">Namespaces</a></strong> for organizing tasks across modules</li>
+<li>Define tasks in JavaScript files with full programmatic control</li>
+<li>Support <a href="../media/reference-3.md#function">flexible function tasks</a> that can return more tasks to run</li>
+<li>Custom task execution reporters</li>
+</ul>
+</li>
+<li>
+<p><strong>Advanced Features</strong></p>
+<ul>
+<li>TTY control for interactive commands</li>
+<li>Environment variable management with <code>env()</code> tasks</li>
+<li>Shell command execution with <code>exec()</code> and spawn options</li>
+<li>Task dependency resolution and execution planning</li>
+</ul>
+</li>
+</ul>
+<h2 id="getting-started" class="tsd-anchor-link">Getting Started<a href="#getting-started" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Still reading? Maybe you want to take it for a test drive?</p>
+<h2 id="a-simple-example" class="tsd-anchor-link">A Simple Example<a href="#a-simple-example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Here is a simple sample.</p>
+<ol>
+<li>First setup the directory and project:</li>
+</ol>
+<pre><code class="bash"><span class="hl-0">mkdir</span><span class="hl-1"> </span><span class="hl-2">xrun-test</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">xrun-test</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">init</span><span class="hl-1"> </span><span class="hl-5">--yes</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">rimraf</span><span class="hl-1"> </span><span class="hl-2">@fynjs/run</span>
+</code><button type="button">Copy</button></pre>
+
+<ol start="2">
+<li>Save the following code to <code>xrun-tasks.js</code>:</li>
+</ol>
+<pre><code class="js"><span class="hl-2">&quot;use strict&quot;</span><span class="hl-1">;</span><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">load</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tasks</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-4">hello:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello world&quot;</span><span class="hl-1">, </span><span class="hl-6">// a shell command to be exec&#39;ed</span><br/><span class="hl-1">  </span><span class="hl-0">jsFunc</span><span class="hl-1">() {</span><br/><span class="hl-1">    </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;JS hello world&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-4">both:</span><span class="hl-1"> [</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;jsFunc&quot;</span><span class="hl-1">] </span><span class="hl-6">// execute the two tasks serially</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-6">// Load the tasks into @fynjs/run</span><br/><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-4">tasks</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<ol start="3">
+<li>And try one of these commands:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>what to do</th>
+<th>command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>run the task <code>hello</code></td>
+<td><code>xrun hello</code></td>
+</tr>
+<tr>
+<td>run the task <code>jsFunc</code></td>
+<td><code>xrun jsFunc</code></td>
+</tr>
+<tr>
+<td>run the task <code>both</code></td>
+<td><code>xrun both</code></td>
+</tr>
+<tr>
+<td>run <code>hello</code> and <code>jsFunc</code> concurrently</td>
+<td><code>xrun hello jsFunc</code></td>
+</tr>
+<tr>
+<td>run <code>hello</code> and <code>jsFunc</code> serially</td>
+<td><code>xrun --serial hello jsFunc</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-more-complex-example" class="tsd-anchor-link">A More Complex Example<a href="#a-more-complex-example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Here is a more complex example to showcase a few more features:</p>
+<pre><code class="js"><span class="hl-2">&quot;use strict&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">util</span><span class="hl-1"> = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;util&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">exec</span><span class="hl-1">, </span><span class="hl-7">concurrent</span><span class="hl-1">, </span><span class="hl-7">serial</span><span class="hl-1">, </span><span class="hl-7">env</span><span class="hl-1">, </span><span class="hl-7">load</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">rimraf</span><span class="hl-1"> = </span><span class="hl-4">util</span><span class="hl-1">.</span><span class="hl-0">promisify</span><span class="hl-1">(</span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;rimraf&quot;</span><span class="hl-1">));</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tasks</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-4">hello:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello world&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-0">jsFunc</span><span class="hl-1">() {</span><br/><span class="hl-1">    </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;JS hello world&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-4">both:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">desc:</span><span class="hl-1"> </span><span class="hl-2">&quot;invoke tasks hello and jsFunc in serial order&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-6">// only array at top level like this is default to serial, other times</span><br/><span class="hl-1">    </span><span class="hl-6">// they are default to concurrent, or they can be marked explicitly</span><br/><span class="hl-1">    </span><span class="hl-6">// with the serial and concurrent APIs (below).</span><br/><span class="hl-1">    </span><span class="hl-4">task:</span><span class="hl-1"> [</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;jsFunc&quot;</span><span class="hl-1">]</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-6">// invoke tasks hello and jsFunc concurrently as a simple concurrent array</span><br/><span class="hl-1">  </span><span class="hl-4">both2:</span><span class="hl-1"> </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;jsFunc&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-4">shell:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">desc:</span><span class="hl-1"> </span><span class="hl-2">&quot;Run a shell command with TTY control and set an env&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">task:</span><span class="hl-1"> </span><span class="hl-0">exec</span><span class="hl-1">({ </span><span class="hl-4">cmd:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo test&quot;</span><span class="hl-1">, </span><span class="hl-4">flags:</span><span class="hl-1"> </span><span class="hl-2">&quot;tty&quot;</span><span class="hl-1">, </span><span class="hl-4">env:</span><span class="hl-1"> { </span><span class="hl-4">foo:</span><span class="hl-1"> </span><span class="hl-2">&quot;bar&quot;</span><span class="hl-1"> } })</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-4">babel:</span><span class="hl-1"> </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;babel src -D lib&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-6">// serial array of two tasks, first one to set env, second to invoke the babel task.</span><br/><span class="hl-1">  </span><span class="hl-4">compile:</span><span class="hl-1"> </span><span class="hl-0">serial</span><span class="hl-1">(</span><span class="hl-0">env</span><span class="hl-1">({ </span><span class="hl-4">BABEL_ENV:</span><span class="hl-1"> </span><span class="hl-2">&quot;production&quot;</span><span class="hl-1"> }), </span><span class="hl-2">&quot;babel&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-6">// more complex nesting serial/concurrent tasks.</span><br/><span class="hl-1">  </span><span class="hl-4">build:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">desc:</span><span class="hl-1"> </span><span class="hl-2">&quot;Run production build&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-4">task:</span><span class="hl-1"> </span><span class="hl-0">serial</span><span class="hl-1">(</span><br/><span class="hl-1">      () </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-0">rimraf</span><span class="hl-1">(</span><span class="hl-2">&quot;dist&quot;</span><span class="hl-1">), </span><span class="hl-6">// cleanup, (returning a promise will be awaited)</span><br/><span class="hl-1">      </span><span class="hl-0">env</span><span class="hl-1">({ </span><span class="hl-4">NODE_ENV:</span><span class="hl-1"> </span><span class="hl-2">&quot;production&quot;</span><span class="hl-1"> }), </span><span class="hl-6">// set env</span><br/><span class="hl-1">      </span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;babel&quot;</span><span class="hl-1">, </span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;webpack&quot;</span><span class="hl-1">)) </span><span class="hl-6">// invoke babel task and run webpack concurrently</span><br/><span class="hl-1">    )</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-4">tasks</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="install-globally" class="tsd-anchor-link">Install Globally<a href="#install-globally" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>If you'd like to get the command <code>xrun</code> globally, you can install this module globally.</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-5">-g</span><span class="hl-1"> </span><span class="hl-2">@fynjs/run</span>
+</code><button type="button">Copy</button></pre>
+
+<p>However, it will still try to <code>require</code> and use the copy from your <code>node_modules</code> if you installed it.</p>
+<h2 id="load-and-run-tasks-programmatically" class="tsd-anchor-link">Load and Run Tasks Programmatically<a href="#load-and-run-tasks-programmatically" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>If you don't want to use the CLI, you can load and invoke tasks in your JavaScript code using the <code>run</code> API.</p>
+<p>Example:</p>
+<pre><code class="js"><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-7">run</span><span class="hl-1">, </span><span class="hl-7">load</span><span class="hl-1">, </span><span class="hl-7">concurrent</span><span class="hl-1"> } = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">myTasks</span><span class="hl-1"> = </span><span class="hl-0">require</span><span class="hl-1">(</span><span class="hl-2">&quot;./tools/tasks&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-0">load</span><span class="hl-1">(</span><span class="hl-4">myTasks</span><span class="hl-1">);</span><br/><span class="hl-6">// assume task1 and task2 are defined, below will run them concurrently</span><br/><span class="hl-0">run</span><span class="hl-1">(</span><span class="hl-0">concurrent</span><span class="hl-1">(</span><span class="hl-2">&quot;task1&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;task2&quot;</span><span class="hl-1">), </span><span class="hl-4">err</span><span class="hl-1"> </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-3">if</span><span class="hl-1"> (</span><span class="hl-4">err</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;run tasks failed&quot;</span><span class="hl-1">, </span><span class="hl-4">err</span><span class="hl-1">);</span><br/><span class="hl-1">  } </span><span class="hl-3">else</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;tasks completed&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>Promise version of <code>run</code> is <code>asyncRun</code></p>
+</blockquote>
+<h2 id="task-file-formats" class="tsd-anchor-link">Task file formats<a href="#task-file-formats" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Your task file can be any of these, and <code>xrun</code> searches for them in this order:</p>
+<table>
+<thead>
+<tr>
+<th>extension</th>
+<th>module type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>xrun-tasks.js</code></td>
+<td>follows the nearest <code>package.json</code> <code>type</code></td>
+</tr>
+<tr>
+<td><code>xrun-tasks.cjs</code></td>
+<td>CommonJS</td>
+</tr>
+<tr>
+<td><code>xrun-tasks.mjs</code></td>
+<td>ES module</td>
+</tr>
+<tr>
+<td><code>xrun-tasks.ts</code></td>
+<td>TypeScript, follows <code>type</code></td>
+</tr>
+<tr>
+<td><code>xrun-tasks.mts</code></td>
+<td>TypeScript ES module</td>
+</tr>
+<tr>
+<td><code>xrun-tasks.cts</code></td>
+<td>TypeScript CommonJS</td>
+</tr>
+</tbody>
+</table>
+<p>A CommonJS task file exports with <code>module.exports</code>, an ES module with <code>export default</code>. Either can
+export the tasks object directly, or a function that receives the <code>xrun</code> instance:</p>
+<pre><code class="js"><span class="hl-3">export</span><span class="hl-1"> </span><span class="hl-3">default</span><span class="hl-1"> </span><span class="hl-4">xrun</span><span class="hl-1"> </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">xrun</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">({ </span><span class="hl-4">hello:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1"> });</span><br/><span class="hl-1">};</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="top-level-await" class="tsd-anchor-link">Top-level await<a href="#top-level-await" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>An ES module task file may use top-level await:</p>
+<pre><code class="js"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">config</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-0">loadConfigFromSomewhere</span><span class="hl-1">();</span><br/><br/><span class="hl-3">export</span><span class="hl-1"> </span><span class="hl-3">default</span><span class="hl-1"> </span><span class="hl-4">xrun</span><span class="hl-1"> </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">xrun</span><span class="hl-1">.</span><span class="hl-0">load</span><span class="hl-1">({ </span><span class="hl-4">build:</span><span class="hl-1"> </span><span class="hl-2">`build --target </span><span class="hl-5">${</span><span class="hl-4">config</span><span class="hl-8">.</span><span class="hl-4">target</span><span class="hl-5">}</span><span class="hl-2">`</span><span class="hl-1"> });</span><br/><span class="hl-1">};</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Task files load through <code>import()</code>, which is what makes this possible - <code>require</code> refuses a module
+graph containing top-level await and always will.</p>
+<h2 id="typescript" class="tsd-anchor-link">TypeScript<a href="#typescript" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Name your task file <code>xrun-tasks.ts</code>, <code>.mts</code>, or <code>.cts</code>.</p>
+<p><strong>No TypeScript runtime is needed for ordinary task files.</strong> Node strips type annotations itself,
+unflagged since 22.18, so a task file with types just works.</p>
+<p>Syntax that must be <em>transformed</em> rather than erased - enums, namespaces, parameter properties -
+is beyond what stripping does. For those, install <a href="https://www.npmjs.com/package/tsx">tsx</a>:</p>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-5">-D</span><span class="hl-1"> </span><span class="hl-2">tsx</span><span class="hl-1"> </span><span class="hl-2">typescript</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>xrun</code> loads it automatically when it finds a TypeScript task file. Without it, node reports
+<code>ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX</code> and <code>xrun</code> tells you which limit you hit. Running node with
+<code>--experimental-transform-types</code> is the other way out.</p>
+<h2 id="command-line-usage" class="tsd-anchor-link">Command Line Usage<a href="#command-line-usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Any task can be invoked with the command <code>xrun</code>:</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-2">task1</span><span class="hl-1"> [task1 </span><span class="hl-2">options]</span><span class="hl-1"> [&lt;task2&gt; </span><span class="hl-2">...</span><span class="hl-1"> &lt;</span><span class="hl-2">task</span><span class="hl-1">N&gt;</span><span class="hl-2">]</span>
+</code><button type="button">Copy</button></pre>
+
+<p>ie:</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-2">build</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="passing-arguments-to-tasks" class="tsd-anchor-link">Passing Arguments to Tasks<a href="#passing-arguments-to-tasks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>You can pass arguments after <code>--</code> to shell commands. These arguments are automatically appended to the last shell task:</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-2">build</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--watch</span><span class="hl-1"> </span><span class="hl-5">--verbose</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--grep</span><span class="hl-1"> </span><span class="hl-2">&quot;specific test&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>For JavaScript function tasks, parsed options are available via the <code>context</code> param:</p>
+<p>It's also pass as the <code>this</code> context for the function.</p>
+<pre><code class="js"><span class="hl-0">load</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-0">myTask</span><span class="hl-1">(</span><span class="hl-4">context</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;Parsed options:&quot;</span><span class="hl-1">, </span><span class="hl-4">context</span><span class="hl-1">.</span><span class="hl-4">argOpts</span><span class="hl-1">);</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="cli-options" class="tsd-anchor-link">CLI Options<a href="#cli-options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Common CLI options include:</p>
+<ul>
+<li><code>--serial</code>, <code>-s</code> - Execute tasks serially instead of concurrently</li>
+<li><code>--cwd &lt;path&gt;</code>, <code>-w</code> - Set working directory</li>
+<li><code>--list</code>, <code>-l</code> - List available tasks</li>
+<li><code>--npm</code>, <code>-n</code> - Load npm scripts (default: true)</li>
+<li><code>--quiet</code>, <code>-q</code> - Suppress output</li>
+<li><code>--soe &lt;mode&gt;</code>, <code>-e</code> - Stop on error mode: <code>no</code>, <code>soft</code>, <code>full</code></li>
+</ul>
+<p>For complete CLI reference:</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-5">-h</span>
+</code><button type="button">Copy</button></pre>
+
+<p>See <a href="../media/reference-3.md#cli-options">CLI Options</a> for full details.</p>
+<p>To load <a href="https://docs.npmjs.com/misc/scripts">npm scripts</a> into the <code>npm</code> namespace, use the <code>--npm</code> option:</p>
+<p>This is enabled by default. To turn it off use <code>--no-npm</code> option.</p>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-5">--npm</span><span class="hl-1"> </span><span class="hl-2">test</span>
+</code><button type="button">Copy</button></pre>
+
+<p>You can also specify command line options under <code>@fynjs/run</code> in your <code>package.json</code>.</p>
+<h3 id="specifying-complex-tasks-from-command-line" class="tsd-anchor-link">Specifying Complex Tasks from command line<a href="#specifying-complex-tasks-from-command-line" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>You can specify your tasks as an array from the command line.  For example, to have <code>xrun</code> execute the tasks <code>[task_a, task_b]</code> concurrently:</li>
+</ul>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> [task_a, </span><span class="hl-2">task_b]</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-5">--concurrent</span><span class="hl-1"> [task_a, </span><span class="hl-2">task_b]</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>You can also execute them serially with:</li>
+</ul>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> [--serial, </span><span class="hl-2">task_a,</span><span class="hl-1"> </span><span class="hl-2">task_b]</span><br/><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-5">--serial</span><span class="hl-1"> [task_a, </span><span class="hl-2">task_b]</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>You can execute tasks serially, and then an inner array with concurrent tasks. The following will execute <code>task_a</code>, then <code>task_b</code>, and finally <code>task_c1</code> and <code>task_c2</code> concurrently</li>
+</ul>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-5">--serial</span><span class="hl-1"> [task_a, </span><span class="hl-2">task_b,</span><span class="hl-1"> [task_c1, </span><span class="hl-2">task_c2]]</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>You can also make inner arrays serial using <code>--serial</code> as the first element.  Other shortcuts for &quot;--serial&quot; are: <code>.</code> and <code>-s</code>.</li>
+</ul>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> [task_a, </span><span class="hl-2">task_b,</span><span class="hl-1"> [--serial, </span><span class="hl-2">task_c1,</span><span class="hl-1"> </span><span class="hl-2">task_c2]]</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>You can pass the whole array in as a single string, which will be parsed as an array with string elements only.</li>
+</ul>
+<pre><code class="bash"><span class="hl-0">$</span><span class="hl-1"> </span><span class="hl-2">xrun</span><span class="hl-1"> </span><span class="hl-2">&quot;[task_a, task_b, [task_c1, task_c2]]&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="task-name" class="tsd-anchor-link">Task Name<a href="#task-name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Task name is any alphanumeric string that does not contain <code>/</code>, or starts with <code>?</code> or <code>~$</code>.</p>
+<p>Tasks can be invoked from command line:</p>
+<ul>
+<li><code>xrun foo/task1</code> indicates to execute <code>task1</code> in namespace <code>foo</code></li>
+<li><code>xrun ?task1</code> or <code>xrun ?foo/task1</code> indicates that executing <code>task1</code> is optional.</li>
+</ul>
+<p><code>xrun</code> treats these characters as special:</p>
+<ul>
+<li><code>/</code> as namespace separator</li>
+<li>prefix <code>?</code> to let you indicate that the execution of a task is optional so it won't fail if the task is not found.</li>
+<li>prefix <code>~$</code> to indicate the task to be a string as a shell command</li>
+</ul>
+<h2 id="optional-task-execution" class="tsd-anchor-link">Optional Task Execution<a href="#optional-task-execution" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>By prefixing the task name with <code>?</code> when invoking, you can indicate the execution of a task as optional so it won't fail in case the task is not found.</p>
+<p>For example:</p>
+<ul>
+<li><code>xrun ?foo/task1</code> or <code>xrun ?task1</code> won't fail if <code>task1</code> is not found.</li>
+</ul>
+<h2 id="task-definition" class="tsd-anchor-link">Task Definition<a href="#task-definition" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>A task can be <code>string</code>, <code>array</code>, <code>function</code>, or <code>object</code>. See <a href="../media/reference-3.md#task-definition">reference</a> for details.</p>
+<h2 id="packagejson" class="tsd-anchor-link">package.json<a href="#packagejson" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>You can define @fynjs/run tasks and options in your <code>package.json</code>.</p>
+<h2 id="tasks" class="tsd-anchor-link">Tasks<a href="#tasks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>You can also define <strong>xrun</strong> tasks without JavaScript capability in your <code>package.json</code>.</p>
+<p>They will be loaded into a namespace <code>pkg</code>.</p>
+<p>For example:</p>
+<pre><code class="js"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;my-app&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;tasks&quot;</span><span class="hl-4">:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-2">&quot;task1&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello from package.json&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-2">&quot;task2&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-2">&quot;echo hello from package.json&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-2">&quot;foo&quot;</span><span class="hl-4">:</span><span class="hl-1"> [</span><span class="hl-2">&quot;task1&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;task2&quot;</span><span class="hl-1">]</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>And you can invoke them with <code>xrun pkg/foo</code>, or <code>xrun foo</code> if there are no other namespace with a task named <code>foo</code>.</p>
+<h2 id="options" class="tsd-anchor-link">Options<a href="#options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Command line options can also be specified under <code>@fynjs/run</code> or <code>xrun</code> inside your <code>package.json</code>.</p>
+<p>For example:</p>
+<pre><code class="js"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;name&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;my-app&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">&quot;@fynjs/run&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;npm&quot;</span><span class="hl-4">:</span><span class="hl-1"> </span><span class="hl-5">true</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="async-tasks" class="tsd-anchor-link">Async Tasks<a href="#async-tasks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>You can provide a JS function for a task that executes asynchronously. Your function just need to take a callback or return a Promise or a <a href="https://nodejs.org/api/stream.html">node.js stream</a>.</p>
+<p>ie:</p>
+<pre><code class="js"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-7">tasks</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-0">cb_async</span><span class="hl-4">:</span><span class="hl-1"> (</span><span class="hl-4">cb</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-0">setTimeout</span><span class="hl-1">(</span><span class="hl-4">cb</span><span class="hl-1">, </span><span class="hl-9">10</span><span class="hl-1">);</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  </span><span class="hl-0">promise_async</span><span class="hl-4">:</span><span class="hl-1"> () </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-3">return</span><span class="hl-1"> </span><span class="hl-5">new</span><span class="hl-1"> </span><span class="hl-15">Promise</span><span class="hl-1">(</span><span class="hl-4">resolve</span><span class="hl-1"> </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-0">setTimeout</span><span class="hl-1">(</span><span class="hl-4">resolve</span><span class="hl-1">, </span><span class="hl-9">10</span><span class="hl-1">);</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="detailed-reference" class="tsd-anchor-link">Detailed Reference<a href="#detailed-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>See the <a href="../media/reference-3.md">Markdown reference</a> for more detailed information on features such as <a href="../media/reference-3.md#loading-tasks">load tasks into namespace</a>, and setup <a href="../media/reference-3.md#auto-complete-with-namespace">auto complete with namespace</a> for your shell.</p>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></p>
+</section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Modules"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="modules">Modules<a href="#modules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary><dl class="tsd-member-summaries"><dt class="tsd-member-summary" id="_"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><a href="_fynjs_run..html"></a><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd><dt class="tsd-member-summary" id="clixrun"><span class="tsd-member-summary-name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><a href="_fynjs_run.cli_xrun.html">cli/xrun</a><a href="#clixrun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></span></dt><dd class="tsd-member-summary"></dd></dl></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#fynjsrun"><span>@fynjs/run</span></a>
+<ul>
+<li><a href="#running-npm-scripts"><span>Running npm scripts</span></a></li>
+<li><a href="#running-javascript-tasks"><span>Running <wbr/>Java<wbr/>Script tasks</span></a></li>
+<li>
+<ul>
+<li><a href="#and-shell-scripts"><span> and shell scripts</span></a></li>
+<li><a href="#function-tasks"><span>Function tasks</span></a></li>
+<li><a href="#running-tasks-with-and"><span>Running tasks with  and </span></a></li>
+<li><a href="#tasks-to-set"><span>Tasks to set </span></a></li>
+<li><a href="#and-to-put-it-all-together"><span>And to put it all together</span></a></li>
+<li><a href="#provider-packages"><span>Provider <wbr/>Packages</span></a></li>
+<li>
+<ul>
+<li><a href="#what-makes-a-provider-package"><span>What makes a provider package?</span></a></li>
+<li><a href="#creating-a-provider-package"><span>Creating a provider package</span></a></li>
+<li><a href="#using-provider-packages"><span>Using provider packages</span></a></li></ul></li>
+<li><a href="#shorthands"><span>Shorthands</span></a></li></ul></li>
+<li><a href="#full-list-of-features"><span>Full <wbr/>List of <wbr/>Features</span></a></li>
+<li><a href="#getting-started"><span>Getting <wbr/>Started</span></a></li>
+<li><a href="#a-simple-example"><span>A <wbr/>Simple <wbr/>Example</span></a></li>
+<li><a href="#a-more-complex-example"><span>A <wbr/>More <wbr/>Complex <wbr/>Example</span></a></li>
+<li><a href="#install-globally"><span>Install <wbr/>Globally</span></a></li>
+<li><a href="#load-and-run-tasks-programmatically"><span>Load and <wbr/>Run <wbr/>Tasks <wbr/>Programmatically</span></a></li>
+<li><a href="#task-file-formats"><span>Task file formats</span></a></li>
+<li>
+<ul>
+<li><a href="#top-level-await"><span>Top-<wbr/>level await</span></a></li></ul></li>
+<li><a href="#typescript"><span>Type<wbr/>Script</span></a></li>
+<li><a href="#command-line-usage"><span>Command <wbr/>Line <wbr/>Usage</span></a></li>
+<li>
+<ul>
+<li><a href="#passing-arguments-to-tasks"><span>Passing <wbr/>Arguments to <wbr/>Tasks</span></a></li>
+<li><a href="#cli-options"><span>CLI <wbr/>Options</span></a></li>
+<li><a href="#specifying-complex-tasks-from-command-line"><span>Specifying <wbr/>Complex <wbr/>Tasks from command line</span></a></li></ul></li>
+<li><a href="#task-name"><span>Task <wbr/>Name</span></a></li>
+<li><a href="#optional-task-execution"><span>Optional <wbr/>Task <wbr/>Execution</span></a></li>
+<li><a href="#task-definition"><span>Task <wbr/>Definition</span></a></li>
+<li><a href="#packagejson"><span>package.json</span></a></li>
+<li><a href="#tasks"><span>Tasks</span></a></li>
+<li><a href="#options"><span>Options</span></a></li>
+<li><a href="#async-tasks"><span>Async <wbr/>Tasks</span></a></li>
+<li><a href="#detailed-reference"><span>Detailed <wbr/>Reference</span></a></li>
+<li><a href="#license"><span>License</span></a></li></ul>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Modules"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Modules</summary>
+<div><a href="#_"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><span></span></a><a href="#clixrun"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Module"><use href="../assets/icons.svg#icon-2"></use></svg><span>cli/xrun</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav id="tsd-sidebar-links" class="tsd-navigation"><a href="/" class="tsd-nav-link">fynjs</a><a href="https://github.com/jchip/fynjs" class="tsd-nav-link">GitHub</a></nav>
+<nav class="tsd-navigation"><a href="../index.html">fynjs API</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>
