@@ -6,7 +6,7 @@
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/create-monorepo",
+  "homepage": "https://fynjs.pages.dev/",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },

@@ -39,7 +39,7 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/check-pkg-new-version",
+  "homepage": "https://fynjs.pages.dev/api/modules/check-pkg-new-version",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },

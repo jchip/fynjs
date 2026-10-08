@@ -15,7 +15,7 @@
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fynpo-base",
+  "homepage": "https://fynjs.pages.dev/api/modules/_fynpo_base",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },

@@ -24,7 +24,7 @@
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/optional-import",
+  "homepage": "https://fynjs.pages.dev/api/modules/optional-import",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },

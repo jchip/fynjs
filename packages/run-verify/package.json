@@ -1,7 +1,7 @@
 {
   "name": "run-verify",
   "version": "2.1.8",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/run-verify",
+  "homepage": "https://fynjs.pages.dev/api/modules/run-verify",
   "description": "Proper test verifications",
   "type": "module",
   "types": "./dist/index.d.ts",

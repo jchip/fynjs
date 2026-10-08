@@ -3,7 +3,7 @@
   "version": "3.2.3",
   "type": "module",
   "description": "fynpo is a zero setup monorepo manager for node.js",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fynpo",
+  "homepage": "https://fynjs.pages.dev/",
   "scripts": {
     "build": "rm -rf dist && rolldown -c rolldown.config.mjs",
     "test": "vitest run",

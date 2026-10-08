@@ -7,7 +7,7 @@
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fynpo-cli",
+  "homepage": "https://fynjs.pages.dev/",
   "bin": {
     "fynpo": "dist/fynpo.js"
   },

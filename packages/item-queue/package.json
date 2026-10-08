@@ -1,7 +1,7 @@
 {
   "name": "item-queue",
   "version": "2.1.10",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/item-queue",
+  "homepage": "https://fynjs.pages.dev/api/modules/item-queue",
   "description": "An item processing queue with Promise",
   "type": "module",
   "types": "./dist/index.d.ts",

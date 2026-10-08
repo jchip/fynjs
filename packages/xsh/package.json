@@ -37,7 +37,7 @@
     "url": "git+https://github.com/jchip/fynjs.git",
     "directory": "packages/xsh"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xsh",
+  "homepage": "https://fynjs.pages.dev/api/modules/xsh",
   "keywords": [
     "shell",
     "exec",

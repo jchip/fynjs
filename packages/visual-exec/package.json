@@ -1,7 +1,7 @@
 {
   "name": "visual-exec",
   "version": "1.1.10",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/visual-exec",
+  "homepage": "https://fynjs.pages.dev/api/modules/visual-exec",
   "description": "Visual shell exec with spinners and progress display",
   "type": "module",
   "types": "./dist/index.d.ts",

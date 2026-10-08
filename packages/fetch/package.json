@@ -15,7 +15,7 @@
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/fetch",
+  "homepage": "https://fynjs.pages.dev/api/modules/_fynjs_fetch",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },

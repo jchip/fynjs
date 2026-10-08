@@ -29,7 +29,7 @@
     "prepack": "publish-util-prepack",
     "postpack": "publish-util-postpack"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xaa",
+  "homepage": "https://fynjs.pages.dev/api/modules/xaa",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },

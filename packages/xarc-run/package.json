@@ -86,7 +86,7 @@
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/xarc-run",
+  "homepage": "https://fynjs.pages.dev/api/modules/_fynjs_run",
   "dependencies": {
     "chalk": "^6.0.0",
     "chalker": "^2.2.1",

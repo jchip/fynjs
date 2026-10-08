@@ -57,7 +57,7 @@
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/filter-scan-dir",
+  "homepage": "https://fynjs.pages.dev/api/modules/filter-scan-dir",
   "dependencies": {},
   "devDependencies": {
     "@fynjs/run": "^1.1.9",

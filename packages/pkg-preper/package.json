@@ -1,7 +1,7 @@
 {
   "name": "pkg-preper",
   "version": "0.3.7",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/pkg-preper",
+  "homepage": "https://fynjs.pages.dev/api/modules/pkg-preper",
   "description": "Package Preparer",
   "type": "module",
   "types": "./dist/index.d.ts",

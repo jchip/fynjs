@@ -40,7 +40,7 @@
   ],
   "author": "Joel Chen",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/jchip/fynjs/tree/main/packages/unwrap-npm-cmd",
+  "homepage": "https://fynjs.pages.dev/api/modules/unwrap-npm-cmd",
   "bugs": {
     "url": "https://github.com/jchip/fynjs/issues"
   },
