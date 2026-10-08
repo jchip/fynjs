@@ -1,3 +1,457 @@
+# 10/7/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/cli-args@1.2.0` `(1.1.7 => 1.2.0)`
+-   `@fynjs/create-monorepo@1.0.0` `(0.0.1 => 1.0.0)`
+-   `@fynjs/fetch@1.0.7` `(1.0.6 => 1.0.7)`
+-   `@fynjs/reflink@0.2.0` `(0.1.0 => 0.2.0)`
+-   `@fynjs/run@1.1.10` `(1.1.9 => 1.1.10)`
+-   `@fynjs/ts-resolve@1.0.4` `(1.0.3 => 1.0.4)`
+-   `@fynpo/base@2.1.13` `(2.1.12 => 2.1.13)`
+-   `@jchip/error@2.1.8` `(2.1.7 => 2.1.8)`
+-   `aveazul@2.1.9` `(2.1.8 => 2.1.9)`
+-   `chalker@2.3.0` `(2.2.1 => 2.3.0)`
+-   `check-pkg-new-version@1.1.9` `(1.1.8 => 1.1.9)`
+-   `check-pkg-new-version-engine@2.1.8` `(2.1.7 => 2.1.8)`
+-   `filter-scan-dir@2.1.11` `(2.1.10 => 2.1.11)`
+-   `fyn@3.3.0` `(3.2.3 => 3.3.0)`
+-   `fynpo@3.3.0` `(3.2.3 => 3.3.0)`
+-   `fynpo-cli@3.3.0` `(3.2.3 => 3.3.0)`
+-   `item-queue@2.2.0` `(2.1.10 => 2.2.0)`
+-   `munchy@2.0.8` `(2.0.7 => 2.0.8)`
+-   `optional-import@1.1.8` `(1.1.7 => 1.1.8)`
+-   `pkg-preper@0.3.8` `(0.3.7 => 0.3.8)`
+-   `publish-util@3.1.8` `(3.1.7 => 3.1.8)`
+-   `run-verify@2.2.0` `(2.1.8 => 2.2.0)`
+-   `string-array@2.1.8` `(2.1.7 => 2.1.8)`
+-   `unwrap-npm-cmd@2.1.8` `(2.1.7 => 2.1.8)`
+-   `visual-exec@1.2.0` `(1.1.10 => 1.2.0)`
+-   `visual-logger@2.1.10` `(2.1.9 => 2.1.10)`
+-   `xaa@3.1.8` `(3.1.7 => 3.1.8)`
+-   `xenv-config@2.1.8` `(2.1.7 => 2.1.8)`
+-   `xflight@3.1.10` `(3.1.9 => 3.1.10)`
+-   `xsh@1.1.9` `(1.1.8 => 1.1.9)`
+
+### Fynpo Updated
+
+
+## Commits
+
+-   `packages/cli-args`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   test: use run-verify steps in new cli-args, fynpo and visual-exec tests [commit](https://github.com/jchip/fynjs/commit/073219c5e23eb9d8e435cc4fbc3bd0fca3a21d6b)
+    -   feat(cli-args): add config hook so config can satisfy required options [commit](https://github.com/jchip/fynjs/commit/ce6d5ac7b3204bd00666a927debe45ea9353cc29)
+    -   FCA-14: fix cli-args required defaults, negative values and handlers [commit](https://github.com/jchip/fynjs/commit/42a3ed7ef6daee81ac8d7d405e23fb980e32a8a9)
+    -   FCA-14: read =0 and =1 as booleans for declared flags [commit](https://github.com/jchip/fynjs/commit/62f2156267229eaa30eae18f1f347f127fbe9c2d)
+    -   chore: remove per-package docs scripts and typedoc [commit](https://github.com/jchip/fynjs/commit/fbda566eca524c45a8299227735bc2de1fa1449d)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/confippet`
+
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+
+-   `packages/create-monorepo`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   feat(create-monorepo): [maj] first public release, fynpo 3, commitlint off by default [commit](https://github.com/jchip/fynjs/commit/f95075bef3eb46d2fc7a5272ca409eebc06fe2f5)
+    -   chore: remove per-package docs scripts and typedoc [commit](https://github.com/jchip/fynjs/commit/fbda566eca524c45a8299227735bc2de1fa1449d)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/dual-mode-template`
+
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+
+-   `packages/fetch`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+
+-   `packages/http-server`
+
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+
+-   `packages/reflink`
+
+    -   fix(reflink): format package.json [commit](https://github.com/jchip/fynjs/commit/6350e4cea4fdd4a102e6d41da4d8cdb1c386bbec)
+    -   fix(reflink): keep napi targets and publish with public access [commit](https://github.com/jchip/fynjs/commit/f3b0df83c927083e7bc12d81bee0a53d3c0c52a9)
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FPM-189: reject duplicate reflink entries and keep each placement error [commit](https://github.com/jchip/fynjs/commit/a9480e24208cd82dc44b7308713b068a362c9704)
+    -   FPM-188: reject a reflink dest that resolves onto the source [commit](https://github.com/jchip/fynjs/commit/7f860460a49adbc2f4f2049aa1bcfd3d506950b9)
+    -   docs(reflink): add README and LICENSE [commit](https://github.com/jchip/fynjs/commit/88def1662b22f844c3dbcbdf93f3a8d61f0057ce)
+    -   chore(reflink): commit fyn-lock.yaml [commit](https://github.com/jchip/fynjs/commit/d676f18bee40a3b49fcd4a10e2a5670cf99a8d77)
+    -   feat(reflink): add @fynjs/reflink native copy-on-write cloning [commit](https://github.com/jchip/fynjs/commit/f261fd0d7655c5411db58995a7bdad8fc228a182)
+
+-   `packages/xarc-run`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+
+-   `packages/tag-renderer`
+
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+
+-   `packages/ts-resolve`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   fix(ts-resolve): cache only hits and test skip below the cwd [commit](https://github.com/jchip/fynjs/commit/f456d731911ede7a34c7a065bf98a32bd3c65ba5)
+    -   FTSR-2: map a directory specifier only to its index [commit](https://github.com/jchip/fynjs/commit/c3766465a74d8ccb9713b59b9c2d6cae273d4a01)
+
+-   `packages/fynpo-base`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FPB-7: fix @fynpo/base graph re-reads, package refs and optional cwd [commit](https://github.com/jchip/fynjs/commit/730a0d37bdb443af18a55eced31d07b438b6819c)
+    -   FPB-7: add no graph edge for a local range that matches nothing [commit](https://github.com/jchip/fynjs/commit/a9b242eab5d9c74f8bf62cf6a1bcd2c9f2d7df1f)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/error`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   fix(error): keep ESM and anonymous frames in cleanErrorStack [commit](https://github.com/jchip/fynjs/commit/14e4fde7c336b0dd080b171336e2fb2789bf1931)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs: point READMEs at the fynjs.pages.dev references [commit](https://github.com/jchip/fynjs/commit/561ddf66280c973d794ab2bd00adb097e284793c)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-212: fix @jchip/error iterables, native stacks and stack cleaning [commit](https://github.com/jchip/fynjs/commit/b720d38f4d769c5bc2cc9a8200b3d2ef7e0707b5)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+
+-   `packages/aveazul`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-207: match Bluebird for callbacks, iterables, and filtered catch [commit](https://github.com/jchip/fynjs/commit/befd2855f8a0a5310d42cbc25b412986a88a2b54)
+    -   FJM-207: keep AveAzul statics in the CJS entry [commit](https://github.com/jchip/fynjs/commit/432892a39de256e9a9ded17d31608ee46f45883b)
+
+-   `packages/chalker`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   fix(chalker): honor styleText color checks for rgb and hex markers [commit](https://github.com/jchip/fynjs/commit/032f50f00eb5eadc4adb7d23fc9b4f72a82ecfc2)
+    -   docs(chalker): document the built-in util.styleText backend [commit](https://github.com/jchip/fynjs/commit/6728b907ff26c47d9e12f44a696837cda2be6dfc)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   docs(chalker): note that chalker changes the ansi-colors module [commit](https://github.com/jchip/fynjs/commit/6c017a133d978d2b1eb2fc574f5d32ec8f1d2193)
+    -   feat(chalker): keep whitespace in remove() [commit](https://github.com/jchip/fynjs/commit/76ad93153046a0bd9527780d9ec87d2a4391d69d)
+    -   FJM-205: parse markers the same way with colors off [commit](https://github.com/jchip/fynjs/commit/abd7023169f62523ad1584d156c2bb42978b4a7c)
+    -   FJM-205: keep unmatched chalker markers as text [commit](https://github.com/jchip/fynjs/commit/78804aee4602155012839fb593b03f5c0105eed8)
+
+-   `packages/check-pkg-new-version`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs(site): serve package references under ref/ [commit](https://github.com/jchip/fynjs/commit/87954bd266ef15b8fb265e8a1ce915dd349b8bdd)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   CPE-6: stop caching failed version checks [commit](https://github.com/jchip/fynjs/commit/b90238c33fac257ba74a84543dfb4c8d35c3a45b)
+
+-   `packages/check-pkg-new-version-engine`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   CPE-6: stop caching failed version checks [commit](https://github.com/jchip/fynjs/commit/b90238c33fac257ba74a84543dfb4c8d35c3a45b)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+
+-   `packages/filter-scan-dir`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs: point READMEs at the fynjs.pages.dev references [commit](https://github.com/jchip/fynjs/commit/561ddf66280c973d794ab2bd00adb097e284793c)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   docs(filter-scan-dir): describe includeSymlink as skipping all symlinks [commit](https://github.com/jchip/fynjs/commit/efeb431caf57b4c30476ff51cdf5c691c9edeb07)
+    -   FSD-18: fix pathSep, ungrouped groups and async filters [commit](https://github.com/jchip/fynjs/commit/c09dca70ff1a5274bb384f202d5f6a4f8ca85fdc)
+    -   FSD-18: treat an undefined option as unset [commit](https://github.com/jchip/fynjs/commit/554de61dfc48fd27c2fc1ec18011d7d858ec957d)
+    -   chore: remove per-package docs scripts and typedoc [commit](https://github.com/jchip/fynjs/commit/fbda566eca524c45a8299227735bc2de1fa1449d)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/fyn`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   fix(fyn): create node_modules/.f before saving the installed lock [commit](https://github.com/jchip/fynjs/commit/6ac2ebd500e5c6684f8b59625934353fcc661e5f)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJS-8: correct READMEs that contradict the code [commit](https://github.com/jchip/fynjs/commit/d1505f6c9e21ca40a9672e8c2ecccd3d6feec569)
+    -   VLG-3: set fyns log level through visual-loggers logLevel [commit](https://github.com/jchip/fynjs/commit/54f18568ba601213dba8488d8dcca795c1ee895f)
+    -   FPM-187: remove dead fyn options and make fyn audit fail on findings [commit](https://github.com/jchip/fynjs/commit/552bc3696a0ffe3b558966a002ad9195c517d258)
+    -   FPB-7: add no graph edge for a local range that matches nothing [commit](https://github.com/jchip/fynjs/commit/a9b242eab5d9c74f8bf62cf6a1bcd2c9f2d7df1f)
+    -   FPM-186: take over an install lock left by a process that died [commit](https://github.com/jchip/fynjs/commit/4b6876b18c9c45607b8852014c7f538708c4f6bf)
+    -   FPM-185: replace a central store entry that has no tree.json [commit](https://github.com/jchip/fynjs/commit/b34f2d31c1eb27e668e9bde6797da7dbd61c0aea)
+    -   fix(fyn): hardlink in workers when reflink cant clone [commit](https://github.com/jchip/fynjs/commit/2d5a5b0c5d00ba0e9242acf988105e029f383e08)
+    -   fix(fyn): stop stray installs from cli/fyn and fix flaky specs [commit](https://github.com/jchip/fynjs/commit/0edbcd9bfbd2cfd526d3af9819dad30a5c240a7e)
+    -   perf(fyn): run the central store protocol in the fs worker [commit](https://github.com/jchip/fynjs/commit/345afd26fb50e6b15ea59eb5303968de4209d686)
+    -   perf(fyn): fetch packuments and store tarballs without cacache [commit](https://github.com/jchip/fynjs/commit/b042d757fec291b006ceb1a032b6711cd9198be6)
+    -   perf(fyn): untar and place store files in worker threads [commit](https://github.com/jchip/fynjs/commit/4b5a6df5832cf83e2b747543d1137bcab51d38ac)
+    -   feat(fyn): use the central store by default on Linux [commit](https://github.com/jchip/fynjs/commit/20a5b33585bdf4d8ff06a156ecc997958f3d8110)
+    -   fix(fyn): run the audit after a no-op install too [commit](https://github.com/jchip/fynjs/commit/b53ba60bbcdb88a82950b3cbb47a1e78d71be1d1)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+    -   feat(fyn): use the central store with clones by default on macOS [commit](https://github.com/jchip/fynjs/commit/ca05e76133dafac4ba47661d4dd6c50d5e659574)
+    -   fix(fyn): clone a package dir beside the install dir, then rename it over [commit](https://github.com/jchip/fynjs/commit/2d77f801ad8cc38b22bf0dfe5ebfbe3bc2625953)
+    -   perf(fyn): hash new central store entries from the tar headers [commit](https://github.com/jchip/fynjs/commit/874ae89bf67695222e5fc03f6836bff1ab51eb73)
+    -   feat(fyn): let concurrent installs share the central store without waiting [commit](https://github.com/jchip/fynjs/commit/b4df8614436dab317afc510d2830c8ecfc495182)
+    -   feat(fyn): replicate central store packages with @fynjs/reflink [commit](https://github.com/jchip/fynjs/commit/05afb794b9698a19097d490ab1862556ac1a2e52)
+
+-   `packages/site`
+
+    -   chore(site): add a publish-site script [commit](https://github.com/jchip/fynjs/commit/b9bda223f7af9629b3f65da3d39f4df548f21931)
+    -   docs(site): serve package references under ref/ [commit](https://github.com/jchip/fynjs/commit/87954bd266ef15b8fb265e8a1ce915dd349b8bdd)
+    -   docs(site): add Google Search Console verification file [commit](https://github.com/jchip/fynjs/commit/883bf4252c7a456070415fc8f279f87d701a2eed)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+
+-   `packages/fynpo`
+
+    -   fix(fynpo): print a short publish failure instead of the error object [commit](https://github.com/jchip/fynjs/commit/da7acf09fd0e8384221264e70d39f6ea578f57e5)
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   fix(fynpo): export resolve-extends stub as module.exports [commit](https://github.com/jchip/fynjs/commit/3f03e8e18d828ed9f95f3cccc1022cb4be64256b)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   test: use run-verify steps in new cli-args, fynpo and visual-exec tests [commit](https://github.com/jchip/fynjs/commit/073219c5e23eb9d8e435cc4fbc3bd0fca3a21d6b)
+    -   fix(fynpo): let fynpo.json config override CLI defaults [commit](https://github.com/jchip/fynjs/commit/559e61397df862ceff9eb48b60fec90802b4a60e)
+    -   FPO-104: remove the fynpo local command [commit](https://github.com/jchip/fynjs/commit/85a4a8665015248cb9adbdfc3e43366389f94083)
+    -   FJS-8: correct READMEs that contradict the code [commit](https://github.com/jchip/fynjs/commit/d1505f6c9e21ca40a9672e8c2ecccd3d6feec569)
+    -   FPO-104: remove dead fynpo flags and fix run args, --cwd and fynOpts [commit](https://github.com/jchip/fynjs/commit/c4e55d513b170ed61200df7eb5ae94262e0ce323)
+    -   chore: remove per-package docs scripts and typedoc [commit](https://github.com/jchip/fynjs/commit/fbda566eca524c45a8299227735bc2de1fa1449d)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+    -   update lockfiles [commit](https://github.com/jchip/fynjs/commit/8d6e79a58f4cf588aa30b0a1b6fdabc13623e418)
+    -   feat(fynpo): confirm indirect bumps in changelog [commit](https://github.com/jchip/fynjs/commit/d6ba8c2fb5f5400c8a844a33f608bfc70763e3f4)
+
+-   `packages/fynpo-cli`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs(site): serve package references under ref/ [commit](https://github.com/jchip/fynjs/commit/87954bd266ef15b8fb265e8a1ce915dd349b8bdd)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   chore: remove per-package docs scripts and typedoc [commit](https://github.com/jchip/fynjs/commit/fbda566eca524c45a8299227735bc2de1fa1449d)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/init-package`
+
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+
+-   `packages/item-queue`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs: point READMEs at the fynjs.pages.dev references [commit](https://github.com/jchip/fynjs/commit/561ddf66280c973d794ab2bd00adb097e284793c)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   feat(item-queue): implement the timeout option [commit](https://github.com/jchip/fynjs/commit/e499227fa097978e13d1509ef7e949a69e7cfe71)
+    -   FJM-208: keep the queue paused after resume() then pause() [commit](https://github.com/jchip/fynjs/commit/070d823edde98d3f93edb891ab2f8157f8f60500)
+    -   FJM-208: fix item-queue pause, failure, and symbol item handling [commit](https://github.com/jchip/fynjs/commit/ba0c3d9a5e42a0fb090c7938951f30f23d9d5847)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+
+-   `packages/munchy`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-210: fix munchy hangs, stray reads, and error ordering [commit](https://github.com/jchip/fynjs/commit/5b39618d79d00102fe862f164f695bf24748d3b8)
+
+-   `packages/optional-import`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   test(optional-import): pin the missing subpath gap [commit](https://github.com/jchip/fynjs/commit/079f148e2627160ff4ea72c6927cdc1f3fb00940)
+    -   OPI-4: treat null options as defaults [commit](https://github.com/jchip/fynjs/commit/f8a5d65c9de49988427b7668f3537aa532769384)
+
+-   `packages/pkg-preper`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-211: copy across filesystems and destroy the stream on errors [commit](https://github.com/jchip/fynjs/commit/61190a226c5fa1f009c937876dc97a2f5801a5a8)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/publish-util`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FPU-10: track pack owners and clean chained publish-util scripts [commit](https://github.com/jchip/fynjs/commit/1e6e66b218f52a822b21fd5401e2f24ebeac7389)
+    -   FPU-10: take over dead pack locks and restore after an interrupted prepack [commit](https://github.com/jchip/fynjs/commit/e3f85453ac6ec0b959d69d3ba9e6916ade567918)
+
+-   `packages/run-verify`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   feat(run-verify): add expectErrorToMatch as an alias of expectErrorMatch [commit](https://github.com/jchip/fynjs/commit/24a9fd040a2b2242d930ca04a6c11faf5247eb51)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   fix(run-verify): fail the run when an async defer handler rejects [commit](https://github.com/jchip/fynjs/commit/6ac80a6cb805cfaefa1e67967de47e921d11ee0a)
+
+-   `packages/string-array`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-206: handle a short .cmd launch line and cross-drive paths [commit](https://github.com/jchip/fynjs/commit/d0618d3b9b96979ebafee3b1510af6d39e083b9b)
+
+-   `packages/visual-exec`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   test: use run-verify steps in new cli-args, fynpo and visual-exec tests [commit](https://github.com/jchip/fynjs/commit/073219c5e23eb9d8e435cc4fbc3bd0fca3a21d6b)
+    -   feat(visual-exec): show progress.format text on the stdout label [commit](https://github.com/jchip/fynjs/commit/f24a78a3c238d35d91e1c27b4bbdc07e1d918f83)
+    -   VEX-16: give the error-shape test logger setItemType [commit](https://github.com/jchip/fynjs/commit/27d88d88aeabdac1472fc19533449a81c4247211)
+    -   VEX-13: remove the AbortSignal listener when execution finishes [commit](https://github.com/jchip/fynjs/commit/b032d405cd585d8ee05ab03dbe8514d86dd3b6ae)
+    -   VEX-16: give timeout and abort errors the full error shape [commit](https://github.com/jchip/fynjs/commit/c0e6c14ce13f4ec2abfb469a8d18184d6415e1b2)
+
+-   `packages/visual-logger`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   fix(visual-logger): show _render false updates on the next redraw [commit](https://github.com/jchip/fynjs/commit/365302ae971a08ba038ddc3512e208da5b965741)
+    -   VLG-3: add a public logLevel option and property [commit](https://github.com/jchip/fynjs/commit/f758906a5c08072ffe72753cb8cdd4dd147c4cc2)
+
+-   `packages/xaa`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   docs: point READMEs at the fynjs.pages.dev references [commit](https://github.com/jchip/fynjs/commit/561ddf66280c973d794ab2bd00adb097e284793c)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJS-8: correct READMEs that contradict the code [commit](https://github.com/jchip/fynjs/commit/d1505f6c9e21ca40a9672e8c2ecccd3d6feec569)
+    -   FJM-204: fix xaa map hang and stray rejections [commit](https://github.com/jchip/fynjs/commit/9681765ab7850f82e74d616799fcd8c46af799bd)
+    -   chore: remove per-package docs scripts and typedoc [commit](https://github.com/jchip/fynjs/commit/fbda566eca524c45a8299227735bc2de1fa1449d)
+    -   chore: remove generated TypeDoc output from packages [commit](https://github.com/jchip/fynjs/commit/e06e652e78c5b784ae0ad734e815092cbfd52bb2)
+    -   fix(fyn): expire audit cache, fix --no-cache, bump flagged deps [commit](https://github.com/jchip/fynjs/commit/218f6abbc4827b52bc002b2a4ce9be52d88dfe8c)
+
+-   `packages/xenv-config`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-212: stop xenv-config from mutating the callers sources [commit](https://github.com/jchip/fynjs/commit/18c982b3b2e38f8a32441cad01c6fb70ed4a8dd7)
+
+-   `packages/xflight`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJM-209: only clean up the inflight entry a promise created [commit](https://github.com/jchip/fynjs/commit/644abb5963a602353f9d253fa2819387865b876f)
+
+-   `packages/xsh`
+
+    -   chore: point package homepages at fynjs.pages.dev [commit](https://github.com/jchip/fynjs/commit/042530239c8375ee717e854c551f5ab486166303)
+    -   docs: standardize API reference links in package READMEs [commit](https://github.com/jchip/fynjs/commit/23389c13587fe0a47336bccbdb0a43584599e147)
+    -   docs: add common badges and normalize repo metadata [commit](https://github.com/jchip/fynjs/commit/7d11c1ffc19c43f7010e4c03633a3ac9a27a59cc)
+    -   fix(deps): refresh locks to clear audit alerts [commit](https://github.com/jchip/fynjs/commit/381d09e731857167ed412aa17bca80b34d756077)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   XSH-2: flatten every array argument in mkCmd [commit](https://github.com/jchip/fynjs/commit/f159516dd43bf336406867bd93dcb676b16fe44c)
+
+-   `.github`
+
+    -   ci(reflink): add a dry-run trigger [reflink-ci-dry-run] [commit](https://github.com/jchip/fynjs/commit/d24b1a89486d3efcbe99557bfd56da555d835704)
+    -   build(reflink): publish platform packages from CI [commit](https://github.com/jchip/fynjs/commit/1ffecb71d135a344d9e668d0022682758e951b33)
+
+-   `docs`
+
+    -   chore: remove docusaurus docs site [commit](https://github.com/jchip/fynjs/commit/e918e035600ee1b8ccacb43a99ad603a67e0b56c)
+
+-   `docusaurus`
+
+    -   chore: remove docusaurus docs site [commit](https://github.com/jchip/fynjs/commit/e918e035600ee1b8ccacb43a99ad603a67e0b56c)
+
+-   `notes`
+
+    -   chore(site): add a publish-site script [commit](https://github.com/jchip/fynjs/commit/b9bda223f7af9629b3f65da3d39f4df548f21931)
+    -   docs(site): serve package references under ref/ [commit](https://github.com/jchip/fynjs/commit/87954bd266ef15b8fb265e8a1ce915dd349b8bdd)
+    -   docs(notes): add a tagline after the blog intro [commit](https://github.com/jchip/fynjs/commit/e3cc282d267c67ff3ad1d59756c04b29f77c28f6)
+    -   docs(notes): add the Node.js perf blog post and memory results [commit](https://github.com/jchip/fynjs/commit/92ae720f59930ffad48537778f380e3bd61ee4d9)
+    -   docs(site): add the fynjs.pages.dev site and AI references for all packages [commit](https://github.com/jchip/fynjs/commit/1afc947e64de3046d02130527201bde91d1117c8)
+    -   FJS-8: correct READMEs that contradict the code [commit](https://github.com/jchip/fynjs/commit/d1505f6c9e21ca40a9672e8c2ecccd3d6feec569)
+    -   docs(notes): record the Linux reflink fallback fix [commit](https://github.com/jchip/fynjs/commit/9c25e8f342a6c94aa34f0621e241dfe574f23eb6)
+    -   fix(fyn): hardlink in workers when reflink cant clone [commit](https://github.com/jchip/fynjs/commit/2d5a5b0c5d00ba0e9242acf988105e029f383e08)
+    -   docs(notes): record fyn on Linux with @fynjs/reflink installed [commit](https://github.com/jchip/fynjs/commit/e5fe95b8971dcf41c5d437667a6a0073657c76c6)
+    -   docs(notes): explain pnpm 12s slow macOS installs and add Linux results [commit](https://github.com/jchip/fynjs/commit/bd7e074e2b94d2a665654673b76b95a2963761d4)
+    -   docs(notes): record a full Mac benchmark run with npm, pnpm and fyn [commit](https://github.com/jchip/fynjs/commit/f70abb6a3249ab46f333aa3ec943393c77b6bd5a)
+    -   docs(notes): consolidate the fyn install perf notes [commit](https://github.com/jchip/fynjs/commit/683296f4c89dd29f0d7bc5ddae1aa4acb92b0e9f)
+    -   docs(notes): add docs site plan [commit](https://github.com/jchip/fynjs/commit/bf1037f4d8b37a7b15498b74555116118f5692bf)
+    -   docs(notes): record fyn fetch stack replacement research [commit](https://github.com/jchip/fynjs/commit/228bd004243e5ded9535bd8ab0ada48aeb825244)
+    -   docs(notes): record reflink and central store benchmark results [commit](https://github.com/jchip/fynjs/commit/a7ea60405791f160ef4e871ddd06b95b27115b8e)
+
+-   `MISC`
+
+    -   update top lockfile [commit](https://github.com/jchip/fynjs/commit/0c6608a45c3937037567465623db14a3eb9d084a)
+    -   chore: gitignore .worktrees [commit](https://github.com/jchip/fynjs/commit/84299ec23598455e73caf5447b1941945c0f8237)
+
 # 10/3/2026
 
 ## Packages
