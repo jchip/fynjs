@@ -33,7 +33,9 @@
     "access": "public"
   },
   "publishUtil": {
-    "keep": ["napi"]
+    "keep": [
+      "napi"
+    ]
   },
   "scripts": {
     "build": "napi build --platform --release --esm",
