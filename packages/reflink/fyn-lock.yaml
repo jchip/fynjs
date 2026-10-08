@@ -1522,10 +1522,10 @@ picomatch:
   $: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==
   _: 'https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz'
 publish-util:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../publish-util: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../publish-util: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   hasI: 1
   $: local

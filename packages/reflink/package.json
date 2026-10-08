@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/reflink",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Native copy-on-write file cloning for fyn (macOS, Linux, Windows)",
   "homepage": "https://fynjs.pages.dev/api/modules/_fynjs_reflink",
   "type": "module",
@@ -68,7 +68,7 @@
   "devDependencies": {
     "@napi-rs/cli": "3.10.6",
     "@types/node": "^26.4.1",
-    "publish-util": "^3.1.7",
+    "publish-util": "^3.1.8",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   },

@@ -52,10 +52,10 @@ $pkg:
   $: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==
   _: 'https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-1.0.2.tgz'
 '@jchip/error':
- _latest: 2.1.7-fynlocal_h
+ _latest: 2.1.8-fynlocal_h
  _:
-  ../error: 2.1.7-fynlocal_h
- 2.1.7-fynlocal_h:
+  ../error: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
   $: local
   _: ../error
 '@jridgewell/resolve-uri':
@@ -592,16 +592,16 @@ ast-v8-to-istanbul:
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
 aveazul:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.1.9-fynlocal_h
  _:
-  ../aveazul: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../aveazul: 2.1.9-fynlocal_h
+ 2.1.9-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
   dependencies:
-   '@jchip/error': ^2.1.7
-   xaa: ^3.1.7
+   '@jchip/error': ^2.1.8
+   xaa: ^3.1.8
 chai:
  _latest: 6.2.2
  _:
@@ -911,10 +911,10 @@ postcss:
    picocolors: ^1.1.1
    source-map-js: ^1.2.1
 publish-util:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../publish-util: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../publish-util: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   hasI: 1
   $: local
@@ -949,10 +949,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.2.0-fynlocal_h
  _:
-  ../run-verify: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../run-verify: 2.2.0-fynlocal_h
+ 2.2.0-fynlocal_h:
   top: 1
   $: local
   _: ../run-verify
@@ -1133,10 +1133,10 @@ why-is-node-running:
    siginfo: ^2.0.0
    stackback: 0.0.2
 xaa:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../xaa: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../xaa: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   $: local
   _: ../xaa
 yocto-queue:

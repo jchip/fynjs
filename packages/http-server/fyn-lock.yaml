@@ -1284,10 +1284,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.2.0-fynlocal_h
  _:
-  ../run-verify: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../run-verify: 2.2.0-fynlocal_h
+ 2.2.0-fynlocal_h:
   top: 1
   $: local
   _: ../run-verify
@@ -1530,10 +1530,10 @@ why-is-node-running:
    siginfo: ^2.0.0
    stackback: 0.0.2
 xaa:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../xaa: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../xaa: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   $: local
   _: ../xaa

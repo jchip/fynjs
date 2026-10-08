@@ -810,10 +810,10 @@ magicast:
    '@babel/types': ^7.29.7
    source-map-js: ^1.2.1
 munchy:
- _latest: 2.0.7-fynlocal_h
+ _latest: 2.0.8-fynlocal_h
  _:
-  ../munchy: 2.0.7-fynlocal_h
- 2.0.7-fynlocal_h:
+  ../munchy: 2.0.8-fynlocal_h
+ 2.0.8-fynlocal_h:
   top: 1
   $: local
   _: ../munchy

@@ -1,6 +1,6 @@
 {
   "name": "pkg-preper",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "homepage": "https://fynjs.pages.dev/api/modules/pkg-preper",
   "description": "Package Preparer",
   "type": "module",
@@ -56,8 +56,8 @@
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
     "prettier": "^3.5.3",
-    "publish-util": "^3.1.7",
-    "run-verify": "^2.1.8",
+    "publish-util": "^3.1.8",
+    "run-verify": "^2.2.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

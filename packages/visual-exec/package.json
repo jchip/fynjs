@@ -1,6 +1,6 @@
 {
   "name": "visual-exec",
-  "version": "1.1.10",
+  "version": "1.2.0",
   "homepage": "https://fynjs.pages.dev/api/modules/visual-exec",
   "description": "Visual shell exec with spinners and progress display",
   "type": "module",
@@ -51,14 +51,14 @@
     "ci-info": "^4.4.0",
     "has-ansi": "^6.0.2",
     "strip-ansi": "^7.2.0",
-    "visual-logger": "^2.1.9",
-    "xsh": "^1.1.8"
+    "visual-logger": "^2.1.10",
+    "xsh": "^1.1.9"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
-    "publish-util": "^3.1.7",
-    "run-verify": "^2.1.8",
+    "publish-util": "^3.1.8",
+    "run-verify": "^2.2.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

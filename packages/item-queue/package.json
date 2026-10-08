@@ -1,6 +1,6 @@
 {
   "name": "item-queue",
-  "version": "2.1.10",
+  "version": "2.2.0",
   "homepage": "https://fynjs.pages.dev/api/modules/item-queue",
   "description": "An item processing queue with Promise",
   "type": "module",
@@ -48,18 +48,18 @@
   "author": "Joel Chen",
   "license": "Apache-2.0",
   "dependencies": {
-    "xflight": "^3.1.9"
+    "xflight": "^3.1.10"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^5.0.0",
-    "aveazul": "^2.1.8",
+    "aveazul": "^2.1.9",
     "chalk": "^6.0.0",
     "prettier": "^3.5.3",
-    "publish-util": "^3.1.7",
-    "run-verify": "^2.1.8",
+    "publish-util": "^3.1.8",
+    "run-verify": "^2.2.0",
     "typescript": "^7.0.2",
-    "visual-logger": "^2.1.9",
+    "visual-logger": "^2.1.10",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
   },

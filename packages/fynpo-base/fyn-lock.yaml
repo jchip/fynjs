@@ -673,10 +673,10 @@ fdir:
   peerDependencies:
    picomatch: '^3 || ^4'
 filter-scan-dir:
- _latest: 2.1.10-fynlocal_h
+ _latest: 2.1.11-fynlocal_h
  _:
-  ../filter-scan-dir: 2.1.10-fynlocal_h
- 2.1.10-fynlocal_h:
+  ../filter-scan-dir: 2.1.11-fynlocal_h
+ 2.1.11-fynlocal_h:
   top: 1
   $: local
   _: ../filter-scan-dir
@@ -965,10 +965,10 @@ obug:
   $: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==
   _: 'https://registry.npmjs.org/obug/-/obug-2.1.4.tgz'
 optional-import:
- _latest: 1.1.7-fynlocal_h
+ _latest: 1.1.8-fynlocal_h
  _:
-  ../optional-import: 1.1.7-fynlocal_h
- 1.1.7-fynlocal_h:
+  ../optional-import: 1.1.8-fynlocal_h
+ 1.1.8-fynlocal_h:
   top: 1
   $: local
   _: ../optional-import
@@ -1041,10 +1041,10 @@ proc-log:
   $: sha512-FYgfaA69XZ93zaXLoMNQ+ViDXGGBgR8aLh03txzcFhV+9xOXx7+8DLCULrKKpR9+GsH9ZfHm82aSUPpozX0Ztg==
   _: 'https://registry.npmjs.org/proc-log/-/proc-log-7.0.0.tgz'
 publish-util:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../publish-util: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../publish-util: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   hasI: 1
   $: local
@@ -1079,10 +1079,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.2.0-fynlocal_h
  _:
-  ../run-verify: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../run-verify: 2.2.0-fynlocal_h
+ 2.2.0-fynlocal_h:
   top: 1
   $: local
   _: ../run-verify

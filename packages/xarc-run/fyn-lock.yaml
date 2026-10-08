@@ -79,18 +79,18 @@ $pkg:
   $: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==
   _: 'https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-1.0.2.tgz'
 '@fynjs/cli-args':
- _latest: 1.1.7-fynlocal_h
+ _latest: 1.2.0-fynlocal_h
  _:
-  ../cli-args: 1.1.7-fynlocal_h
- 1.1.7-fynlocal_h:
+  ../cli-args: 1.2.0-fynlocal_h
+ 1.2.0-fynlocal_h:
   top: 1
   $: local
   _: ../cli-args
 '@fynjs/ts-resolve':
- _latest: 1.0.3-fynlocal_h
+ _latest: 1.0.4-fynlocal_h
  _:
-  ../ts-resolve: 1.0.3-fynlocal_h
- 1.0.3-fynlocal_h:
+  ../ts-resolve: 1.0.4-fynlocal_h
+ 1.0.4-fynlocal_h:
   top: 1
   $: local
   _: ../ts-resolve
@@ -657,16 +657,16 @@ chalk:
   $: sha512-2uNTXIuTTxk7ciZgAU1BQcgnchcG0xXnrs6jzkQfj9SsRa9M2s5zE8WT96hS6KmG4MzWHSrvH43DF1m4XRkrFg==
   _: 'https://registry.npmjs.org/chalk/-/chalk-6.0.0.tgz'
 chalker:
- _latest: 2.2.1-fynlocal_h
+ _latest: 2.3.0-fynlocal_h
  _:
-  ../chalker: 2.2.1-fynlocal_h
- 2.2.1-fynlocal_h:
+  ../chalker: 2.3.0-fynlocal_h
+ 2.3.0-fynlocal_h:
   top: 1
   $: local
   _: ../chalker
   dependencies:
    color-convert: ^3.1.3
-   optional-import: ^1.1.7
+   optional-import: ^1.1.8
   peerDependencies:
    ansi-colors: '>=4'
    chalk: '>=4'
@@ -988,10 +988,10 @@ magicast:
    '@babel/types': ^7.29.7
    source-map-js: ^1.2.1
 munchy:
- _latest: 2.0.7-fynlocal_h
+ _latest: 2.0.8-fynlocal_h
  _:
-  ../munchy: 2.0.7-fynlocal_h
- 2.0.7-fynlocal_h:
+  ../munchy: 2.0.8-fynlocal_h
+ 2.0.8-fynlocal_h:
   top: 1
   $: local
   _: ../munchy
@@ -1021,10 +1021,10 @@ obug:
   $: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==
   _: 'https://registry.npmjs.org/obug/-/obug-2.1.4.tgz'
 optional-import:
- _latest: 1.1.7-fynlocal_h
+ _latest: 1.1.8-fynlocal_h
  _:
-  ../optional-import: 1.1.7-fynlocal_h
- 1.1.7-fynlocal_h:
+  ../optional-import: 1.1.8-fynlocal_h
+ 1.1.8-fynlocal_h:
   $: local
   _: ../optional-import
 optional-require:
@@ -1098,10 +1098,10 @@ prettier:
   $: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==
   _: 'https://registry.npmjs.org/prettier/-/prettier-3.9.6.tgz'
 publish-util:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../publish-util: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../publish-util: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   hasI: 1
   $: local
@@ -1161,10 +1161,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.2.0-fynlocal_h
  _:
-  ../run-verify: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../run-verify: 2.2.0-fynlocal_h
+ 2.2.0-fynlocal_h:
   top: 1
   $: local
   _: ../run-verify
@@ -1238,10 +1238,10 @@ std-env:
   $: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==
   _: 'https://registry.npmjs.org/std-env/-/std-env-4.2.0.tgz'
 string-array:
- _latest: 2.1.7-fynlocal_h
+ _latest: 2.1.8-fynlocal_h
  _:
-  ../string-array: 2.1.7-fynlocal_h
- 2.1.7-fynlocal_h:
+  ../string-array: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
   top: 1
   $: local
   _: ../string-array
@@ -1354,10 +1354,10 @@ unicorn-magic:
   $: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==
   _: 'https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.3.0.tgz'
 unwrap-npm-cmd:
- _latest: 2.1.7-fynlocal_h
+ _latest: 2.1.8-fynlocal_h
  _:
-  ../unwrap-npm-cmd: 2.1.7-fynlocal_h
- 2.1.7-fynlocal_h:
+  ../unwrap-npm-cmd: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
   top: 1
   $: local
   _: ../unwrap-npm-cmd
@@ -1457,18 +1457,18 @@ why-is-node-running:
    siginfo: ^2.0.0
    stackback: 0.0.2
 xaa:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../xaa: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../xaa: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   $: local
   _: ../xaa
 xsh:
- _latest: 1.1.8-fynlocal_h
+ _latest: 1.1.9-fynlocal_h
  _:
-  ../xsh: 1.1.8-fynlocal_h
- 1.1.8-fynlocal_h:
+  ../xsh: 1.1.9-fynlocal_h
+ 1.1.9-fynlocal_h:
   top: 1
   $: local
   _: ../xsh

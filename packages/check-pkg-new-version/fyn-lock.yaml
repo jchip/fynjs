@@ -596,10 +596,10 @@ chai:
   $: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==
   _: 'https://registry.npmjs.org/chai/-/chai-6.2.2.tgz'
 check-pkg-new-version-engine:
- _latest: 2.1.7-fynlocal_h
+ _latest: 2.1.8-fynlocal_h
  _:
-  ../check-pkg-new-version-engine: 2.1.7-fynlocal_h
- 2.1.7-fynlocal_h:
+  ../check-pkg-new-version-engine: 2.1.8-fynlocal_h
+ 2.1.8-fynlocal_h:
   top: 1
   $: local
   _: ../check-pkg-new-version-engine
@@ -962,10 +962,10 @@ prettier:
   $: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==
   _: 'https://registry.npmjs.org/prettier/-/prettier-3.9.6.tgz'
 publish-util:
- _latest: 3.1.7-fynlocal_h
+ _latest: 3.1.8-fynlocal_h
  _:
-  ../publish-util: 3.1.7-fynlocal_h
- 3.1.7-fynlocal_h:
+  ../publish-util: 3.1.8-fynlocal_h
+ 3.1.8-fynlocal_h:
   top: 1
   hasI: 1
   $: local
@@ -1000,10 +1000,10 @@ rolldown:
    '@rolldown/binding-linux-x64-gnu': 1.2.7
    '@rolldown/binding-linux-x64-musl': 1.2.7
 run-verify:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.2.0-fynlocal_h
  _:
-  ../run-verify: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../run-verify: 2.2.0-fynlocal_h
+ 2.2.0-fynlocal_h:
   top: 1
   $: local
   _: ../run-verify
