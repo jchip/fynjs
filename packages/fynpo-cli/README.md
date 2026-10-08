@@ -18,6 +18,8 @@ Install this package globally and you get a `fynpo` binary. It carries no logic 
 
 ```bash
 npm install -g fynpo-cli
+# or
+fyn global add fynpo-cli
 ```
 
 Then, in a monorepo that has `fynpo` as a dev dependency:

@@ -445,6 +445,8 @@ If you'd like to get the command `xrun` globally, you can install this module gl
 
 ```bash
 $ npm install -g @fynjs/run
+# or
+$ fyn global add @fynjs/run
 ```
 
 However, it will still try to `require` and use the copy from your `node_modules` if you installed it.

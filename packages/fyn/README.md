@@ -22,6 +22,12 @@ cd <your-project>
 fyn
 ```
 
+Once fyn is installed, it can manage its own global install:
+
+```sh
+fyn global add fyn
+```
+
 On an existing install, fyn checks file modification times before reinstalling. This scan
 prunes directories and files matched by repository and nested `.gitignore` rules, alongside
 its built-in exclusions. The rules apply even to tracked source files; manifests, lockfiles,
