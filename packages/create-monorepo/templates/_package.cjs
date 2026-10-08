@@ -28,7 +28,9 @@ module.exports = (base, merge) => {
     },
     license: "UNLICENSED",
     devDependencies: {
-      fynpo: "^3.2.3",
+      // filled from create-monorepo's own devDependencies, which each release updates
+      fyn: "{{fyn}}",
+      fynpo: "{{fynpo}}",
       prettier: "^2.2.1",
     },
     prettier: {

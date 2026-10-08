@@ -50,6 +50,11 @@ await verify({
     for (const f of ["package.json", "fynpo.json", ".gitignore", ".npmrc", "packages"]) {
       assert.ok(Fs.existsSync(Path.join(repo, f)), `create-monorepo did not write ${f}`);
     }
+    // the template's fyn and fynpo ranges are the ones create-monorepo itself depends on
+    const ownDevDeps = JSON.parse(Fs.readFileSync(Path.join(PACKAGES, "create-monorepo/package.json"), "utf8")).devDependencies;
+    for (const name of ["fyn", "fynpo"]) {
+      assert.equal(readJson("package.json").devDependencies[name], ownDevDeps[name], `${name} range`);
+    }
     // the guard that keeps every later commit inside my-repo
     assert.ok(Fs.existsSync(Path.join(repo, ".git")), "create-monorepo did not run git init");
     assert.equal(git("rev-parse", "--show-toplevel"), repo);

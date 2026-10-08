@@ -24,6 +24,25 @@ export const sortPackageDeps = (pkg) => {
 
 export const myPkg = JSON.parse(Fs.readFileSync(Path.join(dirname, "../package.json"), "utf-8"));
 
+/**
+ * Replace each `{{name}}` dependency range in the template with create-monorepo's own
+ * devDependency range for that package. fynpo rewrites those ranges on every release of the
+ * package, so a scaffolded repo always gets the versions this release was built with.
+ */
+export const fillTemplateVersions = (pkg, ownDevDeps = myPkg.devDependencies || {}) => {
+  ["dependencies", "devDependencies"].forEach((sec) => {
+    for (const name in pkg[sec] || {}) {
+      const placeholder = /^\{\{(.+)\}\}$/.exec(pkg[sec][name]);
+      if (!placeholder) continue;
+      const range = ownDevDeps[placeholder[1]];
+      if (!range) {
+        throw new Error(`create-monorepo has no ${placeholder[1]} devDependency to fill the template's ${name} range`);
+      }
+      pkg[sec][name] = range;
+    }
+  });
+};
+
 export function getCommitLintSetting() {
   return {
     scripts: {

@@ -1,6 +1,6 @@
 # @fynjs/create-monorepo reference
 
-@fynjs/create-monorepo scaffolds a new fynpo monorepo. It writes a root `package.json` with fynpo as a dev dependency, a fynpo config file, an empty `packages/` directory and a few dotfiles. It is a CLI only.
+@fynjs/create-monorepo scaffolds a new fynpo monorepo. It writes a root `package.json` with fyn and fynpo as dev dependencies, a fynpo config file, an empty `packages/` directory and a few dotfiles. It is a CLI only.
 
 For fynpo itself, see https://fynjs.pages.dev/ref/fynpo.md.
 
@@ -56,7 +56,8 @@ create-monorepo fynpo [dir] [--commitlint]
 The root `package.json`:
 
 - `name: "root"`, `version: "0.0.1"`, `private: true`, `license: "UNLICENSED"`, with empty `description`, `homepage`, `author` and `repository` fields to fill in.
-- `devDependencies`: `fynpo` and `prettier`. Dependency keys are sorted.
+- `devDependencies`: `fyn`, `fynpo` and `prettier`. Dependency keys are sorted.
+- The `fyn` and `fynpo` ranges are the ones this create-monorepo release was published with. They come from create-monorepo's own devDependencies. Each fyn or fynpo release updates them and republishes create-monorepo.
 - `prettier: { printWidth: 100 }`.
 - `scripts`:
 

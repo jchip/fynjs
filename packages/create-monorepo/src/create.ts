@@ -13,7 +13,7 @@ type ExecCommand = Parameters<CommandExecFunc>[0];
 const cjsRequire = createRequire(import.meta.url);
 
 import { loadCk } from "./ck.js";
-import { copyTemplate, sortPackageDeps, getCommitLintSetting } from "./utils.js";
+import { copyTemplate, sortPackageDeps, getCommitLintSetting, fillTemplateVersions } from "./utils.js";
 import { prepareFynpoDir, checkDir } from "./prep-fynpo-dir.js";
 import type { ParsedOpts } from "./interfaces.js";
 import { isGitInitialized, initializeGitRepo } from "./initialize-git.js";
@@ -63,6 +63,7 @@ export async function createFynpo(targetDir: string, opts: ParsedOpts) {
         } else {
           pkg = makePkg({}, merge);
         }
+        fillTemplateVersions(pkg);
         sortPackageDeps(pkg);
         return `${JSON.stringify(pkg, null, 2)}\n`;
       },

@@ -9,6 +9,7 @@ import { verify } from "run-verify";
 const execFileAsync = promisify(execFile);
 const pkgDir = Path.resolve(import.meta.dirname, "..");
 const bin = Path.join(pkgDir, "bin/create-monorepo.js");
+const ownDevDeps = JSON.parse(Fs.readFileSync(Path.join(pkgDir, "package.json"), "utf8")).devDependencies;
 
 describe("create-monorepo e2e", () => {
   let tmp: string;
@@ -36,7 +37,8 @@ describe("create-monorepo e2e", () => {
         return readJson(Path.join(dir, "package.json"));
       })
       .step((pkg: any) => {
-        expect(pkg.devDependencies.fynpo).toBe("^3.2.3");
+        expect(pkg.devDependencies.fyn).toBe(ownDevDeps.fyn);
+        expect(pkg.devDependencies.fynpo).toBe(ownDevDeps.fynpo);
         expect(pkg.devDependencies.husky).toBeDefined();
         expect(pkg.scripts.prepare).toBe("husky install");
       }), 120000);
@@ -51,7 +53,8 @@ describe("create-monorepo e2e", () => {
         return readJson(Path.join(dir, "package.json"));
       })
       .step((pkg: any) => {
-        expect(pkg.devDependencies.fynpo).toBe("^3.2.3");
+        expect(pkg.devDependencies.fyn).toBe(ownDevDeps.fyn);
+        expect(pkg.devDependencies.fynpo).toBe(ownDevDeps.fynpo);
         expect(pkg.devDependencies.husky).toBeUndefined();
         expect(pkg.scripts.prepare).toBeUndefined();
       }), 120000);
