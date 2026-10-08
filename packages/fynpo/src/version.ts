@@ -87,7 +87,12 @@ export class Version {
     return gitIsClean(this._sh.bind(this)).then((clean) => (this._gitClean = clean));
   };
 
-  commitAndTagUpdates = async ({ packages, tags }) => {
+  commitAndTagUpdates = async (updates) => {
+    // updatePackageVersions already logged why there is nothing to update
+    if (!updates) {
+      process.exit(1);
+    }
+    const { packages, tags } = updates;
     return commitAndTag(
       {
         sh: this._sh.bind(this),

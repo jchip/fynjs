@@ -202,7 +202,8 @@ export const collateCommitsPackages = ({
     ? execSync(
         "git",
         ["diff-tree", "--stdin", "--format=%x1e%H", "--name-only", "--root", "-r"],
-        { ...execOpts, input: commitIds.join("\n") }
+        // --stdin skips a last line with no newline, which would drop the oldest commit
+        { ...execOpts, input: `${commitIds.join("\n")}\n` }
       )
         .split("\x1e")
         .filter((x) => x.trim().length > 0)

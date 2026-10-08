@@ -285,7 +285,7 @@ describe("collateCommitsPackages honors --only", () => {
     expect(execSync).toHaveBeenCalledWith(
       "git",
       ["diff-tree", "--stdin", "--format=%x1e%H", "--name-only", "--root", "-r"],
-      { cwd: ".", input: "c1\nc2" }
+      { cwd: ".", input: "c1\nc2\n" }
     );
     expect(collated.realPackages.sort()).toEqual(["chalker", "optional-import"]);
   });

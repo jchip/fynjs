@@ -127,7 +127,12 @@ export default class Changelog {
       });
   };
 
-  commitAndTagUpdates = async ({ packages, tags }) => {
+  commitAndTagUpdates = async (updates) => {
+    // updatePackageVersions already logged why there is nothing to update
+    if (!updates) {
+      process.exit(1);
+    }
+    const { packages, tags } = updates;
     return commitAndTag(
       {
         sh: this._sh.bind(this),
