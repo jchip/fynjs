@@ -91,6 +91,7 @@ AggregateError: test
 
 - Subclass of the built-in [AggregateError]; it does not patch the global
 - `stack` includes the stacks of the aggregated errors, indented
+- Assigning `err.stack` replaces the top part and keeps the aggregated stacks
 - Takes any iterable of errors and the native `{ cause }` option
 
 Example with `cleanErrorStack`:

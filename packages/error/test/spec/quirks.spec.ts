@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { verify } from "run-verify";
-import { cleanErrorStack, AggregateError, aggregateErrorStack } from "../../src/index.js";
+import { cleanErrorStack, AggregateError, aggregateErrorStack, aggregateStack } from "../../src/index.js";
 
 describe("AggregateError with non-array iterables", () => {
   it("should spread a Set into errors", () => {
@@ -89,5 +89,49 @@ describe("cleanErrorStack line handling", () => {
     return verify({ timeout: 1000 })
       .step(() => cleanErrorStack(x, { replacePath: false, ignorePathFilter: ["/skip/"] }))
       .step((s) => expect(s).toBe("Error: x\n    at g (/p/keep.js:2:2)"));
+  });
+});
+
+describe("aggregateStack without errors", () => {
+  it("should add nothing for missing or empty errors", () => {
+    return verify({ timeout: 1000 })
+      .step(() => [aggregateStack("t", null as any), aggregateStack("t", undefined as any), aggregateStack("t", [])])
+      .step((results) => expect(results).toEqual(["t", "t", "t"]));
+  });
+});
+
+describe("cleanErrorStack line endings", () => {
+  it("should normalize CRLF to LF", () => {
+    const x = { stack: "Error: x\r\n    at f (/abs/a.js:1:1)\r\n    at /abs/b.js:2:2\r\n" } as Error;
+    return verify({ timeout: 1000 })
+      .step(() => cleanErrorStack(x, { replacePath: false }))
+      .step((s) => expect(s).toBe("Error: x\n    at f (/abs/a.js:1:1)\n    at /abs/b.js:2:2\n"));
+  });
+});
+
+describe("cleanErrorStack replacePath", () => {
+  it("should strip replacePath only as a leading prefix", () => {
+    const x = { stack: "E\n    at f (/cwd/a.js:1:1)\n    at g (/x/cwd/b.js:2:2)" } as Error;
+    return verify({ timeout: 1000 })
+      .step(() => cleanErrorStack(x, { replacePath: "/cwd/" }))
+      .step((s) => expect(s).toBe("E\n    at f (a.js:1:1)\n    at g (/x/cwd/b.js:2:2)"));
+  });
+});
+
+describe("AggregateError stack write", () => {
+  it("should replace the header and keep the errors' stacks", () => {
+    const inner = new Error("inner");
+    let err: AggregateError;
+    return verify({ timeout: 1000 })
+      .step(() => (err = new AggregateError([inner], "outer")))
+      .step(() => expect(err.stack.split("\n")[0]).toBe("AggregateError: outer"))
+      .step(() => {
+        err.stack = "custom";
+        return err.stack;
+      })
+      .step((stack) => {
+        expect(stack.split("\n")[0]).toBe("custom");
+        expect(stack).toContain("  Error: inner");
+      });
   });
 });

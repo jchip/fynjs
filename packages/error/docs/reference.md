@@ -33,7 +33,7 @@ Returns the text of `error.stack` with noisy stack frames removed and file paths
 
 | option | type | default | behavior |
 | --- | --- | --- | --- |
-| `replacePath` | `false \| string` | `` `${process.cwd()}/` `` (evaluated on each call) | Substring removed from each kept frame path. Ignored when `false`, empty, or exactly 1 character long (so `"/"` does nothing). |
+| `replacePath` | `false \| string` | `` `${process.cwd()}/` `` (evaluated on each call) | Leading prefix removed from each kept frame path. Ignored when `false`, empty, or exactly 1 character long (so `"/"` does nothing). |
 | `ignorePathFilter` | `(string \| RegExp)[]` | `[]` | Extra filters. A frame whose path matches any filter is dropped. Added to the built-in filter. |
 
 Input selection:
@@ -42,16 +42,16 @@ Input selection:
 - When neither exists (or `error` is `null`/`undefined`), nothing is cleaned and the return value is `String(error && (error.stack || error.message))`. That gives `"null"` for `null` and `"undefined"` for `undefined`, `{}`, or an object with empty stack and no message.
 - A non-string, truthy `stack` (such as a number) throws `TypeError` (`stack.split is not a function`).
 
-Processing, applied to each line of the text split on `"\n"`:
+Processing, applied to each line of the text split on `"\n"` or `"\r\n"`:
 
 1. A line that does not match `/ {4,}at/` (an `at` preceded by 4 or more spaces anywhere in the line) is kept unchanged. This covers the message line, `Require stack:` lines, and frames indented with fewer than 4 spaces.
 2. A frame line is parsed with `/( {4,}at )(?:([^(]*\()(.+)(\).*)|(.+))/`. It has two forms. `at name (location)` takes the location from the first `(` to the last `)`, so a `)` inside a path does not cut it short. `at location` has no parentheses. Node uses it for anonymous functions and ES module top-level code.
 3. The frame is dropped when parsing fails (such as a bare `    at`), or unless the location contains `scheme://` (regex `/[^:]+:\/\//`) or `path.isAbsolute(location)` is true. That removes `node:internal/...` frames in either form, `(<anonymous>)`, `(index 0)`, and relative paths. `path.isAbsolute` is platform specific, so a Windows path like `C:\a\b.js` is dropped on POSIX.
 4. Backslashes in the location are replaced with `/`.
 5. The frame is dropped if the location matches the built-in filter or any `ignorePathFilter` entry. A `RegExp` entry uses `location.match(re)`. A string entry uses `location.includes(str)`. Falsy entries (such as `""`) are skipped.
-6. Otherwise `replacePath` (when usable) is removed. A location that starts with `file://` + `replacePath` loses both, so an ES module URL under the current directory becomes a relative path. Any other location has the first occurrence of `replacePath` removed with `String.prototype.replace` (plain string, not a regex). It can match anywhere in the location, not only at the start. A `file://` URL outside `replacePath` therefore stays whole.
+6. Otherwise `replacePath` (when usable) is removed. A location that starts with `file://` + `replacePath` loses both, so an ES module URL under the current directory becomes a relative path. Any other location loses `replacePath` only when it starts with it (plain string, not a regex). A match in the middle of a path is left alone, and so is a `file://` URL outside `replacePath`.
 7. The kept frame is rebuilt as `at` + name + new location + the text after the last `)`. Text before the 4-space indent is not kept.
-8. Dropped frames are removed and the remaining lines are joined with `"\n"`. Blank lines in the original text are kept.
+8. Dropped frames are removed and the remaining lines are joined with `"\n"`. Blank lines in the original text are kept. A CRLF stack therefore comes back with LF line endings throughout.
 
 Real stacks from CommonJS and ES modules are covered by tests on Node 22, 24 and 26 (`test/spec/real-stack.spec.ts`).
 
@@ -87,8 +87,8 @@ Nested aggregate stacks indent again, so each nesting level adds 2 spaces.
 
 Edge cases on `errors`:
 
-- An array (or any object with a `map` function) is mapped. `[]` returns `stack` alone with no trailing newline.
-- A falsy `errors` (`null`, `undefined`, `""`) or a value with no `map` function (such as a string or a plain object without `map`) is treated as no errors, but the result gets a trailing `"\n"`, for example `aggregateStack("t", null) === "t\n"`.
+- An array (or any object with a `map` function) is mapped. `[]` returns `stack` alone.
+- A falsy `errors` (`null`, `undefined`, `""`) or a value with no `map` function (such as a string or a plain object without `map`) is treated as no errors, and also returns `stack` alone, for example `aggregateStack("t", null) === "t"`.
 - A truthy `errors.map` that is not a function throws `TypeError`.
 - `stack` is not checked. A non-string is joined as is.
 
@@ -141,13 +141,13 @@ Instance properties (all defined with `Object.defineProperty`, so `Object.keys(e
 | --- | --- | --- |
 | `name` | non-enumerable, non-writable, non-configurable own property | `"AggregateError"`. A subclass cannot override it by assignment. |
 | `errors` | non-enumerable, writable, configurable | `Array.from(errors)`: a new array, even when `errors` is an array. |
-| `__stack` | non-enumerable, non-writable, non-configurable | `this.stack` read right after `super()`: the native stack text of the error. |
-| `stack` | non-enumerable, configurable accessor | Getter returning `aggregateErrorStack(this)`, computed on first read and cached. |
+| `__stack` | non-enumerable, writable, non-configurable | `this.stack` read right after `super()`: the native stack text of the error. Writing `stack` replaces it. |
+| `stack` | non-enumerable, configurable accessor | Getter returning `aggregateErrorStack(this)`, computed on first read and cached. The setter replaces the header. |
 
 `stack` details:
 
 - The cache means `errors` changes made after the first read of `stack` are not reflected. Changes made before the first read are.
-- Only a getter is defined. The existing native setter of the engine remains, so assigning to `err.stack` does not throw and has no effect on the getter result (observed on Node 24).
+- Assigning `err.stack = text` replaces the header: `__stack` becomes `text` and the cache is cleared. The next read gives `text` followed by the errors' indented stacks, so the aggregated stacks are kept.
 - `instanceof` works against the native class (`new AggregateError([]) instanceof globalThis.AggregateError` is `true`). A native instance is not an instance of this class.
 - `console.log(err)` and `err.stack` in a debugger show the aggregate form. `cleanErrorStack(err)` therefore also cleans the nested error stacks, and the nested lines keep their 2-space indent.
 

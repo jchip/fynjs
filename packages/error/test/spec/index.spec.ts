@@ -110,11 +110,11 @@ describe("AggregateError", () => {
 describe("aggregateErrorStack", () => {
   it("should work with alike objects", () => {
     const s = aggregateErrorStack({ message: "test test" } as any);
-    expect(s).toBe("test test\n");
+    expect(s).toBe("test test");
   });
 
   it("should work with string", () => {
     const s = aggregateErrorStack("blah blah" as any);
-    expect(s).toBe("blah blah\n");
+    expect(s).toBe("blah blah");
   });
 });

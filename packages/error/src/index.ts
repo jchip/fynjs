@@ -29,8 +29,9 @@ export function cleanErrorStack(
     return String(stack);
   }
 
+  // normalize CRLF so every output line ends the same way
   const result = stack
-    .split("\n")
+    .split(/\r?\n/)
     .map((line) => {
       // keep all non stack tracing lines
       if (!line.match(/ {4,}at/)) {
@@ -54,10 +55,10 @@ export function cleanErrorStack(
       }
       let path2 = path;
       if (replacePath && replacePath.length > 1) {
-        // an ESM location is a file:// URL, so drop the scheme along with replacePath
-        path2 = path.startsWith(`file://${replacePath}`)
-          ? path.slice(`file://${replacePath}`.length)
-          : path.replace(replacePath, "");
+        // strip replacePath only as a leading prefix. An ESM location is a file:// URL, so drop
+        // the scheme along with it.
+        const prefix = path.startsWith(`file://${replacePath}`) ? `file://${replacePath}` : replacePath;
+        if (path.startsWith(prefix)) path2 = path.slice(prefix.length);
       }
       return `${at}${name}${path2}${tail}`;
     })
@@ -75,16 +76,14 @@ export function cleanErrorStack(
  * @returns aggregate stack
  */
 export function aggregateStack(stack: string, errors: any[]): string {
-  return [stack]
-    .concat(
-      errors &&
-        errors.map &&
-        errors.map((e) => {
+  const stacks =
+    errors && errors.map
+      ? errors.map((e) => {
           const s = e && (e.stack || e.message);
           return (s || String(e)).replace(/^/gm, "  ");
         })
-    )
-    .join("\n");
+      : [];
+  return [stack].concat(stacks).join("\n");
 }
 
 /**
@@ -136,12 +135,17 @@ export class AggregateError extends globalThis.AggregateError {
       // save original stack
       __stack: {
         enumerable: false,
+        writable: true,
         value: this.stack,
       },
-      // make aggregate stack
+      // make aggregate stack. Writing it replaces the header and keeps the errors' stacks.
       stack: {
         get() {
           return aggStack || (aggStack = aggregateErrorStack(this));
+        },
+        set(value: string) {
+          this.__stack = value;
+          aggStack = "";
         },
       },
     });
