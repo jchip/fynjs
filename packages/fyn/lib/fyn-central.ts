@@ -403,6 +403,9 @@ class FynCentral {
       const info = await this.getInfo(integrity);
 
       const list = flattenTree(info.tree as TreeNode, { dirs: [], files: [] }, "");
+      // a tree saved before "." segments were dropped can list a file twice, which reflink rejects
+      list.dirs = [...new Set(list.dirs)];
+      list.files = [...new Set(list.files)];
       const srcDir = Path.join(info.contentPath, "package");
 
       // one clone for the whole package, where the filesystem can (APFS). Per-file placement

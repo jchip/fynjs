@@ -61,9 +61,13 @@ export function treeCollector(strip: number): {
   const result: UntarTree = { tree: newDirObj(), fromHeaders: true };
 
   const onentry = (entry: TreeEntry): void => {
-    const parts = entry.path.split(/\/|\\/);
     const isDir = entry.type === "Directory";
-    const dirs = parts.slice(strip, isDir ? parts.length : parts.length - 1);
+    // drop "." and empty segments, so "package/./a.js" and "package/a.js" are one file
+    const parts = entry.path
+      .split(/\/|\\/)
+      .slice(strip)
+      .filter(p => p && p !== ".");
+    const dirs = isDir ? parts : parts.slice(0, -1);
 
     const wtree = dirs.reduce((wt: TreeNode, dir: string) => {
       return (wt[dir] as TreeNode) || (wt[dir] = newDirObj());

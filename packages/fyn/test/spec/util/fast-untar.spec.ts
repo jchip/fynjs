@@ -187,4 +187,35 @@ describe("fast-untar", () => {
     expect(() => untarFileSync({ file, integrity, targetDir, strip: 1 })).toThrow();
     expect(Fs.existsSync(Path.join(tmp, "evil.txt"))).toBe(false);
   });
+
+  // @rollup/plugin-commonjs@25.0.8 lists dist/cjs/index.js as both package/./dist/... and package/dist/...
+  it("lists a file once however its tar path spells it", () => {
+    const entry = (path: string, body: string) => {
+      const header = new Tar.Header({ path, type: "File", size: body.length, mode: 0o644, mtime: new Date(0) });
+      header.encode();
+      const block = Buffer.alloc(512);
+      block.write(body);
+      return [header.block!, block];
+    };
+    const buf = Zlib.gzipSync(
+      Buffer.concat([
+        ...entry("package/./a.js", "a1"),
+        ...entry("package/a.js", "a2"),
+        ...entry("package/lib//b.js", "b"),
+        Buffer.alloc(1024)
+      ])
+    );
+    const file = Path.join(tmp, "dup.tgz");
+    const targetDir = Path.join(tmp, "target");
+    return verify()
+      .step(() => Fs.writeFileSync(file, buf))
+      .step(() => ssri.fromData(buf, { algorithms: ["sha512"] }).toString())
+      .step(integrity => untarFileSync({ file, integrity, targetDir, strip: 1 }))
+      .step(({ tree }) => {
+        expect(Object.keys(tree).sort()).toEqual(["/", "lib"]);
+        expect(Object.keys(tree["/"])).toEqual(["a.js"]);
+        expect(Object.keys((tree.lib as any)["/"])).toEqual(["b.js"]);
+        expect(Fs.readFileSync(Path.join(targetDir, "a.js"), "utf8")).toBe("a2");
+      });
+  });
 });

@@ -4,6 +4,7 @@ import Os from "os";
 import Path from "path";
 import FynCentral from "../../lib/fyn-central";
 import FileOps from "../../lib/util/file-ops";
+import { verify } from "run-verify";
 
 // `hide` makes replicate take the JS path, as it does when reflink isn't installed.
 // `fake` stands in for reflink's cloneFiles, and `fakeDir` for its cloneDir. Faking cloneFiles
@@ -223,6 +224,38 @@ describe("fyn-central replicate: reflink call", () => {
     await central.replicate("sha512-test", destDir);
     await central.replicate("sha512-test", destDir);
     expect(fake).toHaveBeenCalledTimes(4);
+  });
+});
+
+// A store tree saved before "." segments were dropped lists a file under "." and under its
+// real dir. Both flatten to one path, and @fynjs/reflink rejects a batch that names a file twice.
+describe("fyn-central replicate: tree with a '.' dir", () => {
+  let root: string;
+  let contentPath: string;
+  let destDir: string;
+
+  beforeEach(() => {
+    ({ root, contentPath, destDir } = makeStore());
+    reflinkMode.hide = false;
+  });
+
+  afterEach(() => {
+    Fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("places each file once", () => {
+    let central: any;
+    return verify({ timeout: 5000 })
+      .step(() => {
+        central = makeCentral(root, contentPath);
+        central._cloneDirs = false;
+        central.getInfo = async () => ({ contentPath, tree: { ...tree, ".": tree } });
+      })
+      .step(() => central.replicate("sha512-test", destDir))
+      .step(() => {
+        expect(Fs.readFileSync(Path.join(destDir, "index.js"), "utf8")).toBe("module.exports = 1;\n");
+        expect(Fs.readFileSync(Path.join(destDir, "lib", "util.js"), "utf8")).toBe("module.exports = 2;\n");
+      });
   });
 });
 
