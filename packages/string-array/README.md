@@ -36,7 +36,7 @@ const r2 = stringArray.parse("test[1,2,3]");
 
 * All leading and trailing whitespaces are automatically `trim`ed.
 
-* Can't have these characters in elements: `,` `[` `]`
+* Can't have `,` or `]` in elements. A `[` in the middle of an element is kept as plain text, but the next `]` still closes the array, so `[a[b], c]` gives `["a[b"]` with `c]` left in `remain`.
 
 ## Examples
 

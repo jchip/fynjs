@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { verify } from "run-verify";
 import { parse } from "../../src/index.js";
 
 describe("string-array parse", () => {
@@ -117,5 +118,15 @@ describe("string-array parse", () => {
   it("should reject incomplete arrays", () => {
     expect(() => parse("[abc")).toThrow("array missing ]");
     expect(() => parse("[abc,")).toThrow("array missing ]");
+  });
+
+  it("should keep a [ in the middle of an element as text", () => {
+    return verify()
+      .step(() => [parse("[a[b, c]"), parse("[a[b], c]")])
+      .step(([lone, paired]) => {
+        expect(lone).toEqual({ prefix: "", array: ["a[b", "c"], remain: "" });
+        // the first ] closes the array, so the rest lands in remain
+        expect(paired).toEqual({ prefix: "", array: ["a[b"], remain: "c]" });
+      });
   });
 });
