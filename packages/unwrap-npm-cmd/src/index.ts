@@ -58,13 +58,17 @@ export function unwrapNpmCmd(cmd: string, options: UnwrapOptions = { path: proce
     return cmd;
   }
 
-  const cmdParts = cmd.split(" ");
-  const exe = unwrapExe(cmdParts[0], options);
-  if (exe !== cmdParts[0]) {
-    return [exe].concat(cmdParts.slice(1)).join(" ");
-  } else {
-    return cmd;
+  // the exe is a leading double-quoted token, such as a path with spaces, or the first word
+  const quoteEnd = cmd.startsWith(`"`) ? cmd.indexOf(`"`, 1) : -1;
+  let exeEnd = quoteEnd + 1;
+  let exe = cmd.slice(1, quoteEnd);
+  if (quoteEnd < 0) {
+    exeEnd = cmd.includes(" ") ? cmd.indexOf(" ") : cmd.length;
+    exe = cmd.slice(0, exeEnd);
   }
+
+  const newExe = unwrapExe(exe, options);
+  return newExe !== exe ? newExe + cmd.slice(exeEnd) : cmd;
 }
 
 export default unwrapNpmCmd;

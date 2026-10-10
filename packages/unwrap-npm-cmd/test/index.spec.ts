@@ -57,13 +57,13 @@ describe("resolveNpmCmd", () => {
   });
 });
 
-describe("unwrap-npm-cmd cache", () => {
-  const withWin32 = () => {
-    const desc = Object.getOwnPropertyDescriptor(process, "platform")!;
-    Object.defineProperty(process, "platform", { ...desc, value: "win32" });
-    return () => Object.defineProperty(process, "platform", desc);
-  };
+const withWin32 = () => {
+  const desc = Object.getOwnPropertyDescriptor(process, "platform")!;
+  Object.defineProperty(process, "platform", { ...desc, value: "win32" });
+  return () => Object.defineProperty(process, "platform", desc);
+};
 
+describe("unwrap-npm-cmd cache", () => {
   it("should apply relative and jsOnly per call on a cached resolve", async () => {
     let restore = () => {};
     const cmdFile = fixture("hello-js.cmd");
@@ -81,6 +81,35 @@ describe("unwrap-npm-cmd cache", () => {
       .step(() => unwrapNpmCmd("hello-js b", { ...opts, jsOnly: true, relative: true, cwd }))
       .keep.step((r) => expect(r).toBe(`${quote(relJs)} b`))
       .step(() => expect(which.sync).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe("unwrap-npm-cmd quoted exe", () => {
+  it("should unwrap a leading quoted path with spaces", async () => {
+    let restore = () => {};
+    const cmdFile = fixture("hello-js.cmd");
+    const jsFile = `${Path.dirname(cmdFile)}\\node_modules\\hello\\bin\\hello.js`;
+    const exe = "C:\\Program Files\\tools\\hello-js.cmd";
+    await verify({ timeout: 1000, cleanup: () => restore() })
+      .step(() => (restore = withWin32()))
+      .step(() => vi.spyOn(which, "sync").mockReturnValue(cmdFile))
+      .step(() => unwrapNpmCmd(`"${exe}" a "b c"`, { path: "quoted-test-path" }))
+      .keep.step((r) => expect(r).toBe(`${quote(process.execPath)} ${quote(jsFile)} a "b c"`))
+      .step(() => expect(which.sync).toHaveBeenCalledWith(exe, { path: "quoted-test-path" }));
+  });
+
+  it("should return the command unchanged when the quoted exe is not found", async () => {
+    let restore = () => {};
+    const cmd = `"C:\\No Such\\tool.cmd" a`;
+    await verify({ timeout: 1000, cleanup: () => restore() })
+      .step(() => (restore = withWin32()))
+      .step(() =>
+        vi.spyOn(which, "sync").mockImplementation(() => {
+          throw new Error("not found");
+        })
+      )
+      .step(() => unwrapNpmCmd(cmd, { path: "quoted-missing-path" }))
+      .step((r) => expect(r).toBe(cmd));
   });
 });
 

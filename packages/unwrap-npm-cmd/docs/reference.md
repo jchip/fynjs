@@ -45,16 +45,18 @@ Returns a command string. Never throws for a command that cannot be resolved; it
 Algorithm:
 
 1. If `process.platform !== "win32"`, return `cmd` unchanged. `options` is ignored.
-2. Split `cmd` on the single space character `" "`. The first piece is the executable name. The rest are kept as is.
+2. Find the executable name. If `cmd` starts with `"` and has a closing `"`, the name is the text between them, such as a path with spaces. Otherwise it is the text before the first space. The rest of `cmd` is kept as is. `&&` chains are not split, so only the first command is looked at.
 3. Resolve the executable name with `resolveNpmCmd(name, options)`. If it throws (for example `which` finds nothing), return `cmd` unchanged.
-4. If `resolveNpmCmd` returned a string (the found path, quoted), replace the first piece with that string.
+4. If `resolveNpmCmd` returned a string (the found path, quoted), it is the replacement.
 5. If it returned `{ jsFile }`:
    - With `options.relative` truthy, `jsFile = relative(jsFile, options.cwd)`.
    - With `options.jsOnly` truthy, the replacement is `quote(jsFile)`.
    - Otherwise the replacement is `quote(process.execPath) + " " + quote(jsFile)`.
-6. Join the replacement and the remaining pieces with single spaces and return.
+6. Return the replacement followed by the rest of `cmd`.
 
-The returned string is `cmd` itself when the replacement equals the first piece. Remaining arguments are never parsed, quoted or changed.
+The returned string is `cmd` itself when the replacement equals the executable name. Remaining arguments are never parsed, quoted or changed.
+
+A failed lookup is cached per `options.path` for the life of the process. A bin installed later in the same process is not picked up for that name.
 
 ### Options
 
