@@ -280,7 +280,7 @@ describe("xenv-config", function() {
         { _env: { [envKey]: JSON.stringify(x) }, merge }
       );
       expect(JSON.stringify(cfg.test)).toBe(JSON.stringify(x));
-      expect(cfg.__$trace__.test).toStrictEqual({ src: "env" });
+      expect(cfg.__$trace__.test).toStrictEqual({ src: "env", name: envKey });
     });
 
     it("should return nothing if no sources available", () => {
@@ -299,7 +299,7 @@ describe("xenv-config", function() {
         { _env: { [envKey]: JSON.stringify(x) }, merge }
       );
       expect(JSON.stringify(cfg.test)).toBe(JSON.stringify(x));
-      expect(cfg.__$trace__.test).toStrictEqual({ src: "env,default" });
+      expect(cfg.__$trace__.test).toStrictEqual({ src: "env,default", name: envKey });
     });
 
     it("should parse and merge json from all by type from default", () => {
@@ -311,7 +311,7 @@ describe("xenv-config", function() {
         { _env: { [envKey]: JSON.stringify(x) }, merge }
       );
       expect(cfg.test).toStrictEqual({ d: 1, o: true, foo: "123", a: { c: 9, b: 5 } });
-      expect(cfg.__$trace__.test).toStrictEqual({ src: "env,option,default" });
+      expect(cfg.__$trace__.test).toStrictEqual({ src: "env,option,default", name: envKey });
     });
 
     it("should use Object.assign if no merge provided", () => {
@@ -323,7 +323,81 @@ describe("xenv-config", function() {
         { _env: { [envKey]: JSON.stringify(x) } }
       );
       expect(cfg.test).toStrictEqual({ d: 1, o: true, foo: "123", a: { b: 5 } });
-      expect(cfg.__$trace__.test).toStrictEqual({ src: "env,option,default" });
+      expect(cfg.__$trace__.test).toStrictEqual({ src: "env,option,default", name: envKey });
+    });
+  });
+
+  describe("null and array defaults", function() {
+    it("should read env as a string with no type and no default", () => {
+      return verify({ timeout: 500 })
+        .step(() => xenvConfig({ test: { env: "PLAIN_ENV" } }, {}, { _env: { PLAIN_ENV: 123 } }))
+        .step(cfg => expect(cfg.test).toBe("123"));
+    });
+
+    it("should keep a null default as null and read env as a string", () => {
+      const spec = { test: { env: "NULL_ENV", default: null } };
+      return verify({ timeout: 500 })
+        .step(() => xenvConfig(spec, {}, { _env: {} }))
+        .keep.step(cfg => expect(cfg.test).toBe(null))
+        .step(() => xenvConfig(spec, {}, { _env: { NULL_ENV: "abc" } }))
+        .step(cfg => expect(cfg.test).toBe("abc"));
+    });
+
+    it("should return an array default as is", () => {
+      const list = [1, 2];
+      return verify({ timeout: 500 })
+        .step(() => xenvConfig({ test: { env: "ARR_ENV", default: list } }, {}, { _env: {} }))
+        .step(cfg => {
+          expect(cfg.test).toBe(list);
+          expect(cfg.__$trace__.test).toStrictEqual({ src: "default" });
+        });
+    });
+
+    it("should take the first array source found without merging", () => {
+      const spec = { test: { env: "ARR_ENV", default: [1, 2] } };
+      return verify({ timeout: 500 })
+        .step(() => xenvConfig(spec, { test: [7] }, { _env: { ARR_ENV: "[3]" } }))
+        .keep.step(cfg => {
+          expect(cfg.test).toStrictEqual([3]);
+          expect(cfg.__$trace__.test).toStrictEqual({ src: "env", name: "ARR_ENV" });
+        })
+        .step(() => xenvConfig(spec, { test: [7] }, { _env: {} }))
+        .step(cfg => expect(cfg.test).toStrictEqual([7]));
+    });
+  });
+
+  describe("unknown source", function() {
+    it("should throw up front, even when an earlier source has the value", () => {
+      const spec = { test: { default: "d" } };
+      const message = 'xenv-config: unknown source "bogus"; valid sources are env, option, default';
+      return verify({ timeout: 500 })
+        .expectError.step(() => xenvConfig(spec, { test: "o" }, { sources: ["option", "bogus"] }))
+        .step(err => expect((err as Error).message).toBe(message))
+        .expectError.step(() => xenvConfig({}, {}, { sources: ["toString"] }))
+        .step(err => expect((err as Error).message).toContain('unknown source "toString"'));
+    });
+  });
+
+  describe("object type alias", function() {
+    it("should treat type object as json", () => {
+      return verify({ timeout: 500 })
+        .step(() =>
+          xenvConfig({ test: { env: "OBJ_ENV", type: "object" } }, { test: { o: 1 } }, { _env: { OBJ_ENV: '{"e":1}' } })
+        )
+        .step(cfg => {
+          expect(cfg.test).toStrictEqual({ o: 1, e: 1 });
+          expect(cfg.__$trace__.test).toStrictEqual({ src: "env,option", name: "OBJ_ENV" });
+        });
+    });
+  });
+
+  describe("json trace name", function() {
+    it("should leave name out when env did not contribute", () => {
+      return verify({ timeout: 500 })
+        .step(() =>
+          xenvConfig({ test: { env: "JSON_ENV", default: { d: 1 } } }, { test: { o: 1 } }, { _env: {} })
+        )
+        .step(cfg => expect(cfg.__$trace__.test).toStrictEqual({ src: "option,default" }));
     });
   });
 });

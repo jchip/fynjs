@@ -67,8 +67,8 @@ Reorder with `options.sources`. Example: `sources: ["option", "env"]` makes user
 
 - Presence is tested with `Object.prototype.hasOwnProperty`. A present key whose value is `undefined`, `null`, `""` or `false` still counts as found. An empty string env var is found.
 - Inherited properties are not seen, on `spec` entries, `userConfig` and the env object.
-- `options.sources` is mutated. The function calls `push("default")` on the array you pass in. See Quirks.
-- A source name other than `"env"`, `"option"` or `"default"` throws a `TypeError` (`getters[s] is not a function`) when that key is resolved.
+- `options.sources` is not mutated. `"default"` is appended to a copy.
+- A source name other than `"env"`, `"option"` or `"default"` throws before any key is resolved: `xenv-config: unknown source "<name>"; valid sources are env, option, default`.
 - The `"default"` entry: if `default` is a function it is called with no arguments and its return value is used. A function is never type-coerced.
 
 ### Env lookup
@@ -117,7 +117,7 @@ All fields are optional. A spec option with none of them resolves only from `use
 The type for a key is decided by `type` first, then inference:
 
 1. `opt.type` if truthy.
-2. Else `typeof opt.default` when `default` is an own property and its `typeof` is not `"function"`.
+2. Else, when `default` is an own property, inferred from it (see the table below).
 3. Else `"string"`.
 
 Then `"object"` is rewritten to `"json"`. A type name not listed below falls back to the `string` converter. Only `"json"` (after the rewrite) triggers merge behavior.
@@ -130,17 +130,20 @@ Then `"object"` is rewritten to `"json"`. A type name not listed below falls bac
 | `boolean` | lower-cased `x` is `"true"`, `"yes"`, `"1"` or `"on"` | Case-insensitive. Any other string gives `false`. A non-string raw value throws (see Errors). |
 | `truthy` | `!!x` | An empty string gives `false`. Any non-empty string, including `"false"` and `"0"`, gives `true`. |
 | `json` | `JSON.parse(x)` | Needs strict JSON. `{b:90}` is invalid. See json merging. |
+| `array` | `JSON.parse(x)` | Same parse as `json`, but first-wins like other types. Nothing is merged. |
 
 Inference from `default`:
 
-| `typeof default` | Inferred type |
+| `default` | Inferred type |
 | --- | --- |
-| `"string"` | `string` |
-| `"number"` | `number` (integer, `parseInt`) |
-| `"boolean"` | `boolean` |
-| `"object"` | `json` (this includes `null` and arrays) |
-| `"undefined"` (own property set to `undefined`) | no converter of that name, so `string` conversion |
-| `"function"`, or no `default` | `string` |
+| a string | `string` |
+| a number | `number` (integer, `parseInt`) |
+| a boolean | `boolean` |
+| `null` | `string`. With no other source the value stays `null`. |
+| an array | `array`. The first source found wins and its value is returned as is. |
+| any other object | `json` |
+| `undefined` (own property set to `undefined`) | no converter of that name, so `string` conversion |
+| a function, or no `default` | `string` |
 
 An explicit `type` always overrides inference. `type: "object"` is accepted as an alias of `json`.
 
@@ -154,7 +157,7 @@ When the resolved type is `json`, sources are not first-wins. Every source in `s
 - The result is always a new object, so defaults and user config are not mutated by the merge.
 - If no source finds a value, the key is skipped.
 - Values are merged as given. With `Object.assign`, a string merges as indexed characters, an array as indexed keys, and `null` or `undefined` is ignored.
-- The trace is `{ src: "<names joined by comma>" }`, in `sources` order, only for the sources that found a value, for example `"env,option,default"` or `"option,default"`. It has no `name` field, even when env contributed.
+- The trace is `{ src: "<names joined by comma>" }`, in `sources` order, only for the sources that found a value, for example `"env,option,default"` or `"option,default"`. When env contributed, the trace also has `name`, the env var name used.
 
 ## `XenvConfigOptions`
 
@@ -170,7 +173,7 @@ interface XenvConfigOptions {
 | --- | --- | --- | --- |
 | `_env` | `XenvConfigEnv` (`Record<string, unknown>`) | `process.env` | Env-like object to read. Used when truthy. Values need not be strings, but `boolean` rejects non-strings. |
 | `merge` | `XenvConfigMergeFn` | `Object.assign` | Called as `merge.apply(null, [{}, ...values])` for json keys. Must return the merged object. Its return value is used as the key's value. |
-| `sources` | `string[]` | `["env", "option"]` | Ordered source names to consult. `"default"` is always appended, after your list. The array is mutated. |
+| `sources` | `string[]` | `["env", "option"]` | Ordered source names to consult. `"default"` is always appended, after your list. The array you pass is not changed. An unknown name throws. |
 
 ## Result
 
@@ -190,7 +193,7 @@ The result is a plain `{}` with one property per resolved spec key, in spec key 
 - `__$trace__` is defined with `Object.defineProperty`: `enumerable: false`, `writable: false`, `configurable: false`. It is skipped by `Object.keys`, spread, `JSON.stringify` and deep-equal checks, but is read as `config.__$trace__`. Copying the object with spread or `Object.assign` drops it.
 - `__$trace__[key]` exists exactly when `key` is in the result.
 - `trace.src` is `"env"`, `"option"`, `"default"`, or for json keys a comma-joined list of those.
-- `trace.name` is set only for non-json keys resolved from env. It holds the env var name actually used, which is useful with an `env` array.
+- `trace.name` is set when env provided the value, or contributed to a json value. It holds the env var name actually used, which is useful with an `env` array.
 - Values from `userConfig` and `default` are stored by reference, not cloned (non-json keys).
 
 ```js
@@ -206,7 +209,7 @@ const config = xenvConfig(
 // config: { port: 9000, opts: { a: 1, b: 2, c: 3 } }  (debug is absent)
 // config.__$trace__:
 //   port: { src: "env", name: "PORT" }
-//   opts: { src: "env,option,default" }
+//   opts: { src: "env,option,default", name: "OPTS" }
 ```
 
 ## Errors
@@ -217,7 +220,7 @@ Nothing is caught or wrapped. All errors are thrown synchronously from `xenvConf
 | --- | --- |
 | `boolean` type and the env value (or `_env` value) is not a string | `AssertionError` from `node:assert`, message `xenv-config: [<key>] trying to convert non-string env value <value> to boolean.` |
 | `json` type and the env string is not valid JSON | `SyntaxError` from `JSON.parse` |
-| `sources` contains an unknown name | `TypeError` (`getters[s] is not a function`) |
+| `sources` contains an unknown name | `Error`, message `xenv-config: unknown source "<name>"; valid sources are env, option, default`. Thrown before any key is resolved. |
 | `spec` is `undefined` or `null` | `TypeError` from `Object.keys` |
 | A function `default`, `post`, or `merge` throws | the error propagates unchanged |
 | `type: "json"` where `x` is not a string, such as a non-string `_env` value | `JSON.parse` coerces it to a string first, so it may parse or throw `SyntaxError` |
@@ -226,9 +229,7 @@ Absence of a value is not an error. Missing keys are left out of the result.
 
 ## Quirks
 
-- `options.sources` is mutated by `push("default")`. Reusing the same array in a later call adds another `"default"`. For json keys this repeats the default in the merge and in the trace (`"option,default,default"`). Pass a fresh array each call.
 - `type: "json"` needs strict JSON in env. The README example `JSON_OPTION = "{b:90}"` throws `SyntaxError`; use `'{"b":90}'`.
-- `default: null` or an array default infers type `json`, so the key resolves to a new merged object (`{}` for `null`, `{0: ...}` for an array), not to `null` or the array.
 - `number` env values that are not integers give `NaN` rather than an error. Empty env strings give `NaN`.
 - `envMap` hits are returned as is, with no coercion by `type`.
 - `userConfig` values and defaults are never coerced, only env values are.

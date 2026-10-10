@@ -45,7 +45,7 @@ expect(config.__$trace__).to.deep.equal({
   fooOption: { src: "default" },
   barOption: { src: "env", name: "BAR_OPTION" },
   zooOption: { src: "option" },
-  jsonOption: { src: "env,option" }
+  jsonOption: { src: "env,option", name: "JSON_OPTION" }
 });
 ```
 
@@ -68,6 +68,7 @@ Returns `config` object.
 
 - `_env` - Object that represents environment instead of `process.env`
 - `merge` - function to merge `json` object instead of using `Object.assign`
+- `sources` - ordered list of sources to check, from `env`, `option` and `default`. Default is `["env", "option"]`, and `default` is always checked last. An unknown name throws.
 
 ## Spec
 
@@ -113,8 +114,9 @@ When loading from `env`, in order to indicate what value to convert the string i
 - `boolean` - (boolean) convert with `x === "true" || x === "yes" || x === "1" || x === "on"`
 - `truthy` - (boolean from truthy check) convert with `!!x`
 - `json` - (JSON) parsed with `JSON.parse`
+- `array` - (array) parsed with `JSON.parse`. The first source found wins, and nothing is merged.
 
-> If `type` is not specified, and `default` exist and not a function, then `typeof default` will be used.
+> If `type` is not specified, and `default` exist and not a function, then `typeof default` will be used. A `null` default is `string`, and an array default is `array`: env is parsed with `JSON.parse`, and the first source found wins with no merging.
 
 ### Trace
 
@@ -132,6 +134,7 @@ The hidden field `__$trace__` contain data for each key to indicate where its va
 - Values from all three sources are combined in the following order `env`, `option`, `default`.
 - It uses `Object.assign` to combine values unless you pass in a `merge` function in options. For example, merge from `lodash`.
 - `trace.src` would be a comma separate list of them. For example, `"env,option"`, `"env,option,default"`, or `"option,default"`
+- When env contributed, the trace also has `name`, the env var name used.
 
 ## Option Orders
 

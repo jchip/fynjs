@@ -75,7 +75,8 @@ const typeGetters: Record<string, TypeGetter> = {
     return lower === "true" || lower === "yes" || lower === "1" || lower === "on";
   },
   truthy: x => !!x,
-  json: x => JSON.parse(x as string)
+  json: x => JSON.parse(x as string),
+  array: x => JSON.parse(x as string)
 };
 
 const getEnvName = (
@@ -124,10 +125,13 @@ const xenvConfig = <T = Record<string, unknown>>(
   const trace: Record<string, XenvConfigTrace> = {};
 
   const getType = (opt: XenvConfigSpecOption): string => {
-    const tod: false | string =
-      Object.prototype.hasOwnProperty.call(opt, "default") && typeof opt.default;
-    const type = opt.type || (tod !== "function" && tod) || "string";
-    return type === "object" ? "json" : (type as string);
+    if (opt.type) return opt.type === "object" ? "json" : opt.type;
+    if (!Object.prototype.hasOwnProperty.call(opt, "default")) return "string";
+    // typeof says "object" for both, but neither is a json object to merge into
+    if (opt.default === null) return "string";
+    if (Array.isArray(opt.default)) return "array";
+    const tod = typeof opt.default;
+    return tod === "object" ? "json" : tod === "function" ? "string" : tod;
   };
 
   const getGetter = (opt: XenvConfigSpecOption): TypeGetter => {
@@ -170,6 +174,12 @@ const xenvConfig = <T = Record<string, unknown>>(
   };
 
   const sources = [...((options && options.sources) || ["env", "option"]), "default"];
+  const badSource = sources.find(s => !Object.prototype.hasOwnProperty.call(getters, s));
+  if (badSource !== undefined) {
+    throw new Error(
+      `xenv-config: unknown source "${badSource}"; valid sources are ${Object.keys(getters).join(", ")}`
+    );
+  }
 
   const config = Object.keys(spec).reduce((cfg: Record<string, unknown>, k) => {
     const opt = spec[k];
@@ -181,8 +191,9 @@ const xenvConfig = <T = Record<string, unknown>>(
     } else {
       const mapped = sources.map(s => getters[s](opt, k)).filter((x): x is FoundValue => Boolean(x));
       if (mapped.length > 0) {
+        const name = mapped.find(x => x.trace.name)?.trace.name;
         found = {
-          trace: { src: mapped.map(x => x.trace.src).join(",") },
+          trace: { src: mapped.map(x => x.trace.src).join(","), ...(name && { name }) },
           value: merge.apply(
             null,
             [{}].concat(mapped.map(x => x.value).reverse()) as [Record<string, unknown>, ...unknown[]]
