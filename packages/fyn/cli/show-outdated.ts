@@ -65,6 +65,14 @@ export const showOutdated = async (
     await new Promise<void>((resolve, reject) => {
       process.stdout.write(`${output}\n`, (error) => (error ? reject(error) : resolve()));
     });
+  } else if (!options.json) {
+    logger.info(
+      result.checked === 1
+        ? "The only direct dependency is up to date"
+        : result.checked > 1
+          ? `All ${result.checked} direct dependencies are up to date`
+          : "No registry dependencies to check",
+    );
   }
 
   if (!options.json && options.packages?.length) {

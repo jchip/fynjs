@@ -37,6 +37,7 @@ Aliases are in parentheses. Command options are listed with each command. Global
 | `install` (`i`) | Resolve, fetch and install dependencies. Default command. |
 | `add` (`a`) | Add packages to `package.json`, then install. |
 | `remove` (`rm`) | Remove packages from `package.json`, then install. |
+| `update` | Update locked versions to the newest their ranges allow, then install. |
 | `stat` | Show where an installed package comes from and who depends on it. |
 | `outdated` | List direct registry dependencies that have newer versions. |
 | `audit` | Check resolved packages for known vulnerabilities. |
@@ -132,6 +133,25 @@ fyn remove <packages..> [--install] [--audit]
 
 Removes each name from `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies`, and from the same sections inside the `fyn` block. Empty sections are deleted. Names not found are logged as `These packages don't exist in your package.json`. If nothing was removed it logs `No package was removed`, skips the install and does not set a failing exit code. No names given: `No packages to remove`, exit 1.
 
+### `update`
+
+```
+fyn update [packages..] [--audit]
+```
+
+| Option | Type | Default | Behavior |
+| --- | --- | --- | --- |
+| `--audit` | boolean | true | Run a summary audit after the update. |
+
+Re-resolves dependencies to the newest versions their declared ranges allow, then installs.
+
+- No names: ignores every pin in `fyn-lock.yaml`, or in `<targetDir>/.f/lock.yaml` when there is no lockfile. `package-lock.json`, `npm-shrinkwrap.json` and `yarn.lock` are also ignored.
+- With names: unlocks those packages and every package they depend on, directly or not. Everything else stays pinned. A shared dependency in that subtree updates for all its dependents.
+- A name that is not in the lock data fails with `not found in lock data: <names>`, exit 1.
+- Always fetches fresh registry metadata and skips the "No Change" shortcut.
+- Never edits `package.json`. Use `add` to move past a declared range.
+- After install it prints `name old -> new` for each package whose locked versions changed, then the audit summary.
+
 ### `stat`
 
 ```
@@ -160,7 +180,7 @@ Rules:
 - `current` is the version in `<targetDir>/<name>/package.json`, or `null` (shown as `MISSING`) when it is not installed.
 - A dependency is reported unless `current === wanted` and (`latest` is missing or `wanted === latest`).
 - Record fields: `name`, `type` (`prod`, `dev`, `optional`, `devOptional`), `requested`, `current`, `wanted`, `latest`, and `resolvedName` for aliases.
-- The table has columns `Package`, `Current`, `Wanted`, `Latest`, `Type`, `Requested`. Empty results print nothing.
+- The table has columns `Package`, `Current`, `Wanted`, `Latest`, `Type`, `Requested`. Empty results log `All N direct dependencies are up to date`, or `No registry dependencies to check` when everything was skipped. `--json` prints `[]`.
 - Errors (bad spec, missing tag target, no matching version, registry failure, unreadable installed `package.json`) are thrown and make the process exit 1.
 
 Exit code: 1 when at least one record is reported, 0 when none. It does not change any file.
@@ -648,6 +668,7 @@ Precedence: an explicit option value (command line, rc, or fynpo `fyn.options.en
 | Uncaught rejection in the bin wrapper | 1 (prints the error). |
 | `install` | 1 on failure. 0 on success or "No Change". |
 | `add`, `remove` | 1 for no package names. Install failures follow `install`. |
+| `update` | 1 for a name that is not locked. Install failures follow `install`. |
 | `outdated` | 1 when anything is outdated. Errors also 1. |
 | `audit` | 0 even with findings. Failures logged only. |
 | `run` | The script's exit code, else 1. Missing script 1 (0 with `--if-present`). |

@@ -1,0 +1,10 @@
+{
+  "name": "update-in-range",
+  "version": "1.0.0",
+  "license": "ISC",
+  "repository": "test",
+  "dependencies": {
+    "mod-a": "^1.0.0",
+    "mod-i": "^1.0.0"
+  }
+}

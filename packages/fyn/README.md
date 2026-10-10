@@ -57,6 +57,16 @@ fyn outdated lodash --json
 and the registry's `latest` tag. Local, Git, and URL dependencies are not compared. Pass
 `--refresh-meta` to bypass fresh registry metadata caches.
 
+To move locked versions to the newest their declared ranges allow:
+
+```sh
+fyn update
+fyn update lodash
+```
+
+With no names, `update` ignores every lock pin. With names, it updates those packages and their
+dependencies and keeps the rest pinned. It never edits `package.json`.
+
 - It can read and use some settings from your `.npmrc`.
 - It can use `npm-shrinkwrap.json` or `package-lock.json` files.
 

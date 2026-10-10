@@ -20,6 +20,8 @@ export interface OutdatedRecord {
 export interface OutdatedResult {
   records: OutdatedRecord[];
   skipped: string[];
+  /** registry dependencies that were checked */
+  checked: number;
 }
 
 interface OutdatedOptions {
@@ -276,7 +278,7 @@ class PkgOutdatedProvider {
       .map((result) => (result.status === "fulfilled" ? result.value : undefined))
       .filter((record): record is OutdatedRecord => Boolean(record));
 
-    return { records, skipped: skipped.sort() };
+    return { records, skipped: skipped.sort(), checked: selected.length - skipped.length };
   }
 }
 

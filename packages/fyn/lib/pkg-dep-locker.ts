@@ -5,7 +5,7 @@ import assert from "assert";
 import Fs from "./util/file-ops";
 import * as _ from "lodash-es";
 import chalk from "chalk";
-import { simpleCompare as simpleSemverCompare, isLocalHard, unlocalify } from "./util/semver";
+import { simpleCompare as simpleSemverCompare, isLocalHard, unlocalify, parseNpmAlias } from "./util/semver";
 import type { VersionIndex } from "./util/semver";
 import Semver from "semver";
 import Yaml from "yamljs";
@@ -600,6 +600,54 @@ class PkgDepLocker {
         _.remove(sorted, x => x === item.resolved);
       }
     }
+  }
+
+  /**
+   * Locked versions by package name, newest first, from the serialized lock data
+   */
+  lockedVersions(): Record<string, string[]> {
+    assert(this._isFynFormat, "lock data is no longer in fyn format");
+    const result: Record<string, string[]> = {};
+    for (const name in this._lockData) {
+      if (name.startsWith("$")) continue;
+      const versions = Object.keys(this._lockData[name] as PkgLockData).filter(v => !v.startsWith("_"));
+      if (versions.length > 0) result[name] = versions.sort(simpleSemverCompare);
+    }
+    return result;
+  }
+
+  /**
+   * Drop lock data so the resolver picks the newest versions the ranges allow.
+   * With no names, drop every package. With names, drop those packages and
+   * everything they depend on, directly or not.
+   *
+   * @param names - packages to unlock, or none for all
+   * @returns the unlocked package names
+   */
+  unlock(names: string[] = []): string[] {
+    assert(this._isFynFormat, "lock data is no longer in fyn format");
+    const data = this._lockData;
+    const pending = names.length > 0 ? [...names] : Object.keys(data).filter(n => !n.startsWith("$"));
+    const unlocked = new Set<string>();
+
+    while (pending.length > 0) {
+      const name = pending.pop()!;
+      const pkgLocked = data[name] as PkgLockData | undefined;
+      if (unlocked.has(name) || !pkgLocked) continue;
+      unlocked.add(name);
+      if (names.length === 0) continue;
+      for (const version in pkgLocked) {
+        if (version.startsWith("_")) continue;
+        const vpkg = pkgLocked[version] as LockVersionMeta;
+        const deps = { ...vpkg.dependencies, ...vpkg.optionalDependencies };
+        for (const dep in deps) {
+          pending.push(parseNpmAlias(deps[dep], dep)?.name || dep);
+        }
+      }
+    }
+
+    for (const name of unlocked) delete data[name];
+    return [...unlocked].sort();
   }
 
   shasum(data: string): string {

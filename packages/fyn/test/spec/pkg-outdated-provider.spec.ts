@@ -90,6 +90,7 @@ describe("pkg-outdated-provider", () => {
         },
       ],
       skipped: [],
+      checked: 4,
     });
   });
 
@@ -194,6 +195,7 @@ describe("pkg-outdated-provider", () => {
     expect(await provider.getOutdated()).toStrictEqual({
       records: [],
       skipped: ["git", "local", "remote"],
+      checked: 0,
     });
     expect(fetchMeta).not.toHaveBeenCalled();
   });
@@ -210,7 +212,7 @@ describe("pkg-outdated-provider", () => {
       { cwd: dir, fynlocal: true },
     );
 
-    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: ["alpha"] });
+    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: ["alpha"], checked: 0 });
     expect(fetchMeta).not.toHaveBeenCalled();
   });
 
@@ -230,7 +232,7 @@ describe("pkg-outdated-provider", () => {
       },
     );
 
-    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: ["alpha"] });
+    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: ["alpha"], checked: 0 });
     expect(resolvePackage).toHaveBeenCalledWith("alpha", "^1.0.0", false);
     expect(fetchMeta).not.toHaveBeenCalled();
   });
@@ -243,7 +245,7 @@ describe("pkg-outdated-provider", () => {
       { optional },
     );
 
-    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: ["optional"] });
+    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: ["optional"], checked: 0 });
   });
 
   it("does not report a current dependency when latest is absent", async () => {
@@ -255,7 +257,7 @@ describe("pkg-outdated-provider", () => {
       { alpha: withoutLatest },
     );
 
-    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: [] });
+    expect(await provider.getOutdated()).toStrictEqual({ records: [], skipped: [], checked: 1 });
   });
 
   it("waits for every metadata request to settle before reporting a failure", async () => {

@@ -479,4 +479,70 @@ describe("pkg-dep-locker", function () {
         });
     });
   });
+
+  describe("unlock", () => {
+    const updateLockData = () => ({
+      $fyn: { layout: "normal" },
+      $pkg: { dep: { app: "^1.0.0", other: "^2.0.0" } },
+      app: {
+        _: { "^1.0.0": "1.0.0" },
+        "1.0.0": {
+          $: 0,
+          _: "app.tgz",
+          dependencies: { mid: "^1.0.0", aliased: "npm:real@^3.0.0" },
+        },
+      },
+      mid: {
+        _: { "^1.0.0": "1.0.0" },
+        "1.0.0": { $: 0, _: "mid.tgz", optionalDependencies: { leaf: "^1.0.0" } },
+      },
+      leaf: { _: { "^1.0.0": "1.0.0" }, "1.0.0": { $: 0, _: "leaf.tgz" } },
+      real: { _: { "^3.0.0": "3.1.0" }, "3.1.0": { $: 0, _: "real.tgz" } },
+      other: {
+        _: { "^2.0.0": "2.0.0", "^2.1.0": "2.1.0" },
+        "2.0.0": { $: 0, _: "other-2.0.0.tgz" },
+        "2.1.0": { $: 0, _: "other-2.1.0.tgz" },
+      },
+    });
+
+    const makeLocker = () => {
+      const locker = new PkgDepLocker(false, true, {});
+      locker._lockData = updateLockData();
+      return locker;
+    };
+
+    it("should list locked versions by package name", () => {
+      return verify()
+        .step(() => makeLocker().lockedVersions())
+        .step((versions) => {
+          expect(versions).toStrictEqual({
+            app: ["1.0.0"],
+            leaf: ["1.0.0"],
+            mid: ["1.0.0"],
+            other: ["2.1.0", "2.0.0"],
+            real: ["3.1.0"],
+          });
+        });
+    });
+
+    it("should unlock every package but keep $fyn and $pkg", () => {
+      let locker;
+      return verify()
+        .step(() => (locker = makeLocker()).unlock())
+        .step((unlocked) => {
+          expect(unlocked).toStrictEqual(["app", "leaf", "mid", "other", "real"]);
+          expect(Object.keys(locker.data).sort()).toStrictEqual(["$fyn", "$pkg"]);
+        });
+    });
+
+    it("should unlock named packages with their transitive and aliased deps", () => {
+      let locker;
+      return verify()
+        .step(() => (locker = makeLocker()).unlock(["app"]))
+        .step((unlocked) => {
+          expect(unlocked).toStrictEqual(["app", "leaf", "mid", "real"]);
+          expect(Object.keys(locker.lockedVersions())).toStrictEqual(["other"]);
+        });
+    });
+  });
 });

@@ -36,7 +36,7 @@ const npmPackageArg = npmPackageArgModule as {
   resolve(name: string, specifier: string): NpmPackageArgResult;
 };
 
-function parseNpmAlias(
+export function parseNpmAlias(
   specifier: string,
   aliasName: string
 ): { name: string; range: string } | undefined {

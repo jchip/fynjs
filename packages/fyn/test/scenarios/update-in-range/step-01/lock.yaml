@@ -1,0 +1,29 @@
+$fyn:
+ flattenTop: true
+ layout: detail
+$pkg:
+  dep:
+    "mod-a": ^1.0.0
+    "mod-i": ^1.0.0
+mod-a:
+  _latest: 2.0.0
+  _:
+    ^1.0.0: 1.0.0
+  1.0.0:
+    top: 1
+    _: "http://localhost:4873/mod-a/-/mod-a-1.0.0.tgz"
+mod-g:
+  _latest: 3.0.11
+  _:
+    ^3.0.0: 3.0.0
+  3.0.0:
+    _: "http://localhost:4873/mod-g/-/mod-g-3.0.0.tgz"
+mod-i:
+  _latest: 1.0.0
+  _:
+    ^1.0.0: 1.0.0
+  1.0.0:
+    top: 1
+    _: "http://localhost:4873/mod-i/-/mod-i-1.0.0.tgz"
+    dependencies:
+      mod-g: ^3.0.0

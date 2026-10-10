@@ -17,6 +17,7 @@ import showOutdated from "./show-outdated";
 import type { OutdatedRecord } from "../lib/pkg-outdated-provider";
 import { InstallScripts } from "../lib/install-scripts";
 import showAudit from "./show-audit";
+import showUpdates from "./show-updates";
 import { runNpmScript, addNpmLifecycle } from "../lib/util/run-npm-script";
 import { makeNpmEnv } from "../lib/util/make-npm-env";
 import runScript from "@npmcli/run-script";
@@ -103,6 +104,8 @@ interface InstallArgv {
   opts?: {
     audit?: boolean;
     auditFile?: string;
+    /** `fyn update`: packages to unlock, or empty for all */
+    update?: string[];
     [key: string]: unknown;
   };
 }
@@ -581,6 +584,8 @@ class FynCli {
     const start = Date.now();
     const runAudit = argv.opts?.audit !== false;
     const auditFile = argv.opts?.auditFile;
+    const update = argv.opts?.update;
+    let lockedBefore: Record<string, string[]> | undefined;
     const auditAfterInstall = async () => {
       if (!runAudit) return;
       try {
@@ -628,6 +633,7 @@ class FynCli {
         }
         installLocked = await this.fyn.createInstallLock();
         await this.fyn.readLockFiles();
+        if (update) lockedBefore = this.unlockForUpdate(update);
         await this.fyn._startInstall();
         const pkg = this.fyn._pkg;
         const preinstall = _.get(pkg, "scripts.preinstall");
@@ -721,6 +727,8 @@ class FynCli {
           chalk.magenta(`${(end - start) / 1000}`) + "secs"
         );
 
+        if (lockedBefore) showUpdates(lockedBefore, this.fyn.depLocker.lockedVersions());
+
         // Run security audit after install (like npm)
         await auditAfterInstall();
       })
@@ -761,6 +769,24 @@ class FynCli {
 
         fyntil.exit(0);
       });
+  }
+
+  /**
+   * Drop lock data for `fyn update` so the resolver picks the newest in-range versions
+   *
+   * @param names - packages to update, or empty for all
+   * @returns the locked versions from before
+   */
+  unlockForUpdate(names: string[]): Record<string, string[]> {
+    const locker = this.fyn.depLocker;
+    const before = locker.lockedVersions();
+    const missing = names.filter(name => !before[name]);
+    if (missing.length > 0) {
+      throw new Error(`not found in lock data: ${missing.join(", ")}`);
+    }
+    const unlocked = locker.unlock(names);
+    logger.info(`updating ${unlocked.length} locked packages to the newest versions their ranges allow`);
+    return before;
   }
 
   stat(argv: StatArgv): Promise<void> {

@@ -578,6 +578,26 @@ const commands: Record<string, CommandSpec> = {
       }
     }
   },
+  update: {
+    args: "[packages string..]",
+    usage: "$0 $1 [packages..]",
+    desc: "Update locked versions to the newest their package.json ranges allow",
+    exec: async (cmd: CommandNode) => {
+      const meta = cmd.jsonMeta;
+      const config = await pickOptions(cmd);
+      // skip npm and yarn locks, fetch fresh metadata, and skip the no-change shortcut
+      Object.assign(config.opts, { forceInstall: true, refreshMeta: true, npmLock: false });
+      const update = (meta.args.packages as string[] | undefined) || [];
+      return new FynCli(config).install({ opts: { audit: meta.opts.audit !== false, update } });
+    },
+    options: {
+      audit: {
+        desc: "run security audit after update (use --no-audit to skip)",
+        args: "<flag boolean>",
+        argDefault: "true"
+      }
+    }
+  },
   stat: {
     desc: "Show stats of installed packages",
     usage: "$0 $1 <package-name>[@semver] [...]",
