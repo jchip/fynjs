@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/run",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "concurrent or serial run npm scripts, javascript tasks, and more",
   "main": "./dist/lib/index.js",
   "types": "./dist/lib/index.d.ts",
@@ -95,9 +95,9 @@
     "@fynjs/cli-args": "^1.2.0",
     "optional-require": "^2.1.0",
     "read-package-up": "^12.0.0",
-    "string-array": "^2.1.8",
-    "unwrap-npm-cmd": "^2.1.8",
-    "xsh": "^1.1.9"
+    "string-array": "^2.1.9",
+    "unwrap-npm-cmd": "^2.1.9",
+    "xsh": "^1.1.10"
   },
   "devDependencies": {
     "@fynjs/ts-resolve": "^1.0.4",

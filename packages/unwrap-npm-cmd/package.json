@@ -1,6 +1,6 @@
 {
   "name": "unwrap-npm-cmd",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "Unwrap npm's node.js bin CMD batch for js files on Windows",
   "type": "module",
   "types": "./dist/index.d.ts",

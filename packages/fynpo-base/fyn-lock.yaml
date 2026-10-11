@@ -673,10 +673,10 @@ fdir:
   peerDependencies:
    picomatch: '^3 || ^4'
 filter-scan-dir:
- _latest: 2.1.11-fynlocal_h
+ _latest: 2.1.12-fynlocal_h
  _:
-  ../filter-scan-dir: 2.1.11-fynlocal_h
- 2.1.11-fynlocal_h:
+  ../filter-scan-dir: 2.1.12-fynlocal_h
+ 2.1.12-fynlocal_h:
   top: 1
   $: local
   _: ../filter-scan-dir

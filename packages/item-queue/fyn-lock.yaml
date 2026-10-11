@@ -57,10 +57,10 @@ $pkg:
   $: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==
   _: 'https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-1.0.2.tgz'
 '@jchip/error':
- _latest: 2.1.8-fynlocal_h
+ _latest: 3.0.0-fynlocal_h
  _:
-  ../error: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../error: 3.0.0-fynlocal_h
+ 3.0.0-fynlocal_h:
   $: local
   _: ../error
 '@jridgewell/resolve-uri':
@@ -620,15 +620,15 @@ ast-v8-to-istanbul:
    estree-walker: ^3.0.3
    js-tokens: ^10.0.0
 aveazul:
- _latest: 2.1.9-fynlocal_h
+ _latest: 2.1.10-fynlocal_h
  _:
-  ../aveazul: 2.1.9-fynlocal_h
- 2.1.9-fynlocal_h:
+  ../aveazul: 2.1.10-fynlocal_h
+ 2.1.10-fynlocal_h:
   top: 1
   $: local
   _: ../aveazul
   dependencies:
-   '@jchip/error': ^2.1.8
+   '@jchip/error': ^3.0.0
    xaa: ^3.1.8
 chai:
  _latest: 6.2.2
@@ -1313,10 +1313,10 @@ xaa:
   $: local
   _: ../xaa
 xflight:
- _latest: 3.1.10-fynlocal_h
+ _latest: 3.1.11-fynlocal_h
  _:
-  ../xflight: 3.1.10-fynlocal_h
- 3.1.10-fynlocal_h:
+  ../xflight: 3.1.11-fynlocal_h
+ 3.1.11-fynlocal_h:
   top: 1
   $: local
   _: ../xflight

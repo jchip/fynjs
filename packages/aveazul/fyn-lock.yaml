@@ -64,10 +64,10 @@ $pkg:
   $: local
   _: ../ts-resolve
 '@jchip/error':
- _latest: 2.1.8-fynlocal_h
+ _latest: 3.0.0-fynlocal_h
  _:
-  ../error: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../error: 3.0.0-fynlocal_h
+ 3.0.0-fynlocal_h:
   top: 1
   $: local
   _: ../error

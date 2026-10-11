@@ -1,6 +1,6 @@
 {
   "name": "string-array",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "Parse string into array of string elements",
   "type": "module",
   "types": "./dist/index.d.ts",

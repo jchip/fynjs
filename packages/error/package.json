@@ -1,6 +1,6 @@
 {
   "name": "@jchip/error",
-  "version": "2.1.8",
+  "version": "3.0.0",
   "description": "utilities and polyfill for node.js errors",
   "homepage": "https://fynjs.pages.dev/api/modules/_jchip_error",
   "type": "module",

@@ -70,10 +70,10 @@ $pkg:
   $: local
   _: ../cli-args
 '@fynjs/run':
- _latest: 1.1.10-fynlocal_h
+ _latest: 1.1.11-fynlocal_h
  _:
-  ../xarc-run: 1.1.10-fynlocal_h
- 1.1.10-fynlocal_h:
+  ../xarc-run: 1.1.11-fynlocal_h
+ 1.1.11-fynlocal_h:
   top: 1
   $: local
   _: ../xarc-run
@@ -85,9 +85,9 @@ $pkg:
    '@fynjs/cli-args': ^1.2.0
    optional-require: ^2.1.0
    read-package-up: ^12.0.0
-   string-array: ^2.1.8
-   unwrap-npm-cmd: ^2.1.8
-   xsh: ^1.1.9
+   string-array: ^2.1.9
+   unwrap-npm-cmd: ^2.1.9
+   xsh: ^1.1.10
 '@jridgewell/resolve-uri':
  _latest: 3.1.2
  _:
@@ -1203,10 +1203,10 @@ std-env:
   $: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==
   _: 'https://registry.npmjs.org/std-env/-/std-env-4.2.0.tgz'
 string-array:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.1.9-fynlocal_h
  _:
-  ../string-array: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../string-array: 2.1.9-fynlocal_h
+ 2.1.9-fynlocal_h:
   $: local
   _: ../string-array
 tagged-tag:
@@ -1308,10 +1308,10 @@ unicorn-magic:
   $: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==
   _: 'https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.3.0.tgz'
 unwrap-npm-cmd:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.1.9-fynlocal_h
  _:
-  ../unwrap-npm-cmd: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../unwrap-npm-cmd: 2.1.9-fynlocal_h
+ 2.1.9-fynlocal_h:
   $: local
   _: ../unwrap-npm-cmd
   dependencies:
@@ -1410,10 +1410,10 @@ why-is-node-running:
    siginfo: ^2.0.0
    stackback: 0.0.2
 xsh:
- _latest: 1.1.9-fynlocal_h
+ _latest: 1.1.10-fynlocal_h
  _:
-  ../xsh: 1.1.9-fynlocal_h
- 1.1.9-fynlocal_h:
+  ../xsh: 1.1.10-fynlocal_h
+ 1.1.10-fynlocal_h:
   $: local
   _: ../xsh
 yocto-queue:

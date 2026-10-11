@@ -1238,10 +1238,10 @@ std-env:
   $: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==
   _: 'https://registry.npmjs.org/std-env/-/std-env-4.2.0.tgz'
 string-array:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.1.9-fynlocal_h
  _:
-  ../string-array: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../string-array: 2.1.9-fynlocal_h
+ 2.1.9-fynlocal_h:
   top: 1
   $: local
   _: ../string-array
@@ -1354,10 +1354,10 @@ unicorn-magic:
   $: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==
   _: 'https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.3.0.tgz'
 unwrap-npm-cmd:
- _latest: 2.1.8-fynlocal_h
+ _latest: 2.1.9-fynlocal_h
  _:
-  ../unwrap-npm-cmd: 2.1.8-fynlocal_h
- 2.1.8-fynlocal_h:
+  ../unwrap-npm-cmd: 2.1.9-fynlocal_h
+ 2.1.9-fynlocal_h:
   top: 1
   $: local
   _: ../unwrap-npm-cmd
@@ -1465,10 +1465,10 @@ xaa:
   $: local
   _: ../xaa
 xsh:
- _latest: 1.1.9-fynlocal_h
+ _latest: 1.1.10-fynlocal_h
  _:
-  ../xsh: 1.1.9-fynlocal_h
- 1.1.9-fynlocal_h:
+  ../xsh: 1.1.10-fynlocal_h
+ 1.1.10-fynlocal_h:
   top: 1
   $: local
   _: ../xsh

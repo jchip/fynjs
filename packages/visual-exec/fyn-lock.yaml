@@ -1300,10 +1300,10 @@ wrap-ansi:
    ansi-styles: ^6.2.3
    string-width: ^8.2.0
 xsh:
- _latest: 1.1.9-fynlocal_h
+ _latest: 1.1.10-fynlocal_h
  _:
-  ../xsh: 1.1.9-fynlocal_h
- 1.1.9-fynlocal_h:
+  ../xsh: 1.1.10-fynlocal_h
+ 1.1.10-fynlocal_h:
   top: 1
   $: local
   _: ../xsh
