@@ -409,6 +409,27 @@ describe("fyn-central replicate: no copy fallback, js", () => {
       /can't replicate/
     );
   });
+
+  // a caller that removes destDir after the failure must not race placements still running
+  it("fails only after the other placements in flight settle", () => {
+    const central = makeCentral(root, contentPath, true, true);
+    let slowDone = false;
+    vi.spyOn(central, "_linkFile").mockImplementation(async (_src: unknown, dest: unknown) => {
+      if (String(dest).endsWith("index.js")) throw new Error("place boom");
+      await new Promise(resolve => setTimeout(resolve, 50));
+      slowDone = true;
+    });
+
+    return verify()
+      .step(() => central.replicate("sha512-test", destDir).then(
+        () => { throw new Error("replicate should have failed"); },
+        (err: Error) => err
+      ))
+      .step((err: Error) => {
+        expect(err.message).toMatch(/can't replicate/);
+        expect(slowDone).toBe(true);
+      });
+  });
 });
 
 describe("fyn-central replicate: hardlink fallback", () => {

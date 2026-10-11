@@ -399,6 +399,8 @@ class FynCentral {
         await prepare!();
       }
     };
+    // per-file placements still running when one fails, so the error waits for them
+    const placing: Promise<unknown>[] = [];
     try {
       const info = await this.getInfo(integrity);
 
@@ -471,14 +473,21 @@ class FynCentral {
           // copy package.json because we modify it. With reflink off, a copy is its only way
           // in, not a fallback, so copyFallback doesn't apply to it.
           // TODO: don't modify it?
+          let placed: Promise<unknown>;
           if (file === "package.json") {
-            return this._reflink && !copy ? cloneFile(src, dest, true) : copyFile(src, dest);
+            placed = this._reflink && !copy ? cloneFile(src, dest, true) : copyFile(src, dest);
+          } else {
+            placed = this._hardlink ? this._linkFile(src, dest) : this._cloneOrCopy(src, dest);
           }
-          return this._hardlink ? this._linkFile(src, dest) : this._cloneOrCopy(src, dest);
+          placing.push(placed);
+          return placed;
         },
         { concurrency: 5 }
       );
     } catch (err) {
+      // a failed FICLONE_FORCE copy creates its dest file before unlinking it, so a caller that
+      // removes destDir right after this throws can race those writes and get ENOTEMPTY
+      await Promise.allSettled(placing);
       const msg = `fyn-central can't replicate package at ${destDir} for integrity ${integrity}`;
       throw new AggregateError([err as Error], msg);
     }
