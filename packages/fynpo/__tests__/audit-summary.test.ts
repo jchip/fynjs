@@ -12,6 +12,7 @@ vi.mock("../src/logger", () => ({
 import Fs from "fs";
 import Path from "path";
 import { FynpoDepGraph } from "@fynpo/base";
+import { verify } from "run-verify";
 
 import { Bootstrap } from "../src/bootstrap";
 import { logger } from "../src/logger";
@@ -167,6 +168,46 @@ describe("Bootstrap.aggregateAuditResults (FPO-1)", () => {
     expect(out).not.toMatch(/pkg2 .* total/);
     expect(out).toContain("Run `fyn audit` in a package for full details.");
   });
+
+  it("counts an alert shared by several packages once in the unique total", () => {
+    const alert = (name: string, version: string, id: number, severity: string) => ({
+      name,
+      version,
+      advisory: { id, severity },
+    });
+
+    return verify()
+      .step(() => {
+        writeAudit("pkg1", {
+          vulnerabilities: [alert("a", "1.0.0", 1, "high"), alert("b", "2.0.0", 2, "low")],
+          metadata: { totalDependencies: 2 },
+        });
+        // same a@1.0.0 advisory again, plus the same advisory on another version of a
+        writeAudit("pkg2", {
+          vulnerabilities: [alert("a", "1.0.0", 1, "high"), alert("a", "1.1.0", 1, "high")],
+          metadata: { totalDependencies: 2 },
+        });
+      })
+      .step(() => makeBootstrap())
+      .step((bootstrap: Bootstrap) => bootstrap.aggregateAuditResults())
+      .step(() => {
+        const out = logged();
+        expect(out).toContain("4 vulnerabilities (3 high, 1 low)");
+        expect(out).toContain("3 unique alerts (2 high, 1 low)");
+      });
+  });
+
+  it("counts each alert without an advisory id as unique", () =>
+    verify()
+      .step(() => {
+        writeAudit("pkg1", { vulnerabilities: [vuln("high")], metadata: { totalDependencies: 1 } });
+        writeAudit("pkg2", { vulnerabilities: [vuln("high")], metadata: { totalDependencies: 1 } });
+      })
+      .step(() => makeBootstrap())
+      .step((bootstrap: Bootstrap) => bootstrap.aggregateAuditResults())
+      .step(() => {
+        expect(logged()).toContain("2 unique alerts (2 high)");
+      }));
 
   it("ignores an unrecognized severity rather than miscounting it", async () => {
     writeAudit("pkg1", {

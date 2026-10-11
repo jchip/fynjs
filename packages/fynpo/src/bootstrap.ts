@@ -248,7 +248,11 @@ export class Bootstrap {
     const reports: {
       pkgInfo: FynpoPackageInfo;
       report: {
-        vulnerabilities?: Array<{ advisory?: { severity?: string } }>;
+        vulnerabilities?: Array<{
+          name?: string;
+          version?: string;
+          advisory?: { id?: number; severity?: string };
+        }>;
         metadata?: { totalDependencies?: number };
       };
     }[] = [];
@@ -294,6 +298,9 @@ export class Bootstrap {
       total: number;
     }[] = [];
     let totalDependencies = 0;
+    // the same advisory on the same name@version in several workspaces is one alert
+    const uniqueKeys = new Set<string>();
+    const uniqueTotals = { ...totals };
 
     for (const { pkgInfo, report } of reports) {
       const vulnerabilities = Array.isArray(report.vulnerabilities) ? report.vulnerabilities : [];
@@ -309,6 +316,13 @@ export class Bootstrap {
         const severity = vuln?.advisory?.severity;
         if (severity && counts[severity] !== undefined) {
           counts[severity] += 1;
+          const id = vuln.advisory?.id;
+          const key = `${vuln.name}@${vuln.version} ${id}`;
+          // without an advisory id there is nothing to match on, so count it as its own alert
+          if (id === undefined || !uniqueKeys.has(key)) {
+            uniqueKeys.add(key);
+            uniqueTotals[severity] += 1;
+          }
         }
       }
 
@@ -336,6 +350,12 @@ export class Bootstrap {
       .filter(sev => totals[sev] > 0)
       .map(sev => severityColors[sev](`${totals[sev]} ${sev}`));
     logger.warn(`${totalVulns} vulnerabilities (${summaryParts.join(", ")})`);
+
+    const totalUnique = severityOrder.reduce((sum, sev) => sum + uniqueTotals[sev], 0);
+    const uniqueParts = severityOrder
+      .filter(sev => uniqueTotals[sev] > 0)
+      .map(sev => severityColors[sev](`${uniqueTotals[sev]} ${sev}`));
+    logger.warn(`${totalUnique} unique alerts (${uniqueParts.join(", ")})`);
 
     if (perPackage.length > 0) {
       const maxPackages = 20;
