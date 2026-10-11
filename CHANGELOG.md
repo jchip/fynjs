@@ -1,3 +1,81 @@
+# 10/11/2026
+
+## Packages
+
+### Directly Updated
+
+-   `@fynjs/create-monorepo@1.0.1` `(1.0.0 => 1.0.1)`
+-   `@fynjs/run@1.1.11` `(1.1.10 => 1.1.11)`
+-   `@jchip/error@3.0.0` `(2.1.8 => 3.0.0)`
+-   `fyn@3.3.1` `(3.3.0 => 3.3.1)`
+-   `fynpo@3.3.1` `(3.3.0 => 3.3.1)`
+-   `fynpo-cli@3.3.1` `(3.3.0 => 3.3.1)`
+-   `string-array@2.1.9` `(2.1.8 => 2.1.9)`
+-   `unwrap-npm-cmd@2.1.9` `(2.1.8 => 2.1.9)`
+-   `xenv-config@3.0.0` `(2.1.8 => 3.0.0)`
+
+### Fynpo Updated
+
+-   `@fynpo/base@2.1.14` `(2.1.13 => 2.1.14)`
+-   `aveazul@2.1.10` `(2.1.9 => 2.1.10)`
+-   `filter-scan-dir@2.1.12` `(2.1.11 => 2.1.12)`
+-   `item-queue@2.2.1` `(2.2.0 => 2.2.1)`
+-   `visual-exec@1.2.1` `(1.2.0 => 1.2.1)`
+-   `xflight@3.1.11` `(3.1.10 => 3.1.11)`
+-   `xsh@1.1.10` `(1.1.9 => 1.1.10)`
+
+## Commits
+
+-   `packages/create-monorepo`
+
+    -   fix(create-monorepo): take template fyn and fynpo ranges from its own devDependencies [commit](https://github.com/jchip/fynjs/commit/6edde8db94e755cd197b4a6cc188aff2d09e809b)
+    -   docs(create-monorepo): add reference doc [commit](https://github.com/jchip/fynjs/commit/bc534a8c19d70b8ad70321b5492940f61321499b)
+
+-   `packages/xarc-run`
+
+    -   docs: add fyn global add install option to global package READMEs [commit](https://github.com/jchip/fynjs/commit/2a068837c65b2e479dc203444c6d0765f9391b13)
+
+-   `packages/error`
+
+    -   fix(error)!: [maj] prefix-only replacePath, LF stacks, stack writes, no trailing newline [commit](https://github.com/jchip/fynjs/commit/4f4d663b0c7616cd4e4693acb57bcbc4cbd1d408)
+
+-   `packages/fyn`
+
+    -   fix(fyn): wait for in-flight placements before replicate fails [commit](https://github.com/jchip/fynjs/commit/8036684f08bde0742a4fec146f6bebf2194c790c)
+    -   fix(fyn): place a tarball file once when its path has a ./ segment [commit](https://github.com/jchip/fynjs/commit/c3e5919d95523b12b84620f1761970aaeb476473)
+    -   feat(fyn): add fyn update and report when fyn outdated finds nothing [commit](https://github.com/jchip/fynjs/commit/34a886eeff6dc4bbe7f5c1c143ea0a329dc58632)
+    -   docs: add fyn global add install option to global package READMEs [commit](https://github.com/jchip/fynjs/commit/2a068837c65b2e479dc203444c6d0765f9391b13)
+
+-   `packages/fynpo`
+
+    -   fix(fynpo): print unique audit alerts in the bootstrap summary [commit](https://github.com/jchip/fynjs/commit/a98e3e72f897c1d849ba884a6aa587413bd7d112)
+    -   fix(fynpo): count the oldest commit in range and exit cleanly when nothing to version [commit](https://github.com/jchip/fynjs/commit/1cf07605a7506e2904a9801f554e794eff13ef79)
+
+-   `packages/fynpo-cli`
+
+    -   docs: add fyn global add install option to global package READMEs [commit](https://github.com/jchip/fynjs/commit/2a068837c65b2e479dc203444c6d0765f9391b13)
+
+-   `packages/string-array`
+
+    -   docs(string-array): say a mid-element [ is kept as text [commit](https://github.com/jchip/fynjs/commit/f6aac5c5e1c45dacd472654fd776d96745c0402b)
+
+-   `packages/unwrap-npm-cmd`
+
+    -   fix(unwrap-npm-cmd): unwrap a leading double-quoted exe [commit](https://github.com/jchip/fynjs/commit/c2691cc2c7861e703629cbea47c8e6d5a9942dd5)
+
+-   `packages/xenv-config`
+
+    -   fix(xenv-config)!: [maj] null and array defaults, unknown source check, json trace name [commit](https://github.com/jchip/fynjs/commit/c3b2252258bb0770b374ffa1b81189fb7e5bafdd)
+
+-   `testing`
+
+    -   fix(create-monorepo): take template fyn and fynpo ranges from its own devDependencies [commit](https://github.com/jchip/fynjs/commit/6edde8db94e755cd197b4a6cc188aff2d09e809b)
+    -   test: add create-monorepo end-to-end check to ci:check [commit](https://github.com/jchip/fynjs/commit/adc875caef3ece1d2a8932b7952848342178852e)
+
+-   `MISC`
+
+    -   chore: update top level lock file [commit](https://github.com/jchip/fynjs/commit/0d754c83abea9fbf63ae8b900ee7f68d8b00db03)
+
 # 10/7/2026
 
 ## Packages
