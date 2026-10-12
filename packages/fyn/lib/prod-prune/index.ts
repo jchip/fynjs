@@ -8,9 +8,7 @@
  *
  * None of what this deletes is reachable code, all of it is readable by anyone
  * who pulls the image, and every file of it is inventory a scanner has to
- * enumerate. Source maps reconstruct a dependency's original source; test and
- * fixture directories are a well-known home for hardcoded credentials and
- * sample tokens.
+ * enumerate. Source maps reconstruct a dependency's original source.
  *
  *   fyn prod-prune [dir] [--max-kb <n>] [--max-files <n>]
  *

@@ -2,6 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import Path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { verify } from "run-verify";
 import {
   REMOVE_DIRS,
   isBundlerOnlyEsnext,
@@ -88,13 +89,20 @@ describe("isNonRuntimeFile", () => {
     expect(isNonRuntimeFile(file, ext)).toBe(true);
   });
 
-  it("removes whole directories by name", () => {
-    for (const dir of ["test", "__tests__", "docs", "examples", ".github", "coverage", ".husky"]) {
-      expect(REMOVE_DIRS.has(dir)).toBe(true);
-    }
-    for (const dir of ["src", "lib", "dist", "build", "node_modules"]) {
-      expect(REMOVE_DIRS.has(dir)).toBe(false);
-    }
+  it("removes whole directories only by dot or __x__ name", () => {
+    return verify()
+      .step(() =>
+        [".git", ".github", ".turbo", ".vscode", ".nyc_output", "__tests__", "__mocks__"].filter(
+          dir => !REMOVE_DIRS.has(dir)
+        )
+      )
+      .step(missed => expect(missed).toEqual([]))
+      .step(() =>
+        ["doc", "docs", "test", "spec", "examples", "coverage", "lib", "dist", ".bin", ".f", ".pnpm", ".cache"].filter(dir =>
+          REMOVE_DIRS.has(dir)
+        )
+      )
+      .step(matched => expect(matched).toEqual([]));
   });
 });
 

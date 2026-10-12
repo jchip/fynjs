@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import Path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { verify } from "run-verify";
 import { clean } from "../../../lib/prod-prune/index";
 import logger from "../../../lib/logger";
 
@@ -111,8 +112,9 @@ describe("clean", () => {
     expect(has("keepme/index.js.map")).toBe(false);
     expect(has("keepme/README.md")).toBe(false);
     expect(has("keepme/npm-debug.log")).toBe(false);
-    expect(has("keepme/test")).toBe(false);
+    // directories go only once the file rules empty them
     expect(has("keepme/docs")).toBe(false);
+    expect(has("keepme/test/spec.js")).toBe(true);
     expect(has("keepme/.github")).toBe(false);
   });
 
@@ -172,6 +174,7 @@ describe("clean", () => {
         "keepme/package.json",
         "keepme/index.js",
         "keepme/logo.png",
+        "keepme/test/spec.js",
         "keepme/internal/c/index.js",
         "otel-like/package.json",
         "otel-like/build/src/index.js",
@@ -311,8 +314,21 @@ describe("clean", () => {
       await clean(tree, 0, 0);
 
       expect(has("benchmark/benchmark.js")).toBe(true);
-      expect(has("benchmark/test")).toBe(false);
+      expect(has("benchmark/test/run.js")).toBe(true);
       expect(has("@scope/test/index.js")).toBe(true);
+    });
+
+    it("keeps code in a directory named doc", () => {
+      return verify()
+        .step(() => {
+          manifest("yaml/package.json", { name: "yaml", version: "2.8.1", main: "dist/index.js" });
+          write("yaml/dist/index.js", "require('./doc/Document.js')");
+          write("yaml/dist/doc/Document.js", "1");
+          write("yaml/dist/doc/Document.d.ts", "export {};");
+        })
+        .step(() => clean(tree, 0, 0))
+        .step(() => expect(has("yaml/dist/doc/Document.js")).toBe(true))
+        .step(() => expect(has("yaml/dist/doc/Document.d.ts")).toBe(false));
     });
 
     it("keeps a code file whose name starts with a document prefix", async () => {

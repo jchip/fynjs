@@ -28,28 +28,43 @@ export interface ManifestTargets {
 }
 
 /**
- * Removed whole, wherever they appear in the tree, except as a package's own
- * directory (see `isPackageRoot`).
+ * Tooling directories removed whole, wherever they appear. Only dot and jest
+ * `__x__` names: a plain word like `doc` or `test` can just as well hold
+ * code a package loads, as `yaml/dist/doc/` does.
  */
 export const REMOVE_DIRS = new Set([
-  "test",
-  "tests",
   "__tests__",
-  "spec",
   "__mocks__",
-  "docs",
-  "doc",
-  "example",
-  "examples",
-  "benchmark",
-  "benchmarks",
-  "coverage",
-  ".nyc_output",
+  // version control
+  ".git",
+  ".svn",
+  ".hg",
+  // CI and repo tooling
   ".github",
+  ".gitlab",
   ".circleci",
+  ".buildkite",
+  ".devcontainer",
+  ".changeset",
   ".husky",
+  // build and test caches
+  ".nyc_output",
+  ".turbo",
+  ".nx",
+  ".vite",
+  ".vite-temp",
+  ".parcel-cache",
+  ".tap",
+  ".yarn",
+  // editors and dev-only config
   ".idea",
-  ".vscode"
+  ".vscode",
+  ".history",
+  ".fleet",
+  ".zed",
+  ".cursor",
+  ".claude",
+  ".storybook"
 ]);
 
 /**
@@ -214,9 +229,9 @@ export function isFynInstalledLock(root: string, fullPath: string): boolean {
 
 /**
  * Is this directory a package's own folder rather than one inside it?
- * `REMOVE_DIRS` names are real package names too (`benchmark` is one), and
- * `esnext` sitting beside the `esm` package would pass `isBundlerOnlyEsnext`.
- * A name match alone would delete a whole dependency.
+ * `esnext` is a real package name too, and one sitting beside the `esm`
+ * package would pass `isBundlerOnlyEsnext`. A name match alone would delete a
+ * whole dependency.
  *
  * A package folder sits directly under a `node_modules` (or the tree root),
  * under an `@scope` there, or in fyn's store at `.f/_/<name>` or
