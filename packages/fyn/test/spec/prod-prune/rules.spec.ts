@@ -11,7 +11,9 @@ import {
   isNonRuntimeFile,
   isPackageRoot,
   isReviewableAsset,
-  readManifestTargets
+  isTestFile,
+  readManifestTargets,
+  type ManifestTargets
 } from "../../../lib/prod-prune/rules";
 
 describe("isNonRuntimeFile", () => {
@@ -23,6 +25,8 @@ describe("isNonRuntimeFile", () => {
     ["index.d.cts", ".cts"],
     ["index.mts", ".mts"],
     ["index.cts", ".cts"],
+    ["Button.tsx", ".tsx"],
+    ["Button.stories.TSX", ".TSX"],
     ["index.js.map", ".map"],
     ["README.md", ".md"],
     ["readme.MARKDOWN", ".MARKDOWN"],
@@ -92,7 +96,7 @@ describe("isNonRuntimeFile", () => {
   it("removes whole directories only by dot or __x__ name", () => {
     return verify()
       .step(() =>
-        [".git", ".github", ".turbo", ".vscode", ".nyc_output", "__tests__", "__mocks__"].filter(
+        [".git", ".github", ".turbo", ".vscode", ".nyc_output", "__tests__", "__mocks__", "__snapshots__"].filter(
           dir => !REMOVE_DIRS.has(dir)
         )
       )
@@ -103,6 +107,73 @@ describe("isNonRuntimeFile", () => {
         )
       )
       .step(matched => expect(matched).toEqual([]));
+  });
+});
+
+describe("isTestFile", () => {
+  const root = Path.join(Path.sep, "app", "node_modules");
+  const noTargets = () => ({ node: [], bundler: [] });
+  const matches = (files: string[], targets: (dir: string) => ManifestTargets = noTargets) =>
+    files.filter(file => isTestFile(root, Path.join(root, "pkg", ...file.split("/")), targets));
+
+  it("removes the double extensions test tools look for", () => {
+    const files = [
+      "test/index.test.js",
+      "test/a.b.spec.mjs",
+      "spec/index.spec.cjs",
+      "src/Button.test.jsx",
+      "UPPER.TEST.JS",
+      "benchmarks/basic.bench.js",
+      "benchmarks/deep.benchmark.js",
+      "src/Button.stories.jsx"
+    ];
+    return verify()
+      .step(() => matches(files))
+      .step(matched => expect(matched).toEqual(files));
+  });
+
+  it("keeps names that read like ordinary modules", () => {
+    return verify()
+      .step(() =>
+        matches([
+          "test.js",
+          "spec.js",
+          "is-test.js",
+          "ab-test.js",
+          "test-utils.js",
+          "foo_test.js",
+          "foo.test.helper.js",
+          "foo.test.json",
+          "react.production.min.js",
+          "index.browser.js"
+        ])
+      )
+      .step(matched => expect(matched).toEqual([]));
+  });
+
+  it("keeps a test-named file the manifest points at", () => {
+    const pkgDir = Path.join(root, "pkg");
+    const targets = (dir: string): ManifestTargets =>
+      dir === pkgDir
+        ? { node: ["./lib/openapi.spec.js", "bin/run.test.js", "main.spec"], bundler: ["./esm/index.spec.mjs"] }
+        : { node: [], bundler: [] };
+    return verify()
+      .step(() =>
+        matches(
+          ["lib/openapi.spec.js", "bin/run.test.js", "main.spec.js", "esm/index.spec.mjs", "lib/other.spec.js"],
+          targets
+        )
+      )
+      .step(matched => expect(matched).toEqual(["lib/other.spec.js"]));
+  });
+
+  it("checks the manifest of the package the file is in, not an outer one", () => {
+    const outer = Path.join(root, "pkg");
+    const targets = (dir: string): ManifestTargets =>
+      dir === outer ? { node: ["node_modules/inner/x.test.js"], bundler: [] } : { node: [], bundler: [] };
+    return verify()
+      .step(() => matches(["node_modules/inner/x.test.js"], targets))
+      .step(matched => expect(matched).toEqual(["node_modules/inner/x.test.js"]));
   });
 });
 

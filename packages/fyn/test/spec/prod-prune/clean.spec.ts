@@ -342,6 +342,31 @@ describe("clean", () => {
       expect(has("history/HISTORY.md")).toBe(false);
     });
 
+    it("removes test, bench, story and snapshot files unless the manifest names one", () => {
+      return verify()
+        .step(() => {
+          manifest("tested/package.json", { name: "tested", version: "1.0.0", main: "lib/openapi.spec.js" });
+          write("tested/lib/openapi.spec.js", "module.exports = {};");
+          write("tested/lib/index.js", "1");
+          write("tested/test/index.test.js", "1");
+          write("tested/test/__snapshots__/index.test.js.snap", "1");
+          write("tested/bench/basic.bench.js", "1");
+          write("tested/src/Button.stories.jsx", "1");
+          write("tested/lib/test.js", "1");
+          write("tested/lib/is-test.js", "1");
+          write("tested/lib/ab-test.js", "1");
+        })
+        .step(() => clean(tree, 0, 0))
+        .step(() =>
+          ["lib/openapi.spec.js", "lib/index.js", "lib/test.js", "lib/is-test.js", "lib/ab-test.js"].filter(
+            file => !has(`tested/${file}`)
+          )
+        )
+        .step(missing => expect(missing).toEqual([]))
+        .step(() => ["test", "bench", "src"].filter(dir => has(`tested/${dir}`)))
+        .step(left => expect(left).toEqual([]));
+    });
+
     it("keeps YAML a package may read, and removes CI config", async () => {
       write("keepme/config/defaults.yaml", "a: 1");
       write("keepme/.travis.yml", "language: node_js");

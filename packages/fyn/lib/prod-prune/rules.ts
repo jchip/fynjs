@@ -35,6 +35,7 @@ export interface ManifestTargets {
 export const REMOVE_DIRS = new Set([
   "__tests__",
   "__mocks__",
+  "__snapshots__",
   // version control
   ".git",
   ".svn",
@@ -72,12 +73,13 @@ export const REMOVE_DIRS = new Set([
  * extension is taken from the last dot; both are compile-time only. `.mts` and
  * `.cts` are the same in the module and commonjs flavours — node loads `.mjs`
  * and `.cjs`, never their TypeScript spellings, so nothing there is reachable
- * either.
+ * either. Nor `.tsx`.
  */
 const REMOVE_EXTS = new Set([
   ".ts",
   ".mts",
   ".cts",
+  ".tsx",
   ".map",
   ".tsbuildinfo",
   ".md",
@@ -212,6 +214,50 @@ export function isNonRuntimeFile(file: string, ext: string): boolean {
     return true;
   }
   return DOC_EXTS.has(lowerExt) && REMOVE_DOC_PREFIXES.some(prefix => lower.startsWith(prefix));
+}
+
+/**
+ * Test, benchmark and story files, by the double extension the tools
+ * themselves look for: Jest's and Vitest's test defaults, the node test
+ * runner's `.test.`, Vitest's bench default, and Storybook. A plain or
+ * hyphenated name like `test.js` or `ab-test.js` reads like an ordinary module,
+ * so it is not matched. TypeScript spellings already go by extension.
+ */
+const TEST_FILE_RE = /\.(test|spec|bench|benchmark|stories)\.(js|cjs|mjs|jsx)$/i;
+
+/**
+ * Is this a test, benchmark or story file that node never loads?
+ *
+ * The name alone is strong evidence, but the package's manifest gets the last
+ * word: a file that `main`, `bin`, `module` or an `exports` entry names stays.
+ * Nothing at prune time can see a file loaded by a computed name; `keepPaths`
+ * covers that.
+ *
+ * @param root the node_modules being cleaned
+ * @param fullPath
+ * @param manifestTargets resolves a package directory to its manifest paths,
+ *   memoised by the caller
+ */
+export function isTestFile(
+  root: string,
+  fullPath: string,
+  manifestTargets: (dir: string) => ManifestTargets
+): boolean {
+  if (!TEST_FILE_RE.test(Path.basename(fullPath))) {
+    return false;
+  }
+  // terminates at the tree root at worst, which isPackageRoot accepts
+  let pkgDir = Path.dirname(fullPath);
+  while (!isPackageRoot(root, pkgDir)) {
+    pkgDir = Path.dirname(pkgDir);
+  }
+  const rel = Path.relative(pkgDir, fullPath).split(Path.sep).join("/");
+  const targets = manifestTargets(pkgDir);
+  return ![...targets.node, ...targets.bundler].some(target => {
+    const path = target.replace(/^\.\//, "");
+    // node adds `.js` to an extension-less `main`
+    return path === rel || `${path}.js` === rel;
+  });
 }
 
 /**

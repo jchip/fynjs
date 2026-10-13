@@ -33,6 +33,7 @@ import {
   isNonRuntimeFile,
   isPackageRoot,
   isReviewableAsset,
+  isTestFile,
   readManifestTargets,
   type ManifestTargets
 } from "./rules";
@@ -189,7 +190,11 @@ async function scan(root: string, keepPaths: string[]): Promise<ScanResult> {
         });
         return false;
       }
-      if (isNonRuntimeFile(file, extras.ext) || isFynInstalledLock(root, extras.fullFile)) {
+      if (
+        isNonRuntimeFile(file, extras.ext) ||
+        isFynInstalledLock(root, extras.fullFile) ||
+        isTestFile(root, extras.fullFile, manifestTargets)
+      ) {
         return "remove";
       }
       kept.push({
