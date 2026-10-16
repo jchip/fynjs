@@ -1,3 +1,24 @@
+# 10/15/2026
+
+## Packages
+
+### Directly Updated
+
+-   `fyn@3.3.2` `(3.3.1 => 3.3.2)`
+-   `fynpo@3.3.2` `(3.3.1 => 3.3.2)`
+-   `fynpo-cli@3.3.2` `(3.3.1 => 3.3.2)`
+
+### Fynpo Updated
+
+-   `@fynjs/create-monorepo@1.0.2` `(1.0.1 => 1.0.2)`
+
+## Commits
+
+-   `packages/fyn`
+
+    -   fix(fyn): prod-prune removes test, bench, story and snapshot files [commit](https://github.com/jchip/fynjs/commit/d89154e22a5ca56435d05e51fc3790fc49491850)
+    -   fix(fyn): prod-prune no longer removes directories by plain names [commit](https://github.com/jchip/fynjs/commit/c20d8949090d22af1bd1a6757dd7e0002d1f8656)
+
 # 10/11/2026
 
 ## Packages
