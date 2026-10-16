@@ -741,20 +741,20 @@ fsevents:
   os:
    - darwin
 fyn:
- _latest: 3.3.1-fynlocal_h
+ _latest: 3.3.2-fynlocal_h
  _:
-  '../fyn,./packages/fyn': 3.3.1-fynlocal_h
- 3.3.1-fynlocal_h:
+  '../fyn,./packages/fyn': 3.3.2-fynlocal_h
+ 3.3.2-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fyn
   optionalDependencies:
    '@fynjs/reflink': ^0.2.0
 fynpo:
- _latest: 3.3.1-fynlocal_h
+ _latest: 3.3.2-fynlocal_h
  _:
-  ./packages/fynpo: 3.3.1-fynlocal_h
- 3.3.1-fynlocal_h:
+  ./packages/fynpo: 3.3.2-fynlocal_h
+ 3.3.2-fynlocal_h:
   top: 1
   $: local
   _: ./packages/fynpo
@@ -778,7 +778,7 @@ fynpo:
    env-paths: ^4.0.0
    execa: ^10.0.0
    fs-extra: ^11.3.0
-   fyn: ^3.3.1
+   fyn: ^3.3.2
    get-stdin: ^10.0.0
    import-fresh: ^4.0.0
    item-queue: ^2.2.1
