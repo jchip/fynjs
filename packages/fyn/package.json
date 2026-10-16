@@ -1,7 +1,7 @@
 {
   "name": "fyn",
   "type": "module",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "fyn is a node.js package manager, and supports fynpo -- a zero setup monorepo tool",
   "main": "./bin/index.mjs",
   "homepage": "https://fynjs.pages.dev/",

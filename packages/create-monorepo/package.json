@@ -1,6 +1,6 @@
 {
   "name": "@fynjs/create-monorepo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Create a new fynpo monorepo",
   "type": "module",
   "engines": {
@@ -44,8 +44,8 @@
     "@fynjs/run": "^1.1.11",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^26.4.1",
-    "fyn": "^3.3.1",
-    "fynpo": "^3.3.1",
+    "fyn": "^3.3.2",
+    "fynpo": "^3.3.2",
     "publish-util": "^3.1.8",
     "run-verify": "^2.2.0",
     "typescript": "^7.0.2",
